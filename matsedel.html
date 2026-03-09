@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Matsedel</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --cream: #faf7f2;
+      --warm-white: #fff9f2;
+      --ink: #1c1a17;
+      --muted: #7a7269;
+      --accent: #b85c2a;
+      --accent-light: #f2e8df;
+      --border: #e4ddd4;
+      --green: #3a6b4a;
+      --blue: #2a5a7a;
+      --brown: #7a5a2a;
+      --red: #6a2a2a;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'DM Sans',sans-serif; background:var(--cream); color:var(--ink); min-height:100vh; }
+
+    /* Header */
+    header { background:var(--ink); color:var(--cream); padding:2rem 2.5rem 1.5rem; display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:1rem; }
+    .header-left h1 { font-family:'Playfair Display',serif; font-size:clamp(1.8rem,4vw,2.8rem); font-weight:400; letter-spacing:-0.02em; line-height:1; }
+    .header-left .subtitle { font-size:.78rem; color:#9a9087; letter-spacing:.12em; text-transform:uppercase; margin-top:.4rem; }
+
+    /* Nav */
+    nav { background:var(--warm-white); border-bottom:1px solid var(--border); padding:0 2.5rem; display:flex; }
+    nav a { font-size:.78rem; font-weight:500; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); text-decoration:none; padding:1rem 1.2rem; border-bottom:2px solid transparent; transition:all .2s; }
+    nav a:hover { color:var(--ink); }
+    nav a.active { color:var(--accent); border-bottom-color:var(--accent); }
+
+    main { max-width:1200px; margin:0 auto; padding:2.5rem 2rem; }
+
+    /* ── Config panel ── */
+    .config-panel { background:var(--warm-white); border:1px solid var(--border); margin-bottom:2rem; }
+
+    .config-header {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:1.2rem 1.8rem; cursor:pointer; user-select:none;
+      border-bottom:1px solid transparent; transition:border-color .2s;
+    }
+    .config-header:hover { background:var(--accent-light); }
+    .config-header.open { border-bottom-color:var(--border); }
+
+    .config-header-left { display:flex; align-items:center; gap:.8rem; }
+    .config-title { font-family:'Playfair Display',serif; font-size:1rem; font-weight:400; }
+    .config-summary { font-size:.75rem; color:var(--muted); font-style:italic; }
+    .config-chevron { font-size:.8rem; color:var(--muted); transition:transform .25s; }
+    .config-chevron.open { transform:rotate(180deg); }
+
+    .config-body { display:none; padding:1.6rem 1.8rem; gap:2rem; flex-wrap:wrap; }
+    .config-body.open { display:flex; }
+
+    /* Config groups */
+    .config-group { display:flex; flex-direction:column; gap:.6rem; min-width:160px; }
+    .config-group label { font-size:.7rem; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+
+    /* Segmented control (30/45/60) */
+    .segmented { display:flex; border:1px solid var(--border); overflow:hidden; }
+    .segmented input[type=radio] { display:none; }
+    .segmented label {
+      flex:1; text-align:center; padding:.5rem .6rem;
+      font-size:.8rem; font-weight:500; cursor:pointer;
+      background:var(--cream); color:var(--muted);
+      border-right:1px solid var(--border); transition:all .15s;
+      letter-spacing:0;
+    }
+    .segmented label:last-of-type { border-right:none; }
+    .segmented input[type=radio]:checked + label { background:var(--ink); color:var(--cream); }
+
+    /* Slider */
+    .slider-row { display:flex; align-items:center; gap:.8rem; }
+    input[type=range] {
+      -webkit-appearance:none; appearance:none;
+      width:130px; height:4px; background:var(--border); border-radius:2px; outline:none; cursor:pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance:none; width:16px; height:16px;
+      border-radius:50%; background:var(--accent); cursor:pointer;
+    }
+    .slider-val { font-size:.9rem; font-weight:500; min-width:1.5rem; text-align:center; }
+
+    /* Stepper */
+    .stepper { display:flex; align-items:center; gap:0; border:1px solid var(--border); width:fit-content; }
+    .stepper button {
+      background:var(--cream); border:none; width:32px; height:32px;
+      font-size:1.1rem; cursor:pointer; color:var(--muted); transition:background .15s;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .stepper button:hover { background:var(--accent-light); color:var(--accent); }
+    .stepper button:disabled { opacity:.3; cursor:default; }
+    .stepper span { width:32px; text-align:center; font-size:.9rem; font-weight:500; }
+
+    /* Checkboxes */
+    .checkbox-group { display:flex; flex-direction:column; gap:.4rem; }
+    .cb-item { display:flex; align-items:center; gap:.5rem; cursor:pointer; }
+    .cb-item input[type=checkbox] { display:none; }
+    .cb-box {
+      width:16px; height:16px; border:1.5px solid var(--border); border-radius:2px;
+      background:var(--cream); flex-shrink:0; display:flex; align-items:center; justify-content:center;
+      transition:all .15s; font-size:.7rem; color:transparent;
+    }
+    .cb-item input:checked ~ .cb-box { background:var(--ink); border-color:var(--ink); color:var(--cream); }
+    .cb-label { font-size:.85rem; }
+    .protein-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+
+    /* Divider */
+    .config-divider { width:1px; background:var(--border); align-self:stretch; margin:0 .5rem; }
+
+    /* ── Date + Generate row ── */
+    .generate-row { background:var(--warm-white); border:1px solid var(--border); padding:1.4rem 1.8rem; margin-bottom:2rem; display:flex; align-items:flex-end; gap:1.5rem; flex-wrap:wrap; }
+    .field { display:flex; flex-direction:column; gap:.35rem; }
+    .field label { font-size:.7rem; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); }
+    .field input[type=date] { font-family:'DM Sans',sans-serif; font-size:.9rem; color:var(--ink); background:var(--cream); border:1px solid var(--border); padding:.55rem .9rem; outline:none; cursor:pointer; transition:border-color .2s; min-width:155px; }
+    .field input[type=date]:focus { border-color:var(--accent); }
+    .range-summary { font-size:.8rem; color:var(--muted); font-style:italic; align-self:center; }
+    .range-error { color:#c04040; }
+
+    .btn { background:var(--ink); color:var(--cream); border:none; padding:.62rem 1.5rem; font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:500; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; transition:background .2s; white-space:nowrap; align-self:flex-end; }
+    .btn:hover { background:var(--accent); }
+    .btn:disabled { background:var(--border); color:var(--muted); cursor:default; }
+    .btn-ghost { background:transparent; color:var(--ink); border:1px solid var(--border); }
+    .btn-ghost:hover { background:var(--accent-light); border-color:var(--accent); color:var(--accent); }
+    .btn-ghost:disabled { opacity:.35; cursor:default; pointer-events:none; }
+
+    /* ── Week nav ── */
+    .week-nav { display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; flex-wrap:wrap; }
+    .week-nav-title { font-family:'Playfair Display',serif; font-size:1.2rem; font-style:italic; flex:1; text-align:center; color:var(--ink); }
+    .week-dots { display:flex; gap:.4rem; align-items:center; justify-content:center; width:100%; }
+    .week-dot { width:8px; height:8px; border-radius:50%; background:var(--border); cursor:pointer; transition:background .2s; }
+    .week-dot.active { background:var(--accent); }
+
+    /* Legend */
+    .legend { display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:1.2rem; font-size:.74rem; color:var(--muted); align-items:center; }
+    .legend-item { display:flex; align-items:center; gap:.3rem; }
+
+    /* Grid */
+    .week-grid { display:grid; gap:0; border:1px solid var(--border); background:var(--border); animation:fadeIn .22s ease; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:none} }
+
+    .day-col { background:var(--warm-white); display:flex; flex-direction:column; min-height:170px; }
+    .day-header { padding:.72rem .9rem .55rem; border-bottom:1px solid var(--border); background:var(--cream); }
+    .day-col.weekend .day-header { background:var(--accent-light); }
+    .day-col.weekend .day-name { color:var(--accent); }
+    .day-col.today .day-header { background:#fff3e8; }
+
+    .day-name { font-size:.66rem; font-weight:500; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+    .day-date { font-family:'Playfair Display',serif; font-size:1.2rem; color:var(--ink); line-height:1; margin-top:.1rem; }
+    .day-date .mo { font-size:.62rem; font-family:'DM Sans',sans-serif; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; margin-left:.25rem; }
+
+    .recipe-slot { padding:.85rem .9rem; flex:1; display:flex; flex-direction:column; gap:.45rem; }
+    .recipe-slot.empty { justify-content:center; align-items:center; color:var(--border); font-size:1.6rem; }
+
+    .recipe-title { font-family:'Playfair Display',serif; font-size:.88rem; line-height:1.35; color:var(--ink); }
+    .recipe-title a { color:inherit; text-decoration:none; border-bottom:1px solid transparent; transition:all .15s; }
+    .recipe-title a:hover { border-bottom-color:var(--accent); color:var(--accent); }
+
+    .recipe-meta { display:flex; align-items:center; gap:.35rem; flex-wrap:wrap; margin-top:auto; }
+    .meta-time { font-size:.68rem; color:var(--muted); }
+    .meta-time::before { content:'⏱ '; }
+
+    .protein-badge { font-size:.6rem; font-weight:500; letter-spacing:.06em; text-transform:uppercase; padding:.13rem .42rem; border-radius:2px; }
+    .protein-vegetarisk { background:#e8f2ec; color:var(--green); }
+    .protein-fisk       { background:#e2edf5; color:var(--blue); }
+    .protein-kyckling   { background:#f5ede2; color:var(--brown); }
+    .protein-kott,.protein-fläsk { background:#f5e2e2; color:var(--red); }
+
+    .helg-badge { font-size:.58rem; font-weight:500; letter-spacing:.06em; text-transform:uppercase; padding:.13rem .42rem; border-radius:2px; background:#fde8d8; color:var(--accent); }
+    .untested-dot { width:6px; height:6px; border-radius:50%; background:#e0c070; flex-shrink:0; }
+
+    /* Stats */
+    .stats-bar { display:flex; gap:1.5rem; flex-wrap:wrap; margin-top:1.2rem; font-size:.78rem; color:var(--muted); }
+
+    /* Shopping */
+    .shopping-section { margin-top:2.5rem; border-top:1px solid var(--border); padding-top:2rem; }
+    .shopping-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.4rem; flex-wrap:wrap; gap:1rem; }
+    .shopping-header h2 { font-family:'Playfair Display',serif; font-size:1.3rem; font-weight:400; }
+    .shopping-note { font-size:.78rem; color:var(--muted); font-style:italic; }
+    .shopping-generate-row { display:flex; align-items:center; gap:1rem; flex-wrap:wrap; padding:.5rem 0; }
+    .shopping-hint { font-size:.78rem; color:var(--muted); font-style:italic; }
+    .shopping-error { font-size:.85rem; color:#c04040; margin-bottom:1rem; }
+    .shopping-category { margin-bottom:1.8rem; }
+    .shopping-cat-title { font-size:.72rem; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:.6rem; padding-bottom:.4rem; border-bottom:1px solid var(--border); }
+    .shopping-cat-list { list-style:none; columns:3; column-gap:2rem; }
+    @media(max-width:800px){ .shopping-cat-list{columns:2} }
+    @media(max-width:500px){ .shopping-cat-list{columns:1} }
+    .shopping-item { break-inside:avoid; padding:.22rem 0; border-bottom:1px solid var(--border); }
+    .shopping-item.checked .shopping-item-name { text-decoration:line-through; color:var(--muted); }
+    .shopping-item.checked .shopping-item-amount { opacity:.4; }
+    .shopping-cb-row { display:flex; align-items:baseline; gap:.5rem; cursor:pointer; }
+    .shopping-cb-row input[type=checkbox] { display:none; }
+    .shopping-check-box { width:13px; height:13px; border:1.5px solid var(--border); border-radius:2px; flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; font-size:.6rem; color:transparent; background:var(--cream); transition:all .15s; margin-top:.15rem; }
+    .shopping-cb-row input:checked ~ .shopping-check-box { background:var(--ink); border-color:var(--ink); color:var(--cream); }
+    .shopping-check-box::after { content:'✓'; }
+    .shopping-item-name { font-size:.83rem; color:var(--ink); flex:1; }
+    .shopping-item-amount { font-size:.75rem; color:var(--muted); white-space:nowrap; }
+    .shopping-regen-row { margin-top:1.5rem; padding-top:1.2rem; border-top:1px solid var(--border); }
+
+    /* Mode toggle */
+    .shopping-mode-toggle { display:flex; gap:.5rem; margin-bottom:1.4rem; background:var(--paper); border:1px solid var(--border); border-radius:4px; padding:3px; width:fit-content; }
+    .mode-btn { padding:.38rem .9rem; font-size:.78rem; font-family:'DM Sans',sans-serif; border:none; background:transparent; color:var(--muted); border-radius:3px; cursor:pointer; transition:all .15s; letter-spacing:.02em; }
+    .mode-btn.active { background:var(--ink); color:var(--cream); }
+
+    /* AI export panel */
+    .ai-export-panel { background:var(--paper); border:1px solid var(--border); border-radius:6px; padding:1.4rem; margin-top:1rem; }
+    .ai-export-title { font-size:.72rem; font-weight:500; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); margin-bottom:.8rem; }
+    .ai-export-text { font-family:'DM Mono',monospace,sans-serif; font-size:.75rem; line-height:1.6; color:var(--ink); white-space:pre-wrap; background:var(--cream); border:1px solid var(--border); border-radius:4px; padding:1rem; max-height:260px; overflow-y:auto; }
+    .ai-export-actions { display:flex; gap:.7rem; margin-top:.9rem; flex-wrap:wrap; align-items:center; }
+    .ai-export-hint { font-size:.73rem; color:var(--muted); font-style:italic; }
+    .copy-success { color:#4a9a6a; font-size:.75rem; font-weight:500; display:none; }
+    .copy-success.show { display:inline; }
+
+    /* Empty */
+    .empty-state { text-align:center; padding:4rem 2rem; color:var(--muted); }
+    .empty-state .big { font-family:'Playfair Display',serif; font-size:1.4rem; margin-bottom:.5rem; font-weight:400; }
+    .empty-state p { font-size:.85rem; }
+
+    footer { text-align:center; padding:2rem; font-size:.74rem; color:#bbb4aa; border-top:1px solid var(--border); margin-top:3rem; font-style:italic; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1>Matsedel</h1>
+    <div class="subtitle">Receptbok · Veckoplanering</div>
+  </div>
+</header>
+
+<nav>
+  <a href="#">Alla recept</a>
+  <a href="#" class="active">Matsedel</a>
+  <a href="#">Favoriter</a>
+</nav>
+
+<main>
+
+  <!-- ── Config panel ── -->
+  <div class="config-panel">
+    <div class="config-header" id="configToggle">
+      <div class="config-header-left">
+        <span class="config-title">Inställningar</span>
+        <span class="config-summary" id="configSummary"></span>
+      </div>
+      <span class="config-chevron" id="configChevron">▼</span>
+    </div>
+    <div class="config-body" id="configBody">
+
+      <!-- Max tid vardagar -->
+      <div class="config-group">
+        <label>Max tid vardagar</label>
+        <div class="segmented">
+          <input type="radio" name="maxTime" id="t30" value="30" checked>
+          <label for="t30">30 min</label>
+          <input type="radio" name="maxTime" id="t45" value="45">
+          <label for="t45">45 min</label>
+          <input type="radio" name="maxTime" id="t60" value="60">
+          <label for="t60">60 min</label>
+        </div>
+      </div>
+
+      <div class="config-divider"></div>
+
+      <!-- Vegetariska dagar -->
+      <div class="config-group">
+        <label>Vegetariska dagar / vecka</label>
+        <div class="slider-row">
+          <input type="range" id="vegSlider" min="0" max="7" value="3">
+          <span class="slider-val" id="vegVal">3</span>
+        </div>
+      </div>
+
+      <div class="config-divider"></div>
+
+      <!-- Proteinkällor -->
+      <div class="config-group">
+        <label>Proteinkällor</label>
+        <div class="checkbox-group">
+          <label class="cb-item">
+            <input type="checkbox" id="cbVeg" checked>
+            <span class="cb-box">✓</span>
+            <span class="protein-dot" style="background:#3a6b4a"></span>
+            <span class="cb-label">Vegetarisk</span>
+          </label>
+          <label class="cb-item">
+            <input type="checkbox" id="cbFisk" checked>
+            <span class="cb-box">✓</span>
+            <span class="protein-dot" style="background:#2a5a7a"></span>
+            <span class="cb-label">Fisk/skaldjur</span>
+          </label>
+          <label class="cb-item">
+            <input type="checkbox" id="cbKyckling" checked>
+            <span class="cb-box">✓</span>
+            <span class="protein-dot" style="background:#7a5a2a"></span>
+            <span class="cb-label">Kyckling</span>
+          </label>
+          <label class="cb-item">
+            <input type="checkbox" id="cbKott" checked>
+            <span class="cb-box">✓</span>
+            <span class="protein-dot" style="background:#6a2a2a"></span>
+            <span class="cb-label">Kött/fläsk</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="config-divider"></div>
+
+      <!-- Otestade + Helgrecept (staplade steppers) -->
+      <div class="config-group">
+        <label>Max otestade / vecka</label>
+        <div class="stepper" id="untestedStepper">
+          <button id="untestedMinus">−</button>
+          <span id="untestedVal">1</span>
+          <button id="untestedPlus">+</button>
+        </div>
+        <label style="margin-top:.8rem">Helgrecept (helg60) / helg</label>
+        <div class="stepper" id="helgStepper">
+          <button id="helgMinus">−</button>
+          <span id="helgVal">1</span>
+          <button id="helgPlus">+</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Date + Generate ── -->
+  <div class="generate-row">
+    <div class="field">
+      <label>Från</label>
+      <input type="date" id="dateFrom" />
+    </div>
+    <div class="field">
+      <label>Till</label>
+      <input type="date" id="dateTo" />
+    </div>
+    <button class="btn" id="generateBtn">Generera</button>
+    <span class="range-summary" id="rangeSummary"></span>
+  </div>
+
+  <!-- ── Plan area ── -->
+  <div id="planArea">
+    <div class="empty-state">
+      <div class="big">Konfigurera och välj datum ovan</div>
+      <p>Justera inställningarna och välj datumintervall för att generera din matsedel</p>
+    </div>
+  </div>
+
+</main>
+
+<footer>Genererad från din receptbok · Recept hämtas från recipes.json</footer>
+
+<script>
+const RECIPES_URL = 'https://raw.githubusercontent.com/jockemedw/receptbok/main/recipes.json';
+const DAYS_SV   = ['Söndag','Måndag','Tisdag','Onsdag','Torsdag','Fredag','Lördag'];
+const MONTHS_SV = ['jan','feb','mar','apr','maj','jun','jul','aug','sep','okt','nov','dec'];
+
+let allRecipes = [];
+let weeks = [];
+let currentWeekIdx = 0;
+
+// ── Settings state ──────────────────────────────────────────────────────────
+const settings = {
+  maxTimeWeekday: 30,
+  vegDaysPerWeek: 3,
+  proteins: { vegetarisk:true, fisk:true, kyckling:true, kott:true },
+  maxUntested: 1,
+  minHelgRecept: 1
+};
+
+// ── Config panel toggle ─────────────────────────────────────────────────────
+document.getElementById('configToggle').addEventListener('click', () => {
+  const body    = document.getElementById('configBody');
+  const chevron = document.getElementById('configChevron');
+  const header  = document.getElementById('configToggle');
+  const isOpen  = body.classList.toggle('open');
+  chevron.classList.toggle('open', isOpen);
+  header.classList.toggle('open', isOpen);
+});
+
+function updateConfigSummary() {
+  const proteins = Object.entries(settings.proteins).filter(([,v])=>v).map(([k])=>k);
+  const proteinStr = proteins.length === 4 ? 'alla proteiner' : proteins.join(', ');
+  document.getElementById('configSummary').textContent =
+    `${settings.maxTimeWeekday} min · ${settings.vegDaysPerWeek} veg/v · ${proteinStr} · max ${settings.maxUntested} otestade`;
+}
+updateConfigSummary();
+
+// Max time segmented
+document.querySelectorAll('input[name=maxTime]').forEach(r => {
+  r.addEventListener('change', () => { settings.maxTimeWeekday = +r.value; updateConfigSummary(); });
+});
+
+// Veg slider
+const vegSlider = document.getElementById('vegSlider');
+const vegVal    = document.getElementById('vegVal');
+vegSlider.addEventListener('input', () => {
+  settings.vegDaysPerWeek = +vegSlider.value;
+  vegVal.textContent = vegSlider.value;
+  updateConfigSummary();
+});
+
+// Protein checkboxes
+[['cbVeg','vegetarisk'],['cbFisk','fisk'],['cbKyckling','kyckling'],['cbKott','kott']].forEach(([id,key]) => {
+  document.getElementById(id).addEventListener('change', e => {
+    settings.proteins[key] = e.target.checked;
+    updateConfigSummary();
+  });
+});
+
+// Steppers
+function makeStepper(minusId, plusId, valId, stateKey, min, max) {
+  const valEl = document.getElementById(valId);
+  document.getElementById(minusId).addEventListener('click', () => {
+    if (settings[stateKey] > min) { settings[stateKey]--; valEl.textContent = settings[stateKey]; updateConfigSummary(); updateStepperBtns(); }
+  });
+  document.getElementById(plusId).addEventListener('click', () => {
+    if (settings[stateKey] < max) { settings[stateKey]++; valEl.textContent = settings[stateKey]; updateConfigSummary(); updateStepperBtns(); }
+  });
+  function updateStepperBtns() {
+    document.getElementById(minusId).disabled = settings[stateKey] <= min;
+    document.getElementById(plusId).disabled  = settings[stateKey] >= max;
+  }
+  updateStepperBtns();
+}
+makeStepper('untestedMinus','untestedPlus','untestedVal','maxUntested',0,3);
+makeStepper('helgMinus','helgPlus','helgVal','minHelgRecept',0,2);
+
+// ── Date helpers ─────────────────────────────────────────────────────────────
+const dateOnly  = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+const addDays   = (d,n) => { const r=new Date(d); r.setDate(r.getDate()+n); return r; };
+const isoToDate = s => { const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); };
+const dateToISO = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+function dateRange(start, end) {
+  const out=[]; let cur=dateOnly(start); const last=dateOnly(end);
+  while(cur<=last){out.push(new Date(cur));cur=addDays(cur,1);}
+  return out;
+}
+function getMondayOf(d) {
+  const day=d.getDay(), diff=day===0?-6:1-day;
+  const m=new Date(d); m.setDate(d.getDate()+diff); return dateOnly(m);
+}
+function splitIntoWeeks(dates) {
+  const g={};
+  dates.forEach(d=>{ const k=dateToISO(getMondayOf(d)); (g[k]=g[k]||[]).push(d); });
+  return Object.keys(g).sort().map(k=>g[k]);
+}
+const isWeekend = d => { const day=d.getDay(); return day===0||day===6; };
+
+// ── Plan generation ──────────────────────────────────────────────────────────
+function isAllowedProtein(r) {
+  const p = r.protein;
+  if (p==='vegetarisk') return settings.proteins.vegetarisk;
+  if (p==='fisk')       return settings.proteins.fisk;
+  if (p==='kyckling')   return settings.proteins.kyckling;
+  if (p==='kött'||p==='fläsk') return settings.proteins.kott;
+  return true;
+}
+
+const SKIP_TAGS = ['tillbehör','frukost','brunch'];
+
+function isWeekdayRecipe(r) {
+  if (r.tags.some(t=>SKIP_TAGS.includes(t))) return false;
+  if (!isAllowedProtein(r)) return false;
+  return r.time <= settings.maxTimeWeekday || r.tags.includes('vardag30') && r.time <= settings.maxTimeWeekday;
+}
+function isWeekendRecipe(r) {
+  if (r.tags.some(t=>SKIP_TAGS.includes(t))) return false;
+  return isAllowedProtein(r);
+}
+
+function pickOne(pool, avoidProtein, allowUntested) {
+  const sh=[...pool].sort(()=>Math.random()-.5);
+  for(const r of sh){ if(r.protein!==avoidProtein&&(r.tested||allowUntested)) return r; }
+  for(const r of sh){ if(r.tested||allowUntested) return r; }
+  return sh[0]||null;
+}
+
+function generatePlan(dates) {
+  const usedIds=new Set();
+  let untestedUsed=0;
+  const plan=[];
+
+  const weekChunks=splitIntoWeeks(dates);
+  const dateToWeekIdx={};
+  weekChunks.forEach((wk,wi)=>wk.forEach(d=>dateToWeekIdx[dateToISO(d)]=wi));
+  const vegPerWeek=new Array(weekChunks.length).fill(0);
+  const helgPerWeek=new Array(weekChunks.length).fill(0);
+
+  const helgPool    = allRecipes.filter(r=>r.tags.includes('helg60')&&isWeekendRecipe(r));
+  const weekdayPool = allRecipes.filter(isWeekdayRecipe);
+  const weekendPool = allRecipes.filter(isWeekendRecipe);
+
+  dates.forEach((date,i)=>{
+    const wi=dateToWeekIdx[dateToISO(date)];
+    const prevProtein=i>0?plan[i-1]?.protein:null;
+    const allowUntested=untestedUsed<settings.maxUntested;
+    const wkend=isWeekend(date);
+
+    let pool;
+    if(wkend){
+      // Use helg60 pool if we haven't hit the min yet, otherwise any weekend recipe
+      const needHelg = helgPerWeek[wi] < settings.minHelgRecept;
+      const avail = (needHelg ? helgPool : weekendPool).filter(r=>!usedIds.has(r.id));
+      pool = avail.length ? avail : weekendPool.filter(r=>!usedIds.has(r.id));
+    } else {
+      let base=weekdayPool.filter(r=>!usedIds.has(r.id));
+      if(vegPerWeek[wi]<settings.vegDaysPerWeek){
+        const veg=base.filter(r=>r.protein==='vegetarisk');
+        if(veg.length) base=veg;
+      } else {
+        const nv=base.filter(r=>r.protein!=='vegetarisk');
+        if(nv.length) base=nv;
+      }
+      pool=base;
+    }
+
+    const picked = pickOne(pool, prevProtein, allowUntested)
+      || pickOne(allRecipes.filter(r=>!usedIds.has(r.id)&&(wkend?isWeekendRecipe(r):isWeekdayRecipe(r))), null, true);
+
+    plan.push(picked||null);
+    if(picked){
+      usedIds.add(picked.id);
+      if(!picked.tested) untestedUsed++;
+      if(picked.protein==='vegetarisk'&&!wkend) vegPerWeek[wi]++;
+      if(wkend&&picked.tags.includes('helg60')) helgPerWeek[wi]++;
+    }
+  });
+  return plan;
+}
+
+// ── Render ───────────────────────────────────────────────────────────────────
+function renderPlan(dates, planRecipes) {
+  const chunks=splitIntoWeeks(dates);
+  weeks=chunks.map(wkDates=>wkDates.map(d=>{
+    const idx=dates.findIndex(dd=>dateToISO(dd)===dateToISO(d));
+    return {date:d, recipe:idx>=0?planRecipes[idx]:null};
+  }));
+  currentWeekIdx=0;
+  renderArea();
+}
+
+function renderArea() {
+  const area=document.getElementById('planArea');
+  area.innerHTML='';
+  if(!weeks.length) return;
+
+  if(weeks.length>1){
+    const nav=document.createElement('div');
+    nav.className='week-nav';
+
+    const prev=document.createElement('button');
+    prev.className='btn btn-ghost'; prev.textContent='← Föregående';
+    prev.disabled=currentWeekIdx===0;
+    prev.onclick=()=>{if(currentWeekIdx>0){currentWeekIdx--;renderArea();}};
+
+    const titleEl=document.createElement('div');
+    titleEl.className='week-nav-title';
+    const wk=weeks[currentWeekIdx],f=wk[0].date,l=wk[wk.length-1].date;
+    titleEl.textContent=`${f.getDate()} ${MONTHS_SV[f.getMonth()]} – ${l.getDate()} ${MONTHS_SV[l.getMonth()]}`;
+
+    const next=document.createElement('button');
+    next.className='btn btn-ghost'; next.textContent='Nästa →';
+    next.disabled=currentWeekIdx===weeks.length-1;
+    next.onclick=()=>{if(currentWeekIdx<weeks.length-1){currentWeekIdx++;renderArea();}};
+
+    nav.append(prev,titleEl,next);
+
+    const dots=document.createElement('div'); dots.className='week-dots';
+    weeks.forEach((_,i)=>{
+      const dot=document.createElement('div');
+      dot.className='week-dot'+(i===currentWeekIdx?' active':'');
+      dot.onclick=()=>{currentWeekIdx=i;renderArea();};
+      dots.appendChild(dot);
+    });
+    nav.appendChild(dots);
+    area.appendChild(nav);
+  }
+
+  // Legend
+  const leg=document.createElement('div'); leg.className='legend';
+  leg.innerHTML=`
+    <span class="legend-item"><span class="protein-badge protein-vegetarisk">Veg</span> Vegetarisk</span>
+    <span class="legend-item"><span class="protein-badge protein-fisk">Fisk</span> Fisk</span>
+    <span class="legend-item"><span class="protein-badge protein-kyckling">Kyckling</span> Kyckling</span>
+    <span class="legend-item"><span class="protein-badge protein-kott">Kött</span> Kött/fläsk</span>
+    <span class="legend-item"><span class="helg-badge">Helg</span> Helgrecept</span>
+    <span class="legend-item"><span class="untested-dot"></span> Ej testat</span>`;
+  area.appendChild(leg);
+
+  // Grid
+  const wkDays=weeks[currentWeekIdx];
+  const today=dateToISO(dateOnly(new Date()));
+  const grid=document.createElement('div');
+  grid.className='week-grid';
+  grid.style.gridTemplateColumns=`repeat(${wkDays.length},1fr)`;
+
+  wkDays.forEach(({date,recipe})=>{
+    const dayNum=date.getDay(), wkend=dayNum===0||dayNum===6, isToday=dateToISO(date)===today;
+    const col=document.createElement('div');
+    col.className='day-col'+(wkend?' weekend':'')+(isToday?' today':'');
+
+    const hdr=document.createElement('div'); hdr.className='day-header';
+    hdr.innerHTML=`<div class="day-name">${DAYS_SV[dayNum]}</div><div class="day-date">${date.getDate()} <span class="mo">${MONTHS_SV[date.getMonth()]}</span></div>`;
+
+    const slot=document.createElement('div');
+    if(!recipe){
+      slot.className='recipe-slot empty'; slot.textContent='—';
+    } else {
+      const protKey=recipe.protein.replace(/[\/\s]/g,'');
+      const isHelg=recipe.tags.includes('helg60');
+      slot.className='recipe-slot';
+      slot.innerHTML=`
+        <div class="recipe-title"><a href="#recept-${recipe.id}">${recipe.title}</a></div>
+        <div class="recipe-meta">
+          <span class="meta-time">${recipe.time} min</span>
+          <span class="protein-badge protein-${protKey}">${recipe.protein}</span>
+          ${isHelg?'<span class="helg-badge">Helg</span>':''}
+          ${!recipe.tested?'<span class="untested-dot" title="Ej testat"></span>':''}
+        </div>`;
+    }
+    col.append(hdr,slot);
+    grid.appendChild(col);
+  });
+  area.appendChild(grid);
+
+  // Stats
+  const weekRecipes=wkDays.map(d=>d.recipe).filter(Boolean);
+  if(weekRecipes.length){
+    const vegs=weekRecipes.filter(r=>r.protein==='vegetarisk').length;
+    const untest=weekRecipes.filter(r=>!r.tested).length;
+    const stats=document.createElement('div'); stats.className='stats-bar';
+    stats.innerHTML=`
+      <span>🥦 ${vegs} vegetariska</span>
+      <span>🐟 ${weekRecipes.filter(r=>r.protein==='fisk').length} fisk</span>
+      <span>🍗 ${weekRecipes.filter(r=>r.protein==='kyckling').length} kyckling</span>
+      <span>🥩 ${weekRecipes.filter(r=>['kött','fläsk'].includes(r.protein)).length} kött/fläsk</span>
+      ${untest?`<span>🟡 ${untest} ej testade</span>`:''}`;
+    area.appendChild(stats);
+  }
+
+  // Shopping list (AI-powered)
+  const allR=weeks.flat().map(d=>d.recipe).filter(Boolean);
+  if(allR.length){
+    const sec=document.createElement('div'); sec.className='shopping-section';
+    sec.id='shoppingSection';
+    sec.innerHTML=`
+      <div class="shopping-header">
+        <h2>Inköpslista</h2>
+        <span class="shopping-note" id="shoppingNote">${allR.length} middagar · hela perioden</span>
+      </div>
+      <div id="shoppingContent">
+        <div class="shopping-generate-row">
+          <button class="btn" id="shoppingAiBtn">✦ Generera smart inköpslista</button>
+          <span class="shopping-hint">AI rationaliserar och grupperar per butikskategori</span>
+        </div>
+      </div>`;
+    area.appendChild(sec);
+    setTimeout(()=>{
+      const aiBtn=document.getElementById('shoppingAiBtn');
+      if(aiBtn) aiBtn.addEventListener('click', ()=>generateSmartShopping(allR));
+    },0);
+  }
+}
+
+// ── AI Shopping list ──────────────────────────────────────────────────────────
+async function generateSmartShopping(recipes) {
+  const btn=document.getElementById('shoppingAiBtn');
+  const container=document.getElementById('shoppingContent');
+  const noteEl=document.getElementById('shoppingNote');
+
+  if(btn){ btn.disabled=true; btn.textContent='Analyserar ingredienser...'; }
+
+  const rawIngredients = recipes.flatMap(r =>
+    r.ingredients
+      .map(s => s.replace(/^[^:]+:\s*/,'').trim())
+      .filter(s => !s.toLowerCase().startsWith('till servering'))
+      .map(ing => `[${r.title}] ${ing}`)
+  );
+
+  const prompt = `Du är en hjälpsam assistent som skapar inköpslistor från recept.
+
+Här är alla ingredienser från ${recipes.length} recept (format: [receptnamn] ingrediens):
+
+${rawIngredients.join('\n')}
+
+Din uppgift:
+1. Slå ihop dubbletter och liknande ingredienser (t.ex. olivolja oavsett mängd → en rad).
+2. Summera mängder där det är rimligt och enheterna stämmer. Om oklart, skriv ungefärlig mängd eller utelämna.
+3. Gruppera per butikskategori. Använd ENDAST relevanta av dessa:
+   - 🥬 Grönt & frukt
+   - 🥛 Mejeri & ägg
+   - 🥩 Kött, fisk & chark
+   - 🥫 Torrvaror & konserver
+   - 🧂 Kryddor & smaksättare
+   - 🍞 Bröd & bakverk
+   - ❄️ Fryst
+   - 🛒 Övrigt
+
+Svara ENDAST med giltig JSON, inga kommentarer eller markdown-backticks. Format:
+{"categories":[{"name":"🥬 Grönt & frukt","items":[{"name":"morot","amount":"4 st"},{"name":"purjolök","amount":"2 st"}]}]}`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await response.json();
+    const text = data.content.find(b=>b.type==='text')?.text || '';
+    const clean = text.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(clean);
+    renderSmartShopping(parsed, recipes, container, noteEl);
+
+  } catch(e) {
+    container.innerHTML=`<div class="shopping-error">Kunde inte generera inköpslistan. Försök igen.</div>
+      <div class="shopping-generate-row">
+        <button class="btn" id="shoppingAiBtn">↻ Försök igen</button>
+      </div>`;
+    document.getElementById('shoppingAiBtn')?.addEventListener('click',()=>generateSmartShopping(recipes));
+  }
+}
+
+function buildAiExportText(data, recipes) {
+  const dateRange = document.getElementById('dateFrom')?.value && document.getElementById('dateTo')?.value
+    ? `${document.getElementById('dateFrom').value} – ${document.getElementById('dateTo').value}`
+    : '';
+  const recipeNames = [...new Set(recipes.map(r => r.title))];
+
+  let lines = [];
+  lines.push('## Inköpslista från matsedel');
+  if(dateRange) lines.push(`Period: ${dateRange}`);
+  lines.push(`Recept (${recipes.length} middagar): ${recipeNames.join(', ')}`);
+  lines.push('');
+  lines.push('Butik: Willys Ekholmen, Linköping');
+  lines.push('');
+  lines.push('### Varor att lägga i korgen:');
+  lines.push('');
+  data.categories.forEach(cat => {
+    lines.push(cat.name);
+    cat.items.forEach(item => {
+      lines.push(`- ${item.name}${item.amount ? ' · ' + item.amount : ''}`);
+    });
+    lines.push('');
+  });
+  lines.push('---');
+  lines.push('Lägg dessa varor i Willys-korgen. Logga in på willys.se, välj Willys Ekholmen och lägg till alla varor ovan. Jag tar över vid BankID-inloggning.');
+  return lines.join('\n');
+}
+
+function renderSmartShopping(data, recipes, container, noteEl) {
+  if(noteEl) noteEl.textContent = `${recipes.length} middagar · AI-rationaliserad`;
+
+  // Build checklist HTML
+  let checkHtml = '<div class="shopping-categories">';
+  data.categories.forEach(cat => {
+    checkHtml += `<div class="shopping-category">
+      <div class="shopping-cat-title">${cat.name}</div>
+      <ul class="shopping-cat-list">
+        ${cat.items.map(item => `
+          <li class="shopping-item">
+            <label class="shopping-cb-row">
+              <input type="checkbox" class="shopping-check">
+              <span class="shopping-check-box"></span>
+              <span class="shopping-item-name">${item.name}</span>
+              ${item.amount ? `<span class="shopping-item-amount">${item.amount}</span>` : ''}
+            </label>
+          </li>`).join('')}
+      </ul>
+    </div>`;
+  });
+  checkHtml += '</div>';
+
+  // Build AI export text
+  const aiText = buildAiExportText(data, recipes);
+
+  const html = `
+    <div class="shopping-mode-toggle">
+      <button class="mode-btn active" id="modeCheck">☑ Checklista</button>
+      <button class="mode-btn" id="modeAi">✦ AI-förberett</button>
+    </div>
+    <div id="shoppingChecklist">${checkHtml}</div>
+    <div id="shoppingAiExport" style="display:none">
+      <div class="ai-export-panel">
+        <div class="ai-export-title">Redo att klistra in i ChatGPT</div>
+        <div class="ai-export-text" id="aiExportText">${aiText.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+        <div class="ai-export-actions">
+          <button class="btn" id="copyAiBtn">Kopiera</button>
+          <span class="copy-success" id="copySuccess">✓ Kopierat!</span>
+          <span class="ai-export-hint">Klistra in i ChatGPT och be den handla på Willys</span>
+        </div>
+      </div>
+    </div>
+    <div class="shopping-regen-row">
+      <button class="btn btn-ghost" id="shoppingRegenBtn">↻ Generera om</button>
+    </div>`;
+
+  container.innerHTML = html;
+
+  // Checkboxes
+  container.querySelectorAll('.shopping-check').forEach(cb => {
+    cb.addEventListener('change', ()=>{
+      cb.closest('.shopping-item').classList.toggle('checked', cb.checked);
+    });
+  });
+
+  // Mode toggle
+  document.getElementById('modeCheck').addEventListener('click', ()=>{
+    document.getElementById('modeCheck').classList.add('active');
+    document.getElementById('modeAi').classList.remove('active');
+    document.getElementById('shoppingChecklist').style.display='';
+    document.getElementById('shoppingAiExport').style.display='none';
+  });
+  document.getElementById('modeAi').addEventListener('click', ()=>{
+    document.getElementById('modeAi').classList.add('active');
+    document.getElementById('modeCheck').classList.remove('active');
+    document.getElementById('shoppingChecklist').style.display='none';
+    document.getElementById('shoppingAiExport').style.display='';
+  });
+
+  // Copy button
+  document.getElementById('copyAiBtn').addEventListener('click', ()=>{
+    navigator.clipboard.writeText(aiText).then(()=>{
+      const s = document.getElementById('copySuccess');
+      s.classList.add('show');
+      setTimeout(()=>s.classList.remove('show'), 2000);
+    });
+  });
+
+  // Regen
+  document.getElementById('shoppingRegenBtn').addEventListener('click', ()=>{
+    generateSmartShopping(recipes);
+  });
+}
+
+// ── Date defaults & summary ──────────────────────────────────────────────────
+const todayISO=dateToISO(dateOnly(new Date()));
+const next6ISO=dateToISO(addDays(new Date(),6));
+document.getElementById('dateFrom').value=todayISO;
+document.getElementById('dateTo').value=next6ISO;
+
+function updateSummary(){
+  const f=document.getElementById('dateFrom').value;
+  const t=document.getElementById('dateTo').value;
+  const el=document.getElementById('rangeSummary');
+  if(!f||!t){el.textContent='';return;}
+  const d1=isoToDate(f),d2=isoToDate(t);
+  if(d2<d1){el.textContent='Slutdatum måste vara efter startdatum';el.classList.add('range-error');return;}
+  el.classList.remove('range-error');
+  const days=Math.round((d2-d1)/86400000)+1;
+  const wks=splitIntoWeeks(dateRange(d1,d2)).length;
+  el.textContent=`${days} dagar · ${wks} ${wks===1?'vecka':'veckor'}`;
+}
+updateSummary();
+document.getElementById('dateFrom').addEventListener('change',updateSummary);
+document.getElementById('dateTo').addEventListener('change',updateSummary);
+
+// ── Generate ─────────────────────────────────────────────────────────────────
+document.getElementById('generateBtn').addEventListener('click', async()=>{
+  const btn=document.getElementById('generateBtn');
+  const f=document.getElementById('dateFrom').value;
+  const t=document.getElementById('dateTo').value;
+  if(!f||!t) return;
+  const d1=isoToDate(f),d2=isoToDate(t);
+  if(d2<d1) return;
+
+  btn.disabled=true; btn.textContent='Genererar...';
+
+  if(!allRecipes.length){
+    try{
+      const resp=await fetch(RECIPES_URL);
+      const data=await resp.json();
+      allRecipes=data.recipes;
+    } catch(e){
+      // Fallback till inbyggda recept
+      if(EMBEDDED_RECIPES?.recipes?.length){
+        allRecipes=EMBEDDED_RECIPES.recipes;
+      } else {
+        document.getElementById('planArea').innerHTML='<div class="empty-state"><div class="big">Kunde inte hämta recept</div><p>Kontrollera nätverksåtkomsten och försök igen.</p></div>';
+        btn.disabled=false; btn.textContent='Generera'; return;
+      }
+    }
+  }
+
+  const dates=dateRange(d1,d2);
+  const plan=generatePlan(dates);
+  renderPlan(dates,plan);
+  btn.disabled=false; btn.textContent='Generera ny';
+});
+</script>
+</body>
+</html>
