@@ -708,13 +708,7 @@
           <span id="tokenStatus" style="font-size:.75rem;white-space:nowrap"></span>
         </div>
         <div style="font-size:.68rem;color:var(--muted);margin-top:.2rem">Krävs för automatisk commit. <a href="https://github.com/settings/tokens/new?scopes=repo" target="_blank" style="color:var(--accent)">Skapa token →</a></div>
-        <label style="margin-top:.8rem">Anthropic API-nyckel</label>
-        <div style="display:flex;gap:.5rem;align-items:center">
-          <input type="password" id="anthropicKey" placeholder="sk-ant-xxxxxxxxxxxx"
-            style="font-family:'DM Sans',sans-serif;font-size:.82rem;color:var(--ink);background:var(--cream);border:1px solid var(--border);padding:.5rem .8rem;outline:none;flex:1;transition:border-color .2s"
-            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-        </div>
-        <div style="font-size:.68rem;color:var(--muted);margin-top:.2rem">Krävs för AI-import av recept från URL.</div>
+
         <button class="btn" id="saveKeysBtn" style="margin-top:.8rem;padding:.45rem 1rem">Spara nycklar</button>
       </div>
 
@@ -1169,14 +1163,10 @@ Svara ENDAST med giltig JSON, inga kommentarer eller markdown-backticks. Format:
 {"categories":[{"name":"🥬 Grönt & frukt","items":[{"name":"morot","amount":"4 st"},{"name":"purjolök","amount":"2 st"}]}]}`;
 
   try {
-    const apiKey = localStorage.getItem('anthropic_key') || '';
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('https://anthropic-proxy.joakimweimar.workers.dev', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
@@ -1341,20 +1331,14 @@ const GITHUB_BRANCH = 'main';
 
 function loadKeys() {
   const gt = localStorage.getItem('gh_pat') || '';
-  const ak = localStorage.getItem('anthropic_key') || '';
   document.getElementById('githubToken').value  = gt;
-  document.getElementById('anthropicKey').value = ak;
   updateTokenStatus();
-  updateImportPanel();
 }
 
 function saveKeys() {
   const gt = document.getElementById('githubToken').value.trim();
-  const ak = document.getElementById('anthropicKey').value.trim();
   if (gt) localStorage.setItem('gh_pat', gt); else localStorage.removeItem('gh_pat');
-  if (ak) localStorage.setItem('anthropic_key', ak); else localStorage.removeItem('anthropic_key');
   updateTokenStatus();
-  updateImportPanel();
   showToast('Nycklar sparade ✓');
 }
 
@@ -1363,11 +1347,6 @@ function updateTokenStatus() {
   const el = document.getElementById('tokenStatus');
   el.textContent = gt ? '✓ Sparad' : '';
   el.style.color = 'var(--green)';
-}
-
-function updateImportPanel() {
-  const ak = localStorage.getItem('anthropic_key') || '';
-  document.getElementById('importPanel').style.display = ak ? 'block' : 'none';
 }
 
 document.getElementById('saveKeysBtn').addEventListener('click', saveKeys);
@@ -1432,9 +1411,6 @@ async function githubCommitRecipe(newRecipe) {
 
 // ── URL-import via Claude API ─────────────────────────────────────────────────
 async function importRecipeFromUrl(url) {
-  const apiKey = localStorage.getItem('anthropic_key');
-  if (!apiKey) throw new Error('Ingen Anthropic API-nyckel sparad.');
-
   setImportStatus('⏳ Hämtar receptsida...', false);
 
   // Steg 1: Hämta receptsidan via cors-proxy (corsproxy.io är gratis)
@@ -1476,13 +1452,10 @@ Regler:
     ? `Extrahera receptet från denna HTML-sida (URL: ${url}):\n\n${pageHtml.substring(0, 15000)}`
     : `Extrahera receptet från denna URL: ${url}`;
 
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+  const resp = await fetch('https://anthropic-proxy.joakimweimar.workers.dev', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true'
     },
     body: JSON.stringify({
       model: 'claude-sonnet-4-20250514',
