@@ -1176,13 +1176,16 @@ Svara ENDAST med giltig JSON, inga kommentarer eller markdown-backticks. Format:
     });
 
     const data = await response.json();
+    console.log('Worker svar:', JSON.stringify(data));
+    if (!data.content) throw new Error('Inget content i svar: ' + JSON.stringify(data));
     const text = data.content.find(b=>b.type==='text')?.text || '';
     const clean = text.replace(/```json|```/g,'').trim();
     const parsed = JSON.parse(clean);
     renderSmartShopping(parsed, recipes, container, noteEl);
 
   } catch(e) {
-    container.innerHTML=`<div class="shopping-error">Kunde inte generera inköpslistan. Försök igen.</div>
+    console.error('Inköpslista fel:', e);
+    container.innerHTML=`<div class="shopping-error">Fel: ${e.message || e}</div>
       <div class="shopping-generate-row">
         <button class="btn" id="shoppingAiBtn">↻ Försök igen</button>
       </div>`;
