@@ -1169,9 +1169,15 @@ Svara ENDAST med giltig JSON, inga kommentarer eller markdown-backticks. Format:
 {"categories":[{"name":"🥬 Grönt & frukt","items":[{"name":"morot","amount":"4 st"},{"name":"purjolök","amount":"2 st"}]}]}`;
 
   try {
+    const apiKey = localStorage.getItem('anthropic_key') || '';
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 2000,
