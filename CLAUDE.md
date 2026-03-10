@@ -135,3 +135,20 @@ Grundstrukturen är på plats och fungerar. Frontend live på GitHub Pages. Näs
 
 **Nästa session börjar med:**
 Steg 1 i prioritetslistan — GitHub Actions workflow som genererar `weekly-plan.json` och `shopping-list.json` via Gemini API.
+
+---
+
+### 2026-03-10 — Session 2
+**Vad vi gjorde:**
+- Felsökte GitHub Actions-körning av `scripts/generate_weekly_plan.py`
+- **Willys 400-fel:** Endpoint `https://www.willys.se/search/campaigns/offline` returnerar 400 — troligen blockering av scraping. Felet är inte fatalt; skriptet fortsätter med 0 erbjudanden.
+- **Gemini 429-fel (`limit: 0`):** Modellen `gemini-2.0-flash` har ingen free tier-kvot. Bytte primär modell till `gemini-1.5-flash` som har välkänd free tier (15 req/min, 1500/dag).
+- Lade till fallback-logik i `call_gemini()`: provar `gemini-1.5-flash` → `gemini-1.5-flash-001` → `gemini-1.5-pro` i ordning.
+
+**Var vi slutade:**
+Skriptet är fixat lokalt men ej committat/pushat. Ändringen i `scripts/generate_weekly_plan.py` ligger kvar som unstaged.
+
+**Nästa session börjar med:**
+1. Committa + pusha ändringen i `generate_weekly_plan.py` via GitHub Desktop
+2. Trigga GitHub Actions manuellt och verifiera att det fungerar end-to-end
+3. Om Willys fortfarande 400:ar — undersök alternativa endpoints eller acceptera att köra utan erbjudanden
