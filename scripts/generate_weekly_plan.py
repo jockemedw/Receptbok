@@ -185,15 +185,27 @@ def call_gemini(recipes, offers, day_list):
     client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
     prompt = build_prompt(recipes, offers, day_list)
-    response = client.models.generate_content(
-        model="gemini-2.0-flash",
-        contents=prompt,
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            temperature=0.4,
-        ),
-    )
-    return json.loads(response.text)
+
+    models_to_try = ["gemini-1.5-flash", "gemini-1.5-flash-001", "gemini-1.5-pro"]
+    last_error = None
+
+    for model in models_to_try:
+        try:
+            print(f"      Provar modell: {model}")
+            response = client.models.generate_content(
+                model=model,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    temperature=0.4,
+                ),
+            )
+            return json.loads(response.text)
+        except Exception as e:
+            print(f"      Modell {model} misslyckades: {e}")
+            last_error = e
+
+    raise last_error
 
 
 def write_outputs(plan_data, offers, start, end):
