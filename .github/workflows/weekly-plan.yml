@@ -1,0 +1,38 @@
+name: Generera veckoplan
+
+on:
+  schedule:
+    - cron: '0 6 * * 0'  # Söndagar 06:00 UTC (07:00/08:00 svensk tid)
+  workflow_dispatch:       # Manuell trigger från GitHub Actions-fliken
+
+permissions:
+  contents: write  # Krävs för att committa tillbaka genererade JSON-filer
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checka ut repo
+        uses: actions/checkout@v4
+
+      - name: Installera Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Installera beroenden
+        run: pip install requests google-generativeai
+
+      - name: Generera veckoplan
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python scripts/generate_weekly_plan.py
+
+      - name: Committa och pusha genererade filer
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add offers.json weekly-plan.json shopping-list.json
+          git diff --cached --quiet || git commit -m "Veckoplan vecka $(date +%V) — autogenererad"
+          git push
