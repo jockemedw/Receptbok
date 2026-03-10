@@ -449,6 +449,314 @@
     color: var(--text-muted);
     opacity: 0.6;
   }
+
+  /* ── TABS ── */
+  .tab-bar {
+    display: flex;
+    border-bottom: 2px solid var(--border);
+    background: var(--warm-brown);
+    padding: 0 1rem;
+    gap: 0.25rem;
+  }
+
+  .tab-btn {
+    background: none;
+    border: none;
+    color: rgba(250,247,242,0.65);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 0.75rem 1.1rem;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: color 0.2s, border-color 0.2s;
+    white-space: nowrap;
+  }
+
+  .tab-btn.active {
+    color: var(--cream);
+    border-bottom-color: var(--gold);
+  }
+
+  /* ── WEEK VIEW ── */
+  #weekView {
+    display: none;
+    padding: 1.5rem 1rem 4rem;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  #weekView.visible { display: block; }
+
+  .week-section {
+    margin-bottom: 2rem;
+  }
+
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem;
+    font-weight: 400;
+    color: var(--warm-brown);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  /* ── WEEK GRID ── */
+  .week-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.6rem;
+  }
+
+  .week-day-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0.75rem 0.9rem;
+    cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .week-day-card:hover {
+    border-color: var(--terracotta);
+    box-shadow: 0 2px 10px rgba(194,82,43,0.12);
+  }
+
+  .week-day-name {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-bottom: 0.3rem;
+  }
+
+  .week-day-recipe {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.9rem;
+    color: var(--ink);
+    line-height: 1.35;
+  }
+
+  .week-meta {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-bottom: 1rem;
+  }
+
+  /* ── SHOPPING LIST ── */
+  .shopping-category {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 0.8rem;
+  }
+
+  .shopping-cat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.8rem 1rem;
+    background: #f9f6f1;
+    border-bottom: 1px solid var(--border);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .shopping-cat-name {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--warm-brown);
+  }
+
+  .shopping-cat-count {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+
+  .shopping-items {
+    list-style: none;
+    padding: 0.4rem 0;
+  }
+
+  .shopping-item {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.55rem 1rem;
+    border-bottom: 1px solid #f5f0ea;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .shopping-item:last-child { border-bottom: none; }
+
+  .shopping-item:hover { background: #fdf9f5; }
+
+  .shopping-item.checked {
+    opacity: 0.4;
+  }
+
+  .shopping-item.checked .item-text {
+    text-decoration: line-through;
+  }
+
+  .item-checkbox {
+    width: 1.15rem;
+    height: 1.15rem;
+    border: 1.5px solid var(--border);
+    border-radius: 4px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    background: white;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .shopping-item.checked .item-checkbox {
+    background: var(--sage);
+    border-color: var(--sage);
+    color: white;
+  }
+
+  .item-text {
+    font-size: 0.9rem;
+    color: var(--ink);
+    line-height: 1.4;
+  }
+
+  /* ── TRIGGER BUTTON ── */
+  .trigger-section {
+    text-align: center;
+    padding: 1.5rem 0 0.5rem;
+  }
+
+  .trigger-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--terracotta);
+    color: white;
+    border: none;
+    border-radius: 30px;
+    padding: 0.75rem 1.5rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: opacity 0.2s, transform 0.15s;
+    box-shadow: 0 4px 16px rgba(194,82,43,0.25);
+  }
+
+  .trigger-btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+
+  .trigger-hint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.6rem;
+    font-style: italic;
+  }
+
+  .trigger-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: var(--warm-brown);
+    margin-bottom: 1.1rem;
+  }
+
+  .date-range {
+    display: flex;
+    align-items: flex-end;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 0.9rem;
+  }
+
+  .date-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .date-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+
+  .date-input {
+    padding: 0.6rem 0.75rem;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    color: var(--ink);
+    background: white;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .date-input:focus { border-color: var(--terracotta); }
+  .date-input::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.6; }
+
+  .date-sep {
+    font-size: 1.1rem;
+    color: var(--text-muted);
+    padding-bottom: 0.55rem;
+  }
+
+  .date-hint {
+    font-size: 0.85rem;
+    color: var(--warm-brown);
+    font-weight: 500;
+    min-height: 1.3em;
+    margin-bottom: 1rem;
+  }
+
+  .trigger-dates {
+    display: none;
+    margin-top: 0.85rem;
+    background: #f2ede8;
+    border-radius: 8px;
+    padding: 0.7rem 1rem;
+    font-size: 0.82rem;
+    color: var(--ink);
+    font-family: monospace;
+    line-height: 1.8;
+    text-align: left;
+    max-width: 280px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .trigger-dates.visible { display: block; }
+
+  /* ── NO DATA ── */
+  .no-data {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--text-muted);
+  }
+
+  .no-data-icon { font-size: 2rem; margin-bottom: 0.75rem; }
 </style>
 </head>
 <body>
@@ -476,12 +784,12 @@
   </div>
 </header>
 
-<main>
-  <div class="plan-banner" id="planBanner">
-    <div class="plan-banner-title">📅 Veckans matsedel</div>
-    <div class="plan-days" id="planDays"></div>
-  </div>
+<div class="tab-bar">
+  <button class="tab-btn active" id="tabRecept" onclick="switchTab('recept')">📖 Recept</button>
+  <button class="tab-btn" id="tabVecka" onclick="switchTab('vecka')">📅 Veckans mat</button>
+</div>
 
+<main id="receptView">
   <p class="results-info" id="resultsInfo"></p>
 
   <div id="loadingState" class="loading">
@@ -496,6 +804,48 @@
     <p>Inga recept matchade sökningen.</p>
   </div>
 </main>
+
+<div id="weekView">
+  <div id="weekNoData" class="no-data" style="display:none">
+    <div class="no-data-icon">📋</div>
+    <p>Ingen veckoplan genererad ännu.</p>
+  </div>
+
+  <div id="weekContent" style="display:none">
+    <div class="week-section">
+      <h2 class="section-title">🗓 Veckans middag</h2>
+      <p class="week-meta" id="weekMeta"></p>
+      <div class="week-grid" id="weekGrid"></div>
+    </div>
+
+    <div class="week-section">
+      <h2 class="section-title">🛒 Inköpslista</h2>
+      <div id="shoppingList"></div>
+    </div>
+  </div>
+
+  <div class="trigger-section">
+    <h3 class="trigger-title">Generera ny plan</h3>
+    <div class="date-range">
+      <div class="date-field">
+        <label class="date-label" for="startDate">Från</label>
+        <input type="date" id="startDate" class="date-input">
+      </div>
+      <div class="date-sep">→</div>
+      <div class="date-field">
+        <label class="date-label" for="endDate">Till</label>
+        <input type="date" id="endDate" class="date-input">
+      </div>
+    </div>
+    <p class="date-hint" id="dateHint"></p>
+    <a href="https://github.com/jockemedw/Receptbok/actions/workflows/weekly-plan.yml"
+       target="_blank" rel="noopener" class="trigger-btn">
+      ✨ Generera ny veckoplan
+    </a>
+    <div class="trigger-dates" id="triggerDates"></div>
+    <p class="trigger-hint">Öppnar GitHub Actions → "Run workflow" → ange datumen ovan</p>
+  </div>
+</div>
 
 <footer id="footerEl">Receptboken</footer>
 <button id="scrolltop" title="Till toppen">↑</button>
@@ -612,7 +962,64 @@ function toggleCard(card) {
   }
 }
 
+// ── DATE PICKERS ───────────────────────────────────────────
+function fmtIso(date) {
+  return date.toISOString().split('T')[0];
+}
+
+function fmtShort(isoStr) {
+  if (!isoStr) return '';
+  const d = new Date(isoStr + 'T12:00:00');
+  return d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
+}
+
+function initDatePickers() {
+  const today = new Date();
+  const end = new Date(today);
+  end.setDate(today.getDate() + 6);
+
+  document.getElementById('startDate').value = fmtIso(today);
+  document.getElementById('endDate').value = fmtIso(end);
+  document.getElementById('startDate').addEventListener('change', updateDateHint);
+  document.getElementById('endDate').addEventListener('change', updateDateHint);
+  updateDateHint();
+}
+
+function updateDateHint() {
+  const startVal = document.getElementById('startDate').value;
+  const endVal   = document.getElementById('endDate').value;
+  const hint     = document.getElementById('dateHint');
+  const datesEl  = document.getElementById('triggerDates');
+
+  if (!startVal || !endVal) { hint.textContent = ''; return; }
+
+  const diff = Math.round(
+    (new Date(endVal + 'T12:00:00') - new Date(startVal + 'T12:00:00')) / 864e5
+  ) + 1;
+
+  if (diff < 1) {
+    hint.textContent = 'Slutdatum måste vara efter startdatum';
+    hint.style.color = 'var(--terracotta)';
+    datesEl.classList.remove('visible');
+    return;
+  }
+  if (diff > 14) {
+    hint.textContent = 'Max 14 dagar';
+    hint.style.color = 'var(--terracotta)';
+    datesEl.classList.remove('visible');
+    return;
+  }
+
+  hint.textContent = `${diff} dag${diff !== 1 ? 'ar' : ''} planeras`;
+  hint.style.color = 'var(--warm-brown)';
+
+  datesEl.classList.add('visible');
+  datesEl.innerHTML =
+    `Ange i GitHub Actions:<br><b>start_date:</b> ${startVal}<br><b>end_date:</b> ${endVal}`;
+}
+
 function jumpToRecipe(title) {
+  switchTab('recept');
   activeFilter = 'alla';
   document.getElementById('search').value = '';
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
@@ -626,19 +1033,110 @@ function jumpToRecipe(title) {
   });
 }
 
+function switchTab(tab) {
+  const isRecept = tab === 'recept';
+  document.getElementById('receptView').style.display = isRecept ? '' : 'none';
+  document.getElementById('weekView').classList.toggle('visible', !isRecept);
+  document.getElementById('tabRecept').classList.toggle('active', isRecept);
+  document.getElementById('tabVecka').classList.toggle('active', !isRecept);
+  // Hide search/filters on week tab
+  document.querySelector('.search-wrap').style.display = isRecept ? '' : 'none';
+  document.getElementById('filters').style.display = isRecept ? '' : 'none';
+  window.scrollTo({ top: 0 });
+}
+
+// ── SHOPPING LIST ──────────────────────────────────────────
+const SHOP_KEY = 'shopping_checked';
+
+function getChecked(generated) {
+  try {
+    const stored = JSON.parse(localStorage.getItem(SHOP_KEY) || '{}');
+    // Invalidate if list was regenerated
+    if (stored.generated !== generated) return { generated, items: {} };
+    return stored;
+  } catch { return { generated, items: {} }; }
+}
+
+function saveChecked(state) {
+  localStorage.setItem(SHOP_KEY, JSON.stringify(state));
+}
+
+function renderShoppingList(categories, generated) {
+  const state = getChecked(generated);
+  const catIcons = {
+    'Mejeri': '🥛', 'Grönsaker': '🥦', 'Fisk & kött': '🥩',
+    'Skafferi': '🫙', 'Frukt': '🍎', 'Övrigt': '🛍️'
+  };
+
+  const html = Object.entries(categories)
+    .filter(([, items]) => items.length > 0)
+    .map(([cat, items]) => {
+      const icon = catIcons[cat] || '•';
+      const itemsHtml = items.map((item, idx) => {
+        const key = `${cat}::${idx}`;
+        const checked = state.items[key] || false;
+        return `<li class="shopping-item${checked ? ' checked' : ''}"
+                    onclick="toggleShopItem(this,'${key}','${generated.replace(/'/g,"\\'")}')">
+          <span class="item-checkbox">${checked ? '✓' : ''}</span>
+          <span class="item-text">${item}</span>
+        </li>`;
+      }).join('');
+      return `<div class="shopping-category">
+        <div class="shopping-cat-header">
+          <span class="shopping-cat-name">${icon} ${cat}</span>
+          <span class="shopping-cat-count">${items.length} varor</span>
+        </div>
+        <ul class="shopping-items">${itemsHtml}</ul>
+      </div>`;
+    }).join('');
+
+  document.getElementById('shoppingList').innerHTML = html;
+}
+
+function toggleShopItem(el, key, generated) {
+  const state = getChecked(generated);
+  const nowChecked = !state.items[key];
+  state.items[key] = nowChecked;
+  saveChecked(state);
+  el.classList.toggle('checked', nowChecked);
+  el.querySelector('.item-checkbox').textContent = nowChecked ? '✓' : '';
+}
+
 async function loadWeeklyPlan() {
   try {
-    const res = await fetch('weekly-plan.json');
-    if (!res.ok) return;
-    const plan = await res.json();
-    if (!plan.days?.length) return;
-    document.getElementById('planBanner').classList.add('visible');
-    document.getElementById('planDays').innerHTML = plan.days.map(d => `
-      <div class="plan-day" onclick="jumpToRecipe('${d.recipe.replace(/'/g,"\\'")}')">
-        <div class="plan-day-name">${d.day}</div>
-        <div class="plan-day-recipe">${d.recipe}</div>
+    const [planRes, shopRes] = await Promise.all([
+      fetch('weekly-plan.json'),
+      fetch('shopping-list.json'),
+    ]);
+
+    if (!planRes.ok) { document.getElementById('weekNoData').style.display = ''; return; }
+
+    const plan = await planRes.json();
+    if (!plan.days?.length) { document.getElementById('weekNoData').style.display = ''; return; }
+
+    document.getElementById('weekContent').style.display = '';
+
+    const metaParts = [];
+    if (plan.startDate && plan.endDate)
+      metaParts.push(`${fmtShort(plan.startDate)} – ${fmtShort(plan.endDate)}`);
+    else if (plan.week)
+      metaParts.push(`Vecka ${plan.week}`);
+    metaParts.push(`Genererad ${plan.generated}`);
+    document.getElementById('weekMeta').textContent = metaParts.join(' · ');
+
+    document.getElementById('weekGrid').innerHTML = plan.days.map(d => `
+      <div class="week-day-card" onclick="jumpToRecipe('${d.recipe.replace(/'/g,"\\'")}')">
+        <div class="week-day-name">${d.day}${d.date ? ' · ' + fmtShort(d.date) : ''}</div>
+        <div class="week-day-recipe">${d.recipe}</div>
       </div>`).join('');
-  } catch(e) {}
+
+    if (shopRes.ok) {
+      const shop = await shopRes.json();
+      renderShoppingList(shop.categories || {}, shop.generated || plan.generated);
+    }
+  } catch(e) {
+    document.getElementById('weekNoData').style.display = '';
+  }
 }
 
 async function init() {
@@ -653,6 +1151,7 @@ async function init() {
     document.getElementById('footerEl').textContent =
       `Receptboken · ${data.meta?.lastUpdated || ''} · ${RECIPES.length} recept`;
     applyFilters();
+    initDatePickers();
     await loadWeeklyPlan();
   } catch(err) {
     document.getElementById('loadingState').innerHTML = `

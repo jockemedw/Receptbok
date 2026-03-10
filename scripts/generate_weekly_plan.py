@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import datetime
 import requests
@@ -17,6 +18,50 @@ HEADERS = {
     ),
     "Accept": "application/json",
 }
+
+DAY_NAMES = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag", "Lördag", "Söndag"]
+
+
+def get_date_range():
+    today = datetime.date.today()
+    start_str = os.environ.get("START_DATE", "").strip()
+    end_str   = os.environ.get("END_DATE", "").strip()
+
+    try:
+        start = datetime.date.fromisoformat(start_str) if start_str else today
+    except ValueError:
+        print(f"[VARNING] Ogiltigt START_DATE '{start_str}' — använder idag")
+        start = today
+
+    try:
+        end = datetime.date.fromisoformat(end_str) if end_str else start + datetime.timedelta(days=6)
+    except ValueError:
+        print(f"[VARNING] Ogiltigt END_DATE '{end_str}' — använder +6 dagar")
+        end = start + datetime.timedelta(days=6)
+
+    if end < start:
+        print(f"[VARNING] Slutdatum {end} är före startdatum {start} — justerar till +6 dagar")
+        end = start + datetime.timedelta(days=6)
+
+    max_days = 14
+    if (end - start).days + 1 > max_days:
+        end = start + datetime.timedelta(days=max_days - 1)
+        print(f"[VARNING] Max {max_days} dagar — justerade slutdatum till {end}")
+
+    return start, end
+
+
+def build_day_list(start, end):
+    days = []
+    current = start
+    while current <= end:
+        days.append({
+            "date": current.isoformat(),
+            "day": DAY_NAMES[current.weekday()],
+            "is_weekend": current.weekday() >= 5,
+        })
+        current += datetime.timedelta(days=1)
+    return days
 
 
 def fetch_willys_offers():
@@ -65,32 +110,37 @@ def load_recipes():
     return slim
 
 
-def build_prompt(recipes, offers):
+def build_prompt(recipes, offers, day_list):
     recipes_json = json.dumps(recipes, ensure_ascii=False)
-    offers_json = json.dumps(offers, ensure_ascii=False)
+    offers_json  = json.dumps(offers, ensure_ascii=False)
+    n = len(day_list)
+
+    days_text = "\n".join(
+        f"- {d['day']} ({d['date']}): {'helg60' if d['is_weekend'] else 'vardag30'}"
+        for d in day_list
+    )
+
+    days_template = json.dumps(
+        [{"date": d["date"], "day": d["day"], "recipe": "<exact title>", "recipeId": 0}
+         for d in day_list],
+        ensure_ascii=False, indent=2
+    )
 
     return f"""
-You are a meal planner for a Swedish family. Your job is to select 7 recipes from
-the recipe database below and create a weekly dinner plan for Monday through Sunday.
+You are a meal planner for a Swedish family. Select {n} recipes from the recipe
+database below — one per day — for the period listed.
 
 ## Rules
-1. Monday–Friday must use recipes tagged "vardag30" (quick weekday meals, ≤30 min).
-2. Saturday–Sunday must use recipes tagged "helg60" (weekend meals, up to 60 min).
-3. Do not repeat the same recipe or the same protein type more than twice in the week.
-4. PREFER recipes whose main protein or key ingredients are currently on sale at Willys
-   (see offers list below). This is a preference, not a hard requirement.
-5. Vary the protein types across the week for nutritional balance.
-6. All recipe titles and ingredient strings in the output MUST be copied exactly as
-   they appear in the recipe database — do not translate or rewrite them.
+1. Days tagged "vardag30" MUST use recipes tagged "vardag30" (quick weekday meals, ≤30 min).
+2. Days tagged "helg60" MUST use recipes tagged "helg60" (weekend meals, up to 60 min).
+3. Do not repeat the same recipe or the same protein type more than twice across all days.
+4. PREFER recipes whose main protein or key ingredients are on sale at Willys (see offers).
+   This is a preference, not a hard requirement.
+5. Vary protein types across the days for nutritional balance.
+6. All recipe titles in the output MUST be copied exactly as they appear in the database.
 
-## Day mapping
-- Måndag    → weekday (vardag30)
-- Tisdag    → weekday (vardag30)
-- Onsdag    → weekday (vardag30)
-- Torsdag   → weekday (vardag30)
-- Fredag    → weekday (vardag30)
-- Lördag    → weekend (helg60)
-- Söndag    → weekend (helg60)
+## Days to plan
+{days_text}
 
 ## Recipe database
 {recipes_json}
@@ -102,15 +152,7 @@ the recipe database below and create a weekly dinner plan for Monday through Sun
 Return a single JSON object with exactly this structure:
 
 {{
-  "days": [
-    {{"day": "Måndag",  "recipe": "<exact title from database>", "recipeId": <integer>}},
-    {{"day": "Tisdag",  "recipe": "<exact title from database>", "recipeId": <integer>}},
-    {{"day": "Onsdag",  "recipe": "<exact title from database>", "recipeId": <integer>}},
-    {{"day": "Torsdag", "recipe": "<exact title from database>", "recipeId": <integer>}},
-    {{"day": "Fredag",  "recipe": "<exact title from database>", "recipeId": <integer>}},
-    {{"day": "Lördag",  "recipe": "<exact title from database>", "recipeId": <integer>}},
-    {{"day": "Söndag",  "recipe": "<exact title from database>", "recipeId": <integer>}}
-  ],
+  "days": {days_template},
   "shoppingList": {{
     "Mejeri":      ["<item>", ...],
     "Grönsaker":   ["<item>", ...],
@@ -121,18 +163,18 @@ Return a single JSON object with exactly this structure:
   }}
 }}
 
-The shoppingList must consolidate all ingredients from all 7 selected recipes,
+The shoppingList must consolidate all ingredients from all {n} selected recipes,
 merged and deduplicated where possible (e.g. "3 dl grädde" + "1 dl grädde" → "4 dl grädde").
-Quantities should be in Swedish units (dl, g, msk, tsk, st).
+Quantities in Swedish units (dl, g, msk, tsk, st).
 Each category may be an empty array [] if no items belong there.
 Do not include any text outside the JSON object.
 """.strip()
 
 
-def call_gemini(recipes, offers):
+def call_gemini(recipes, offers, day_list):
     client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
-    prompt = build_prompt(recipes, offers)
+    prompt = build_prompt(recipes, offers, day_list)
     response = client.models.generate_content(
         model="gemini-1.5-flash",
         contents=prompt,
@@ -144,9 +186,8 @@ def call_gemini(recipes, offers):
     return json.loads(response.text)
 
 
-def write_outputs(plan_data, offers):
+def write_outputs(plan_data, offers, start, end):
     today = datetime.date.today().isoformat()
-    week_num = datetime.date.today().isocalendar()[1]
 
     with open("offers.json", "w", encoding="utf-8") as f:
         json.dump({
@@ -158,32 +199,40 @@ def write_outputs(plan_data, offers):
     with open("weekly-plan.json", "w", encoding="utf-8") as f:
         json.dump({
             "generated": today,
-            "week": week_num,
+            "startDate": start.isoformat(),
+            "endDate": end.isoformat(),
             "days": plan_data["days"],
         }, f, ensure_ascii=False, indent=2)
 
     with open("shopping-list.json", "w", encoding="utf-8") as f:
         json.dump({
             "generated": today,
+            "startDate": start.isoformat(),
+            "endDate": end.isoformat(),
             "categories": plan_data["shoppingList"],
         }, f, ensure_ascii=False, indent=2)
 
 
 def main():
-    print("[1/4] Hämtar Willys-erbjudanden...")
+    print("[1/5] Beräknar datumintervall...")
+    start, end = get_date_range()
+    day_list = build_day_list(start, end)
+    print(f"      {start} – {end} ({len(day_list)} dagar)")
+
+    print("[2/5] Hämtar Willys-erbjudanden...")
     offers = fetch_willys_offers()
     print(f"      Hittade {len(offers)} erbjudanden.")
 
-    print("[2/4] Läser recipes.json...")
+    print("[3/5] Läser recipes.json...")
     recipes = load_recipes()
     print(f"      {len(recipes)} recept laddade.")
 
-    print("[3/4] Anropar Gemini API...")
-    plan_data = call_gemini(recipes, offers)
+    print("[4/5] Anropar Gemini API...")
+    plan_data = call_gemini(recipes, offers, day_list)
     print("      Svar mottaget.")
 
-    print("[4/4] Skriver JSON-filer...")
-    write_outputs(plan_data, offers)
+    print("[5/5] Skriver JSON-filer...")
+    write_outputs(plan_data, offers, start, end)
     print("      Klart. Filer skrivna: offers.json, weekly-plan.json, shopping-list.json")
 
 
