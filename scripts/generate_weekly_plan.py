@@ -2,7 +2,8 @@ import os
 import json
 import datetime
 import requests
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 WILLYS_URL = (
     "https://www.willys.se/search/campaigns/offline"
@@ -129,13 +130,13 @@ Do not include any text outside the JSON object.
 
 
 def call_gemini(recipes, offers):
-    genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-    model = genai.GenerativeModel("gemini-2.0-flash")
+    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
     prompt = build_prompt(recipes, offers)
-    response = model.generate_content(
-        prompt,
-        generation_config=genai.GenerationConfig(
+    response = client.models.generate_content(
+        model="gemini-1.5-flash",
+        contents=prompt,
+        config=types.GenerateContentConfig(
             response_mime_type="application/json",
             temperature=0.4,
         ),
