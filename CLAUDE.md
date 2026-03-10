@@ -112,3 +112,26 @@ Claude Code hanterar all kod — användaren committar och pushar via GitHub Des
 Max 20 kr/månad. Helst gratis.
 Gemini free tier: 1500 requests/dag gratis — mer än tillräckligt.
 GitHub Actions free tier: räcker gott.
+
+---
+
+## Sessionslogg
+
+### 2026-03-10 — Session 1
+**Vad vi gjorde:**
+- Genomförde bred research och arkitekturanalys av hela projektet
+- Beslutade om GitHub-centrerad arkitektur (Pages + Actions + Gemini)
+- Konstaterade att Willys saknar publik API men att reverse-engineerade endpoints fungerar (jimmystridh/willys-mcp)
+- Beslutade att använda ChatGPT Agent Mode för varukorgsifyllning (användaren tar över vid BankID)
+- Separerade receptbok i `recipes.json` (data) och `index.html` (visning)
+- Byggde ny `index.html` med ljust krämvitt/terrakotta-tema som läser JSON externt via fetch()
+- Aktiverade GitHub Pages på https://jockemedw.github.io/Receptbok/
+- Installerade GitHub Desktop för lokal filsynk
+- Diskuterade Claude Code vs Antigravity — beslut: **kör Claude Code**
+- Skapade denna CLAUDE.md som permanent projektkontext
+
+**Var vi slutade:**
+Grundstrukturen är på plats och fungerar. Frontend live på GitHub Pages. Nästa steg är att börja bygga GitHub Actions-automationen.
+
+**Nästa session börjar med:**
+Steg 1 i prioritetslistan — GitHub Actions workflow som genererar `weekly-plan.json` och `shopping-list.json` via Gemini API.
