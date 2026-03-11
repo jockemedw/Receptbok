@@ -186,7 +186,7 @@ def call_gemini(recipes, offers, day_list):
 
     prompt = build_prompt(recipes, offers, day_list)
 
-    models_to_try = ["gemini-1.5-flash", "gemini-1.5-flash-001", "gemini-1.5-pro"]
+    models_to_try = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-2.0-flash-exp"]
     last_error = None
 
     for model in models_to_try:
