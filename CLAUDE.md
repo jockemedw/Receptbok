@@ -98,19 +98,28 @@ Receptbok/
 ```
 
 ## Nästa steg att bygga (i prioritetsordning)
-1. **GitHub Actions workflow** — hämtar Willys-erbjudanden + anropar Gemini + genererar weekly-plan.json och shopping-list.json
-2. **Willys-erbjudanden** — via Tjek API (Willys ID: c371GA) eller direkt scraping
-3. **Gemini API-integration** — prompt som tar recept + erbjudanden och returnerar veckoplanen
-4. **Inköpslista-vy i frontend** — visa shopping-list.json snyggt
-5. **Manuell trigger** — knapp i appen för att trigga ny veckoplan utan att vänta på cron
+1. ~~**GitHub Actions workflow**~~ ✅ Klart
+2. ~~**AI-integration**~~ ✅ Klart (Anthropic Claude Haiku)
+3. ~~**Inköpslista-vy i frontend**~~ ✅ Klart
+4. ~~**Manuell trigger**~~ ✅ Klart (knapp i appen + workflow_dispatch)
+5. **Willys-erbjudanden** — endpoint 400:ar, trolig EU-scraping-blockering. Lågprio.
+6. **Förbättra matsedelvyn** — ev. visa recept-detaljer direkt i tidslinjekortet
 
 ## Användarens tekniska nivå
 Inte utvecklare men bekväm med GitHub Desktop, kan följa instruktioner.
 Claude Code hanterar all kod — användaren committar och pushar via GitHub Desktop.
+Workflow triggas manuellt direkt på GitHub (Actions-fliken), inte via lokal push.
+
+## AI-integration
+**Valt: Anthropic Claude API** (bytte från Gemini p.g.a. EU-begränsningar på free tier)
+- Modell: `claude-haiku-4-5-20251001` med fallback till `claude-haiku-4-5`
+- Secret: `ANTHROPIC_API_KEY` i GitHub Secrets
+- Kostnad: ~1–2 kr/år vid en körning/vecka
+- Inget automatiskt schema — körs manuellt via GitHub Actions workflow_dispatch
 
 ## Kostnadsmål
 Max 20 kr/månad. Helst gratis.
-Gemini free tier: 1500 requests/dag gratis — mer än tillräckligt.
+Anthropic Haiku: ~$0.002/körning = ~10 öre/vecka = ~5 kr/år.
 GitHub Actions free tier: räcker gott.
 
 ---
@@ -141,14 +150,26 @@ Steg 1 i prioritetslistan — GitHub Actions workflow som genererar `weekly-plan
 ### 2026-03-10 — Session 2
 **Vad vi gjorde:**
 - Felsökte GitHub Actions-körning av `scripts/generate_weekly_plan.py`
-- **Willys 400-fel:** Endpoint `https://www.willys.se/search/campaigns/offline` returnerar 400 — troligen blockering av scraping. Felet är inte fatalt; skriptet fortsätter med 0 erbjudanden.
-- **Gemini 429-fel (`limit: 0`):** Modellen `gemini-2.0-flash` har ingen free tier-kvot. Bytte primär modell till `gemini-1.5-flash` som har välkänd free tier (15 req/min, 1500/dag).
-- Lade till fallback-logik i `call_gemini()`: provar `gemini-1.5-flash` → `gemini-1.5-flash-001` → `gemini-1.5-pro` i ordning.
+- **Willys 400-fel:** Endpoint returnerar 400 — troligen EU-scraping-blockering. Accepterat, körs med 0 erbjudanden.
+- **Gemini ej fungerande:** Alla Gemini-modeller antingen 404 (deprecated) eller `limit: 0` (EU-begränsning på free tier för svenska Google-konton). Bytte till Anthropic Claude API.
+
+---
+
+### 2026-03-11 — Session 3
+**Vad vi gjorde:**
+- Bytte AI från Gemini till **Anthropic Claude Haiku** (`claude-haiku-4-5-20251001`)
+- Uppdaterade `scripts/generate_weekly_plan.py`: ny `call_claude()`, använder `anthropic`-paketet
+- Uppdaterade `.github/workflows/weekly-plan.yml`: `ANTHROPIC_API_KEY`, `pip install anthropic`
+- **Workflow körde framgångsrikt** — `weekly-plan.json`, `shopping-list.json`, `offers.json` genererade och committade automatiskt av github-actions[bot]
+- Tog bort cron-schema från workflow (körs nu enbart manuellt via workflow_dispatch)
+- Byggde om veckyvyn i `index.html` till **horisontell tidslinje**:
+  - Dag-kort på rad, touch-scrollbar på mobil
+  - Idag markerad med terrakotta-ram + röd prick
+  - Dåtid nedtonad (45% opacity)
+  - Auto-scrollar till idag vid laddning
 
 **Var vi slutade:**
-Skriptet är fixat lokalt men ej committat/pushat. Ändringen i `scripts/generate_weekly_plan.py` ligger kvar som unstaged.
+Allt fungerar. Ändringarna är committade och pushade. Appen är live.
 
 **Nästa session börjar med:**
-1. Committa + pusha ändringen i `generate_weekly_plan.py` via GitHub Desktop
-2. Trigga GitHub Actions manuellt och verifiera att det fungerar end-to-end
-3. Om Willys fortfarande 400:ar — undersök alternativa endpoints eller acceptera att köra utan erbjudanden
+Eventuella förbättringar av tidslinjyvyn eller receptdetaljer i dag-korten.
