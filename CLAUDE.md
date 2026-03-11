@@ -2,20 +2,23 @@
 
 ## Vad det här projektet är
 En personlig matplaneringsapp för familjen. Målet är ett komplett system som:
-1. Hämtar aktuella extrapriser från Willys automatiskt varje vecka
-2. Väljer recept ur receptboken med hänsyn till veckans erbjudanden
-3. Genererar en veckomatsedel
-4. Genererar en strukturerad inköpslista
-5. Gör det enkelt att fylla Willys varukorg (via ChatGPT Agent Mode)
+1. Väljer recept ur receptboken baserat på familjens preferenser (kontrollpanel)
+2. Genererar en veckomatsedel via Claude AI
+3. Genererar en strukturerad inköpslista direkt från receptdata
+4. Gör det enkelt att fylla Willys varukorg (via ChatGPT Agent Mode, framtida)
+5. ~~Willys extrapriser~~ — avaktiverat (EU-scraping-blockering)
 
 ## Repo-struktur
 ```
 Receptbok/
 ├── index.html          # PWA-frontend — läser recipes.json via fetch()
 ├── recipes.json        # Receptdatabasen (62 recept, rör ej strukturen)
-├── weekly-plan.json    # Veckans matsedel — genereras automatiskt (finns ej än)
-├── shopping-list.json  # Inköpslista — genereras automatiskt (finns ej än)
-├── offers.json         # Willys erbjudanden — genereras automatiskt (finns ej än)
+├── weekly-plan.json    # Veckans matsedel — genereras automatiskt
+├── shopping-list.json  # Inköpslista — genereras automatiskt
+├── scripts/
+│   └── generate_weekly_plan.py  # Python-script: filter + Claude + inköpslista
+├── .github/workflows/
+│   └── weekly-plan.yml          # GitHub Actions (manuell trigger)
 ├── CLAUDE.md           # Den här filen
 └── README.md
 ```
@@ -23,12 +26,13 @@ Receptbok/
 ## Tekniska beslut vi tagit
 - **Hosting:** GitHub Pages (gratis, fungerar)
 - **URL:** https://jockemedw.github.io/Receptbok/
-- **Dataformat:** JSON för allt — recept, matsedel, inköpslista, erbjudanden
+- **Dataformat:** JSON för allt — recept, matsedel, inköpslista
 - **Frontend:** Vanilla HTML/CSS/JS, inga ramverk, Playfair Display + DM Sans
 - **Färgtema:** Krämvitt (#faf7f2), varm brun header (#5c3d1e), terrakotta (#c2522b)
-- **AI för menyplanering:** Google Gemini API (gratis tier räcker)
-- **Automation:** GitHub Actions (cron, söndagar) — ej byggt än
-- **Willys-integration:** Via ChatGPT Agent Mode (användaren tar över vid BankID)
+- **AI för menyplanering:** Anthropic Claude Haiku (bytte från Gemini pga EU-begränsningar)
+- **Automation:** GitHub Actions — manuell trigger via workflow_dispatch (inget cron-schema)
+- **Willys-integration:** Avaktiverad — EU-scraping-blockering (400-fel). Ersatt av kontrollpanel.
+- **Inköpslista:** Byggs deterministiskt i Python från receptdata — inga AI-hallucinationer
 
 ## recipes.json — struktur
 ```json
@@ -86,24 +90,37 @@ Receptbok/
 }
 ```
 
-## offers.json — planerat format
-```json
-{
-  "fetched": "2026-03-09",
-  "source": "willys",
-  "offers": [
-    { "name": "Laxfilé", "normalPrice": 89, "offerPrice": 59, "unit": "400g" }
-  ]
-}
-```
+## generate_weekly_plan.py — arkitektur
+Skriptet är uppdelat i tydliga ansvarsområden:
+1. **Datumintervall** — läser `START_DATE`/`END_DATE` från env, fallback till idag + 6 dagar
+2. **Constraints** — läser filtreringsinställningar från env (se nedan)
+3. **Receptfiltrering** — Python pre-filtrerar innan Claude ser recepten:
+   - Exkluderar fel protein (`ALLOWED_PROTEINS`)
+   - Exkluderar oprövade om `UNTESTED_COUNT=0`
+   - Exkluderar recept som är för långa för båda dagtyper (`MAX_WEEKDAY_TIME`, `MAX_WEEKEND_TIME`)
+4. **Claude** — väljer bara recept (returnerar days-array). Prompt inkluderar hårda regler.
+5. **Inköpslista** — byggs i Python från `recipes.json` (deterministisk, inga hallucinationer)
+6. **Output** — skriver `weekly-plan.json` + `shopping-list.json`
+
+### Workflow-inputs / Env-variabler
+| Input (GitHub Actions) | Env-variabel | Default | Beskrivning |
+|---|---|---|---|
+| `start_date` | `START_DATE` | idag | Startdatum YYYY-MM-DD |
+| `end_date` | `END_DATE` | start+6d | Slutdatum YYYY-MM-DD |
+| `untested_count` | `UNTESTED_COUNT` | 0 | Max antal oprövade recept |
+| `max_weekday_time` | `MAX_WEEKDAY_TIME` | 30 | Max tid vardagar (min) |
+| `max_weekend_time` | `MAX_WEEKEND_TIME` | 60 | Max tid helg (min) |
+| `vegetarian_days` | `VEGETARIAN_DAYS` | 0 | Antal vegetariska dagar |
+| `allowed_proteins` | `ALLOWED_PROTEINS` | alla | Kommaseparerat: fisk,kyckling,kött,fläsk,vegetarisk |
 
 ## Nästa steg att bygga (i prioritetsordning)
 1. ~~**GitHub Actions workflow**~~ ✅ Klart
 2. ~~**AI-integration**~~ ✅ Klart (Anthropic Claude Haiku)
 3. ~~**Inköpslista-vy i frontend**~~ ✅ Klart
 4. ~~**Manuell trigger**~~ ✅ Klart (knapp i appen + workflow_dispatch)
-5. **Willys-erbjudanden** — endpoint 400:ar, trolig EU-scraping-blockering. Lågprio.
+5. ~~**Kontrollpanel för receptval**~~ ✅ Klart (inställningar i "Generera ny plan")
 6. **Förbättra matsedelvyn** — ev. visa recept-detaljer direkt i tidslinjekortet
+7. **Willys-erbjudanden** — avaktiverat. Möjlig framtida lösning: annan datakälla.
 
 ## Användarens tekniska nivå
 Inte utvecklare men bekväm med GitHub Desktop, kan följa instruktioner.
@@ -158,18 +175,22 @@ Steg 1 i prioritetslistan — GitHub Actions workflow som genererar `weekly-plan
 ### 2026-03-11 — Session 3
 **Vad vi gjorde:**
 - Bytte AI från Gemini till **Anthropic Claude Haiku** (`claude-haiku-4-5-20251001`)
-- Uppdaterade `scripts/generate_weekly_plan.py`: ny `call_claude()`, använder `anthropic`-paketet
-- Uppdaterade `.github/workflows/weekly-plan.yml`: `ANTHROPIC_API_KEY`, `pip install anthropic`
-- **Workflow körde framgångsrikt** — `weekly-plan.json`, `shopping-list.json`, `offers.json` genererade och committade automatiskt av github-actions[bot]
-- Tog bort cron-schema från workflow (körs nu enbart manuellt via workflow_dispatch)
-- Byggde om veckyvyn i `index.html` till **horisontell tidslinje**:
-  - Dag-kort på rad, touch-scrollbar på mobil
-  - Idag markerad med terrakotta-ram + röd prick
-  - Dåtid nedtonad (45% opacity)
-  - Auto-scrollar till idag vid laddning
+- Workflow körde framgångsrikt end-to-end
+- Tog bort cron-schema (enbart manuell trigger)
+- Byggde om veckyvyn till **horisontell tidslinje** (touch-scroll, idag markerad, dåtid nedtonad)
+- **Kvalitetskontroll av inköpslistan** — hittade allvarliga hallucinationer (AI uppfann ingredienser, missade 15+)
+- **Arkitekturell fix:** Claude väljer bara recept, Python bygger inköpslistan från `recipes.json` (deterministisk)
+- Inaktiverade Willys-funktionen (EU-blockering, aldrig fungerande)
+- Lade till **kontrollpanel** i "Generera ny plan"-sektionen:
+  - Max antal oprövade recept (default: 0)
+  - Max tillagningstid vardag/helg
+  - Antal vegetariska dagar
+  - Protein-filterval (toggle-knappar, alla aktiva som standard)
+- Python pre-filtrerar receptdatabasen baserat på inställningarna *innan* Claude ser dem
+- Parameterlistan i UI visar alla värden att kopiera in i GitHub Actions
 
 **Var vi slutade:**
-Allt fungerar. Ändringarna är committade och pushade. Appen är live.
+Allt är implementerat och klart att committa + pusha.
 
 **Nästa session börjar med:**
-Eventuella förbättringar av tidslinjyvyn eller receptdetaljer i dag-korten.
+Testa kontrollpanelen end-to-end via GitHub Actions.
