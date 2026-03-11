@@ -193,11 +193,12 @@ def call_claude(recipes, offers, day_list):
             print(f"      Provar modell: {model}")
             message = client.messages.create(
                 model=model,
-                max_tokens=4096,
+                max_tokens=8192,
                 messages=[{"role": "user", "content": prompt}],
             )
-            raw = message.content[0].text.strip()
-            print(f"      Svar (första 200 tecken): {raw[:200]}")
+            print(f"      stop_reason: {message.stop_reason}")
+            raw = message.content[0].text.strip() if message.content else ""
+            print(f"      Svar (första 300 tecken): {raw[:300]}")
             # Hantera markdown-kodblock (```json ... ```)
             if raw.startswith("```"):
                 raw = raw.split("```", 2)[1]
