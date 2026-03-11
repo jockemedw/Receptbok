@@ -1,0 +1,49 @@
+{
+  "generated": "2026-03-11",
+  "startDate": "2026-03-11",
+  "endDate": "2026-03-17",
+  "days": [
+    {
+      "date": "2026-03-11",
+      "day": "Onsdag",
+      "recipe": "Pastasallad med kyckling, feta och basilika",
+      "recipeId": 6
+    },
+    {
+      "date": "2026-03-12",
+      "day": "Torsdag",
+      "recipe": "Tonfiskpasta",
+      "recipeId": 24
+    },
+    {
+      "date": "2026-03-13",
+      "day": "Fredag",
+      "recipe": "Blomkålssoppa med bacontopping",
+      "recipeId": 9
+    },
+    {
+      "date": "2026-03-14",
+      "day": "Lördag",
+      "recipe": "Marinerad kyckling med curry-cashewnötssås",
+      "recipeId": 4
+    },
+    {
+      "date": "2026-03-15",
+      "day": "Söndag",
+      "recipe": "Gräddig fiskgratäng med purjo",
+      "recipeId": 1
+    },
+    {
+      "date": "2026-03-16",
+      "day": "Måndag",
+      "recipe": "Röd linsgryta med potatis",
+      "recipeId": 46
+    },
+    {
+      "date": "2026-03-17",
+      "day": "Tisdag",
+      "recipe": "Buljongsoppa med shiitakesvamp och pocherat ägg",
+      "recipeId": 5
+    }
+  ]
+}
