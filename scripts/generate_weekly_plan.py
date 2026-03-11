@@ -196,7 +196,17 @@ def call_claude(recipes, offers, day_list):
                 max_tokens=4096,
                 messages=[{"role": "user", "content": prompt}],
             )
-            return json.loads(message.content[0].text)
+            raw = message.content[0].text.strip()
+            print(f"      Svar (första 200 tecken): {raw[:200]}")
+            # Hantera markdown-kodblock (```json ... ```)
+            if raw.startswith("```"):
+                raw = raw.split("```", 2)[1]
+                if raw.startswith("json"):
+                    raw = raw[4:]
+                raw = raw.strip().rstrip("```").strip()
+            if not raw:
+                raise ValueError("Tom respons från modellen")
+            return json.loads(raw)
         except Exception as e:
             print(f"      Modell {model} misslyckades: {e}")
             last_error = e
