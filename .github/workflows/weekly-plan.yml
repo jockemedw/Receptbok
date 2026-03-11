@@ -11,6 +11,26 @@ on:
         description: 'Slutdatum (YYYY-MM-DD, lämna tomt för startdatum + 6 dagar)'
         required: false
         default: ''
+      untested_count:
+        description: 'Max antal oprövade recept (0 = bara prövade)'
+        required: false
+        default: '0'
+      max_weekday_time:
+        description: 'Max tillagningstid vardagar i minuter (default 30)'
+        required: false
+        default: '30'
+      max_weekend_time:
+        description: 'Max tillagningstid helg i minuter (default 60)'
+        required: false
+        default: '60'
+      vegetarian_days:
+        description: 'Antal vegetariska dagar (0 = ingen begränsning)'
+        required: false
+        default: '0'
+      allowed_proteins:
+        description: 'Tillåtna proteiner, kommaseparerat (fisk,kyckling,kött,fläsk,vegetarisk)'
+        required: false
+        default: 'fisk,kyckling,kött,fläsk,vegetarisk'
 
 permissions:
   contents: write  # Krävs för att committa tillbaka genererade JSON-filer
@@ -29,19 +49,24 @@ jobs:
           python-version: '3.11'
 
       - name: Installera beroenden
-        run: pip install requests anthropic
+        run: pip install anthropic
 
       - name: Generera veckoplan
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           START_DATE: ${{ github.event.inputs.start_date }}
           END_DATE: ${{ github.event.inputs.end_date }}
+          UNTESTED_COUNT: ${{ github.event.inputs.untested_count }}
+          MAX_WEEKDAY_TIME: ${{ github.event.inputs.max_weekday_time }}
+          MAX_WEEKEND_TIME: ${{ github.event.inputs.max_weekend_time }}
+          VEGETARIAN_DAYS: ${{ github.event.inputs.vegetarian_days }}
+          ALLOWED_PROTEINS: ${{ github.event.inputs.allowed_proteins }}
         run: python scripts/generate_weekly_plan.py
 
       - name: Committa och pusha genererade filer
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add offers.json weekly-plan.json shopping-list.json
+          git add weekly-plan.json shopping-list.json
           git diff --cached --quiet || git commit -m "Matsedel $(date +%Y-%m-%d) — autogenererad"
           git push

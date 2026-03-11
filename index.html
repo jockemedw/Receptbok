@@ -797,6 +797,146 @@
   }
 
   .no-data-icon { font-size: 2rem; margin-bottom: 0.75rem; }
+
+  /* ── SETTINGS PANEL ── */
+  .settings-toggle-wrap {
+    margin-bottom: 0.75rem;
+  }
+
+  .settings-toggle {
+    background: none;
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    padding: 0.4rem 1rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  .settings-toggle:hover {
+    border-color: var(--warm-brown);
+    color: var(--warm-brown);
+  }
+
+  .settings-panel {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+
+  .settings-panel.open {
+    max-height: 600px;
+  }
+
+  .settings-inner {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    text-align: left;
+    margin-bottom: 1rem;
+  }
+
+  .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .setting-label {
+    font-size: 0.82rem;
+    color: var(--ink);
+    font-weight: 500;
+    flex: 1;
+  }
+
+  .setting-sublabel {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-weight: 400;
+    display: block;
+    margin-top: 0.1rem;
+  }
+
+  .setting-control {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .setting-num {
+    width: 3.8rem;
+    padding: 0.4rem 0.5rem;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    color: var(--ink);
+    text-align: center;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .setting-num:focus { border-color: var(--terracotta); }
+
+  .setting-unit {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+
+  .setting-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0;
+  }
+
+  .setting-row-proteins {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .protein-checks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .prot-btn {
+    background: #f4f2ef;
+    border: 1.5px solid var(--border);
+    color: var(--text-muted);
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    transition: all 0.15s;
+    user-select: none;
+  }
+
+  .prot-btn.active {
+    background: var(--light-terra);
+    border-color: var(--terracotta);
+    color: var(--terracotta);
+  }
+
+  .settings-warning {
+    font-size: 0.75rem;
+    color: var(--terracotta);
+    font-style: italic;
+    margin-top: 0.25rem;
+    display: none;
+  }
+
+  .settings-warning.visible { display: block; }
 </style>
 </head>
 <body>
@@ -880,12 +1020,96 @@
       </div>
     </div>
     <p class="date-hint" id="dateHint"></p>
+
+    <div class="settings-toggle-wrap">
+      <button class="settings-toggle" id="settingsToggle" onclick="toggleSettings()">
+        ⚙ Inställningar <span id="settingsArrow">▾</span>
+      </button>
+    </div>
+
+    <div class="settings-panel" id="settingsPanel">
+      <div class="settings-inner">
+
+        <div class="setting-row">
+          <label class="setting-label">
+            Oprövade recept
+            <span class="setting-sublabel">Max antal recept vi inte testat</span>
+          </label>
+          <div class="setting-control">
+            <input type="number" id="untestedCount" class="setting-num"
+                   min="0" max="7" value="0" onchange="updateDateHint()">
+            <span class="setting-unit">st</span>
+          </div>
+        </div>
+
+        <hr class="setting-divider">
+
+        <div class="setting-row">
+          <label class="setting-label">
+            Max tid vardagar
+            <span class="setting-sublabel">Tillåten tillagningstid vardag</span>
+          </label>
+          <div class="setting-control">
+            <input type="number" id="maxWeekdayTime" class="setting-num"
+                   min="15" max="60" step="5" value="30" onchange="updateDateHint()">
+            <span class="setting-unit">min</span>
+          </div>
+        </div>
+
+        <div class="setting-row">
+          <label class="setting-label">
+            Max tid helg
+            <span class="setting-sublabel">Tillåten tillagningstid helg</span>
+          </label>
+          <div class="setting-control">
+            <input type="number" id="maxWeekendTime" class="setting-num"
+                   min="30" max="120" step="15" value="60" onchange="updateDateHint()">
+            <span class="setting-unit">min</span>
+          </div>
+        </div>
+
+        <hr class="setting-divider">
+
+        <div class="setting-row">
+          <label class="setting-label">
+            Vegetariska dagar
+            <span class="setting-sublabel">Minst X dagar utan kött/fisk</span>
+          </label>
+          <div class="setting-control">
+            <input type="number" id="vegetarianDays" class="setting-num"
+                   min="0" max="7" value="0" onchange="updateDateHint()">
+            <span class="setting-unit">dagar</span>
+          </div>
+        </div>
+
+        <hr class="setting-divider">
+
+        <div class="setting-row setting-row-proteins">
+          <label class="setting-label">
+            Proteiner att inkludera
+            <span class="setting-sublabel">Avmarkera för att exkludera helt</span>
+          </label>
+          <div class="protein-checks">
+            <button class="prot-btn active" data-prot="fisk"       onclick="toggleProtein(this)">Fisk</button>
+            <button class="prot-btn active" data-prot="kyckling"   onclick="toggleProtein(this)">Kyckling</button>
+            <button class="prot-btn active" data-prot="kött"       onclick="toggleProtein(this)">Kött</button>
+            <button class="prot-btn active" data-prot="fläsk"      onclick="toggleProtein(this)">Fläsk</button>
+            <button class="prot-btn active" data-prot="vegetarisk" onclick="toggleProtein(this)">Vegetarisk</button>
+          </div>
+          <p class="settings-warning" id="protWarning">
+            Minst ett protein måste vara valt.
+          </p>
+        </div>
+
+      </div>
+    </div>
+
     <a href="https://github.com/jockemedw/Receptbok/actions/workflows/weekly-plan.yml"
        target="_blank" rel="noopener" class="trigger-btn">
       ✨ Generera ny veckoplan
     </a>
     <div class="trigger-dates" id="triggerDates"></div>
-    <p class="trigger-hint">Öppnar GitHub Actions → "Run workflow" → ange datumen ovan</p>
+    <p class="trigger-hint">Öppnar GitHub Actions → "Run workflow" → ange värdena ovan</p>
   </div>
 </div>
 
@@ -1024,7 +1248,34 @@ function initDatePickers() {
   document.getElementById('endDate').value = fmtIso(end);
   document.getElementById('startDate').addEventListener('change', updateDateHint);
   document.getElementById('endDate').addEventListener('change', updateDateHint);
+  document.getElementById('untestedCount').addEventListener('change', updateDateHint);
+  document.getElementById('maxWeekdayTime').addEventListener('change', updateDateHint);
+  document.getElementById('maxWeekendTime').addEventListener('change', updateDateHint);
+  document.getElementById('vegetarianDays').addEventListener('change', updateDateHint);
   updateDateHint();
+}
+
+function getSelectedProteins() {
+  return Array.from(document.querySelectorAll('.prot-btn.active')).map(b => b.dataset.prot);
+}
+
+function toggleProtein(btn) {
+  const willDeactivate = btn.classList.contains('active');
+  const activeCount = document.querySelectorAll('.prot-btn.active').length;
+  if (willDeactivate && activeCount <= 1) {
+    document.getElementById('protWarning').classList.add('visible');
+    return;
+  }
+  document.getElementById('protWarning').classList.remove('visible');
+  btn.classList.toggle('active');
+  updateDateHint();
+}
+
+function toggleSettings() {
+  const panel = document.getElementById('settingsPanel');
+  const arrow = document.getElementById('settingsArrow');
+  const open  = panel.classList.toggle('open');
+  arrow.textContent = open ? '▴' : '▾';
 }
 
 function updateDateHint() {
@@ -1055,9 +1306,22 @@ function updateDateHint() {
   hint.textContent = `${diff} dag${diff !== 1 ? 'ar' : ''} planeras`;
   hint.style.color = 'var(--warm-brown)';
 
+  const untested  = document.getElementById('untestedCount').value;
+  const maxWd     = document.getElementById('maxWeekdayTime').value;
+  const maxWe     = document.getElementById('maxWeekendTime').value;
+  const vegDays   = document.getElementById('vegetarianDays').value;
+  const proteins  = getSelectedProteins().join(',');
+
   datesEl.classList.add('visible');
   datesEl.innerHTML =
-    `Ange i GitHub Actions:<br><b>start_date:</b> ${startVal}<br><b>end_date:</b> ${endVal}`;
+    `Ange i GitHub Actions:<br>` +
+    `<b>start_date:</b> ${startVal}<br>` +
+    `<b>end_date:</b> ${endVal}<br>` +
+    `<b>untested_count:</b> ${untested}<br>` +
+    `<b>max_weekday_time:</b> ${maxWd}<br>` +
+    `<b>max_weekend_time:</b> ${maxWe}<br>` +
+    `<b>vegetarian_days:</b> ${vegDays}<br>` +
+    `<b>allowed_proteins:</b> ${proteins}`;
 }
 
 function jumpToRecipe(title) {
