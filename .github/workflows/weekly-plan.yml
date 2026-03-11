@@ -1,8 +1,6 @@
 name: Generera veckoplan
 
 on:
-  schedule:
-    - cron: '0 6 * * 0'  # Söndagar 06:00 UTC — genererar idag + 6 dagar
   workflow_dispatch:
     inputs:
       start_date:
