@@ -3,8 +3,7 @@ import sys
 import json
 import datetime
 import requests
-from google import genai
-from google.genai import types
+import anthropic
 
 WILLYS_URL = (
     "https://www.willys.se/search/campaigns/offline"
@@ -181,26 +180,23 @@ Do not include any text outside the JSON object.
 """.strip()
 
 
-def call_gemini(recipes, offers, day_list):
-    client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
+def call_claude(recipes, offers, day_list):
+    client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
     prompt = build_prompt(recipes, offers, day_list)
 
-    models_to_try = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-2.0-flash-exp"]
+    models_to_try = ["claude-haiku-4-5-20251001", "claude-haiku-4-5"]
     last_error = None
 
     for model in models_to_try:
         try:
             print(f"      Provar modell: {model}")
-            response = client.models.generate_content(
+            message = client.messages.create(
                 model=model,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    response_mime_type="application/json",
-                    temperature=0.4,
-                ),
+                max_tokens=4096,
+                messages=[{"role": "user", "content": prompt}],
             )
-            return json.loads(response.text)
+            return json.loads(message.content[0].text)
         except Exception as e:
             print(f"      Modell {model} misslyckades: {e}")
             last_error = e
@@ -249,8 +245,8 @@ def main():
     recipes = load_recipes()
     print(f"      {len(recipes)} recept laddade.")
 
-    print("[4/5] Anropar Gemini API...")
-    plan_data = call_gemini(recipes, offers, day_list)
+    print("[4/5] Anropar Claude API...")
+    plan_data = call_claude(recipes, offers, day_list)
     print("      Svar mottaget.")
 
     print("[5/5] Skriver JSON-filer...")

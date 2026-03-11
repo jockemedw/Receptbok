@@ -31,11 +31,11 @@ jobs:
           python-version: '3.11'
 
       - name: Installera beroenden
-        run: pip install requests google-genai
+        run: pip install requests anthropic
 
       - name: Generera veckoplan
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           START_DATE: ${{ github.event.inputs.start_date }}
           END_DATE: ${{ github.event.inputs.end_date }}
         run: python scripts/generate_weekly_plan.py
