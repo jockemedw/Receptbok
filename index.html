@@ -37,27 +37,29 @@
   header {
     background: var(--warm-brown);
     color: var(--cream);
-    padding: 0.9rem 1.5rem 0;
     position: sticky;
     top: 0;
     z-index: 100;
-    box-shadow: 0 2px 20px rgba(0,0,0,0.15);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.06), 0 4px 28px rgba(0,0,0,0.2);
   }
 
-  .header-top {
+  .header-bar {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 0.75rem;
+    align-items: stretch;
+    padding: 0 1.25rem;
+    height: 54px;
   }
 
   header h1 {
     font-family: 'Playfair Display', serif;
-    font-size: clamp(1.2rem, 4vw, 1.5rem);
+    font-size: 1.25rem;
     font-weight: 400;
     letter-spacing: 0.02em;
-    line-height: 1;
+    color: var(--cream);
+    display: flex;
+    align-items: center;
+    margin-right: auto;
+    padding-right: 1.5rem;
   }
 
   header h1 em {
@@ -65,35 +67,47 @@
     color: var(--gold);
   }
 
-  .header-tabs {
+  .header-nav {
     display: flex;
-    gap: 0.15rem;
-    background: rgba(0,0,0,0.15);
-    border-radius: 8px;
-    padding: 3px;
   }
 
   .header-tab {
     background: none;
     border: none;
-    color: rgba(250,247,242,0.6);
+    border-bottom: 2px solid transparent;
+    color: rgba(250,247,242,0.45);
     font-family: 'DM Sans', sans-serif;
-    font-size: 0.85rem;
+    font-size: 0.88rem;
     font-weight: 500;
-    padding: 0.35rem 0.9rem;
-    border-radius: 6px;
+    letter-spacing: 0.03em;
+    padding: 0 1.1rem;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: color 0.2s, border-color 0.25s;
     white-space: nowrap;
+    height: 100%;
   }
+
+  .header-tab:hover { color: rgba(250,247,242,0.75); }
 
   .header-tab.active {
-    background: rgba(255,255,255,0.18);
     color: var(--cream);
+    border-bottom-color: var(--gold);
   }
 
-  .recipe-count {
-    display: none;
+  /* ── SEARCH AREA (collapsible) ── */
+  .header-search-area {
+    padding: 0.6rem 1.25rem 0.85rem;
+    overflow: hidden;
+    max-height: 130px;
+    opacity: 1;
+    transition: max-height 0.3s ease, opacity 0.25s ease, padding 0.3s ease;
+  }
+
+  .header-search-area.hidden {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
   }
 
   /* ── SEARCH ── */
@@ -101,54 +115,72 @@
 
   #search {
     width: 100%;
-    padding: 0.7rem 1rem 0.7rem 2.5rem;
-    border-radius: 30px;
-    border: none;
-    background: rgba(255,255,255,0.15);
+    padding: 0.65rem 1rem 0.65rem 2.4rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(0,0,0,0.18);
     color: var(--cream);
     font-family: 'DM Sans', sans-serif;
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     outline: none;
-    transition: background 0.2s;
+    transition: background 0.2s, border-color 0.2s;
   }
 
-  #search::placeholder { color: rgba(250,247,242,0.6); }
-  #search:focus { background: rgba(255,255,255,0.22); }
+  #search::placeholder { color: rgba(250,247,242,0.45); }
+  #search:focus {
+    background: rgba(0,0,0,0.28);
+    border-color: rgba(255,255,255,0.22);
+  }
 
   .search-icon {
     position: absolute;
-    left: 0.8rem;
+    left: 0.75rem;
     top: 50%;
     transform: translateY(-50%);
-    opacity: 0.7;
-    font-size: 1rem;
+    opacity: 0.5;
+    font-size: 0.9rem;
+    pointer-events: none;
   }
 
   /* ── FILTERS ── */
   .filters {
     display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    margin-top: 0.8rem;
+    gap: 0.4rem;
+    margin-top: 0.55rem;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
+  .filters::-webkit-scrollbar { display: none; }
 
   .filter-btn {
-    background: rgba(255,255,255,0.12);
-    border: 1px solid rgba(255,255,255,0.2);
-    color: var(--cream);
-    padding: 0.3rem 0.8rem;
-    border-radius: 20px;
-    font-size: 0.8rem;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.14);
+    color: rgba(250,247,242,0.7);
+    padding: 0.25rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.78rem;
     cursor: pointer;
     font-family: 'DM Sans', sans-serif;
-    transition: all 0.2s;
+    font-weight: 500;
+    transition: all 0.15s;
     white-space: nowrap;
+    flex-shrink: 0;
   }
 
-  .filter-btn:hover, .filter-btn.active {
+  .filter-btn:hover {
+    background: rgba(255,255,255,0.14);
+    color: var(--cream);
+  }
+
+  .filter-btn.active {
     background: var(--terracotta);
     border-color: var(--terracotta);
+    color: var(--cream);
   }
+
+  .recipe-count { display: none; }
 
   /* ── MAIN ── */
   main {
@@ -1055,28 +1087,30 @@
 <body>
 
 <header>
-  <div class="header-top">
+  <div class="header-bar">
     <h1>Recept<em>boken</em></h1>
-    <nav class="header-tabs">
+    <nav class="header-nav">
       <button class="header-tab active" id="tabRecept" onclick="switchTab('recept')">Recept</button>
       <button class="header-tab" id="tabVecka" onclick="switchTab('vecka')">Veckans mat</button>
     </nav>
   </div>
-  <div class="search-wrap" id="searchWrap">
-    <span class="search-icon">🔍</span>
-    <input id="search" type="search" placeholder="Sök på namn, ingrediens, tagg…" autocomplete="off">
-  </div>
-  <div class="filters" id="filters">
-    <button class="filter-btn active" data-filter="alla">Alla</button>
-    <button class="filter-btn" data-filter="provat">✓ Provat</button>
-    <button class="filter-btn" data-filter="fisk">Fisk</button>
-    <button class="filter-btn" data-filter="kyckling">Kyckling</button>
-    <button class="filter-btn" data-filter="vegetarisk">Vegetarisk</button>
-    <button class="filter-btn" data-filter="kött">Kött</button>
-    <button class="filter-btn" data-filter="fläsk">Fläsk</button>
-    <button class="filter-btn" data-filter="snabb">Snabb &lt;30 min</button>
-    <button class="filter-btn" data-filter="soppa">Soppa</button>
-    <button class="filter-btn" data-filter="pasta">Pasta</button>
+  <div class="header-search-area" id="headerSearchArea">
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input id="search" type="search" placeholder="Sök på namn, ingrediens, tagg…" autocomplete="off">
+    </div>
+    <div class="filters" id="filters">
+      <button class="filter-btn active" data-filter="alla">Alla</button>
+      <button class="filter-btn" data-filter="provat">✓ Provat</button>
+      <button class="filter-btn" data-filter="fisk">Fisk</button>
+      <button class="filter-btn" data-filter="kyckling">Kyckling</button>
+      <button class="filter-btn" data-filter="vegetarisk">Vegetarisk</button>
+      <button class="filter-btn" data-filter="kött">Kött</button>
+      <button class="filter-btn" data-filter="fläsk">Fläsk</button>
+      <button class="filter-btn" data-filter="snabb">Snabb &lt;30 min</button>
+      <button class="filter-btn" data-filter="soppa">Soppa</button>
+      <button class="filter-btn" data-filter="pasta">Pasta</button>
+    </div>
   </div>
 </header>
 
@@ -1494,8 +1528,7 @@ function switchTab(tab) {
   document.getElementById('weekView').classList.toggle('visible', !isRecept);
   document.getElementById('tabRecept').classList.toggle('active', isRecept);
   document.getElementById('tabVecka').classList.toggle('active', !isRecept);
-  document.getElementById('searchWrap').style.display = isRecept ? '' : 'none';
-  document.getElementById('filters').style.display = isRecept ? '' : 'none';
+  document.getElementById('headerSearchArea').classList.toggle('hidden', !isRecept);
   window.scrollTo({ top: 0 });
 }
 
