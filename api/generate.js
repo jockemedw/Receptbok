@@ -106,24 +106,21 @@ async function writeFileToGitHub(path, content, pat) {
     "Content-Type": "application/json",
     Accept: "application/vnd.github+json",
   };
+  const encoded = Buffer.from(JSON.stringify(content, null, 2)).toString("base64");
+  const message = `Matsedel ${new Date().toISOString().slice(0, 10)} — autogenererad`;
 
-  // Get current SHA
-  let sha;
-  const getRes = await fetch(apiUrl, { headers });
-  if (getRes.ok) {
-    const existing = await getRes.json();
-    sha = existing.sha;
-  }
+  for (let attempt = 0; attempt < 2; attempt++) {
+    let sha;
+    const getRes = await fetch(apiUrl, { headers });
+    if (getRes.ok) sha = (await getRes.json()).sha;
 
-  const body = {
-    message: `Matsedel ${new Date().toISOString().slice(0, 10)} — autogenererad`,
-    content: Buffer.from(JSON.stringify(content, null, 2)).toString("base64"),
-    branch: BRANCH,
-    ...(sha ? { sha } : {}),
-  };
-
-  const putRes = await fetch(apiUrl, { method: "PUT", headers, body: JSON.stringify(body) });
-  if (!putRes.ok) {
+    const putRes = await fetch(apiUrl, {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({ message, content: encoded, branch: BRANCH, ...(sha ? { sha } : {}) }),
+    });
+    if (putRes.ok) return;
+    if (putRes.status === 409 && attempt === 0) continue; // SHA conflict — retry with fresh SHA
     const err = await putRes.text();
     throw new Error(`GitHub API-fel för ${path}: ${putRes.status} — ${err}`);
   }

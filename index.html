@@ -1445,8 +1445,8 @@ function updateDateHint() {
     hint.style.color = 'var(--terracotta)';
     return;
   }
-  if (diff > 14) {
-    hint.textContent = 'Max 14 dagar';
+  if (diff > 15) {
+    hint.textContent = 'Max 15 dagar';
     hint.style.color = 'var(--terracotta)';
     return;
   }
@@ -1470,7 +1470,7 @@ async function generatePlan() {
   const diff = Math.round(
     (new Date(endVal + 'T12:00:00') - new Date(startVal + 'T12:00:00')) / 864e5
   ) + 1;
-  if (diff < 1 || diff > 14) return;
+  if (diff < 1 || diff > 15) return;
 
   btn.disabled = true;
   status.textContent = 'Genererar… detta tar upp till en minut.';
