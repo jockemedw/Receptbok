@@ -2,11 +2,64 @@
 
 ## Vad det här projektet är
 En personlig matplaneringsapp för familjen. Målet är ett komplett system som:
-1. Väljer recept ur receptboken baserat på familjens preferenser (kontrollpanel)
-2. Genererar en veckomatsedel via Claude AI
-3. Genererar en strukturerad inköpslista direkt från receptdata
-4. Gör det enkelt att fylla Willys varukorg (via ChatGPT Agent Mode, framtida)
-5. ~~Willys extrapriser~~ — avaktiverat (EU-scraping-blockering)
+1. Låter användaren välja datum + inställningar (protein, tid, fritext) i appen
+2. Genererar en matsedel för det valda datumintervallet — direkt i browsern (JS)
+3. Sparar matsedeln + inköpslistan centralt i repot så att hela familjen ser samma data på alla enheter
+4. Gör det enkelt att fylla Willys varukorg (framtida)
+
+## Kärnarkitektur (beslutat 2026-03-12)
+**Vercel = hosting + serverless backend. GitHub = datakälla (recipes.json) + datalagring (weekly-plan.json, shopping-list.json).**
+
+```
+Browser → Vercel /api/generate → Claude API → skriver JSON till GitHub repo → Browser läser filerna
+```
+
+- **Hosting:** Vercel (ersätter GitHub Pages) — gratis, kopplas direkt till GitHub-repot
+- **Backend:** Vercel serverless funktion `/api/generate`
+  - Tar emot: start_date, end_date, instruktioner (fritext), filter (protein, tid, oprövade)
+  - Kör: receptfiltrering + Claude-anrop för receptval
+  - Skriver: `weekly-plan.json` + `shopping-list.json` till GitHub repo via API
+- **Autentisering:** Ingen — familjeapp, ingen utomstående känner till URL:en
+- **Secrets:** `ANTHROPIC_API_KEY` + `GITHUB_PAT` (contents:write) i Vercel env vars — aldrig synliga för användaren
+- **Data:** Alla enheter läser samma filer från repot
+
+**Varför inte GitHub Actions längre?**
+Actions var en workaround för att köra Python server-side. Vercel är den riktiga lösningen — ger en riktig backend utan krångel.
+
+## Implementationsplan
+1. Skapa Vercel-projekt kopplat till GitHub-repot (engångsgrej, användaren gör manuellt)
+2. Skapa `api/generate.js` — serverless funktion som hanterar hela genereringen
+3. Lägg till `ANTHROPIC_API_KEY` + `GITHUB_PAT` i Vercel env vars
+4. Uppdatera `index.html` — kontrollpanelen anropar `/api/generate` direkt
+5. Ta bort GitHub Actions workflow (eller behåll som backup)
+
+## UI — Generera ny plan
+- Datumväljare (start + slut)
+- Fritextfält för instruktioner (förifyllt med standardtext)
+- Proteintoggle-knappar
+- Max tillagningstid vardag / helg
+- Max antal oprövade recept
+- Knapp: "Generera" → POST till `/api/generate` → spinner → sidan uppdateras
+
+## UI — Inköpslista (växlingsvy)
+Två lägen, ett i taget. Toggle/flik för att växla mellan dem.
+- **Handla-läget:** Avbockningsbar lista per kategori (checkboxar, återställs vid ny plan)
+- **Text-läget:** Ren textlista per kategori (kopierbar, t.ex. för att klistra in i meddelande)
+Bara ett läge syns åt gången. Ska se snyggt ut — inte som en teknisk switch.
+
+## Designprinciper (följ alltid dessa)
+- **Gratis i första hand** — GitHub Pages + Actions free tier är basnivån. Betallösningar kräver stark motivering.
+- **Noll handpåläggning** — appen ska fungera av sig själv. Föreslå aldrig lösningar som kräver återkommande manuella steg från användaren.
+- **Automatisering via cron** är alltid att föredra framför manuella triggers.
+- **Delad data för hela familjen** — localStorage och device-specifika lösningar är aldrig acceptabla. Data måste vara central och tillgänglig för alla enheter.
+- **AI/API bara där det verkligen behövs** — slump + filter är bättre än AI om resultatet är likvärdigt. Ifrågasätt alltid om ett API-anrop tillför värde.
+- **Vercel är backend** — serverless funktioner, secrets och API-anrop hanteras där. GitHub Actions används ej längre.
+
+## Hur Claude ska tänka
+- Förstå användarens **övergripande ambition** (självgående familjeapp), inte bara den enskilda frågan.
+- Föreslå aldrig lösningar som kräver att användaren återkommande gör manuella steg.
+- Tänk på hela familjen som användare — inte bara den tekniska användaren.
+- **Uppdatera CLAUDE.md efter varje större ändring** i projektet så att nästa session alltid har korrekt kontext.
 
 ## Repo-struktur
 ```
@@ -29,8 +82,8 @@ Receptbok/
 - **Dataformat:** JSON för allt — recept, matsedel, inköpslista
 - **Frontend:** Vanilla HTML/CSS/JS, inga ramverk, Playfair Display + DM Sans
 - **Färgtema:** Krämvitt (#faf7f2), varm brun header (#5c3d1e), terrakotta (#c2522b)
-- **AI för menyplanering:** Anthropic Claude Haiku (bytte från Gemini pga EU-begränsningar)
-- **Automation:** GitHub Actions — manuell trigger via workflow_dispatch (inget cron-schema)
+- **AI för menyplanering:** ~~Anthropic Claude Haiku~~ — **borttaget**. Receptval sker nu via Python (filter + slump), ingen AI behövs.
+- **Automation:** GitHub Actions — **cron-schema** (automatisk körning varje vecka)
 - **Willys-integration:** Avaktiverad — EU-scraping-blockering (400-fel). Ersatt av kontrollpanel.
 - **Inköpslista:** Byggs deterministiskt i Python från receptdata — inga AI-hallucinationer
 
@@ -94,11 +147,11 @@ Receptbok/
 Skriptet är uppdelat i tydliga ansvarsområden:
 1. **Datumintervall** — läser `START_DATE`/`END_DATE` från env, fallback till idag + 6 dagar
 2. **Constraints** — läser filtreringsinställningar från env (se nedan)
-3. **Receptfiltrering** — Python pre-filtrerar innan Claude ser recepten:
+3. **Receptfiltrering** — Python filtrerar baserat på constraints:
    - Exkluderar fel protein (`ALLOWED_PROTEINS`)
    - Exkluderar oprövade om `UNTESTED_COUNT=0`
    - Exkluderar recept som är för långa för båda dagtyper (`MAX_WEEKDAY_TIME`, `MAX_WEEKEND_TIME`)
-4. **Claude** — väljer bara recept (returnerar days-array). Prompt inkluderar hårda regler.
+4. **Receptval** — slumpmässigt val ur filtrerade recept (Python, ingen AI). Respekterar vardag/helg-taggar och undviker upprepning av protein.
 5. **Inköpslista** — byggs i Python från `recipes.json` (deterministisk, inga hallucinationer)
 6. **Output** — skriver `weekly-plan.json` + `shopping-list.json`
 
@@ -115,29 +168,28 @@ Skriptet är uppdelat i tydliga ansvarsområden:
 
 ## Nästa steg att bygga (i prioritetsordning)
 1. ~~**GitHub Actions workflow**~~ ✅ Klart
-2. ~~**AI-integration**~~ ✅ Klart (Anthropic Claude Haiku)
+2. ~~**AI-integration**~~ ✅ → ❌ Borttaget — ersatt av Python-slump
 3. ~~**Inköpslista-vy i frontend**~~ ✅ Klart
 4. ~~**Manuell trigger**~~ ✅ Klart (knapp i appen + workflow_dispatch)
 5. ~~**Kontrollpanel för receptval**~~ ✅ Klart (inställningar i "Generera ny plan")
-6. **Förbättra matsedelvyn** — ev. visa recept-detaljer direkt i tidslinjekortet
-7. **Willys-erbjudanden** — avaktiverat. Möjlig framtida lösning: annan datakälla.
+6. **Ta bort Claude API-anrop** — ersätt `call_claude()` i Python med slumpmässigt val
+7. **Lägg till cron-schema** i `weekly-plan.yml` (automatisk körning varje vecka)
+8. **Förbättra matsedelvyn** — ev. visa recept-detaljer direkt i tidslinjekortet
+9. **Willys-erbjudanden** — avaktiverat. Möjlig framtida lösning: annan datakälla.
 
 ## Användarens tekniska nivå
 Inte utvecklare men bekväm med GitHub Desktop, kan följa instruktioner.
 Claude Code hanterar all kod — användaren committar och pushar via GitHub Desktop.
-Workflow triggas manuellt direkt på GitHub (Actions-fliken), inte via lokal push.
+Workflow körs automatiskt via cron. Manuell trigger finns kvar som backup.
 
 ## AI-integration
-**Valt: Anthropic Claude API** (bytte från Gemini p.g.a. EU-begränsningar på free tier)
-- Modell: `claude-haiku-4-5-20251001` med fallback till `claude-haiku-4-5`
-- Secret: `ANTHROPIC_API_KEY` i GitHub Secrets
-- Kostnad: ~1–2 kr/år vid en körning/vecka
-- Inget automatiskt schema — körs manuellt via GitHub Actions workflow_dispatch
+~~Anthropic Claude Haiku användes för receptval~~ — **borttaget i session 4**.
+Receptval sker nu helt i Python (filter + slumpmässigt val). Inget API-anrop, ingen kostnad, ingen API-nyckel behövs.
 
 ## Kostnadsmål
-Max 20 kr/månad. Helst gratis.
-Anthropic Haiku: ~$0.002/körning = ~10 öre/vecka = ~5 kr/år.
-GitHub Actions free tier: räcker gott.
+**Mål: helt gratis.**
+GitHub Pages + Actions free tier: räcker gott.
+Ingen AI-API används längre för receptval — kostnad: 0 kr.
 
 ---
 
@@ -194,3 +246,40 @@ Allt är implementerat och klart att committa + pusha.
 
 **Nästa session börjar med:**
 Testa kontrollpanelen end-to-end via GitHub Actions.
+
+---
+
+### 2026-03-12 — Session 4
+**Vad vi gjorde:**
+- Insåg att Claude API-anropet för receptval är onödigt — kontrollpanelens filter gör redan jobbet
+- Beslutade att ersätta `call_claude()` med slumpmässigt val i Python (billigare, snabbare, enklare)
+- Beslutade att lägga tillbaka cron-schema i workflow (automatisk körning varje vecka, noll handpåläggning)
+- Uppdaterade designprinciper i CLAUDE.md: gratis, automatiserat, delad data, AI bara där det behövs
+
+**Var vi slutade:**
+CLAUDE.md uppdaterat. Koden är ännu inte ändrad.
+
+**Nästa session börjar med:**
+1. Ta bort `call_claude()` ur `generate_weekly_plan.py`, ersätt med Python-slump
+2. Lägg till cron-schema i `.github/workflows/weekly-plan.yml`
+
+---
+
+### 2026-03-12 — Session 4 (fortsättning)
+**Vad vi gjorde:**
+- Bestämde slutgiltig arkitektur: Vercel (hosting + serverless) + GitHub repo (data)
+- Skapade `api/generate.js` — serverless funktion som kör receptfiltrering, Claude-anrop, bygger inköpslista, skriver JSON till GitHub repo via API
+- Skapade `vercel.json` (60s timeout) och `package.json` (@anthropic-ai/sdk)
+- Uppdaterade `index.html`:
+  - Lade till fritextfält för instruktioner (förifyllt med standardtext)
+  - Ersatte GitHub Actions-länken med riktig "Generera"-knapp som anropar `/api/generate`
+  - Lade till mode-toggle för inköpslistan: Handla-läge (checkboxar) / Kopiera-läge (ren text med kopieringsknapp)
+  - Tog bort "ange i GitHub Actions"-output
+
+**Var vi slutade:**
+Koden är klar att committa. Vercel är INTE satt upp ännu.
+
+**Nästa session börjar med:**
+1. Committa + pusha alla ändringar
+2. Sätt upp Vercel: koppla repot, lägg in `ANTHROPIC_API_KEY` + `GITHUB_PAT` som env vars
+3. Testa generera-knappen end-to-end

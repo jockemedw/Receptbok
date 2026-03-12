@@ -937,6 +937,124 @@
   }
 
   .settings-warning.visible { display: block; }
+
+  /* ── INSTRUCTIONS ── */
+  .instructions-field {
+    width: 100%;
+    min-height: 80px;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    color: var(--ink);
+    background: var(--warm-white);
+    resize: vertical;
+    outline: none;
+    line-height: 1.5;
+    transition: border-color 0.2s;
+    margin-bottom: 0.75rem;
+  }
+  .instructions-field:focus { border-color: var(--terracotta); }
+  .instructions-label {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 0.35rem;
+    display: block;
+  }
+
+  /* ── GENERATE BUTTON & STATUS ── */
+  .generate-btn {
+    width: 100%;
+    background: var(--terracotta);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 0.9rem 1.5rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    margin-top: 0.25rem;
+  }
+  .generate-btn:hover { opacity: 0.9; }
+  .generate-btn:active { transform: scale(0.98); }
+  .generate-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+  .trigger-status {
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    text-align: center;
+    min-height: 1.4em;
+    color: var(--text-muted);
+  }
+  .trigger-status.error { color: var(--terracotta); }
+  .trigger-status.success { color: var(--sage); font-weight: 500; }
+
+  /* ── SHOPPING LIST MODE TOGGLE ── */
+  .shop-mode-bar {
+    display: flex;
+    gap: 0;
+    background: var(--border);
+    border-radius: 10px;
+    padding: 3px;
+    margin-bottom: 1rem;
+  }
+  .shop-mode-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .shop-mode-btn.active {
+    background: white;
+    color: var(--warm-brown);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  }
+
+  /* ── SHOPPING TEXT VIEW ── */
+  .shop-text-view { display: none; }
+  .shop-text-view.visible { display: block; }
+  .shop-text-category {
+    margin-bottom: 1.1rem;
+  }
+  .shop-text-cat-name {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--warm-brown);
+    margin-bottom: 0.35rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .shop-text-items {
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: var(--ink);
+    white-space: pre-wrap;
+  }
+  .shop-copy-btn {
+    margin-top: 0.75rem;
+    background: var(--light-terra);
+    border: 1.5px solid var(--border);
+    color: var(--warm-brown);
+    border-radius: 8px;
+    padding: 0.5rem 1.1rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .shop-copy-btn:hover { background: #f5e5dd; }
 </style>
 </head>
 <body>
@@ -1002,7 +1120,12 @@
 
     <div class="week-section">
       <h2 class="section-title">🛒 Inköpslista</h2>
+      <div class="shop-mode-bar">
+        <button class="shop-mode-btn active" id="modeBtnHandla" onclick="setShopMode('handla')">✓ Handla</button>
+        <button class="shop-mode-btn" id="modeBtnText" onclick="setShopMode('text')">Kopiera lista</button>
+      </div>
       <div id="shoppingList"></div>
+      <div id="shoppingText" class="shop-text-view"></div>
     </div>
   </div>
 
@@ -1020,6 +1143,9 @@
       </div>
     </div>
     <p class="date-hint" id="dateHint"></p>
+
+    <label class="instructions-label">Önskemål & instruktioner</label>
+    <textarea id="instructions" class="instructions-field">Välj omväxlande recept med variation i protein och tillagningssätt. Undvik att ha samma typ av rätt flera dagar i rad.</textarea>
 
     <div class="settings-toggle-wrap">
       <button class="settings-toggle" id="settingsToggle" onclick="toggleSettings()">
@@ -1104,12 +1230,10 @@
       </div>
     </div>
 
-    <a href="https://github.com/jockemedw/Receptbok/actions/workflows/weekly-plan.yml"
-       target="_blank" rel="noopener" class="trigger-btn">
-      ✨ Generera ny veckoplan
-    </a>
-    <div class="trigger-dates" id="triggerDates"></div>
-    <p class="trigger-hint">Öppnar GitHub Actions → "Run workflow" → ange värdena ovan</p>
+    <button class="generate-btn" id="generateBtn" onclick="generatePlan()">
+      ✨ Generera ny plan
+    </button>
+    <div class="trigger-status" id="triggerStatus"></div>
   </div>
 </div>
 
@@ -1282,7 +1406,6 @@ function updateDateHint() {
   const startVal = document.getElementById('startDate').value;
   const endVal   = document.getElementById('endDate').value;
   const hint     = document.getElementById('dateHint');
-  const datesEl  = document.getElementById('triggerDates');
 
   if (!startVal || !endVal) { hint.textContent = ''; return; }
 
@@ -1293,35 +1416,68 @@ function updateDateHint() {
   if (diff < 1) {
     hint.textContent = 'Slutdatum måste vara efter startdatum';
     hint.style.color = 'var(--terracotta)';
-    datesEl.classList.remove('visible');
     return;
   }
   if (diff > 14) {
     hint.textContent = 'Max 14 dagar';
     hint.style.color = 'var(--terracotta)';
-    datesEl.classList.remove('visible');
     return;
   }
 
   hint.textContent = `${diff} dag${diff !== 1 ? 'ar' : ''} planeras`;
   hint.style.color = 'var(--warm-brown)';
+}
 
-  const untested  = document.getElementById('untestedCount').value;
-  const maxWd     = document.getElementById('maxWeekdayTime').value;
-  const maxWe     = document.getElementById('maxWeekendTime').value;
-  const vegDays   = document.getElementById('vegetarianDays').value;
-  const proteins  = getSelectedProteins().join(',');
+async function generatePlan() {
+  const startVal = document.getElementById('startDate').value;
+  const endVal   = document.getElementById('endDate').value;
+  const status   = document.getElementById('triggerStatus');
+  const btn      = document.getElementById('generateBtn');
 
-  datesEl.classList.add('visible');
-  datesEl.innerHTML =
-    `Ange i GitHub Actions:<br>` +
-    `<b>start_date:</b> ${startVal}<br>` +
-    `<b>end_date:</b> ${endVal}<br>` +
-    `<b>untested_count:</b> ${untested}<br>` +
-    `<b>max_weekday_time:</b> ${maxWd}<br>` +
-    `<b>max_weekend_time:</b> ${maxWe}<br>` +
-    `<b>vegetarian_days:</b> ${vegDays}<br>` +
-    `<b>allowed_proteins:</b> ${proteins}`;
+  if (!startVal || !endVal) {
+    status.textContent = 'Välj start- och slutdatum.';
+    status.className = 'trigger-status error';
+    return;
+  }
+
+  const diff = Math.round(
+    (new Date(endVal + 'T12:00:00') - new Date(startVal + 'T12:00:00')) / 864e5
+  ) + 1;
+  if (diff < 1 || diff > 14) return;
+
+  btn.disabled = true;
+  status.textContent = 'Genererar… detta tar upp till en minut.';
+  status.className = 'trigger-status';
+
+  try {
+    const body = {
+      start_date:      startVal,
+      end_date:        endVal,
+      instructions:    document.getElementById('instructions').value,
+      allowed_proteins: getSelectedProteins().join(','),
+      untested_count:  document.getElementById('untestedCount').value,
+      max_weekday_time: document.getElementById('maxWeekdayTime').value,
+      max_weekend_time: document.getElementById('maxWeekendTime').value,
+      vegetarian_days: document.getElementById('vegetarianDays').value,
+    };
+
+    const res = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Okänt fel');
+
+    status.textContent = `✓ Klar! ${data.days} dagar planerade. Laddar om…`;
+    status.className = 'trigger-status success';
+    setTimeout(() => location.reload(), 2000);
+  } catch (err) {
+    status.textContent = `Fel: ${err.message}`;
+    status.className = 'trigger-status error';
+    btn.disabled = false;
+  }
 }
 
 function jumpToRecipe(title) {
@@ -1353,6 +1509,15 @@ function switchTab(tab) {
 
 // ── SHOPPING LIST ──────────────────────────────────────────
 const SHOP_KEY = 'shopping_checked';
+let _shopCategories = null;
+
+function setShopMode(mode) {
+  const isHandla = mode === 'handla';
+  document.getElementById('modeBtnHandla').classList.toggle('active', isHandla);
+  document.getElementById('modeBtnText').classList.toggle('active', !isHandla);
+  document.getElementById('shoppingList').style.display = isHandla ? '' : 'none';
+  document.getElementById('shoppingText').classList.toggle('visible', !isHandla);
+}
 
 function getChecked(generated) {
   try {
@@ -1368,13 +1533,15 @@ function saveChecked(state) {
 }
 
 function renderShoppingList(categories, generated) {
+  _shopCategories = categories;
   const state = getChecked(generated);
   const catIcons = {
     'Mejeri': '🥛', 'Grönsaker': '🥦', 'Fisk & kött': '🥩',
     'Skafferi': '🫙', 'Frukt': '🍎', 'Övrigt': '🛍️'
   };
 
-  const html = Object.entries(categories)
+  // ── Handla-läge (checkboxar) ──
+  const checkHtml = Object.entries(categories)
     .filter(([, items]) => items.length > 0)
     .map(([cat, items]) => {
       const icon = catIcons[cat] || '•';
@@ -1396,7 +1563,35 @@ function renderShoppingList(categories, generated) {
       </div>`;
     }).join('');
 
-  document.getElementById('shoppingList').innerHTML = html;
+  document.getElementById('shoppingList').innerHTML = checkHtml;
+
+  // ── Text-läge (kopierbar) ──
+  const textBlocks = Object.entries(categories)
+    .filter(([, items]) => items.length > 0)
+    .map(([cat, items]) => `<div class="shop-text-category">
+      <div class="shop-text-cat-name">${catIcons[cat] || '•'} ${cat}</div>
+      <div class="shop-text-items">${items.map(i => '• ' + i).join('\n')}</div>
+    </div>`).join('');
+
+  const fullText = Object.entries(categories)
+    .filter(([, items]) => items.length > 0)
+    .map(([cat, items]) => `${cat}:\n${items.map(i => '• ' + i).join('\n')}`)
+    .join('\n\n');
+
+  document.getElementById('shoppingText').innerHTML =
+    textBlocks +
+    `<button class="shop-copy-btn" onclick="copyShoppingList()">Kopiera hela listan</button>`;
+
+  document.getElementById('shoppingText')._fullText = fullText;
+}
+
+function copyShoppingList() {
+  const el = document.getElementById('shoppingText');
+  navigator.clipboard.writeText(el._fullText || '').then(() => {
+    const btn = el.querySelector('.shop-copy-btn');
+    btn.textContent = 'Kopierad!';
+    setTimeout(() => { btn.textContent = 'Kopiera hela listan'; }, 2000);
+  });
 }
 
 function toggleShopItem(el, key, generated) {
