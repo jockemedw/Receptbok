@@ -1500,7 +1500,9 @@ async function generatePlan() {
     status.textContent = `✓ Klar! ${data.days} dagar planerade.`;
     status.className = 'trigger-status success';
     btn.disabled = false;
-    await loadWeeklyPlan();
+    if (data.weeklyPlan) {
+      renderWeeklyPlanData(data.weeklyPlan, data.shoppingList);
+    }
     switchTab('vecka');
   } catch (err) {
     status.textContent = `Fel: ${err.message}`;
@@ -1630,6 +1632,43 @@ function toggleShopItem(el, key, generated) {
   el.querySelector('.item-checkbox').textContent = nowChecked ? '✓' : '';
 }
 
+function renderWeeklyPlanData(plan, shop) {
+  if (!plan?.days?.length) { document.getElementById('weekNoData').style.display = ''; return; }
+
+  document.getElementById('weekNoData').style.display = 'none';
+  document.getElementById('weekContent').style.display = '';
+
+  const metaParts = [];
+  if (plan.startDate && plan.endDate)
+    metaParts.push(`${fmtShort(plan.startDate)} – ${fmtShort(plan.endDate)}`);
+  else if (plan.week)
+    metaParts.push(`Vecka ${plan.week}`);
+  metaParts.push(`Genererad ${plan.generated}`);
+  document.getElementById('weekMeta').textContent = metaParts.join(' · ');
+
+  const todayIso = fmtIso(new Date());
+  document.getElementById('weekGrid').innerHTML = plan.days.map(d => {
+    const isToday = d.date === todayIso;
+    const isPast  = d.date < todayIso;
+    const cls     = isToday ? ' today' : isPast ? ' past' : '';
+    const dot     = isToday ? '<span class="today-dot"></span>' : '';
+    return `<div class="week-day-card${cls}" onclick="jumpToRecipe('${d.recipe.replace(/'/g,"\\'")}')">
+      <div class="week-day-name">${d.day}${d.date ? ' · ' + fmtShort(d.date) : ''}${dot}</div>
+      <div class="week-day-recipe">${d.recipe}</div>
+    </div>`;
+  }).join('');
+
+  setTimeout(() => {
+    const target = document.querySelector('.week-day-card.today')
+                || document.querySelector('.week-day-card:not(.past)');
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }, 150);
+
+  if (shop?.categories) {
+    renderShoppingList(shop.categories, shop.generated || plan.generated);
+  }
+}
+
 async function loadWeeklyPlan() {
   try {
     const cb = Date.now();
@@ -1637,45 +1676,10 @@ async function loadWeeklyPlan() {
       fetch('weekly-plan.json?cb=' + cb),
       fetch('shopping-list.json?cb=' + cb),
     ]);
-
     if (!planRes.ok) { document.getElementById('weekNoData').style.display = ''; return; }
-
     const plan = await planRes.json();
-    if (!plan.days?.length) { document.getElementById('weekNoData').style.display = ''; return; }
-
-    document.getElementById('weekContent').style.display = '';
-
-    const metaParts = [];
-    if (plan.startDate && plan.endDate)
-      metaParts.push(`${fmtShort(plan.startDate)} – ${fmtShort(plan.endDate)}`);
-    else if (plan.week)
-      metaParts.push(`Vecka ${plan.week}`);
-    metaParts.push(`Genererad ${plan.generated}`);
-    document.getElementById('weekMeta').textContent = metaParts.join(' · ');
-
-    const todayIso = fmtIso(new Date());
-    document.getElementById('weekGrid').innerHTML = plan.days.map(d => {
-      const isToday = d.date === todayIso;
-      const isPast  = d.date < todayIso;
-      const cls     = isToday ? ' today' : isPast ? ' past' : '';
-      const dot     = isToday ? '<span class="today-dot"></span>' : '';
-      return `<div class="week-day-card${cls}" onclick="jumpToRecipe('${d.recipe.replace(/'/g,"\\'")}')">
-        <div class="week-day-name">${d.day}${d.date ? ' · ' + fmtShort(d.date) : ''}${dot}</div>
-        <div class="week-day-recipe">${d.recipe}</div>
-      </div>`;
-    }).join('');
-
-    // Skrolla till idag (eller första kommande dag)
-    setTimeout(() => {
-      const target = document.querySelector('.week-day-card.today')
-                  || document.querySelector('.week-day-card:not(.past)');
-      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    }, 150);
-
-    if (shopRes.ok) {
-      const shop = await shopRes.json();
-      renderShoppingList(shop.categories || {}, shop.generated || plan.generated);
-    }
+    const shop = shopRes.ok ? await shopRes.json() : null;
+    renderWeeklyPlanData(plan, shop);
   } catch(e) {
     document.getElementById('weekNoData').style.display = '';
   }

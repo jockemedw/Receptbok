@@ -264,7 +264,7 @@ export default async function handler(req, res) {
       writeFileToGitHub("shopping-list.json", shoppingList, pat),
     ]);
 
-    return res.status(200).json({ ok: true, days: days.length });
+    return res.status(200).json({ ok: true, days: days.length, weeklyPlan, shoppingList });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: err.message });
