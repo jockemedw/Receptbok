@@ -1499,7 +1499,10 @@ async function generatePlan() {
 
     status.textContent = `✓ Klar! ${data.days} dagar planerade. Laddar om…`;
     status.className = 'trigger-status success';
-    setTimeout(() => location.reload(), 2000);
+    setTimeout(() => {
+      sessionStorage.setItem('showTab', 'vecka');
+      location.reload();
+    }, 2000);
   } catch (err) {
     status.textContent = `Fel: ${err.message}`;
     status.className = 'trigger-status error';
@@ -1630,9 +1633,10 @@ function toggleShopItem(el, key, generated) {
 
 async function loadWeeklyPlan() {
   try {
+    const cb = Date.now();
     const [planRes, shopRes] = await Promise.all([
-      fetch('weekly-plan.json'),
-      fetch('shopping-list.json'),
+      fetch('weekly-plan.json?cb=' + cb),
+      fetch('shopping-list.json?cb=' + cb),
     ]);
 
     if (!planRes.ok) { document.getElementById('weekNoData').style.display = ''; return; }
@@ -1692,6 +1696,10 @@ async function init() {
     applyFilters();
     initDatePickers();
     await loadWeeklyPlan();
+    if (sessionStorage.getItem('showTab') === 'vecka') {
+      sessionStorage.removeItem('showTab');
+      switchTab('vecka');
+    }
   } catch(err) {
     document.getElementById('loadingState').innerHTML = `
       <div style="font-size:2rem;margin-bottom:1rem">⚠️</div>
