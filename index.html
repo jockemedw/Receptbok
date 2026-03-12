@@ -1461,7 +1461,7 @@ async function generatePlan() {
       vegetarian_days: document.getElementById('vegetarianDays').value,
     };
 
-    const res = await fetch('/api/generate', {
+    const res = await fetch('https://receptbok-six.vercel.app/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
