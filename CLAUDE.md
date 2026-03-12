@@ -77,15 +77,15 @@ Receptbok/
 ```
 
 ## Tekniska beslut vi tagit
-- **Hosting:** GitHub Pages (gratis, fungerar)
-- **URL:** https://jockemedw.github.io/Receptbok/
+- **Hosting:** GitHub Pages (statiska filer) + Vercel (serverless API)
+- **URL:** https://jockemedw.github.io/Receptbok/ (frontend) + https://receptbok-six.vercel.app (API)
 - **Dataformat:** JSON för allt — recept, matsedel, inköpslista
 - **Frontend:** Vanilla HTML/CSS/JS, inga ramverk, Playfair Display + DM Sans
 - **Färgtema:** Krämvitt (#faf7f2), varm brun header (#5c3d1e), terrakotta (#c2522b)
-- **AI för menyplanering:** ~~Anthropic Claude Haiku~~ — **borttaget**. Receptval sker nu via Python (filter + slump), ingen AI behövs.
-- **Automation:** GitHub Actions — **cron-schema** (automatisk körning varje vecka)
-- **Willys-integration:** Avaktiverad — EU-scraping-blockering (400-fel). Ersatt av kontrollpanel.
-- **Inköpslista:** Byggs deterministiskt i Python från receptdata — inga AI-hallucinationer
+- **AI för menyplanering:** Anthropic Claude Haiku (`claude-haiku-4-5-20251001`) — anropas från Vercel-funktionen
+- **Inköpslista:** Byggs deterministiskt i JS från receptdata — inga AI-hallucinationer
+- **Willys-integration:** Avaktiverad — EU-scraping-blockering (400-fel).
+- **Secrets:** `ANTHROPIC_API_KEY` + `GITHUB_PAT` i Vercel env vars
 
 ## recipes.json — struktur
 ```json
@@ -265,21 +265,30 @@ CLAUDE.md uppdaterat. Koden är ännu inte ändrad.
 
 ---
 
-### 2026-03-12 — Session 4 (fortsättning)
+### 2026-03-12 — Session 4 (fortsättning) + Session 5
 **Vad vi gjorde:**
 - Bestämde slutgiltig arkitektur: Vercel (hosting + serverless) + GitHub repo (data)
-- Skapade `api/generate.js` — serverless funktion som kör receptfiltrering, Claude-anrop, bygger inköpslista, skriver JSON till GitHub repo via API
+- Skapade `api/generate.js` — serverless funktion med receptfiltrering, Claude Haiku-anrop, deterministisk inköpslista, skriver JSON till GitHub via API
 - Skapade `vercel.json` (60s timeout) och `package.json` (@anthropic-ai/sdk)
-- Uppdaterade `index.html`:
-  - Lade till fritextfält för instruktioner (förifyllt med standardtext)
-  - Ersatte GitHub Actions-länken med riktig "Generera"-knapp som anropar `/api/generate`
-  - Lade till mode-toggle för inköpslistan: Handla-läge (checkboxar) / Kopiera-läge (ren text med kopieringsknapp)
-  - Tog bort "ange i GitHub Actions"-output
+- Driftsatte på Vercel — kopplade GitHub-repot, lade in `ANTHROPIC_API_KEY` + `GITHUB_PAT` som env vars
+- **Felsökning och fixar:**
+  - CORS-headers i `api/generate.js` (GitHub Pages → Vercel cross-origin)
+  - GitHub PAT behöver `Contents: Read and write` på fine-grained token
+  - 409-fel (SHA-konflikt vid GitHub-skrivning) → retry-logik i `writeFileToGitHub`
+  - GitHub Pages CDN-cache → API returnerar nu hela planen i svaret, frontend renderar direkt utan att invänta CDN
+  - `fetch('/api/generate')` → `fetch('https://receptbok-six.vercel.app/api/generate')` (absolut URL krävs från GitHub Pages)
+- **Header-redesign:** Nordisk minimal stil
+  - Kompakt 54px toprad med titel + tab-navigation (underline-stil med guldmarkering)
+  - Sök + filterknappar i collapsible area under toprad — glider mjukt upp/ner vid flikbyte
+  - Filterknappar horisontellt scrollbara (ingen radbrytning)
+- Max datumintervall utökat från 14 → 15 dagar
+- Efter lyckad generering: byter automatiskt till Veckans mat-fliken och visar planen direkt
 
-**Var vi slutade:**
-Koden är klar att committa. Vercel är INTE satt upp ännu.
+**Status:**
+Hela flödet fungerar end-to-end. Generera ny plan → Claude väljer recept → inköpslista byggs → sparas i repo → visas direkt i appen.
 
 **Nästa session börjar med:**
-1. Committa + pusha alla ändringar
-2. Sätt upp Vercel: koppla repot, lägg in `ANTHROPIC_API_KEY` + `GITHUB_PAT` som env vars
-3. Testa generera-knappen end-to-end
+Inga kända buggar. Möjliga förbättringar:
+- Förbättra matsedelvyn (visa mer detaljer per dag?)
+- Willys-integration (avaktiverad, framtida möjlighet)
+- Ev. cron-schema för automatisk veckogenerering
