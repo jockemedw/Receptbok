@@ -1,97 +1,55 @@
 {
   "generated": "2026-03-12",
-  "startDate": "2026-03-14",
-  "endDate": "2026-03-28",
+  "startDate": "2026-03-15",
+  "endDate": "2026-03-22",
   "days": [
     {
-      "date": "2026-03-14",
-      "day": "Lördag",
-      "recipe": "Gräddig fiskgratäng med purjo",
-      "recipeId": 1
-    },
-    {
       "date": "2026-03-15",
-      "day": "Söndag",
-      "recipe": "Marinerad kyckling med curry-cashewnötssås",
-      "recipeId": 4
-    },
-    {
-      "date": "2026-03-16",
-      "day": "Måndag",
-      "recipe": "Pastasallad med kyckling, feta och basilika",
-      "recipeId": 6
-    },
-    {
-      "date": "2026-03-17",
-      "day": "Tisdag",
-      "recipe": "Buljongsoppa med shiitakesvamp och pocherat ägg",
-      "recipeId": 5
-    },
-    {
-      "date": "2026-03-18",
-      "day": "Onsdag",
-      "recipe": "Tonfiskpasta",
-      "recipeId": 24
-    },
-    {
-      "date": "2026-03-19",
-      "day": "Torsdag",
-      "recipe": "Stekt curryris med färs och salladslök",
-      "recipeId": 29
-    },
-    {
-      "date": "2026-03-20",
-      "day": "Fredag",
-      "recipe": "Röd linsgryta med potatis",
-      "recipeId": 46
-    },
-    {
-      "date": "2026-03-21",
-      "day": "Lördag",
-      "recipe": "Ramen med salladskål och champinjoner",
-      "recipeId": 10
-    },
-    {
-      "date": "2026-03-22",
       "day": "Söndag",
       "recipe": "Skaldjurslasagne",
       "recipeId": 47
     },
     {
-      "date": "2026-03-23",
+      "date": "2026-03-16",
       "day": "Måndag",
       "recipe": "Oreganokyckling",
       "recipeId": 60
     },
     {
-      "date": "2026-03-24",
+      "date": "2026-03-17",
       "day": "Tisdag",
-      "recipe": "Gnocchi med snabbpesto",
-      "recipeId": 26
+      "recipe": "Röd linsgryta med potatis",
+      "recipeId": 46
     },
     {
-      "date": "2026-03-25",
+      "date": "2026-03-18",
       "day": "Onsdag",
+      "recipe": "Pasta med lax och sås på vitt vin, grädde och spenat",
+      "recipeId": 51
+    },
+    {
+      "date": "2026-03-19",
+      "day": "Torsdag",
+      "recipe": "Annas pasta med morötter, lök & sweet chili",
+      "recipeId": 52
+    },
+    {
+      "date": "2026-03-20",
+      "day": "Fredag",
       "recipe": "Fisk med örtsås",
       "recipeId": 50
     },
     {
-      "date": "2026-03-26",
-      "day": "Torsdag",
-      "recipe": "Krämig bönmasala",
-      "recipeId": 59
-    },
-    {
-      "date": "2026-03-27",
-      "day": "Fredag",
-      "recipe": "Pasta Rosso med champinjoner",
-      "recipeId": 56
-    },
-    {
-      "date": "2026-03-28",
+      "date": "2026-03-21",
       "day": "Lördag",
-      "recipe": "Min bästa wok",
-      "recipeId": 21
+      "recipe": "Rödbetsrisotto",
+      "recipeId": 62
+    },
+    {
+      "date": "2026-03-22",
+      "day": "Söndag",
+      "recipe": "Indisk gryta med spenat, kikärter, senap & yoghurt",
+      "recipeId": 53
     }
   ]
 }
