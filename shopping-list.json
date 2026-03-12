@@ -1,7 +1,7 @@
 {
   "generated": "2026-03-12",
   "startDate": "2026-03-14",
-  "endDate": "2026-03-28",
+  "endDate": "2026-03-21",
   "categories": {
     "Mejeri": [
       "200 g riven ost",
@@ -12,11 +12,6 @@
       "1 dl turkisk yoghurt + 100 g chèvre",
       "1 dl matgrädde eller yoghurt",
       "2 dl naturell yoghurt",
-      "1½ dl grädde",
-      "1 dl turkisk yoghurt",
-      "125 g mozzarella",
-      "4 dl kokosmjölk",
-      "1 dl crème fraiche eller matyoghurt",
       "1 dl crème fraiche"
     ],
     "Grönsaker": [
@@ -36,17 +31,11 @@
       "1 tsk ingefära",
       "1 krm chiliflakes",
       "250 g fryst hackad spenat",
-      "12 körsbärstomater",
-      "2 schalottenlökar",
-      "4 schalottenlökar",
-      "100 g bladspenat",
-      "3 dl majs",
-      "1–2 msk sweet chili",
-      "0,5 dl hackad gul lök",
-      "100 g champinjoner",
       "1 gul lök (stor)",
       "0,5 dl sweet chili",
-      "valfria grönsaker (t.ex. ärtor, vitkål, paprika)"
+      "valfria grönsaker (t.ex. ärtor, vitkål, paprika)",
+      "12 körsbärstomater",
+      "2 schalottenlökar"
     ],
     "Fisk & kött": [
       "2 fiskbuljongtärningar, rivna",
@@ -54,13 +43,10 @@
       "1–2 kycklingfiléer",
       "2 laxfiléer",
       "3 dl fiskbuljong",
-      "600 g fisk",
-      "4 laxfiléer",
-      "1 tsk kycklingfond"
+      "600 g fisk"
     ],
     "Frukt": [
-      "Skal och saft av 1 citron",
-      "1 citron"
+      "Skal och saft av 1 citron"
     ],
     "Skafferi": [
       "250 g färska lasagneplattor",
@@ -90,6 +76,8 @@
       "1 tsk kardemumma",
       "1 burk kikärtor (avsköljda)",
       "ev. lite vatten",
+      "2 rivna morötter",
+      "hackade nötter (valfritt)",
       "1 msk olja",
       "1 tsk brun farin",
       "½ tsk salt",
@@ -97,31 +85,7 @@
       "1 msk margarin",
       "1 dl vitt vin",
       "1 dl hackade örter (timjan, basilika, persilja)",
-      "1 tsk maizena",
-      "½ kruka färsk timjan",
-      "½ kruka färsk persilja",
-      "salt och peppar",
-      "ev. maizena till redning",
-      "4 morötter (ca 400 g), rivna",
-      "2–3 tsk garam masala",
-      "1 buljongtärning",
-      "6 dl blandade kokta bönor",
-      "1 dl hackade cashewnötter",
-      "2 dl vetemjöl",
-      "2 krm salt",
-      "2 ägg",
-      "2–3 morötter (ca 200 g), rivna",
-      "0,5 grönsaksbuljongtärning",
-      "oregano eller basilika",
-      "pärlcouscous (för 4 portioner)",
-      "1 msk senap",
-      "1 msk vitvinsvinäger",
-      "1 msk honung",
-      "4 msk olja",
-      "2 msk vatten",
-      "30 g dill",
-      "2 rivna morötter",
-      "hackade nötter (valfritt)"
+      "1 tsk maizena"
     ],
     "Övrigt": []
   }
