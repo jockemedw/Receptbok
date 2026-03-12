@@ -37,7 +37,7 @@
   header {
     background: var(--warm-brown);
     color: var(--cream);
-    padding: 2rem 1.5rem 1.5rem;
+    padding: 0.9rem 1.5rem 0;
     position: sticky;
     top: 0;
     z-index: 100;
@@ -49,14 +49,15 @@
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
   }
 
   header h1 {
     font-family: 'Playfair Display', serif;
-    font-size: clamp(1.4rem, 5vw, 1.8rem);
+    font-size: clamp(1.2rem, 4vw, 1.5rem);
     font-weight: 400;
     letter-spacing: 0.02em;
+    line-height: 1;
   }
 
   header h1 em {
@@ -64,13 +65,35 @@
     color: var(--gold);
   }
 
-  .recipe-count {
-    font-size: 0.8rem;
-    background: rgba(255,255,255,0.15);
-    padding: 0.3rem 0.7rem;
-    border-radius: 20px;
-    white-space: nowrap;
+  .header-tabs {
+    display: flex;
+    gap: 0.15rem;
+    background: rgba(0,0,0,0.15);
+    border-radius: 8px;
+    padding: 3px;
+  }
+
+  .header-tab {
+    background: none;
+    border: none;
+    color: rgba(250,247,242,0.6);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
     font-weight: 500;
+    padding: 0.35rem 0.9rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .header-tab.active {
+    background: rgba(255,255,255,0.18);
+    color: var(--cream);
+  }
+
+  .recipe-count {
+    display: none;
   }
 
   /* ── SEARCH ── */
@@ -450,34 +473,6 @@
     opacity: 0.6;
   }
 
-  /* ── TABS ── */
-  .tab-bar {
-    display: flex;
-    border-bottom: 2px solid var(--border);
-    background: var(--warm-brown);
-    padding: 0 1rem;
-    gap: 0.25rem;
-  }
-
-  .tab-btn {
-    background: none;
-    border: none;
-    color: rgba(250,247,242,0.65);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.9rem;
-    font-weight: 500;
-    padding: 0.75rem 1.1rem;
-    cursor: pointer;
-    border-bottom: 2px solid transparent;
-    margin-bottom: -2px;
-    transition: color 0.2s, border-color 0.2s;
-    white-space: nowrap;
-  }
-
-  .tab-btn.active {
-    color: var(--cream);
-    border-bottom-color: var(--gold);
-  }
 
   /* ── WEEK VIEW ── */
   #weekView {
@@ -1062,9 +1057,12 @@
 <header>
   <div class="header-top">
     <h1>Recept<em>boken</em></h1>
-    <span class="recipe-count" id="countDisplay">— recept</span>
+    <nav class="header-tabs">
+      <button class="header-tab active" id="tabRecept" onclick="switchTab('recept')">Recept</button>
+      <button class="header-tab" id="tabVecka" onclick="switchTab('vecka')">Veckans mat</button>
+    </nav>
   </div>
-  <div class="search-wrap">
+  <div class="search-wrap" id="searchWrap">
     <span class="search-icon">🔍</span>
     <input id="search" type="search" placeholder="Sök på namn, ingrediens, tagg…" autocomplete="off">
   </div>
@@ -1081,11 +1079,6 @@
     <button class="filter-btn" data-filter="pasta">Pasta</button>
   </div>
 </header>
-
-<div class="tab-bar">
-  <button class="tab-btn active" id="tabRecept" onclick="switchTab('recept')">📖 Recept</button>
-  <button class="tab-btn" id="tabVecka" onclick="switchTab('vecka')">📅 Veckans mat</button>
-</div>
 
 <main id="receptView">
   <p class="results-info" id="resultsInfo"></p>
@@ -1501,8 +1494,7 @@ function switchTab(tab) {
   document.getElementById('weekView').classList.toggle('visible', !isRecept);
   document.getElementById('tabRecept').classList.toggle('active', isRecept);
   document.getElementById('tabVecka').classList.toggle('active', !isRecept);
-  // Hide search/filters on week tab
-  document.querySelector('.search-wrap').style.display = isRecept ? '' : 'none';
+  document.getElementById('searchWrap').style.display = isRecept ? '' : 'none';
   document.getElementById('filters').style.display = isRecept ? '' : 'none';
   window.scrollTo({ top: 0 });
 }
