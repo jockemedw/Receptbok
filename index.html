@@ -1497,12 +1497,11 @@ async function generatePlan() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Okänt fel');
 
-    status.textContent = `✓ Klar! ${data.days} dagar planerade. Laddar om…`;
+    status.textContent = `✓ Klar! ${data.days} dagar planerade.`;
     status.className = 'trigger-status success';
-    setTimeout(() => {
-      sessionStorage.setItem('showTab', 'vecka');
-      location.reload();
-    }, 2000);
+    btn.disabled = false;
+    await loadWeeklyPlan();
+    switchTab('vecka');
   } catch (err) {
     status.textContent = `Fel: ${err.message}`;
     status.className = 'trigger-status error';
@@ -1696,10 +1695,6 @@ async function init() {
     applyFilters();
     initDatePickers();
     await loadWeeklyPlan();
-    if (sessionStorage.getItem('showTab') === 'vecka') {
-      sessionStorage.removeItem('showTab');
-      switchTab('vecka');
-    }
   } catch(err) {
     document.getElementById('loadingState').innerHTML = `
       <div style="font-size:2rem;margin-bottom:1rem">⚠️</div>
