@@ -7,13 +7,18 @@ async function readFileFromGitHub(filename, pat) {
   const res = await fetch(url, {
     headers: {
       Authorization: `Bearer ${pat}`,
-      Accept: "application/vnd.github.raw+json",
+      Accept: "application/vnd.github+json",
       "User-Agent": "Receptbok-App",
       "X-GitHub-Api-Version": "2022-11-28",
     },
   });
   if (!res.ok) return null;
-  return res.json();
+  const data = await res.json();
+  if (data.encoding === "base64" && data.content) {
+    const decoded = Buffer.from(data.content.replace(/\n/g, ""), "base64").toString("utf-8");
+    return JSON.parse(decoded);
+  }
+  return null;
 }
 
 export default async function handler(req, res) {
