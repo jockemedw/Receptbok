@@ -292,3 +292,21 @@ Inga kända buggar. Möjliga förbättringar:
 - Förbättra matsedelvyn (visa mer detaljer per dag?)
 - Willys-integration (avaktiverad, framtida möjlighet)
 - Ev. cron-schema för automatisk veckogenerering
+
+---
+
+### 2026-03-13 — Session 6
+**Vad vi gjorde:**
+- **Buggfix: veckoplan visades inte vid återbesök** — rotorsaken var att `loadWeeklyPlan()` anropades inuti `init()`s try-catch. Om något i `init()` kastade ett fel (t.ex. vid rendering av recepten) kördes aldrig `loadWeeklyPlan()`. Laddningsindikatorn ("⏳ Laddar matsedeln…") satt kvar för alltid.
+- **Fix:** Flyttade `loadWeeklyPlan()` utanför `init()` — de körs nu parallellt och helt oberoende. Oavsett vad som händer med receptdelen laddas alltid veckoplanen.
+- **Laddningsindikator** tillagd i weekView — visar "Laddar matsedeln…" tills data är hämtad, ersätts av plan eller felmeddelande.
+- **Städning:** Skapade och tog sedan bort `api/plan.js` (en tillfällig Vercel-endpoint som visade sig onödig). `loadWeeklyPlan` hämtar nu direkt från `weekly-plan.json` och `shopping-list.json` via relativa URL:er från GitHub Pages — enklast möjliga lösning.
+
+**Var vi slutade:**
+Sidladdning fungerar korrekt. Veckoplanen visas alltid vid besök om en plan finns i repot.
+
+**Nästa session börjar med:**
+Inga kända buggar. Möjliga förbättringar:
+- Förbättra matsedelvyn (visa mer detaljer per dag?)
+- Willys-integration (avaktiverad, framtida möjlighet)
+- Ev. cron-schema för automatisk veckogenerering
