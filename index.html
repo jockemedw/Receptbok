@@ -1672,9 +1672,10 @@ function renderWeeklyPlanData(plan, shop) {
 async function loadWeeklyPlan() {
   try {
     const cb = Date.now();
+    const base = 'https://raw.githubusercontent.com/jockemedw/Receptbok/main/';
     const [planRes, shopRes] = await Promise.all([
-      fetch('weekly-plan.json?cb=' + cb),
-      fetch('shopping-list.json?cb=' + cb),
+      fetch(base + 'weekly-plan.json?cb=' + cb),
+      fetch(base + 'shopping-list.json?cb=' + cb),
     ]);
     if (!planRes.ok) { document.getElementById('weekNoData').style.display = ''; return; }
     const plan = await planRes.json();
