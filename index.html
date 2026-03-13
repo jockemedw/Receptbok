@@ -1680,6 +1680,7 @@ async function loadWeeklyPlan() {
     const plan = await planRes.json();
     const shop = shopRes.ok ? await shopRes.json() : null;
     renderWeeklyPlanData(plan, shop);
+    if (plan?.days?.length) switchTab('vecka');
   } catch(e) {
     document.getElementById('weekNoData').style.display = '';
   }
