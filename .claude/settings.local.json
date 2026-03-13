@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cat /c/Users/joaki/Documents/GitHub/Receptbok/.github/workflows/*.yml)"
+      "Bash(cat /c/Users/joaki/Documents/GitHub/Receptbok/.github/workflows/*.yml)",
+      "WebFetch(domain:receptbok-six.vercel.app)"
     ]
   }
 }

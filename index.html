@@ -1131,6 +1131,11 @@
 </main>
 
 <div id="weekView">
+  <div id="weekLoading" class="no-data">
+    <div class="no-data-icon">⏳</div>
+    <p>Laddar matsedeln…</p>
+  </div>
+
   <div id="weekNoData" class="no-data" style="display:none">
     <div class="no-data-icon">📋</div>
     <p>Ingen veckoplan genererad ännu.</p>
@@ -1635,6 +1640,7 @@ function toggleShopItem(el, key, generated) {
 function renderWeeklyPlanData(plan, shop) {
   if (!plan?.days?.length) { document.getElementById('weekNoData').style.display = ''; return; }
 
+  document.getElementById('weekLoading').style.display = 'none';
   document.getElementById('weekNoData').style.display = 'none';
   document.getElementById('weekContent').style.display = '';
 
@@ -1671,13 +1677,17 @@ function renderWeeklyPlanData(plan, shop) {
 
 async function loadWeeklyPlan() {
   try {
-    const res = await fetch('https://receptbok-six.vercel.app/api/plan', { cache: 'no-store' });
+    const res = await fetch('https://receptbok-six.vercel.app/api/plan');
+    document.getElementById('weekLoading').style.display = 'none';
     if (!res.ok) { document.getElementById('weekNoData').style.display = ''; return; }
     const data = await res.json();
     const plan = data.weeklyPlan;
     const shop = data.shoppingList;
+    if (!plan?.days?.length) { document.getElementById('weekNoData').style.display = ''; return; }
     renderWeeklyPlanData(plan, shop);
+    switchTab('vecka');
   } catch(e) {
+    document.getElementById('weekLoading').style.display = 'none';
     document.getElementById('weekNoData').style.display = '';
   }
 }
