@@ -1677,12 +1677,14 @@ function renderWeeklyPlanData(plan, shop) {
 
 async function loadWeeklyPlan() {
   try {
-    const res = await fetch('https://receptbok-six.vercel.app/api/plan');
+    const [planRes, shopRes] = await Promise.all([
+      fetch('weekly-plan.json'),
+      fetch('shopping-list.json'),
+    ]);
     document.getElementById('weekLoading').style.display = 'none';
-    if (!res.ok) { document.getElementById('weekNoData').style.display = ''; return; }
-    const data = await res.json();
-    const plan = data.weeklyPlan;
-    const shop = data.shoppingList;
+    if (!planRes.ok) { document.getElementById('weekNoData').style.display = ''; return; }
+    const plan = await planRes.json();
+    const shop = shopRes.ok ? await shopRes.json() : null;
     if (!plan?.days?.length) { document.getElementById('weekNoData').style.display = ''; return; }
     renderWeeklyPlanData(plan, shop);
     switchTab('vecka');
