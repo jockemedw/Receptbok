@@ -1,7 +1,7 @@
 {
   "generated": "2026-03-13",
-  "startDate": "2026-03-21",
-  "endDate": "2026-03-28",
+  "startDate": "2026-03-14",
+  "endDate": "2026-03-21",
   "categories": {
     "Mejeri": [
       "200 g riven ost",
@@ -11,9 +11,8 @@
       "2 dl rostade nötter/frön",
       "1 dl turkisk yoghurt + 100 g chèvre",
       "1 dl matgrädde eller yoghurt",
-      "1 dl crème fraiche",
       "2 dl naturell yoghurt",
-      "1½ dl grädde"
+      "1 dl crème fraiche"
     ],
     "Grönsaker": [
       "1 vitlöksklyfta, pressad",
@@ -23,32 +22,31 @@
       "3–4 schalottenlökar (eller 1–2 gula lökar)",
       "3 vitlöksklyftor",
       "1 vitlöksklyfta",
-      "300 g tärnad potatis (ca 3–4 st)",
-      "1 gul lök, hackad",
-      "2 vitlöksklyftor, hackade",
-      "400 g krossade tomater",
+      "12 körsbärstomater",
+      "2 schalottenlökar",
       "1 gul lök",
-      "2 vitlöksklyftor",
-      "1 gul lök (stor)",
-      "0,5 dl sweet chili",
-      "valfria grönsaker (t.ex. ärtor, vitkål, paprika)",
       "1 tsk ingefära",
       "1 krm chiliflakes",
+      "400 g krossade tomater",
       "250 g fryst hackad spenat",
-      "4 schalottenlökar",
-      "100 g bladspenat"
+      "1 gul lök (stor)",
+      "2 vitlöksklyftor",
+      "0,5 dl sweet chili",
+      "valfria grönsaker (t.ex. ärtor, vitkål, paprika)",
+      "300 g tärnad potatis (ca 3–4 st)",
+      "1 gul lök, hackad",
+      "2 vitlöksklyftor, hackade"
     ],
     "Fisk & kött": [
       "2 fiskbuljongtärningar, rivna",
       "170 g räkor i lag",
       "1–2 kycklingfiléer",
-      "2 laxfiléer",
-      "4 laxfiléer",
-      "1 tsk kycklingfond"
+      "3 dl fiskbuljong",
+      "600 g fisk",
+      "2 laxfiléer"
     ],
     "Frukt": [
-      "Skal och saft av 1 citron",
-      "1 citron"
+      "Skal och saft av 1 citron"
     ],
     "Skafferi": [
       "250 g färska lasagneplattor",
@@ -63,27 +61,31 @@
       "0,5 buljongtärning",
       "1–1,5 tsk torkad oregano",
       "1 msk balsamvinäger",
-      "2 dl röda linser",
+      "1 msk olja",
+      "1 tsk brun farin",
+      "½ tsk salt",
+      "1 krm peppar",
+      "1 msk margarin",
+      "1 dl vitt vin",
+      "1 dl hackade örter (timjan, basilika, persilja)",
+      "1 tsk maizena",
       "2 tsk spiskummin",
-      "2 tsk koriander",
-      "1 tsk kajennpeppar",
-      "1 grönsaksbuljongtärning",
-      "salt och svartpeppar",
-      "1 ägg",
-      "örtkryddor",
-      "salt",
-      "peppar",
-      "2 rivna morötter",
-      "hackade nötter (valfritt)",
       "2 tsk gurkmeja",
       "2 tsk garam masala",
       "1 tsk kardemumma",
       "1 burk kikärtor (avsköljda)",
       "ev. lite vatten",
-      "½ kruka färsk timjan",
-      "½ kruka färsk persilja",
-      "salt och peppar",
-      "ev. maizena till redning"
+      "2 rivna morötter",
+      "hackade nötter (valfritt)",
+      "1 ägg",
+      "örtkryddor",
+      "salt",
+      "peppar",
+      "2 dl röda linser",
+      "2 tsk koriander",
+      "1 tsk kajennpeppar",
+      "1 grönsaksbuljongtärning",
+      "salt och svartpeppar"
     ],
     "Övrigt": []
   }
