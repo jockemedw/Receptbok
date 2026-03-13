@@ -1671,17 +1671,12 @@ function renderWeeklyPlanData(plan, shop) {
 
 async function loadWeeklyPlan() {
   try {
-    const base = 'https://api.github.com/repos/jockemedw/Receptbok/contents/';
-    const ghHeaders = { Accept: 'application/vnd.github.raw+json', 'X-GitHub-Api-Version': '2022-11-28' };
-    const [planRes, shopRes] = await Promise.all([
-      fetch(base + 'weekly-plan.json', { headers: ghHeaders, cache: 'no-store' }),
-      fetch(base + 'shopping-list.json', { headers: ghHeaders, cache: 'no-store' }),
-    ]);
-    if (!planRes.ok) { document.getElementById('weekNoData').style.display = ''; return; }
-    const plan = await planRes.json();
-    const shop = shopRes.ok ? await shopRes.json() : null;
+    const res = await fetch('https://receptbok-six.vercel.app/api/plan', { cache: 'no-store' });
+    if (!res.ok) { document.getElementById('weekNoData').style.display = ''; return; }
+    const data = await res.json();
+    const plan = data.weeklyPlan;
+    const shop = data.shoppingList;
     renderWeeklyPlanData(plan, shop);
-    if (plan?.days?.length) switchTab('vecka');
   } catch(e) {
     document.getElementById('weekNoData').style.display = '';
   }
