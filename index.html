@@ -1705,7 +1705,6 @@ async function init() {
       `Receptboken · ${data.meta?.lastUpdated || ''} · ${RECIPES.length} recept`;
     applyFilters();
     initDatePickers();
-    await loadWeeklyPlan();
   } catch(err) {
     document.getElementById('loadingState').innerHTML = `
       <div style="font-size:2rem;margin-bottom:1rem">⚠️</div>
@@ -1728,6 +1727,7 @@ window.addEventListener('scroll', () => scrollBtn.classList.toggle('visible', wi
 scrollBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
 init();
+loadWeeklyPlan();
 </script>
 </body>
 </html>
