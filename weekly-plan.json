@@ -1,55 +1,55 @@
 {
-  "generated": "2026-03-12",
-  "startDate": "2026-03-14",
-  "endDate": "2026-03-21",
+  "generated": "2026-03-13",
+  "startDate": "2026-03-21",
+  "endDate": "2026-03-28",
   "days": [
     {
-      "date": "2026-03-14",
+      "date": "2026-03-21",
       "day": "Lördag",
       "recipe": "Skaldjurslasagne",
       "recipeId": 47
     },
     {
-      "date": "2026-03-15",
+      "date": "2026-03-22",
       "day": "Söndag",
       "recipe": "Rödbetsrisotto",
       "recipeId": 62
     },
     {
-      "date": "2026-03-16",
+      "date": "2026-03-23",
       "day": "Måndag",
       "recipe": "Oreganokyckling",
       "recipeId": 60
     },
     {
-      "date": "2026-03-17",
+      "date": "2026-03-24",
       "day": "Tisdag",
-      "recipe": "Fisk med örtsås",
-      "recipeId": 50
+      "recipe": "Röd linsgryta med potatis",
+      "recipeId": 46
     },
     {
-      "date": "2026-03-18",
+      "date": "2026-03-25",
       "day": "Onsdag",
-      "recipe": "Indisk gryta med spenat, kikärter, senap & yoghurt",
-      "recipeId": 53
+      "recipe": "Amandas laxbiffar",
+      "recipeId": 55
     },
     {
-      "date": "2026-03-19",
+      "date": "2026-03-26",
       "day": "Torsdag",
-      "recipe": "Pasta med lax och sås på vitt vin, grädde och spenat",
-      "recipeId": 51
-    },
-    {
-      "date": "2026-03-20",
-      "day": "Fredag",
       "recipe": "Annas pasta med morötter, lök & sweet chili",
       "recipeId": 52
     },
     {
-      "date": "2026-03-21",
+      "date": "2026-03-27",
+      "day": "Fredag",
+      "recipe": "Indisk gryta med spenat, kikärter, senap & yoghurt",
+      "recipeId": 53
+    },
+    {
+      "date": "2026-03-28",
       "day": "Lördag",
-      "recipe": "Röd linsgryta med potatis",
-      "recipeId": 46
+      "recipe": "Pasta med lax och sås på vitt vin, grädde och spenat",
+      "recipeId": 51
     }
   ]
 }
