@@ -99,6 +99,32 @@ async function fetchRecipes() {
   }));
 }
 
+async function fetchHistory() {
+  const url = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRANCH}/recipe-history.json`;
+  const res = await fetch(url);
+  if (!res.ok) return { history: [] };
+  return res.json();
+}
+
+// Returns Set of recipe IDs used within the last `days` days
+function recentlyUsedIds(history, days = 28) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  const ids = new Set();
+  for (const entry of history) {
+    if (new Date(entry.date) >= cutoff) {
+      for (const id of entry.recipeIds) ids.add(id);
+    }
+  }
+  return ids;
+}
+
+function updateHistory(history, newIds, date) {
+  const updated = [{ date, recipeIds: newIds }, ...history];
+  // Keep max 8 entries (covers ~2 months)
+  return updated.slice(0, 8);
+}
+
 async function writeFileToGitHub(path, content, pat) {
   const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`;
   const headers = {
@@ -126,10 +152,19 @@ async function writeFileToGitHub(path, content, pat) {
   }
 }
 
-async function callClaude(recipes, dayList, constraints, instructions) {
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+async function callClaude(recipes, dayList, constraints, instructions, recentIds = new Set()) {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-  const slim = recipes.map((r) => ({
+  const slim = shuffle(recipes).map((r) => ({
     id: r.id, title: r.title, time: r.time,
     tags: r.tags, protein: r.protein, tested: r.tested,
   }));
@@ -154,8 +189,13 @@ async function callClaude(recipes, dayList, constraints, instructions) {
       `7. Exactly ${constraints.vegetarian_days} of the ${dayList.length} days must use a vegetarian recipe (protein='vegetarisk').`
     );
   }
+  if (recentIds.size > 0) {
+    const ruleNum = extraRules.length + 6;
+    extraRules.push(`${ruleNum}. The following recipe IDs were used in the last 4 weeks — AVOID them if possible, only use as last resort: [${[...recentIds].join(", ")}]`);
+  }
   if (instructions?.trim()) {
-    extraRules.push(`8. Additional family instructions: ${instructions.trim()}`);
+    const ruleNum = extraRules.length + 6;
+    extraRules.push(`${ruleNum}. Additional family instructions: ${instructions.trim()}`);
   }
 
   const prompt = `You are a meal planner for a Swedish family. Select ${dayList.length} recipes from the recipe database below — one per day — for the period listed.
@@ -242,15 +282,18 @@ export default async function handler(req, res) {
       vegetarian_days: parseInt(vegetarian_days) || 0,
     };
 
-    const allRecipes = await fetchRecipes();
+    const [allRecipes, historyData] = await Promise.all([fetchRecipes(), fetchHistory()]);
     const filtered = filterRecipes(allRecipes, constraints);
 
     if (filtered.length === 0) {
       return res.status(400).json({ error: "Inga recept kvar efter filtrering — justera inställningarna." });
     }
 
+    // Pass recently used IDs to Claude so it avoids them
+    const recentIds = recentlyUsedIds(historyData.history);
+
     const dayList = buildDayList(start_date, end_date);
-    const days = await callClaude(filtered, dayList, constraints, instructions);
+    const days = await callClaude(filtered, dayList, constraints, instructions, recentIds);
 
     const selectedIds = days.map((d) => d.recipeId).filter(Boolean);
     const shoppingCategories = buildShoppingList(selectedIds, allRecipes);
@@ -258,10 +301,12 @@ export default async function handler(req, res) {
     const today = new Date().toISOString().slice(0, 10);
     const weeklyPlan = { generated: today, startDate: start_date, endDate: end_date, days };
     const shoppingList = { generated: today, startDate: start_date, endDate: end_date, categories: shoppingCategories };
+    const updatedHistory = { history: updateHistory(historyData.history, selectedIds, today) };
 
     await Promise.all([
       writeFileToGitHub("weekly-plan.json", weeklyPlan, pat),
       writeFileToGitHub("shopping-list.json", shoppingList, pat),
+      writeFileToGitHub("recipe-history.json", updatedHistory, pat),
     ]);
 
     return res.status(200).json({ ok: true, days: days.length, weeklyPlan, shoppingList });
