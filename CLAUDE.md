@@ -50,7 +50,7 @@ Bara ett läge syns åt gången. Ska se snyggt ut — inte som en teknisk switch
 ## Designprinciper (följ alltid dessa)
 - **Gratis i första hand** — GitHub Pages + Actions free tier är basnivån. Betallösningar kräver stark motivering.
 - **Noll handpåläggning** — appen ska fungera av sig själv. Föreslå aldrig lösningar som kräver återkommande manuella steg från användaren.
-- **Automatisering via cron** är alltid att föredra framför manuella triggers.
+- **Ingen cron/automatisk generering** — matsedeln genereras alltid manuellt av användaren när det passar familjen. Familjen har ett litet barn och kan inte styra inköp till en fast veckodag. Föreslå aldrig cron-schema eller automatisk schemalagd generering.
 - **Delad data för hela familjen** — localStorage och device-specifika lösningar är aldrig acceptabla. Data måste vara central och tillgänglig för alla enheter.
 - **AI/API bara där det verkligen behövs** — slump + filter är bättre än AI om resultatet är likvärdigt. Ifrågasätt alltid om ett API-anrop tillför värde.
 - **Vercel är backend** — serverless funktioner, secrets och API-anrop hanteras där. GitHub Actions används ej längre.
@@ -173,14 +173,13 @@ Skriptet är uppdelat i tydliga ansvarsområden:
 4. ~~**Manuell trigger**~~ ✅ Klart (knapp i appen + workflow_dispatch)
 5. ~~**Kontrollpanel för receptval**~~ ✅ Klart (inställningar i "Generera ny plan")
 6. **Ta bort Claude API-anrop** — ersätt `call_claude()` i Python med slumpmässigt val
-7. **Lägg till cron-schema** i `weekly-plan.yml` (automatisk körning varje vecka)
-8. **Förbättra matsedelvyn** — ev. visa recept-detaljer direkt i tidslinjekortet
-9. **Willys-erbjudanden** — avaktiverat. Möjlig framtida lösning: annan datakälla.
+7. **Förbättra matsedelvyn** — ev. visa recept-detaljer direkt i tidslinjekortet
+8. **Willys-erbjudanden** — avaktiverat. Möjlig framtida lösning: annan datakälla.
 
 ## Användarens tekniska nivå
 Inte utvecklare men bekväm med GitHub Desktop, kan följa instruktioner.
 Claude Code hanterar all kod — användaren committar och pushar via GitHub Desktop.
-Workflow körs automatiskt via cron. Manuell trigger finns kvar som backup.
+Matsedeln genereras alltid manuellt via appen — inget cron-schema.
 
 ## AI-integration
 ~~Anthropic Claude Haiku användes för receptval~~ — **borttaget i session 4**.
@@ -253,7 +252,7 @@ Testa kontrollpanelen end-to-end via GitHub Actions.
 **Vad vi gjorde:**
 - Insåg att Claude API-anropet för receptval är onödigt — kontrollpanelens filter gör redan jobbet
 - Beslutade att ersätta `call_claude()` med slumpmässigt val i Python (billigare, snabbare, enklare)
-- Beslutade att lägga tillbaka cron-schema i workflow (automatisk körning varje vecka, noll handpåläggning)
+- Beslutade att lägga tillbaka cron-schema i workflow (automatisk körning varje vecka) — **detta beslut reviderades senare, se nedan**
 - Uppdaterade designprinciper i CLAUDE.md: gratis, automatiserat, delad data, AI bara där det behövs
 
 **Var vi slutade:**
@@ -291,7 +290,7 @@ Hela flödet fungerar end-to-end. Generera ny plan → Claude väljer recept →
 Inga kända buggar. Möjliga förbättringar:
 - Förbättra matsedelvyn (visa mer detaljer per dag?)
 - Willys-integration (avaktiverad, framtida möjlighet)
-- Ev. cron-schema för automatisk veckogenerering
+- Matsedeln genereras alltid manuellt — inget cron-schema (familjen har litet barn, kan inte styra inköp till fast dag)
 
 ---
 
@@ -309,4 +308,4 @@ Sidladdning fungerar korrekt. Veckoplanen visas alltid vid besök om en plan fin
 Inga kända buggar. Möjliga förbättringar:
 - Förbättra matsedelvyn (visa mer detaljer per dag?)
 - Willys-integration (avaktiverad, framtida möjlighet)
-- Ev. cron-schema för automatisk veckogenerering
+- Matsedeln genereras alltid manuellt — inget cron-schema (familjen har litet barn, kan inte styra inköp till fast dag)
