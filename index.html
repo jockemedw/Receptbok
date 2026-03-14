@@ -1082,6 +1082,103 @@
     transition: background 0.15s;
   }
   .shop-copy-btn:hover { background: #f5e5dd; }
+
+  /* ── SHOP VIEW ── */
+  #shopView {
+    display: none;
+    padding: 1.5rem 0 4rem;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+  #shopView.visible { display: block; }
+
+  /* ── INGREDIENT PREVIEW (veckovyn) ── */
+  .ingredient-preview { padding: 0 1rem; }
+  .ingredient-preview-category { margin-bottom: 0.75rem; }
+  .ingredient-preview-cat-name {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--warm-brown);
+    margin-bottom: 0.3rem;
+  }
+  .ingredient-preview-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.2rem;
+  }
+  .ingredient-preview-list li { font-size: 0.85rem; color: var(--ink); }
+
+  /* ── FLYTTA BUTTON ── */
+  .flytta-btn {
+    display: block;
+    width: calc(100% - 2rem);
+    margin: 1.2rem 1rem 0;
+    padding: 0.9rem;
+    background: var(--terracotta);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .flytta-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+  .flytta-btn:hover:not(:disabled) { background: #a84522; }
+
+  /* ── MANUAL ADD ── */
+  .manual-add-section {
+    padding: 1rem;
+    border-top: 1px solid var(--border);
+    margin-top: 0.5rem;
+  }
+  .manual-add-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--warm-brown);
+    margin-bottom: 0.6rem;
+  }
+  .manual-add-row { display: flex; gap: 0.5rem; }
+  .manual-add-input {
+    flex: 1;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-family: 'DM Sans', sans-serif;
+    background: white;
+  }
+  .manual-add-btn {
+    padding: 0.6rem 1rem;
+    background: var(--warm-brown);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+  }
+  .manual-add-btn:hover { background: #4a3018; }
+  .manual-add-btn:disabled { opacity: 0.6; }
+  .remove-manual-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0 0.3rem;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .remove-manual-btn:hover { color: var(--terracotta); }
 </style>
 </head>
 <body>
@@ -1092,6 +1189,7 @@
     <nav class="header-nav">
       <button class="header-tab active" id="tabRecept" onclick="switchTab('recept')">Recept</button>
       <button class="header-tab" id="tabVecka" onclick="switchTab('vecka')">Veckans mat</button>
+      <button class="header-tab" id="tabShop" onclick="switchTab('shop')">Inköpslista</button>
     </nav>
   </div>
   <div class="header-search-area" id="headerSearchArea">
@@ -1151,13 +1249,9 @@
     </div>
 
     <div class="week-section">
-      <h2 class="section-title">🛒 Inköpslista</h2>
-      <div class="shop-mode-bar">
-        <button class="shop-mode-btn active" id="modeBtnHandla" onclick="setShopMode('handla')">✓ Handla</button>
-        <button class="shop-mode-btn" id="modeBtnText" onclick="setShopMode('text')">Kopiera lista</button>
-      </div>
-      <div id="shoppingList"></div>
-      <div id="shoppingText" class="shop-text-view"></div>
+      <h2 class="section-title">🧾 Veckans ingredienser</h2>
+      <div id="ingredientPreview" class="ingredient-preview"></div>
+      <button class="flytta-btn" id="flyttaBtn" onclick="moveToShoppingList()">Flytta till inköpslista →</button>
     </div>
   </div>
 
@@ -1266,6 +1360,37 @@
       ✨ Generera ny plan
     </button>
     <div class="trigger-status" id="triggerStatus"></div>
+  </div>
+</div>
+
+<div id="shopView">
+  <div id="shopLoading" class="no-data">
+    <div class="no-data-icon">⏳</div>
+    <p>Laddar inköpslistan…</p>
+  </div>
+  <div id="shopNoData" class="no-data" style="display:none">
+    <div class="no-data-icon">🛒</div>
+    <p>Ingen inköpslista ännu — generera en matsedel och flytta ingredienserna hit.</p>
+  </div>
+  <div id="shopContent" style="display:none">
+    <div class="week-section">
+      <h2 class="section-title">🛒 Inköpslista</h2>
+      <div class="shop-mode-bar">
+        <button class="shop-mode-btn active" id="modeBtnHandla" onclick="setShopMode('handla')">✓ Handla</button>
+        <button class="shop-mode-btn" id="modeBtnText" onclick="setShopMode('text')">Kopiera lista</button>
+      </div>
+      <div id="shoppingList"></div>
+      <div id="shoppingText" class="shop-text-view"></div>
+      <div class="manual-add-section">
+        <div class="manual-add-title">Lägg till vara</div>
+        <div class="manual-add-row">
+          <input type="text" id="manualItemInput" class="manual-add-input"
+                 placeholder="T.ex. Toalettpapper"
+                 onkeydown="if(event.key==='Enter')addManualItem()">
+          <button class="manual-add-btn" id="manualAddBtn" onclick="addManualItem()">Lägg till</button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1532,18 +1657,20 @@ function jumpToRecipe(title) {
 }
 
 function switchTab(tab) {
-  const isRecept = tab === 'recept';
-  document.getElementById('receptView').style.display = isRecept ? '' : 'none';
-  document.getElementById('weekView').classList.toggle('visible', !isRecept);
-  document.getElementById('tabRecept').classList.toggle('active', isRecept);
-  document.getElementById('tabVecka').classList.toggle('active', !isRecept);
-  document.getElementById('headerSearchArea').classList.toggle('hidden', !isRecept);
+  document.getElementById('receptView').style.display = tab === 'recept' ? '' : 'none';
+  document.getElementById('weekView').classList.toggle('visible', tab === 'vecka');
+  document.getElementById('shopView').classList.toggle('visible', tab === 'shop');
+  document.getElementById('tabRecept').classList.toggle('active', tab === 'recept');
+  document.getElementById('tabVecka').classList.toggle('active', tab === 'vecka');
+  document.getElementById('tabShop').classList.toggle('active', tab === 'shop');
+  document.getElementById('headerSearchArea').classList.toggle('hidden', tab !== 'recept');
+  if (tab === 'shop') loadShoppingTab();
   window.scrollTo({ top: 0 });
 }
 
 // ── SHOPPING LIST ──────────────────────────────────────────
 const SHOP_KEY = 'shopping_checked';
-let _shopCategories = null;
+let _freshShopContent = null; // används för att skippa fetch direkt efter API-anrop
 
 function setShopMode(mode) {
   const isHandla = mode === 'handla';
@@ -1566,57 +1693,207 @@ function saveChecked(state) {
   localStorage.setItem(SHOP_KEY, JSON.stringify(state));
 }
 
-function renderShoppingList(categories, generated) {
-  _shopCategories = categories;
-  const state = getChecked(generated);
-  const catIcons = {
-    'Mejeri': '🥛', 'Grönsaker': '🥦', 'Fisk & kött': '🥩',
-    'Skafferi': '🫙', 'Frukt': '🍎', 'Övrigt': '🛍️'
-  };
+const CAT_ICONS = {
+  'Mejeri': '🥛', 'Grönsaker': '🥦', 'Fisk & kött': '🥩',
+  'Skafferi': '🫙', 'Frukt': '🍎', 'Övrigt': '🛍️'
+};
 
-  // ── Handla-läge (checkboxar) ──
-  const checkHtml = Object.entries(categories)
+function renderIngredientPreview(recipeItems, movedAt) {
+  const btn = document.getElementById('flyttaBtn');
+  if (!recipeItems || Object.values(recipeItems).every(v => v.length === 0)) {
+    document.getElementById('ingredientPreview').innerHTML =
+      '<p style="color:var(--text-muted);font-size:0.85rem;padding:0.5rem 0">Inga ingredienser genererade ännu.</p>';
+    btn.style.display = 'none';
+    return;
+  }
+  const html = Object.entries(recipeItems)
     .filter(([, items]) => items.length > 0)
-    .map(([cat, items]) => {
-      const icon = catIcons[cat] || '•';
-      const itemsHtml = items.map((item, idx) => {
-        const key = `${cat}::${idx}`;
-        const checked = state.items[key] || false;
-        return `<li class="shopping-item${checked ? ' checked' : ''}"
-                    onclick="toggleShopItem(this,'${key}','${generated.replace(/'/g,"\\'")}')">
-          <span class="item-checkbox">${checked ? '✓' : ''}</span>
-          <span class="item-text">${item}</span>
-        </li>`;
+    .map(([cat, items]) => `<div class="ingredient-preview-category">
+      <div class="ingredient-preview-cat-name">${CAT_ICONS[cat] || '•'} ${cat}</div>
+      <ul class="ingredient-preview-list">${items.map(i => `<li>${i}</li>`).join('')}</ul>
+    </div>`).join('');
+  document.getElementById('ingredientPreview').innerHTML = html;
+  btn.style.display = '';
+  btn.dataset.movedAt = movedAt || '';
+}
+
+async function moveToShoppingList() {
+  const btn = document.getElementById('flyttaBtn');
+  const movedAt = btn.dataset.movedAt;
+  if (movedAt) {
+    if (!confirm(`Receptvarorna flyttades till inköpslistan ${movedAt}. Vill du ersätta dem?`)) return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'Flyttar…';
+  try {
+    const res = await fetch('https://receptbok-six.vercel.app/api/shopping', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'move' }),
+    });
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    const shop = data.content;
+    btn.dataset.movedAt = shop?.recipeItemsMovedAt || '';
+    btn.textContent = 'Flytta till inköpslista →';
+    btn.disabled = false;
+    // Skicka färskt innehåll till loadShoppingTab så CDN-cache kringgås
+    _freshShopContent = shop;
+    switchTab('shop');
+  } catch {
+    alert('Kunde inte flytta varorna — prova igen.');
+    btn.textContent = 'Flytta till inköpslista →';
+    btn.disabled = false;
+  }
+}
+
+function renderFullShoppingList(recipeItems, manualItems, generatedKey) {
+  const state = getChecked(generatedKey || 'manual');
+  let checkHtml = '';
+  let textParts = [];
+  let textBlocksHtml = '';
+
+  if (recipeItems) {
+    checkHtml += Object.entries(recipeItems)
+      .filter(([, items]) => items.length > 0)
+      .map(([cat, items]) => {
+        const icon = CAT_ICONS[cat] || '•';
+        const itemsHtml = items.map((item, idx) => {
+          const key = `recipe::${cat}::${idx}`;
+          const checked = state.items[key] || false;
+          return `<li class="shopping-item${checked ? ' checked' : ''}"
+                      onclick="toggleShopItem(this,'${key}','${(generatedKey||'').replace(/'/g,"\\'")}')">
+            <span class="item-checkbox">${checked ? '✓' : ''}</span>
+            <span class="item-text">${item}</span>
+          </li>`;
+        }).join('');
+        return `<div class="shopping-category">
+          <div class="shopping-cat-header">
+            <span class="shopping-cat-name">${icon} ${cat}</span>
+            <span class="shopping-cat-count">${items.length} varor</span>
+          </div>
+          <ul class="shopping-items">${itemsHtml}</ul>
+        </div>`;
       }).join('');
-      return `<div class="shopping-category">
-        <div class="shopping-cat-header">
-          <span class="shopping-cat-name">${icon} ${cat}</span>
-          <span class="shopping-cat-count">${items.length} varor</span>
-        </div>
-        <ul class="shopping-items">${itemsHtml}</ul>
-      </div>`;
+
+    const recipeText = Object.entries(recipeItems)
+      .filter(([, items]) => items.length > 0)
+      .map(([cat, items]) => `${cat}:\n${items.map(i => '• ' + i).join('\n')}`)
+      .join('\n\n');
+    if (recipeText) textParts.push(recipeText);
+
+    textBlocksHtml += Object.entries(recipeItems)
+      .filter(([, items]) => items.length > 0)
+      .map(([cat, items]) => `<div class="shop-text-category">
+        <div class="shop-text-cat-name">${CAT_ICONS[cat] || '•'} ${cat}</div>
+        <div class="shop-text-items">${items.map(i => '• ' + i).join('\n')}</div>
+      </div>`).join('');
+  }
+
+  if (manualItems.length > 0) {
+    const manualHtml = manualItems.map((item, idx) => {
+      const key = `manual::${idx}`;
+      const checked = state.items[key] || false;
+      return `<li class="shopping-item${checked ? ' checked' : ''}"
+                  onclick="toggleShopItem(this,'${key}','${(generatedKey||'').replace(/'/g,"\\'")}')">
+        <span class="item-checkbox">${checked ? '✓' : ''}</span>
+        <span class="item-text">${item}</span>
+        <button class="remove-manual-btn" onclick="event.stopPropagation();removeManualItem('${item.replace(/'/g,"\\'")}')">×</button>
+      </li>`;
     }).join('');
+    checkHtml += `<div class="shopping-category">
+      <div class="shopping-cat-header">
+        <span class="shopping-cat-name">📝 Egna tillägg</span>
+        <span class="shopping-cat-count">${manualItems.length} varor</span>
+      </div>
+      <ul class="shopping-items">${manualHtml}</ul>
+    </div>`;
+    textParts.push(`Egna tillägg:\n${manualItems.map(i => '• ' + i).join('\n')}`);
+    textBlocksHtml += `<div class="shop-text-category">
+      <div class="shop-text-cat-name">📝 Egna tillägg</div>
+      <div class="shop-text-items">${manualItems.map(i => '• ' + i).join('\n')}</div>
+    </div>`;
+  }
 
   document.getElementById('shoppingList').innerHTML = checkHtml;
-
-  // ── Text-läge (kopierbar) ──
-  const textBlocks = Object.entries(categories)
-    .filter(([, items]) => items.length > 0)
-    .map(([cat, items]) => `<div class="shop-text-category">
-      <div class="shop-text-cat-name">${catIcons[cat] || '•'} ${cat}</div>
-      <div class="shop-text-items">${items.map(i => '• ' + i).join('\n')}</div>
-    </div>`).join('');
-
-  const fullText = Object.entries(categories)
-    .filter(([, items]) => items.length > 0)
-    .map(([cat, items]) => `${cat}:\n${items.map(i => '• ' + i).join('\n')}`)
-    .join('\n\n');
-
-  document.getElementById('shoppingText').innerHTML =
-    textBlocks +
+  const textEl = document.getElementById('shoppingText');
+  textEl.innerHTML = textBlocksHtml +
     `<button class="shop-copy-btn" onclick="copyShoppingList()">Kopiera hela listan</button>`;
+  textEl._fullText = textParts.join('\n\n');
+}
 
-  document.getElementById('shoppingText')._fullText = fullText;
+async function loadShoppingTab() {
+  document.getElementById('shopLoading').style.display = '';
+  document.getElementById('shopContent').style.display = 'none';
+  document.getElementById('shopNoData').style.display = 'none';
+  try {
+    let shop;
+    if (_freshShopContent) {
+      shop = _freshShopContent;
+      _freshShopContent = null;
+    } else {
+      const res = await fetch('shopping-list.json?' + Date.now());
+      if (!res.ok) throw new Error();
+      shop = await res.json();
+    }
+    const hasRecipe = shop.recipeItemsMovedAt &&
+      shop.recipeItems && Object.values(shop.recipeItems).some(v => v.length > 0);
+    const hasManual = shop.manualItems?.length > 0;
+    document.getElementById('shopLoading').style.display = 'none';
+    if (!hasRecipe && !hasManual) {
+      document.getElementById('shopNoData').style.display = '';
+      return;
+    }
+    document.getElementById('shopContent').style.display = '';
+    renderFullShoppingList(
+      hasRecipe ? shop.recipeItems : null,
+      shop.manualItems || [],
+      shop.recipeItemsMovedAt || shop.generated
+    );
+  } catch {
+    document.getElementById('shopLoading').style.display = 'none';
+    document.getElementById('shopNoData').style.display = '';
+  }
+}
+
+async function addManualItem() {
+  const input = document.getElementById('manualItemInput');
+  const item = input.value.trim();
+  if (!item) return;
+  const btn = document.getElementById('manualAddBtn');
+  btn.disabled = true;
+  try {
+    const res = await fetch('https://receptbok-six.vercel.app/api/shopping', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'add', item }),
+    });
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    _freshShopContent = data.content;
+    input.value = '';
+    loadShoppingTab();
+  } catch {
+    alert('Kunde inte lägga till varan — prova igen.');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function removeManualItem(item) {
+  try {
+    const res = await fetch('https://receptbok-six.vercel.app/api/shopping', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'remove', item }),
+    });
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    _freshShopContent = data.content;
+    loadShoppingTab();
+  } catch {
+    alert('Kunde inte ta bort varan — prova igen.');
+  }
 }
 
 function copyShoppingList() {
@@ -1670,9 +1947,8 @@ function renderWeeklyPlanData(plan, shop) {
     if (target) target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   }, 150);
 
-  if (shop?.categories) {
-    renderShoppingList(shop.categories, shop.generated || plan.generated);
-  }
+  const recipeItems = shop?.recipeItems || shop?.categories || null;
+  renderIngredientPreview(recipeItems, shop?.recipeItemsMovedAt || null);
 }
 
 async function loadWeeklyPlan() {

@@ -106,6 +106,13 @@ async function fetchHistory() {
   return res.json();
 }
 
+async function fetchShoppingList() {
+  const url = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRANCH}/shopping-list.json`;
+  const res = await fetch(url);
+  if (!res.ok) return null;
+  return res.json();
+}
+
 // Returns Set of recipe IDs used within the last `days` days
 function recentlyUsedIds(history, days = 28) {
   const cutoff = new Date();
@@ -281,7 +288,7 @@ export default async function handler(req, res) {
       vegetarian_days: parseInt(vegetarian_days) || 0,
     };
 
-    const [allRecipes, historyData] = await Promise.all([fetchRecipes(), fetchHistory()]);
+    const [allRecipes, historyData, existingShop] = await Promise.all([fetchRecipes(), fetchHistory(), fetchShoppingList()]);
     const filtered = filterRecipes(allRecipes, constraints);
 
     if (filtered.length === 0) {
@@ -299,7 +306,12 @@ export default async function handler(req, res) {
 
     const today = new Date().toISOString().slice(0, 10);
     const weeklyPlan = { generated: today, startDate: start_date, endDate: end_date, days };
-    const shoppingList = { generated: today, startDate: start_date, endDate: end_date, categories: shoppingCategories };
+    const shoppingList = {
+      generated: today, startDate: start_date, endDate: end_date,
+      recipeItems: shoppingCategories,
+      recipeItemsMovedAt: null,
+      manualItems: existingShop?.manualItems || [],
+    };
     const updatedHistory = { history: updateHistory(historyData.history, selectedIds, today) };
 
     await Promise.all([
