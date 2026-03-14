@@ -86,7 +86,7 @@ function buildShoppingList(selectedIds, allRecipes) {
 async function fetchRecipes() {
   const url = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRANCH}/recipes.json`;
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`Kunde inte läsa recipes.json: ${res.status}`);
+  if (!res.ok) throw new Error("Kunde inte hämta receptdatabasen — kontrollera att recipes.json finns i repot.");
   const data = await res.json();
   return data.recipes.map((r) => ({
     id: r.id,
@@ -147,8 +147,7 @@ async function writeFileToGitHub(path, content, pat) {
     });
     if (putRes.ok) return;
     if (putRes.status === 409 && attempt < 2) continue; // SHA conflict — retry with fresh SHA
-    const err = await putRes.text();
-    throw new Error(`GitHub API-fel för ${path}: ${putRes.status} — ${err}`);
+    throw new Error(`Kunde inte spara ${path} — prova att generera igen.`);
   }
 }
 
