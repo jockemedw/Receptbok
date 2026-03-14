@@ -1094,24 +1094,43 @@
 
   /* ── INGREDIENT PREVIEW (veckovyn) ── */
   .ingredient-preview { padding: 0 1rem; }
-  .ingredient-preview-category { margin-bottom: 0.75rem; }
+  .ingredient-preview-category {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 0.8rem;
+  }
   .ingredient-preview-cat-name {
-    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.8rem 1rem;
+    background: #f9f6f1;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.8rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--warm-brown);
-    margin-bottom: 0.3rem;
+  }
+  .ingredient-preview-cat-count {
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--text-muted);
   }
   .ingredient-preview-list {
     list-style: none;
     padding: 0;
     margin: 0;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem 1.2rem;
   }
-  .ingredient-preview-list li { font-size: 0.85rem; color: var(--ink); }
+  .ingredient-preview-list li {
+    padding: 0.55rem 1rem;
+    font-size: 0.88rem;
+    color: var(--ink);
+    border-bottom: 1px solid var(--border);
+  }
+  .ingredient-preview-list li:last-child { border-bottom: none; }
 
   /* ── FLYTTA BUTTON ── */
   .flytta-btn {
@@ -1709,7 +1728,10 @@ function renderIngredientPreview(recipeItems, movedAt) {
   const html = Object.entries(recipeItems)
     .filter(([, items]) => items.length > 0)
     .map(([cat, items]) => `<div class="ingredient-preview-category">
-      <div class="ingredient-preview-cat-name">${CAT_ICONS[cat] || '•'} ${cat}</div>
+      <div class="ingredient-preview-cat-name">
+        <span>${CAT_ICONS[cat] || '•'} ${cat}</span>
+        <span class="ingredient-preview-cat-count">${items.length} varor</span>
+      </div>
       <ul class="ingredient-preview-list">${items.map(i => `<li>${i}</li>`).join('')}</ul>
     </div>`).join('');
   document.getElementById('ingredientPreview').innerHTML = html;
@@ -1836,8 +1858,10 @@ async function loadShoppingTab() {
       if (!res.ok) throw new Error();
       shop = await res.json();
     }
+    // Stöd för både nytt (recipeItems) och gammalt (categories) format
+    const recipeItemsData = shop.recipeItems || shop.categories || null;
     const hasRecipe = shop.recipeItemsMovedAt &&
-      shop.recipeItems && Object.values(shop.recipeItems).some(v => v.length > 0);
+      recipeItemsData && Object.values(recipeItemsData).some(v => v.length > 0);
     const hasManual = shop.manualItems?.length > 0;
     document.getElementById('shopLoading').style.display = 'none';
     if (!hasRecipe && !hasManual) {
@@ -1846,7 +1870,7 @@ async function loadShoppingTab() {
     }
     document.getElementById('shopContent').style.display = '';
     renderFullShoppingList(
-      hasRecipe ? shop.recipeItems : null,
+      hasRecipe ? recipeItemsData : null,
       shop.manualItems || [],
       shop.recipeItemsMovedAt || shop.generated
     );
