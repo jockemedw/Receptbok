@@ -135,9 +135,9 @@ async function writeFileToGitHub(path, content, pat) {
   const encoded = Buffer.from(JSON.stringify(content, null, 2)).toString("base64");
   const message = `Matsedel ${new Date().toISOString().slice(0, 10)} — autogenererad`;
 
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (let attempt = 0; attempt < 3; attempt++) {
     let sha;
-    const getRes = await fetch(apiUrl, { headers });
+    const getRes = await fetch(`${apiUrl}?t=${Date.now()}`, { headers });
     if (getRes.ok) sha = (await getRes.json()).sha;
 
     const putRes = await fetch(apiUrl, {
@@ -146,7 +146,7 @@ async function writeFileToGitHub(path, content, pat) {
       body: JSON.stringify({ message, content: encoded, branch: BRANCH, ...(sha ? { sha } : {}) }),
     });
     if (putRes.ok) return;
-    if (putRes.status === 409 && attempt === 0) continue; // SHA conflict — retry with fresh SHA
+    if (putRes.status === 409 && attempt < 2) continue; // SHA conflict — retry with fresh SHA
     const err = await putRes.text();
     throw new Error(`GitHub API-fel för ${path}: ${putRes.status} — ${err}`);
   }
