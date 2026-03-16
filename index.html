@@ -1308,7 +1308,7 @@
           </label>
           <div class="setting-control">
             <input type="number" id="untestedCount" class="setting-num"
-                   min="0" max="7" value="0" onchange="updateDateHint()">
+                   min="0" max="7" value="1" onchange="updateDateHint()">
             <span class="setting-unit">st</span>
           </div>
         </div>
@@ -1348,7 +1348,7 @@
           </label>
           <div class="setting-control">
             <input type="number" id="vegetarianDays" class="setting-num"
-                   min="0" max="7" value="0" onchange="updateDateHint()">
+                   min="0" max="7" value="4" onchange="updateDateHint()">
             <span class="setting-unit">dagar</span>
           </div>
         </div>
@@ -1626,15 +1626,20 @@ async function generatePlan() {
   status.className = 'trigger-status';
 
   try {
+    const untestedPerWeek  = parseFloat(document.getElementById('untestedCount').value)  || 0;
+    const vegDaysPerWeek   = parseFloat(document.getElementById('vegetarianDays').value) || 0;
+    const scaledUntested   = Math.round(diff / 7 * untestedPerWeek);
+    const scaledVegetarian = Math.round(diff / 7 * vegDaysPerWeek);
+
     const body = {
       start_date:      startVal,
       end_date:        endVal,
       instructions:    document.getElementById('instructions').value,
       allowed_proteins: getSelectedProteins().join(','),
-      untested_count:  document.getElementById('untestedCount').value,
+      untested_count:  scaledUntested,
       max_weekday_time: document.getElementById('maxWeekdayTime').value,
       max_weekend_time: document.getElementById('maxWeekendTime').value,
-      vegetarian_days: document.getElementById('vegetarianDays').value,
+      vegetarian_days: scaledVegetarian,
     };
 
     const res = await fetch('https://receptbok-six.vercel.app/api/generate', {
