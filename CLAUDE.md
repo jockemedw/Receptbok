@@ -116,6 +116,10 @@ Receptbok/
 8. **Flerval i receptfilter** — möjlighet att klicka i flera filter samtidigt (nu är det ett åt gången)
 9. **Prövat/Oprövat-filter** — lägg till båda som valbara filter i receptboken
 10. **Agent/skill för receptväljaren** — träna/bygga en dedikerad agent (Claude skill) för receptvalet som anropas vid matsedelsgenerering, ersätter nuvarande prompt-lösning i `api/generate.js`
+    - **10a. Recipe Selector Agent** *(kärnan)* — ersätter `callClaude()` med ett tool use-flöde: hämtar rätt delmängd per dag-typ, validerar att returnerade ID:n faktiskt finns i poolen, retry vid regelkollision. Löser: hallucination av ID:n, tysta fel, motstridiga regler.
+    - **10b. Inköpsliste-aggregator** — skickar råingredienslistan till Haiku som slår samman kvantiteter och normaliserar enheter ("2 msk smör" + "100 g smör" → ett item). Deterministisk kod klarar inte enhetsblandning. Löser: dubbletter och fragmenterad inköpslista.
+    - **10c. Receptimportör** — klistra in URL → Haiku hämtar sida, tolkar recept, översätter till svenska, föreslår protein/tags, returnerar recept-objekt redo att lägga till i `recipes.json`. Löser: databasen kan bara växa manuellt idag.
+    - **10d. Matlagningsläge** *(ingen AI)* — "Laga nu"-knapp öppnar fokuserat steg-för-steg-vy, en instruktion i taget, avbockningsbar, skärmen hålls vaken. Frontend-only. Löser: receptkort är oanvändbara i köket med mjölhänder.
 
 ## Senaste session (2026-03-14 — Session 8)
 - Stängde av Antigravity som todo-punkt — användaren pushar och refreshar, inget lokalt behov
@@ -124,14 +128,18 @@ Receptbok/
 
 ## Session 9 (2026-03-16)
 - **Punkt 3 klar:** Standardvärden satta — untestedCount 0→1, vegetarianDays 0→4. Skalning sker proportionellt vid generering (Math.round(dagar/7 × värde)), displayvärdena ändras aldrig.
-- **Punkt 10 påbörjad men pausad:** Djupanalys av hela repot genomförd. Tre konkreta problem identifierade i receptvalet (se nedan). Avvaktar svar från användaren om vad som upplevs som fel i praktiken — innan någon implementation påbörjas.
+- **Punkt 10 analyserad och nedbruten:** Fullständig repogenomgång genomförd. Fyra underliggande problem identifierade och brutna ut som 10a–10d (se Nästa steg). Klar att implementera i prioritetsordning.
 
-### Punkt 10 — öppen fråga till nästa session
-Tre problem hittade i `callClaude()` / receptvalet:
-1. **Ingen validering av returdata** — Claude kan hallucinera recept-ID:n, returdata kollas knappt
-2. **Motstridiga regler** — "helg60 MÅSTE användas" vs "samma protein max 2 ggr" krockar vid smal databas (t.ex. bara fisk + flera helgdagar)
-3. **Databas-bias är dold** — 66% vegetariska recept, Claude vet inte om det sneda urvalet
+### Kodfynd från repogenomgången (session 9)
+**`callClaude()` i `generate.js` — tre konkreta buggar:**
+1. **Ingen ID-validering** — `JSON.parse(raw)` utan kontroll att returnerade recept-ID:n finns i filtrerad pool. Tysta fel om Claude hallucinerar ett ID.
+2. **Regelkollision** — "helg60 MÅSTE användas" krockar med "samma protein max 2 ggr" vid smal pool (t.ex. bara fisk + flera helgdagar). Ingen fallback.
+3. **Dold databas-bias** — 66% vegetariska recept (41/62), Claude informeras ej. Kan ge skeva val.
 
-**Fråga att ställa användaren:** Vad har gått snett i praktiken — finns det matsedlar som blivit dåliga, och i så fall varför?
+**`buildShoppingList()` — kvantiteter aggregeras aldrig:**
+`seen.has(key)` deduplicerar på exakt sträng. "2 msk smör" och "100 g smör" hamnar båda på listan. Eskalerar med fler dagar.
 
-**Nästa session börjar med:** Få svar på ovanstående fråga, sedan besluta om punkt 10 ska vara bugfix, agentic refactor, eller något annat.
+**Databas-snapshot (2026-03-16):**
+- 62 recept, 19 testade (31%)
+- Proteiner: vegetarisk 41, fisk 10, kyckling 7, kött 3, fläsk 1
+- Tags: vardag30: 27, helg60: 18, soppa: 11, veg: 24
