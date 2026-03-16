@@ -115,6 +115,7 @@ Receptbok/
 7. **Portionsanpassning** — konvertera alla recept till 4 portioner (genomgång av recipes.json)
 8. **Flerval i receptfilter** — möjlighet att klicka i flera filter samtidigt (nu är det ett åt gången)
 9. **Prövat/Oprövat-filter** — lägg till båda som valbara filter i receptboken
+10. **Agent/skill för receptväljaren** — träna/bygga en dedikerad agent (Claude skill) för receptvalet som anropas vid matsedelsgenerering, ersätter nuvarande prompt-lösning i `api/generate.js`
 
 ## Senaste session (2026-03-14 — Session 8)
 - Stängde av Antigravity som todo-punkt — användaren pushar och refreshar, inget lokalt behov
