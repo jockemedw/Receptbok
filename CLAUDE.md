@@ -122,4 +122,16 @@ Receptbok/
 - Lade till "Stanna och bekräfta"-regel i Operativa regler — agera ej på feedback utan att fråga först
 - To-do-listan fastställd, inga kodfixar gjorda
 
-**Nästa session börjar med punkt 1 i Nästa steg:** Migrera till Vercel-URL (CORS → `*`, relativa fetch-anrop).
+## Session 9 (2026-03-16)
+- **Punkt 3 klar:** Standardvärden satta — untestedCount 0→1, vegetarianDays 0→4. Skalning sker proportionellt vid generering (Math.round(dagar/7 × värde)), displayvärdena ändras aldrig.
+- **Punkt 10 påbörjad men pausad:** Djupanalys av hela repot genomförd. Tre konkreta problem identifierade i receptvalet (se nedan). Avvaktar svar från användaren om vad som upplevs som fel i praktiken — innan någon implementation påbörjas.
+
+### Punkt 10 — öppen fråga till nästa session
+Tre problem hittade i `callClaude()` / receptvalet:
+1. **Ingen validering av returdata** — Claude kan hallucinera recept-ID:n, returdata kollas knappt
+2. **Motstridiga regler** — "helg60 MÅSTE användas" vs "samma protein max 2 ggr" krockar vid smal databas (t.ex. bara fisk + flera helgdagar)
+3. **Databas-bias är dold** — 66% vegetariska recept, Claude vet inte om det sneda urvalet
+
+**Fråga att ställa användaren:** Vad har gått snett i praktiken — finns det matsedlar som blivit dåliga, och i så fall varför?
+
+**Nästa session börjar med:** Få svar på ovanstående fråga, sedan besluta om punkt 10 ska vara bugfix, agentic refactor, eller något annat.
