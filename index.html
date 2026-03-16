@@ -45,9 +45,9 @@
 
   .header-bar {
     display: flex;
+    flex-direction: column;
     align-items: stretch;
-    padding: 0 1.25rem;
-    height: 54px;
+    padding: 0.6rem 1.25rem 0;
   }
 
   header h1 {
@@ -58,8 +58,7 @@
     color: var(--cream);
     display: flex;
     align-items: center;
-    margin-right: auto;
-    padding-right: 1.5rem;
+    padding-bottom: 0.4rem;
   }
 
   header h1 em {
@@ -80,11 +79,12 @@
     font-size: 0.88rem;
     font-weight: 500;
     letter-spacing: 0.03em;
-    padding: 0 1.1rem;
+    padding: 0.5rem 0;
     cursor: pointer;
     transition: color 0.2s, border-color 0.25s;
     white-space: nowrap;
-    height: 100%;
+    flex: 1;
+    text-align: center;
   }
 
   .header-tab:hover { color: rgba(250,247,242,0.75); }
