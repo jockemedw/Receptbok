@@ -1539,7 +1539,10 @@ function toggleCard(card) {
   document.querySelectorAll('.recipe-card.open').forEach(c => c.classList.remove('open'));
   if (!wasOpen) {
     card.classList.add('open');
-    setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 150);
+    setTimeout(() => {
+      const top = card.getBoundingClientRect().top + window.scrollY - headerEl.offsetHeight - 8;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }, 150);
   }
 }
 
@@ -2049,6 +2052,8 @@ function toggleStep(li) { li.classList.toggle('done'); }
 const scrollBtn = document.getElementById('scrolltop');
 const headerEl  = document.querySelector('header');
 let lastScrollY = 0;
+let scrollUpAccum = 0;
+const HEADER_SHOW_THRESHOLD = 80;
 
 new ResizeObserver(() => {
   document.body.style.paddingTop = headerEl.offsetHeight + 'px';
@@ -2057,10 +2062,12 @@ new ResizeObserver(() => {
 window.addEventListener('scroll', () => {
   const y = window.scrollY;
   scrollBtn.classList.toggle('visible', y > 400);
-  if (y > lastScrollY && y > headerEl.offsetHeight) {
-    headerEl.classList.add('header-hidden');
+  if (y > lastScrollY) {
+    scrollUpAccum = 0;
+    if (y > headerEl.offsetHeight) headerEl.classList.add('header-hidden');
   } else {
-    headerEl.classList.remove('header-hidden');
+    scrollUpAccum += lastScrollY - y;
+    if (scrollUpAccum >= HEADER_SHOW_THRESHOLD) headerEl.classList.remove('header-hidden');
   }
   lastScrollY = y;
 }, { passive: true });
