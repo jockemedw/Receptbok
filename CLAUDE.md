@@ -106,7 +106,7 @@ Receptbok/
 ```
 
 ## Nästa steg (prioritetsordning)
-1. **Migrera till Vercel-URL** — CORS → `*`, fetch → relativ URL, GitHub Pages kvar som backup
+1. ~~**Migrera till Vercel-URL**~~ — **KLAR** (session 10, 2026-03-23)
 2. **Inköpslistan** — se över hur ingredienser läses och rationaliseras (kända misstag)
 3. **Standardvärden** — sätt rimliga defaults i generatorn (inte 0 på allt)
 4. **Matlagningsläge** — "Laga detta recept"-knapp med avbockningsbara instruktioner
@@ -135,3 +135,6 @@ Tre problem hittade i `callClaude()` / receptvalet:
 **Fråga att ställa användaren:** Vad har gått snett i praktiken — finns det matsedlar som blivit dåliga, och i så fall varför?
 
 **Nästa session börjar med:** Få svar på ovanstående fråga, sedan besluta om punkt 10 ska vara bugfix, agentic refactor, eller något annat.
+
+## Session 10 (2026-03-23)
+- **Punkt 1 klar:** Hårdkodade Vercel-URL:er (`https://receptbok-six.vercel.app/api/...`) bytta mot relativa sökvägar (`/api/...`) i index.html. CORS var redan `*` i båda endpoints. Pushades direkt till main.
