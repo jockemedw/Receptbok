@@ -1642,7 +1642,7 @@ async function generatePlan() {
       vegetarian_days: scaledVegetarian,
     };
 
-    const res = await fetch('https://receptbok-six.vercel.app/api/generate', {
+    const res = await fetch('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -1753,7 +1753,7 @@ async function moveToShoppingList() {
   btn.disabled = true;
   btn.textContent = 'Flyttar…';
   try {
-    const res = await fetch('https://receptbok-six.vercel.app/api/shopping', {
+    const res = await fetch('/api/shopping', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'move' }),
@@ -1892,7 +1892,7 @@ async function addManualItem() {
   const btn = document.getElementById('manualAddBtn');
   btn.disabled = true;
   try {
-    const res = await fetch('https://receptbok-six.vercel.app/api/shopping', {
+    const res = await fetch('/api/shopping', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'add', item }),
@@ -1911,7 +1911,7 @@ async function addManualItem() {
 
 async function removeManualItem(item) {
   try {
-    const res = await fetch('https://receptbok-six.vercel.app/api/shopping', {
+    const res = await fetch('/api/shopping', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'remove', item }),
