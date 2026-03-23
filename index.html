@@ -1534,6 +1534,21 @@ function applyFilters() {
     ? `Visar ${shown} av ${RECIPES.length} recept` : '';
 }
 
+function smoothScrollTo(target, duration) {
+  const start = window.scrollY;
+  const dist  = target - start;
+  let startTime = null;
+  function step(ts) {
+    if (!startTime) startTime = ts;
+    const elapsed = ts - startTime;
+    const t = Math.min(elapsed / duration, 1);
+    const ease = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; // ease-in-out
+    window.scrollTo(0, start + dist * ease);
+    if (elapsed < duration) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
 function toggleCard(card) {
   const wasOpen = card.classList.contains('open');
   document.querySelectorAll('.recipe-card.open').forEach(c => c.classList.remove('open'));
@@ -1542,7 +1557,7 @@ function toggleCard(card) {
     setTimeout(() => {
       const hh  = document.querySelector('header').offsetHeight;
       const top = card.getBoundingClientRect().top + window.scrollY - hh - 12;
-      window.scrollTo({ top, behavior: 'smooth' });
+      smoothScrollTo(top, 680);
     }, 400);
   }
 }
