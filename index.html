@@ -1540,9 +1540,10 @@ function toggleCard(card) {
   if (!wasOpen) {
     card.classList.add('open');
     setTimeout(() => {
-      const top = card.getBoundingClientRect().top + window.scrollY - headerEl.offsetHeight - 8;
+      const hh  = document.querySelector('header').offsetHeight;
+      const top = card.getBoundingClientRect().top + window.scrollY - hh - 12;
       window.scrollTo({ top, behavior: 'smooth' });
-    }, 150);
+    }, 400);
   }
 }
 
