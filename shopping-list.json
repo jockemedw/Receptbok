@@ -86,5 +86,8 @@
     ],
     "Övrigt": []
   },
-  "recipeItemsMovedAt": "2026-03-14"
+  "recipeItemsMovedAt": "2026-03-14",
+  "manualItems": [
+    "Basilika"
+  ]
 }
