@@ -37,11 +37,15 @@
   header {
     background: var(--warm-brown);
     color: var(--cream);
-    position: sticky;
+    position: fixed;
     top: 0;
+    left: 0;
+    right: 0;
     z-index: 100;
     box-shadow: 0 1px 0 rgba(255,255,255,0.06), 0 4px 28px rgba(0,0,0,0.2);
+    transition: transform 0.3s ease;
   }
+  header.header-hidden { transform: translateY(-100%); }
 
   .header-bar {
     display: flex;
@@ -425,6 +429,17 @@
     font-size: 0.9rem;
     line-height: 1.65;
     color: var(--ink);
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .steps-list li.done::before {
+    content: '✓';
+    background: #6aaa3e;
+  }
+  .steps-list li.done span {
+    text-decoration: line-through;
+    opacity: 0.45;
   }
 
   .steps-list li::before {
@@ -1440,7 +1455,7 @@ function renderIngredient(i) {
 function renderCard(r) {
   const t = timeStr(r);
   const ingHtml   = r.ingredients.map(renderIngredient).join('');
-  const stepsHtml = r.instructions.map(s => `<li>${s}</li>`).join('');
+  const stepsHtml = r.instructions.map(s => `<li onclick="toggleStep(this)"><span>${s}</span></li>`).join('');
   const notesHtml = r.notes
     ? `<div class="detail-section"><h3>Noteringar</h3><div class="notes-box">💡 ${r.notes}</div></div>`
     : '';
@@ -2029,8 +2044,27 @@ document.getElementById('filters').addEventListener('click', e => {
   applyFilters();
 });
 
+function toggleStep(li) { li.classList.toggle('done'); }
+
 const scrollBtn = document.getElementById('scrolltop');
-window.addEventListener('scroll', () => scrollBtn.classList.toggle('visible', window.scrollY > 400));
+const headerEl  = document.querySelector('header');
+let lastScrollY = 0;
+
+new ResizeObserver(() => {
+  document.body.style.paddingTop = headerEl.offsetHeight + 'px';
+}).observe(headerEl);
+
+window.addEventListener('scroll', () => {
+  const y = window.scrollY;
+  scrollBtn.classList.toggle('visible', y > 400);
+  if (y > lastScrollY && y > headerEl.offsetHeight) {
+    headerEl.classList.add('header-hidden');
+  } else {
+    headerEl.classList.remove('header-hidden');
+  }
+  lastScrollY = y;
+}, { passive: true });
+
 scrollBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
 init();
