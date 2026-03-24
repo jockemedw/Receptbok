@@ -137,6 +137,9 @@ const NORMALIZATION_TABLE = {
   // Diverse
   "gröna oliver": "oliver", "svarta oliver": "oliver",
   "flytande honung": "honung", "sweet chilisås": "sweet chili",
+  // Nötter (tillagningsbeskrivningar)
+  "hackade nötter": "nötter", "grovhackade nötter": "nötter",
+  "rostade nötter/frön": "nötter",
 };
 
 // Steg 5: Kategorinyckelord (utökade)
@@ -187,6 +190,14 @@ const CATEGORY_KEYWORDS = {
   Övrigt: [],
 };
 
+// Enheter som inte är meningsfulla på en inköpslista — visa bara ingrediensnamnet
+const SMALL_UNITS = new Set(["tsk", "krm", "msk", "nypa", "tumme"]);
+
+// Ingredienser som aldrig ska visas på inköpslistan
+const PANTRY_ALWAYS_SKIP = new Set([
+  "salt", "svartpeppar", "vitpeppar", "vatten", "salt & peppar",
+]);
+
 // Svenska matlagningsenheter (längst först för regex-matchning)
 const SWEDISH_UNITS = [
   "förpackning", "stycken",
@@ -194,7 +205,7 @@ const SWEDISH_UNITS = [
   "burk", "frp", "förp", "pkt", "paket", "påsar", "påse",
   "krukor", "kruka", "knippe", "skivor", "klyftor", "bitar", "kvistar",
   "skiva", "klyfta", "kvist", "bit",
-  "huvud", "näve", "nypa", "st",
+  "huvud", "näve", "nypa", "tumme", "st",
   "g", "l",
 ];
 
@@ -227,6 +238,7 @@ function cleanIngredient(raw) {
   let s = raw.includes(":") ? raw.split(":")[1].trim() : raw.trim();
   s = s.replace(/\s*\(.*?\)\s*/g, " ").trim(); // strip parentes
   s = s.replace(/^(ev\.?\s+|eventuellt\s+|ca\s+)/i, ""); // strip prefix
+  s = s.replace(/^(nykokt|nykokta|kokt|kokta|stekt|stekta|rostad|rostade|tinad|tinade)\s+/i, ""); // strip tillagningsbeskrivningar
   return s;
 }
 
@@ -339,6 +351,27 @@ function buildShoppingList(selectedIds, allRecipes) {
         }
       }
     }
+  }
+
+  // Steg 4.5: Filtrera bort basvaror och konvertera småenheter till bara namn
+  for (const [key, item] of merged) {
+    if (PANTRY_ALWAYS_SKIP.has(item.name)) {
+      merged.delete(key);
+      continue;
+    }
+    if (SMALL_UNITS.has(item.unit)) {
+      merged.delete(key);
+      // Lägg till som namn utan mängd, om inte en stor-enhetspost redan finns
+      const hasLargeUnit = [...merged.keys()].some(
+        (k) => k.startsWith(item.name + "||") && !SMALL_UNITS.has(merged.get(k)?.unit)
+      );
+      if (!hasLargeUnit) {
+        noAmount.set(item.name, item.name);
+      }
+    }
+  }
+  for (const [name] of noAmount) {
+    if (PANTRY_ALWAYS_SKIP.has(name)) noAmount.delete(name);
   }
 
   // Steg 5: Kategorisera och bygg listor
