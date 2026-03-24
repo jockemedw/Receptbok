@@ -27,10 +27,14 @@ const NORMALIZATION_TABLE = {
   // Vitlök
   "vitlök": "vitlöksklyftor",
   "vitlöksklyfta": "vitlöksklyftor", "vitlöksklyftor": "vitlöksklyftor",
+  "stor vitlöksklyfta": "vitlöksklyftor", "liten vitlöksklyfta": "vitlöksklyftor",
+  "stor vitlök": "vitlöksklyftor", "liten vitlök": "vitlöksklyftor",
   "pressad vitlök": "vitlöksklyftor", "krossad vitlök": "vitlöksklyftor",
   "riven vitlök": "vitlöksklyftor", "rivna vitlöksklyftor": "vitlöksklyftor",
   "skivad vitlök": "vitlöksklyftor", "finhackad vitlök": "vitlöksklyftor",
   "hackad vitlök": "vitlöksklyftor", "vitlöksfond": "vitlöksklyftor",
+  // Kyckling (plural)
+  "kycklingfiléer": "kycklingfilé",
   // Morötter (plural matchar inte "morot" som substring)
   "morötter": "morot", "rivna morötter": "morot", "grovriven morot": "morot",
   "skivade morötter": "morot", "tärnade morötter": "morot",
@@ -191,6 +195,13 @@ const CATEGORY_KEYWORDS = {
   Övrigt: [],
 };
 
+// Ingredienser som alltid tillhör Skafferi, oavsett om de råkar innehålla "fisk" el liknande
+const SKAFFERI_OVERRIDE = new Set([
+  "fiskbuljong", "fiskfond", "fisksås", "fisksas",
+  "ostronsås", "ostronssas",
+  "hönsbuljong", "grönsaksbuljong", "köttbuljong", "buljongtärning",
+]);
+
 // Enheter som inte är meningsfulla på en inköpslista — visa bara ingrediensnamnet
 const SMALL_UNITS = new Set(["tsk", "krm", "msk", "nypa", "tumme"]);
 
@@ -240,8 +251,20 @@ function cleanIngredient(raw) {
   s = s.replace(/\s*\(.*?\)\s*/g, " ").trim(); // strip parentes
   s = s.replace(/^(ev\.?\s+|eventuellt\s+|ca\s+)/i, ""); // strip prefix
   s = s.replace(/^(nykokt|nykokta|kokt|kokta|stekt|stekta|rostad|rostade|tinad|tinade)\s+/i, ""); // strip tillagningsbeskrivningar
-  // Strip "eller"-alternativ när strängen börjar med en mängd (t.ex. "200 g shiitakesvamp eller champinjoner" → "200 g shiitakesvamp")
-  if (/^\d/.test(s) && s.includes(" eller ")) s = s.split(" eller ")[0].trim();
+  s = s.replace(/\s+till\s+\S+(\s+\S+)?$/i, ""); // strip "till X"-suffix (t.ex. "till stekning", "till redning")
+  // Strip "eller"-alternativ när strängen börjar med en mängd
+  // Om adjektiv föregår "eller" (t.ex. "250 g färsk eller tinad fryst broccoli") tas sista ordet som ingrediensnamn
+  if (/^\d/.test(s) && s.includes(" eller ")) {
+    const ADJEKTIV = new Set(["färsk", "tinad", "fryst", "varm", "kall", "riven", "hackad", "malen"]);
+    const beforeEller = s.split(" eller ")[0].trim();
+    const lastBeforeWord = beforeEller.split(/\s+/).pop().toLowerCase();
+    if (ADJEKTIV.has(lastBeforeWord)) {
+      const lastWord = s.replace(/,.*$/, "").trim().split(/\s+/).pop().toLowerCase();
+      s = beforeEller.replace(new RegExp("\\s+" + lastBeforeWord + "$", "i"), " " + lastWord).trim();
+    } else {
+      s = beforeEller;
+    }
+  }
   return s;
 }
 
@@ -268,8 +291,9 @@ function parseIngredient(raw) {
     remaining = remaining.slice(unitMatch[0].length).trim();
   }
 
-  // Namn: strip tillagningsnot efter komma
-  const name = remaining.replace(/,.*$/, "").trim().toLowerCase() || cleaned.toLowerCase();
+  // Namn: strip tillagningsnot efter komma, och "kokt/kokta"-prefix (t.ex. "2 dl kokt röd quinoa" → "röd quinoa")
+  let name = remaining.replace(/,.*$/, "").trim().toLowerCase() || cleaned.toLowerCase();
+  name = name.replace(/^(nykokt|nykokta|kokt|kokta)\s+/, "");
 
   return { amount, unit, name };
 }
@@ -282,6 +306,7 @@ function normalizeName(name) {
 // Steg 5: Kategorisera
 function categorize(name) {
   const low = name.toLowerCase();
+  if (SKAFFERI_OVERRIDE.has(low)) return "Skafferi";
   for (const [cat, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
     if (cat === "Skafferi" || cat === "Övrigt") continue;
     if (keywords.some((kw) => low === kw || low.includes(kw))) return cat;
