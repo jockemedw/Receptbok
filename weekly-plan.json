@@ -1,8 +1,26 @@
 {
   "generated": "2026-03-24",
-  "startDate": "2026-03-28",
-  "endDate": "2026-04-04",
+  "startDate": "2026-03-25",
+  "endDate": "2026-04-08",
   "days": [
+    {
+      "date": "2026-03-25",
+      "day": "Onsdag",
+      "recipe": "Krämig bönmasala",
+      "recipeId": 59
+    },
+    {
+      "date": "2026-03-26",
+      "day": "Torsdag",
+      "recipe": "Amandas laxbiffar",
+      "recipeId": 55
+    },
+    {
+      "date": "2026-03-27",
+      "day": "Fredag",
+      "recipe": "Annas pasta med morötter, lök & sweet chili",
+      "recipeId": 52
+    },
     {
       "date": "2026-03-28",
       "day": "Lördag",
@@ -12,14 +30,14 @@
     {
       "date": "2026-03-29",
       "day": "Söndag",
-      "recipe": "Pepprig pastasås med aubergine",
-      "recipeId": 31
+      "recipe": "Stekta rödspättafiléer med stuvade morötter",
+      "recipeId": 3
     },
     {
       "date": "2026-03-30",
       "day": "Måndag",
-      "recipe": "Gazpacho",
-      "recipeId": 25
+      "recipe": "Bönstroganoff",
+      "recipeId": 16
     },
     {
       "date": "2026-03-31",
@@ -30,26 +48,50 @@
     {
       "date": "2026-04-01",
       "day": "Onsdag",
-      "recipe": "Nudlar i röd curry",
-      "recipeId": 13
+      "recipe": "Röd linsgryta med potatis",
+      "recipeId": 46
     },
     {
       "date": "2026-04-02",
       "day": "Torsdag",
-      "recipe": "Matvetesallad med gröna ärter och krispig halloumi",
-      "recipeId": 2
+      "recipe": "Tonfiskpasta",
+      "recipeId": 24
     },
     {
       "date": "2026-04-03",
       "day": "Fredag",
-      "recipe": "Annas pasta med morötter, lök & sweet chili",
-      "recipeId": 52
+      "recipe": "Nudlar i röd curry",
+      "recipeId": 13
     },
     {
       "date": "2026-04-04",
       "day": "Lördag",
+      "recipe": "Skaldjurslasagne",
+      "recipeId": 47
+    },
+    {
+      "date": "2026-04-05",
+      "day": "Söndag",
       "recipe": "Rödbetsrisotto",
       "recipeId": 62
+    },
+    {
+      "date": "2026-04-06",
+      "day": "Måndag",
+      "recipe": "Gnocchi med snabbpesto",
+      "recipeId": 26
+    },
+    {
+      "date": "2026-04-07",
+      "day": "Tisdag",
+      "recipe": "Senapsdressad pärlcouscous",
+      "recipeId": 49
+    },
+    {
+      "date": "2026-04-08",
+      "day": "Onsdag",
+      "recipe": "Matvetesallad med gröna ärter och krispig halloumi",
+      "recipeId": 2
     }
   ]
 }
