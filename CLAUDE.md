@@ -108,7 +108,7 @@ Receptbok/
 ## Nästa steg (prioritetsordning)
 1. ~~**Migrera till Vercel-URL**~~ — **KLAR** (session 10, 2026-03-23)
 2. ~~**Inköpslistan**~~ — **KLAR** (session 10, 2026-03-23)
-3. **Standardvärden** — sätt rimliga defaults i generatorn (inte 0 på allt)
+3. ~~**Standardvärden**~~ — **KLAR** (session 9)
 4. ~~**Matlagningsläge**~~ — **KLAR** (session 10, 2026-03-23)
 5. **Receptimport** — klistra in URL, hämta/tolka/översätt till `recipes.json`-format
 6. **Inköpsliste-ombyggnad** — standard = kopiera-läge, separat flik med manuell tilläggsfunktion
@@ -117,6 +117,7 @@ Receptbok/
 9. **Prövat/Oprövat-filter** — lägg till båda som valbara filter i receptboken
 10. **Agent/skill för receptväljaren** — träna/bygga en dedikerad agent (Claude skill) för receptvalet som anropas vid matsedelsgenerering, ersätter nuvarande prompt-lösning i `api/generate.js`
 11. **Expanderbara receptkort i veckovyn** — receptkortet ska kunna vecklas ut direkt i matsedelsvyn (inline expand), utan att lämna vyn
+12. **Ytterligare kvalitetskontroll av inköpslistan** — parsern har förbättrats avsevärt (session 11) men fler fel kan finnas. Generera en ny matsedel och granska listan mot recepten igen innan punkterna anses klara.
 
 ## Senaste session (2026-03-14 — Session 8)
 - Stängde av Antigravity som todo-punkt — användaren pushar och refreshar, inget lokalt behov
@@ -142,7 +143,7 @@ Tre problem hittade i `callClaude()` / receptvalet:
 - **Punkt 2 klar:** Inköpslistebyggaren omskriven med 5-stegspipeline
 - **Punkt 4 klar:** Matlagningsläge — instruktionssteg är klickbara/tappbara (grön bock + genomstrykning). Header auto-hides vid nedscroll, visas vid uppscroll (position fixed + transform translateY + ResizeObserver för padding-top). Card-snap med smoothScrollTo (ease-in-out, 420ms), isSnapping-flagga förhindrar jojo-effekt. Flikar högerorienterade på PC (≥600px). Receptboken är nu startsida. Ingredienslista i veckovyn är kollapsbar (default minimerad, expanderas vid generering). i `api/generate.js`. Ersätter exakt textsträngsmatching med: Clean → Parse (regex, bråk, intervall) → Normalize (~150 varianter → kanoniska namn, byggd från 500+ svenska ingredienssträngar) → Merge (summerar mängder per ingrediens+enhet) → Categorize (utökade nyckelord inkl. ägg, bönor, linser, rödbetor, örter). Täckning ~90-95%.
 
-## Session 11 (2026-03-24)
+## Session 11 (2026-03-24 — pågående)
 - **Inköpsliste-fix:** Nytt steg 4.5 i pipeline (api/generate.js) — filtrera + konvertera innan kategorisering:
   - **Basvaror bort helt:** salt, svartpeppar, vitpeppar, vatten, "salt & peppar" tas bort från listan
   - **Småenheter → bara namn:** tsk/msk/krm/nypa/tumme-poster visas utan mängd (t.ex. "1 msk sambal oelek" → "sambal oelek"). Om samma ingrediens finns med stor enhet (dl/g/kg) behålls bara den stora.
@@ -150,3 +151,14 @@ Tre problem hittade i `callClaude()` / receptvalet:
   - **Tillagningsbeskrivningar stripas:** "nykokt ris" → "ris", "rostade nötter" → "nötter"
   - **Normalisering utökad:** "hackade nötter", "rostade nötter/frön" → "nötter"
   - **Designprincip:** Visa allt utom det absolut självklara — användaren lägger 1 minut på att radera det hen redan har hemma
+- **Ytterligare parsningsfixar (session 11, senare):**
+  - `stor`/`liten vitlöksklyfta` → slås nu ihop korrekt
+  - `kycklingfiléer` normaliseras → rätt kategori
+  - `fiskbuljong`/`fisksås`/`ostronsås` → SKAFFERI_OVERRIDE
+  - `till X`-suffix stripas (till stekning, till redning)
+  - Smart eller-hantering: adjektiv/bindestreck hanteras
+  - `kokt/kokta` stripas från namn efter enhet
+  - UNIT_REGEX: `\b` → lookahead för svenska tecken (fixar `lök` → `½ l ök`)
+  - `"fil"` borttaget från Mejeri-nyckelord (fixar `kycklingfilé` i Mejeri)
+  - `+`-suffix stripas (majsstärkelse + 2 msk vatten)
+- **Nästa session börjar med:** Punkt 12 — ny kvalitetskontroll efter att användaren genererat en ny matsedel
