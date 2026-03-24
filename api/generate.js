@@ -25,11 +25,12 @@ const NORMALIZATION_TABLE = {
   "salladslökar": "salladslök", "strimlad salladslök": "salladslök",
   "pärllök": "silverlök", "pickleslök": "silverlök",
   // Vitlök
-  "vitlöksklyfta": "vitlök", "vitlöksklyftor": "vitlök",
-  "pressad vitlök": "vitlök", "krossad vitlök": "vitlök",
-  "riven vitlök": "vitlök", "rivna vitlöksklyftor": "vitlök",
-  "skivad vitlök": "vitlök", "finhackad vitlök": "vitlök",
-  "hackad vitlök": "vitlök", "vitlöksfond": "vitlök",
+  "vitlök": "vitlöksklyftor",
+  "vitlöksklyfta": "vitlöksklyftor", "vitlöksklyftor": "vitlöksklyftor",
+  "pressad vitlök": "vitlöksklyftor", "krossad vitlök": "vitlöksklyftor",
+  "riven vitlök": "vitlöksklyftor", "rivna vitlöksklyftor": "vitlöksklyftor",
+  "skivad vitlök": "vitlöksklyftor", "finhackad vitlök": "vitlöksklyftor",
+  "hackad vitlök": "vitlöksklyftor", "vitlöksfond": "vitlöksklyftor",
   // Morötter (plural matchar inte "morot" som substring)
   "morötter": "morot", "rivna morötter": "morot", "grovriven morot": "morot",
   "skivade morötter": "morot", "tärnade morötter": "morot",
@@ -195,7 +196,7 @@ const SMALL_UNITS = new Set(["tsk", "krm", "msk", "nypa", "tumme"]);
 
 // Ingredienser som aldrig ska visas på inköpslistan
 const PANTRY_ALWAYS_SKIP = new Set([
-  "salt", "svartpeppar", "vitpeppar", "vatten", "salt & peppar",
+  "salt", "svartpeppar", "vitpeppar", "vatten", "salt & peppar", "salt och svartpeppar",
 ]);
 
 // Svenska matlagningsenheter (längst först för regex-matchning)
@@ -206,7 +207,7 @@ const SWEDISH_UNITS = [
   "krukor", "kruka", "knippe", "skivor", "klyftor", "bitar", "kvistar",
   "skiva", "klyfta", "kvist", "bit",
   "huvud", "näve", "nypa", "tumme", "st",
-  "g", "l",
+  "g", "liter", "l",
 ];
 
 // Förbyggd enhets-regex (en gång vid modulstart)
@@ -239,6 +240,8 @@ function cleanIngredient(raw) {
   s = s.replace(/\s*\(.*?\)\s*/g, " ").trim(); // strip parentes
   s = s.replace(/^(ev\.?\s+|eventuellt\s+|ca\s+)/i, ""); // strip prefix
   s = s.replace(/^(nykokt|nykokta|kokt|kokta|stekt|stekta|rostad|rostade|tinad|tinade)\s+/i, ""); // strip tillagningsbeskrivningar
+  // Strip "eller"-alternativ när strängen börjar med en mängd (t.ex. "200 g shiitakesvamp eller champinjoner" → "200 g shiitakesvamp")
+  if (/^\d/.test(s) && s.includes(" eller ")) s = s.split(" eller ")[0].trim();
   return s;
 }
 
@@ -372,6 +375,20 @@ function buildShoppingList(selectedIds, allRecipes) {
   }
   for (const [name] of noAmount) {
     if (PANTRY_ALWAYS_SKIP.has(name)) noAmount.delete(name);
+  }
+
+  // Samma ingrediens med olika stora enheter (t.ex. "4 dl frysta ärter" + "500 g frysta ärter")
+  // → ta bort alla och visa bara namn utan mängd
+  const keysByName = new Map();
+  for (const [key, item] of merged) {
+    if (!keysByName.has(item.name)) keysByName.set(item.name, []);
+    keysByName.get(item.name).push(key);
+  }
+  for (const [name, keys] of keysByName) {
+    if (keys.length > 1) {
+      for (const k of keys) merged.delete(k);
+      noAmount.set(name, name);
+    }
   }
 
   // Steg 5: Kategorisera och bygg listor
