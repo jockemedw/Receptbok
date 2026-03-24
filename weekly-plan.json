@@ -1,55 +1,97 @@
 {
   "generated": "2026-03-24",
-  "startDate": "2026-03-28",
-  "endDate": "2026-04-04",
+  "startDate": "2026-03-25",
+  "endDate": "2026-04-08",
   "days": [
+    {
+      "date": "2026-03-25",
+      "day": "Onsdag",
+      "recipe": "Blomkålssoppa med halloumitrössel",
+      "recipeId": 28
+    },
+    {
+      "date": "2026-03-26",
+      "day": "Torsdag",
+      "recipe": "Oreganokyckling",
+      "recipeId": 60
+    },
+    {
+      "date": "2026-03-27",
+      "day": "Fredag",
+      "recipe": "Pasta med lax och sås på vitt vin, grädde och spenat",
+      "recipeId": 51
+    },
     {
       "date": "2026-03-28",
       "day": "Lördag",
-      "recipe": "Gräddig fiskgratäng med purjo",
-      "recipeId": 1
+      "recipe": "Soppa med vermicelli och rotfrukter",
+      "recipeId": 17
     },
     {
       "date": "2026-03-29",
       "day": "Söndag",
-      "recipe": "Vinterwok med brysselkål, svamp och jordärtskocka",
-      "recipeId": 12
+      "recipe": "Min bästa wok",
+      "recipeId": 21
     },
     {
       "date": "2026-03-30",
       "day": "Måndag",
-      "recipe": "Buljongprimörsoppa med kycklingfrikadeller",
-      "recipeId": 8
+      "recipe": "Indisk gryta med spenat, kikärter, senap & yoghurt",
+      "recipeId": 53
     },
     {
       "date": "2026-03-31",
       "day": "Tisdag",
-      "recipe": "Gnocchi med snabbpesto",
-      "recipeId": 26
+      "recipe": "Tuna melt-macka",
+      "recipeId": 18
     },
     {
       "date": "2026-04-01",
       "day": "Onsdag",
-      "recipe": "Blomkålssoppa med bacontopping",
-      "recipeId": 9
+      "recipe": "Krämig bönmasala",
+      "recipeId": 59
     },
     {
       "date": "2026-04-02",
       "day": "Torsdag",
-      "recipe": "Buljongsoppa med shiitakesvamp och pocherat ägg",
-      "recipeId": 5
+      "recipe": "Majsplättar med kokosmjölk",
+      "recipeId": 54
     },
     {
       "date": "2026-04-03",
       "day": "Fredag",
-      "recipe": "Hummusbowl",
-      "recipeId": 27
+      "recipe": "Minestrone",
+      "recipeId": 23
     },
     {
       "date": "2026-04-04",
       "day": "Lördag",
-      "recipe": "Pepprig pastasås med aubergine",
-      "recipeId": 31
+      "recipe": "Ramen med salladskål och champinjoner",
+      "recipeId": 10
+    },
+    {
+      "date": "2026-04-05",
+      "day": "Söndag",
+      "recipe": "Valnötshummus med ugnsrostade grönsaker",
+      "recipeId": 30
+    },
+    {
+      "date": "2026-04-06",
+      "day": "Måndag",
+      "recipe": "Pasta Rosso med champinjoner",
+      "recipeId": 56
+    },
+    {
+      "date": "2026-04-07",
+      "day": "Tisdag",
+      "recipe": "Fisk med örtsås",
+      "recipeId": 50
+    },
+    {
+      "date": "2026-04-08",
+      "day": "Onsdag",
+      "recipe": "Quinoabollar",
+      "recipeId": 11
     }
   ]
 }
