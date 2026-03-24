@@ -1,97 +1,55 @@
 {
   "generated": "2026-03-24",
-  "startDate": "2026-03-25",
-  "endDate": "2026-04-08",
+  "startDate": "2026-03-28",
+  "endDate": "2026-04-04",
   "days": [
-    {
-      "date": "2026-03-25",
-      "day": "Onsdag",
-      "recipe": "Blomkålssoppa med halloumitrössel",
-      "recipeId": 28
-    },
-    {
-      "date": "2026-03-26",
-      "day": "Torsdag",
-      "recipe": "Oreganokyckling",
-      "recipeId": 60
-    },
-    {
-      "date": "2026-03-27",
-      "day": "Fredag",
-      "recipe": "Pasta med lax och sås på vitt vin, grädde och spenat",
-      "recipeId": 51
-    },
     {
       "date": "2026-03-28",
       "day": "Lördag",
-      "recipe": "Soppa med vermicelli och rotfrukter",
-      "recipeId": 17
+      "recipe": "Marinerad kyckling med curry-cashewnötssås",
+      "recipeId": 4
     },
     {
       "date": "2026-03-29",
       "day": "Söndag",
-      "recipe": "Min bästa wok",
-      "recipeId": 21
+      "recipe": "Pepprig pastasås med aubergine",
+      "recipeId": 31
     },
     {
       "date": "2026-03-30",
       "day": "Måndag",
-      "recipe": "Indisk gryta med spenat, kikärter, senap & yoghurt",
-      "recipeId": 53
+      "recipe": "Gazpacho",
+      "recipeId": 25
     },
     {
       "date": "2026-03-31",
       "day": "Tisdag",
-      "recipe": "Tuna melt-macka",
-      "recipeId": 18
+      "recipe": "Pastasallad med kyckling, feta och basilika",
+      "recipeId": 6
     },
     {
       "date": "2026-04-01",
       "day": "Onsdag",
-      "recipe": "Krämig bönmasala",
-      "recipeId": 59
+      "recipe": "Nudlar i röd curry",
+      "recipeId": 13
     },
     {
       "date": "2026-04-02",
       "day": "Torsdag",
-      "recipe": "Majsplättar med kokosmjölk",
-      "recipeId": 54
+      "recipe": "Matvetesallad med gröna ärter och krispig halloumi",
+      "recipeId": 2
     },
     {
       "date": "2026-04-03",
       "day": "Fredag",
-      "recipe": "Minestrone",
-      "recipeId": 23
+      "recipe": "Annas pasta med morötter, lök & sweet chili",
+      "recipeId": 52
     },
     {
       "date": "2026-04-04",
       "day": "Lördag",
-      "recipe": "Ramen med salladskål och champinjoner",
-      "recipeId": 10
-    },
-    {
-      "date": "2026-04-05",
-      "day": "Söndag",
-      "recipe": "Valnötshummus med ugnsrostade grönsaker",
-      "recipeId": 30
-    },
-    {
-      "date": "2026-04-06",
-      "day": "Måndag",
-      "recipe": "Pasta Rosso med champinjoner",
-      "recipeId": 56
-    },
-    {
-      "date": "2026-04-07",
-      "day": "Tisdag",
-      "recipe": "Fisk med örtsås",
-      "recipeId": 50
-    },
-    {
-      "date": "2026-04-08",
-      "day": "Onsdag",
-      "recipe": "Quinoabollar",
-      "recipeId": 11
+      "recipe": "Rödbetsrisotto",
+      "recipeId": 62
     }
   ]
 }
