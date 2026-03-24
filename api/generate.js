@@ -142,6 +142,8 @@ const NORMALIZATION_TABLE = {
   // Diverse
   "gröna oliver": "oliver", "svarta oliver": "oliver",
   "flytande honung": "honung", "sweet chilisås": "sweet chili",
+  // Olja (sammansatta)
+  "neutral jordnöts": "rapsolja", "neutral jordnötsolja": "rapsolja",
   // Nötter (tillagningsbeskrivningar)
   "hackade nötter": "nötter", "grovhackade nötter": "nötter",
   "rostade nötter/frön": "nötter",
@@ -155,7 +157,7 @@ const CATEGORY_KEYWORDS = {
     "smör", "margarin",
     "ost", "parmesan", "pecorino", "mozzarella", "fetaost", "halloumi",
     "cheddar", "chèvre", "gruyère", "ricotta", "mascarpone", "kvarg", "keso",
-    "crème fraiche", "yoghurt", "turkisk yoghurt", "fil", "filmjölk",
+    "crème fraiche", "yoghurt", "turkisk yoghurt", "filmjölk",
     "ägg", "äggula", "äggvita",
   ],
   Grönsaker: [
@@ -222,8 +224,10 @@ const SWEDISH_UNITS = [
 ];
 
 // Förbyggd enhets-regex (en gång vid modulstart)
+// Använder lookahead istället för \b för att hantera svenska tecken (ö/ä/å är ej \w i JS-regex)
+// Utan detta matchar "l" felaktigt i t.ex. "lök" eftersom ö inte är ett "ordtecken"
 const UNIT_REGEX = new RegExp(
-  `^(${SWEDISH_UNITS.map((u) => u.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})\\b`,
+  `^(${SWEDISH_UNITS.map((u) => u.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})(?![a-zA-ZåäöÅÄÖ])`,
   "i"
 );
 
@@ -252,8 +256,10 @@ function cleanIngredient(raw) {
   s = s.replace(/^(ev\.?\s+|eventuellt\s+|ca\s+)/i, ""); // strip prefix
   s = s.replace(/^(nykokt|nykokta|kokt|kokta|stekt|stekta|rostad|rostade|tinad|tinade)\s+/i, ""); // strip tillagningsbeskrivningar
   s = s.replace(/\s+till\s+\S+(\s+\S+)?$/i, ""); // strip "till X"-suffix (t.ex. "till stekning", "till redning")
+  s = s.replace(/\s*\+.*$/, "");                  // strip "+ X"-suffix (t.ex. "maizena + 2 msk vatten")
   // Strip "eller"-alternativ när strängen börjar med en mängd
   // Om adjektiv föregår "eller" (t.ex. "250 g färsk eller tinad fryst broccoli") tas sista ordet som ingrediensnamn
+  // Om bindestreck föregår "eller" (t.ex. "2 paket ramen- eller udonnudlar") strippas bindestrecket
   if (/^\d/.test(s) && s.includes(" eller ")) {
     const ADJEKTIV = new Set(["färsk", "tinad", "fryst", "varm", "kall", "riven", "hackad", "malen"]);
     const beforeEller = s.split(" eller ")[0].trim();
@@ -261,6 +267,8 @@ function cleanIngredient(raw) {
     if (ADJEKTIV.has(lastBeforeWord)) {
       const lastWord = s.replace(/,.*$/, "").trim().split(/\s+/).pop().toLowerCase();
       s = beforeEller.replace(new RegExp("\\s+" + lastBeforeWord + "$", "i"), " " + lastWord).trim();
+    } else if (lastBeforeWord.endsWith("-")) {
+      s = beforeEller.replace(/-$/, "").trim(); // "2 paket ramen-" → "2 paket ramen"
     } else {
       s = beforeEller;
     }
