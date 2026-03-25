@@ -72,6 +72,10 @@ export default async function handler(req, res) {
       content.manualItems = (content.manualItems || []).filter((i) => i !== item);
     } else if (action === "move") {
       content.recipeItemsMovedAt = new Date().toISOString().slice(0, 10);
+    } else if (action === "clear") {
+      content.recipeItems = {};
+      content.manualItems = [];
+      content.recipeItemsMovedAt = null;
     } else {
       return res.status(400).json({ error: "Okänd action" });
     }

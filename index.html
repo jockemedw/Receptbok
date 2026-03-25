@@ -1073,6 +1073,8 @@
     color: var(--warm-brown);
     box-shadow: 0 1px 4px rgba(0,0,0,0.1);
   }
+  .shop-clear-btn { color: #b04030; }
+  .shop-clear-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
   /* ── SHOPPING TEXT VIEW ── */
   .shop-text-view { display: none; }
@@ -1451,6 +1453,7 @@
       <div class="shop-mode-bar">
         <button class="shop-mode-btn active" id="modeBtnHandla" onclick="setShopMode('handla')">✓ Handla</button>
         <button class="shop-mode-btn" id="modeBtnText" onclick="setShopMode('text')">Kopiera lista</button>
+        <button class="shop-mode-btn shop-clear-btn" id="modeBtnClear" onclick="clearShoppingList()">Rensa</button>
       </div>
       <div id="shoppingList"></div>
       <div id="shoppingText" class="shop-text-view"></div>
@@ -2007,6 +2010,28 @@ async function removeManualItem(item) {
     loadShoppingTab();
   } catch {
     alert('Kunde inte ta bort varan — prova igen.');
+  }
+}
+
+async function clearShoppingList() {
+  const btn = document.getElementById('modeBtnClear');
+  btn.disabled = true;
+  btn.textContent = 'Rensar…';
+  try {
+    const res = await fetch('/api/shopping', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'clear' }),
+    });
+    if (!res.ok) throw new Error();
+    localStorage.removeItem(SHOP_KEY);
+    _freshShopContent = (await res.json()).content;
+    loadShoppingTab();
+  } catch {
+    alert('Kunde inte rensa listan — prova igen.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Rensa';
   }
 }
 
