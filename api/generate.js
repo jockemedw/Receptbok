@@ -526,7 +526,26 @@ function shuffle(arr) {
 async function callClaude(recipes, dayList, constraints, instructions, recentIds = new Set()) {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-  const slim = shuffle(recipes).map((r) => ({
+  // Bygg en snabb-uppslagstabell för validering
+  const recipeMap = new Map(recipes.map((r) => [r.id, r]));
+
+  // ── 1. Hårt förval: nyligen använda recept filtreras bort ──────────────────
+  // Istället för att be Claude "undvika" dem (mjuk regel) tar vi bort dem ur poolen.
+  // Om poolen blir för liten (färre recept än dagar att planera) läggs äldre recept
+  // tillbaka tills vi har tillräckligt med utrymme.
+  const fresh = recipes.filter((r) => !recentIds.has(r.id));
+  const stale = recipes.filter((r) => recentIds.has(r.id));
+  let pool = fresh.length >= dayList.length ? fresh : [...fresh, ...stale];
+  if (pool.length === 0) pool = recipes;
+
+  // ── 2. Proteinfördelning — ger Claude kontexten den behöver ────────────────
+  const proteinCounts = {};
+  for (const r of pool) proteinCounts[r.protein] = (proteinCounts[r.protein] || 0) + 1;
+  const proteinInfo = Object.entries(proteinCounts)
+    .map(([p, n]) => `${p}: ${n} st`)
+    .join(", ");
+
+  const slim = shuffle(pool).map((r) => ({
     id: r.id, title: r.title, time: r.time,
     tags: r.tags, protein: r.protein, tested: r.tested,
   }));
@@ -551,24 +570,22 @@ async function callClaude(recipes, dayList, constraints, instructions, recentIds
       `7. Exactly ${constraints.vegetarian_days} of the ${dayList.length} days must use a vegetarian recipe (protein='vegetarisk').`
     );
   }
-  if (recentIds.size > 0) {
-    const ruleNum = extraRules.length + 6;
-    extraRules.push(`${ruleNum}. The following recipe IDs were used in the last 4 weeks — AVOID them if possible, only use as last resort: [${[...recentIds].join(", ")}]`);
-  }
   if (instructions?.trim()) {
-    const ruleNum = extraRules.length + 6;
-    extraRules.push(`${ruleNum}. Additional family instructions: ${instructions.trim()}`);
+    extraRules.push(`${extraRules.length + 6}. Additional family instructions: ${instructions.trim()}`);
   }
 
-  const prompt = `You are a meal planner for a Swedish family. Select ${dayList.length} recipes from the recipe database below — one per day — for the period listed.
+  const buildPrompt = (feedbackNote = "") => `You are a meal planner for a Swedish family. Select ${dayList.length} recipes from the recipe database below — one per day — for the period listed.
+
+## Available recipes by protein type
+${proteinInfo}
 
 ## Rules
 1. Days tagged "vardag30" MUST use recipes tagged "vardag30" (max ${constraints.max_weekday_time} min).
 2. Days tagged "helg60" MUST use recipes tagged "helg60" (max ${constraints.max_weekend_time} min).
-3. Do not repeat the same recipe or the same protein type more than twice across all days.
+3. Do not repeat the same recipe. Do not use the same protein type more than twice.
 4. Vary protein types across the days for nutritional balance.
-5. Copy recipe titles and IDs EXACTLY as they appear in the database.
-${extraRules.join("\n")}
+5. Copy recipe titles and IDs EXACTLY as they appear in the database — do not invent new IDs or titles.
+${extraRules.join("\n")}${feedbackNote ? `\n\n## IMPORTANT — fix these errors from your previous attempt\n${feedbackNote}` : ""}
 
 ## Days to plan
 ${daysText}
@@ -577,30 +594,79 @@ ${daysText}
 ${JSON.stringify(slim, null, 0)}
 
 ## Required output format
-Return ONLY a JSON array — no other text outside the array:
+Return ONLY a JSON array — no other text, no markdown, no explanation:
 
 ${daysTemplate}`;
 
+  // ── 3. Validera Claudes svar mot databasen ─────────────────────────────────
+  function validateAndFix(days) {
+    if (!Array.isArray(days)) return { error: "Response is not a JSON array", days: null };
+    if (days.length !== dayList.length) return { error: `Expected ${dayList.length} entries, got ${days.length}`, days: null };
+
+    const errors = [];
+    const usedIds = new Set();
+
+    for (const d of days) {
+      let recipe = recipeMap.get(d.recipeId);
+
+      // Om ID saknas, försök matcha på exakt titel
+      if (!recipe) {
+        const byTitle = [...recipeMap.values()].find((r) => r.title === d.recipe);
+        if (byTitle) {
+          d.recipeId = byTitle.id; // korrigera ID
+          recipe = byTitle;
+        } else {
+          errors.push(`Recipe ID ${d.recipeId} ("${d.recipe}") does not exist in the database.`);
+          continue;
+        }
+      }
+
+      // Om titel inte stämmer, korrigera tyst
+      if (recipe.title !== d.recipe) d.recipe = recipe.title;
+
+      // Kontrollera dubbletter
+      if (usedIds.has(d.recipeId)) {
+        errors.push(`Recipe "${d.recipe}" (ID ${d.recipeId}) was selected more than once.`);
+      }
+      usedIds.add(d.recipeId);
+    }
+
+    if (errors.length > 0) return { error: errors.join(" "), days: null };
+    return { error: null, days };
+  }
+
+  // ── 4. Anropa Claude med retry vid valideringsfel ──────────────────────────
   const models = ["claude-haiku-4-5-20251001", "claude-haiku-4-5"];
   let lastError;
-  for (const model of models) {
+  let feedbackNote = "";
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const model = models[Math.min(attempt, models.length - 1)];
     try {
       const msg = await client.messages.create({
         model,
         max_tokens: 2048,
-        messages: [{ role: "user", content: prompt }],
+        messages: [{ role: "user", content: buildPrompt(feedbackNote) }],
       });
+
       let raw = msg.content[0]?.text?.trim() || "";
       if (raw.startsWith("```")) {
         raw = raw.split("```")[1];
         if (raw.startsWith("json")) raw = raw.slice(4);
         raw = raw.trim().replace(/```$/, "").trim();
       }
-      const days = JSON.parse(raw);
-      if (!Array.isArray(days)) throw new Error("Svar är inte en array");
-      return days;
+
+      const parsed = JSON.parse(raw);
+      const { error, days } = validateAndFix(parsed);
+
+      if (!error) return days;
+
+      // Valideringsfel — skicka feedback i nästa försök
+      feedbackNote = error;
+      lastError = new Error(error);
     } catch (e) {
       lastError = e;
+      feedbackNote = `Parse error: ${e.message}`;
     }
   }
   throw lastError;
