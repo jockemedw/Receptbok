@@ -164,6 +164,11 @@ Tre problem hittade i `callClaude()` / receptvalet:
   - `+`-suffix stripas (majsstärkelse + 2 msk vatten)
 - **Nästa session börjar med:** Punkt 12 — ny kvalitetskontroll efter att användaren genererat en ny matsedel
 
-## Session 12 (2026-03-25 — pågående)
+## Session 12 (2026-03-25 — KLAR)
 - **Punkt 7 klar:** Alla 62 recept nu 4 portioner. 17 tvåportionsrecept dubblerade, 1 sexportionsrecept (ID 6) skalat till ⅔. Engångsskript (Node.js) + manuella korrigeringar för avrundningar, pluralformer och parentetiska vikter. Verifierat via Playwright: 62 receptkort renderas, inga "2 portioner"/"6 portioner" kvar i UI.
 - **Punkt 10 klar:** Receptvalet förbättrat i `api/generate.js` — fyra ändringar: (1) nyligen använda recept filtreras *hårt* ur poolen (löser identiska matsedlar), (2) proteinfördelning skickas med i prompten, (3) valideringslogik kontrollerar returnerade ID:n och korrigerar automatiskt, (4) retry upp till 3 ggr med felåterkoppling.
+- **Buggfix:** "Flytta till inköpslista"-knappen låg inuti kollapsad sektion — nu alltid synlig.
+- **Buggfix:** Confirm-dialog vid "Flytta till inköpslista" borttagen — ett tryck räcker nu.
+- **Ny funktion:** "Rensa lista"-knapp längst ned i inköpslistan — tömmer receptvaror, manuella varor och bockningar. Ny `clear`-action i `api/shopping.js`.
+- **Backlog:** Punkt 13 tillagd — sortering inom inköpslistans kategorier.
+- **Nästa session börjar med:** Punkt 12 — kvalitetskontroll av inköpslistan (generera ny matsedel och granska).
