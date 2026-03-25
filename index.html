@@ -1835,10 +1835,6 @@ function renderIngredientPreview(recipeItems, movedAt, expand = false) {
 
 async function moveToShoppingList() {
   const btn = document.getElementById('flyttaBtn');
-  const movedAt = btn.dataset.movedAt;
-  if (movedAt) {
-    if (!confirm(`Receptvarorna flyttades till inköpslistan ${movedAt}. Vill du ersätta dem?`)) return;
-  }
   btn.disabled = true;
   btn.textContent = 'Flyttar…';
   try {
