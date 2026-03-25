@@ -1,7 +1,7 @@
 {
   "meta": {
     "version": "1.0",
-    "lastUpdated": "2026-03-08",
+    "lastUpdated": "2026-03-25",
     "totalRecipes": 62
   },
   "recipes": [
@@ -12,7 +12,11 @@
       "servings": 4,
       "time": 40,
       "timeNote": "ugn 150°",
-      "tags": ["helg60", "fisk", "ugn"],
+      "tags": [
+        "helg60",
+        "fisk",
+        "ugn"
+      ],
       "protein": "fisk",
       "ingredients": [
         "600 g fryst torsk, sej eller alaska pollock (tinad)",
@@ -38,7 +42,11 @@
       "servings": 4,
       "time": 30,
       "timeNote": null,
-      "tags": ["vardag30", "veg", "sallad"],
+      "tags": [
+        "vardag30",
+        "veg",
+        "sallad"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "3 dl matvete",
@@ -68,7 +76,10 @@
       "servings": 4,
       "time": 40,
       "timeNote": null,
-      "tags": ["helg60", "fisk"],
+      "tags": [
+        "helg60",
+        "fisk"
+      ],
       "protein": "fisk",
       "ingredients": [
         "600 g rödspättafiléer",
@@ -96,7 +107,11 @@
       "servings": 4,
       "time": 45,
       "timeNote": "+ tid att marinera (minst 6 timmar)",
-      "tags": ["helg60", "kyckling", "curry"],
+      "tags": [
+        "helg60",
+        "kyckling",
+        "curry"
+      ],
       "protein": "kyckling",
       "ingredients": [
         "4 dl basmatiris",
@@ -139,7 +154,11 @@
       "servings": 4,
       "time": 30,
       "timeNote": null,
-      "tags": ["vardag30", "soppa", "veg"],
+      "tags": [
+        "vardag30",
+        "soppa",
+        "veg"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "1 gul lök, finhackad",
@@ -170,22 +189,26 @@
       "id": 6,
       "title": "Pastasallad med kyckling, feta och basilika",
       "tested": false,
-      "servings": 6,
+      "servings": 4,
       "time": 20,
       "timeNote": "tid ej angiven – uppskattat",
-      "tags": ["vardag30", "sallad", "pasta"],
+      "tags": [
+        "vardag30",
+        "sallad",
+        "pasta"
+      ],
       "protein": "kyckling",
       "ingredients": [
-        "500 g pennepasta",
+        "350 g pennepasta",
         "1 färdiggrillad kyckling",
-        "150 g fetaost",
-        "2 stora tomater eller 200 g små tomater",
-        "2 dl oliver",
+        "100 g fetaost",
+        "2 tomater eller 150 g små tomater",
+        "1,5 dl oliver",
         "1 rödlök, finhackad",
         "1 paprika, tärnad",
         "1 kruka basilika, riven",
-        "1 dl olivolja",
-        "2 msk vinäger",
+        "⅔ dl olivolja",
+        "1,5 msk vinäger",
         "salt och svartpeppar"
       ],
       "instructions": [
@@ -203,7 +226,11 @@
       "servings": 4,
       "time": 40,
       "timeNote": "ugn 225°",
-      "tags": ["helg60", "soppa", "ugn"],
+      "tags": [
+        "helg60",
+        "soppa",
+        "ugn"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "2 gula lökar, hackade",
@@ -238,7 +265,10 @@
       "servings": 4,
       "time": 30,
       "timeNote": null,
-      "tags": ["vardag30", "soppa"],
+      "tags": [
+        "vardag30",
+        "soppa"
+      ],
       "protein": "kyckling",
       "ingredients": [
         "400 g kycklingfärs",
@@ -270,7 +300,10 @@
       "servings": 4,
       "time": 30,
       "timeNote": null,
-      "tags": ["vardag30", "soppa"],
+      "tags": [
+        "vardag30",
+        "soppa"
+      ],
       "protein": "kött",
       "ingredients": [
         "800 g blomkål",
@@ -298,7 +331,11 @@
       "servings": 4,
       "time": 40,
       "timeNote": null,
-      "tags": ["helg60", "ramen", "soppa"],
+      "tags": [
+        "helg60",
+        "ramen",
+        "soppa"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "4 ägg",
@@ -340,7 +377,11 @@
       "servings": 4,
       "time": 20,
       "timeNote": "+ tid i kyl",
-      "tags": ["vardag30", "veg", "bollar"],
+      "tags": [
+        "vardag30",
+        "veg",
+        "bollar"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "2 frp kokta svarta bönor (à 400 g)",
@@ -369,7 +410,11 @@
       "servings": 4,
       "time": 35,
       "timeNote": "+ tid att koka riset",
-      "tags": ["helg60", "veg", "wok"],
+      "tags": [
+        "helg60",
+        "veg",
+        "wok"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "1 dl ris, gärna vild- eller rött",
@@ -401,23 +446,27 @@
       "id": 13,
       "title": "Nudlar i röd curry",
       "tested": false,
-      "servings": 2,
+      "servings": 4,
       "time": 25,
       "timeNote": "20–30 min",
-      "tags": ["vardag30", "curry", "nudlar"],
+      "tags": [
+        "vardag30",
+        "curry",
+        "nudlar"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
-        "3 salladslökar",
-        "4 vitlöksklyftor",
-        "1 tumme ingefära",
-        "100 g friterad tofu",
-        "1 lime (limeskal och saft)",
-        "1 msk neutral jordnöts- eller rapsolja",
-        "3–4 msk röd curry (börja med 2–3 msk om känslig)",
-        "250 ml kokosmjölk, gärna extra smooth",
-        "2–3 msk japansk soja",
-        "2 dl vatten",
-        "2 paket färska ramen- eller udonnudlar",
+        "6 salladslökar",
+        "8 vitlöksklyftor",
+        "2 tummar ingefära",
+        "200 g friterad tofu",
+        "2 limefrukter (limeskal och saft)",
+        "2 msk neutral jordnöts- eller rapsolja",
+        "6–8 msk röd curry (börja med 2–3 msk om känslig)",
+        "500 ml kokosmjölk, gärna extra smooth",
+        "4–6 msk japansk soja",
+        "4 dl vatten",
+        "4 paket färska ramen- eller udonnudlar",
         "Valfritt: rostad lök och sesamfrön"
       ],
       "instructions": [
@@ -436,7 +485,10 @@
       "servings": 4,
       "time": 30,
       "timeNote": "25–35 min",
-      "tags": ["helg60", "soppa"],
+      "tags": [
+        "helg60",
+        "soppa"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "Soppa: 1 dl belugalinser",
@@ -474,7 +526,11 @@
       "servings": 4,
       "time": 90,
       "timeNote": "naan tar tid (jästid 45–60 min)",
-      "tags": ["helg60", "veg", "indiskt"],
+      "tags": [
+        "helg60",
+        "veg",
+        "indiskt"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "2 pkt kokta kikärtor à ca 380 g",
@@ -519,7 +575,10 @@
       "servings": 4,
       "time": 20,
       "timeNote": "tid ej angiven – uppskattat",
-      "tags": ["vardag30", "veg"],
+      "tags": [
+        "vardag30",
+        "veg"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "1 pkt kokta blandade bönor à 400 g",
@@ -553,7 +612,10 @@
       "servings": 4,
       "time": 45,
       "timeNote": "ugn 225° för vitlöksbröd",
-      "tags": ["helg60", "soppa"],
+      "tags": [
+        "helg60",
+        "soppa"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "2 morötter",
@@ -590,7 +652,10 @@
       "servings": 4,
       "time": 15,
       "timeNote": "snabb",
-      "tags": ["vardag30", "macka"],
+      "tags": [
+        "vardag30",
+        "macka"
+      ],
       "protein": "fisk",
       "ingredients": [
         "2 burkar tonfisk i vatten à ca 170 g",
@@ -620,7 +685,11 @@
       "servings": 4,
       "time": 35,
       "timeNote": "ugn 225°",
-      "tags": ["helg60", "kyckling", "plåt"],
+      "tags": [
+        "helg60",
+        "kyckling",
+        "plåt"
+      ],
       "protein": "kyckling",
       "ingredients": [
         "400 g kycklinglårfilé",
@@ -659,7 +728,10 @@
       "servings": 4,
       "time": 40,
       "timeNote": "ugn + risoni",
-      "tags": ["helg60", "veg"],
+      "tags": [
+        "helg60",
+        "veg"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "500–700 g spetskål eller vitkål",
@@ -691,7 +763,10 @@
       "servings": 4,
       "time": 45,
       "timeNote": "+ blötläggning 1 timme",
-      "tags": ["helg60", "wok"],
+      "tags": [
+        "helg60",
+        "wok"
+      ],
       "protein": "kyckling",
       "ingredients": [
         "350 g breda risnudlar",
@@ -725,20 +800,23 @@
       "id": 22,
       "title": "Parmesanpotatis med kallrökt lax",
       "tested": false,
-      "servings": 2,
+      "servings": 4,
       "time": 15,
       "timeNote": "snabb (ugn/grill 250°)",
-      "tags": ["helg60", "fisk"],
+      "tags": [
+        "helg60",
+        "fisk"
+      ],
       "protein": "fisk",
       "ingredients": [
-        "ca 8 kokta potatisar",
-        "1 msk olivolja",
-        "1 dl finriven parmesan",
+        "ca 16 kokta potatisar",
+        "2 msk olivolja",
+        "2 dl finriven parmesan",
         "flingsalt",
-        "1 dl crème fraiche",
-        "0,5 citron",
+        "2 dl crème fraiche",
+        "1 citron",
         "salt och svartpeppar",
-        "200 g kallrökt lax i skivor",
+        "400 g kallrökt lax i skivor",
         "salladsblad"
       ],
       "instructions": [
@@ -754,25 +832,28 @@
       "id": 23,
       "title": "Minestrone",
       "tested": false,
-      "servings": 2,
+      "servings": 4,
       "time": 20,
       "timeNote": "snabb",
-      "tags": ["vardag30", "soppa"],
+      "tags": [
+        "vardag30",
+        "soppa"
+      ],
       "protein": "kött",
       "ingredients": [
-        "150 g soppasta (t ex snäckor)",
-        "1 msk olivolja",
-        "100 g pancetta, tärnad",
-        "2 msk tomatpuré",
-        "6 dl vatten",
-        "10 cm purjolök, finstrimlad",
-        "2 morötter, tärnade",
-        "1 blekselleristjälk, finstrimlad",
-        "1 msk grönsaks- eller kycklingfond",
-        "1 liten vitlöksklyfta, riven",
-        "0,5–1 tsk chiliflakes",
-        "1 dl finriven parmesan",
-        "2 äggulor",
+        "300 g soppasta (t ex snäckor)",
+        "2 msk olivolja",
+        "200 g pancetta, tärnad",
+        "4 msk tomatpuré",
+        "12 dl vatten",
+        "20 cm purjolök, finstrimlad",
+        "4 morötter, tärnade",
+        "2 blekselleristjälkar, finstrimlade",
+        "2 msk grönsaks- eller kycklingfond",
+        "2 vitlöksklyftor, rivna",
+        "1–2 tsk chiliflakes",
+        "2 dl finriven parmesan",
+        "4 äggulor",
         "ev några basilikablad"
       ],
       "instructions": [
@@ -788,21 +869,24 @@
       "id": 24,
       "title": "Tonfiskpasta",
       "tested": false,
-      "servings": 2,
+      "servings": 4,
       "time": 15,
       "timeNote": "snabb",
-      "tags": ["vardag30", "pasta"],
+      "tags": [
+        "vardag30",
+        "pasta"
+      ],
       "protein": "fisk",
       "ingredients": [
-        "2 portioner färsk fettuccini (250 g)",
-        "1 burk tonfisk i vatten (200 g), avrunnen",
-        "0,5 lök, hackad",
-        "2 msk olivolja",
-        "1 blekselleristjälk, skivad",
-        "2 msk kapris",
-        "2 tomater, hackade",
-        "1 msk balsamvinäger",
-        "0,5 tsk chiliflakes",
+        "4 portioner färsk fettuccini (500 g)",
+        "2 burkar tonfisk i vatten (400 g), avrunnen",
+        "1 lök, hackad",
+        "4 msk olivolja",
+        "2 blekselleristjälkar, skivade",
+        "4 msk kapris",
+        "4 tomater, hackade",
+        "2 msk balsamvinäger",
+        "1 tsk chiliflakes",
         "salt och svartpeppar"
       ],
       "instructions": [
@@ -817,27 +901,31 @@
       "id": 25,
       "title": "Gazpacho",
       "tested": false,
-      "servings": 2,
+      "servings": 4,
       "time": 15,
       "timeNote": "snabb",
-      "tags": ["vardag30", "soppa", "veg"],
+      "tags": [
+        "vardag30",
+        "soppa",
+        "veg"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
-        "1 dl vatten",
-        "3 tomater",
-        "0,5 gurka",
-        "1 färsk paprika (eller 1 grillad paprika på burk)",
-        "0,5 lök",
-        "1–2 vitlöksklyftor",
-        "1 msk balsamvinäger",
-        "0,5 msk honung",
-        "0,5 dl olivolja",
-        "1 msk grönsaksfond",
-        "1–2 tsk sambal oelek",
+        "2 dl vatten",
+        "6 tomater",
+        "1 gurka",
+        "2 paprikor (eller 2 grillade paprikor på burk)",
+        "1 lök",
+        "2–4 vitlöksklyftor",
+        "2 msk balsamvinäger",
+        "1 msk honung",
+        "1 dl olivolja",
+        "2 msk grönsaksfond",
+        "2–4 tsk sambal oelek",
         "salt och svartpeppar",
         "Tillbehör: bröd",
         "Tillbehör: olivolja till stekning",
-        "Tillbehör: 1 vitlöksklyfta, krossad",
+        "Tillbehör: 2 vitlöksklyftor, krossade",
         "Tillbehör: skalade räkor",
         "Tillbehör: kokta linser, kikärtor eller bönor",
         "Tillbehör: färsk koriander, hackad"
@@ -845,7 +933,7 @@
       "instructions": [
         "Mixa alla ingredienser till gazpachon. Smaka av med salt och peppar.",
         "Riv brödet i bitar och stek det i lite olivolja med vitlöken.",
-        "Lägg räkor, linser och koriander i två skålar.",
+        "Lägg räkor, linser och koriander i fyra skålar.",
         "Häll på gazpachon och toppa med brödkrutongerna."
       ],
       "notes": "Tips: Grillad paprika på burk funkar bra."
@@ -854,19 +942,22 @@
       "id": 26,
       "title": "Gnocchi med snabbpesto",
       "tested": false,
-      "servings": 2,
+      "servings": 4,
       "time": 15,
       "timeNote": "snabb",
-      "tags": ["vardag30", "veg"],
+      "tags": [
+        "vardag30",
+        "veg"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
-        "2 msk olivolja",
-        "1 påse färsk gnocchi (500 g)",
-        "1 dl solroskärnor",
-        "1 vitlöksklyfta, pressad",
+        "4 msk olivolja",
+        "2 påsar färsk gnocchi (1 kg)",
+        "2 dl solroskärnor",
+        "2 vitlöksklyftor, pressade",
         "1 kruka basilika",
-        "1 mozzarella (125 g), i bitar",
-        "2 dl riven parmesan",
+        "2 mozzarella (250 g), i bitar",
+        "4 dl riven parmesan",
         "salt och svartpeppar"
       ],
       "instructions": [
@@ -882,27 +973,30 @@
       "id": 27,
       "title": "Hummusbowl",
       "tested": false,
-      "servings": 2,
+      "servings": 4,
       "time": 15,
       "timeNote": "snabb",
-      "tags": ["vardag30", "veg"],
+      "tags": [
+        "vardag30",
+        "veg"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
-        "2 dl blomkål, i bitar",
-        "2 msk olivolja",
-        "1 tsk malen spiskummin",
-        "1 tsk sambal oelek",
+        "4 dl blomkål, i bitar",
+        "4 msk olivolja",
+        "2 tsk malen spiskummin",
+        "2 tsk sambal oelek",
         "salt",
-        "10 padrones",
-        "300–400 g färdig hummus",
-        "1 dl oliver och hackade soltorkade tomater",
+        "20 padrones",
+        "600–800 g färdig hummus",
+        "2 dl oliver och hackade soltorkade tomater",
         "pressad citron",
         "libabröd eller lantbröd"
       ],
       "instructions": [
         "Stek blomkålen i olja tillsammans med spiskummin, sambal oelek och lite salt.",
         "Lägg i padrones när blomkålen börjar få fin färg. Stek sammanlagt ca 5 minuter.",
-        "Skeda upp hummusen i två skålar.",
+        "Skeda upp hummusen i fyra skålar.",
         "Lägg på oliver, soltorkade tomater, blomkål och padrones.",
         "Toppa med lite olivolja och citronsaft. Servera med bröd."
       ],
@@ -912,22 +1006,26 @@
       "id": 28,
       "title": "Blomkålssoppa med halloumitrössel",
       "tested": false,
-      "servings": 2,
+      "servings": 4,
       "time": 20,
       "timeNote": "snabb",
-      "tags": ["vardag30", "soppa", "veg"],
+      "tags": [
+        "vardag30",
+        "soppa",
+        "veg"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
-        "300 g blomkål, i små bitar",
-        "2 msk smör",
-        "4 dl vatten",
-        "1 dl crème fraiche",
-        "1 msk grönsaksfond",
-        "1 stor vitlöksklyfta, riven",
-        "1 msk färsk timjan (eller 1 tsk torkad)",
+        "600 g blomkål, i små bitar",
+        "4 msk smör",
+        "8 dl vatten",
+        "2 dl crème fraiche",
+        "2 msk grönsaksfond",
+        "2 stora vitlöksklyftor, rivna",
+        "2 msk färsk timjan (eller 2 tsk torkad)",
         "salt och svartpeppar",
-        "1 tsk olja",
-        "50 g halloumi (eller annan stekost)"
+        "2 tsk olja",
+        "100 g halloumi (eller annan stekost)"
       ],
       "instructions": [
         "Stek blomkålen i smöret i en stekpanna i ca 3 minuter.",
@@ -945,7 +1043,10 @@
       "servings": 4,
       "time": 20,
       "timeNote": "snabb",
-      "tags": ["vardag30", "restmat"],
+      "tags": [
+        "vardag30",
+        "restmat"
+      ],
       "protein": "kött",
       "ingredients": [
         "3 vitlöksklyftor",
@@ -978,7 +1079,11 @@
       "servings": 4,
       "time": 30,
       "timeNote": "ugn 225°",
-      "tags": ["helg60", "veg", "ugn"],
+      "tags": [
+        "helg60",
+        "veg",
+        "ugn"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "Ugnsrostade grönsaker: en plåt grönsaker/rotfrukter (t ex 400 g potatis, kålklyftor, morot, blomkål eller broccoli, 1 röd paprika, några jordärtskockor)",
@@ -1008,7 +1113,11 @@
       "servings": 4,
       "time": 35,
       "timeNote": null,
-      "tags": ["helg60", "pasta", "veg"],
+      "tags": [
+        "helg60",
+        "pasta",
+        "veg"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "3 vitlöksklyftor",
@@ -1038,23 +1147,28 @@
       "id": 32,
       "title": "Breakfast burrito med kål och äggröra",
       "tested": false,
-      "servings": 2,
+      "servings": 4,
       "time": 20,
       "timeNote": "snabb",
-      "tags": ["frukost", "snabb", "kål", "ägg"],
+      "tags": [
+        "frukost",
+        "snabb",
+        "kål",
+        "ägg"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
-        "½ spetskålshuvud eller vitkål (ca 200 g)",
+        "1 spetskålshuvud eller vitkål (ca 400 g)",
         "1 kruka färsk koriander",
-        "1 gul lök",
-        "2 vitlöksklyftor",
+        "2 gula lökar",
+        "4 vitlöksklyftor",
         "rapsolja",
         "salt",
-        "1 tsk chiliflakes",
-        "1 msk smör",
-        "4 ägg",
-        "1 dl riven ost",
-        "2 stora tortillas",
+        "2 tsk chiliflakes",
+        "2 msk smör",
+        "8 ägg",
+        "2 dl riven ost",
+        "4 stora tortillas",
         "Till servering: chilisås"
       ],
       "instructions": [
@@ -1074,7 +1188,12 @@
       "servings": 4,
       "time": 40,
       "timeNote": null,
-      "tags": ["middag", "vegetarisk", "kål", "tortilla"],
+      "tags": [
+        "middag",
+        "vegetarisk",
+        "kål",
+        "tortilla"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "450 g potatis",
@@ -1113,7 +1232,12 @@
       "servings": 4,
       "time": 45,
       "timeNote": "ugn 200°",
-      "tags": ["middag", "vardag", "kål", "ugn"],
+      "tags": [
+        "middag",
+        "vardag",
+        "kål",
+        "ugn"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "Ugnspannkaka: 3 dl mjöl",
@@ -1149,7 +1273,12 @@
       "servings": 4,
       "time": 40,
       "timeNote": null,
-      "tags": ["macka", "tofu", "japanskt", "fritera"],
+      "tags": [
+        "macka",
+        "tofu",
+        "japanskt",
+        "fritera"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "Sojamajonnäs: 1 dl majonnäs",
@@ -1189,7 +1318,12 @@
       "servings": 4,
       "time": 30,
       "timeNote": "+ 20 min saltning",
-      "tags": ["tillbehör", "sallad", "kimchi", "koreanskt"],
+      "tags": [
+        "tillbehör",
+        "sallad",
+        "kimchi",
+        "koreanskt"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "1 kg salladskål",
@@ -1222,7 +1356,12 @@
       "servings": 4,
       "time": 30,
       "timeNote": null,
-      "tags": ["middag", "vegetarisk", "indiskt", "kål"],
+      "tags": [
+        "middag",
+        "vegetarisk",
+        "indiskt",
+        "kål"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "½ huvud vitkål (ca 400 g)",
@@ -1261,7 +1400,12 @@
       "servings": 4,
       "time": 50,
       "timeNote": null,
-      "tags": ["middag", "gryta", "sommar", "kål"],
+      "tags": [
+        "middag",
+        "gryta",
+        "sommar",
+        "kål"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "½ vitkålshuvud (ca 400 g)",
@@ -1302,7 +1446,12 @@
       "servings": 4,
       "time": 20,
       "timeNote": "snabb",
-      "tags": ["middag", "plättar", "kål", "snabb"],
+      "tags": [
+        "middag",
+        "plättar",
+        "kål",
+        "snabb"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "2 dl mjöl",
@@ -1335,7 +1484,11 @@
       "servings": 4,
       "time": 15,
       "timeNote": "snabb (+ 2 h marinering)",
-      "tags": ["tillbehör", "sallad", "snabb"],
+      "tags": [
+        "tillbehör",
+        "sallad",
+        "snabb"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "2 kålrabbi",
@@ -1357,24 +1510,29 @@
       "id": 41,
       "title": "Ägg i vitkål med gruyère och salladslök",
       "tested": false,
-      "servings": 2,
+      "servings": 4,
       "time": 15,
       "timeNote": "snabb",
-      "tags": ["frukost", "brunch", "ägg", "kål"],
+      "tags": [
+        "frukost",
+        "brunch",
+        "ägg",
+        "kål"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
-        "½ huvud vitkål eller spetskål (ca 400 g)",
-        "3 salladslökar",
-        "1 msk smör",
+        "1 huvud vitkål eller spetskål (ca 800 g)",
+        "6 salladslökar",
+        "2 msk smör",
         "salt",
-        "4 ägg",
-        "50 g gruyère eller annan smakrik ost",
+        "8 ägg",
+        "100 g gruyère eller annan smakrik ost",
         "Till servering: rostat bröd"
       ],
       "instructions": [
         "Skiva vitkål och salladslök.",
         "Stek grönsakerna mjuka i smöret, ca 3 minuter, och salta.",
-        "Gör fyra gropar i kålen och knäck ner äggen. Lägg på lock och låt tillagas ca 2–3 minuter.",
+        "Gör åtta gropar i kålen och knäck ner äggen. Lägg på lock och låt tillagas ca 2–3 minuter.",
         "Lyft locket och riv över osten.",
         "Servera direkt med rostat bröd."
       ],
@@ -1387,7 +1545,12 @@
       "servings": 4,
       "time": 35,
       "timeNote": null,
-      "tags": ["ramen", "asiatiskt", "fläsk", "nudlar"],
+      "tags": [
+        "ramen",
+        "asiatiskt",
+        "fläsk",
+        "nudlar"
+      ],
       "protein": "fläsk",
       "ingredients": [
         "Buljong: 1 bit ingefära",
@@ -1425,7 +1588,12 @@
       "servings": 4,
       "time": 30,
       "timeNote": null,
-      "tags": ["sallad", "sötpotatis", "fetaost", "hot honey"],
+      "tags": [
+        "sallad",
+        "sötpotatis",
+        "fetaost",
+        "hot honey"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "2–3 sötpotatisar (ca 600 g)",
@@ -1459,7 +1627,10 @@
       "servings": 4,
       "time": 30,
       "timeNote": null,
-      "tags": ["soppa", "veg"],
+      "tags": [
+        "soppa",
+        "veg"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "1 gul lök",
@@ -1486,7 +1657,10 @@
       "servings": 4,
       "time": 20,
       "timeNote": null,
-      "tags": ["veg", "biffar"],
+      "tags": [
+        "veg",
+        "biffar"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "1 gul lök",
@@ -1515,7 +1689,11 @@
       "servings": 4,
       "time": 30,
       "timeNote": null,
-      "tags": ["vardag30", "veg", "gryta"],
+      "tags": [
+        "vardag30",
+        "veg",
+        "gryta"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "2 dl röda linser",
@@ -1545,7 +1723,11 @@
       "servings": 4,
       "time": 40,
       "timeNote": "ugn 225°",
-      "tags": ["helg60", "fisk", "ugn"],
+      "tags": [
+        "helg60",
+        "fisk",
+        "ugn"
+      ],
       "protein": "fisk",
       "ingredients": [
         "250 g färska lasagneplattor",
@@ -1577,7 +1759,10 @@
       "servings": 4,
       "time": 120,
       "timeNote": "ugn 175° (2 h)",
-      "tags": ["helg60", "kyckling"],
+      "tags": [
+        "helg60",
+        "kyckling"
+      ],
       "protein": "kyckling",
       "ingredients": [
         "900 g kycklinglår med ben",
@@ -1606,7 +1791,10 @@
       "servings": 4,
       "time": 15,
       "timeNote": "snabb",
-      "tags": ["vardag30", "sallad"],
+      "tags": [
+        "vardag30",
+        "sallad"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "pärlcouscous (för 4 portioner)",
@@ -1632,7 +1820,10 @@
       "servings": 4,
       "time": 25,
       "timeNote": null,
-      "tags": ["vardag30", "fisk"],
+      "tags": [
+        "vardag30",
+        "fisk"
+      ],
       "protein": "fisk",
       "ingredients": [
         "12 körsbärstomater",
@@ -1663,7 +1854,11 @@
       "servings": 4,
       "time": 25,
       "timeNote": null,
-      "tags": ["vardag30", "fisk", "pasta"],
+      "tags": [
+        "vardag30",
+        "fisk",
+        "pasta"
+      ],
       "protein": "fisk",
       "ingredients": [
         "4 laxfiléer",
@@ -1691,17 +1886,21 @@
       "id": 52,
       "title": "Annas pasta med morötter, lök & sweet chili",
       "tested": true,
-      "servings": 2,
+      "servings": 4,
       "time": 20,
       "timeNote": "snabb",
-      "tags": ["vardag30", "pasta", "veg"],
+      "tags": [
+        "vardag30",
+        "pasta",
+        "veg"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
-        "1 gul lök (stor)",
-        "2 rivna morötter",
-        "2 vitlöksklyftor",
-        "0,5 dl sweet chili",
-        "1 dl crème fraiche",
+        "2 gula lökar (stora)",
+        "4 rivna morötter",
+        "4 vitlöksklyftor",
+        "1 dl sweet chili",
+        "2 dl crème fraiche",
         "valfria grönsaker (t.ex. ärtor, vitkål, paprika)",
         "hackade nötter (valfritt)"
       ],
@@ -1720,7 +1919,12 @@
       "servings": 4,
       "time": 30,
       "timeNote": null,
-      "tags": ["vardag30", "veg", "indiskt", "gryta"],
+      "tags": [
+        "vardag30",
+        "veg",
+        "indiskt",
+        "gryta"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "1 gul lök",
@@ -1753,7 +1957,11 @@
       "servings": 4,
       "time": 20,
       "timeNote": "snabb",
-      "tags": ["vardag30", "veg", "plättar"],
+      "tags": [
+        "vardag30",
+        "veg",
+        "plättar"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "2 dl vetemjöl",
@@ -1776,16 +1984,19 @@
       "id": 55,
       "title": "Amandas laxbiffar",
       "tested": true,
-      "servings": 2,
+      "servings": 4,
       "time": 20,
       "timeNote": "snabb",
-      "tags": ["vardag30", "fisk"],
+      "tags": [
+        "vardag30",
+        "fisk"
+      ],
       "protein": "fisk",
       "ingredients": [
-        "2 laxfiléer",
-        "1 gul lök",
-        "2 vitlöksklyftor",
-        "1 ägg",
+        "4 laxfiléer",
+        "2 gula lökar",
+        "4 vitlöksklyftor",
+        "2 ägg",
         "örtkryddor",
         "salt",
         "peppar"
@@ -1801,20 +2012,24 @@
       "id": 56,
       "title": "Pasta Rosso med champinjoner",
       "tested": true,
-      "servings": 2,
+      "servings": 4,
       "time": 25,
       "timeNote": null,
-      "tags": ["vardag30", "pasta", "veg"],
+      "tags": [
+        "vardag30",
+        "pasta",
+        "veg"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
-        "0,5 dl hackad gul lök",
-        "2 vitlöksklyftor",
-        "2–3 morötter (ca 200 g), rivna",
-        "400 g krossade tomater",
-        "0,5 grönsaksbuljongtärning",
-        "1 dl crème fraiche eller matyoghurt",
+        "1 dl hackad gul lök",
+        "4 vitlöksklyftor",
+        "4–6 morötter (ca 400 g), rivna",
+        "800 g krossade tomater",
+        "1 grönsaksbuljongtärning",
+        "2 dl crème fraiche eller matyoghurt",
         "oregano eller basilika",
-        "100 g champinjoner"
+        "200 g champinjoner"
       ],
       "instructions": [
         "Hacka lök och vitlök grovt. Riv morötterna och fräs tillsammans med löken.",
@@ -1828,18 +2043,21 @@
       "id": 57,
       "title": "Babaganoush",
       "tested": true,
-      "servings": 2,
+      "servings": 4,
       "time": 50,
       "timeNote": "ugn 200°",
-      "tags": ["tillbehör", "veg"],
+      "tags": [
+        "tillbehör",
+        "veg"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
-        "1 medelstor aubergine",
-        "1 msk rapsolja (till plåt)",
-        "0,25 dl rapsolja",
-        "2 vitlöksklyftor, rivna",
-        "2 msk citronsaft",
-        "1 msk tahini",
+        "2 medelstora auberginer",
+        "2 msk rapsolja (till plåt)",
+        "½ dl rapsolja",
+        "4 vitlöksklyftor, rivna",
+        "4 msk citronsaft",
+        "2 msk tahini",
         "flingsalt",
         "ev. chiliflakes"
       ],
@@ -1854,17 +2072,20 @@
       "id": 58,
       "title": "Broccolipesto",
       "tested": true,
-      "servings": 2,
+      "servings": 4,
       "time": 15,
       "timeNote": "snabb",
-      "tags": ["tillbehör", "veg"],
+      "tags": [
+        "tillbehör",
+        "veg"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
-        "0,5 dl nötter och frön",
-        "125 g broccoli",
-        "25 g parmesan",
-        "1 vitlöksklyfta",
-        "0,5 dl rapsolja",
+        "1 dl nötter och frön",
+        "250 g broccoli",
+        "50 g parmesan",
+        "2 vitlöksklyftor",
+        "1 dl rapsolja",
         "salt",
         "peppar"
       ],
@@ -1883,7 +2104,11 @@
       "servings": 4,
       "time": 30,
       "timeNote": null,
-      "tags": ["vardag30", "veg", "indiskt"],
+      "tags": [
+        "vardag30",
+        "veg",
+        "indiskt"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "4 morötter (ca 400 g), rivna",
@@ -1910,18 +2135,21 @@
       "id": 60,
       "title": "Oreganokyckling",
       "tested": true,
-      "servings": 2,
+      "servings": 4,
       "time": 20,
       "timeNote": "snabb",
-      "tags": ["vardag30", "kyckling"],
+      "tags": [
+        "vardag30",
+        "kyckling"
+      ],
       "protein": "kyckling",
       "ingredients": [
-        "1–2 kycklingfiléer",
-        "1 vitlöksklyfta",
-        "1 dl matgrädde eller yoghurt",
-        "0,5 buljongtärning",
-        "1–1,5 tsk torkad oregano",
-        "1 msk balsamvinäger",
+        "3–4 kycklingfiléer",
+        "2 vitlöksklyftor",
+        "2 dl matgrädde eller yoghurt",
+        "1 buljongtärning",
+        "2–3 tsk torkad oregano",
+        "2 msk balsamvinäger",
         "salt & peppar"
       ],
       "instructions": [
@@ -1935,16 +2163,19 @@
       "id": 61,
       "title": "Citronisås (till fisk)",
       "tested": true,
-      "servings": 2,
+      "servings": 4,
       "time": 10,
       "timeNote": "snabb",
-      "tags": ["tillbehör", "fisk"],
+      "tags": [
+        "tillbehör",
+        "fisk"
+      ],
       "protein": "fisk",
       "ingredients": [
-        "1 dl matgrädde eller mjölk",
-        "1,5 dl matyoghurt eller crème fraiche",
-        "1 fiskbuljongtärning",
-        "1 citron (skal + 1–2 tsk saft)",
+        "2 dl matgrädde eller mjölk",
+        "3 dl matyoghurt eller crème fraiche",
+        "2 fiskbuljongtärningar",
+        "2 citroner (skal + 2–4 tsk saft)",
         "salt"
       ],
       "instructions": [
@@ -1960,7 +2191,10 @@
       "servings": 4,
       "time": 40,
       "timeNote": null,
-      "tags": ["helg60", "veg"],
+      "tags": [
+        "helg60",
+        "veg"
+      ],
       "protein": "vegetarisk",
       "ingredients": [
         "3–4 schalottenlökar (eller 1–2 gula lökar)",
