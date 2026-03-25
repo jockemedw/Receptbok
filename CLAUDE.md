@@ -112,7 +112,7 @@ Receptbok/
 4. ~~**Matlagningsläge**~~ — **KLAR** (session 10, 2026-03-23)
 5. **Receptimport** — klistra in URL, hämta/tolka/översätt till `recipes.json`-format
 6. **Inköpsliste-ombyggnad** — standard = kopiera-läge, separat flik med manuell tilläggsfunktion
-7. **Portionsanpassning** — konvertera alla recept till 4 portioner (genomgång av recipes.json)
+7. ~~**Portionsanpassning**~~ — **KLAR** (session 12, 2026-03-25)
 8. **Flerval i receptfilter** — möjlighet att klicka i flera filter samtidigt (nu är det ett åt gången)
 9. **Prövat/Oprövat-filter** — lägg till båda som valbara filter i receptboken
 10. **Agent/skill för receptväljaren** — träna/bygga en dedikerad agent (Claude skill) för receptvalet som anropas vid matsedelsgenerering, ersätter nuvarande prompt-lösning i `api/generate.js`
@@ -162,3 +162,6 @@ Tre problem hittade i `callClaude()` / receptvalet:
   - `"fil"` borttaget från Mejeri-nyckelord (fixar `kycklingfilé` i Mejeri)
   - `+`-suffix stripas (majsstärkelse + 2 msk vatten)
 - **Nästa session börjar med:** Punkt 12 — ny kvalitetskontroll efter att användaren genererat en ny matsedel
+
+## Session 12 (2026-03-25 — pågående)
+- **Punkt 7 klar:** Alla 62 recept nu 4 portioner. 17 tvåportionsrecept dubblerade, 1 sexportionsrecept (ID 6) skalat till ⅔. Engångsskript (Node.js) + manuella korrigeringar för avrundningar, pluralformer och parentetiska vikter. Verifierat via Playwright: 62 receptkort renderas, inga "2 portioner"/"6 portioner" kvar i UI.
