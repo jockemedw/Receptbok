@@ -1073,8 +1073,20 @@
     color: var(--warm-brown);
     box-shadow: 0 1px 4px rgba(0,0,0,0.1);
   }
-  .shop-clear-btn { color: #b04030; }
-  .shop-clear-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .shop-clear-btn {
+    display: block;
+    width: 100%;
+    margin-top: 2rem;
+    padding: 0.6rem;
+    background: none;
+    border: none;
+    color: #b04030;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    opacity: 0.7;
+  }
+  .shop-clear-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
   /* ── SHOPPING TEXT VIEW ── */
   .shop-text-view { display: none; }
@@ -1453,7 +1465,6 @@
       <div class="shop-mode-bar">
         <button class="shop-mode-btn active" id="modeBtnHandla" onclick="setShopMode('handla')">✓ Handla</button>
         <button class="shop-mode-btn" id="modeBtnText" onclick="setShopMode('text')">Kopiera lista</button>
-        <button class="shop-mode-btn shop-clear-btn" id="modeBtnClear" onclick="clearShoppingList()">Rensa</button>
       </div>
       <div id="shoppingList"></div>
       <div id="shoppingText" class="shop-text-view"></div>
@@ -1466,6 +1477,7 @@
           <button class="manual-add-btn" id="manualAddBtn" onclick="addManualItem()">Lägg till</button>
         </div>
       </div>
+      <button class="shop-clear-btn" id="modeBtnClear" onclick="clearShoppingList()">Rensa lista</button>
     </div>
   </div>
 </div>
