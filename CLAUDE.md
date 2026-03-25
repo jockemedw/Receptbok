@@ -118,6 +118,7 @@ Receptbok/
 10. ~~**Förbättrad receptväljare**~~ — **KLAR** (session 12, 2026-03-25)
 11. **Expanderbara receptkort i veckovyn** — receptkortet ska kunna vecklas ut direkt i matsedelsvyn (inline expand), utan att lämna vyn
 12. **Ytterligare kvalitetskontroll av inköpslistan** — parsern har förbättrats avsevärt (session 11) men fler fel kan finnas. Generera en ny matsedel och granska listan mot recepten igen innan punkterna anses klara.
+13. **Sortering inom inköpslistans kategorier** — varorna listas nu i slumpmässig ordning inom varje kategori. Bör sorteras på ett logiskt sätt (t.ex. alfabetiskt, eller efter typ/placering i butik).
 
 ## Senaste session (2026-03-14 — Session 8)
 - Stängde av Antigravity som todo-punkt — användaren pushar och refreshar, inget lokalt behov
