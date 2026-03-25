@@ -111,7 +111,7 @@ Receptbok/
 3. ~~**Standardvärden**~~ — **KLAR** (session 9)
 4. ~~**Matlagningsläge**~~ — **KLAR** (session 10, 2026-03-23)
 5. **Receptimport** — klistra in URL, hämta/tolka/översätt till `recipes.json`-format
-6. **Inköpsliste-ombyggnad** — standard = kopiera-läge, separat flik med manuell tilläggsfunktion
+6. ~~**Inköpsliste-ombyggnad**~~ — **KLAR** (session 12, 2026-03-25)
 7. ~~**Portionsanpassning**~~ — **KLAR** (session 12, 2026-03-25)
 8. **Flerval i receptfilter** — möjlighet att klicka i flera filter samtidigt (nu är det ett åt gången)
 9. **Prövat/Oprövat-filter** — lägg till båda som valbara filter i receptboken
