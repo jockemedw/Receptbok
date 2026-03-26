@@ -335,7 +335,8 @@ function formatIngredient(amount, unit, name) {
   if (amount === null) return name;
   const FRAC_DISPLAY = { 0.5: "½", 0.25: "¼", 0.75: "¾", 1.5: "1½", 2.5: "2½" };
   const amtStr = FRAC_DISPLAY[amount] ?? (Number.isInteger(amount) ? String(amount) : String(amount).replace(".", ","));
-  return unit ? `${amtStr} ${unit} ${name}` : `${amtStr} ${name}`;
+  const qty = unit ? `${amtStr} ${unit}` : amtStr;
+  return `${name} (${qty})`;
 }
 
 function buildDayList(startDate, endDate) {
