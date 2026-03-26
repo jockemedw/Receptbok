@@ -515,8 +515,8 @@ async function fetchShoppingList() {
 
 // Returnerar Set med recept-ID:n använda de senaste `days` dagarna.
 // Nytt format: { usedOn: { "5": "2026-03-25", ... } } — ett datum per recept.
-// 14 dagar: med 62 recept och ~12-15 per generering ger det ~38 färska recept,
-// tillräcklig variation. 28 dagar blockerade för många recept och gav tom pool.
+// 14 dagar: med ~12-15 recept per generering ger det god variation utan att
+// poolen töms. 28 dagar blockerade för många recept och gav tom pool.
 function recentlyUsedIds(history, days = 14) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
@@ -569,19 +569,28 @@ function shuffle(arr) {
   return a;
 }
 
-async function callClaude(recipes, dayList, constraints, instructions, recentIds = new Set()) {
+async function callClaude(recipes, dayList, constraints, instructions, recentIds = new Set(), usedOn = {}) {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
   // Bygg en snabb-uppslagstabell för validering
   const recipeMap = new Map(recipes.map((r) => [r.id, r]));
 
   // ── 1. Hårt förval: nyligen använda recept filtreras bort ──────────────────
-  // Istället för att be Claude "undvika" dem (mjuk regel) tar vi bort dem ur poolen.
-  // Om poolen blir för liten (färre recept än dagar att planera) läggs äldre recept
-  // tillbaka tills vi har tillräckligt med utrymme.
+  // Färska recept (ej använda senaste 14 dagarna) prioriteras alltid.
+  // Om poolen är för liten fylls den på med de recept som gick längst sedan —
+  // aldrig slumpmässigt eller med Claudes egna preferenser.
   const fresh = recipes.filter((r) => !recentIds.has(r.id));
-  const stale = recipes.filter((r) => recentIds.has(r.id));
-  let pool = fresh.length >= dayList.length ? fresh : [...fresh, ...stale];
+  let pool;
+  if (fresh.length >= dayList.length) {
+    pool = fresh;
+  } else {
+    const needed = dayList.length - fresh.length;
+    const oldest = recipes
+      .filter((r) => recentIds.has(r.id))
+      .sort((a, b) => (usedOn[a.id] ?? "") < (usedOn[b.id] ?? "") ? -1 : 1)
+      .slice(0, needed);
+    pool = [...fresh, ...oldest];
+  }
   if (pool.length === 0) pool = recipes;
 
   // ── 2. Proteinfördelning — ger Claude kontexten den behöver ────────────────
@@ -767,7 +776,7 @@ export default async function handler(req, res) {
     const recentIds = recentlyUsedIds(historyData);
 
     const dayList = buildDayList(start_date, end_date);
-    const days = await callClaude(filtered, dayList, constraints, instructions, recentIds);
+    const days = await callClaude(filtered, dayList, constraints, instructions, recentIds, historyData.usedOn || {});
 
     const selectedIds = days.map((d) => d.recipeId).filter(Boolean);
     const shoppingCategories = buildShoppingList(selectedIds, allRecipes);
