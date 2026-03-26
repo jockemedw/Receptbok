@@ -478,11 +478,32 @@ async function fetchRecipes() {
   }));
 }
 
-async function fetchHistory() {
-  const url = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRANCH}/recipe-history.json`;
-  const res = await fetch(url);
-  if (!res.ok) return { history: [] };
-  return res.json();
+// Läser historik via GitHub API (inte raw-URL) för att undvika CDN-cache.
+// CDN-cachen är ~60s efter en commit, vilket gör att täta genereringar
+// skriver ovanpå gammal data och tappar mellanliggande körningar.
+async function fetchHistory(pat) {
+  const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/recipe-history.json?ref=${BRANCH}`;
+  const res = await fetch(apiUrl, {
+    headers: { Authorization: `token ${pat}`, Accept: "application/vnd.github+json" },
+  });
+  if (!res.ok) return { usedOn: {} };
+  try {
+    const data = await res.json();
+    const parsed = JSON.parse(Buffer.from(data.content, "base64").toString("utf-8"));
+    // Migrering från gammalt format { history: [...] } → nytt { usedOn: { id: date } }
+    if (parsed.history && !parsed.usedOn) {
+      const usedOn = {};
+      for (const entry of parsed.history) {
+        for (const id of entry.recipeIds || []) {
+          if (!usedOn[id] || entry.date > usedOn[id]) usedOn[id] = entry.date;
+        }
+      }
+      return { usedOn };
+    }
+    return parsed;
+  } catch {
+    return { usedOn: {} };
+  }
 }
 
 async function fetchShoppingList() {
@@ -492,23 +513,25 @@ async function fetchShoppingList() {
   return res.json();
 }
 
-// Returns Set of recipe IDs used within the last `days` days
-function recentlyUsedIds(history, days = 28) {
+// Returnerar Set med recept-ID:n använda de senaste `days` dagarna.
+// Nytt format: { usedOn: { "5": "2026-03-25", ... } } — ett datum per recept.
+// 14 dagar: med 62 recept och ~12-15 per generering ger det ~38 färska recept,
+// tillräcklig variation. 28 dagar blockerade för många recept och gav tom pool.
+function recentlyUsedIds(history, days = 14) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
+  const cutoffStr = cutoff.toISOString().slice(0, 10); // "YYYY-MM-DD"
   const ids = new Set();
-  for (const entry of history) {
-    if (new Date(entry.date) >= cutoff) {
-      for (const id of entry.recipeIds) ids.add(id);
-    }
+  for (const [id, date] of Object.entries(history.usedOn || {})) {
+    if (date >= cutoffStr) ids.add(parseInt(id, 10));
   }
   return ids;
 }
 
 function updateHistory(history, newIds, date) {
-  const updated = [{ date, recipeIds: newIds }, ...history];
-  // Keep max 8 entries (covers ~2 months)
-  return updated.slice(0, 8);
+  const usedOn = { ...(history.usedOn || {}) };
+  for (const id of newIds) usedOn[String(id)] = date;
+  return { usedOn };
 }
 
 async function writeFileToGitHub(path, content, pat) {
@@ -733,7 +756,7 @@ export default async function handler(req, res) {
       vegetarian_days: parseInt(vegetarian_days) || 0,
     };
 
-    const [allRecipes, historyData, existingShop] = await Promise.all([fetchRecipes(), fetchHistory(), fetchShoppingList()]);
+    const [allRecipes, historyData, existingShop] = await Promise.all([fetchRecipes(), fetchHistory(pat), fetchShoppingList()]);
     const filtered = filterRecipes(allRecipes, constraints);
 
     if (filtered.length === 0) {
@@ -741,7 +764,7 @@ export default async function handler(req, res) {
     }
 
     // Pass recently used IDs to Claude so it avoids them
-    const recentIds = recentlyUsedIds(historyData.history);
+    const recentIds = recentlyUsedIds(historyData);
 
     const dayList = buildDayList(start_date, end_date);
     const days = await callClaude(filtered, dayList, constraints, instructions, recentIds);
@@ -757,7 +780,7 @@ export default async function handler(req, res) {
       recipeItemsMovedAt: null,
       manualItems: existingShop?.manualItems || [],
     };
-    const updatedHistory = { history: updateHistory(historyData.history, selectedIds, today) };
+    const updatedHistory = updateHistory(historyData, selectedIds, today);
 
     await Promise.all([
       writeFileToGitHub("weekly-plan.json", weeklyPlan, pat),
