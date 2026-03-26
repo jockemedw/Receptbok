@@ -445,11 +445,17 @@ function buildShoppingList(selectedIds, allRecipes) {
     }
   }
 
-  // Sortera alfabetiskt inom varje kategori (jämför på ingrediensnamn, ignorera ledande mängd+enhet)
-  const extractName = (s) =>
-    s.replace(/^[0-9½¼¾][0-9,.\s]*(?:dl|g|kg|msk|tsk|krm|st|frp|påsar?|burk|kruka|liter|l)\s+/i, "").trim();
+  // Sortera alfabetiskt inom varje kategori (å/ä/ö sist, som i svenska alfabetet)
+  // localeCompare("sv") är opålitligt i serverless — mappar istället å/ä/ö till tecken efter z
+  const svKey = (s) =>
+    s.replace(/^[0-9½¼¾][0-9,.\s]*(?:dl|g|kg|msk|tsk|krm|st|frp|påsar?|burk|kruka|liter|l)\s+/i, "")
+     .trim()
+     .toLowerCase()
+     .replace(/å/g, "z\u0001")
+     .replace(/ä/g, "z\u0002")
+     .replace(/ö/g, "z\u0003");
   for (const arr of Object.values(categories)) {
-    arr.sort((a, b) => extractName(a).localeCompare(extractName(b), "sv"));
+    arr.sort((a, b) => svKey(a).localeCompare(svKey(b)));
   }
 
   return categories;
