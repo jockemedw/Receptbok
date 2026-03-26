@@ -6,50 +6,50 @@
     {
       "date": "2026-03-28",
       "day": "Lördag",
-      "recipe": "Skaldjurslasagne",
-      "recipeId": 47
+      "recipe": "Stekta rödspättafiléer med stuvade morötter",
+      "recipeId": 3
     },
     {
       "date": "2026-03-29",
       "day": "Söndag",
-      "recipe": "Rödbetsrisotto",
-      "recipeId": 62
+      "recipe": "Marinerad kyckling med curry-cashewnötssås",
+      "recipeId": 4
     },
     {
       "date": "2026-03-30",
       "day": "Måndag",
-      "recipe": "Oreganokyckling",
-      "recipeId": 60
-    },
-    {
-      "date": "2026-03-31",
-      "day": "Tisdag",
-      "recipe": "Krämig bönmasala",
-      "recipeId": 59
-    },
-    {
-      "date": "2026-04-01",
-      "day": "Onsdag",
-      "recipe": "Pasta med lax och sås på vitt vin, grädde och spenat",
-      "recipeId": 51
-    },
-    {
-      "date": "2026-04-02",
-      "day": "Torsdag",
       "recipe": "Indisk gryta med spenat, kikärter, senap & yoghurt",
       "recipeId": 53
     },
     {
+      "date": "2026-03-31",
+      "day": "Tisdag",
+      "recipe": "Fisk med örtsås",
+      "recipeId": 50
+    },
+    {
+      "date": "2026-04-01",
+      "day": "Onsdag",
+      "recipe": "Annas pasta med morötter, lök & sweet chili",
+      "recipeId": 52
+    },
+    {
+      "date": "2026-04-02",
+      "day": "Torsdag",
+      "recipe": "Oreganokyckling",
+      "recipeId": 60
+    },
+    {
       "date": "2026-04-03",
       "day": "Fredag",
-      "recipe": "Majsplättar med kokosmjölk",
-      "recipeId": 54
+      "recipe": "Krämig bönmasala",
+      "recipeId": 59
     },
     {
       "date": "2026-04-04",
       "day": "Lördag",
-      "recipe": "Stekta rödspättafiléer med stuvade morötter",
-      "recipeId": 3
+      "recipe": "Ramen med salladskål och champinjoner",
+      "recipeId": 10
     }
   ]
 }
