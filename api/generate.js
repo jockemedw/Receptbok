@@ -313,7 +313,9 @@ function normalizeName(name) {
 
 // Steg 5: Kategorisera
 function categorize(name) {
-  const low = name.toLowerCase();
+  // Strip tillagningsbeskrivningar före matchning — "rostade" innehåller "ost" som är Mejeri-nyckelord
+  const low = name.toLowerCase()
+    .replace(/^(rostad|rostade|stekt|stekta|tinad|tinade|nykokt|nykokta|kokt|kokta)\s+/, "");
   if (SKAFFERI_OVERRIDE.has(low)) return "Skafferi";
   for (const [cat, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
     if (cat === "Skafferi" || cat === "Övrigt") continue;
