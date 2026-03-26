@@ -119,6 +119,7 @@ Receptbok/
 11. **Expanderbara receptkort i veckovyn** — receptkortet ska kunna vecklas ut direkt i matsedelsvyn (inline expand), utan att lämna vyn
 12. ~~**Ytterligare kvalitetskontroll av inköpslistan**~~ — **KLAR** (session 13, 2026-03-26)
 13. ~~**Sortering inom inköpslistans kategorier**~~ — **KLAR** (session 13, 2026-03-26)
+14. **Handplocka recept** — möjlighet att låsa in ett eller flera specifika recept från receptboken innan generering. Fritekstfältet är en mjuk önskan som tyst misslyckas om receptet är historikblockat. Handplockning kringgår historikblockering och ger full kontroll.
 
 ## Senaste session (2026-03-14 — Session 8)
 - Stängde av Antigravity som todo-punkt — användaren pushar och refreshar, inget lokalt behov
@@ -178,3 +179,10 @@ Tre problem hittade i `callClaude()` / receptvalet:
 - **Punkt 13 klar:** Alfabetisk sortering (A–Ö) inom varje kategori. å/ä/ö sorteras sist via explicit teckenmappning (localeCompare med sv-locale är opålitligt i Vercels serverless-miljö).
 - **Format:** Inköpslistan visar nu "ingrediensnamn (mängd)" istället för "mängd ingrediensnamn" — bättre läsbarhet och naturligare med alfabetisk sortering.
 - **Nästa session börjar med:** Punkt 8, 9 eller 11 — flerval i filter, prövat/oprövat-filter, eller expanderbara receptkort.
+
+## Session 14 (2026-03-26 — KLAR)
+- **Historikspårning ombyggd:** Rotorsaker till receptupprepning (rödbetsrisotto 12×): (1) fetchHistory läste från CDN-cachad raw-URL — täta genereringar skrev ovanpå gammal data och tappade mellanliggande körningar. (2) Generationsbaserat format tappade individuell receptspårning. (3) 28-dagarsfönster blockerade ~45 av 62 recept → för snäv pool.
+- **Ny design:** `fetchHistory(pat)` läser nu via GitHub API (ingen CDN-cache). Nytt format: `{ usedOn: { "5": "2026-03-26" } }` — ett datum per recept, max lika många poster som receptdatabasen har. 14-dagarsfönster. `recipe-history.json` migrerad.
+- **Fallback:** När färska recept inte räcker fylls poolen med de recept som gick *längst sedan* (sorterat på datum), aldrig slumpmässigt.
+- **Punkt 14 tillagd:** Handplocka recept — fritekstfältet är mjuk önskan som tyst misslyckas om receptet är historikblockat.
+- **Nästa session börjar med:** Punkt 8, 9, 11 eller 14 — flerval i filter, prövat/oprövat, expanderbara receptkort, eller handplockning.
