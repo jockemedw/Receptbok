@@ -117,8 +117,9 @@ Receptbok/
 9. **Prövat/Oprövat-filter** — lägg till båda som valbara filter i receptboken
 10. ~~**Förbättrad receptväljare**~~ — **KLAR** (session 12, 2026-03-25)
 11. **Expanderbara receptkort i veckovyn** — receptkortet ska kunna vecklas ut direkt i matsedelsvyn (inline expand), utan att lämna vyn
-12. **Ytterligare kvalitetskontroll av inköpslistan** — parsern har förbättrats avsevärt (session 11) men fler fel kan finnas. Generera en ny matsedel och granska listan mot recepten igen innan punkterna anses klara.
-13. **Sortering inom inköpslistans kategorier** — varorna listas nu i slumpmässig ordning inom varje kategori. Bör sorteras på ett logiskt sätt (t.ex. alfabetiskt, eller efter typ/placering i butik).
+12. ~~**Ytterligare kvalitetskontroll av inköpslistan**~~ — **KLAR** (session 13, 2026-03-26)
+13. ~~**Sortering inom inköpslistans kategorier**~~ — **KLAR** (session 13, 2026-03-26)
+14. **Handplocka recept** — möjlighet att låsa in ett eller flera specifika recept från receptboken innan generering. Fritekstfältet är en mjuk önskan som tyst misslyckas om receptet är historikblockat. Handplockning kringgår historikblockering och ger full kontroll.
 
 ## Senaste session (2026-03-14 — Session 8)
 - Stängde av Antigravity som todo-punkt — användaren pushar och refreshar, inget lokalt behov
@@ -172,3 +173,16 @@ Tre problem hittade i `callClaude()` / receptvalet:
 - **Ny funktion:** "Rensa lista"-knapp längst ned i inköpslistan — tömmer receptvaror, manuella varor och bockningar. Ny `clear`-action i `api/shopping.js`.
 - **Backlog:** Punkt 13 tillagd — sortering inom inköpslistans kategorier.
 - **Nästa session börjar med:** Punkt 12 — kvalitetskontroll av inköpslistan (generera ny matsedel och granska).
+
+## Session 13 (2026-03-26 — KLAR)
+- **Punkt 12 klar:** Kvalitetsgranskning mot 15 recept. Rotorsaker identifierade och åtgärdade i `api/generate.js`: (1) kycklingfilé i Mejeri — "rostad" innehåller "ost" som substring, fixat i `categorize()`. (2) Cashewnötter duplicerades — "hackade cashewnötter" normaliseras nu till "cashewnötter". (3) Citroner delades upp — "Skal och saft av" strippas i `cleanIngredient()`. (4) Kryddor i Grönsaker — torkad/malen-prefix → alltid Skafferi; tomatpuré/chiliflakes/paprikapulver till SKAFFERI_OVERRIDE; ingefära borttagen ur Grönsaker-nyckelord. (5) Basvaror kvar — "salt och peppar", "lite vatten", "valfria grönsaker" till PANTRY_ALWAYS_SKIP. (6) "oregano eller basilika" filtreras via " eller "-check i noAmount.
+- **Punkt 13 klar:** Alfabetisk sortering (A–Ö) inom varje kategori. å/ä/ö sorteras sist via explicit teckenmappning (localeCompare med sv-locale är opålitligt i Vercels serverless-miljö).
+- **Format:** Inköpslistan visar nu "ingrediensnamn (mängd)" istället för "mängd ingrediensnamn" — bättre läsbarhet och naturligare med alfabetisk sortering.
+- **Nästa session börjar med:** Punkt 8, 9 eller 11 — flerval i filter, prövat/oprövat-filter, eller expanderbara receptkort.
+
+## Session 14 (2026-03-26 — KLAR)
+- **Historikspårning ombyggd:** Rotorsaker till receptupprepning (rödbetsrisotto 12×): (1) fetchHistory läste från CDN-cachad raw-URL — täta genereringar skrev ovanpå gammal data och tappade mellanliggande körningar. (2) Generationsbaserat format tappade individuell receptspårning. (3) 28-dagarsfönster blockerade ~45 av 62 recept → för snäv pool.
+- **Ny design:** `fetchHistory(pat)` läser nu via GitHub API (ingen CDN-cache). Nytt format: `{ usedOn: { "5": "2026-03-26" } }` — ett datum per recept, max lika många poster som receptdatabasen har. 14-dagarsfönster. `recipe-history.json` migrerad.
+- **Fallback:** När färska recept inte räcker fylls poolen med de recept som gick *längst sedan* (sorterat på datum), aldrig slumpmässigt.
+- **Punkt 14 tillagd:** Handplocka recept — fritekstfältet är mjuk önskan som tyst misslyckas om receptet är historikblockat.
+- **Nästa session börjar med:** Punkt 8, 9, 11 eller 14 — flerval i filter, prövat/oprövat, expanderbara receptkort, eller handplockning.
