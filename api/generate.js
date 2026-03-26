@@ -147,6 +147,7 @@ const NORMALIZATION_TABLE = {
   // Nötter (tillagningsbeskrivningar)
   "hackade nötter": "nötter", "grovhackade nötter": "nötter",
   "rostade nötter/frön": "nötter",
+  "hackade cashewnötter": "cashewnötter",
 };
 
 // Steg 5: Kategorinyckelord (utökade)
@@ -176,7 +177,6 @@ const CATEGORY_KEYWORDS = {
     "sallad", "salladsblad",
     "persilja", "koriander", "dill", "basilika", "timjan", "gräslök",
     "rosmarin", "oregano", "mynta", "dragon", "lagerblad",
-    "ingefära",
   ],
   "Fisk & kött": [
     "lax", "torsk", "sej", "rödspätta", "fisk",
@@ -202,6 +202,8 @@ const SKAFFERI_OVERRIDE = new Set([
   "fiskbuljong", "fiskfond", "fisksås", "fisksas",
   "ostronsås", "ostronssas",
   "hönsbuljong", "grönsaksbuljong", "köttbuljong", "buljongtärning",
+  // Kryddor/kondiment som råkar matcha Grönsaker-nyckelord via substring
+  "tomatpuré", "chiliflakes", "paprikapulver",
 ]);
 
 // Enheter som inte är meningsfulla på en inköpslista — visa bara ingrediensnamnet
@@ -210,6 +212,7 @@ const SMALL_UNITS = new Set(["tsk", "krm", "msk", "nypa", "tumme"]);
 // Ingredienser som aldrig ska visas på inköpslistan
 const PANTRY_ALWAYS_SKIP = new Set([
   "salt", "svartpeppar", "vitpeppar", "vatten", "salt & peppar", "salt och svartpeppar",
+  "salt och peppar", "lite vatten", "valfria grönsaker",
 ]);
 
 // Svenska matlagningsenheter (längst först för regex-matchning)
@@ -254,6 +257,7 @@ function cleanIngredient(raw) {
   let s = raw.includes(":") ? raw.split(":")[1].trim() : raw.trim();
   s = s.replace(/\s*\(.*?\)\s*/g, " ").trim(); // strip parentes
   s = s.replace(/^(ev\.?\s+|eventuellt\s+|ca\s+)/i, ""); // strip prefix
+  s = s.replace(/^(skal och saft av|saften av|skalet av|saft av)\s+/i, ""); // strip prep-noteringar (citrus)
   s = s.replace(/^(nykokt|nykokta|kokt|kokta|stekt|stekta|rostad|rostade|tinad|tinade)\s+/i, ""); // strip tillagningsbeskrivningar
   s = s.replace(/\s+till\s+\S+(\s+\S+)?$/i, ""); // strip "till X"-suffix (t.ex. "till stekning", "till redning")
   s = s.replace(/\s*\+.*$/, "");                  // strip "+ X"-suffix (t.ex. "maizena + 2 msk vatten")
@@ -313,8 +317,12 @@ function normalizeName(name) {
 
 // Steg 5: Kategorisera
 function categorize(name) {
-  const low = name.toLowerCase();
+  // Strip tillagningsbeskrivningar före matchning — "rostade" innehåller "ost" som är Mejeri-nyckelord
+  const low = name.toLowerCase()
+    .replace(/^(rostad|rostade|stekt|stekta|tinad|tinade|nykokt|nykokta|kokt|kokta)\s+/, "");
   if (SKAFFERI_OVERRIDE.has(low)) return "Skafferi";
+  // Torkade och malda kryddor är alltid skafferivaror
+  if (/^(torkad|torkade|malen|mald)\s+/.test(low)) return "Skafferi";
   for (const [cat, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
     if (cat === "Skafferi" || cat === "Övrigt") continue;
     if (keywords.some((kw) => low === kw || low.includes(kw))) return cat;
@@ -408,6 +416,7 @@ function buildShoppingList(selectedIds, allRecipes) {
   }
   for (const [name] of noAmount) {
     if (PANTRY_ALWAYS_SKIP.has(name)) noAmount.delete(name);
+    if (name.includes(" eller ")) noAmount.delete(name); // "oregano eller basilika" etc. — valfria alternativ utan mängd
   }
 
   // Samma ingrediens med olika stora enheter (t.ex. "4 dl frysta ärter" + "500 g frysta ärter")
