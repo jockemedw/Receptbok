@@ -445,6 +445,13 @@ function buildShoppingList(selectedIds, allRecipes) {
     }
   }
 
+  // Sortera alfabetiskt inom varje kategori (jämför på ingrediensnamn, ignorera ledande mängd+enhet)
+  const extractName = (s) =>
+    s.replace(/^[0-9½¼¾][0-9,.\s]*(?:dl|g|kg|msk|tsk|krm|st|frp|påsar?|burk|kruka|liter|l)\s+/i, "").trim();
+  for (const arr of Object.values(categories)) {
+    arr.sort((a, b) => extractName(a).localeCompare(extractName(b), "sv"));
+  }
+
   return categories;
 }
 
