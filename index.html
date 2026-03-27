@@ -663,6 +663,75 @@
   .replace-recipe-btn:hover { background: var(--light-terra); }
   .replace-recipe-btn:disabled { opacity: 0.55; cursor: default; }
 
+  .confirm-plan-wrap {
+    padding: 0.75rem 1rem 0.25rem;
+  }
+
+  .confirm-plan-btn {
+    width: 100%;
+    background: var(--terracotta);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 0.7rem 1rem;
+    font-size: 0.9rem;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .confirm-plan-btn:hover { opacity: 0.88; }
+  .confirm-plan-btn:disabled { opacity: 0.55; cursor: default; }
+
+  .confirm-status {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.4rem;
+    text-align: center;
+  }
+
+  .confirm-status.confirmed { color: #5a8a5a; font-weight: 500; }
+
+  .week-day-card.swap-source {
+    border: 2px dashed var(--terracotta);
+    background: var(--light-terra);
+  }
+
+  .week-day-card.swap-target {
+    border-color: #7aaa7a;
+    background: #f0f7f0;
+    cursor: pointer;
+  }
+
+  .week-day-card.swap-target::after {
+    content: 'Byt hit';
+    display: block;
+    font-size: 0.65rem;
+    color: #5a8a5a;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 0.35rem;
+  }
+
+  .swap-day-btn {
+    margin-top: 0.6rem;
+    margin-left: 0.5rem;
+    display: inline-block;
+    background: none;
+    border: 1.5px solid var(--text-muted);
+    color: var(--text-muted);
+    border-radius: 8px;
+    padding: 0.4rem 0.85rem;
+    font-size: 0.82rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+
+  .swap-day-btn:hover { border-color: var(--terracotta); color: var(--terracotta); }
+
   .week-day-name {
     font-size: 0.68rem;
     text-transform: uppercase;
@@ -1387,6 +1456,10 @@
         <div class="timeline" id="weekGrid"></div>
       </div>
       <div id="weekRecipeDetail" class="week-recipe-detail"></div>
+      <div class="confirm-plan-wrap" id="confirmPlanWrap" style="display:none">
+        <button class="confirm-plan-btn" id="confirmPlanBtn" onclick="confirmPlan()">✓ Bekräfta och bygg inköpslista</button>
+        <p class="confirm-status" id="confirmStatus"></p>
+      </div>
     </div>
 
     <div class="week-section" id="ingredientSection">
@@ -1797,6 +1870,7 @@ async function generatePlan() {
       max_weekday_time: document.getElementById('maxWeekdayTime').value,
       max_weekend_time: document.getElementById('maxWeekendTime').value,
       vegetarian_days: scaledVegetarian,
+      skip_shopping: true,
     };
 
     const res = await fetch('/api/generate', {
@@ -1808,11 +1882,11 @@ async function generatePlan() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Okänt fel');
 
-    status.textContent = `✓ Klar! ${data.days} dagar planerade.`;
+    status.textContent = `✓ Klar! ${data.days} dagar planerade. Bekräfta matsedeln för att bygga inköpslistan.`;
     status.className = 'trigger-status success';
     btn.disabled = false;
     if (data.weeklyPlan) {
-      renderWeeklyPlanData(data.weeklyPlan, data.shoppingList, true);
+      renderWeeklyPlanData(data.weeklyPlan, null, true);
     }
     switchTab('vecka');
   } catch (err) {
@@ -1839,10 +1913,20 @@ function jumpToRecipe(title) {
 
 const PROTEIN_LABEL = { fisk:'Fisk', kyckling:'Kyckling', kött:'Kött', fläsk:'Fläsk', vegetarisk:'Vegetarisk' };
 
+let planConfirmed = false;
+
 function openWeekRecipe(recipeId, title, cardEl) {
+  // Om vi är i bytesläge — tolka klick som val av måldag
+  if (cardEl.classList.contains('swap-target')) {
+    const fromDate = document.querySelector('.week-day-card.swap-source')?.dataset.date;
+    if (fromDate) swapDays(fromDate, cardEl.dataset.date);
+    return;
+  }
+
   const panel = document.getElementById('weekRecipeDetail');
   const alreadySelected = cardEl.classList.contains('selected');
 
+  cancelSwapMode();
   document.querySelectorAll('.week-day-card').forEach(c => c.classList.remove('selected'));
 
   if (alreadySelected) {
@@ -1862,6 +1946,10 @@ function openWeekRecipe(recipeId, title, cardEl) {
   const notesHtml = r.notes ? `<div class="detail-section"><p class="recipe-notes">${r.notes}</p></div>` : '';
   const date = cardEl.dataset.date || '';
 
+  const actionBtns = planConfirmed ? '' : `
+    <button class="replace-recipe-btn" onclick="replaceRecipe(${r.id}, '${date}', this)">Föreslå nytt recept</button>
+    <button class="swap-day-btn" onclick="enterSwapMode('${date}')">↕ Flytta till annan dag</button>`;
+
   panel.innerHTML = `<div class="detail-inner">
     <div class="week-recipe-header">
       <div class="week-recipe-title">${r.title}</div>
@@ -1878,7 +1966,7 @@ function openWeekRecipe(recipeId, title, cardEl) {
       <ol class="steps-list">${stepsHtml}</ol>
     </div>
     ${notesHtml}
-    <button class="replace-recipe-btn" onclick="replaceRecipe(${r.id}, '${date}', this)">Föreslå nytt recept</button>
+    ${actionBtns}
   </div>`;
 
   panel.classList.add('open');
@@ -1888,6 +1976,103 @@ function openWeekRecipe(recipeId, title, cardEl) {
     const top = panel.getBoundingClientRect().top + window.scrollY - hh - 12;
     smoothScrollTo(top, 420);
   }, 520);
+}
+
+async function confirmPlan() {
+  const btn = document.getElementById('confirmPlanBtn');
+  const statusEl = document.getElementById('confirmStatus');
+  btn.disabled = true;
+  btn.textContent = 'Bygger inköpslista…';
+  statusEl.textContent = '';
+
+  try {
+    const res = await fetch('/api/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Okänt fel');
+
+    planConfirmed = true;
+    document.getElementById('confirmPlanWrap').style.display = 'none';
+
+    // Stäng detaljpanelen (knappar ska uppdateras om den öppnas igen)
+    const panel = document.getElementById('weekRecipeDetail');
+    panel.classList.remove('open');
+    panel.innerHTML = '';
+    document.querySelectorAll('.week-day-card').forEach(c => c.classList.remove('selected'));
+
+    renderIngredientPreview(
+      data.shoppingList?.recipeItems || null,
+      data.shoppingList?.recipeItemsMovedAt || null,
+      true
+    );
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = '✓ Bekräfta och bygg inköpslista';
+    statusEl.textContent = 'Kunde inte bekräfta — prova igen.';
+    statusEl.className = 'confirm-status';
+  }
+}
+
+function enterSwapMode(fromDate) {
+  cancelSwapMode();
+  const fromCard = document.querySelector(`.week-day-card[data-date="${fromDate}"]`);
+  if (!fromCard) return;
+
+  // Stäng detaljpanelen men behåll selected-markering på kortet
+  const panel = document.getElementById('weekRecipeDetail');
+  panel.classList.remove('open');
+  panel.innerHTML = '';
+
+  fromCard.classList.remove('selected');
+  fromCard.classList.add('swap-source');
+
+  document.querySelectorAll('.week-day-card').forEach(c => {
+    if (c !== fromCard) c.classList.add('swap-target');
+  });
+}
+
+function cancelSwapMode() {
+  document.querySelectorAll('.week-day-card.swap-source').forEach(c => c.classList.remove('swap-source'));
+  document.querySelectorAll('.week-day-card.swap-target').forEach(c => c.classList.remove('swap-target'));
+}
+
+async function swapDays(date1, date2) {
+  cancelSwapMode();
+  document.querySelectorAll('.week-day-card').forEach(c => c.classList.remove('selected'));
+  const panel = document.getElementById('weekRecipeDetail');
+  panel.classList.remove('open');
+  panel.innerHTML = '';
+
+  try {
+    const res = await fetch('/api/swap-days', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date1, date2 })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Okänt fel');
+
+    // Uppdatera korten i DOM direkt utan omladdning
+    const card1 = document.querySelector(`.week-day-card[data-date="${date1}"]`);
+    const card2 = document.querySelector(`.week-day-card[data-date="${date2}"]`);
+    if (card1 && card2) {
+      const title1 = card1.querySelector('.week-day-recipe').textContent;
+      const rid1   = card1.dataset.recipeid;
+      card1.querySelector('.week-day-recipe').textContent = card2.querySelector('.week-day-recipe').textContent;
+      card1.dataset.recipeid = card2.dataset.recipeid;
+      card1.setAttribute('onclick', `openWeekRecipe(${card2.dataset.recipeid || 'null'}, '${card2.querySelector('.week-day-recipe').textContent.replace(/'/g,"\\'")}', this)`);
+      card2.querySelector('.week-day-recipe').textContent = title1;
+      card2.dataset.recipeid = rid1;
+      card2.setAttribute('onclick', `openWeekRecipe(${rid1 || 'null'}, '${title1.replace(/'/g,"\\'")}', this)`);
+    }
+  } catch (e) {
+    // Visa kort felmeddelande
+    const errEl = document.createElement('p');
+    errEl.style.cssText = 'color:var(--terracotta);font-size:0.82rem;padding:0.5rem 1rem';
+    errEl.textContent = 'Kunde inte byta dag — prova igen.';
+    panel.innerHTML = '';
+    panel.appendChild(errEl);
+    panel.classList.add('open');
+  }
 }
 
 async function replaceRecipe(currentId, date, btnEl) {
@@ -1911,6 +2096,7 @@ async function replaceRecipe(currentId, date, btnEl) {
     if (selectedCard) {
       selectedCard.dataset.recipeid = data.recipeId;
       selectedCard.querySelector('.week-day-recipe').textContent = data.recipe;
+      selectedCard.classList.remove('selected');
       openWeekRecipe(data.recipeId, data.recipe, selectedCard);
     }
   } catch (e) {
@@ -2250,8 +2436,21 @@ function renderWeeklyPlanData(plan, shop, freshlyGenerated = false) {
     if (target) target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   }, 150);
 
+  const confirmed = !!plan.confirmedAt;
+  planConfirmed = confirmed;
+
+  // Bekräfta-knapp: visas om planen inte är bekräftad
+  const confirmWrap = document.getElementById('confirmPlanWrap');
+  const confirmStatus = document.getElementById('confirmStatus');
+  const confirmBtn = document.getElementById('confirmPlanBtn');
+  confirmWrap.style.display = confirmed ? 'none' : '';
+  confirmBtn.disabled = false;
+  confirmBtn.textContent = '✓ Bekräfta och bygg inköpslista';
+  confirmStatus.textContent = confirmed ? '' : '';
+  confirmStatus.className = 'confirm-status';
+
   const recipeItems = shop?.recipeItems || shop?.categories || null;
-  renderIngredientPreview(recipeItems, shop?.recipeItemsMovedAt || null, freshlyGenerated);
+  renderIngredientPreview(recipeItems, shop?.recipeItemsMovedAt || null, freshlyGenerated || confirmed);
 }
 
 async function loadWeeklyPlan() {
