@@ -1,343 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { buildShoppingList } from "./_shared/shopping-builder.js";
 
 const REPO_OWNER = "jockemedw";
 const REPO_NAME = "Receptbok";
 const BRANCH = "main";
 
 const DAY_NAMES = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag", "Lördag", "Söndag"];
-
-// ─── INGREDIENT PARSER — 5-stegspipeline ───────────────────────────────────
-
-// Steg 3: Varianter → kanoniskt namn
-const NORMALIZATION_TABLE = {
-  // Lök
-  "gul lök": "lök", "gula lökar": "lök", "lökar": "lök",
-  "hackad lök": "lök", "finhackad lök": "lök", "hackad gul lök": "lök",
-  "grovhackad lök": "lök", "tunt skivad lök": "lök", "strimlad lök": "lök",
-  "liten gul lök": "lök", "stor gul lök": "lök", "liten lök": "lök",
-  "rödlökar": "rödlök", "röd lök": "rödlök", "tunt skivad rödlök": "rödlök",
-  "finhackad rödlök": "rödlök", "strimlad rödlök": "rödlök",
-  "purjo": "purjolök", "purjolökar": "purjolök", "strimlad purjolök": "purjolök",
-  "finstrimlad purjolök": "purjolök",
-  "schalottenlökar": "schalottenlök", "schalotten": "schalottenlök",
-  "bananschalottenlök": "schalottenlök", "bananschalotten": "schalottenlök",
-  "steklök": "schalottenlök",
-  "salladslökar": "salladslök", "strimlad salladslök": "salladslök",
-  "pärllök": "silverlök", "pickleslök": "silverlök",
-  // Vitlök
-  "vitlök": "vitlöksklyftor",
-  "vitlöksklyfta": "vitlöksklyftor", "vitlöksklyftor": "vitlöksklyftor",
-  "stor vitlöksklyfta": "vitlöksklyftor", "liten vitlöksklyfta": "vitlöksklyftor",
-  "stor vitlök": "vitlöksklyftor", "liten vitlök": "vitlöksklyftor",
-  "pressad vitlök": "vitlöksklyftor", "krossad vitlök": "vitlöksklyftor",
-  "riven vitlök": "vitlöksklyftor", "rivna vitlöksklyftor": "vitlöksklyftor",
-  "skivad vitlök": "vitlöksklyftor", "finhackad vitlök": "vitlöksklyftor",
-  "hackad vitlök": "vitlöksklyftor", "vitlöksfond": "vitlöksklyftor",
-  // Kyckling (plural)
-  "kycklingfiléer": "kycklingfilé",
-  // Morötter (plural matchar inte "morot" som substring)
-  "morötter": "morot", "rivna morötter": "morot", "grovriven morot": "morot",
-  "skivade morötter": "morot", "tärnade morötter": "morot",
-  // Potatis
-  "potatisen": "potatis", "kokt potatis": "potatis", "fast potatis": "potatis",
-  "potatisbitar": "potatis", "tärnad potatis": "potatis", "klyftad potatis": "potatis",
-  "sötpotatisen": "sötpotatis",
-  // Grädde
-  "vispgrädde": "grädde", "matlagningsgrädde": "matlagningsgrädde",
-  "matgrädde": "matlagningsgrädde", "havregrädde": "havregrädde",
-  "syrad grädde": "crème fraiche", "lätt crème fraiche": "crème fraiche",
-  "crème fraîche": "crème fraiche", "creme fraiche": "crème fraiche", "fraiche": "crème fraiche",
-  // Mjölk
-  "mellanmjölk": "mjölk", "lättmjölk": "mjölk", "standardmjölk": "mjölk", "helmjölk": "mjölk",
-  // Smör
-  "rumstempererat smör": "smör", "klicka smör": "smör", "brynt smör": "smör",
-  // Ost
-  "parmesanost": "parmesan", "parmigiano reggiano": "parmesan",
-  "riven parmesan": "parmesan", "finriven parmesan": "parmesan", "grana padano": "parmesan",
-  "pecorinoost": "pecorino", "mozzarellaost": "mozzarella", "färsk mozzarella": "mozzarella",
-  "smulad fetaost": "fetaost", "feta": "fetaost", "stekost": "halloumi",
-  "getost": "chèvre", "riven ost": "ost", "gratängost": "ost",
-  "lagrad ost": "ost", "smakrik ost": "ost", "hushållsost": "ost",
-  // Yoghurt
-  "naturell yoghurt": "yoghurt", "matyoghurt": "yoghurt", "grekisk yoghurt": "turkisk yoghurt",
-  // Ägg
-  "hela ägg": "ägg", "äggulor": "äggula", "äggvitor": "äggvita",
-  // Tomat
-  "körsbärstomater": "körsbärstomat", "cocktailtomater": "körsbärstomat",
-  "cocktailtomat": "körsbärstomat", "mini tomater": "körsbärstomat",
-  "tomater": "tomat", "tomatpure": "tomatpuré",
-  // Örter (färsk = samma nyckel, torkad = separat)
-  "färsk persilja": "persilja", "bladpersilja": "persilja", "finhackad persilja": "persilja",
-  "torkad persilja": "torkad persilja",
-  "färsk koriander": "koriander", "hackad koriander": "koriander",
-  "malen koriander": "malen koriander", "torkad koriander": "malen koriander",
-  "färsk timjan": "timjan", "torkad timjan": "torkad timjan",
-  "timjankvist": "timjan", "timjankvister": "timjan",
-  "färsk basilika": "basilika", "basilikablad": "basilika",
-  "torkad basilika": "torkad basilika",
-  "färsk dill": "dill", "torkad dill": "torkad dill",
-  "färsk gräslök": "gräslök",
-  "rosmarinkvist": "rosmarin", "torkad rosmarin": "torkad rosmarin",
-  "torkad oregano": "torkad oregano",
-  "färsk dragon": "dragon", "färsk mynta": "mynta", "torkad mynta": "torkad mynta",
-  // Bönor & linser
-  "kikärter": "kikärtor", "kokta kikärtor": "kikärtor",
-  "vita bönor": "vita bönor", "stora vita bönor": "vita bönor", "cannellinibönor": "vita bönor",
-  "kokta linser": "linser",
-  // Olja
-  "extra virgin olivolja": "olivolja", "neutral olja": "rapsolja", "olja": "rapsolja",
-  // Buljong
-  "kycklingbuljong": "hönsbuljong", "hönsbuljongtärning": "hönsbuljong",
-  "kycklingbuljongtärning": "hönsbuljong", "kycklingfond": "hönsbuljong", "hönsfond": "hönsbuljong",
-  "grönsaksbuljongtärning": "grönsaksbuljong", "grönsaksfond": "grönsaksbuljong",
-  "köttbuljongtärning": "köttbuljong", "fiskbuljongtärning": "fiskbuljong",
-  "umamibuljongtärning": "buljongtärning",
-  // Pasta & ris
-  "pennepasta": "penne", "lasagneplatta": "lasagneplattor",
-  "arborio": "risotto-ris", "avorioris": "risotto-ris",
-  // Kål
-  "vitkålshuvud": "vitkål", "spetskålshuvud": "spetskål",
-  "broccolibuketter": "broccoli", "pak choi": "pak choy",
-  // Svamp
-  "champinjon": "champinjoner", "skivade champinjoner": "champinjoner",
-  "shiitakesvamp": "shiitake", "blandad svamp": "svamp",
-  // Spenat
-  "bladspenat": "spenat", "babyspenat": "spenat", "färsk spenat": "spenat",
-  "fryst hackad spenat": "fryst spenat",
-  // Citrus
-  "citronsaft": "citron", "citronskal": "citron",
-  "limesaft": "lime", "limeskal": "lime", "limeklyftor": "lime",
-  "apelsinjuice": "apelsin",
-  // Fisk & skaldjur
-  "laxfilé": "lax", "laxfiléer": "lax",
-  "rödspättafiléer": "rödspätta", "fiskfilé": "fisk",
-  "skalade räkor": "räkor", "räkor i lag": "räkor",
-  "tonfisk i vatten": "tonfisk", "tonfisk i olja": "tonfisk",
-  "ansjovisfilé": "ansjovis", "kräftor i lag": "kräftor",
-  // Kött
-  "nötfärs": "köttfärs", "hushållsfärs": "köttfärs",
-  "kycklinglårfilé": "kycklinglår", "kycklinginnerfilé": "kycklingfilé",
-  "tärnat bacon": "bacon", "chorizokorv": "chorizo",
-  // Rotfrukter
-  "rotselleri": "selleri", "blekselleri": "selleri", "blekselleristjälk": "selleri",
-  "jordärtskockor": "jordärtskocka", "rödbeta": "rödbetor",
-  // Nötter & frön
-  "naturella cashewnötter": "cashewnötter", "salta jordnötter": "jordnötter",
-  "sötmandel": "mandel", "rostade sesamfrön": "sesamfrön", "torrostade sesamfrön": "sesamfrön",
-  // Kryddor
-  "flingsalt": "salt", "nymalen svartpeppar": "svartpeppar", "peppar": "svartpeppar",
-  "malen spiskummin": "spiskummin", "hel spiskummin": "spiskummin",
-  "malen ingefära": "ingefära", "ingefärspulver": "ingefära", "färsk ingefära": "ingefära",
-  "gul currypulver": "curry", "currypulver": "curry",
-  // Soja & asiatiska
-  "japansk soja": "soja", "japansk sojasås": "soja",
-  "ljus soja": "soja", "kinesisk soja": "soja",
-  "sesamkräm": "tahini", "misopasta": "miso",
-  // Mjöl & bakning
-  "mjöl": "vetemjöl", "majsstärkelse": "maizena",
-  "strösocker": "socker", "råsocker": "socker",
-  "panko": "pankoströbröd",
-  // Bröd
-  "tortillabröd": "tortilla", "libabröd": "pitabröd",
-  // Diverse
-  "gröna oliver": "oliver", "svarta oliver": "oliver",
-  "flytande honung": "honung", "sweet chilisås": "sweet chili",
-  // Olja (sammansatta)
-  "neutral jordnöts": "rapsolja", "neutral jordnötsolja": "rapsolja",
-  // Nötter (tillagningsbeskrivningar)
-  "hackade nötter": "nötter", "grovhackade nötter": "nötter",
-  "rostade nötter/frön": "nötter",
-  "hackade cashewnötter": "cashewnötter",
-};
-
-// Steg 5: Kategorinyckelord (utökade)
-const CATEGORY_KEYWORDS = {
-  Mejeri: [
-    "grädde", "matlagningsgrädde", "havregrädde", "kokosmjölk", "kokosgrädde",
-    "mjölk", "havremjölk", "mandelmjölk",
-    "smör", "margarin",
-    "ost", "parmesan", "pecorino", "mozzarella", "fetaost", "halloumi",
-    "cheddar", "chèvre", "gruyère", "ricotta", "mascarpone", "kvarg", "keso",
-    "crème fraiche", "yoghurt", "turkisk yoghurt", "filmjölk",
-    "ägg", "äggula", "äggvita",
-  ],
-  Grönsaker: [
-    "lök", "rödlök", "purjolök", "salladslök", "schalottenlök", "silverlök", "vitlök",
-    "morot", "morötter", "potatis", "sötpotatis",
-    "blomkål", "broccoli", "brysselkål", "grönkål", "vitkål", "spetskål",
-    "salladskål", "savojkål", "pak choy", "kålrabbi",
-    "paprika", "chili", "jalapeño",
-    "tomat", "körsbärstomat", "krossade tomater", "passerade tomater", "soltorkade tomater",
-    "gurka", "inlagd gurka", "zucchini", "aubergine",
-    "spenat", "fryst spenat",
-    "champinjoner", "svamp", "shiitake", "kantareller",
-    "selleri", "palsternacka", "jordärtskocka", "fänkål", "rödbetor",
-    "sparris", "majs", "ärtor", "ärter", "sockerärtor", "haricots verts",
-    "bönor", "kikärtor", "linser", "belugalinser",
-    "sallad", "salladsblad",
-    "persilja", "koriander", "dill", "basilika", "timjan", "gräslök",
-    "rosmarin", "oregano", "mynta", "dragon", "lagerblad",
-  ],
-  "Fisk & kött": [
-    "lax", "torsk", "sej", "rödspätta", "fisk",
-    "räkor", "kräftor", "tonfisk", "ansjovis", "sardeller", "skaldjur", "makrill",
-    "kyckling", "kycklingfilé", "kycklinglår", "kycklingfärs",
-    "köttfärs", "fläskfärs", "vegofärs",
-    "fläskfilé", "fläsk", "stekfläsk",
-    "bacon", "pancetta", "chorizo", "salsiccia", "korv",
-    "biff", "oxfilé", "lamm", "tofu",
-  ],
-  Frukt: [
-    "citron", "lime", "apelsin", "grapefrukt",
-    "äpple", "päron", "banan", "mango", "ananas",
-    "hallon", "jordgubbar", "lingon", "blåbär",
-    "dadlar", "russin",
-  ],
-  Skafferi: [],
-  Övrigt: [],
-};
-
-// Ingredienser som alltid tillhör Skafferi, oavsett om de råkar innehålla "fisk" el liknande
-const SKAFFERI_OVERRIDE = new Set([
-  "fiskbuljong", "fiskfond", "fisksås", "fisksas",
-  "ostronsås", "ostronssas",
-  "hönsbuljong", "grönsaksbuljong", "köttbuljong", "buljongtärning",
-  // Kryddor/kondiment som råkar matcha Grönsaker-nyckelord via substring
-  "tomatpuré", "chiliflakes", "paprikapulver",
-]);
-
-// Enheter som inte är meningsfulla på en inköpslista — visa bara ingrediensnamnet
-const SMALL_UNITS = new Set(["tsk", "krm", "msk", "nypa", "tumme"]);
-
-// Ingredienser som aldrig ska visas på inköpslistan
-const PANTRY_ALWAYS_SKIP = new Set([
-  "salt", "svartpeppar", "vitpeppar", "vatten", "salt & peppar", "salt och svartpeppar",
-  "salt och peppar", "lite vatten", "valfria grönsaker",
-]);
-
-// Svenska matlagningsenheter (längst först för regex-matchning)
-const SWEDISH_UNITS = [
-  "förpackning", "stycken",
-  "dl", "cl", "ml", "kg", "msk", "tsk", "krm",
-  "burk", "frp", "förp", "pkt", "paket", "påsar", "påse",
-  "krukor", "kruka", "knippe", "skivor", "klyftor", "bitar", "kvistar",
-  "skiva", "klyfta", "kvist", "bit",
-  "huvud", "näve", "nypa", "tumme", "st",
-  "g", "liter", "l",
-];
-
-// Förbyggd enhets-regex (en gång vid modulstart)
-// Använder lookahead istället för \b för att hantera svenska tecken (ö/ä/å är ej \w i JS-regex)
-// Utan detta matchar "l" felaktigt i t.ex. "lök" eftersom ö inte är ett "ordtecken"
-const UNIT_REGEX = new RegExp(
-  `^(${SWEDISH_UNITS.map((u) => u.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})(?![a-zA-ZåäöÅÄÖ])`,
-  "i"
-);
-
-// Steg 2: Parsa bråk och intervall till tal
-function parseFraction(str) {
-  const FRACS = { "½": 0.5, "¼": 0.25, "¾": 0.75 };
-  const s = str.trim();
-  if (FRACS[s]) return FRACS[s];
-  // "1½", "2¼" etc.
-  for (const [f, v] of Object.entries(FRACS)) {
-    if (s.endsWith(f)) {
-      const base = parseFloat(s.slice(0, -f.length));
-      if (!isNaN(base)) return base + v;
-    }
-  }
-  // Intervall "1–2" eller "1-2" → ta max
-  const range = s.replace(",", ".").match(/^[\d.]+\s*[–-]\s*([\d.]+)$/);
-  if (range) return parseFloat(range[1]);
-  return parseFloat(s.replace(",", ".")) || null;
-}
-
-// Steg 1: Rensa råsträng
-function cleanIngredient(raw) {
-  let s = raw.includes(":") ? raw.split(":")[1].trim() : raw.trim();
-  s = s.replace(/\s*\(.*?\)\s*/g, " ").trim(); // strip parentes
-  s = s.replace(/^(ev\.?\s+|eventuellt\s+|ca\s+)/i, ""); // strip prefix
-  s = s.replace(/^(skal och saft av|saften av|skalet av|saft av)\s+/i, ""); // strip prep-noteringar (citrus)
-  s = s.replace(/^(nykokt|nykokta|kokt|kokta|stekt|stekta|rostad|rostade|tinad|tinade)\s+/i, ""); // strip tillagningsbeskrivningar
-  s = s.replace(/\s+till\s+\S+(\s+\S+)?$/i, ""); // strip "till X"-suffix (t.ex. "till stekning", "till redning")
-  s = s.replace(/\s*\+.*$/, "");                  // strip "+ X"-suffix (t.ex. "maizena + 2 msk vatten")
-  // Strip "eller"-alternativ när strängen börjar med en mängd
-  // Om adjektiv föregår "eller" (t.ex. "250 g färsk eller tinad fryst broccoli") tas sista ordet som ingrediensnamn
-  // Om bindestreck föregår "eller" (t.ex. "2 paket ramen- eller udonnudlar") strippas bindestrecket
-  if (/^\d/.test(s) && s.includes(" eller ")) {
-    const ADJEKTIV = new Set(["färsk", "tinad", "fryst", "varm", "kall", "riven", "hackad", "malen"]);
-    const beforeEller = s.split(" eller ")[0].trim();
-    const lastBeforeWord = beforeEller.split(/\s+/).pop().toLowerCase();
-    if (ADJEKTIV.has(lastBeforeWord)) {
-      const lastWord = s.replace(/,.*$/, "").trim().split(/\s+/).pop().toLowerCase();
-      s = beforeEller.replace(new RegExp("\\s+" + lastBeforeWord + "$", "i"), " " + lastWord).trim();
-    } else if (lastBeforeWord.endsWith("-")) {
-      s = beforeEller.replace(/-$/, "").trim(); // "2 paket ramen-" → "2 paket ramen"
-    } else {
-      s = beforeEller;
-    }
-  }
-  return s;
-}
-
-// Steg 2: Parsa mängd + enhet + namn
-function parseIngredient(raw) {
-  const cleaned = cleanIngredient(raw);
-  let remaining = cleaned;
-
-  // Mängd: siffra, bråk, intervall
-  const amountMatch = remaining.match(
-    /^([\d]+[,.]?\d*(?:\s*[–-]\s*[\d]+[,.]?\d*)?(?:\s*[½¼¾])?|[½¼¾])\s*/
-  );
-  let amount = null;
-  if (amountMatch) {
-    amount = parseFraction(amountMatch[1]);
-    remaining = remaining.slice(amountMatch[0].length);
-  }
-
-  // Enhet
-  const unitMatch = remaining.match(UNIT_REGEX);
-  let unit = null;
-  if (unitMatch) {
-    unit = unitMatch[1].toLowerCase();
-    remaining = remaining.slice(unitMatch[0].length).trim();
-  }
-
-  // Namn: strip tillagningsnot efter komma, och "kokt/kokta"-prefix (t.ex. "2 dl kokt röd quinoa" → "röd quinoa")
-  let name = remaining.replace(/,.*$/, "").trim().toLowerCase() || cleaned.toLowerCase();
-  name = name.replace(/^(nykokt|nykokta|kokt|kokta)\s+/, "");
-
-  return { amount, unit, name };
-}
-
-// Steg 3: Normalisera namn
-function normalizeName(name) {
-  return NORMALIZATION_TABLE[name] || name;
-}
-
-// Steg 5: Kategorisera
-function categorize(name) {
-  // Strip tillagningsbeskrivningar före matchning — "rostade" innehåller "ost" som är Mejeri-nyckelord
-  const low = name.toLowerCase()
-    .replace(/^(rostad|rostade|stekt|stekta|tinad|tinade|nykokt|nykokta|kokt|kokta)\s+/, "");
-  if (SKAFFERI_OVERRIDE.has(low)) return "Skafferi";
-  // Torkade och malda kryddor är alltid skafferivaror
-  if (/^(torkad|torkade|malen|mald)\s+/.test(low)) return "Skafferi";
-  for (const [cat, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
-    if (cat === "Skafferi" || cat === "Övrigt") continue;
-    if (keywords.some((kw) => low === kw || low.includes(kw))) return cat;
-  }
-  return "Skafferi";
-}
-
-// Formatera tillbaka till läsbar sträng
-function formatIngredient(amount, unit, name) {
-  if (amount === null) return name;
-  const FRAC_DISPLAY = { 0.5: "½", 0.25: "¼", 0.75: "¾", 1.5: "1½", 2.5: "2½" };
-  const amtStr = FRAC_DISPLAY[amount] ?? (Number.isInteger(amount) ? String(amount) : String(amount).replace(".", ","));
-  const qty = unit ? `${amtStr} ${unit}` : amtStr;
-  return `${name} (${qty})`;
-}
 
 function buildDayList(startDate, endDate) {
   const days = [];
@@ -369,97 +37,6 @@ function filterRecipes(recipes, constraints) {
     const weekendOk = tags.includes("helg60") && t <= max_weekend_time;
     return weekdayOk || weekendOk;
   });
-}
-
-function buildShoppingList(selectedIds, allRecipes) {
-  const recipeMap = Object.fromEntries(allRecipes.map((r) => [r.id, r]));
-  const categories = { Mejeri: [], Grönsaker: [], "Fisk & kött": [], Frukt: [], Skafferi: [], Övrigt: [] };
-
-  // Steg 4: Merge — nyckel = "normaliseratNamn||enhet"
-  const merged = new Map();   // med mängd
-  const noAmount = new Map(); // utan mängd — deduplicera på namn
-
-  for (const rid of selectedIds) {
-    const recipe = recipeMap[rid];
-    if (!recipe) continue;
-    for (const rawIng of recipe.ingredients || []) {
-      const { amount, unit, name } = parseIngredient(rawIng);
-      const normalized = normalizeName(name);
-      if (amount === null) {
-        noAmount.set(normalized, normalized); // deduplicera, behåll ett
-      } else {
-        const key = `${normalized}||${unit ?? ""}`;
-        if (merged.has(key)) {
-          merged.get(key).amount += amount;
-        } else {
-          merged.set(key, { name: normalized, unit: unit ?? null, amount });
-        }
-      }
-    }
-  }
-
-  // Steg 4.5: Filtrera bort basvaror och konvertera småenheter till bara namn
-  for (const [key, item] of merged) {
-    if (PANTRY_ALWAYS_SKIP.has(item.name)) {
-      merged.delete(key);
-      continue;
-    }
-    if (SMALL_UNITS.has(item.unit)) {
-      merged.delete(key);
-      // Lägg till som namn utan mängd, om inte en stor-enhetspost redan finns
-      const hasLargeUnit = [...merged.keys()].some(
-        (k) => k.startsWith(item.name + "||") && !SMALL_UNITS.has(merged.get(k)?.unit)
-      );
-      if (!hasLargeUnit) {
-        noAmount.set(item.name, item.name);
-      }
-    }
-  }
-  for (const [name] of noAmount) {
-    if (PANTRY_ALWAYS_SKIP.has(name)) noAmount.delete(name);
-    if (name.includes(" eller ")) noAmount.delete(name); // "oregano eller basilika" etc. — valfria alternativ utan mängd
-  }
-
-  // Samma ingrediens med olika stora enheter (t.ex. "4 dl frysta ärter" + "500 g frysta ärter")
-  // → ta bort alla och visa bara namn utan mängd
-  const keysByName = new Map();
-  for (const [key, item] of merged) {
-    if (!keysByName.has(item.name)) keysByName.set(item.name, []);
-    keysByName.get(item.name).push(key);
-  }
-  for (const [name, keys] of keysByName) {
-    if (keys.length > 1) {
-      for (const k of keys) merged.delete(k);
-      noAmount.set(name, name);
-    }
-  }
-
-  // Steg 5: Kategorisera och bygg listor
-  for (const { name, unit, amount } of merged.values()) {
-    categories[categorize(name)].push(formatIngredient(amount, unit, name));
-  }
-  for (const [normalized] of noAmount.entries()) {
-    // Hoppa över om ingrediensen redan finns med mängd
-    const alreadyCovered = [...merged.keys()].some((k) => k.startsWith(normalized + "||"));
-    if (!alreadyCovered) {
-      categories[categorize(normalized)].push(normalized);
-    }
-  }
-
-  // Sortera alfabetiskt inom varje kategori (å/ä/ö sist, som i svenska alfabetet)
-  // localeCompare("sv") är opålitligt i serverless — mappar istället å/ä/ö till tecken efter z
-  const svKey = (s) =>
-    s.replace(/^[0-9½¼¾][0-9,.\s]*(?:dl|g|kg|msk|tsk|krm|st|frp|påsar?|burk|kruka|liter|l)\s+/i, "")
-     .trim()
-     .toLowerCase()
-     .replace(/å/g, "z\u0001")
-     .replace(/ä/g, "z\u0002")
-     .replace(/ö/g, "z\u0003");
-  for (const arr of Object.values(categories)) {
-    arr.sort((a, b) => svKey(a).localeCompare(svKey(b)));
-  }
-
-  return categories;
 }
 
 async function fetchRecipes() {
@@ -750,6 +327,7 @@ export default async function handler(req, res) {
     max_weekday_time = 30,
     max_weekend_time = 60,
     vegetarian_days = 0,
+    skip_shopping = false,
   } = req.body;
 
   if (!start_date || !end_date) {
@@ -765,31 +343,40 @@ export default async function handler(req, res) {
       vegetarian_days: parseInt(vegetarian_days) || 0,
     };
 
-    const [allRecipes, historyData, existingShop] = await Promise.all([fetchRecipes(), fetchHistory(pat), fetchShoppingList()]);
+    const fetches = [fetchRecipes(), fetchHistory(pat)];
+    if (!skip_shopping) fetches.push(fetchShoppingList());
+    const [allRecipes, historyData, existingShop] = await Promise.all(fetches);
+
     const filtered = filterRecipes(allRecipes, constraints);
 
     if (filtered.length === 0) {
       return res.status(400).json({ error: "Inga recept kvar efter filtrering — justera inställningarna." });
     }
 
-    // Pass recently used IDs to Claude so it avoids them
     const recentIds = recentlyUsedIds(historyData);
-
     const dayList = buildDayList(start_date, end_date);
     const days = await callClaude(filtered, dayList, constraints, instructions, recentIds, historyData.usedOn || {});
 
-    const selectedIds = days.map((d) => d.recipeId).filter(Boolean);
-    const shoppingCategories = buildShoppingList(selectedIds, allRecipes);
-
     const today = new Date().toISOString().slice(0, 10);
     const weeklyPlan = { generated: today, startDate: start_date, endDate: end_date, days };
+    const updatedHistory = updateHistory(historyData, days.map((d) => d.recipeId).filter(Boolean), today);
+
+    if (skip_shopping) {
+      await Promise.all([
+        writeFileToGitHub("weekly-plan.json", weeklyPlan, pat),
+        writeFileToGitHub("recipe-history.json", updatedHistory, pat),
+      ]);
+      return res.status(200).json({ ok: true, days: days.length, weeklyPlan, shoppingList: null });
+    }
+
+    const selectedIds = days.map((d) => d.recipeId).filter(Boolean);
+    const shoppingCategories = buildShoppingList(selectedIds, allRecipes);
     const shoppingList = {
       generated: today, startDate: start_date, endDate: end_date,
       recipeItems: shoppingCategories,
       recipeItemsMovedAt: null,
       manualItems: existingShop?.manualItems || [],
     };
-    const updatedHistory = updateHistory(historyData, selectedIds, today);
 
     await Promise.all([
       writeFileToGitHub("weekly-plan.json", weeklyPlan, pat),
