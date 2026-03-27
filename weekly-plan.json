@@ -1,61 +1,55 @@
 {
-  "generated": "2026-03-26",
-  "startDate": "2026-03-27",
+  "generated": "2026-03-27",
+  "startDate": "2026-03-28",
   "endDate": "2026-04-04",
   "days": [
     {
-      "date": "2026-03-27",
-      "day": "Fredag",
-      "recipe": "Snabbkimchi på salladskål",
-      "recipeId": 36
-    },
-    {
       "date": "2026-03-28",
       "day": "Lördag",
-      "recipe": "Skaldjurslasagne",
-      "recipeId": 47
+      "recipe": "Gräddig fiskgratäng med purjo",
+      "recipeId": 1
     },
     {
       "date": "2026-03-29",
       "day": "Söndag",
-      "recipe": "Rödbetsrisotto",
-      "recipeId": 62
+      "recipe": "Citronrisoni med rostad spetskål",
+      "recipeId": 20
     },
     {
       "date": "2026-03-30",
       "day": "Måndag",
-      "recipe": "Röd linsgryta med potatis",
-      "recipeId": 46
+      "recipe": "Gazpacho",
+      "recipeId": 25
     },
     {
       "date": "2026-03-31",
       "day": "Tisdag",
-      "recipe": "Oreganokyckling",
-      "recipeId": 60
+      "recipe": "Stekt curryris med färs och salladslök",
+      "recipeId": 29
     },
     {
       "date": "2026-04-01",
       "day": "Onsdag",
-      "recipe": "Krämig bönmasala",
-      "recipeId": 59
+      "recipe": "Tomatsoppa med pizzasnurror",
+      "recipeId": 7
     },
     {
       "date": "2026-04-02",
       "day": "Torsdag",
-      "recipe": "Fisk med örtsås",
-      "recipeId": 50
+      "recipe": "Nudelwok med kyckling på plåt",
+      "recipeId": 19
     },
     {
       "date": "2026-04-03",
       "day": "Fredag",
-      "recipe": "Pasta Rosso med champinjoner",
-      "recipeId": 56
+      "recipe": "Belugabouillabaisse",
+      "recipeId": 14
     },
     {
       "date": "2026-04-04",
       "day": "Lördag",
-      "recipe": "Marinerad kyckling med curry-cashewnötssås",
-      "recipeId": 4
+      "recipe": "Parmesanpotatis med kallrökt lax",
+      "recipeId": 22
     }
   ]
 }
