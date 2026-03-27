@@ -607,8 +607,8 @@
   }
 
   .week-day-card.selected {
-    border-color: var(--terracotta);
-    box-shadow: 0 2px 14px rgba(194,82,43,0.22);
+    border: 2.5px solid var(--terracotta);
+    box-shadow: 0 3px 18px rgba(194,82,43,0.28);
     background: var(--light-terra);
   }
 
@@ -695,10 +695,10 @@
   .confirm-status.confirmed { color: #5a8a5a; font-weight: 500; }
 
   @keyframes wiggle {
-    0%, 100% { transform: rotate(0deg); }
-    20%       { transform: rotate(-4deg); }
-    50%       { transform: rotate(4deg); }
-    80%       { transform: rotate(-2deg); }
+    0%   { transform: scale(1); }
+    30%  { transform: scale(1.05); }
+    65%  { transform: scale(0.97); }
+    100% { transform: scale(1); }
   }
 
   .swap-icon-btn {
@@ -774,6 +774,7 @@
     font-size: 0.88rem;
     color: var(--ink);
     line-height: 1.35;
+    transition: opacity 0.15s;
   }
 
   .week-meta {
@@ -2058,6 +2059,34 @@ async function swapDays(date1, date2) {
   panel.classList.remove('open');
   panel.innerHTML = '';
 
+  const card1 = document.querySelector(`.week-day-card[data-date="${date1}"]`);
+  const card2 = document.querySelector(`.week-day-card[data-date="${date2}"]`);
+
+  // Spara originalvärden för eventuell revert
+  const orig1 = card1 ? { title: card1.querySelector('.week-day-recipe').textContent, rid: card1.dataset.recipeid } : null;
+  const orig2 = card2 ? { title: card2.querySelector('.week-day-recipe').textContent, rid: card2.dataset.recipeid } : null;
+
+  function applySwap(c1, o1, c2, o2) {
+    if (!c1 || !c2) return;
+    const t1 = c1.querySelector('.week-day-recipe');
+    const t2 = c2.querySelector('.week-day-recipe');
+    t1.style.opacity = '0';
+    t2.style.opacity = '0';
+    setTimeout(() => {
+      t1.textContent = o2.title;
+      t2.textContent = o1.title;
+      c1.dataset.recipeid = o2.rid;
+      c2.dataset.recipeid = o1.rid;
+      c1.setAttribute('onclick', `openWeekRecipe(${o2.rid || 'null'}, '${o2.title.replace(/'/g,"\\'")}', this)`);
+      c2.setAttribute('onclick', `openWeekRecipe(${o1.rid || 'null'}, '${o1.title.replace(/'/g,"\\'")}', this)`);
+      t1.style.opacity = '';
+      t2.style.opacity = '';
+    }, 150);
+  }
+
+  // Optimistisk DOM-uppdatering — sker direkt, innan API-svaret
+  applySwap(card1, orig1, card2, orig2);
+
   try {
     const res = await fetch('/api/swap-days', {
       method: 'POST',
@@ -2066,22 +2095,10 @@ async function swapDays(date1, date2) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Okänt fel');
-
-    // Uppdatera korten i DOM direkt utan omladdning
-    const card1 = document.querySelector(`.week-day-card[data-date="${date1}"]`);
-    const card2 = document.querySelector(`.week-day-card[data-date="${date2}"]`);
-    if (card1 && card2) {
-      const title1 = card1.querySelector('.week-day-recipe').textContent;
-      const rid1   = card1.dataset.recipeid;
-      card1.querySelector('.week-day-recipe').textContent = card2.querySelector('.week-day-recipe').textContent;
-      card1.dataset.recipeid = card2.dataset.recipeid;
-      card1.setAttribute('onclick', `openWeekRecipe(${card2.dataset.recipeid || 'null'}, '${card2.querySelector('.week-day-recipe').textContent.replace(/'/g,"\\'")}', this)`);
-      card2.querySelector('.week-day-recipe').textContent = title1;
-      card2.dataset.recipeid = rid1;
-      card2.setAttribute('onclick', `openWeekRecipe(${rid1 || 'null'}, '${title1.replace(/'/g,"\\'")}', this)`);
-    }
+    // API lyckades — DOM är redan uppdaterad
   } catch (e) {
-    // Visa kort felmeddelande
+    // Återställ DOM vid fel
+    applySwap(card1, orig2, card2, orig1);
     const errEl = document.createElement('p');
     errEl.style.cssText = 'color:var(--terracotta);font-size:0.82rem;padding:0.5rem 1rem';
     errEl.textContent = 'Kunde inte byta dag — prova igen.';
