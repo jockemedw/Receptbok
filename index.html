@@ -586,6 +586,7 @@
     border-radius: 12px;
     padding: 0.75rem 0.85rem;
     cursor: pointer;
+    position: relative;
     transition: border-color 0.15s, box-shadow 0.15s, opacity 0.15s;
   }
 
@@ -693,9 +694,41 @@
 
   .confirm-status.confirmed { color: #5a8a5a; font-weight: 500; }
 
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    20%       { transform: rotate(-4deg); }
+    50%       { transform: rotate(4deg); }
+    80%       { transform: rotate(-2deg); }
+  }
+
+  .swap-icon-btn {
+    position: absolute;
+    bottom: 0.4rem;
+    right: 0.4rem;
+    background: none;
+    border: none;
+    padding: 0.2rem 0.25rem;
+    border-radius: 5px;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    color: var(--text-muted);
+    transition: opacity 0.15s, color 0.15s;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+  }
+
+  .week-day-card.selected .swap-icon-btn {
+    opacity: 1;
+    pointer-events: auto;
+    color: var(--terracotta);
+  }
+
   .week-day-card.swap-source {
     border: 2px dashed var(--terracotta);
     background: var(--light-terra);
+    animation: wiggle 0.35s ease-in-out;
   }
 
   .week-day-card.swap-target {
@@ -714,23 +747,6 @@
     letter-spacing: 0.06em;
     margin-top: 0.35rem;
   }
-
-  .swap-day-btn {
-    margin-top: 0.6rem;
-    margin-left: 0.5rem;
-    display: inline-block;
-    background: none;
-    border: 1.5px solid var(--text-muted);
-    color: var(--text-muted);
-    border-radius: 8px;
-    padding: 0.4rem 0.85rem;
-    font-size: 0.82rem;
-    font-family: inherit;
-    cursor: pointer;
-    transition: border-color 0.15s, color 0.15s;
-  }
-
-  .swap-day-btn:hover { border-color: var(--terracotta); color: var(--terracotta); }
 
   .week-day-name {
     font-size: 0.68rem;
@@ -1947,8 +1963,7 @@ function openWeekRecipe(recipeId, title, cardEl) {
   const date = cardEl.dataset.date || '';
 
   const actionBtns = planConfirmed ? '' : `
-    <button class="replace-recipe-btn" onclick="replaceRecipe(${r.id}, '${date}', this)">Föreslå nytt recept</button>
-    <button class="swap-day-btn" onclick="enterSwapMode('${date}')">↕ Flytta till annan dag</button>`;
+    <button class="replace-recipe-btn" onclick="replaceRecipe(${r.id}, '${date}', this)">Föreslå nytt recept</button>`;
 
   panel.innerHTML = `<div class="detail-inner">
     <div class="week-recipe-header">
@@ -1992,6 +2007,7 @@ async function confirmPlan() {
 
     planConfirmed = true;
     document.getElementById('confirmPlanWrap').style.display = 'none';
+    document.querySelectorAll('.swap-icon-btn').forEach(b => b.remove());
 
     // Stäng detaljpanelen (knappar ska uppdateras om den öppnas igen)
     const panel = document.getElementById('weekRecipeDetail');
@@ -2424,9 +2440,11 @@ function renderWeeklyPlanData(plan, shop, freshlyGenerated = false) {
     const dot     = isToday ? '<span class="today-dot"></span>' : '';
     const safeTitle = d.recipe.replace(/'/g,"\\'");
     const rid = d.recipeId || '';
+    const swapBtn = planConfirmed ? '' : `<button class="swap-icon-btn" title="Flytta till annan dag" onclick="event.stopPropagation();enterSwapMode('${d.date || ''}')"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="10" viewBox="0 0 13 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 2.5h11M9 0.5l2.5 2L9 4.5"/><path d="M12 7.5H1M4 5.5L1.5 7.5 4 9.5"/></svg></button>`;
     return `<div class="week-day-card${cls}" data-recipeid="${rid}" data-date="${d.date || ''}" onclick="openWeekRecipe(${rid || 'null'}, '${safeTitle}', this)">
       <div class="week-day-name">${d.day}${d.date ? ' · ' + fmtShort(d.date) : ''}${dot}</div>
       <div class="week-day-recipe">${d.recipe}</div>
+      ${swapBtn}
     </div>`;
   }).join('');
 
