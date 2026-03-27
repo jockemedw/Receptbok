@@ -605,6 +605,64 @@
     box-shadow: 0 2px 10px rgba(194,82,43,0.12);
   }
 
+  .week-day-card.selected {
+    border-color: var(--terracotta);
+    box-shadow: 0 2px 14px rgba(194,82,43,0.22);
+    background: var(--light-terra);
+  }
+
+  .week-recipe-detail {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.5s cubic-bezier(0.4,0,0.2,1);
+    margin: 0.25rem 0 0;
+  }
+
+  .week-recipe-detail.open {
+    max-height: 3000px;
+  }
+
+  .week-recipe-detail .detail-inner {
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.1rem 1.25rem;
+    margin: 0 1rem 0.5rem;
+  }
+
+  .week-recipe-header {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.85rem;
+  }
+
+  .week-recipe-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--brown);
+    flex: 1 1 100%;
+  }
+
+  .replace-recipe-btn {
+    margin-top: 1.1rem;
+    display: inline-block;
+    background: none;
+    border: 1.5px solid var(--terracotta);
+    color: var(--terracotta);
+    border-radius: 8px;
+    padding: 0.45rem 1rem;
+    font-size: 0.82rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .replace-recipe-btn:hover { background: var(--light-terra); }
+  .replace-recipe-btn:disabled { opacity: 0.55; cursor: default; }
+
   .week-day-name {
     font-size: 0.68rem;
     text-transform: uppercase;
@@ -1328,6 +1386,7 @@
       <div class="timeline-wrap">
         <div class="timeline" id="weekGrid"></div>
       </div>
+      <div id="weekRecipeDetail" class="week-recipe-detail"></div>
     </div>
 
     <div class="week-section" id="ingredientSection">
@@ -1778,6 +1837,97 @@ function jumpToRecipe(title) {
   });
 }
 
+const PROTEIN_LABEL = { fisk:'Fisk', kyckling:'Kyckling', kött:'Kött', fläsk:'Fläsk', vegetarisk:'Vegetarisk' };
+
+function openWeekRecipe(recipeId, title, cardEl) {
+  const panel = document.getElementById('weekRecipeDetail');
+  const alreadySelected = cardEl.classList.contains('selected');
+
+  document.querySelectorAll('.week-day-card').forEach(c => c.classList.remove('selected'));
+
+  if (alreadySelected) {
+    panel.classList.remove('open');
+    panel.innerHTML = '';
+    return;
+  }
+
+  const r = recipeId ? RECIPES.find(x => x.id === recipeId) : null;
+  if (!r) { jumpToRecipe(title); return; }
+
+  cardEl.classList.add('selected');
+
+  const t = r.time ? (r.timeNote ? `${r.time} min · ${r.timeNote}` : `${r.time} min`) : '';
+  const ingHtml = r.ingredients.map(i => `<li>${i}</li>`).join('');
+  const stepsHtml = r.instructions.map(s => `<li onclick="toggleStep(this)"><span>${s}</span></li>`).join('');
+  const notesHtml = r.notes ? `<div class="detail-section"><p class="recipe-notes">${r.notes}</p></div>` : '';
+  const date = cardEl.dataset.date || '';
+
+  panel.innerHTML = `<div class="detail-inner">
+    <div class="week-recipe-header">
+      <div class="week-recipe-title">${r.title}</div>
+      <span class="pill pill-protein">${PROTEIN_LABEL[r.protein] || r.protein}</span>
+      ${t ? `<span class="pill pill-time">⏱ ${t}</span>` : ''}
+      <span class="pill ${r.tested ? 'pill-tested' : 'pill-untested'}">${r.tested ? '✓ Provat' : 'Ej provat'}</span>
+    </div>
+    <div class="detail-section">
+      <h3>Ingredienser · ${r.servings} portioner</h3>
+      <ul class="ingredients-list">${ingHtml}</ul>
+    </div>
+    <div class="detail-section">
+      <h3>Tillagning</h3>
+      <ol class="steps-list">${stepsHtml}</ol>
+    </div>
+    ${notesHtml}
+    <button class="replace-recipe-btn" onclick="replaceRecipe(${r.id}, '${date}', this)">Föreslå nytt recept</button>
+  </div>`;
+
+  panel.classList.add('open');
+
+  setTimeout(() => {
+    const hh = document.querySelector('header').offsetHeight;
+    const top = panel.getBoundingClientRect().top + window.scrollY - hh - 12;
+    smoothScrollTo(top, 420);
+  }, 520);
+}
+
+async function replaceRecipe(currentId, date, btnEl) {
+  btnEl.disabled = true;
+  btnEl.textContent = 'Letar recept…';
+
+  const weekRecipeIds = Array.from(document.querySelectorAll('.week-day-card[data-recipeid]'))
+    .map(c => parseInt(c.dataset.recipeid, 10))
+    .filter(id => !isNaN(id));
+
+  try {
+    const res = await fetch('/api/replace-recipe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date, currentRecipeId: currentId, weekRecipeIds })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Okänt fel');
+
+    const selectedCard = document.querySelector('.week-day-card.selected');
+    if (selectedCard) {
+      selectedCard.dataset.recipeid = data.recipeId;
+      selectedCard.querySelector('.week-day-recipe').textContent = data.recipe;
+      openWeekRecipe(data.recipeId, data.recipe, selectedCard);
+    }
+  } catch (e) {
+    btnEl.disabled = false;
+    btnEl.textContent = 'Föreslå nytt recept';
+    const panel = document.getElementById('weekRecipeDetail');
+    const errEl = panel.querySelector('.replace-error');
+    if (!errEl) {
+      const p = document.createElement('p');
+      p.className = 'replace-error';
+      p.style.cssText = 'color:var(--terracotta);font-size:0.82rem;margin-top:0.5rem';
+      p.textContent = 'Kunde inte byta recept — prova igen.';
+      btnEl.after(p);
+    }
+  }
+}
+
 function switchTab(tab) {
   document.getElementById('receptView').style.display = tab === 'recept' ? '' : 'none';
   document.getElementById('weekView').classList.toggle('visible', tab === 'vecka');
@@ -2086,7 +2236,9 @@ function renderWeeklyPlanData(plan, shop, freshlyGenerated = false) {
     const isPast  = d.date < todayIso;
     const cls     = isToday ? ' today' : isPast ? ' past' : '';
     const dot     = isToday ? '<span class="today-dot"></span>' : '';
-    return `<div class="week-day-card${cls}" onclick="jumpToRecipe('${d.recipe.replace(/'/g,"\\'")}')">
+    const safeTitle = d.recipe.replace(/'/g,"\\'");
+    const rid = d.recipeId || '';
+    return `<div class="week-day-card${cls}" data-recipeid="${rid}" data-date="${d.date || ''}" onclick="openWeekRecipe(${rid || 'null'}, '${safeTitle}', this)">
       <div class="week-day-name">${d.day}${d.date ? ' · ' + fmtShort(d.date) : ''}${dot}</div>
       <div class="week-day-recipe">${d.recipe}</div>
     </div>`;
