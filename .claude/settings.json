@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "notify-send 'Claude Code' 'Claude väntar på dig'"
+            "command": "powershell.exe -NoProfile -Command \"[System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms') | Out-Null; [System.Windows.Forms.MessageBox]::Show('Claude väntar på dig','Claude Code')\""
           }
         ]
       }
