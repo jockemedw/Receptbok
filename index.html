@@ -2184,7 +2184,9 @@ function openWeekRecipe(recipeId, title, cardEl) {
 
   panel.classList.add('open');
 
-  // Scrollar direkt — panelens toppposition är fast, bara höjden växer nedåt
+  isSnapping = true;
+  scrollUpAccum = 0;
+  headerEl.classList.remove('header-hidden');
   const hh = document.querySelector('header').offsetHeight;
   const top = panel.getBoundingClientRect().top + window.scrollY - hh - 8;
   smoothScrollTo(top, 380);
