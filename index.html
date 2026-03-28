@@ -1426,6 +1426,7 @@
     <div class="filters" id="filters">
       <button class="filter-btn active" data-filter="alla">Alla</button>
       <button class="filter-btn" data-filter="provat">✓ Provat</button>
+      <button class="filter-btn" data-filter="oprovat">✗ Oprövat</button>
       <button class="filter-btn" data-filter="fisk">Fisk</button>
       <button class="filter-btn" data-filter="kyckling">Kyckling</button>
       <button class="filter-btn" data-filter="vegetarisk">Vegetarisk</button>
@@ -1702,7 +1703,7 @@ function renderCard(r) {
 }
 
 let RECIPES = [];
-let activeFilter = 'alla';
+let activeFilters = new Set(['alla']);
 
 function applyFilters() {
   const q = document.getElementById('search').value.toLowerCase().trim();
@@ -1718,10 +1719,15 @@ function applyFilters() {
     const ings    = card.dataset.ingredients;
     const steps   = card.dataset.instructions;
 
-    let passFilter = true;
-    if (activeFilter === 'provat')     passFilter = tested;
-    else if (activeFilter === 'snabb') passFilter = time <= 30;
-    else if (activeFilter !== 'alla')  passFilter = protein === activeFilter || tags.includes(activeFilter);
+    let passFilter = activeFilters.has('alla');
+    if (!passFilter) {
+      for (const f of activeFilters) {
+        if (f === 'provat'  && tested)             { passFilter = true; break; }
+        if (f === 'oprovat' && !tested)            { passFilter = true; break; }
+        if (f === 'snabb'   && time <= 30)         { passFilter = true; break; }
+        if (protein === f || tags.includes(f))     { passFilter = true; break; }
+      }
+    }
 
     const passSearch = !q || title.includes(q) || protein.includes(q) || tags.includes(q)
       || ings.includes(q) || steps.includes(q);
@@ -1733,7 +1739,7 @@ function applyFilters() {
   });
 
   document.getElementById('emptyState').style.display = shown === 0 ? 'block' : 'none';
-  document.getElementById('resultsInfo').textContent = (q || activeFilter !== 'alla')
+  document.getElementById('resultsInfo').textContent = (q || !activeFilters.has('alla'))
     ? `Visar ${shown} av ${RECIPES.length} recept` : '';
 }
 
@@ -2530,9 +2536,17 @@ document.getElementById('search').addEventListener('input', applyFilters);
 document.getElementById('filters').addEventListener('click', e => {
   const btn = e.target.closest('.filter-btn');
   if (!btn) return;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  activeFilter = btn.dataset.filter;
+  const f = btn.dataset.filter;
+  if (f === 'alla') {
+    activeFilters = new Set(['alla']);
+  } else {
+    activeFilters.delete('alla');
+    activeFilters.has(f) ? activeFilters.delete(f) : activeFilters.add(f);
+    if (activeFilters.size === 0) activeFilters.add('alla');
+  }
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.classList.toggle('active', activeFilters.has(b.dataset.filter));
+  });
   applyFilters();
 });
 
