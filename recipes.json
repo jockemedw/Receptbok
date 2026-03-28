@@ -8,7 +8,7 @@
     {
       "id": 1,
       "title": "Gräddig fiskgratäng med purjo",
-      "tested": false,
+      "tested": true,
       "servings": 4,
       "time": 40,
       "timeNote": "ugn 150°",
