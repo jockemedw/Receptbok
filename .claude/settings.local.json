@@ -3,7 +3,26 @@
     "allow": [
       "Bash(cat /c/Users/joaki/Documents/GitHub/Receptbok/.github/workflows/*.yml)",
       "WebFetch(domain:receptbok-six.vercel.app)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(jq -r \".recipes[] | select\\(.id <= 15\\) | \"\"\\\\\\(.id\\) | \\\\\\(.title\\) | \\\\\\(.ingredients | join\\(\"\" | \"\"\\)\\)\"\"\" /c/Users/joaki/Documents/GitHub/Receptbok/recipes.json)",
+      "Bash(python3:*)",
+      "Bash(node -e \":*)",
+      "WebFetch(domain:www.ica.se)",
+      "WebFetch(domain:www.koket.se)",
+      "WebFetch(domain:www.arla.se)",
+      "WebFetch(domain:www.allrecipes.se)",
+      "Bash(git pull:*)",
+      "Bash(git stash:*)",
+      "Bash(node scale-recipes.js)",
+      "Bash(node scale-recipes.cjs)",
+      "Bash(node -e \"const d = require\\(''./recipes.json''\\); const non4 = d.recipes.filter\\(r => r.servings !== 4\\); console.log\\(''Recept som INTE är 4 portioner:'', non4.length\\); non4.forEach\\(r => console.log\\(''  ID'', r.id, r.title, r.servings, ''portioner''\\)\\); console.log\\(''Totalt recept:'', d.recipes.length\\);\")",
+      "Bash(node -e \"const d = JSON.parse\\(require\\(''fs''\\).readFileSync\\(''recipes.json'',''utf-8''\\)\\); const non4 = d.recipes.filter\\(r => r.servings !== 4\\); console.log\\(''Non-4:'', non4.length\\); non4.forEach\\(r => console.log\\(r.id, r.title, r.servings\\)\\); console.log\\(''Total:'', d.recipes.length\\);\")",
+      "Bash(node verify.cjs)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(node --check api/generate.js)"
     ]
   }
 }

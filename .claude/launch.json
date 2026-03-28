@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "receptbok",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "require('http').createServer((q,r)=>{const fs=require('fs'),p=require('path'),f=p.join('.',q.url==='/'?'index.html':q.url),e=p.extname(f),t={'.html':'text/html','.json':'application/json','.js':'text/javascript','.css':'text/css'}[e]||'text/plain';fs.readFile(f,(err,d)=>{if(err){r.writeHead(404);r.end('Not found')}else{r.writeHead(200,{'Content-Type':t+';charset=utf-8','Access-Control-Allow-Origin':'*'});r.end(d)}})}).listen(3456,()=>console.log('Server on 3456'))"],
+      "port": 3456
+    }
+  ]
+}
