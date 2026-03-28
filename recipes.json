@@ -681,7 +681,7 @@
     {
       "id": 19,
       "title": "Nudelwok med kyckling på plåt",
-      "tested": false,
+      "tested": true,
       "servings": 4,
       "time": 35,
       "timeNote": "ugn 225°",
