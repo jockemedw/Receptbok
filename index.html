@@ -338,6 +338,8 @@
   .pill-time     { background: #f2ede8; color: var(--text-muted); }
   .pill-tested   { background: var(--light-sage); color: #4a7d4e; }
   .pill-untested { background: #f4f2ef; color: #b0a090; }
+  .pill-toggle   { cursor: pointer; }
+  .pill-toggle:active { opacity: 0.6; }
 
   .card-chevron {
     color: var(--text-muted);
@@ -586,6 +588,7 @@
     border-radius: 12px;
     padding: 0.75rem 0.85rem;
     cursor: pointer;
+    position: relative;
     transition: border-color 0.15s, box-shadow 0.15s, opacity 0.15s;
   }
 
@@ -603,6 +606,148 @@
     opacity: 1;
     border-color: var(--terracotta);
     box-shadow: 0 2px 10px rgba(194,82,43,0.12);
+  }
+
+  .week-day-card.selected {
+    border: 2.5px solid var(--terracotta);
+    box-shadow: 0 3px 18px rgba(194,82,43,0.28);
+    background: var(--light-terra);
+  }
+
+  .week-recipe-detail {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.5s cubic-bezier(0.4,0,0.2,1);
+    margin: 0.25rem 0 0;
+  }
+
+  .week-recipe-detail.open {
+    max-height: 3000px;
+  }
+
+  .week-recipe-detail .detail-inner {
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.1rem 1.25rem;
+    margin: 0 1rem 0.5rem;
+  }
+
+  .week-recipe-header {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.85rem;
+  }
+
+  .week-recipe-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--brown);
+    flex: 1 1 100%;
+  }
+
+  .replace-recipe-btn {
+    margin-top: 1.1rem;
+    display: inline-block;
+    background: none;
+    border: 1.5px solid var(--terracotta);
+    color: var(--terracotta);
+    border-radius: 8px;
+    padding: 0.45rem 1rem;
+    font-size: 0.82rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .replace-recipe-btn:hover { background: var(--light-terra); }
+  .replace-recipe-btn:disabled { opacity: 0.55; cursor: default; }
+
+  .confirm-plan-wrap {
+    padding: 0.75rem 1rem 0.25rem;
+  }
+
+  .confirm-plan-btn {
+    width: 100%;
+    background: var(--terracotta);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 0.7rem 1rem;
+    font-size: 0.9rem;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .confirm-plan-btn:hover { opacity: 0.88; }
+  .confirm-plan-btn:disabled { opacity: 0.55; cursor: default; }
+
+  .confirm-status {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.4rem;
+    text-align: center;
+  }
+
+  .confirm-status.confirmed { color: #5a8a5a; font-weight: 500; }
+
+  @keyframes wiggle {
+    0%   { transform: scale(1); }
+    30%  { transform: scale(1.05); }
+    65%  { transform: scale(0.97); }
+    100% { transform: scale(1); }
+  }
+
+  .swap-icon-btn {
+    position: absolute;
+    bottom: 0.4rem;
+    right: 0.4rem;
+    background: none;
+    border: none;
+    padding: 0.2rem 0.25rem;
+    border-radius: 5px;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    color: var(--text-muted);
+    transition: opacity 0.15s, color 0.15s;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+  }
+
+  .week-day-card.selected .swap-icon-btn {
+    opacity: 1;
+    pointer-events: auto;
+    color: var(--terracotta);
+  }
+
+  .week-day-card.swap-source {
+    border: 2px dashed var(--terracotta);
+    background: var(--light-terra);
+    animation: wiggle 0.35s ease-in-out;
+  }
+
+  .week-day-card.swap-target {
+    border-color: #7aaa7a;
+    background: #f0f7f0;
+    cursor: pointer;
+  }
+
+  .week-day-card.swap-target::after {
+    content: 'Byt hit';
+    display: block;
+    font-size: 0.65rem;
+    color: #5a8a5a;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 0.35rem;
   }
 
   .week-day-name {
@@ -631,6 +776,7 @@
     font-size: 0.88rem;
     color: var(--ink);
     line-height: 1.35;
+    transition: opacity 0.15s;
   }
 
   .week-meta {
@@ -731,6 +877,46 @@
   .trigger-section {
     text-align: center;
     padding: 1.5rem 0 0.5rem;
+  }
+
+  .trigger-section.collapsed .trigger-body {
+    max-height: 0;
+    overflow: hidden;
+    margin: 0;
+  }
+
+  .trigger-toggle-row {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .trigger-section:not(.collapsed) .trigger-toggle-row {
+    display: none;
+  }
+
+  .trigger-toggle-btn {
+    background: none;
+    border: 1.5px solid var(--terracotta);
+    color: var(--terracotta);
+    border-radius: 20px;
+    padding: 0.4rem 1.1rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .trigger-toggle-btn:hover {
+    background: var(--terracotta);
+    color: #fff;
+  }
+
+  .trigger-body {
+    max-height: 2000px;
+    transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1);
+    overflow: hidden;
   }
 
   .trigger-btn {
@@ -1261,6 +1447,118 @@
     flex-shrink: 0;
   }
   .remove-manual-btn:hover { color: var(--terracotta); }
+
+  /* ── REDIGERINGSKNAPP ── */
+  .edit-recipe-btn {
+    display: block;
+    margin-top: 1.2rem;
+    background: none;
+    border: 1px solid rgba(92,61,30,0.2);
+    color: var(--brown);
+    padding: 0.45rem 1rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+  }
+  .edit-recipe-btn:hover { background: rgba(92,61,30,0.06); }
+
+  /* ── REDIGERINGSMODAL ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000;
+    overflow-y: auto;
+    padding: 1rem;
+  }
+  .modal-box {
+    background: var(--cream);
+    margin: 0 auto;
+    max-width: 580px;
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.2rem;
+  }
+  .modal-header h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    color: var(--brown);
+    margin: 0;
+  }
+  .modal-header button {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.2rem 0.4rem;
+  }
+  .modal-box label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 0.85rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .modal-box input,
+  .modal-box select,
+  .modal-box textarea {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    color: var(--brown);
+    background: #fff;
+    border: 1px solid rgba(92,61,30,0.2);
+    border-radius: 6px;
+    padding: 0.5rem 0.7rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .modal-box textarea { resize: vertical; line-height: 1.5; }
+  .modal-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.4rem;
+    flex-wrap: wrap;
+  }
+  .btn-save {
+    flex: 1;
+    background: var(--terracotta);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.65rem 1.2rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-save:disabled { opacity: 0.6; cursor: default; }
+  .btn-delete {
+    background: none;
+    border: 1px solid #d9534f;
+    color: #d9534f;
+    border-radius: 8px;
+    padding: 0.65rem 1rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  .modal-feedback {
+    margin-top: 0.75rem;
+    font-size: 0.9rem;
+    min-height: 1.2em;
+  }
 </style>
 </head>
 <body>
@@ -1282,6 +1580,7 @@
     <div class="filters" id="filters">
       <button class="filter-btn active" data-filter="alla">Alla</button>
       <button class="filter-btn" data-filter="provat">✓ Provat</button>
+      <button class="filter-btn" data-filter="oprovat">✗ Oprövat</button>
       <button class="filter-btn" data-filter="fisk">Fisk</button>
       <button class="filter-btn" data-filter="kyckling">Kyckling</button>
       <button class="filter-btn" data-filter="vegetarisk">Vegetarisk</button>
@@ -1323,16 +1622,21 @@
 
   <div id="weekContent" style="display:none">
     <div class="week-section">
-      <h2 class="section-title">🗓 Matsedeln</h2>
+      <h2 class="section-title">Matsedeln</h2>
       <p class="week-meta" id="weekMeta"></p>
       <div class="timeline-wrap">
         <div class="timeline" id="weekGrid"></div>
       </div>
+      <div class="confirm-plan-wrap" id="confirmPlanWrap" style="display:none">
+        <button class="confirm-plan-btn" id="confirmPlanBtn" onclick="confirmPlan()">✓ Bekräfta och bygg inköpslista</button>
+        <p class="confirm-status" id="confirmStatus"></p>
+      </div>
+      <div id="weekRecipeDetail" class="week-recipe-detail"></div>
     </div>
 
     <div class="week-section" id="ingredientSection">
       <div class="ingredient-section-header" onclick="toggleIngredientSection()">
-        <h2 class="section-title">🧾 Veckans ingredienser</h2>
+        <h2 class="section-title">Veckans ingredienser</h2>
         <span class="ingredient-toggle-chevron">›</span>
       </div>
       <div class="ingredient-section-body">
@@ -1342,7 +1646,11 @@
     </div>
   </div>
 
-  <div class="trigger-section">
+  <div class="trigger-section" id="triggerSection">
+    <div class="trigger-toggle-row">
+      <button class="trigger-toggle-btn" onclick="toggleTrigger()">＋ Ny plan</button>
+    </div>
+    <div class="trigger-body">
     <h3 class="trigger-title">Generera ny plan</h3>
     <div class="date-range">
       <div class="date-field">
@@ -1447,6 +1755,7 @@
       ✨ Generera ny plan
     </button>
     <div class="trigger-status" id="triggerStatus"></div>
+    </div>
   </div>
 </div>
 
@@ -1484,6 +1793,36 @@
 
 <footer id="footerEl">Receptboken</footer>
 <button id="scrolltop" title="Till toppen">↑</button>
+
+<div id="editModal" class="modal-overlay" style="display:none" onclick="handleModalOverlayClick(event)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Redigera recept</h2>
+      <button onclick="closeEditModal()">✕</button>
+    </div>
+    <label>Titel<input type="text" id="edit-title"></label>
+    <label>Protein
+      <select id="edit-protein">
+        <option value="fisk">Fisk</option>
+        <option value="kyckling">Kyckling</option>
+        <option value="vegetarisk">Vegetarisk</option>
+        <option value="kött">Kött</option>
+        <option value="fläsk">Fläsk</option>
+      </select>
+    </label>
+    <label>Tid (minuter)<input type="number" id="edit-time" min="1"></label>
+    <label>Portioner<input type="number" id="edit-servings" min="1"></label>
+    <label>Taggar (kommaseparerat)<input type="text" id="edit-tags" placeholder="vardag30, soppa, ..."></label>
+    <label>Ingredienser (en per rad)<textarea id="edit-ingredients" rows="8"></textarea></label>
+    <label>Instruktioner (ett steg per rad)<textarea id="edit-instructions" rows="8"></textarea></label>
+    <label>Noteringar<input type="text" id="edit-notes" placeholder="Tips, varianter..."></label>
+    <div class="modal-actions">
+      <button class="btn-save" id="editSaveBtn" onclick="saveRecipe()">Spara</button>
+      <button class="btn-delete" onclick="deleteRecipe()">Ta bort recept</button>
+    </div>
+    <div class="modal-feedback" id="editFeedback"></div>
+  </div>
+</div>
 
 <script>
 const proteinLabel = {
@@ -1531,7 +1870,7 @@ function renderCard(r) {
       <div class="card-meta">
         <span class="pill pill-protein">${proteinLabel[r.protein] || r.protein}</span>
         ${t ? `<span class="pill pill-time">⏱ ${t}</span>` : ''}
-        <span class="pill ${r.tested ? 'pill-tested' : 'pill-untested'}">${r.tested ? '✓ Provat' : 'Ej provat'}</span>
+        <span class="pill ${r.tested ? 'pill-tested' : 'pill-untested'} pill-toggle" onclick="toggleTested(event, ${r.id})">${r.tested ? '✓ Provat' : 'Ej provat'}</span>
       </div>
     </div>
     <span class="card-chevron">›</span>
@@ -1547,13 +1886,14 @@ function renderCard(r) {
         <ol class="steps-list">${stepsHtml}</ol>
       </div>
       ${notesHtml}
+      <button class="edit-recipe-btn" onclick="openEditModal(event, ${r.id})">✏️ Redigera recept</button>
     </div>
   </div>
 </div>`;
 }
 
 let RECIPES = [];
-let activeFilter = 'alla';
+let activeFilters = new Set(['alla']);
 
 function applyFilters() {
   const q = document.getElementById('search').value.toLowerCase().trim();
@@ -1569,10 +1909,15 @@ function applyFilters() {
     const ings    = card.dataset.ingredients;
     const steps   = card.dataset.instructions;
 
-    let passFilter = true;
-    if (activeFilter === 'provat')     passFilter = tested;
-    else if (activeFilter === 'snabb') passFilter = time <= 30;
-    else if (activeFilter !== 'alla')  passFilter = protein === activeFilter || tags.includes(activeFilter);
+    let passFilter = activeFilters.has('alla');
+    if (!passFilter) {
+      for (const f of activeFilters) {
+        if (f === 'provat'  && tested)             { passFilter = true; break; }
+        if (f === 'oprovat' && !tested)            { passFilter = true; break; }
+        if (f === 'snabb'   && time <= 30)         { passFilter = true; break; }
+        if (protein === f || tags.includes(f))     { passFilter = true; break; }
+      }
+    }
 
     const passSearch = !q || title.includes(q) || protein.includes(q) || tags.includes(q)
       || ings.includes(q) || steps.includes(q);
@@ -1584,7 +1929,7 @@ function applyFilters() {
   });
 
   document.getElementById('emptyState').style.display = shown === 0 ? 'block' : 'none';
-  document.getElementById('resultsInfo').textContent = (q || activeFilter !== 'alla')
+  document.getElementById('resultsInfo').textContent = (q || !activeFilters.has('alla'))
     ? `Visar ${shown} av ${RECIPES.length} recept` : '';
 }
 
@@ -1738,6 +2083,7 @@ async function generatePlan() {
       max_weekday_time: document.getElementById('maxWeekdayTime').value,
       max_weekend_time: document.getElementById('maxWeekendTime').value,
       vegetarian_days: scaledVegetarian,
+      skip_shopping: true,
     };
 
     const res = await fetch('/api/generate', {
@@ -1749,11 +2095,11 @@ async function generatePlan() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Okänt fel');
 
-    status.textContent = `✓ Klar! ${data.days} dagar planerade.`;
+    status.textContent = `✓ Klar! ${data.days} dagar planerade. Bekräfta matsedeln för att bygga inköpslistan.`;
     status.className = 'trigger-status success';
     btn.disabled = false;
     if (data.weeklyPlan) {
-      renderWeeklyPlanData(data.weeklyPlan, data.shoppingList, true);
+      renderWeeklyPlanData(data.weeklyPlan, null, true);
     }
     switchTab('vecka');
   } catch (err) {
@@ -1765,10 +2111,11 @@ async function generatePlan() {
 
 function jumpToRecipe(title) {
   switchTab('recept');
-  activeFilter = 'alla';
+  activeFilters = new Set(['alla']);
   document.getElementById('search').value = '';
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector('[data-filter="alla"]').classList.add('active');
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === 'alla');
+  });
   applyFilters();
   document.querySelectorAll('.recipe-card').forEach(card => {
     if (card.dataset.title === title.toLowerCase()) {
@@ -1776,6 +2123,226 @@ function jumpToRecipe(title) {
       setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
     }
   });
+}
+
+const PROTEIN_LABEL = { fisk:'Fisk', kyckling:'Kyckling', kött:'Kött', fläsk:'Fläsk', vegetarisk:'Vegetarisk' };
+
+let planConfirmed = false;
+
+function openWeekRecipe(recipeId, title, cardEl) {
+  // Om vi är i bytesläge — tolka klick som val av måldag
+  if (cardEl.classList.contains('swap-target')) {
+    const fromDate = document.querySelector('.week-day-card.swap-source')?.dataset.date;
+    if (fromDate) swapDays(fromDate, cardEl.dataset.date);
+    return;
+  }
+
+  const panel = document.getElementById('weekRecipeDetail');
+  const alreadySelected = cardEl.classList.contains('selected');
+
+  cancelSwapMode();
+  document.querySelectorAll('.week-day-card').forEach(c => c.classList.remove('selected'));
+
+  if (alreadySelected) {
+    panel.classList.remove('open');
+    panel.innerHTML = '';
+    return;
+  }
+
+  const r = recipeId ? RECIPES.find(x => x.id === recipeId) : null;
+  if (!r) { jumpToRecipe(title); return; }
+
+  cardEl.classList.add('selected');
+
+  const t = r.time ? (r.timeNote ? `${r.time} min · ${r.timeNote}` : `${r.time} min`) : '';
+  const ingHtml = r.ingredients.map(i => `<li>${i}</li>`).join('');
+  const stepsHtml = r.instructions.map(s => `<li onclick="toggleStep(this)"><span>${s}</span></li>`).join('');
+  const notesHtml = r.notes ? `<div class="detail-section"><p class="recipe-notes">${r.notes}</p></div>` : '';
+  const date = cardEl.dataset.date || '';
+
+  const actionBtns = planConfirmed ? '' : `
+    <button class="replace-recipe-btn" onclick="replaceRecipe(${r.id}, '${date}', this)">Föreslå nytt recept</button>`;
+
+  panel.innerHTML = `<div class="detail-inner">
+    <div class="week-recipe-header">
+      <div class="week-recipe-title">${r.title}</div>
+      <span class="pill pill-protein">${PROTEIN_LABEL[r.protein] || r.protein}</span>
+      ${t ? `<span class="pill pill-time">⏱ ${t}</span>` : ''}
+      <span class="pill ${r.tested ? 'pill-tested' : 'pill-untested'}">${r.tested ? '✓ Provat' : 'Ej provat'}</span>
+    </div>
+    <div class="detail-section">
+      <h3>Ingredienser · ${r.servings} portioner</h3>
+      <ul class="ingredients-list">${ingHtml}</ul>
+    </div>
+    <div class="detail-section">
+      <h3>Tillagning</h3>
+      <ol class="steps-list">${stepsHtml}</ol>
+    </div>
+    ${notesHtml}
+    ${actionBtns}
+  </div>`;
+
+  panel.classList.add('open');
+
+  isSnapping = true;
+  scrollUpAccum = 0;
+  headerEl.classList.remove('header-hidden');
+  const hh = document.querySelector('header').offsetHeight;
+  const top = panel.getBoundingClientRect().top + window.scrollY - hh - 8;
+  smoothScrollTo(top, 380);
+}
+
+async function confirmPlan() {
+  const btn = document.getElementById('confirmPlanBtn');
+  const statusEl = document.getElementById('confirmStatus');
+  btn.disabled = true;
+  btn.textContent = 'Bygger inköpslista…';
+  statusEl.textContent = '';
+
+  try {
+    const res = await fetch('/api/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Okänt fel');
+
+    planConfirmed = true;
+    document.getElementById('confirmPlanWrap').style.display = 'none';
+    document.querySelectorAll('.swap-icon-btn').forEach(b => b.remove());
+
+    // Stäng detaljpanelen (knappar ska uppdateras om den öppnas igen)
+    const panel = document.getElementById('weekRecipeDetail');
+    panel.classList.remove('open');
+    panel.innerHTML = '';
+    document.querySelectorAll('.week-day-card').forEach(c => c.classList.remove('selected'));
+
+    renderIngredientPreview(
+      data.shoppingList?.recipeItems || null,
+      data.shoppingList?.recipeItemsMovedAt || null,
+      true
+    );
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = '✓ Bekräfta och bygg inköpslista';
+    statusEl.textContent = 'Kunde inte bekräfta — prova igen.';
+    statusEl.className = 'confirm-status';
+  }
+}
+
+function enterSwapMode(fromDate) {
+  cancelSwapMode();
+  const fromCard = document.querySelector(`.week-day-card[data-date="${fromDate}"]`);
+  if (!fromCard) return;
+
+  // Stäng detaljpanelen men behåll selected-markering på kortet
+  const panel = document.getElementById('weekRecipeDetail');
+  panel.classList.remove('open');
+  panel.innerHTML = '';
+
+  fromCard.classList.remove('selected');
+  fromCard.classList.add('swap-source');
+
+  document.querySelectorAll('.week-day-card').forEach(c => {
+    if (c !== fromCard) c.classList.add('swap-target');
+  });
+}
+
+function cancelSwapMode() {
+  document.querySelectorAll('.week-day-card.swap-source').forEach(c => c.classList.remove('swap-source'));
+  document.querySelectorAll('.week-day-card.swap-target').forEach(c => c.classList.remove('swap-target'));
+}
+
+async function swapDays(date1, date2) {
+  cancelSwapMode();
+  document.querySelectorAll('.week-day-card').forEach(c => c.classList.remove('selected'));
+  const panel = document.getElementById('weekRecipeDetail');
+  panel.classList.remove('open');
+  panel.innerHTML = '';
+
+  const card1 = document.querySelector(`.week-day-card[data-date="${date1}"]`);
+  const card2 = document.querySelector(`.week-day-card[data-date="${date2}"]`);
+
+  // Spara originalvärden för eventuell revert
+  const orig1 = card1 ? { title: card1.querySelector('.week-day-recipe').textContent, rid: card1.dataset.recipeid } : null;
+  const orig2 = card2 ? { title: card2.querySelector('.week-day-recipe').textContent, rid: card2.dataset.recipeid } : null;
+
+  function applySwap(c1, o1, c2, o2) {
+    if (!c1 || !c2) return;
+    const t1 = c1.querySelector('.week-day-recipe');
+    const t2 = c2.querySelector('.week-day-recipe');
+    t1.style.opacity = '0';
+    t2.style.opacity = '0';
+    setTimeout(() => {
+      t1.textContent = o2.title;
+      t2.textContent = o1.title;
+      c1.dataset.recipeid = o2.rid;
+      c2.dataset.recipeid = o1.rid;
+      c1.setAttribute('onclick', `openWeekRecipe(${o2.rid || 'null'}, '${o2.title.replace(/'/g,"\\'")}', this)`);
+      c2.setAttribute('onclick', `openWeekRecipe(${o1.rid || 'null'}, '${o1.title.replace(/'/g,"\\'")}', this)`);
+      t1.style.opacity = '';
+      t2.style.opacity = '';
+    }, 150);
+  }
+
+  // Optimistisk DOM-uppdatering — sker direkt, innan API-svaret
+  applySwap(card1, orig1, card2, orig2);
+
+  try {
+    const res = await fetch('/api/swap-days', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date1, date2 })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Okänt fel');
+    // API lyckades — DOM är redan uppdaterad
+  } catch (e) {
+    // Återställ DOM vid fel
+    applySwap(card1, orig2, card2, orig1);
+    const errEl = document.createElement('p');
+    errEl.style.cssText = 'color:var(--terracotta);font-size:0.82rem;padding:0.5rem 1rem';
+    errEl.textContent = 'Kunde inte byta dag — prova igen.';
+    panel.innerHTML = '';
+    panel.appendChild(errEl);
+    panel.classList.add('open');
+  }
+}
+
+async function replaceRecipe(currentId, date, btnEl) {
+  btnEl.disabled = true;
+  btnEl.textContent = 'Letar recept…';
+
+  const weekRecipeIds = Array.from(document.querySelectorAll('.week-day-card[data-recipeid]'))
+    .map(c => parseInt(c.dataset.recipeid, 10))
+    .filter(id => !isNaN(id));
+
+  try {
+    const res = await fetch('/api/replace-recipe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date, currentRecipeId: currentId, weekRecipeIds })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Okänt fel');
+
+    const selectedCard = document.querySelector('.week-day-card.selected');
+    if (selectedCard) {
+      selectedCard.dataset.recipeid = data.recipeId;
+      selectedCard.querySelector('.week-day-recipe').textContent = data.recipe;
+      selectedCard.classList.remove('selected');
+      openWeekRecipe(data.recipeId, data.recipe, selectedCard);
+    }
+  } catch (e) {
+    btnEl.disabled = false;
+    btnEl.textContent = 'Föreslå nytt recept';
+    const panel = document.getElementById('weekRecipeDetail');
+    const errEl = panel.querySelector('.replace-error');
+    if (!errEl) {
+      const p = document.createElement('p');
+      p.className = 'replace-error';
+      p.style.cssText = 'color:var(--terracotta);font-size:0.82rem;margin-top:0.5rem';
+      p.textContent = 'Kunde inte byta recept — prova igen.';
+      btnEl.after(p);
+    }
+  }
 }
 
 function switchTab(tab) {
@@ -2072,23 +2639,30 @@ function renderWeeklyPlanData(plan, shop, freshlyGenerated = false) {
   document.getElementById('weekNoData').style.display = 'none';
   document.getElementById('weekContent').style.display = '';
 
-  const metaParts = [];
+  let metaText = '';
   if (plan.startDate && plan.endDate)
-    metaParts.push(`${fmtShort(plan.startDate)} – ${fmtShort(plan.endDate)}`);
+    metaText = `${fmtShort(plan.startDate)} – ${fmtShort(plan.endDate)}`;
   else if (plan.week)
-    metaParts.push(`Vecka ${plan.week}`);
-  metaParts.push(`Genererad ${plan.generated}`);
-  document.getElementById('weekMeta').textContent = metaParts.join(' · ');
+    metaText = `Vecka ${plan.week}`;
+  document.getElementById('weekMeta').textContent = metaText;
 
+  const PROTEIN_COLOR = { fisk:'#5b9bd5', kyckling:'#e8a735', vegetarisk:'#4a7d4e', kött:'#b05040', fläsk:'#b05040' };
   const todayIso = fmtIso(new Date());
   document.getElementById('weekGrid').innerHTML = plan.days.map(d => {
     const isToday = d.date === todayIso;
     const isPast  = d.date < todayIso;
     const cls     = isToday ? ' today' : isPast ? ' past' : '';
     const dot     = isToday ? '<span class="today-dot"></span>' : '';
-    return `<div class="week-day-card${cls}" onclick="jumpToRecipe('${d.recipe.replace(/'/g,"\\'")}')">
+    const safeTitle = d.recipe.replace(/'/g,"\\'");
+    const rid = d.recipeId || '';
+    const recipe = rid ? RECIPES.find(r => r.id === rid) : null;
+    const proteinColor = recipe ? (PROTEIN_COLOR[recipe.protein] || '') : '';
+    const borderStyle = proteinColor ? ` style="border-left: 3px solid ${proteinColor}"` : '';
+    const swapBtn = planConfirmed ? '' : `<button class="swap-icon-btn" title="Flytta till annan dag" onclick="event.stopPropagation();enterSwapMode('${d.date || ''}')"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="10" viewBox="0 0 13 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 2.5h11M9 0.5l2.5 2L9 4.5"/><path d="M12 7.5H1M4 5.5L1.5 7.5 4 9.5"/></svg></button>`;
+    return `<div class="week-day-card${cls}"${borderStyle} data-recipeid="${rid}" data-date="${d.date || ''}" onclick="openWeekRecipe(${rid || 'null'}, '${safeTitle}', this)">
       <div class="week-day-name">${d.day}${d.date ? ' · ' + fmtShort(d.date) : ''}${dot}</div>
       <div class="week-day-recipe">${d.recipe}</div>
+      ${swapBtn}
     </div>`;
   }).join('');
 
@@ -2098,8 +2672,27 @@ function renderWeeklyPlanData(plan, shop, freshlyGenerated = false) {
     if (target) target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   }, 150);
 
+  const confirmed = !!plan.confirmedAt;
+  planConfirmed = confirmed;
+
+  // Bekräfta-knapp: visas om planen inte är bekräftad
+  const confirmWrap = document.getElementById('confirmPlanWrap');
+  const confirmStatus = document.getElementById('confirmStatus');
+  const confirmBtn = document.getElementById('confirmPlanBtn');
+  confirmWrap.style.display = confirmed ? 'none' : '';
+  confirmBtn.disabled = false;
+  confirmBtn.textContent = '✓ Bekräfta och bygg inköpslista';
+  confirmStatus.textContent = confirmed ? '' : '';
+  confirmStatus.className = 'confirm-status';
+
   const recipeItems = shop?.recipeItems || shop?.categories || null;
-  renderIngredientPreview(recipeItems, shop?.recipeItemsMovedAt || null, freshlyGenerated);
+  renderIngredientPreview(recipeItems, shop?.recipeItemsMovedAt || null, freshlyGenerated || confirmed);
+
+  document.getElementById('triggerSection').classList.add('collapsed');
+}
+
+function toggleTrigger() {
+  document.getElementById('triggerSection').classList.remove('collapsed');
 }
 
 async function loadWeeklyPlan() {
@@ -2144,9 +2737,17 @@ document.getElementById('search').addEventListener('input', applyFilters);
 document.getElementById('filters').addEventListener('click', e => {
   const btn = e.target.closest('.filter-btn');
   if (!btn) return;
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  activeFilter = btn.dataset.filter;
+  const f = btn.dataset.filter;
+  if (f === 'alla') {
+    activeFilters = new Set(['alla']);
+  } else {
+    activeFilters.delete('alla');
+    activeFilters.has(f) ? activeFilters.delete(f) : activeFilters.add(f);
+    if (activeFilters.size === 0) activeFilters.add('alla');
+  }
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.classList.toggle('active', activeFilters.has(b.dataset.filter));
+  });
   applyFilters();
 });
 
@@ -2178,6 +2779,156 @@ window.addEventListener('scroll', () => {
 }, { passive: true });
 
 scrollBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+// ── TOGGLE PRÖVAT ──
+async function toggleTested(event, id) {
+  event.stopPropagation();
+  const pill = event.currentTarget;
+  pill.style.opacity = '0.5';
+  try {
+    const res = await fetch('/api/recipes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'toggle_tested', id })
+    });
+    if (!res.ok) throw new Error();
+    const { tested } = await res.json();
+    const r = RECIPES.find(r => r.id === id);
+    if (r) r.tested = tested;
+    pill.className = `pill ${tested ? 'pill-tested' : 'pill-untested'} pill-toggle`;
+    pill.textContent = tested ? '✓ Provat' : 'Ej provat';
+    pill.closest('.recipe-card').dataset.tested = tested;
+  } catch {
+    pill.style.outline = '2px solid var(--terracotta)';
+    setTimeout(() => { pill.style.outline = ''; }, 1500);
+  } finally {
+    pill.style.opacity = '';
+  }
+}
+
+// ── REDIGERINGSMODAL ──
+let editingId = null;
+
+function openEditModal(event, id) {
+  event.stopPropagation();
+  const r = RECIPES.find(r => r.id === id);
+  if (!r) return;
+  editingId = id;
+  document.getElementById('edit-title').value        = r.title;
+  document.getElementById('edit-protein').value      = r.protein;
+  document.getElementById('edit-time').value         = r.time || '';
+  document.getElementById('edit-servings').value     = r.servings || 4;
+  document.getElementById('edit-tags').value         = (r.tags || []).join(', ');
+  document.getElementById('edit-ingredients').value  = (r.ingredients || []).join('\n');
+  document.getElementById('edit-instructions').value = (r.instructions || []).join('\n');
+  document.getElementById('edit-notes').value        = r.notes || '';
+  document.getElementById('editFeedback').textContent = '';
+  document.getElementById('editSaveBtn').disabled    = false;
+  document.getElementById('editModal').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').style.display = 'none';
+  document.body.style.overflow = '';
+  editingId = null;
+}
+
+const editModalEl = document.getElementById('editModal');
+
+function handleModalOverlayClick(event) {
+  if (event.target === editModalEl) closeEditModal();
+}
+
+async function saveRecipe() {
+  const saveBtn = document.getElementById('editSaveBtn');
+  const feedback = document.getElementById('editFeedback');
+  saveBtn.disabled = true;
+  feedback.textContent = 'Sparar...';
+  feedback.style.color = 'var(--text-muted)';
+
+  const r = RECIPES.find(r => r.id === editingId);
+  if (!r) { saveBtn.disabled = false; return; }
+
+  const tagsRaw = document.getElementById('edit-tags').value;
+  const updated = {
+    ...r,
+    title:        document.getElementById('edit-title').value.trim(),
+    protein:      document.getElementById('edit-protein').value,
+    time:         parseInt(document.getElementById('edit-time').value) || null,
+    servings:     parseInt(document.getElementById('edit-servings').value) || 4,
+    tags:         tagsRaw.split(',').map(t => t.trim()).filter(Boolean),
+    ingredients:  document.getElementById('edit-ingredients').value.split('\n').map(s => s.trim()).filter(Boolean),
+    instructions: document.getElementById('edit-instructions').value.split('\n').map(s => s.trim()).filter(Boolean),
+    notes:        document.getElementById('edit-notes').value.trim() || null,
+  };
+
+  try {
+    const res = await fetch('/api/recipes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'update', recipe: updated })
+    });
+    if (!res.ok) throw new Error();
+    const idx = RECIPES.findIndex(r => r.id === editingId);
+    RECIPES[idx] = updated;
+    const card = document.querySelector(`.recipe-card[data-id="${editingId}"]`);
+    if (card) {
+      const t = timeStr(updated);
+      card.dataset.title        = updated.title.toLowerCase();
+      card.dataset.protein      = updated.protein;
+      card.dataset.tags         = updated.tags.join(' ');
+      card.dataset.time         = updated.time || 999;
+      card.dataset.ingredients  = updated.ingredients.join(' ').toLowerCase();
+      card.dataset.instructions = updated.instructions.join(' ').toLowerCase();
+      card.querySelector('.card-title').textContent = updated.title;
+      card.querySelector('.card-meta').innerHTML = `
+        <span class="pill pill-protein">${proteinLabel[updated.protein] || updated.protein}</span>
+        ${t ? `<span class="pill pill-time">⏱ ${t}</span>` : ''}
+        <span class="pill ${updated.tested ? 'pill-tested' : 'pill-untested'} pill-toggle" onclick="toggleTested(event, ${updated.id})">${updated.tested ? '✓ Provat' : 'Ej provat'}</span>`;
+      const ingHtml   = updated.ingredients.map(renderIngredient).join('');
+      const stepsHtml = updated.instructions.map(s => `<li onclick="toggleStep(this)"><span>${s}</span></li>`).join('');
+      const notesHtml = updated.notes
+        ? `<div class="detail-section"><h3>Noteringar</h3><div class="notes-box">💡 ${updated.notes}</div></div>` : '';
+      card.querySelector('.detail-inner').innerHTML = `
+        <div class="detail-section"><h3>Ingredienser · ${updated.servings} portioner</h3><ul class="ingredients-list">${ingHtml}</ul></div>
+        <div class="detail-section"><h3>Tillagning</h3><ol class="steps-list">${stepsHtml}</ol></div>
+        ${notesHtml}
+        <button class="edit-recipe-btn" onclick="openEditModal(event, ${updated.id})">✏️ Redigera recept</button>`;
+    }
+    closeEditModal();
+  } catch {
+    feedback.textContent = 'Kunde inte spara — prova igen.';
+    feedback.style.color = 'var(--terracotta)';
+    saveBtn.disabled = false;
+  }
+}
+
+async function deleteRecipe() {
+  if (!confirm('Ta bort receptet permanent? Det går inte att ångra.')) return;
+  const delBtn = document.querySelector('#editModal .btn-delete');
+  const feedback = document.getElementById('editFeedback');
+  delBtn.disabled = true;
+  feedback.textContent = 'Tar bort...';
+  feedback.style.color = 'var(--text-muted)';
+
+  try {
+    const res = await fetch('/api/recipes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', id: editingId })
+    });
+    if (!res.ok) throw new Error();
+    RECIPES = RECIPES.filter(r => r.id !== editingId);
+    const card = document.querySelector(`.recipe-card[data-id="${editingId}"]`);
+    if (card) card.remove();
+    closeEditModal();
+  } catch {
+    feedback.textContent = 'Kunde inte ta bort — prova igen.';
+    feedback.style.color = 'var(--terracotta)';
+    delBtn.disabled = false;
+  }
+}
 
 init();
 loadWeeklyPlan();
