@@ -2184,11 +2184,10 @@ function openWeekRecipe(recipeId, title, cardEl) {
 
   panel.classList.add('open');
 
-  setTimeout(() => {
-    const hh = document.querySelector('header').offsetHeight;
-    const top = panel.getBoundingClientRect().top + window.scrollY - hh - 12;
-    smoothScrollTo(top, 420);
-  }, 520);
+  // Scrollar direkt — panelens toppposition är fast, bara höjden växer nedåt
+  const hh = document.querySelector('header').offsetHeight;
+  const top = panel.getBoundingClientRect().top + window.scrollY - hh - 8;
+  smoothScrollTo(top, 380);
 }
 
 async function confirmPlan() {
