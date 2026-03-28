@@ -1,55 +1,85 @@
 {
-  "generated": "2026-03-27",
-  "startDate": "2026-03-28",
-  "endDate": "2026-04-04",
+  "generated": "2026-03-28",
+  "startDate": "2026-03-31",
+  "endDate": "2026-04-12",
   "days": [
-    {
-      "date": "2026-03-28",
-      "day": "Lördag",
-      "recipe": "Stekt curryris med färs och salladslök",
-      "recipeId": 29
-    },
-    {
-      "date": "2026-03-29",
-      "day": "Söndag",
-      "recipe": "Citronrisoni med rostad spetskål",
-      "recipeId": 20
-    },
-    {
-      "date": "2026-03-30",
-      "day": "Måndag",
-      "recipe": "Gräddig fiskgratäng med purjo",
-      "recipeId": 1
-    },
     {
       "date": "2026-03-31",
       "day": "Tisdag",
-      "recipe": "Gazpacho",
-      "recipeId": 25
+      "recipe": "Bönstroganoff",
+      "recipeId": 16
     },
     {
       "date": "2026-04-01",
       "day": "Onsdag",
-      "recipe": "Tomatsoppa med pizzasnurror",
-      "recipeId": 7
+      "recipe": "Tonfiskpasta",
+      "recipeId": 24
     },
     {
       "date": "2026-04-02",
       "day": "Torsdag",
-      "recipe": "Nudelwok med kyckling på plåt",
-      "recipeId": 19
+      "recipe": "Matvetesallad med gröna ärter och krispig halloumi",
+      "recipeId": 2
     },
     {
       "date": "2026-04-03",
       "day": "Fredag",
-      "recipe": "Belugabouillabaisse",
-      "recipeId": 14
+      "recipe": "Buljongprimörsoppa med kycklingfrikadeller",
+      "recipeId": 8
     },
     {
       "date": "2026-04-04",
       "day": "Lördag",
-      "recipe": "Parmesanpotatis med kallrökt lax",
-      "recipeId": 22
+      "recipe": "Valnötshummus med ugnsrostade grönsaker",
+      "recipeId": 30
+    },
+    {
+      "date": "2026-04-05",
+      "day": "Söndag",
+      "recipe": "Soppa med vermicelli och rotfrukter",
+      "recipeId": 17
+    },
+    {
+      "date": "2026-04-06",
+      "day": "Måndag",
+      "recipe": "Minestrone",
+      "recipeId": 23
+    },
+    {
+      "date": "2026-04-07",
+      "day": "Tisdag",
+      "recipe": "Hummusbowl",
+      "recipeId": 27
+    },
+    {
+      "date": "2026-04-08",
+      "day": "Onsdag",
+      "recipe": "Pastasallad med kyckling, feta och basilika",
+      "recipeId": 6
+    },
+    {
+      "date": "2026-04-09",
+      "day": "Torsdag",
+      "recipe": "Blomkålssoppa med halloumitrössel",
+      "recipeId": 28
+    },
+    {
+      "date": "2026-04-10",
+      "day": "Fredag",
+      "recipe": "Buljongsoppa med shiitakesvamp och pocherat ägg",
+      "recipeId": 5
+    },
+    {
+      "date": "2026-04-11",
+      "day": "Lördag",
+      "recipe": "Pepprig pastasås med aubergine",
+      "recipeId": 31
+    },
+    {
+      "date": "2026-04-12",
+      "day": "Söndag",
+      "recipe": "Blomkålssoppa med bacontopping",
+      "recipeId": 9
     }
   ]
 }
