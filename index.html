@@ -879,6 +879,46 @@
     padding: 1.5rem 0 0.5rem;
   }
 
+  .trigger-section.collapsed .trigger-body {
+    max-height: 0;
+    overflow: hidden;
+    margin: 0;
+  }
+
+  .trigger-toggle-row {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .trigger-section:not(.collapsed) .trigger-toggle-row {
+    display: none;
+  }
+
+  .trigger-toggle-btn {
+    background: none;
+    border: 1.5px solid var(--terracotta);
+    color: var(--terracotta);
+    border-radius: 20px;
+    padding: 0.4rem 1.1rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .trigger-toggle-btn:hover {
+    background: var(--terracotta);
+    color: #fff;
+  }
+
+  .trigger-body {
+    max-height: 2000px;
+    transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1);
+    overflow: hidden;
+  }
+
   .trigger-btn {
     display: inline-flex;
     align-items: center;
@@ -1582,21 +1622,21 @@
 
   <div id="weekContent" style="display:none">
     <div class="week-section">
-      <h2 class="section-title">🗓 Matsedeln</h2>
+      <h2 class="section-title">Matsedeln</h2>
       <p class="week-meta" id="weekMeta"></p>
       <div class="timeline-wrap">
         <div class="timeline" id="weekGrid"></div>
       </div>
-      <div id="weekRecipeDetail" class="week-recipe-detail"></div>
       <div class="confirm-plan-wrap" id="confirmPlanWrap" style="display:none">
         <button class="confirm-plan-btn" id="confirmPlanBtn" onclick="confirmPlan()">✓ Bekräfta och bygg inköpslista</button>
         <p class="confirm-status" id="confirmStatus"></p>
       </div>
+      <div id="weekRecipeDetail" class="week-recipe-detail"></div>
     </div>
 
     <div class="week-section" id="ingredientSection">
       <div class="ingredient-section-header" onclick="toggleIngredientSection()">
-        <h2 class="section-title">🧾 Veckans ingredienser</h2>
+        <h2 class="section-title">Veckans ingredienser</h2>
         <span class="ingredient-toggle-chevron">›</span>
       </div>
       <div class="ingredient-section-body">
@@ -1606,7 +1646,11 @@
     </div>
   </div>
 
-  <div class="trigger-section">
+  <div class="trigger-section" id="triggerSection">
+    <div class="trigger-toggle-row">
+      <button class="trigger-toggle-btn" onclick="toggleTrigger()">＋ Ny plan</button>
+    </div>
+    <div class="trigger-body">
     <h3 class="trigger-title">Generera ny plan</h3>
     <div class="date-range">
       <div class="date-field">
@@ -1711,6 +1755,7 @@
       ✨ Generera ny plan
     </button>
     <div class="trigger-status" id="triggerStatus"></div>
+    </div>
   </div>
 </div>
 
@@ -2066,10 +2111,11 @@ async function generatePlan() {
 
 function jumpToRecipe(title) {
   switchTab('recept');
-  activeFilter = 'alla';
+  activeFilters = new Set(['alla']);
   document.getElementById('search').value = '';
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector('[data-filter="alla"]').classList.add('active');
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.filter === 'alla');
+  });
   applyFilters();
   document.querySelectorAll('.recipe-card').forEach(card => {
     if (card.dataset.title === title.toLowerCase()) {
@@ -2592,14 +2638,14 @@ function renderWeeklyPlanData(plan, shop, freshlyGenerated = false) {
   document.getElementById('weekNoData').style.display = 'none';
   document.getElementById('weekContent').style.display = '';
 
-  const metaParts = [];
+  let metaText = '';
   if (plan.startDate && plan.endDate)
-    metaParts.push(`${fmtShort(plan.startDate)} – ${fmtShort(plan.endDate)}`);
+    metaText = `${fmtShort(plan.startDate)} – ${fmtShort(plan.endDate)}`;
   else if (plan.week)
-    metaParts.push(`Vecka ${plan.week}`);
-  metaParts.push(`Genererad ${plan.generated}`);
-  document.getElementById('weekMeta').textContent = metaParts.join(' · ');
+    metaText = `Vecka ${plan.week}`;
+  document.getElementById('weekMeta').textContent = metaText;
 
+  const PROTEIN_COLOR = { fisk:'#5b9bd5', kyckling:'#e8a735', vegetarisk:'#4a7d4e', kött:'#b05040', fläsk:'#b05040' };
   const todayIso = fmtIso(new Date());
   document.getElementById('weekGrid').innerHTML = plan.days.map(d => {
     const isToday = d.date === todayIso;
@@ -2608,8 +2654,11 @@ function renderWeeklyPlanData(plan, shop, freshlyGenerated = false) {
     const dot     = isToday ? '<span class="today-dot"></span>' : '';
     const safeTitle = d.recipe.replace(/'/g,"\\'");
     const rid = d.recipeId || '';
+    const recipe = rid ? RECIPES.find(r => r.id === rid) : null;
+    const proteinColor = recipe ? (PROTEIN_COLOR[recipe.protein] || '') : '';
+    const borderStyle = proteinColor ? ` style="border-left: 3px solid ${proteinColor}"` : '';
     const swapBtn = planConfirmed ? '' : `<button class="swap-icon-btn" title="Flytta till annan dag" onclick="event.stopPropagation();enterSwapMode('${d.date || ''}')"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="10" viewBox="0 0 13 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 2.5h11M9 0.5l2.5 2L9 4.5"/><path d="M12 7.5H1M4 5.5L1.5 7.5 4 9.5"/></svg></button>`;
-    return `<div class="week-day-card${cls}" data-recipeid="${rid}" data-date="${d.date || ''}" onclick="openWeekRecipe(${rid || 'null'}, '${safeTitle}', this)">
+    return `<div class="week-day-card${cls}"${borderStyle} data-recipeid="${rid}" data-date="${d.date || ''}" onclick="openWeekRecipe(${rid || 'null'}, '${safeTitle}', this)">
       <div class="week-day-name">${d.day}${d.date ? ' · ' + fmtShort(d.date) : ''}${dot}</div>
       <div class="week-day-recipe">${d.recipe}</div>
       ${swapBtn}
@@ -2637,6 +2686,12 @@ function renderWeeklyPlanData(plan, shop, freshlyGenerated = false) {
 
   const recipeItems = shop?.recipeItems || shop?.categories || null;
   renderIngredientPreview(recipeItems, shop?.recipeItemsMovedAt || null, freshlyGenerated || confirmed);
+
+  document.getElementById('triggerSection').classList.add('collapsed');
+}
+
+function toggleTrigger() {
+  document.getElementById('triggerSection').classList.remove('collapsed');
 }
 
 async function loadWeeklyPlan() {
@@ -2743,7 +2798,8 @@ async function toggleTested(event, id) {
     pill.textContent = tested ? '✓ Provat' : 'Ej provat';
     pill.closest('.recipe-card').dataset.tested = tested;
   } catch {
-    alert('Kunde inte spara — prova igen.');
+    pill.style.outline = '2px solid var(--terracotta)';
+    setTimeout(() => { pill.style.outline = ''; }, 1500);
   } finally {
     pill.style.opacity = '';
   }
@@ -2777,8 +2833,10 @@ function closeEditModal() {
   editingId = null;
 }
 
+const editModalEl = document.getElementById('editModal');
+
 function handleModalOverlayClick(event) {
-  if (event.target === document.getElementById('editModal')) closeEditModal();
+  if (event.target === editModalEl) closeEditModal();
 }
 
 async function saveRecipe() {
@@ -2789,7 +2847,7 @@ async function saveRecipe() {
   feedback.style.color = 'var(--text-muted)';
 
   const r = RECIPES.find(r => r.id === editingId);
-  if (!r) return;
+  if (!r) { saveBtn.disabled = false; return; }
 
   const tagsRaw = document.getElementById('edit-tags').value;
   const updated = {
@@ -2811,18 +2869,31 @@ async function saveRecipe() {
       body: JSON.stringify({ action: 'update', recipe: updated })
     });
     if (!res.ok) throw new Error();
-    // Uppdatera in-memory
     const idx = RECIPES.findIndex(r => r.id === editingId);
     RECIPES[idx] = updated;
-    // Re-rendera det ändrade kortet
     const card = document.querySelector(`.recipe-card[data-id="${editingId}"]`);
     if (card) {
-      const wasOpen = card.classList.contains('open');
-      card.outerHTML = renderCard(updated);
-      if (wasOpen) {
-        const newCard = document.querySelector(`.recipe-card[data-id="${editingId}"]`);
-        if (newCard) newCard.classList.add('open');
-      }
+      const t = timeStr(updated);
+      card.dataset.title        = updated.title.toLowerCase();
+      card.dataset.protein      = updated.protein;
+      card.dataset.tags         = updated.tags.join(' ');
+      card.dataset.time         = updated.time || 999;
+      card.dataset.ingredients  = updated.ingredients.join(' ').toLowerCase();
+      card.dataset.instructions = updated.instructions.join(' ').toLowerCase();
+      card.querySelector('.card-title').textContent = updated.title;
+      card.querySelector('.card-meta').innerHTML = `
+        <span class="pill pill-protein">${proteinLabel[updated.protein] || updated.protein}</span>
+        ${t ? `<span class="pill pill-time">⏱ ${t}</span>` : ''}
+        <span class="pill ${updated.tested ? 'pill-tested' : 'pill-untested'} pill-toggle" onclick="toggleTested(event, ${updated.id})">${updated.tested ? '✓ Provat' : 'Ej provat'}</span>`;
+      const ingHtml   = updated.ingredients.map(renderIngredient).join('');
+      const stepsHtml = updated.instructions.map(s => `<li onclick="toggleStep(this)"><span>${s}</span></li>`).join('');
+      const notesHtml = updated.notes
+        ? `<div class="detail-section"><h3>Noteringar</h3><div class="notes-box">💡 ${updated.notes}</div></div>` : '';
+      card.querySelector('.detail-inner').innerHTML = `
+        <div class="detail-section"><h3>Ingredienser · ${updated.servings} portioner</h3><ul class="ingredients-list">${ingHtml}</ul></div>
+        <div class="detail-section"><h3>Tillagning</h3><ol class="steps-list">${stepsHtml}</ol></div>
+        ${notesHtml}
+        <button class="edit-recipe-btn" onclick="openEditModal(event, ${updated.id})">✏️ Redigera recept</button>`;
     }
     closeEditModal();
   } catch {
@@ -2834,7 +2905,9 @@ async function saveRecipe() {
 
 async function deleteRecipe() {
   if (!confirm('Ta bort receptet permanent? Det går inte att ångra.')) return;
+  const delBtn = document.querySelector('#editModal .btn-delete');
   const feedback = document.getElementById('editFeedback');
+  delBtn.disabled = true;
   feedback.textContent = 'Tar bort...';
   feedback.style.color = 'var(--text-muted)';
 
@@ -2852,6 +2925,7 @@ async function deleteRecipe() {
   } catch {
     feedback.textContent = 'Kunde inte ta bort — prova igen.';
     feedback.style.color = 'var(--terracotta)';
+    delBtn.disabled = false;
   }
 }
 
