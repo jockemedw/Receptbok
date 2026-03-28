@@ -5,19 +5,20 @@ Personlig matplaneringsapp för familjen (två vuxna + litet barn). Användaren 
 
 ## Arkitektur
 ```
-Browser → Vercel /api/generate → Claude Haiku (receptval) → GitHub repo (JSON-filer) → Browser läser
+Browser → Vercel /api/generate → Deterministisk receptväljare (JS) → GitHub repo (JSON-filer) → Browser läser
 ```
-- **Frontend:** `index.html` på GitHub Pages (backup) + Vercel (primär, under migration)
-- **Backend:** Vercel serverless `/api/generate` — tar emot inställningar, filtrerar recept, anropar Claude Haiku, sparar JSON till GitHub
+- **Frontend:** `index.html` på GitHub Pages (backup) + Vercel (primär)
+- **Backend:** Vercel serverless `/api/generate` — tar emot inställningar, filtrerar recept, väljer deterministiskt, sparar JSON till GitHub
 - **Data:** `recipes.json` (källa), `weekly-plan.json`, `shopping-list.json`, `recipe-history.json` — alla i repot
-- **Secrets:** `ANTHROPIC_API_KEY` + `GITHUB_PAT` (contents:write) i Vercel env vars
+- **Secrets:** `GITHUB_PAT` (contents:write) i Vercel env vars
 - **Autentisering:** Ingen — familjeapp med okänd URL
+- **Ingen AI-kostnad** — appen använder inte längre Anthropic API
 
 ## Designprinciper (följ alltid)
 - **Gratis** — betallösningar kräver stark motivering
 - **Ingen automatisk generering** — matsedeln triggas alltid manuellt. Familjen har litet barn och kan inte styra inköp till en fast veckodag. Föreslå aldrig cron-schema.
 - **Delad data** — localStorage och device-specifika lösningar är aldrig acceptabla
-- **AI bara där det behövs** — slump + filter är bättre än AI om resultatet är likvärdigt
+- **Ingen AI i runtime** — receptval sker deterministiskt (filter + slump + proteinbalans). AI (Claude Code) används bara vid utveckling
 - **Vercel är backend** — GitHub Actions används ej längre
 
 ## Kommunikation med användaren
@@ -60,16 +61,16 @@ Receptbok/
 ├── api/
 │   └── generate.js         # Vercel serverless: filtrering + Claude Haiku + GitHub-skrivning
 ├── vercel.json             # 60s timeout
-├── package.json            # @anthropic-ai/sdk
+├── package.json            # Inga runtime-beroenden
 └── CLAUDE.md
 ```
 
 ## Tekniska beslut
 - **Färgtema:** Krämvitt `#faf7f2`, brun header `#5c3d1e`, terrakotta `#c2522b`
-- **AI för receptval:** Claude Haiku `claude-haiku-4-5-20251001` — väljer recept, respekterar regler + historik
+- **Receptval:** Deterministisk JS-algoritm i `selectRecipes()` — historikfiltrering (14 dagar) → proteinfördelning (max 2 per typ) → vardag30/helg60-matchning → slump. Ingen AI.
 - **Inköpslista:** Byggs deterministiskt i JS från receptdata — ingen AI
-- **Recepthistorik:** `recipe-history.json` — Claude instrueras undvika recept använda senaste 28 dagar
-- **Receptlistan shufflas** innan Claude ser den — ger variation varje generering
+- **Recepthistorik:** `recipe-history.json` — recept använda senaste 14 dagar filtreras bort, äldsta fylls på vid behov
+- **Inställningar:** Oprövade (direkt siffra), vegetariska dagar (direkt siffra), proteintoggle med receptantal. Ingen skalning, inga tidsväljare, inget fritextfält.
 - **Willys-integration:** Avaktiverad — EU-scraping-blockering (400-fel), ingen plan
 
 ## recipes.json — struktur (rör ej)
@@ -186,3 +187,12 @@ Tre problem hittade i `callClaude()` / receptvalet:
 - **Fallback:** När färska recept inte räcker fylls poolen med de recept som gick *längst sedan* (sorterat på datum), aldrig slumpmässigt.
 - **Punkt 14 tillagd:** Handplocka recept — fritekstfältet är mjuk önskan som tyst misslyckas om receptet är historikblockat.
 - **Nästa session börjar med:** Punkt 8, 9, 11 eller 14 — flerval i filter, prövat/oprövat, expanderbara receptkort, eller handplockning.
+
+## Session 15 (2026-03-28)
+- **AI borttagen från receptval:** `callClaude()` ersatt med deterministisk `selectRecipes()` i `api/generate.js`. Ingen Anthropic API-kostnad längre. Algoritm: historikfiltrering (14 dagar) → pool-uppdelning vardag/helg → veg-dagar slumpas → proteinbalans (max 2 per typ) → oprövade-kvot → slump inom varje slot. Fallback om pool är för liten.
+- **Anthropic SDK borttagen:** `@anthropic-ai/sdk` borttagen ur `package.json`. `ANTHROPIC_API_KEY` behövs ej längre i Vercel env vars.
+- **Inställningar förenklat:** Fritekstfält ("Önskemål") borttaget — styrde AI-prompten, irrelevant utan AI. Tidsväljare (max tid vardag/helg) borttagna — filtrering sker på taggar (vardag30/helg60), inte minuter. Oprövade och vegetariska dagar: direkt siffra istället för per-vecka-skalning.
+- **Realtids-feedback:** "X recept matchar dina filter" visas i inställningspanelen. Proteinknappar visar receptantal per typ. Veg-dagar-max anpassas automatiskt till datumintervallet.
+- **Vercel timeout:** Sänkt från 60s till 15s (ingen AI-väntan).
+- **Claude Code hooks:** Tre hooks tillagda i `.claude/settings.json`: (1) recipes.json-skydd (PreToolUse-block), (2) Windows-notifikation vid väntan (Notification), (3) commit-påminnelse vid osparade ändringar (Stop-prompt).
+- **Nästa session börjar med:** Punkt 8, 9, 11 eller 14.

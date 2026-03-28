@@ -1,4 +1,3 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { buildShoppingList } from "./_shared/shopping-builder.js";
 
 const REPO_OWNER = "jockemedw";
@@ -26,16 +25,13 @@ function buildDayList(startDate, endDate) {
 
 function filterRecipes(recipes, constraints) {
   const allowed = new Set(constraints.allowed_proteins);
-  const { untested_count, max_weekday_time, max_weekend_time } = constraints;
+  const { untested_count } = constraints;
 
   return recipes.filter((r) => {
     if (!allowed.has(r.protein)) return false;
     if (!untested_count && !r.tested) return false;
-    const t = r.time || 999;
     const tags = r.tags || [];
-    const weekdayOk = tags.includes("vardag30") && t <= max_weekday_time;
-    const weekendOk = tags.includes("helg60") && t <= max_weekend_time;
-    return weekdayOk || weekendOk;
+    return tags.includes("vardag30") || tags.includes("helg60");
   });
 }
 
@@ -146,16 +142,11 @@ function shuffle(arr) {
   return a;
 }
 
-async function callClaude(recipes, dayList, constraints, instructions, recentIds = new Set(), usedOn = {}) {
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-  // Bygg en snabb-uppslagstabell för validering
-  const recipeMap = new Map(recipes.map((r) => [r.id, r]));
-
-  // ── 1. Hårt förval: nyligen använda recept filtreras bort ──────────────────
-  // Färska recept (ej använda senaste 14 dagarna) prioriteras alltid.
-  // Om poolen är för liten fylls den på med de recept som gick längst sedan —
-  // aldrig slumpmässigt eller med Claudes egna preferenser.
+// ── Deterministisk receptväljare ─────────────────────────────────────────────
+// Ersätter AI-anropet med ren logik: historikfiltrering → proteinfördelning →
+// vardag/helg-matchning → slump inom varje slot.
+function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), usedOn = {}) {
+  // ── 1. Historikfiltrering — identisk med tidigare logik ────────────────────
   const fresh = recipes.filter((r) => !recentIds.has(r.id));
   let pool;
   if (fresh.length >= dayList.length) {
@@ -170,138 +161,70 @@ async function callClaude(recipes, dayList, constraints, instructions, recentIds
   }
   if (pool.length === 0) pool = recipes;
 
-  // ── 2. Proteinfördelning — ger Claude kontexten den behöver ────────────────
-  const proteinCounts = {};
-  for (const r of pool) proteinCounts[r.protein] = (proteinCounts[r.protein] || 0) + 1;
-  const proteinInfo = Object.entries(proteinCounts)
-    .map(([p, n]) => `${p}: ${n} st`)
-    .join(", ");
+  // ── 2. Dela upp poolen per dag-typ + protein ──────────────────────────────
+  const weekdayPool = shuffle(pool.filter((r) => r.tags.includes("vardag30")));
+  const weekendPool = shuffle(pool.filter((r) => r.tags.includes("helg60")));
 
-  const slim = shuffle(pool).map((r) => ({
-    id: r.id, title: r.title, time: r.time,
-    tags: r.tags, protein: r.protein, tested: r.tested,
-  }));
+  // ── 3. Bestäm vilka dagar som ska vara vegetariska ────────────────────────
+  const vegCount = constraints.vegetarian_days;
+  const dayIndices = dayList.map((_, i) => i);
+  // Shuffla index för att sprida veg-dagarna slumpmässigt
+  const shuffledIndices = shuffle(dayIndices);
+  const vegDaySet = new Set(shuffledIndices.slice(0, vegCount));
 
-  const daysText = dayList
-    .map((d) => `- ${d.day} (${d.date}): ${d.is_weekend ? "helg60" : "vardag30"}`)
-    .join("\n");
+  // ── 4. Fyll varje dag — protein max 2 ggr ─────────────────────────────────
+  const usedIds = new Set();
+  const proteinUsage = {}; // { "fisk": 2, ... }
+  const MAX_PER_PROTEIN = 2;
+  const result = [];
 
-  const daysTemplate = JSON.stringify(
-    dayList.map((d) => ({ date: d.date, day: d.day, recipe: "<exact title>", recipeId: 0 })),
-    null, 2
-  );
-
-  const extraRules = [];
-  if (!constraints.untested_count) {
-    extraRules.push("6. ONLY select recipes where tested=true.");
-  } else {
-    extraRules.push(`6. At most ${constraints.untested_count} selected recipe(s) may have tested=false.`);
-  }
-  if (constraints.vegetarian_days > 0) {
-    extraRules.push(
-      `7. Exactly ${constraints.vegetarian_days} of the ${dayList.length} days must use a vegetarian recipe (protein='vegetarisk').`
-    );
-  }
-  if (instructions?.trim()) {
-    extraRules.push(`${extraRules.length + 6}. Additional family instructions: ${instructions.trim()}`);
-  }
-
-  const buildPrompt = (feedbackNote = "") => `You are a meal planner for a Swedish family. Select ${dayList.length} recipes from the recipe database below — one per day — for the period listed.
-
-## Available recipes by protein type
-${proteinInfo}
-
-## Rules
-1. Days tagged "vardag30" MUST use recipes tagged "vardag30" (max ${constraints.max_weekday_time} min).
-2. Days tagged "helg60" MUST use recipes tagged "helg60" (max ${constraints.max_weekend_time} min).
-3. Do not repeat the same recipe. Do not use the same protein type more than twice.
-4. Vary protein types across the days for nutritional balance.
-5. Copy recipe titles and IDs EXACTLY as they appear in the database — do not invent new IDs or titles.
-${extraRules.join("\n")}${feedbackNote ? `\n\n## IMPORTANT — fix these errors from your previous attempt\n${feedbackNote}` : ""}
-
-## Days to plan
-${daysText}
-
-## Recipe database
-${JSON.stringify(slim, null, 0)}
-
-## Required output format
-Return ONLY a JSON array — no other text, no markdown, no explanation:
-
-${daysTemplate}`;
-
-  // ── 3. Validera Claudes svar mot databasen ─────────────────────────────────
-  function validateAndFix(days) {
-    if (!Array.isArray(days)) return { error: "Response is not a JSON array", days: null };
-    if (days.length !== dayList.length) return { error: `Expected ${dayList.length} entries, got ${days.length}`, days: null };
-
-    const errors = [];
-    const usedIds = new Set();
-
-    for (const d of days) {
-      let recipe = recipeMap.get(d.recipeId);
-
-      // Om ID saknas, försök matcha på exakt titel
-      if (!recipe) {
-        const byTitle = [...recipeMap.values()].find((r) => r.title === d.recipe);
-        if (byTitle) {
-          d.recipeId = byTitle.id; // korrigera ID
-          recipe = byTitle;
-        } else {
-          errors.push(`Recipe ID ${d.recipeId} ("${d.recipe}") does not exist in the database.`);
-          continue;
-        }
+  // Hjälpfunktion: välj recept från pool med proteinbegränsning
+  function pick(dayPool, mustBeVeg) {
+    for (const r of dayPool) {
+      if (usedIds.has(r.id)) continue;
+      if (mustBeVeg && r.protein !== "vegetarisk") continue;
+      // På icke-veg-dagar: undvik vegetariskt om det finns andra alternativ
+      if (!mustBeVeg && r.protein === "vegetarisk") continue;
+      if ((proteinUsage[r.protein] || 0) >= MAX_PER_PROTEIN) continue;
+      // Oprövade-begränsning
+      if (!r.tested) {
+        const untestedSoFar = result.filter((d) => {
+          const poolRecipe = pool.find((p) => p.id === d.recipeId);
+          return poolRecipe && !poolRecipe.tested;
+        }).length;
+        if (untestedSoFar >= constraints.untested_count) continue;
       }
+      return r;
+    }
+    // Fallback: släpp proteinbegränsning
+    for (const r of dayPool) {
+      if (usedIds.has(r.id)) continue;
+      if (mustBeVeg && r.protein !== "vegetarisk") continue;
+      return r;
+    }
+    return null;
+  }
 
-      // Om titel inte stämmer, korrigera tyst
-      if (recipe.title !== d.recipe) d.recipe = recipe.title;
+  for (let i = 0; i < dayList.length; i++) {
+    const day = dayList[i];
+    const isVegDay = vegDaySet.has(i);
+    const dayPool = day.is_weekend ? weekendPool : weekdayPool;
 
-      // Kontrollera dubbletter
-      if (usedIds.has(d.recipeId)) {
-        errors.push(`Recipe "${d.recipe}" (ID ${d.recipeId}) was selected more than once.`);
-      }
-      usedIds.add(d.recipeId);
+    const recipe = pick(dayPool, isVegDay);
+    if (!recipe) {
+      throw new Error(
+        `Kunde inte hitta recept för ${day.day} (${day.date}) — ` +
+        `${isVegDay ? "vegetarisk " : ""}${day.is_weekend ? "helg" : "vardag"}. ` +
+        "Prova att ändra inställningarna."
+      );
     }
 
-    if (errors.length > 0) return { error: errors.join(" "), days: null };
-    return { error: null, days };
+    usedIds.add(recipe.id);
+    proteinUsage[recipe.protein] = (proteinUsage[recipe.protein] || 0) + 1;
+    result.push({ date: day.date, day: day.day, recipe: recipe.title, recipeId: recipe.id });
   }
 
-  // ── 4. Anropa Claude med retry vid valideringsfel ──────────────────────────
-  const models = ["claude-haiku-4-5-20251001", "claude-haiku-4-5"];
-  let lastError;
-  let feedbackNote = "";
-
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const model = models[Math.min(attempt, models.length - 1)];
-    try {
-      const msg = await client.messages.create({
-        model,
-        max_tokens: 2048,
-        messages: [{ role: "user", content: buildPrompt(feedbackNote) }],
-      });
-
-      let raw = msg.content[0]?.text?.trim() || "";
-      if (raw.startsWith("```")) {
-        raw = raw.split("```")[1];
-        if (raw.startsWith("json")) raw = raw.slice(4);
-        raw = raw.trim().replace(/```$/, "").trim();
-      }
-
-      const parsed = JSON.parse(raw);
-      const { error, days } = validateAndFix(parsed);
-
-      if (!error) return days;
-
-      // Valideringsfel — skicka feedback i nästa försök
-      feedbackNote = error;
-      lastError = new Error(error);
-    } catch (e) {
-      lastError = e;
-      feedbackNote = `Parse error: ${e.message}`;
-    }
-  }
-  throw lastError;
+  return result;
 }
 
 export default async function handler(req, res) {
@@ -316,16 +239,12 @@ export default async function handler(req, res) {
 
   const pat = process.env.GITHUB_PAT;
   if (!pat) return res.status(500).json({ error: "GITHUB_PAT saknas i env" });
-  if (!process.env.ANTHROPIC_API_KEY) return res.status(500).json({ error: "ANTHROPIC_API_KEY saknas i env" });
 
   const {
     start_date,
     end_date,
-    instructions = "",
     allowed_proteins = "fisk,kyckling,kött,fläsk,vegetarisk",
     untested_count = 0,
-    max_weekday_time = 30,
-    max_weekend_time = 60,
     vegetarian_days = 0,
     skip_shopping = false,
   } = req.body;
@@ -338,8 +257,6 @@ export default async function handler(req, res) {
     const constraints = {
       allowed_proteins: allowed_proteins.split(",").map((p) => p.trim()).filter(Boolean),
       untested_count: parseInt(untested_count) || 0,
-      max_weekday_time: parseInt(max_weekday_time) || 30,
-      max_weekend_time: parseInt(max_weekend_time) || 60,
       vegetarian_days: parseInt(vegetarian_days) || 0,
     };
 
@@ -355,7 +272,7 @@ export default async function handler(req, res) {
 
     const recentIds = recentlyUsedIds(historyData);
     const dayList = buildDayList(start_date, end_date);
-    const days = await callClaude(filtered, dayList, constraints, instructions, recentIds, historyData.usedOn || {});
+    const days = selectRecipes(filtered, dayList, constraints, recentIds, historyData.usedOn || {});
 
     const today = new Date().toISOString().slice(0, 10);
     const weeklyPlan = { generated: today, startDate: start_date, endDate: end_date, days };

@@ -1176,32 +1176,14 @@
   }
 
   .settings-warning.visible { display: block; }
+  .settings-preview {
+    margin: 1rem 0 0;
+    font-size: .85rem;
+    text-align: center;
+    font-weight: 500;
+  }
 
   /* ── INSTRUCTIONS ── */
-  .instructions-field {
-    width: 100%;
-    min-height: 80px;
-    padding: 0.75rem 1rem;
-    border: 1.5px solid var(--border);
-    border-radius: 10px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.88rem;
-    color: var(--ink);
-    background: var(--warm-white);
-    resize: vertical;
-    outline: none;
-    line-height: 1.5;
-    transition: border-color 0.2s;
-    margin-bottom: 0.75rem;
-  }
-  .instructions-field:focus { border-color: var(--terracotta); }
-  .instructions-label {
-    font-size: 0.78rem;
-    font-weight: 500;
-    color: var(--text-muted);
-    margin-bottom: 0.35rem;
-    display: block;
-  }
 
   /* ── GENERATE BUTTON & STATUS ── */
   .generate-btn {
@@ -1665,9 +1647,6 @@
     </div>
     <p class="date-hint" id="dateHint"></p>
 
-    <label class="instructions-label">Önskemål & instruktioner</label>
-    <textarea id="instructions" class="instructions-field">Välj omväxlande recept med variation i protein och tillagningssätt. Undvik att ha samma typ av rätt flera dagar i rad.</textarea>
-
     <div class="settings-toggle-wrap">
       <button class="settings-toggle" id="settingsToggle" onclick="toggleSettings()">
         ⚙ Inställningar <span id="settingsArrow">▾</span>
@@ -1680,11 +1659,11 @@
         <div class="setting-row">
           <label class="setting-label">
             Oprövade recept
-            <span class="setting-sublabel">Max antal recept vi inte testat</span>
+            <span class="setting-sublabel">Max antal nya recept i planen</span>
           </label>
           <div class="setting-control">
             <input type="number" id="untestedCount" class="setting-num"
-                   min="0" max="7" value="1" onchange="updateDateHint()">
+                   min="0" max="15" value="1" onchange="updateSettingsPreview()">
             <span class="setting-unit">st</span>
           </div>
         </div>
@@ -1693,38 +1672,12 @@
 
         <div class="setting-row">
           <label class="setting-label">
-            Max tid vardagar
-            <span class="setting-sublabel">Tillåten tillagningstid vardag</span>
-          </label>
-          <div class="setting-control">
-            <input type="number" id="maxWeekdayTime" class="setting-num"
-                   min="15" max="60" step="5" value="30" onchange="updateDateHint()">
-            <span class="setting-unit">min</span>
-          </div>
-        </div>
-
-        <div class="setting-row">
-          <label class="setting-label">
-            Max tid helg
-            <span class="setting-sublabel">Tillåten tillagningstid helg</span>
-          </label>
-          <div class="setting-control">
-            <input type="number" id="maxWeekendTime" class="setting-num"
-                   min="30" max="120" step="15" value="60" onchange="updateDateHint()">
-            <span class="setting-unit">min</span>
-          </div>
-        </div>
-
-        <hr class="setting-divider">
-
-        <div class="setting-row">
-          <label class="setting-label">
             Vegetariska dagar
-            <span class="setting-sublabel">Minst X dagar utan kött/fisk</span>
+            <span class="setting-sublabel">Antal dagar utan kött/fisk</span>
           </label>
           <div class="setting-control">
             <input type="number" id="vegetarianDays" class="setting-num"
-                   min="0" max="7" value="4" onchange="updateDateHint()">
+                   min="0" max="15" value="4" onchange="updateSettingsPreview()">
             <span class="setting-unit">dagar</span>
           </div>
         </div>
@@ -1736,7 +1689,7 @@
             Proteiner att inkludera
             <span class="setting-sublabel">Avmarkera för att exkludera helt</span>
           </label>
-          <div class="protein-checks">
+          <div class="protein-checks" id="proteinChecks">
             <button class="prot-btn active" data-prot="fisk"       onclick="toggleProtein(this)">Fisk</button>
             <button class="prot-btn active" data-prot="kyckling"   onclick="toggleProtein(this)">Kyckling</button>
             <button class="prot-btn active" data-prot="kött"       onclick="toggleProtein(this)">Kött</button>
@@ -1747,6 +1700,8 @@
             Minst ett protein måste vara valt.
           </p>
         </div>
+
+        <p class="settings-preview" id="settingsPreview"></p>
 
       </div>
     </div>
@@ -1989,13 +1944,10 @@ function initDatePickers() {
 
   document.getElementById('startDate').value = fmtIso(today);
   document.getElementById('endDate').value = fmtIso(end);
-  document.getElementById('startDate').addEventListener('change', updateDateHint);
-  document.getElementById('endDate').addEventListener('change', updateDateHint);
-  document.getElementById('untestedCount').addEventListener('change', updateDateHint);
-  document.getElementById('maxWeekdayTime').addEventListener('change', updateDateHint);
-  document.getElementById('maxWeekendTime').addEventListener('change', updateDateHint);
-  document.getElementById('vegetarianDays').addEventListener('change', updateDateHint);
+  document.getElementById('startDate').addEventListener('change', () => { updateDateHint(); updateSettingsPreview(); });
+  document.getElementById('endDate').addEventListener('change', () => { updateDateHint(); updateSettingsPreview(); });
   updateDateHint();
+  updateSettingsPreview();
 }
 
 function getSelectedProteins() {
@@ -2011,7 +1963,7 @@ function toggleProtein(btn) {
   }
   document.getElementById('protWarning').classList.remove('visible');
   btn.classList.toggle('active');
-  updateDateHint();
+  updateSettingsPreview();
 }
 
 function toggleSettings() {
@@ -2019,6 +1971,55 @@ function toggleSettings() {
   const arrow = document.getElementById('settingsArrow');
   const open  = panel.classList.toggle('open');
   arrow.textContent = open ? '▴' : '▾';
+}
+
+function updateSettingsPreview() {
+  const preview = document.getElementById('settingsPreview');
+  if (!preview || !window._allRecipes) return;
+
+  const selected = getSelectedProteins();
+  const allowed = new Set(selected);
+  const untestedOk = parseInt(document.getElementById('untestedCount').value) || 0;
+
+  const matching = window._allRecipes.filter(r => {
+    if (!allowed.has(r.protein)) return false;
+    if (!untestedOk && !r.tested) return false;
+    const tags = r.tags || [];
+    return tags.includes('vardag30') || tags.includes('helg60');
+  });
+
+  // Räkna per protein för knapparna
+  const protCounts = {};
+  for (const r of window._allRecipes) {
+    const tags = r.tags || [];
+    if (tags.includes('vardag30') || tags.includes('helg60')) {
+      protCounts[r.protein] = (protCounts[r.protein] || 0) + 1;
+    }
+  }
+  document.querySelectorAll('.prot-btn').forEach(btn => {
+    const prot = btn.dataset.prot;
+    const count = protCounts[prot] || 0;
+    const label = btn.textContent.replace(/\s*\(\d+\)/, '');
+    btn.textContent = `${label} (${count})`;
+  });
+
+  // Kontrollera veg-dagar mot datumintervall
+  const startVal = document.getElementById('startDate').value;
+  const endVal = document.getElementById('endDate').value;
+  const vegDays = parseInt(document.getElementById('vegetarianDays').value) || 0;
+  if (startVal && endVal) {
+    const diff = Math.round(
+      (new Date(endVal + 'T12:00:00') - new Date(startVal + 'T12:00:00')) / 864e5
+    ) + 1;
+    if (vegDays > diff) {
+      document.getElementById('vegetarianDays').value = diff;
+    }
+    document.getElementById('vegetarianDays').max = diff;
+    document.getElementById('untestedCount').max = diff;
+  }
+
+  preview.textContent = `${matching.length} recept matchar dina filter`;
+  preview.style.color = matching.length < 3 ? 'var(--terracotta)' : 'var(--warm-brown)';
 }
 
 function updateDateHint() {
@@ -2065,24 +2066,16 @@ async function generatePlan() {
   if (diff < 1 || diff > 15) return;
 
   btn.disabled = true;
-  status.textContent = 'Genererar… detta tar upp till en minut.';
+  status.textContent = 'Genererar matsedel…';
   status.className = 'trigger-status';
 
   try {
-    const untestedPerWeek  = parseFloat(document.getElementById('untestedCount').value)  || 0;
-    const vegDaysPerWeek   = parseFloat(document.getElementById('vegetarianDays').value) || 0;
-    const scaledUntested   = Math.round(diff / 7 * untestedPerWeek);
-    const scaledVegetarian = Math.round(diff / 7 * vegDaysPerWeek);
-
     const body = {
       start_date:      startVal,
       end_date:        endVal,
-      instructions:    document.getElementById('instructions').value,
       allowed_proteins: getSelectedProteins().join(','),
-      untested_count:  scaledUntested,
-      max_weekday_time: document.getElementById('maxWeekdayTime').value,
-      max_weekend_time: document.getElementById('maxWeekendTime').value,
-      vegetarian_days: scaledVegetarian,
+      untested_count:  parseInt(document.getElementById('untestedCount').value) || 0,
+      vegetarian_days: parseInt(document.getElementById('vegetarianDays').value) || 0,
       skip_shopping: true,
     };
 
@@ -2719,6 +2712,7 @@ async function init() {
     if (!res.ok) throw new Error('Kunde inte ladda recipes.json');
     const data = await res.json();
     RECIPES = data.recipes;
+    window._allRecipes = RECIPES;
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('recipeGrid').innerHTML = RECIPES.map(renderCard).join('');
     document.getElementById('countDisplay').textContent = `${RECIPES.length} recept`;
