@@ -56,10 +56,17 @@ Receptbok/
 ├── recipes.json            # Receptdatabasen (62 recept, rör ej strukturen)
 ├── weekly-plan.json        # Genereras av /api/generate
 ├── shopping-list.json      # Genereras av /api/generate
-├── recipe-history.json     # Recepthistorik (senaste 8 planer) — undviker upprepning
+├── recipe-history.json     # Recepthistorik — undviker upprepning
 ├── api/
-│   └── generate.js         # Vercel serverless: filtrering + Claude Haiku + GitHub-skrivning
-├── vercel.json             # 60s timeout
+│   ├── generate.js         # Vercel serverless: filtrering + Claude Haiku + GitHub-skrivning
+│   ├── recipes.js          # Vercel serverless: toggle_tested, update, delete mot recipes.json
+│   ├── shopping.js         # Vercel serverless: inköpslisteoperationer
+│   ├── confirm.js          # Vercel serverless: bekräfta matsedel
+│   ├── replace-recipe.js   # Vercel serverless: byt recept i plan
+│   ├── swap-days.js        # Vercel serverless: byt dagar i plan
+│   └── _shared/
+│       └── shopping-builder.js  # Delad inköpslistebyggare
+├── vercel.json             # 60s timeout för generate.js
 ├── package.json            # @anthropic-ai/sdk
 └── CLAUDE.md
 ```
@@ -113,13 +120,22 @@ Receptbok/
 5. **Receptimport** — klistra in URL, hämta/tolka/översätt till `recipes.json`-format
 6. ~~**Inköpsliste-ombyggnad**~~ — **KLAR** (session 12, 2026-03-25)
 7. ~~**Portionsanpassning**~~ — **KLAR** (session 12, 2026-03-25)
-8. **Flerval i receptfilter** — möjlighet att klicka i flera filter samtidigt (nu är det ett åt gången)
-9. **Prövat/Oprövat-filter** — lägg till båda som valbara filter i receptboken
+8. ~~**Flerval i receptfilter**~~ — **KLAR** (session 15, 2026-03-28)
+9. ~~**Prövat/Oprövat-filter**~~ — **KLAR** (session 15, 2026-03-28)
 10. ~~**Förbättrad receptväljare**~~ — **KLAR** (session 12, 2026-03-25)
 11. **Expanderbara receptkort i veckovyn** — receptkortet ska kunna vecklas ut direkt i matsedelsvyn (inline expand), utan att lämna vyn
 12. ~~**Ytterligare kvalitetskontroll av inköpslistan**~~ — **KLAR** (session 13, 2026-03-26)
 13. ~~**Sortering inom inköpslistans kategorier**~~ — **KLAR** (session 13, 2026-03-26)
 14. **Handplocka recept** — möjlighet att låsa in ett eller flera specifika recept från receptboken innan generering. Fritekstfältet är en mjuk önskan som tyst misslyckas om receptet är historikblockat. Handplockning kringgår historikblockering och ger full kontroll.
+15. ~~**Receptredigering**~~ — **KLAR** (session 15, 2026-03-28) — toggle prövat/ej prövat direkt på kort, redigeringsmodal för alla fält, ta bort recept
+
+## Session 15 (2026-03-28 — KLAR)
+- **Punkt 8 + 9 klara:** Flerval i receptfilter — `activeFilters` (Set) ersätter `activeFilter` (sträng). OR-logik: recept visas om det matchar något av de valda filtren. Nytt filter "✗ Oprövat" (43 recept) tillagt. Filterordning: Alla → Provat → Oprövat → Fisk → Kyckling → Vegetarisk → Kött → Fläsk → Snabb → Soppa → Pasta.
+- **Punkt 15 klar:** Receptredigering — ny `api/recipes.js` med actions `toggle_tested`, `update`, `delete`. Prövat/ej provat-pill klickbar direkt på receptkortet. Redigeringsmodal med alla fält. Ta bort-knapp med bekräftelse. DOM uppdateras utan sidladdning.
+- **Veckomatsedel redesign:** Genereringsformuläret fälls ihop automatiskt när plan finns (visas som "＋ Ny plan"). Bekräfta-knappen flyttad ovanför receptdetaljpanelen. Proteinindikator (färgad vänsterkant) på dag-korten. Metadatarad visar bara datumspann. Emojis borttagna ur sektionsrubriker.
+- **Bugfixar:** jumpToRecipe använde gammal filtervariabel. saveBtn fastnade i disabled-läge. scroll till receptdetalj i veckovyn landade fel (isSnapping sattes inte → header-hide förskjöt sidan).
+- **Tekniska beslut:** Recepthistorik använder 14-dagarsfönster, format `{ usedOn: { "id": "datum" } }`. `activeFilters` är en Set, inte en sträng.
+- **Nästa session börjar med:** Punkt 11 (expanderbara receptkort i veckovyn) eller punkt 14 (handplocka recept).
 
 ## Senaste session (2026-03-14 — Session 8)
 - Stängde av Antigravity som todo-punkt — användaren pushar och refreshar, inget lokalt behov
