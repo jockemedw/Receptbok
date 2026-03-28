@@ -1,0 +1,35 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "INPUT=$(cat); FILE=$(echo \"$INPUT\" | grep -o '\"file_path\"[[:space:]]*:[[:space:]]*\"[^\"]*\"' | head -1 | sed 's/.*\"\\([^\"]*\\)\"/\\1/'); case \"$FILE\" in *recipes.json) echo 'Blockerad: recipes.json är skyddad. Be användaren om explicit tillåtelse först.' >&2; exit 2;; *) exit 0;; esac"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "notify-send 'Claude Code' 'Claude väntar på dig'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "prompt",
+            "prompt": "Check if there are uncommitted git changes (staged or unstaged modified files). If yes, respond {\"ok\": false, \"reason\": \"Det finns osparade ändringar. Vill du att jag committar och pushar?\"} If no uncommitted changes, respond {\"ok\": true}."
+          }
+        ]
+      }
+    ]
+  }
+}
