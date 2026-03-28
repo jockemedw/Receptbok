@@ -1,8 +1,8 @@
 {
   "meta": {
     "version": "1.0",
-    "lastUpdated": "2026-03-25",
-    "totalRecipes": 62
+    "lastUpdated": "2026-03-28",
+    "totalRecipes": 61
   },
   "recipes": [
     {
@@ -675,49 +675,6 @@
         "Blanda tonfisk, rödlök, salladslök, crème fraiche, majonnäs, chiliflakes och eventuellt cornichoner eller jalapeño. Smaka av med salt.",
         "Bred tonfiskröra på en brödskiva, toppa med riven ost och lägg en andra brödskiva ovanpå. Stek mackan i olja eller smör tills brödet är gyllene och osten har smält.",
         "Dela mackan i två delar och servera direkt!"
-      ],
-      "notes": null
-    },
-    {
-      "id": 19,
-      "title": "Nudelwok med kyckling på plåt",
-      "tested": true,
-      "servings": 4,
-      "time": 35,
-      "timeNote": "ugn 225°",
-      "tags": [
-        "helg60",
-        "kyckling",
-        "plåt"
-      ],
-      "protein": "kyckling",
-      "ingredients": [
-        "400 g kycklinglårfilé",
-        "1 msk japansk soja",
-        "2 vitlöksklyftor",
-        "2 morötter",
-        "1 paprika",
-        "250 g broccoli",
-        "2 msk neutral olja",
-        "250 g äggnudlar",
-        "Woksås: 3 msk japansk soja",
-        "Woksås: 3 msk sweet chilisås",
-        "Woksås: 3 msk ostronsås",
-        "Woksås: 2 tsk strösocker",
-        "Woksås: 1 tsk chiliasås eller chiliflakes",
-        "Woksås: saften från 1 lime",
-        "Till servering: ev strimlad salladslök",
-        "Till servering: lime i klyftor",
-        "Till servering: sweet chilisås"
-      ],
-      "instructions": [
-        "Sätt ugnen på 225 grader över- och undervärme.",
-        "Dela kycklingen i mindre bitar. Blanda med soja och pressa ner 1 vitlöksklyfta.",
-        "Skala och hacka morötterna. Strimla paprikan och dela broccolin i buketter. Lägg grönsakerna på en plåt, ringla över olja och pressa över 1 vitlöksklyfta.",
-        "Lägg kycklingen på den andra sidan av plåten.",
-        "Rosta i mitten av ugnen i 20–25 minuter. Koka nudlarna enligt anvisningarna och blanda ihop alla ingredienser till såsen.",
-        "Ta ut plåten ur ugnen och lägg på nudlar och sås. Vänd ihop.",
-        "Toppa gärna med salladslök och servera med limeklyftor och sötsur sås."
       ],
       "notes": null
     },
