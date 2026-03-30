@@ -1875,7 +1875,7 @@ function renderCard(r) {
         <span class="pill ${r.tested ? 'pill-tested' : 'pill-untested'} pill-toggle" onclick="toggleTested(event, ${r.id})">${r.tested ? '✓ Provat' : 'Ej provat'}</span>
       </div>
     </div>
-    <button class="select-btn" onclick="selectRecipeForDay(event,${r.id},${JSON.stringify(r.title)})">Välj</button>
+    <button class="select-btn" onclick="selectRecipeForDay(event,${r.id},'${r.title.replace(/'/g,"\\'")}')">Välj</button>
     <span class="card-chevron">›</span>
   </div>
   <div class="recipe-detail">
@@ -2254,7 +2254,8 @@ function openWeekRecipe(recipeId, title, cardEl) {
   const dayName = cardEl.dataset.day  || '';
 
   const actionBtns = planConfirmed ? '' : `
-    <button class="replace-recipe-btn" onclick="enterReplaceMode('${date}', '${dayName}')">Välj annat recept</button>`;
+    <button class="replace-recipe-btn" onclick="enterReplaceMode('${date}', '${dayName}')">Välj annat recept</button>
+    <button class="replace-recipe-btn" onclick="replaceRecipe(${r.id}, '${date}', this)">Slumpa nytt recept</button>`;
 
   panel.innerHTML = `<div class="detail-inner">
     <div class="week-recipe-header">
