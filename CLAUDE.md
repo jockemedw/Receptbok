@@ -24,7 +24,7 @@ Browser → Vercel /api/generate → Deterministisk receptväljare (JS) → GitH
 ## Kommunikation med användaren
 - **Förklaringsnivå 3.5** — använd analogi + teknisk term i parentes vid behov. Nivå 1–2 för rutinändringar, 3.5 vid beslut eller felsökning.
 - **Felmeddelanden** — alltid på begriplig svenska utan tekniska termer, med en handlingsorienterad uppmaning. Inte: `409 — SHA conflict`. Utan: `Kunde inte spara matsedeln — prova att generera igen.`
-- Användaren är inte utvecklare. Claude Code hanterar all kod — användaren committar via GitHub Desktop.
+- Claude pushar direkt till `main` efter varje ändring — användaren behöver inte använda GitHub Desktop.
 
 ## Deployment
 - Commit + push till `main` → Vercel och GitHub Pages deployas automatiskt (~30 sek). Ingen manuell åtgärd behövs.
@@ -36,6 +36,13 @@ Browser → Vercel /api/generate → Deterministisk receptväljare (JS) → GitH
 - Rör aldrig `recipes.json`-strukturen utan explicit instruktion
 - Appen ska fungera på alla enheter. Mobilanvändning prioriteras vid designbeslut (touch-first, inga hover-states som primär interaktion)
 - **Stanna och bekräfta** — om ett meddelande är feedback eller återkoppling (inte en tydlig instruktion), tolka det INTE som en order att agera. Ställ en kort fråga och invänta svar innan du gör ändringar.
+
+## Definition of Done (följ alltid)
+Innan "klart" deklareras ska Claude alltid:
+1. Läsa tillbaka den editerade filen och verifiera att ändringen landade rätt (Edit-hooken fångar syntaxfel automatiskt)
+2. Kontrollera att relaterade funktioner inte brutits — Grep efter berörda funktionsnamn om tveksamt
+3. Committa och pusha till `main`
+4. Uppdatera "Senaste session"-sektionen i CLAUDE.md
 
 ## Nyckelkfunktioner i index.html (sök vid behov, rör ej strukturen)
 - `init()` — startar appen, laddar recept

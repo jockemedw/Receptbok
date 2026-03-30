@@ -21,6 +21,17 @@
         ]
       }
     ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "INPUT=$(cat); FILE=$(echo \"$INPUT\" | grep -o '\"file_path\"[[:space:]]*:[[:space:]]*\"[^\"]*\"' | head -1 | sed 's/.*\"\\([^\"]*\\)\"/\\1/'); case \"$FILE\" in *.js) node --check \"$FILE\" 2>&1 && echo \"Syntax OK: $FILE\" || echo \"SYNTAXFEL i $FILE — åtgärda innan push\" >&2;; esac; exit 0"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [
