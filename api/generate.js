@@ -169,23 +169,35 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
   const vegCount = constraints.vegetarian_days;
   const vegDaySet = new Set(shuffle(dayList.map((_, i) => i)).slice(0, vegCount));
 
-  // ── 4. Fyll varje dag — protein max 2 ggr ────────────────────────────────
+  // Vegetarisk-proteinet tillåts upp till vegCount gånger (minst 2 som golv).
+  // Övriga proteiner begränsas till 2 för att ge variation.
+  const maxVeg = Math.max(2, vegCount);
+
+  // ── 4. Fyll varje dag ────────────────────────────────────────────────────
   const usedIds = new Set();
   const proteinUsage = {};
   const result = [];
   let untestedSoFar = 0;
 
-  function pick(dayPool, mustBeVeg) {
+  function pick(dayPool, altPool, mustBeVeg) {
+    const maxForProtein = (p) => p === "vegetarisk" ? maxVeg : MAX_PER_PROTEIN;
+    // Försök primär pool
     for (const r of dayPool) {
       if (usedIds.has(r.id)) continue;
       if (mustBeVeg && r.protein !== "vegetarisk") continue;
       if (!mustBeVeg && r.protein === "vegetarisk") continue;
-      if ((proteinUsage[r.protein] || 0) >= MAX_PER_PROTEIN) continue;
+      if ((proteinUsage[r.protein] || 0) >= maxForProtein(r.protein)) continue;
       if (!r.tested && untestedSoFar >= constraints.untested_count) continue;
       return r;
     }
-    // Fallback: släpp proteinbegränsning
+    // Fallback 1: släpp proteinbegränsning i primär pool
     for (const r of dayPool) {
+      if (usedIds.has(r.id)) continue;
+      if (mustBeVeg && r.protein !== "vegetarisk") continue;
+      return r;
+    }
+    // Fallback 2: prova alternativ pool (vardag/helg-korsning)
+    for (const r of altPool) {
       if (usedIds.has(r.id)) continue;
       if (mustBeVeg && r.protein !== "vegetarisk") continue;
       return r;
@@ -197,7 +209,8 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
     const day = dayList[i];
     const isVegDay = vegDaySet.has(i);
     const dayPool = day.is_weekend ? weekendPool : weekdayPool;
-    const recipe = pick(dayPool, isVegDay);
+    const altPool = day.is_weekend ? weekdayPool : weekendPool;
+    const recipe = pick(dayPool, altPool, isVegDay);
     if (!recipe) {
       throw new Error(
         `Kunde inte hitta recept för ${day.day} (${day.date}) — ` +
