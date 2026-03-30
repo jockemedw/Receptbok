@@ -202,6 +202,12 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
       if (mustBeVeg && r.protein !== "vegetarisk") continue;
       return r;
     }
+    // Fallback 3: hela receptdatabasen oavsett historik
+    for (const r of recipes) {
+      if (usedIds.has(r.id)) continue;
+      if (mustBeVeg && r.protein !== "vegetarisk") continue;
+      return r;
+    }
     return null;
   }
 
