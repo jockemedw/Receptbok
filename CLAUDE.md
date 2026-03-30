@@ -121,8 +121,8 @@ Receptbok/
 5. **Receptimport** — klistra in URL, hämta/tolka/översätt till `recipes.json`-format
 6. ~~**Inköpsliste-ombyggnad**~~ — **KLAR** (session 12, 2026-03-25)
 7. ~~**Portionsanpassning**~~ — **KLAR** (session 12, 2026-03-25)
-8. **Flerval i receptfilter** — möjlighet att klicka i flera filter samtidigt (nu är det ett åt gången)
-9. **Prövat/Oprövat-filter** — lägg till båda som valbara filter i receptboken
+8. ~~**Flerval i receptfilter**~~ — **KLAR** (session 16, avbruten)
+9. ~~**Prövat/Oprövat-filter**~~ — **KLAR** (session 16, avbruten)
 10. ~~**Förbättrad receptväljare**~~ — **KLAR** (session 12, 2026-03-25)
 11. **Expanderbara receptkort i veckovyn** — receptkortet ska kunna vecklas ut direkt i matsedelsvyn (inline expand), utan att lämna vyn
 12. ~~**Ytterligare kvalitetskontroll av inköpslistan**~~ — **KLAR** (session 13, 2026-03-26)
