@@ -99,41 +99,42 @@ export default async function handler(req, res) {
   const pat = process.env.GITHUB_PAT;
   if (!pat) return res.status(500).json({ error: "GITHUB_PAT saknas i env" });
 
-  const { date, currentRecipeId, weekRecipeIds = [] } = req.body || {};
+  const { date, currentRecipeId, weekRecipeIds = [], newRecipeId } = req.body || {};
   if (!date) return res.status(400).json({ error: "date saknas" });
 
   try {
-    const [allRecipes, history, { plan, sha: planSha }] = await Promise.all([
+    const [allRecipes, { plan }] = await Promise.all([
       fetchRecipes(),
-      fetchHistory(pat),
       fetchWeeklyPlan(pat),
     ]);
 
-    const recentIds = recentlyUsedIds(history);
-    const weekSet   = new Set(weekRecipeIds.filter(id => id !== currentRecipeId));
+    let picked;
+    if (newRecipeId) {
+      // Manuellt valt recept — använd direkt
+      picked = allRecipes.find(r => r.id === parseInt(newRecipeId, 10));
+      if (!picked) return res.status(404).json({ error: "Receptet hittades inte." });
+    } else {
+      // Slumpmässigt förslag — filtrera bort nyligen använda och veckans recept
+      const history = await fetchHistory(pat);
+      const recentIds = recentlyUsedIds(history);
+      const weekSet   = new Set(weekRecipeIds.filter(id => id !== currentRecipeId));
 
-    // Pool: inte nyligen använd, inte redan i veckans plan, inte det vi ersätter
-    let pool = allRecipes.filter(r =>
-      r.id !== currentRecipeId &&
-      !weekSet.has(r.id) &&
-      !recentIds.has(r.id)
-    );
+      let pool = allRecipes.filter(r =>
+        r.id !== currentRecipeId &&
+        !weekSet.has(r.id) &&
+        !recentIds.has(r.id)
+      );
 
-    // Fallback: välj det som användes längst sedan om poolen är tom
-    if (!pool.length) {
-      const usedOn = history.usedOn || {};
-      pool = allRecipes
-        .filter(r => r.id !== currentRecipeId && !weekSet.has(r.id))
-        .sort((a, b) => {
-          const da = usedOn[a.id] || "0000-00-00";
-          const db = usedOn[b.id] || "0000-00-00";
-          return da < db ? -1 : 1;
-        });
+      if (!pool.length) {
+        const usedOn = history.usedOn || {};
+        pool = allRecipes
+          .filter(r => r.id !== currentRecipeId && !weekSet.has(r.id))
+          .sort((a, b) => (usedOn[a.id] || "0000-00-00") < (usedOn[b.id] || "0000-00-00") ? -1 : 1);
+      }
+
+      if (!pool.length) return res.status(409).json({ error: "Inga tillgängliga recept att byta till." });
+      picked = shuffle(pool)[0];
     }
-
-    if (!pool.length) return res.status(409).json({ error: "Inga tillgängliga recept att byta till." });
-
-    const picked = shuffle(pool)[0];
 
     // Uppdatera weekly-plan.json — byt ut rätt dag
     const dayIdx = plan.days.findIndex(d => d.date === date);

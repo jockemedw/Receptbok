@@ -1167,56 +1167,48 @@
     color: var(--terracotta);
   }
 
-  .lock-btn {
-    background: none;
-    border: 1.5px solid var(--border);
+  .select-btn {
+    display: none;
+    background: var(--terracotta);
+    color: white;
+    border: none;
     border-radius: 6px;
-    padding: 0.2rem 0.5rem;
-    font-size: 0.72rem;
-    color: #aaa;
+    padding: 0.25rem 0.65rem;
+    font-size: 0.78rem;
+    font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
-    transition: border-color 0.15s, color 0.15s, background 0.15s;
     flex-shrink: 0;
     align-self: center;
   }
-  .lock-btn:hover { border-color: var(--terracotta); color: var(--terracotta); }
-  .lock-btn.locked {
-    background: var(--light-terra);
-    border-color: var(--terracotta);
-    color: var(--terracotta);
-    font-weight: 600;
-  }
-  .recipe-card.locked-card { border-color: var(--terracotta); }
+  .select-btn:hover { opacity: 0.88; }
+  #receptView.replace-mode .select-btn { display: inline-block; }
 
-  .locked-chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    margin-top: 0.5rem;
-  }
-  .locked-chip {
-    display: inline-flex;
+  .replace-banner {
+    display: none;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.75rem;
     background: var(--light-terra);
     border: 1.5px solid var(--terracotta);
-    border-radius: 20px;
-    padding: 0.2rem 0.65rem 0.2rem 0.75rem;
-    font-size: 0.8rem;
-    color: var(--terracotta);
+    border-radius: 10px;
+    padding: 0.7rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.88rem;
+    color: var(--brown);
   }
-  .locked-chip button {
+  #receptView.replace-mode .replace-banner { display: flex; }
+  .replace-banner strong { color: var(--terracotta); }
+  .replace-banner-cancel {
+    margin-left: auto;
     background: none;
-    border: none;
+    border: 1.5px solid var(--terracotta);
+    border-radius: 6px;
     color: var(--terracotta);
+    padding: 0.2rem 0.65rem;
+    font-size: 0.82rem;
     cursor: pointer;
-    font-size: 1.1rem;
-    line-height: 1;
-    padding: 0;
-    opacity: 0.7;
+    white-space: nowrap;
   }
-  .locked-chip button:hover { opacity: 1; }
 
   .settings-warning {
     font-size: 0.75rem;
@@ -1627,6 +1619,10 @@
 </header>
 
 <main id="receptView">
+  <div class="replace-banner" id="replaceBanner">
+    Väljer recept till <strong id="replaceBannerDay"></strong> — tryck på ett recept nedan
+    <button class="replace-banner-cancel" onclick="exitReplaceMode()">Avbryt</button>
+  </div>
   <p class="results-info" id="resultsInfo"></p>
 
   <div id="loadingState" class="loading">
@@ -1750,17 +1746,6 @@
           <p class="settings-warning" id="protWarning">
             Minst ett protein måste vara valt.
           </p>
-        </div>
-
-        <div id="lockedSection" style="display:none">
-          <hr class="setting-divider">
-          <div class="setting-row">
-            <label class="setting-label">
-              Handplockade recept
-              <span class="setting-sublabel">Ingår alltid i planen, kringgår historik</span>
-            </label>
-            <div id="lockedChips" class="locked-chips"></div>
-          </div>
         </div>
 
         <p class="settings-preview" id="settingsPreview"></p>
@@ -1890,7 +1875,7 @@ function renderCard(r) {
         <span class="pill ${r.tested ? 'pill-tested' : 'pill-untested'} pill-toggle" onclick="toggleTested(event, ${r.id})">${r.tested ? '✓ Provat' : 'Ej provat'}</span>
       </div>
     </div>
-    <button class="lock-btn" onclick="toggleLock(event,${r.id},${JSON.stringify(r.title)})" title="Lås in i nästa plan">Lås in</button>
+    <button class="select-btn" onclick="selectRecipeForDay(event,${r.id},${JSON.stringify(r.title)})">Välj</button>
     <span class="card-chevron">›</span>
   </div>
   <div class="recipe-detail">
@@ -1912,43 +1897,56 @@ function renderCard(r) {
 
 let RECIPES = [];
 let activeFilters = new Set(['alla']);
-let lockedRecipeIds = new Set();
-const lockedRecipeTitles = {};
+let replaceMode = null; // { date, dayName } när receptbyte pågår
 
-function toggleLock(event, id, title) {
-  event.stopPropagation();
-  if (lockedRecipeIds.has(id)) {
-    lockedRecipeIds.delete(id);
-    delete lockedRecipeTitles[id];
-  } else {
-    lockedRecipeIds.add(id);
-    lockedRecipeTitles[id] = title;
-  }
-  document.querySelectorAll(`.recipe-card[data-id="${id}"]`).forEach(card => {
-    card.classList.toggle('locked-card', lockedRecipeIds.has(id));
-    const btn = card.querySelector('.lock-btn');
-    if (btn) {
-      btn.classList.toggle('locked', lockedRecipeIds.has(id));
-      btn.textContent = lockedRecipeIds.has(id) ? 'Låst' : 'Lås in';
-    }
-  });
-  updateLockedSection();
+function enterReplaceMode(date, dayName) {
+  replaceMode = { date, dayName };
+  document.getElementById('replaceBannerDay').textContent = dayName;
+  document.getElementById('receptView').classList.add('replace-mode');
+  switchTab('recept');
 }
 
-function updateLockedSection() {
-  const section = document.getElementById('lockedSection');
-  const chips   = document.getElementById('lockedChips');
-  if (!section || !chips) return;
-  if (lockedRecipeIds.size === 0) {
-    section.style.display = 'none';
-    chips.innerHTML = '';
-    return;
+function exitReplaceMode() {
+  replaceMode = null;
+  document.getElementById('receptView').classList.remove('replace-mode');
+}
+
+async function selectRecipeForDay(event, recipeId, title) {
+  event.stopPropagation();
+  if (!replaceMode) return;
+  const { date } = replaceMode;
+
+  const btn = event.currentTarget;
+  btn.disabled = true;
+  btn.textContent = 'Sparar…';
+
+  try {
+    const res = await fetch('/api/replace-recipe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date, newRecipeId: recipeId }),
+    });
+    if (!res.ok) throw new Error();
+
+    const card = document.querySelector(`.week-day-card[data-date="${date}"]`);
+    if (card) {
+      card.dataset.recipeid = recipeId;
+      card.querySelector('.week-day-recipe').textContent = title;
+    }
+    exitReplaceMode();
+    switchTab('vecka');
+  } catch {
+    btn.disabled = false;
+    btn.textContent = 'Välj';
+    const banner = document.getElementById('replaceBanner');
+    if (!banner.querySelector('.replace-err')) {
+      const e = document.createElement('span');
+      e.className = 'replace-err';
+      e.style.cssText = 'color:var(--terracotta);font-size:0.8rem';
+      e.textContent = 'Kunde inte spara — prova igen.';
+      banner.insertBefore(e, banner.querySelector('.replace-banner-cancel'));
+    }
   }
-  section.style.display = '';
-  chips.innerHTML = [...lockedRecipeIds].map(id => {
-    const t = lockedRecipeTitles[id] || '';
-    return `<span class="locked-chip">${t}<button onclick="toggleLock(event,${id},${JSON.stringify(t)})">×</button></span>`;
-  }).join('');
 }
 
 function applyFilters() {
@@ -2178,7 +2176,6 @@ async function generatePlan() {
       untested_count:  parseInt(document.getElementById('untestedCount').value) || 0,
       vegetarian_days: parseInt(document.getElementById('vegetarianDays').value) || 0,
       skip_shopping: true,
-      locked_ids:      [...lockedRecipeIds].join(','),
     };
 
     const res = await fetch('/api/generate', {
@@ -2253,10 +2250,11 @@ function openWeekRecipe(recipeId, title, cardEl) {
   const ingHtml = r.ingredients.map(i => `<li>${i}</li>`).join('');
   const stepsHtml = r.instructions.map(s => `<li onclick="toggleStep(this)"><span>${s}</span></li>`).join('');
   const notesHtml = r.notes ? `<div class="detail-section"><p class="recipe-notes">${r.notes}</p></div>` : '';
-  const date = cardEl.dataset.date || '';
+  const date    = cardEl.dataset.date || '';
+  const dayName = cardEl.dataset.day  || '';
 
   const actionBtns = planConfirmed ? '' : `
-    <button class="replace-recipe-btn" onclick="replaceRecipe(${r.id}, '${date}', this)">Föreslå nytt recept</button>`;
+    <button class="replace-recipe-btn" onclick="enterReplaceMode('${date}', '${dayName}')">Välj annat recept</button>`;
 
   panel.innerHTML = `<div class="detail-inner">
     <div class="week-recipe-header">
@@ -2754,7 +2752,7 @@ function renderWeeklyPlanData(plan, shop, freshlyGenerated = false) {
     const proteinColor = recipe ? (PROTEIN_COLOR[recipe.protein] || '') : '';
     const borderStyle = proteinColor ? ` style="border-left: 3px solid ${proteinColor}"` : '';
     const swapBtn = planConfirmed ? '' : `<button class="swap-icon-btn" title="Flytta till annan dag" onclick="event.stopPropagation();enterSwapMode('${d.date || ''}')"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="10" viewBox="0 0 13 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M1 2.5h11M9 0.5l2.5 2L9 4.5"/><path d="M12 7.5H1M4 5.5L1.5 7.5 4 9.5"/></svg></button>`;
-    return `<div class="week-day-card${cls}"${borderStyle} data-recipeid="${rid}" data-date="${d.date || ''}" onclick="openWeekRecipe(${rid || 'null'}, '${safeTitle}', this)">
+    return `<div class="week-day-card${cls}"${borderStyle} data-recipeid="${rid}" data-date="${d.date || ''}" data-day="${d.day || ''}" onclick="openWeekRecipe(${rid || 'null'}, '${safeTitle}', this)">
       <div class="week-day-name">${d.day}${d.date ? ' · ' + fmtShort(d.date) : ''}${dot}</div>
       <div class="week-day-recipe">${d.recipe}</div>
       ${swapBtn}
