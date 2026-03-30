@@ -124,7 +124,7 @@ Receptbok/
 8. ~~**Flerval i receptfilter**~~ — **KLAR** (session 16, avbruten)
 9. ~~**Prövat/Oprövat-filter**~~ — **KLAR** (session 16, avbruten)
 10. ~~**Förbättrad receptväljare**~~ — **KLAR** (session 12, 2026-03-25)
-11. **Expanderbara receptkort i veckovyn** — receptkortet ska kunna vecklas ut direkt i matsedelsvyn (inline expand), utan att lämna vyn
+11. ~~**Expanderbara receptkort i veckovyn**~~ — **KLAR** (session 16, avbruten)
 12. ~~**Ytterligare kvalitetskontroll av inköpslistan**~~ — **KLAR** (session 13, 2026-03-26)
 13. ~~**Sortering inom inköpslistans kategorier**~~ — **KLAR** (session 13, 2026-03-26)
 14. **Handplocka recept** — möjlighet att låsa in ett eller flera specifika recept från receptboken innan generering. Fritekstfältet är en mjuk önskan som tyst misslyckas om receptet är historikblockat. Handplockning kringgår historikblockering och ger full kontroll.
