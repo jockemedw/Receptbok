@@ -127,7 +127,7 @@ Receptbok/
 11. ~~**Expanderbara receptkort i veckovyn**~~ — **KLAR** (session 16, avbruten)
 12. ~~**Ytterligare kvalitetskontroll av inköpslistan**~~ — **KLAR** (session 13, 2026-03-26)
 13. ~~**Sortering inom inköpslistans kategorier**~~ — **KLAR** (session 13, 2026-03-26)
-14. **Handplocka recept** — möjlighet att låsa in ett eller flera specifika recept från receptboken innan generering. Fritekstfältet är en mjuk önskan som tyst misslyckas om receptet är historikblockat. Handplockning kringgår historikblockering och ger full kontroll.
+14. ~~**Handplocka recept**~~ — **KLAR** (session 17, 2026-03-30)
 
 ## Senaste session (2026-03-14 — Session 8)
 - Stängde av Antigravity som todo-punkt — användaren pushar och refreshar, inget lokalt behov
@@ -203,3 +203,13 @@ Tre problem hittade i `callClaude()` / receptvalet:
 - **Vercel timeout:** Sänkt från 60s till 15s (ingen AI-väntan).
 - **Claude Code hooks:** Tre hooks tillagda i `.claude/settings.json`: (1) recipes.json-skydd (PreToolUse-block), (2) Windows-notifikation vid väntan (Notification), (3) commit-påminnelse vid osparade ändringar (Stop-prompt).
 - **Nästa session börjar med:** Punkt 8, 9, 11 eller 14.
+
+## Session 16 (avbruten)
+- **Punkt 8 klar:** Flerval i receptfilter — `activeFilters` är en Set, knappar togglars individuellt.
+- **Punkt 9 klar:** Prövat/Oprövat som valbara filter.
+- **Punkt 11 klar:** Expanderbara receptkort i veckovyn — `.week-recipe-detail` med `open`-klass och max-height-transition.
+
+## Session 17 (2026-03-30)
+- **Förbättrat arbetsflöde:** Claude pushar direkt till `main`. PostToolUse-hook kör `node --check` vid JS-edits. Definition of Done inbakad i CLAUDE.md.
+- **Punkt 14 klar:** Handplocka recept — "Lås in"-knapp på varje receptkort. Låsta recept visas som chips i inställningspanelen. `selectRecipes()` placerar dem i lämpliga slots (helg60 → helgdag) och kringgår historikblockering. Veg-dag-logiken tillämpas bara på kvarvarande slots.
+- **Backlog tömd** — alla planerade punkter klara.
