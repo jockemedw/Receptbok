@@ -1167,6 +1167,57 @@
     color: var(--terracotta);
   }
 
+  .lock-btn {
+    background: none;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.72rem;
+    color: #aaa;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+    flex-shrink: 0;
+    align-self: center;
+  }
+  .lock-btn:hover { border-color: var(--terracotta); color: var(--terracotta); }
+  .lock-btn.locked {
+    background: var(--light-terra);
+    border-color: var(--terracotta);
+    color: var(--terracotta);
+    font-weight: 600;
+  }
+  .recipe-card.locked-card { border-color: var(--terracotta); }
+
+  .locked-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.5rem;
+  }
+  .locked-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: var(--light-terra);
+    border: 1.5px solid var(--terracotta);
+    border-radius: 20px;
+    padding: 0.2rem 0.65rem 0.2rem 0.75rem;
+    font-size: 0.8rem;
+    color: var(--terracotta);
+  }
+  .locked-chip button {
+    background: none;
+    border: none;
+    color: var(--terracotta);
+    cursor: pointer;
+    font-size: 1.1rem;
+    line-height: 1;
+    padding: 0;
+    opacity: 0.7;
+  }
+  .locked-chip button:hover { opacity: 1; }
+
   .settings-warning {
     font-size: 0.75rem;
     color: var(--terracotta);
@@ -1701,6 +1752,17 @@
           </p>
         </div>
 
+        <div id="lockedSection" style="display:none">
+          <hr class="setting-divider">
+          <div class="setting-row">
+            <label class="setting-label">
+              Handplockade recept
+              <span class="setting-sublabel">Ingår alltid i planen, kringgår historik</span>
+            </label>
+            <div id="lockedChips" class="locked-chips"></div>
+          </div>
+        </div>
+
         <p class="settings-preview" id="settingsPreview"></p>
 
       </div>
@@ -1828,6 +1890,7 @@ function renderCard(r) {
         <span class="pill ${r.tested ? 'pill-tested' : 'pill-untested'} pill-toggle" onclick="toggleTested(event, ${r.id})">${r.tested ? '✓ Provat' : 'Ej provat'}</span>
       </div>
     </div>
+    <button class="lock-btn" onclick="toggleLock(event,${r.id},${JSON.stringify(r.title)})" title="Lås in i nästa plan">Lås in</button>
     <span class="card-chevron">›</span>
   </div>
   <div class="recipe-detail">
@@ -1849,6 +1912,44 @@ function renderCard(r) {
 
 let RECIPES = [];
 let activeFilters = new Set(['alla']);
+let lockedRecipeIds = new Set();
+const lockedRecipeTitles = {};
+
+function toggleLock(event, id, title) {
+  event.stopPropagation();
+  if (lockedRecipeIds.has(id)) {
+    lockedRecipeIds.delete(id);
+    delete lockedRecipeTitles[id];
+  } else {
+    lockedRecipeIds.add(id);
+    lockedRecipeTitles[id] = title;
+  }
+  document.querySelectorAll(`.recipe-card[data-id="${id}"]`).forEach(card => {
+    card.classList.toggle('locked-card', lockedRecipeIds.has(id));
+    const btn = card.querySelector('.lock-btn');
+    if (btn) {
+      btn.classList.toggle('locked', lockedRecipeIds.has(id));
+      btn.textContent = lockedRecipeIds.has(id) ? 'Låst' : 'Lås in';
+    }
+  });
+  updateLockedSection();
+}
+
+function updateLockedSection() {
+  const section = document.getElementById('lockedSection');
+  const chips   = document.getElementById('lockedChips');
+  if (!section || !chips) return;
+  if (lockedRecipeIds.size === 0) {
+    section.style.display = 'none';
+    chips.innerHTML = '';
+    return;
+  }
+  section.style.display = '';
+  chips.innerHTML = [...lockedRecipeIds].map(id => {
+    const t = lockedRecipeTitles[id] || '';
+    return `<span class="locked-chip">${t}<button onclick="toggleLock(event,${id},${JSON.stringify(t)})">×</button></span>`;
+  }).join('');
+}
 
 function applyFilters() {
   const q = document.getElementById('search').value.toLowerCase().trim();
@@ -2077,6 +2178,7 @@ async function generatePlan() {
       untested_count:  parseInt(document.getElementById('untestedCount').value) || 0,
       vegetarian_days: parseInt(document.getElementById('vegetarianDays').value) || 0,
       skip_shopping: true,
+      locked_ids:      [...lockedRecipeIds].join(','),
     };
 
     const res = await fetch('/api/generate', {

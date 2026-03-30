@@ -143,57 +143,76 @@ function shuffle(arr) {
 }
 
 // ── Deterministisk receptväljare ─────────────────────────────────────────────
-// Ersätter AI-anropet med ren logik: historikfiltrering → proteinfördelning →
-// vardag/helg-matchning → slump inom varje slot.
-function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), usedOn = {}) {
-  // ── 1. Historikfiltrering — identisk med tidigare logik ────────────────────
-  const fresh = recipes.filter((r) => !recentIds.has(r.id));
+// lockedRecipes: recept som alltid ska ingå, kringgår historik och proteinbegränsning.
+function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), usedOn = {}, lockedRecipes = []) {
+  const MAX_PER_PROTEIN = 2;
+  const usedIds = new Set();
+  const proteinUsage = {};
+
+  // ── 0. Förtilldela låsta recept ────────────────────────────────────────────
+  const dayAssignments = new Array(dayList.length).fill(null);
+  const capped = lockedRecipes.slice(0, dayList.length);
+  const unmatched = [];
+  for (const recipe of capped) {
+    const prefersWeekend = recipe.tags.includes("helg60") && !recipe.tags.includes("vardag30");
+    let placed = false;
+    for (let i = 0; i < dayList.length; i++) {
+      if (dayAssignments[i]) continue;
+      if (prefersWeekend && !dayList[i].is_weekend) continue;
+      dayAssignments[i] = recipe;
+      usedIds.add(recipe.id);
+      proteinUsage[recipe.protein] = (proteinUsage[recipe.protein] || 0) + 1;
+      placed = true;
+      break;
+    }
+    if (!placed) unmatched.push(recipe);
+  }
+  for (const recipe of unmatched) {
+    for (let i = 0; i < dayList.length; i++) {
+      if (dayAssignments[i]) continue;
+      dayAssignments[i] = recipe;
+      usedIds.add(recipe.id);
+      proteinUsage[recipe.protein] = (proteinUsage[recipe.protein] || 0) + 1;
+      break;
+    }
+  }
+
+  // ── 1. Historikfiltrering för återstående slots ────────────────────────────
+  const remainingSlots = dayList.length - capped.length;
+  const fresh = recipes.filter((r) => !recentIds.has(r.id) && !usedIds.has(r.id));
   let pool;
-  if (fresh.length >= dayList.length) {
+  if (fresh.length >= remainingSlots) {
     pool = fresh;
   } else {
-    const needed = dayList.length - fresh.length;
+    const needed = remainingSlots - fresh.length;
     const oldest = recipes
-      .filter((r) => recentIds.has(r.id))
+      .filter((r) => recentIds.has(r.id) && !usedIds.has(r.id))
       .sort((a, b) => (usedOn[a.id] ?? "") < (usedOn[b.id] ?? "") ? -1 : 1)
       .slice(0, needed);
     pool = [...fresh, ...oldest];
   }
-  if (pool.length === 0) pool = recipes;
+  if (pool.length === 0) pool = recipes.filter((r) => !usedIds.has(r.id));
 
-  // ── 2. Dela upp poolen per dag-typ + protein ──────────────────────────────
+  // ── 2. Dela upp poolen per dag-typ ────────────────────────────────────────
   const weekdayPool = shuffle(pool.filter((r) => r.tags.includes("vardag30")));
   const weekendPool = shuffle(pool.filter((r) => r.tags.includes("helg60")));
 
-  // ── 3. Bestäm vilka dagar som ska vara vegetariska ────────────────────────
+  // ── 3. Vegetariska dagar — bara bland lediga slots ────────────────────────
   const vegCount = constraints.vegetarian_days;
-  const dayIndices = dayList.map((_, i) => i);
-  // Shuffla index för att sprida veg-dagarna slumpmässigt
-  const shuffledIndices = shuffle(dayIndices);
-  const vegDaySet = new Set(shuffledIndices.slice(0, vegCount));
+  const unfilledIndices = dayList.map((_, i) => i).filter((i) => !dayAssignments[i]);
+  const vegDaySet = new Set(shuffle([...unfilledIndices]).slice(0, Math.min(vegCount, unfilledIndices.length)));
 
-  // ── 4. Fyll varje dag — protein max 2 ggr ─────────────────────────────────
-  const usedIds = new Set();
-  const proteinUsage = {}; // { "fisk": 2, ... }
-  const MAX_PER_PROTEIN = 2;
+  // ── 4. Fyll varje dag ─────────────────────────────────────────────────────
   const result = [];
+  let untestedSoFar = capped.filter((r) => !r.tested).length;
 
-  // Hjälpfunktion: välj recept från pool med proteinbegränsning
   function pick(dayPool, mustBeVeg) {
     for (const r of dayPool) {
       if (usedIds.has(r.id)) continue;
       if (mustBeVeg && r.protein !== "vegetarisk") continue;
-      // På icke-veg-dagar: undvik vegetariskt om det finns andra alternativ
       if (!mustBeVeg && r.protein === "vegetarisk") continue;
       if ((proteinUsage[r.protein] || 0) >= MAX_PER_PROTEIN) continue;
-      // Oprövade-begränsning
-      if (!r.tested) {
-        const untestedSoFar = result.filter((d) => {
-          const poolRecipe = pool.find((p) => p.id === d.recipeId);
-          return poolRecipe && !poolRecipe.tested;
-        }).length;
-        if (untestedSoFar >= constraints.untested_count) continue;
-      }
+      if (!r.tested && untestedSoFar >= constraints.untested_count) continue;
       return r;
     }
     // Fallback: släpp proteinbegränsning
@@ -207,9 +226,13 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
 
   for (let i = 0; i < dayList.length; i++) {
     const day = dayList[i];
+    if (dayAssignments[i]) {
+      const r = dayAssignments[i];
+      result.push({ date: day.date, day: day.day, recipe: r.title, recipeId: r.id });
+      continue;
+    }
     const isVegDay = vegDaySet.has(i);
     const dayPool = day.is_weekend ? weekendPool : weekdayPool;
-
     const recipe = pick(dayPool, isVegDay);
     if (!recipe) {
       throw new Error(
@@ -218,9 +241,9 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
         "Prova att ändra inställningarna."
       );
     }
-
     usedIds.add(recipe.id);
     proteinUsage[recipe.protein] = (proteinUsage[recipe.protein] || 0) + 1;
+    if (!recipe.tested) untestedSoFar++;
     result.push({ date: day.date, day: day.day, recipe: recipe.title, recipeId: recipe.id });
   }
 
@@ -247,6 +270,7 @@ export default async function handler(req, res) {
     untested_count = 0,
     vegetarian_days = 0,
     skip_shopping = false,
+    locked_ids = "",
   } = req.body;
 
   if (!start_date || !end_date) {
@@ -272,7 +296,9 @@ export default async function handler(req, res) {
 
     const recentIds = recentlyUsedIds(historyData);
     const dayList = buildDayList(start_date, end_date);
-    const days = selectRecipes(filtered, dayList, constraints, recentIds, historyData.usedOn || {});
+    const lockedIds = String(locked_ids || "").split(",").map((n) => parseInt(n, 10)).filter((n) => !isNaN(n) && n > 0);
+    const lockedRecipes = lockedIds.map((id) => allRecipes.find((r) => r.id === id)).filter(Boolean);
+    const days = selectRecipes(filtered, dayList, constraints, recentIds, historyData.usedOn || {}, lockedRecipes);
 
     const today = new Date().toISOString().slice(0, 10);
     const weeklyPlan = { generated: today, startDate: start_date, endDate: end_date, days };
