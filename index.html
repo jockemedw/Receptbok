@@ -1625,6 +1625,7 @@
     transition: background 0.15s, transform 0.15s;
     display: none;
   }
+  .fab-import { display: block; }
   .fab-import:active { transform: scale(0.93); }
   @media (hover: hover) {
     .fab-import:hover { background: rgba(194,82,43,1); }
@@ -2898,7 +2899,6 @@ async function init() {
       `Receptboken · ${data.meta?.lastUpdated || ''} · ${RECIPES.length} recept`;
     applyFilters();
     initDatePickers();
-    document.getElementById('fabImport').style.display = 'block';
   } catch(err) {
     document.getElementById('loadingState').innerHTML = `
       <div style="font-size:2rem;margin-bottom:1rem">⚠️</div>
