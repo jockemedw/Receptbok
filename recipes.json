@@ -1,8 +1,8 @@
 {
   "meta": {
     "version": "1.0",
-    "lastUpdated": "2026-03-28",
-    "totalRecipes": 61
+    "lastUpdated": "2026-04-01",
+    "totalRecipes": 62
   },
   "recipes": [
     {
@@ -2174,6 +2174,57 @@
         "Rosta nötter/frön i en torr stekpanna. Blanda yoghurt med chèvre och servera till."
       ],
       "notes": null
+    },
+    {
+      "id": 63,
+      "title": "Chopped sallad med krämig dressing",
+      "tested": false,
+      "servings": 4,
+      "time": 35,
+      "timeNote": null,
+      "tags": [
+        "vegetarisk",
+        "vardag30"
+      ],
+      "protein": "vegetarisk",
+      "ingredients": [
+        "Rostade kikärtor",
+        "1 förp färdigkokta kikärtor, sköljda och avrunna (à ca 400 g)",
+        "1 tsk paprikapulver",
+        "1 tsk vitlökspulver",
+        "1 msk rapsolja",
+        "Tunna brödchips",
+        "2 libabröd",
+        "2 msk olivolja",
+        "Dressing",
+        "1 kruka färsk basilika (spara några blad till garnering)",
+        "1 kruka färsk koriander (spara några blad till garnering)",
+        "1 dl olivolja",
+        "1 avokado",
+        "0,5 citron, pressad saft",
+        "2 msk vit balsamvinäger",
+        "2 klyftor vitlök, rivna",
+        "2-3 dl parmesanost, riven",
+        "3 dl matyoghurt",
+        "Sallad",
+        "1,5 dl valnötter",
+        "1 spetskål (litet)",
+        "1 gurka",
+        "8 cm purjolök",
+        "2 avokador",
+        "salt",
+        "peppar"
+      ],
+      "instructions": [
+        "Sätt ugnen på 200 grader varmluft.",
+        "Vänd kikärtorna i rapsoljan samt kryddorna och lite salt. Rosta i ugnen i 15 minuter.",
+        "Pensla bröden med olivolja, skär i mindre bitar och rosta i ugnen i 5-7 minuter.",
+        "Lägg valnötterna bredvid kikärtorna och låt rosta i 5-7 minuter.",
+        "Ta ut allt från ugnen och låt svalna något.",
+        "Kör allt till dressingen förutom yoghurt och parmesan i en mixer till en tjock dressing. Tillsätt ev lite yoghurt om den är för tjock för att gå ihop. När allt är en tjock dressing, rör då ner parmesan och yoghurt och blanda väl. Smaka av med salt och peppar.",
+        "Hacka alla grönsaker till salladen i små tärningar. Lägg på ett stort fat och lägg på kikärtor. Häll på dressingen och rör om. Strö på valnötter och lite extra koriander och basilika. Använd de tunna brödchipsen att skopa upp den goda salladen med och ät gärna med händerna. Njut!"
+      ],
+      "notes": "Krispigt, krämigt och fullt av smak – Jennie Walldén bjuder här på en fräsch och matig sallad med rostade kikärtor, krispiga brödchips och en krämig ört- och avokadodressing. Servera gärna allt på ett…"
     }
   ]
 }
