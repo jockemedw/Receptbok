@@ -12,7 +12,7 @@ Browser → Vercel /api/generate → Deterministisk receptväljare (JS) → GitH
 - **Data:** `recipes.json` (källa), `weekly-plan.json`, `shopping-list.json`, `recipe-history.json` — alla i repot
 - **Secrets:** `GITHUB_PAT` (contents:write) i Vercel env vars
 - **Autentisering:** Ingen — familjeapp med okänd URL
-- **Ingen AI-kostnad** — appen använder inte längre Anthropic API
+- **AI-kostnad vid import** — receptimport via foto och URL-fallback använder Google Gemini API (gratistier). Receptval är fortfarande kostnadsfritt och deterministiskt.
 
 ## Designprinciper (följ alltid)
 - **Gratis** — betallösningar kräver stark motivering
@@ -128,6 +128,15 @@ Receptbok/
 12. ~~**Ytterligare kvalitetskontroll av inköpslistan**~~ — **KLAR** (session 13, 2026-03-26)
 13. ~~**Sortering inom inköpslistans kategorier**~~ — **KLAR** (session 13, 2026-03-26)
 14. ~~**Handplocka recept**~~ — **KLAR** (session 17, 2026-03-30)
+15. ~~**Receptimport via URL och foto**~~ — **KLAR** (session 18, 2026-04-01)
+
+## Session 18 (2026-04-01 — KLAR)
+- **Receptimport via URL:** Ny endpoint `api/import-recipe.js` — server-side fetch → JSON-LD-parsning (schema.org/Recipe) som primär strategi. Om JSON-LD saknas och GOOGLE_API_KEY finns → Gemini-fallback (rensar HTML, skickar till Gemini). Mappar ISO 8601-duration, gissar protein, bygger taggar.
+- **Receptimport via foto:** Samma endpoint — base64-bild skickas till Gemini 2.0 Flash Vision med strikt JSON-prompt (returnerar exakt receptschemat). Bilden krympas i webbläsaren (max 1200px, JPEG quality 0.7) för att undvika Vercels 4.5 MB-gräns.
+- **Ny `add`-action i `api/recipes.js`:** Genererar ID (max+1), sparar till `recipes.json` via befintlig SHA-retry.
+- **UI:** "＋ Importera recept"-knapp i receptvyn → import-modal med URL/Foto-flikar. Foto-flödet visar progressiva meddelanden (Analyserar bild… → Identifierar ingredienser… → Formaterar recept…). Importerat recept öppnar redigera-modalen med titeln "Nytt recept" för granskning innan sparning.
+- **Kräver av användaren:** `GOOGLE_API_KEY` i Vercel env vars (gratis från aistudio.google.com). URL-import med JSON-LD fungerar utan nyckeln.
+- **Planprocess:** Plan granskad av GPT och Gemini — Gemini-fallback för URL och JPEG-komprimering lades till baserat på feedback.
 
 ## Senaste session (2026-03-14 — Session 8)
 - Stängde av Antigravity som todo-punkt — användaren pushar och refreshar, inget lokalt behov
