@@ -1584,6 +1584,40 @@
     font-size: 0.9rem;
     min-height: 1.2em;
   }
+  .import-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.2rem;
+  }
+  .import-tab {
+    flex: 1;
+    padding: 0.45rem 1rem;
+    border-radius: 20px;
+    border: 1px solid rgba(92,61,30,0.25);
+    background: transparent;
+    color: var(--brown);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+  .import-tab.active {
+    background: var(--brown);
+    color: #fff;
+    border-color: var(--brown);
+  }
+  .btn-import {
+    display: block;
+    margin: 0 auto 1.2rem;
+    background: none;
+    border: 1px solid var(--terracotta);
+    color: var(--terracotta);
+    border-radius: 8px;
+    padding: 0.5rem 1.2rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
 </style>
 </head>
 <body>
@@ -1624,6 +1658,7 @@
     <button class="replace-banner-cancel" onclick="exitReplaceMode()">Avbryt</button>
   </div>
   <p class="results-info" id="resultsInfo"></p>
+  <button class="btn-import" onclick="openImportModal()">＋ Importera recept</button>
 
   <div id="loadingState" class="loading">
     <div class="loading-icon">⟳</div>
@@ -1799,7 +1834,7 @@
 <div id="editModal" class="modal-overlay" style="display:none" onclick="handleModalOverlayClick(event)">
   <div class="modal-box">
     <div class="modal-header">
-      <h2>Redigera recept</h2>
+      <h2 id="editModalTitle">Redigera recept</h2>
       <button onclick="closeEditModal()">✕</button>
     </div>
     <label>Titel<input type="text" id="edit-title"></label>
@@ -1823,6 +1858,36 @@
       <button class="btn-delete" onclick="deleteRecipe()">Ta bort recept</button>
     </div>
     <div class="modal-feedback" id="editFeedback"></div>
+  </div>
+</div>
+
+<div id="importModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeImportModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h2>Importera recept</h2>
+      <button onclick="closeImportModal()">✕</button>
+    </div>
+    <div class="import-tabs">
+      <button class="import-tab active" id="importTabUrl" onclick="switchImportTab('url')">Webbadress</button>
+      <button class="import-tab" id="importTabPhoto" onclick="switchImportTab('photo')">Foto</button>
+    </div>
+    <div id="importUrlSection">
+      <label>Klistra in receptets webbadress
+        <input type="url" id="importUrlInput" placeholder="https://www.ica.se/recept/...">
+      </label>
+      <div class="modal-actions">
+        <button class="btn-save" id="importUrlBtn" onclick="importFromUrl()">Hämta recept</button>
+      </div>
+    </div>
+    <div id="importPhotoSection" style="display:none">
+      <label>Ta foto eller välj bild på receptet
+        <input type="file" id="importPhotoInput" accept="image/*" capture="environment">
+      </label>
+      <div class="modal-actions">
+        <button class="btn-save" id="importPhotoBtn" onclick="importFromPhoto()">Tolka recept</button>
+      </div>
+    </div>
+    <div class="modal-feedback" id="importFeedback"></div>
   </div>
 </div>
 
@@ -2927,6 +2992,7 @@ function closeEditModal() {
   document.getElementById('editModal').style.display = 'none';
   document.body.style.overflow = '';
   editingId = null;
+  document.getElementById('editModalTitle').textContent = 'Redigera recept';
 }
 
 const editModalEl = document.getElementById('editModal');
@@ -2942,12 +3008,9 @@ async function saveRecipe() {
   feedback.textContent = 'Sparar...';
   feedback.style.color = 'var(--text-muted)';
 
-  const r = RECIPES.find(r => r.id === editingId);
-  if (!r) { saveBtn.disabled = false; return; }
-
+  const isNew = (editingId === null);
   const tagsRaw = document.getElementById('edit-tags').value;
-  const updated = {
-    ...r,
+  const formData = {
     title:        document.getElementById('edit-title').value.trim(),
     protein:      document.getElementById('edit-protein').value,
     time:         parseInt(document.getElementById('edit-time').value) || null,
@@ -2957,6 +3020,34 @@ async function saveRecipe() {
     instructions: document.getElementById('edit-instructions').value.split('\n').map(s => s.trim()).filter(Boolean),
     notes:        document.getElementById('edit-notes').value.trim() || null,
   };
+
+  if (isNew) {
+    try {
+      const res = await fetch('/api/recipes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'add', recipe: formData })
+      });
+      if (!res.ok) throw new Error();
+      const { recipe: saved } = await res.json();
+      RECIPES.push(saved);
+      const grid = document.getElementById('recipeGrid');
+      const tmp = document.createElement('div');
+      tmp.innerHTML = renderCard(saved);
+      grid.prepend(tmp.firstChild);
+      closeEditModal();
+    } catch {
+      feedback.textContent = 'Kunde inte spara — prova igen.';
+      feedback.style.color = 'var(--terracotta)';
+      saveBtn.disabled = false;
+    }
+    return;
+  }
+
+  const r = RECIPES.find(r => r.id === editingId);
+  if (!r) { saveBtn.disabled = false; return; }
+
+  const updated = { ...r, ...formData };
 
   try {
     const res = await fetch('/api/recipes', {
@@ -3023,6 +3114,126 @@ async function deleteRecipe() {
     feedback.style.color = 'var(--terracotta)';
     delBtn.disabled = false;
   }
+}
+
+// ── IMPORTMODAL ──────────────────────────────────────────────────────────────
+
+function openImportModal() {
+  document.getElementById('importFeedback').textContent = '';
+  document.getElementById('importUrlInput').value = '';
+  document.getElementById('importPhotoInput').value = '';
+  document.getElementById('importUrlBtn').disabled = false;
+  document.getElementById('importPhotoBtn').disabled = false;
+  switchImportTab('url');
+  document.getElementById('importModal').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeImportModal() {
+  document.getElementById('importModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function switchImportTab(tab) {
+  document.getElementById('importUrlSection').style.display   = tab === 'url'   ? '' : 'none';
+  document.getElementById('importPhotoSection').style.display = tab === 'photo' ? '' : 'none';
+  document.getElementById('importTabUrl').classList.toggle('active',   tab === 'url');
+  document.getElementById('importTabPhoto').classList.toggle('active', tab === 'photo');
+  document.getElementById('importFeedback').textContent = '';
+}
+
+async function importFromUrl() {
+  const url = document.getElementById('importUrlInput').value.trim();
+  const fb  = document.getElementById('importFeedback');
+  const btn = document.getElementById('importUrlBtn');
+  if (!url) { fb.textContent = 'Ange en webbadress.'; return; }
+  btn.disabled = true;
+  fb.style.color = 'var(--text-muted)';
+  fb.textContent = 'Hämtar recept…';
+  try {
+    const res  = await fetch('/api/import-recipe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'url', url })
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'Fel');
+    closeImportModal();
+    openImportPreview(data.recipe);
+  } catch (e) {
+    fb.style.color = 'var(--terracotta)';
+    fb.textContent = e.message || 'Kunde inte hämta receptet — kontrollera adressen.';
+    btn.disabled = false;
+  }
+}
+
+async function importFromPhoto() {
+  const file = document.getElementById('importPhotoInput').files[0];
+  const fb   = document.getElementById('importFeedback');
+  const btn  = document.getElementById('importPhotoBtn');
+  if (!file) { fb.textContent = 'Välj en bild.'; return; }
+  btn.disabled = true;
+
+  const messages = ['Analyserar bild…', 'Identifierar ingredienser…', 'Formaterar recept…'];
+  let msgIdx = 0;
+  fb.style.color = 'var(--text-muted)';
+  fb.textContent = messages[0];
+  const msgTimer = setInterval(() => {
+    msgIdx = (msgIdx + 1) % messages.length;
+    fb.textContent = messages[msgIdx];
+  }, 2500);
+
+  try {
+    const imageBase64 = await resizeAndEncodeImage(file, 1200);
+    const res  = await fetch('/api/import-recipe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type: 'photo', imageBase64, mimeType: 'image/jpeg' })
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || 'Fel');
+    closeImportModal();
+    openImportPreview(data.recipe);
+  } catch (e) {
+    fb.style.color = 'var(--terracotta)';
+    fb.textContent = e.message || 'Kunde inte tolka bilden — prova med klarare ljus eller närmre avstånd.';
+    btn.disabled = false;
+  } finally {
+    clearInterval(msgTimer);
+  }
+}
+
+function resizeAndEncodeImage(file, maxPx) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxPx / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width  = Math.round(img.width  * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.7).split(',')[1]);
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+function openImportPreview(recipe) {
+  editingId = null;
+  document.getElementById('editModalTitle').textContent     = 'Nytt recept';
+  document.getElementById('edit-title').value               = recipe.title || '';
+  document.getElementById('edit-protein').value             = recipe.protein || 'vegetarisk';
+  document.getElementById('edit-time').value                = recipe.time || '';
+  document.getElementById('edit-servings').value            = recipe.servings || 4;
+  document.getElementById('edit-tags').value                = (recipe.tags || []).join(', ');
+  document.getElementById('edit-ingredients').value         = (recipe.ingredients || []).join('\n');
+  document.getElementById('edit-instructions').value        = (recipe.instructions || []).join('\n');
+  document.getElementById('edit-notes').value               = recipe.notes || '';
+  document.getElementById('editFeedback').textContent       = '';
+  document.getElementById('editSaveBtn').disabled           = false;
+  document.getElementById('editModal').style.display        = 'block';
+  document.body.style.overflow = 'hidden';
 }
 
 init();

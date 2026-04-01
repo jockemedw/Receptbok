@@ -88,6 +88,28 @@ export default async function handler(req, res) {
       await writeRecipes(content, sha, pat);
       return res.status(200).json({ ok: true });
 
+    } else if (action === "add") {
+      if (!recipe) return res.status(400).json({ error: "Recept saknas." });
+      const maxId = recipes.reduce((max, r) => Math.max(max, r.id), 0);
+      const newRecipe = {
+        id: maxId + 1,
+        title: recipe.title,
+        tested: false,
+        servings: recipe.servings || 4,
+        time: recipe.time || null,
+        timeNote: recipe.timeNote || null,
+        tags: recipe.tags || [],
+        protein: recipe.protein,
+        ingredients: recipe.ingredients || [],
+        instructions: recipe.instructions || [],
+        notes: recipe.notes || null,
+      };
+      recipes.push(newRecipe);
+      content.meta.totalRecipes = recipes.length;
+      content.meta.lastUpdated = new Date().toISOString().slice(0, 10);
+      await writeRecipes(content, sha, pat);
+      return res.status(200).json({ ok: true, recipe: newRecipe });
+
     } else {
       return res.status(400).json({ error: "Okänd action." });
     }
