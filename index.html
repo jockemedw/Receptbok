@@ -1605,18 +1605,29 @@
     color: #fff;
     border-color: var(--brown);
   }
-  .btn-import {
-    display: block;
-    margin: 0 auto 1.2rem;
-    background: none;
-    border: 1px solid var(--terracotta);
-    color: var(--terracotta);
-    border-radius: 8px;
-    padding: 0.5rem 1.2rem;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.9rem;
-    font-weight: 600;
+  .fab-import {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(194,82,43,0.82);
+    color: #fff;
+    border: none;
+    font-size: 1.8rem;
+    line-height: 1;
     cursor: pointer;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.22);
+    z-index: 900;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    transition: background 0.15s, transform 0.15s;
+    display: none;
+  }
+  .fab-import:active { transform: scale(0.93); }
+  @media (hover: hover) {
+    .fab-import:hover { background: rgba(194,82,43,1); }
   }
 </style>
 </head>
@@ -1658,7 +1669,6 @@
     <button class="replace-banner-cancel" onclick="exitReplaceMode()">Avbryt</button>
   </div>
   <p class="results-info" id="resultsInfo"></p>
-  <button class="btn-import" onclick="openImportModal()">＋ Importera recept</button>
 
   <div id="loadingState" class="loading">
     <div class="loading-icon">⟳</div>
@@ -1830,6 +1840,7 @@
 
 <footer id="footerEl">Receptboken</footer>
 <button id="scrolltop" title="Till toppen">↑</button>
+<button class="fab-import" id="fabImport" onclick="openImportModal()" title="Importera recept" aria-label="Importera recept">＋</button>
 
 <div id="editModal" class="modal-overlay" style="display:none" onclick="handleModalOverlayClick(event)">
   <div class="modal-box">
@@ -2512,6 +2523,7 @@ function switchTab(tab) {
   document.getElementById('tabVecka').classList.toggle('active', tab === 'vecka');
   document.getElementById('tabShop').classList.toggle('active', tab === 'shop');
   document.getElementById('headerSearchArea').classList.toggle('hidden', tab !== 'recept');
+  document.getElementById('fabImport').style.display = tab === 'recept' ? 'block' : 'none';
   if (tab === 'shop') loadShoppingTab();
   window.scrollTo({ top: 0 });
 }
@@ -2886,6 +2898,7 @@ async function init() {
       `Receptboken · ${data.meta?.lastUpdated || ''} · ${RECIPES.length} recept`;
     applyFilters();
     initDatePickers();
+    document.getElementById('fabImport').style.display = 'block';
   } catch(err) {
     document.getElementById('loadingState').innerHTML = `
       <div style="font-size:2rem;margin-bottom:1rem">⚠️</div>

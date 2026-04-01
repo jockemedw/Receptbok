@@ -187,7 +187,11 @@ async function callGemini(parts, apiKey) {
     throw new Error("Kunde inte nå Google — prova igen om en stund.");
   }
 
-  if (!geminiRes.ok) throw new Error("Tolkningsfel — prova igen.");
+  if (!geminiRes.ok) {
+    let detail = "";
+    try { detail = (await geminiRes.json())?.error?.message || ""; } catch {}
+    throw new Error(detail || `Gemini svarade ${geminiRes.status} — prova igen.`);
+  }
 
   const data = await geminiRes.json();
   const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
