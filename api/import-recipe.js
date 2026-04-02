@@ -1,5 +1,5 @@
 const GEMINI_URL =
-  "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent";
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
 const GEMINI_SCHEMA_PROMPT = `Du är en expert på matlagning och dataextraktion. Extrahera receptet och returnera BARA ett JSON-objekt (ingen annan text, ingen markdown) med exakt dessa fält:
 {
