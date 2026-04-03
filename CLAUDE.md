@@ -130,6 +130,11 @@ Receptbok/
 14. ~~**Handplocka recept**~~ — **KLAR** (session 17, 2026-03-30)
 15. ~~**Receptimport via URL och foto**~~ — **KLAR** (session 18, 2026-04-01)
 
+## Session 19 (2026-04-02 — PÅGÅENDE/PAUSAD)
+- **Fotoimport-felsökning:** Gemini-modellnamnet har behövt justeras flera gånger — `gemini-2.0-flash` (quota 0 på free tier) → `gemini-1.5-flash` (not found, pensionerad) → `gemini-2.5-flash` via `v1beta` (nuvarande gratisflash-modell, ej testad ännu)
+- **FAB-position:** Plusknappen flyttad till vänster sida så den inte lappar över scroll-to-top-pilen (höger)
+- **Status:** Branch `claude/create-backlog-list-qvwRK` ej mergad — innehåller Gemini-modellfix + FAB-flytt. Nästa session börjar med att merga branchen och verifiera att fotoimport fungerar med `gemini-2.5-flash`.
+
 ## Session 18 (2026-04-01 — KLAR)
 - **Receptimport via URL:** Ny endpoint `api/import-recipe.js` — server-side fetch → JSON-LD-parsning (schema.org/Recipe) som primär strategi. Om JSON-LD saknas och GOOGLE_API_KEY finns → Gemini-fallback (rensar HTML, skickar till Gemini). Mappar ISO 8601-duration, gissar protein, bygger taggar.
 - **Receptimport via foto:** Samma endpoint — base64-bild skickas till Gemini 2.0 Flash Vision med strikt JSON-prompt (returnerar exakt receptschemat). Bilden krympas i webbläsaren (max 1200px, JPEG quality 0.7) för att undvika Vercels 4.5 MB-gräns.
