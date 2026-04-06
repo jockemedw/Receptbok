@@ -32,7 +32,8 @@ Browser → Vercel /api/generate → Deterministisk receptväljare (JS) → GitH
 - **Lokal testmiljö:** Antigravity har inbyggd live preview för `index.html` — öppna filen där för att testa UI utan att pusha. Genereringsknappen kräver Vercel-backend och kan ej testas lokalt.
 
 ## Operativa regler (följ utan att fråga)
-- Använd alltid `Edit` på `index.html` — aldrig `Write` (filen är för stor, Write skriver över allt)
+- `index.html` är nu 290 rader (bara HTML-markup). `Edit` eller `Write` fungerar båda, men `Edit` föredras.
+- Frontend-JS ligger i `js/`-moduler — redigera rätt modulfil, inte index.html
 - Rör aldrig `recipes.json`-strukturen utan explicit instruktion
 - Appen ska fungera på alla enheter. Mobilanvändning prioriteras vid designbeslut (touch-first, inga hover-states som primär interaktion)
 - **Stanna och bekräfta** — om ett meddelande är feedback eller återkoppling (inte en tydlig instruktion), tolka det INTE som en order att agera. Ställ en kort fråga och invänta svar innan du gör ändringar.
@@ -44,13 +45,31 @@ Innan "klart" deklareras ska Claude alltid:
 3. Committa och pusha till `main`
 4. Uppdatera "Senaste session"-sektionen i CLAUDE.md
 
-## Nyckelkfunktioner i index.html (sök vid behov, rör ej strukturen)
-- `init()` — startar appen, laddar recept
-- `loadWeeklyPlan()` — hämtar och renderar veckoplan + inköpslista
-- `generatePlan()` — hanterar genereringsknappen och API-anropet
-- `renderWeeklyPlanData()` — renderar veckovyn
-- `renderShoppingList()` — renderar inköpslistan
-- `applyFilters()` — filtrerar receptvyn
+## Frontend-moduler (VSA)
+Varje feature-slice är en fristående JS-fil. En agent som jobbar med en feature behöver bara läsa 1–2 filer.
+- `js/app.js` — entry point, importerar alla moduler, kör `init()` + `loadWeeklyPlan()`
+- `js/state.js` — alla globala `window.*`-variabler (förberedelse för ContextBridge)
+- `js/utils.js` — delade hjälpfunktioner (`proteinLabel`, `timeStr`, `renderIngredient`, `fmtIso`, `fmtShort`)
+- `js/ui/scroll.js` — scroll-logik, header show/hide, smoothScrollTo
+- `js/ui/navigation.js` — `switchTab()`
+- `js/shopping/shopping-list.js` — hela inköpsliste-slicen
+- `js/weekly-plan/ingredient-preview.js` — ingrediens-förhandsgranskning i veckovyn
+- `js/weekly-plan/plan-generator.js` — datumväljare, inställningar, generering
+- `js/weekly-plan/plan-viewer.js` — veckoplan, swap, replace, confirm
+- `js/recipes/recipe-browser.js` — receptlistning, filtrering, sökning
+- `js/recipes/recipe-editor.js` — redigera/spara/ta bort recept
+- `js/recipes/recipe-import.js` — import via URL och foto
+
+### Cross-modul-anrop
+Funktioner exponeras via `window.*` i varje modul. Moduler anropar varandra via `window.funktionsNamn()` — inga cirkulära ES6-imports.
+
+### Backend-moduler (VSA)
+Delad infrastruktur i `api/_shared/`:
+- `constants.js` — REPO_OWNER, REPO_NAME, BRANCH
+- `github.js` — `readFile()`, `readFileRaw()`, `writeFile()` (3-retry SHA-hantering)
+- `handler.js` — `createHandler()` (CORS, auth, error-wrapping)
+
+Domänlogik stannar i respektive endpoint-fil (`api/generate.js`, `api/shopping.js`, etc.).
 
 ## Hur Claude ska tänka
 - Förstå den övergripande ambitionen (självgående familjeapp), inte bara den enskilda frågan
@@ -60,14 +79,43 @@ Innan "klart" deklareras ska Claude alltid:
 ## Repo-struktur
 ```
 Receptbok/
-├── index.html              # Frontend — Vanilla JS, Playfair Display + DM Sans
+├── index.html              # HTML-markup (290 rader) — laddar js/app.js som ES-modul
+├── css/
+│   └── styles.css          # All CSS (1620 rader, extraherad från index.html)
+├── js/
+│   ├── app.js              # Entry point — importerar alla moduler
+│   ├── state.js            # Globala variabler (ContextBridge-förberedelse)
+│   ├── utils.js            # Delade hjälpfunktioner
+│   ├── ui/
+│   │   ├── scroll.js       # Scroll, header, smoothScrollTo
+│   │   └── navigation.js   # switchTab()
+│   ├── shopping/
+│   │   └── shopping-list.js # Inköpsliste-slice
+│   ├── weekly-plan/
+│   │   ├── plan-generator.js  # Generering + inställningar
+│   │   ├── plan-viewer.js     # Veckoplan + swap/replace/confirm
+│   │   └── ingredient-preview.js
+│   └── recipes/
+│       ├── recipe-browser.js  # Listning, filter, sökning
+│       ├── recipe-editor.js   # Redigera/spara/ta bort
+│       └── recipe-import.js   # Import via URL/foto
+├── api/
+│   ├── _shared/
+│   │   ├── constants.js    # REPO_OWNER, REPO_NAME, BRANCH
+│   │   ├── github.js       # readFile, readFileRaw, writeFile
+│   │   └── handler.js      # createHandler (CORS, auth, errors)
+│   ├── generate.js         # Receptval + matsedel + inköpslista
+│   ├── replace-recipe.js   # Byt enskilt recept
+│   ├── swap-days.js        # Byt plats på två dagar
+│   ├── confirm.js          # Bekräfta matsedel
+│   ├── recipes.js          # CRUD recept
+│   ├── shopping.js         # Inköpsliste-API
+│   └── import-recipe.js    # Receptimport (Gemini)
 ├── recipes.json            # Receptdatabasen (62 recept, rör ej strukturen)
 ├── weekly-plan.json        # Genereras av /api/generate
 ├── shopping-list.json      # Genereras av /api/generate
-├── recipe-history.json     # Recepthistorik (senaste 8 planer) — undviker upprepning
-├── api/
-│   └── generate.js         # Vercel serverless: filtrering + Claude Haiku + GitHub-skrivning
-├── vercel.json             # 60s timeout
+├── recipe-history.json     # Recepthistorik — undviker upprepning
+├── vercel.json             # 15s timeout
 ├── package.json            # Inga runtime-beroenden
 └── CLAUDE.md
 ```
@@ -129,6 +177,8 @@ Receptbok/
 13. ~~**Sortering inom inköpslistans kategorier**~~ — **KLAR** (session 13, 2026-03-26)
 14. ~~**Handplocka recept**~~ — **KLAR** (session 17, 2026-03-30)
 15. ~~**Receptimport via URL och foto**~~ — **KLAR** (session 18, 2026-04-01)
+16. ~~**VSA-refaktorering**~~ — **KLAR** (session 21, 2026-04-06)
+17. **ContextBridge** — `js/state.js` förberett, implementation ej påbörjad
 
 ### Buggar (tillagda session 20, 2026-04-06)
 - **[BUGG] Inköpslista-bockningar synkas inte** — Bockningar sparas lokalt i webbläsaren hos respektive användare. Ska sparas centralt (GitHub JSON) så att hela familjen ser samma bockar i realtid.
@@ -137,6 +187,15 @@ Receptbok/
 
 ### Nya features (tillagda session 20, 2026-04-06)
 - **[FEATURE] Blockera dagar i matsedeln** — Möjlighet att markera en eller flera dagar som "ledig" (AW, äter ute, etc.) innan eller efter generering. Blockerade dagar får inget recept och räknas inte in i inköpslistan.
+
+## Senaste session — Session 21 (2026-04-06 — KLAR)
+- **VSA-refaktorering genomförd** i tre faser:
+  - **Fas 1 — Backend:** Delad infrastruktur extraherad till `api/_shared/` (`constants.js`, `github.js`, `handler.js`). 7 endpoints refaktorerade, ~266 rader duplicerad kod borttagna.
+  - **Fas 2 — CSS:** `css/styles.css` skapad (1620 rader). `<style>`-block i index.html ersatt med `<link>`.
+  - **Fas 3 — Frontend JS:** 11 feature-moduler skapade under `js/`. Entry point `js/app.js` med ES-modulimport. `index.html` reducerad från 3305 → 290 rader.
+- **Designbeslut:** Cross-modul-anrop via `window.*` (inga cirkulära ES6-imports). Domänlogik stannar i varje slice — delar bara teknisk infrastruktur. Optimerat för att agenter ska kunna jobba med en feature genom att läsa 1–2 filer.
+- **ContextBridge ej implementerad** — `js/state.js` förberett med alla `window.*`-globaler, men `getState()`/`setState()`/`subscribe()` återstår som separat fas.
+- **Nästa session:** Testa VSA-ändringarna live. Sedan ContextBridge om allt fungerar.
 
 ## Session 19 (2026-04-02 — PÅGÅENDE)
 - **Fotoimport-felsökning:** Gemini-modellnamnet har behövt justeras flera gånger — `gemini-2.0-flash` (quota 0 på free tier) → `gemini-1.5-flash` (not found, pensionerad) → `gemini-2.5-flash` via `v1beta` (nuvarande gratisflash-modell)
@@ -152,7 +211,7 @@ Receptbok/
 - **Kräver av användaren:** `GOOGLE_API_KEY` i Vercel env vars (gratis från aistudio.google.com). URL-import med JSON-LD fungerar utan nyckeln.
 - **Planprocess:** Plan granskad av GPT och Gemini — Gemini-fallback för URL och JPEG-komprimering lades till baserat på feedback.
 
-## Senaste session (2026-03-14 — Session 8)
+## Session 8 (2026-03-14)
 - Stängde av Antigravity som todo-punkt — användaren pushar och refreshar, inget lokalt behov
 - Lade till "Stanna och bekräfta"-regel i Operativa regler — agera ej på feedback utan att fråga först
 - To-do-listan fastställd, inga kodfixar gjorda
