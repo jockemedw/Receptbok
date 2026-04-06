@@ -1,56 +1,85 @@
 {
-  "generated": "2026-03-30",
-  "startDate": "2026-03-31",
-  "endDate": "2026-04-07",
+  "generated": "2026-04-06",
+  "startDate": "2026-04-07",
+  "endDate": "2026-04-19",
   "days": [
-    {
-      "date": "2026-03-31",
-      "day": "Tisdag",
-      "recipe": "Tomatsoppa med pizzasnurror",
-      "recipeId": 7
-    },
-    {
-      "date": "2026-04-01",
-      "day": "Onsdag",
-      "recipe": "Kålpannkaka med zucchini och sojadipp",
-      "recipeId": 39
-    },
-    {
-      "date": "2026-04-02",
-      "day": "Torsdag",
-      "recipe": "Majsplättar med kokosmjölk",
-      "recipeId": 54
-    },
-    {
-      "date": "2026-04-03",
-      "day": "Fredag",
-      "recipe": "Tikka masala med kikärtor och vitlöksnaan",
-      "recipeId": 15
-    },
-    {
-      "date": "2026-04-04",
-      "day": "Lördag",
-      "recipe": "Pulled chicken",
-      "recipeId": 48
-    },
-    {
-      "date": "2026-04-05",
-      "day": "Söndag",
-      "recipe": "Stekta rödspättafiléer med stuvade morötter",
-      "recipeId": 3
-    },
-    {
-      "date": "2026-04-06",
-      "day": "Måndag",
-      "recipe": "Tuna melt-macka",
-      "recipeId": 18
-    },
     {
       "date": "2026-04-07",
       "day": "Tisdag",
-      "recipe": "Min bästa wok",
-      "recipeId": 21
+      "recipe": "Amandas laxbiffar",
+      "recipeId": 55
+    },
+    {
+      "date": "2026-04-08",
+      "day": "Onsdag",
+      "recipe": "Fisk med örtsås",
+      "recipeId": 50
+    },
+    {
+      "date": "2026-04-09",
+      "day": "Torsdag",
+      "recipe": "Annas pasta med morötter, lök & sweet chili",
+      "recipeId": 52
+    },
+    {
+      "date": "2026-04-10",
+      "day": "Fredag",
+      "recipe": "Gnocchi med snabbpesto",
+      "recipeId": 26
+    },
+    {
+      "date": "2026-04-11",
+      "day": "Lördag",
+      "recipe": "Ramen med salladskål och champinjoner",
+      "recipeId": 10
+    },
+    {
+      "date": "2026-04-12",
+      "day": "Söndag",
+      "recipe": "Vinterwok med brysselkål, svamp och jordärtskocka",
+      "recipeId": 12
+    },
+    {
+      "date": "2026-04-13",
+      "day": "Måndag",
+      "recipe": "Röd linsgryta med potatis",
+      "recipeId": 46
+    },
+    {
+      "date": "2026-04-14",
+      "day": "Tisdag",
+      "recipe": "Quinoabollar",
+      "recipeId": 11
+    },
+    {
+      "date": "2026-04-15",
+      "day": "Onsdag",
+      "recipe": "Chopped sallad med krämig dressing",
+      "recipeId": 63
+    },
+    {
+      "date": "2026-04-16",
+      "day": "Torsdag",
+      "recipe": "Pasta med lax och sås på vitt vin, grädde och spenat",
+      "recipeId": 51
+    },
+    {
+      "date": "2026-04-17",
+      "day": "Fredag",
+      "recipe": "Indisk gryta med spenat, kikärter, senap & yoghurt",
+      "recipeId": 53
+    },
+    {
+      "date": "2026-04-18",
+      "day": "Lördag",
+      "recipe": "Skaldjurslasagne",
+      "recipeId": 47
+    },
+    {
+      "date": "2026-04-19",
+      "day": "Söndag",
+      "recipe": "Matvetesallad med gröna ärter och krispig halloumi",
+      "recipeId": 2
     }
-  ],
-  "confirmedAt": "2026-03-30T20:08:13.426Z"
+  ]
 }
