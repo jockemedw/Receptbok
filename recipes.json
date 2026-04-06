@@ -1,8 +1,8 @@
 {
   "meta": {
     "version": "1.0",
-    "lastUpdated": "2026-04-01",
-    "totalRecipes": 62
+    "lastUpdated": "2026-04-06",
+    "totalRecipes": 61
   },
   "recipes": [
     {
@@ -1993,35 +1993,6 @@
         "Tillsätt krossade tomater, buljong och crème fraiche/matyoghurt. Låt koka 15–20 minuter.",
         "Fräs vitlök och svamp i en torr stekpanna. Tillsätt lite margarin/olja när svampen släppt vätska.",
         "Mixa såsen slät och blanda ner pasta och svamp."
-      ],
-      "notes": null
-    },
-    {
-      "id": 57,
-      "title": "Babaganoush",
-      "tested": true,
-      "servings": 4,
-      "time": 50,
-      "timeNote": "ugn 200°",
-      "tags": [
-        "tillbehör",
-        "veg"
-      ],
-      "protein": "vegetarisk",
-      "ingredients": [
-        "2 medelstora auberginer",
-        "2 msk rapsolja (till plåt)",
-        "½ dl rapsolja",
-        "4 vitlöksklyftor, rivna",
-        "4 msk citronsaft",
-        "2 msk tahini",
-        "flingsalt",
-        "ev. chiliflakes"
-      ],
-      "instructions": [
-        "Värm ugnen till 200°C. Baka auberginen 30–40 minuter (eller tills den är riktigt mjuk). Låt svalna.",
-        "Skala auberginen och gröp ur innanmätet ner i en bunke. Låt stå och rinna av ca 15 minuter.",
-        "Blanda auberginemoset med övriga ingredienser och smaka av med flingsalt."
       ],
       "notes": null
     },
