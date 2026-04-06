@@ -130,10 +130,11 @@ Receptbok/
 14. ~~**Handplocka recept**~~ — **KLAR** (session 17, 2026-03-30)
 15. ~~**Receptimport via URL och foto**~~ — **KLAR** (session 18, 2026-04-01)
 
-## Session 19 (2026-04-02 — PÅGÅENDE/PAUSAD)
-- **Fotoimport-felsökning:** Gemini-modellnamnet har behövt justeras flera gånger — `gemini-2.0-flash` (quota 0 på free tier) → `gemini-1.5-flash` (not found, pensionerad) → `gemini-2.5-flash` via `v1beta` (nuvarande gratisflash-modell, ej testad ännu)
+## Session 19 (2026-04-02 — PÅGÅENDE)
+- **Fotoimport-felsökning:** Gemini-modellnamnet har behövt justeras flera gånger — `gemini-2.0-flash` (quota 0 på free tier) → `gemini-1.5-flash` (not found, pensionerad) → `gemini-2.5-flash` via `v1beta` (nuvarande gratisflash-modell)
 - **FAB-position:** Plusknappen flyttad till vänster sida så den inte lappar över scroll-to-top-pilen (höger)
-- **Status:** Branch `claude/create-backlog-list-qvwRK` ej mergad — innehåller Gemini-modellfix + FAB-flytt. Nästa session börjar med att merga branchen och verifiera att fotoimport fungerar med `gemini-2.5-flash`.
+- **Kodgranskning klar (session 20, 2026-04-06):** Branch mergad. `api/import-recipe.js` verifierad — rätt modell (`gemini-2.5-flash`), rätt endpoint (`v1beta`), korrekt request-format för både foto och URL-fallback.
+- **Återstår:** Funktionstest i live-appen — kräver att `GOOGLE_API_KEY` finns i Vercel env vars. Prova importera ett recept via foto eller URL.
 
 ## Session 18 (2026-04-01 — KLAR)
 - **Receptimport via URL:** Ny endpoint `api/import-recipe.js` — server-side fetch → JSON-LD-parsning (schema.org/Recipe) som primär strategi. Om JSON-LD saknas och GOOGLE_API_KEY finns → Gemini-fallback (rensar HTML, skickar till Gemini). Mappar ISO 8601-duration, gissar protein, bygger taggar.
