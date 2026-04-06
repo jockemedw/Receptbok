@@ -137,6 +137,8 @@
     "recipe::Skafferi::24": true,
     "recipe::Skafferi::25": true,
     "recipe::Skafferi::26": true,
-    "recipe::Skafferi::30": true
+    "recipe::Skafferi::30": true,
+    "recipe::Skafferi::31": true,
+    "recipe::Skafferi::32": true
   }
 }
