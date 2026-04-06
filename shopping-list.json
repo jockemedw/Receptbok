@@ -113,6 +113,7 @@
     "recipe::Mejeri::12": true,
     "recipe::Grönsaker::6": true,
     "recipe::Grönsaker::7": true,
-    "recipe::Grönsaker::10": true
+    "recipe::Grönsaker::10": true,
+    "recipe::Grönsaker::28": true
   }
 }
