@@ -109,6 +109,7 @@
   "checkedItems": {
     "recipe::Fisk & kött::0": true,
     "recipe::Fisk & kött::1": true,
-    "recipe::Fisk & kött::2": true
+    "recipe::Fisk & kött::2": true,
+    "recipe::Mejeri::12": true
   }
 }
