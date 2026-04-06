@@ -117,6 +117,7 @@
     "recipe::Grönsaker::28": true,
     "recipe::Frukt::4": true,
     "recipe::Skafferi::0": true,
-    "recipe::Skafferi::1": true
+    "recipe::Skafferi::1": true,
+    "recipe::Skafferi::3": true
   }
 }
