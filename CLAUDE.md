@@ -130,6 +130,14 @@ Receptbok/
 14. ~~**Handplocka recept**~~ — **KLAR** (session 17, 2026-03-30)
 15. ~~**Receptimport via URL och foto**~~ — **KLAR** (session 18, 2026-04-01)
 
+### Buggar (tillagda session 20, 2026-04-06)
+- **[BUGG] Inköpslista-bockningar synkas inte** — Bockningar sparas lokalt i webbläsaren hos respektive användare. Ska sparas centralt (GitHub JSON) så att hela familjen ser samma bockar i realtid.
+- **[BUGG] Bockningar försvinner vid flikbyte** — Bockar en ingrediens och byter till "Kopiera lista"-fliken → bockningarna är borta när man går tillbaka.
+- **[BUGG] Slumpa nytt recept ignorerar regler** — När ett enskilt recept i matsedeln ersätts via "slumpa nytt" tillämpas inte samma regler som vid initial generering (historikfiltrering, proteinbalans, vardag/helg-tagg, veg-dagar).
+
+### Nya features (tillagda session 20, 2026-04-06)
+- **[FEATURE] Blockera dagar i matsedeln** — Möjlighet att markera en eller flera dagar som "ledig" (AW, äter ute, etc.) innan eller efter generering. Blockerade dagar får inget recept och räknas inte in i inköpslistan.
+
 ## Session 19 (2026-04-02 — PÅGÅENDE)
 - **Fotoimport-felsökning:** Gemini-modellnamnet har behövt justeras flera gånger — `gemini-2.0-flash` (quota 0 på free tier) → `gemini-1.5-flash` (not found, pensionerad) → `gemini-2.5-flash` via `v1beta` (nuvarande gratisflash-modell)
 - **FAB-position:** Plusknappen flyttad till vänster sida så den inte lappar över scroll-to-top-pilen (höger)
