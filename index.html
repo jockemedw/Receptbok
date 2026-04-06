@@ -2533,6 +2533,8 @@ function switchTab(tab) {
 let _freshShopContent = null; // används för att skippa fetch direkt efter API-anrop
 let _checkedItems = {};       // bockar — synkad med server
 let _checkedSaveTimer = null;
+let _shopRecipeItems = null;  // sparar receptdata för textvy-rebuild
+let _shopManualItems = [];
 
 function setShopMode(mode) {
   const isHandla = mode === 'handla';
@@ -2615,6 +2617,8 @@ async function moveToShoppingList() {
 }
 
 function renderFullShoppingList(recipeItems, manualItems) {
+  _shopRecipeItems = recipeItems;
+  _shopManualItems = manualItems;
   let checkHtml = '';
   let textParts = [];
   let textBlocksHtml = '';
@@ -2644,16 +2648,22 @@ function renderFullShoppingList(recipeItems, manualItems) {
 
     const recipeText = Object.entries(recipeItems)
       .filter(([, items]) => items.length > 0)
-      .map(([cat, items]) => `${cat}:\n${items.map(i => '• ' + i).join('\n')}`)
-      .join('\n\n');
+      .map(([cat, items]) => {
+        const unchecked = items.filter((_, idx) => !_checkedItems[`recipe::${cat}::${idx}`]);
+        return unchecked.length ? `${cat}:\n${unchecked.map(i => '• ' + i).join('\n')}` : null;
+      }).filter(Boolean).join('\n\n');
     if (recipeText) textParts.push(recipeText);
 
     textBlocksHtml += Object.entries(recipeItems)
       .filter(([, items]) => items.length > 0)
-      .map(([cat, items]) => `<div class="shop-text-category">
+      .map(([cat, items]) => {
+        const unchecked = items.filter((_, idx) => !_checkedItems[`recipe::${cat}::${idx}`]);
+        if (!unchecked.length) return '';
+        return `<div class="shop-text-category">
         <div class="shop-text-cat-name">${CAT_ICONS[cat] || '•'} ${cat}</div>
-        <div class="shop-text-items">${items.map(i => '• ' + i).join('\n')}</div>
-      </div>`).join('');
+        <div class="shop-text-items">${unchecked.map(i => '• ' + i).join('\n')}</div>
+      </div>`;
+      }).join('');
   }
 
   if (manualItems.length > 0) {
@@ -2674,11 +2684,14 @@ function renderFullShoppingList(recipeItems, manualItems) {
       </div>
       <ul class="shopping-items">${manualHtml}</ul>
     </div>`;
-    textParts.push(`Egna tillägg:\n${manualItems.map(i => '• ' + i).join('\n')}`);
-    textBlocksHtml += `<div class="shop-text-category">
-      <div class="shop-text-cat-name">📝 Egna tillägg</div>
-      <div class="shop-text-items">${manualItems.map(i => '• ' + i).join('\n')}</div>
-    </div>`;
+    const uncheckedManual = manualItems.filter((_, idx) => !_checkedItems[`manual::${idx}`]);
+    if (uncheckedManual.length) {
+      textParts.push(`Egna tillägg:\n${uncheckedManual.map(i => '• ' + i).join('\n')}`);
+      textBlocksHtml += `<div class="shop-text-category">
+        <div class="shop-text-cat-name">📝 Egna tillägg</div>
+        <div class="shop-text-items">${uncheckedManual.map(i => '• ' + i).join('\n')}</div>
+      </div>`;
+    }
   }
 
   document.getElementById('shoppingList').innerHTML = checkHtml;
@@ -2800,7 +2813,44 @@ function toggleShopItem(el, key) {
   _checkedItems[key] = nowChecked;
   el.classList.toggle('checked', nowChecked);
   el.querySelector('.item-checkbox').textContent = nowChecked ? '✓' : '';
+  rebuildShopText();
   scheduleCheckedSave();
+}
+
+function rebuildShopText() {
+  let textParts = [];
+  let textBlocksHtml = '';
+  if (_shopRecipeItems) {
+    const recipeText = Object.entries(_shopRecipeItems)
+      .filter(([, items]) => items.length > 0)
+      .map(([cat, items]) => {
+        const unchecked = items.filter((_, idx) => !_checkedItems[`recipe::${cat}::${idx}`]);
+        return unchecked.length ? `${cat}:\n${unchecked.map(i => '• ' + i).join('\n')}` : null;
+      }).filter(Boolean).join('\n\n');
+    if (recipeText) textParts.push(recipeText);
+    textBlocksHtml += Object.entries(_shopRecipeItems)
+      .filter(([, items]) => items.length > 0)
+      .map(([cat, items]) => {
+        const unchecked = items.filter((_, idx) => !_checkedItems[`recipe::${cat}::${idx}`]);
+        if (!unchecked.length) return '';
+        return `<div class="shop-text-category">
+        <div class="shop-text-cat-name">${CAT_ICONS[cat] || '•'} ${cat}</div>
+        <div class="shop-text-items">${unchecked.map(i => '• ' + i).join('\n')}</div>
+      </div>`;
+      }).join('');
+  }
+  const uncheckedManual = _shopManualItems.filter((_, idx) => !_checkedItems[`manual::${idx}`]);
+  if (uncheckedManual.length) {
+    textParts.push(`Egna tillägg:\n${uncheckedManual.map(i => '• ' + i).join('\n')}`);
+    textBlocksHtml += `<div class="shop-text-category">
+      <div class="shop-text-cat-name">📝 Egna tillägg</div>
+      <div class="shop-text-items">${uncheckedManual.map(i => '• ' + i).join('\n')}</div>
+    </div>`;
+  }
+  const textEl = document.getElementById('shoppingText');
+  textEl.innerHTML = textBlocksHtml +
+    `<button class="shop-copy-btn" onclick="copyShoppingList()">Kopiera hela listan</button>`;
+  textEl._fullText = textParts.join('\n\n');
 }
 
 function renderWeeklyPlanData(plan, shop, freshlyGenerated = false) {
