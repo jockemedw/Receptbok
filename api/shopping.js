@@ -57,7 +57,7 @@ export default async function handler(req, res) {
   const pat = process.env.GITHUB_PAT;
   if (!pat) return res.status(500).json({ error: "GITHUB_PAT saknas" });
 
-  const { action, item } = req.body || {};
+  const { action, item, checkedItems } = req.body || {};
 
   try {
     const { content, sha } = await readShoppingList(pat);
@@ -72,9 +72,12 @@ export default async function handler(req, res) {
       content.manualItems = (content.manualItems || []).filter((i) => i !== item);
     } else if (action === "move") {
       content.recipeItemsMovedAt = new Date().toISOString().slice(0, 10);
+    } else if (action === "set_checked") {
+      content.checkedItems = checkedItems || {};
     } else if (action === "clear") {
       content.recipeItems = {};
       content.manualItems = [];
+      content.checkedItems = {};
       content.recipeItemsMovedAt = null;
     } else {
       return res.status(400).json({ error: "Okänd action" });

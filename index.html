@@ -2530,8 +2530,9 @@ function switchTab(tab) {
 }
 
 // ── SHOPPING LIST ──────────────────────────────────────────
-const SHOP_KEY = 'shopping_checked';
 let _freshShopContent = null; // används för att skippa fetch direkt efter API-anrop
+let _checkedItems = {};       // bockar — synkad med server
+let _checkedSaveTimer = null;
 
 function setShopMode(mode) {
   const isHandla = mode === 'handla';
@@ -2541,17 +2542,17 @@ function setShopMode(mode) {
   document.getElementById('shoppingText').classList.toggle('visible', !isHandla);
 }
 
-function getChecked(generated) {
-  try {
-    const stored = JSON.parse(localStorage.getItem(SHOP_KEY) || '{}');
-    // Invalidate if list was regenerated
-    if (stored.generated !== generated) return { generated, items: {} };
-    return stored;
-  } catch { return { generated, items: {} }; }
-}
-
-function saveChecked(state) {
-  localStorage.setItem(SHOP_KEY, JSON.stringify(state));
+function scheduleCheckedSave() {
+  clearTimeout(_checkedSaveTimer);
+  _checkedSaveTimer = setTimeout(async () => {
+    try {
+      await fetch('/api/shopping', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'set_checked', checkedItems: _checkedItems }),
+      });
+    } catch { /* tyst fel — nästa bockning försöker igen */ }
+  }, 600);
 }
 
 const CAT_ICONS = {
@@ -2613,8 +2614,7 @@ async function moveToShoppingList() {
   }
 }
 
-function renderFullShoppingList(recipeItems, manualItems, generatedKey) {
-  const state = getChecked(generatedKey || 'manual');
+function renderFullShoppingList(recipeItems, manualItems) {
   let checkHtml = '';
   let textParts = [];
   let textBlocksHtml = '';
@@ -2626,9 +2626,9 @@ function renderFullShoppingList(recipeItems, manualItems, generatedKey) {
         const icon = CAT_ICONS[cat] || '•';
         const itemsHtml = items.map((item, idx) => {
           const key = `recipe::${cat}::${idx}`;
-          const checked = state.items[key] || false;
+          const checked = _checkedItems[key] || false;
           return `<li class="shopping-item${checked ? ' checked' : ''}"
-                      onclick="toggleShopItem(this,'${key}','${(generatedKey||'').replace(/'/g,"\\'")}')">
+                      onclick="toggleShopItem(this,'${key}')">
             <span class="item-checkbox">${checked ? '✓' : ''}</span>
             <span class="item-text">${item}</span>
           </li>`;
@@ -2659,9 +2659,9 @@ function renderFullShoppingList(recipeItems, manualItems, generatedKey) {
   if (manualItems.length > 0) {
     const manualHtml = manualItems.map((item, idx) => {
       const key = `manual::${idx}`;
-      const checked = state.items[key] || false;
+      const checked = _checkedItems[key] || false;
       return `<li class="shopping-item${checked ? ' checked' : ''}"
-                  onclick="toggleShopItem(this,'${key}','${(generatedKey||'').replace(/'/g,"\\'")}')">
+                  onclick="toggleShopItem(this,'${key}')">
         <span class="item-checkbox">${checked ? '✓' : ''}</span>
         <span class="item-text">${item}</span>
         <button class="remove-manual-btn" onclick="event.stopPropagation();removeManualItem('${item.replace(/'/g,"\\'")}')">×</button>
@@ -2713,10 +2713,10 @@ async function loadShoppingTab() {
       return;
     }
     document.getElementById('shopContent').style.display = '';
+    _checkedItems = shop.checkedItems || {};
     renderFullShoppingList(
       hasRecipe ? recipeItemsData : null,
-      shop.manualItems || [],
-      shop.recipeItemsMovedAt || shop.generated
+      shop.manualItems || []
     );
   } catch {
     document.getElementById('shopLoading').style.display = 'none';
@@ -2775,7 +2775,7 @@ async function clearShoppingList() {
       body: JSON.stringify({ action: 'clear' }),
     });
     if (!res.ok) throw new Error();
-    localStorage.removeItem(SHOP_KEY);
+    _checkedItems = {};
     _freshShopContent = (await res.json()).content;
     loadShoppingTab();
   } catch {
@@ -2795,13 +2795,12 @@ function copyShoppingList() {
   });
 }
 
-function toggleShopItem(el, key, generated) {
-  const state = getChecked(generated);
-  const nowChecked = !state.items[key];
-  state.items[key] = nowChecked;
-  saveChecked(state);
+function toggleShopItem(el, key) {
+  const nowChecked = !_checkedItems[key];
+  _checkedItems[key] = nowChecked;
   el.classList.toggle('checked', nowChecked);
   el.querySelector('.item-checkbox').textContent = nowChecked ? '✓' : '';
+  scheduleCheckedSave();
 }
 
 function renderWeeklyPlanData(plan, shop, freshlyGenerated = false) {
