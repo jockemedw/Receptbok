@@ -1,3 +1,5 @@
+import { createHandler } from "./_shared/handler.js";
+
 const GEMINI_URL =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
@@ -13,24 +15,15 @@ const GEMINI_SCHEMA_PROMPT = `Du är en expert på matlagning och dataextraktion
   "notes": "string med tips/varianter eller null"
 }`;
 
-export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+// ── Handler ─────────────────────────────────────────────────────────────────
 
-  if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
-
+export default createHandler(async (req, res) => {
   const { type, url, imageBase64, mimeType } = req.body || {};
 
-  try {
-    if (type === "url") return await handleUrl(url, res);
-    if (type === "photo") return await handlePhoto(imageBase64, mimeType, res);
-    return res.status(400).json({ error: "Ange type: 'url' eller 'photo'." });
-  } catch (err) {
-    return res.status(500).json({ error: err.message || "Något gick fel." });
-  }
-}
+  if (type === "url") return await handleUrl(url, res);
+  if (type === "photo") return await handlePhoto(imageBase64, mimeType, res);
+  return res.status(400).json({ error: "Ange type: 'url' eller 'photo'." });
+});
 
 // ── URL-import ──────────────────────────────────────────────────────────────
 
@@ -73,7 +66,7 @@ async function handleUrl(url, res) {
     .replace(/<[^>]+>/g, " ")
     .replace(/\s{3,}/g, "\n")
     .trim()
-    .slice(0, 15000); // begränsa tokens
+    .slice(0, 15000);
 
   const geminiRecipe = await callGemini(
     [{ text: `${GEMINI_SCHEMA_PROMPT}\n\nWebbsidans text:\n${cleanText}` }],
@@ -172,7 +165,7 @@ async function handlePhoto(imageBase64, mimeType, res) {
   return res.status(200).json({ recipe });
 }
 
-// ── Gemini-anrop ─────────────────────────────────────────────────────────────
+// ── Gemini-anrop ────────────────────────────────────────────────────────────
 
 async function callGemini(parts, apiKey) {
   let geminiRes;
@@ -200,7 +193,6 @@ async function callGemini(parts, apiKey) {
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return null;
     const recipe = JSON.parse(jsonMatch[0]);
-    // Normalisera
     recipe.tested   = false;
     recipe.timeNote = recipe.timeNote || null;
     recipe.notes    = recipe.notes    || null;
@@ -213,7 +205,7 @@ async function callGemini(parts, apiKey) {
   }
 }
 
-// ── Hjälpfunktioner ──────────────────────────────────────────────────────────
+// ── Hjälpfunktioner ─────────────────────────────────────────────────────────
 
 function guessProtein(title, ingredients) {
   const text = (title + " " + ingredients.join(" ")).toLowerCase();

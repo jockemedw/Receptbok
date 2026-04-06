@@ -1,24 +1,16 @@
-const REPO_OWNER = "jockemedw";
-const REPO_NAME  = "Receptbok";
-const BRANCH     = "main";
+import { createHandler } from "./_shared/handler.js";
+import { readFile, readFileRaw, writeFile } from "./_shared/github.js";
+
+// ── Domänlogik (ägs av denna slice) ─────────────────────────────────────────
 
 async function fetchRecipes() {
-  const url = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRANCH}/recipes.json`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Kunde inte hämta receptdatabasen.");
-  const data = await res.json();
+  const data = await readFileRaw("recipes.json");
   return data.recipes;
 }
 
 async function fetchHistory(pat) {
-  const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/recipe-history.json?ref=${BRANCH}`;
-  const res = await fetch(apiUrl, {
-    headers: { Authorization: `token ${pat}`, Accept: "application/vnd.github+json" },
-  });
-  if (!res.ok) return { usedOn: {} };
   try {
-    const data = await res.json();
-    const parsed = JSON.parse(Buffer.from(data.content, "base64").toString("utf-8"));
+    const { content: parsed } = await readFile("recipe-history.json", pat);
     if (parsed.history && !parsed.usedOn) {
       const usedOn = {};
       for (const entry of parsed.history) {
@@ -31,45 +23,6 @@ async function fetchHistory(pat) {
     return parsed;
   } catch {
     return { usedOn: {} };
-  }
-}
-
-async function fetchWeeklyPlan(pat) {
-  const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/weekly-plan.json?ref=${BRANCH}`;
-  const res = await fetch(apiUrl, {
-    headers: { Authorization: `token ${pat}`, Accept: "application/vnd.github+json" },
-  });
-  if (!res.ok) throw new Error("Kunde inte hämta veckoplan.");
-  const data = await res.json();
-  return {
-    plan: JSON.parse(Buffer.from(data.content, "base64").toString("utf-8")),
-    sha: data.sha,
-  };
-}
-
-async function writeFileToGitHub(path, content, pat) {
-  const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`;
-  const headers = {
-    Authorization: `token ${pat}`,
-    "Content-Type": "application/json",
-    Accept: "application/vnd.github+json",
-  };
-  const encoded = Buffer.from(JSON.stringify(content, null, 2)).toString("base64");
-  const message = `Receptbyte ${new Date().toISOString().slice(0, 10)} — autogenererad`;
-
-  for (let attempt = 0; attempt < 3; attempt++) {
-    let sha;
-    const getRes = await fetch(`${apiUrl}?t=${Date.now()}`, { headers });
-    if (getRes.ok) sha = (await getRes.json()).sha;
-
-    const putRes = await fetch(apiUrl, {
-      method: "PUT",
-      headers,
-      body: JSON.stringify({ message, content: encoded, branch: BRANCH, ...(sha ? { sha } : {}) }),
-    });
-    if (putRes.ok) return;
-    if (putRes.status === 409 && attempt < 2) continue;
-    throw new Error(`Kunde inte spara ${path} — prova igen.`);
   }
 }
 
@@ -93,63 +46,54 @@ function shuffle(arr) {
   return a;
 }
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).json({ error: "Metod ej tillåten" });
+// ── Handler ─────────────────────────────────────────────────────────────────
 
-  const pat = process.env.GITHUB_PAT;
-  if (!pat) return res.status(500).json({ error: "GITHUB_PAT saknas i env" });
-
+export default createHandler(async (req, res, pat) => {
   const { date, currentRecipeId, weekRecipeIds = [], newRecipeId } = req.body || {};
   if (!date) return res.status(400).json({ error: "date saknas" });
 
-  try {
-    const [allRecipes, { plan }] = await Promise.all([
-      fetchRecipes(),
-      fetchWeeklyPlan(pat),
-    ]);
+  const [allRecipes, { content: plan }] = await Promise.all([
+    fetchRecipes(),
+    readFile("weekly-plan.json", pat),
+  ]);
 
-    let picked;
-    if (newRecipeId) {
-      // Manuellt valt recept — använd direkt
-      picked = allRecipes.find(r => r.id === parseInt(newRecipeId, 10));
-      if (!picked) return res.status(404).json({ error: "Receptet hittades inte." });
-    } else {
-      // Slumpmässigt förslag — filtrera bort nyligen använda och veckans recept
-      const history = await fetchHistory(pat);
-      const recentIds = recentlyUsedIds(history);
-      const weekSet   = new Set(weekRecipeIds.filter(id => id !== currentRecipeId));
+  let picked;
+  if (newRecipeId) {
+    picked = allRecipes.find(r => r.id === parseInt(newRecipeId, 10));
+    if (!picked) return res.status(404).json({ error: "Receptet hittades inte." });
+  } else {
+    const history = await fetchHistory(pat);
+    const recentIds = recentlyUsedIds(history);
+    const weekSet = new Set(weekRecipeIds.filter(id => id !== currentRecipeId));
 
-      let pool = allRecipes.filter(r =>
-        r.id !== currentRecipeId &&
-        !weekSet.has(r.id) &&
-        !recentIds.has(r.id)
-      );
+    let pool = allRecipes.filter(r =>
+      r.id !== currentRecipeId &&
+      !weekSet.has(r.id) &&
+      !recentIds.has(r.id)
+    );
 
-      if (!pool.length) {
-        const usedOn = history.usedOn || {};
-        pool = allRecipes
-          .filter(r => r.id !== currentRecipeId && !weekSet.has(r.id))
-          .sort((a, b) => (usedOn[a.id] || "0000-00-00") < (usedOn[b.id] || "0000-00-00") ? -1 : 1);
-      }
-
-      if (!pool.length) return res.status(409).json({ error: "Inga tillgängliga recept att byta till." });
-      picked = shuffle(pool)[0];
+    if (!pool.length) {
+      const usedOn = history.usedOn || {};
+      pool = allRecipes
+        .filter(r => r.id !== currentRecipeId && !weekSet.has(r.id))
+        .sort((a, b) => (usedOn[a.id] || "0000-00-00") < (usedOn[b.id] || "0000-00-00") ? -1 : 1);
     }
 
-    // Uppdatera weekly-plan.json — byt ut rätt dag
-    const dayIdx = plan.days.findIndex(d => d.date === date);
-    if (dayIdx === -1) return res.status(404).json({ error: "Dagen hittades inte i veckoplanen." });
-
-    plan.days[dayIdx] = {
-      ...plan.days[dayIdx],
-      recipe: picked.title,
-      recipeId: picked.id,
-    };
-
-    await writeFileToGitHub("weekly-plan.json", plan, pat);
-
-    return res.status(200).json({ recipe: picked.title, recipeId: picked.id });
-  } catch (e) {
-    return res.status(500).json({ error: e.message || "Okänt fel" });
+    if (!pool.length) return res.status(409).json({ error: "Inga tillgängliga recept att byta till." });
+    picked = shuffle(pool)[0];
   }
-}
+
+  const dayIdx = plan.days.findIndex(d => d.date === date);
+  if (dayIdx === -1) return res.status(404).json({ error: "Dagen hittades inte i veckoplanen." });
+
+  plan.days[dayIdx] = {
+    ...plan.days[dayIdx],
+    recipe: picked.title,
+    recipeId: picked.id,
+  };
+
+  const today = new Date().toISOString().slice(0, 10);
+  await writeFile("weekly-plan.json", plan, pat, `Receptbyte ${today} — autogenererad`);
+
+  return res.status(200).json({ recipe: picked.title, recipeId: picked.id });
+});

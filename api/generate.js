@@ -1,10 +1,11 @@
 import { buildShoppingList } from "./_shared/shopping-builder.js";
-
-const REPO_OWNER = "jockemedw";
-const REPO_NAME = "Receptbok";
-const BRANCH = "main";
+import { createHandler } from "./_shared/handler.js";
+import { readFile, readFileRaw, writeFile } from "./_shared/github.js";
+import { REPO_OWNER, REPO_NAME, BRANCH } from "./_shared/constants.js";
 
 const DAY_NAMES = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag", "Lördag", "Söndag"];
+
+// ── Domänlogik (ägs av denna slice) ─────────────────────────────────────────
 
 function buildDayList(startDate, endDate) {
   const days = [];
@@ -36,10 +37,7 @@ function filterRecipes(recipes, constraints) {
 }
 
 async function fetchRecipes() {
-  const url = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRANCH}/recipes.json`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error("Kunde inte hämta receptdatabasen — kontrollera att recipes.json finns i repot.");
-  const data = await res.json();
+  const data = await readFileRaw("recipes.json");
   return data.recipes.map((r) => ({
     id: r.id,
     title: r.title,
@@ -52,17 +50,9 @@ async function fetchRecipes() {
 }
 
 // Läser historik via GitHub API (inte raw-URL) för att undvika CDN-cache.
-// CDN-cachen är ~60s efter en commit, vilket gör att täta genereringar
-// skriver ovanpå gammal data och tappar mellanliggande körningar.
 async function fetchHistory(pat) {
-  const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/recipe-history.json?ref=${BRANCH}`;
-  const res = await fetch(apiUrl, {
-    headers: { Authorization: `token ${pat}`, Accept: "application/vnd.github+json" },
-  });
-  if (!res.ok) return { usedOn: {} };
   try {
-    const data = await res.json();
-    const parsed = JSON.parse(Buffer.from(data.content, "base64").toString("utf-8"));
+    const { content: parsed } = await readFile("recipe-history.json", pat);
     // Migrering från gammalt format { history: [...] } → nytt { usedOn: { id: date } }
     if (parsed.history && !parsed.usedOn) {
       const usedOn = {};
@@ -80,20 +70,19 @@ async function fetchHistory(pat) {
 }
 
 async function fetchShoppingList() {
-  const url = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/${BRANCH}/shopping-list.json`;
-  const res = await fetch(url);
-  if (!res.ok) return null;
-  return res.json();
+  try {
+    const data = await readFileRaw("shopping-list.json");
+    return data;
+  } catch {
+    return null;
+  }
 }
 
 // Returnerar Set med recept-ID:n använda de senaste `days` dagarna.
-// Nytt format: { usedOn: { "5": "2026-03-25", ... } } — ett datum per recept.
-// 14 dagar: med ~12-15 recept per generering ger det god variation utan att
-// poolen töms. 28 dagar blockerade för många recept och gav tom pool.
 function recentlyUsedIds(history, days = 14) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
-  const cutoffStr = cutoff.toISOString().slice(0, 10); // "YYYY-MM-DD"
+  const cutoffStr = cutoff.toISOString().slice(0, 10);
   const ids = new Set();
   for (const [id, date] of Object.entries(history.usedOn || {})) {
     if (date >= cutoffStr) ids.add(parseInt(id, 10));
@@ -105,32 +94,6 @@ function updateHistory(history, newIds, date) {
   const usedOn = { ...(history.usedOn || {}) };
   for (const id of newIds) usedOn[String(id)] = date;
   return { usedOn };
-}
-
-async function writeFileToGitHub(path, content, pat) {
-  const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`;
-  const headers = {
-    Authorization: `token ${pat}`,
-    "Content-Type": "application/json",
-    Accept: "application/vnd.github+json",
-  };
-  const encoded = Buffer.from(JSON.stringify(content, null, 2)).toString("base64");
-  const message = `Matsedel ${new Date().toISOString().slice(0, 10)} — autogenererad`;
-
-  for (let attempt = 0; attempt < 3; attempt++) {
-    let sha;
-    const getRes = await fetch(`${apiUrl}?t=${Date.now()}`, { headers });
-    if (getRes.ok) sha = (await getRes.json()).sha;
-
-    const putRes = await fetch(apiUrl, {
-      method: "PUT",
-      headers,
-      body: JSON.stringify({ message, content: encoded, branch: BRANCH, ...(sha ? { sha } : {}) }),
-    });
-    if (putRes.ok) return;
-    if (putRes.status === 409 && attempt < 2) continue; // SHA conflict — retry with fresh SHA
-    throw new Error(`Kunde inte spara ${path} — prova att generera igen.`);
-  }
 }
 
 function shuffle(arr) {
@@ -169,8 +132,6 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
   const vegCount = constraints.vegetarian_days;
   const vegDaySet = new Set(shuffle(dayList.map((_, i) => i)).slice(0, vegCount));
 
-  // Vegetarisk-proteinet tillåts upp till vegCount gånger (minst 2 som golv).
-  // Övriga proteiner begränsas till 2 för att ge variation.
   const maxVeg = Math.max(2, vegCount);
 
   // ── 4. Fyll varje dag ────────────────────────────────────────────────────
@@ -181,7 +142,6 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
 
   function pick(dayPool, altPool, mustBeVeg) {
     const maxForProtein = (p) => p === "vegetarisk" ? maxVeg : MAX_PER_PROTEIN;
-    // Försök primär pool
     for (const r of dayPool) {
       if (usedIds.has(r.id)) continue;
       if (mustBeVeg && r.protein !== "vegetarisk") continue;
@@ -190,19 +150,16 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
       if (!r.tested && untestedSoFar >= constraints.untested_count) continue;
       return r;
     }
-    // Fallback 1: släpp proteinbegränsning i primär pool
     for (const r of dayPool) {
       if (usedIds.has(r.id)) continue;
       if (mustBeVeg && r.protein !== "vegetarisk") continue;
       return r;
     }
-    // Fallback 2: prova alternativ pool (vardag/helg-korsning)
     for (const r of altPool) {
       if (usedIds.has(r.id)) continue;
       if (mustBeVeg && r.protein !== "vegetarisk") continue;
       return r;
     }
-    // Fallback 3: hela receptdatabasen oavsett historik
     for (const r of recipes) {
       if (usedIds.has(r.id)) continue;
       if (mustBeVeg && r.protein !== "vegetarisk") continue;
@@ -233,19 +190,9 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
   return result;
 }
 
-export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+// ── Handler ─────────────────────────────────────────────────────────────────
 
-  if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
-  const pat = process.env.GITHUB_PAT;
-  if (!pat) return res.status(500).json({ error: "GITHUB_PAT saknas i env" });
-
+export default createHandler(async (req, res, pat) => {
   const {
     start_date,
     end_date,
@@ -259,57 +206,53 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "start_date och end_date krävs" });
   }
 
-  try {
-    const constraints = {
-      allowed_proteins: allowed_proteins.split(",").map((p) => p.trim()).filter(Boolean),
-      untested_count: parseInt(untested_count) || 0,
-      vegetarian_days: parseInt(vegetarian_days) || 0,
-    };
+  const constraints = {
+    allowed_proteins: allowed_proteins.split(",").map((p) => p.trim()).filter(Boolean),
+    untested_count: parseInt(untested_count) || 0,
+    vegetarian_days: parseInt(vegetarian_days) || 0,
+  };
 
-    const fetches = [fetchRecipes(), fetchHistory(pat)];
-    if (!skip_shopping) fetches.push(fetchShoppingList());
-    const [allRecipes, historyData, existingShop] = await Promise.all(fetches);
+  const fetches = [fetchRecipes(), fetchHistory(pat)];
+  if (!skip_shopping) fetches.push(fetchShoppingList());
+  const [allRecipes, historyData, existingShop] = await Promise.all(fetches);
 
-    const filtered = filterRecipes(allRecipes, constraints);
+  const filtered = filterRecipes(allRecipes, constraints);
 
-    if (filtered.length === 0) {
-      return res.status(400).json({ error: "Inga recept kvar efter filtrering — justera inställningarna." });
-    }
-
-    const recentIds = recentlyUsedIds(historyData);
-    const dayList = buildDayList(start_date, end_date);
-    const days = selectRecipes(filtered, dayList, constraints, recentIds, historyData.usedOn || {});
-
-    const today = new Date().toISOString().slice(0, 10);
-    const weeklyPlan = { generated: today, startDate: start_date, endDate: end_date, days };
-    const updatedHistory = updateHistory(historyData, days.map((d) => d.recipeId).filter(Boolean), today);
-
-    if (skip_shopping) {
-      await Promise.all([
-        writeFileToGitHub("weekly-plan.json", weeklyPlan, pat),
-        writeFileToGitHub("recipe-history.json", updatedHistory, pat),
-      ]);
-      return res.status(200).json({ ok: true, days: days.length, weeklyPlan, shoppingList: null });
-    }
-
-    const selectedIds = days.map((d) => d.recipeId).filter(Boolean);
-    const shoppingCategories = buildShoppingList(selectedIds, allRecipes);
-    const shoppingList = {
-      generated: today, startDate: start_date, endDate: end_date,
-      recipeItems: shoppingCategories,
-      recipeItemsMovedAt: null,
-      manualItems: existingShop?.manualItems || [],
-    };
-
-    await Promise.all([
-      writeFileToGitHub("weekly-plan.json", weeklyPlan, pat),
-      writeFileToGitHub("shopping-list.json", shoppingList, pat),
-      writeFileToGitHub("recipe-history.json", updatedHistory, pat),
-    ]);
-
-    return res.status(200).json({ ok: true, days: days.length, weeklyPlan, shoppingList });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: err.message });
+  if (filtered.length === 0) {
+    return res.status(400).json({ error: "Inga recept kvar efter filtrering — justera inställningarna." });
   }
-}
+
+  const recentIds = recentlyUsedIds(historyData);
+  const dayList = buildDayList(start_date, end_date);
+  const days = selectRecipes(filtered, dayList, constraints, recentIds, historyData.usedOn || {});
+
+  const today = new Date().toISOString().slice(0, 10);
+  const weeklyPlan = { generated: today, startDate: start_date, endDate: end_date, days };
+  const updatedHistory = updateHistory(historyData, days.map((d) => d.recipeId).filter(Boolean), today);
+  const commitMsg = `Matsedel ${today} — autogenererad`;
+
+  if (skip_shopping) {
+    await Promise.all([
+      writeFile("weekly-plan.json", weeklyPlan, pat, commitMsg),
+      writeFile("recipe-history.json", updatedHistory, pat, commitMsg),
+    ]);
+    return res.status(200).json({ ok: true, days: days.length, weeklyPlan, shoppingList: null });
+  }
+
+  const selectedIds = days.map((d) => d.recipeId).filter(Boolean);
+  const shoppingCategories = buildShoppingList(selectedIds, allRecipes);
+  const shoppingList = {
+    generated: today, startDate: start_date, endDate: end_date,
+    recipeItems: shoppingCategories,
+    recipeItemsMovedAt: null,
+    manualItems: existingShop?.manualItems || [],
+  };
+
+  await Promise.all([
+    writeFile("weekly-plan.json", weeklyPlan, pat, commitMsg),
+    writeFile("shopping-list.json", shoppingList, pat, commitMsg),
+    writeFile("recipe-history.json", updatedHistory, pat, commitMsg),
+  ]);
+
+  return res.status(200).json({ ok: true, days: days.length, weeklyPlan, shoppingList });
+});
