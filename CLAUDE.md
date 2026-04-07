@@ -188,7 +188,30 @@ Receptbok/
 ### Nya features (tillagda session 20, 2026-04-06)
 - **[FEATURE] Blockera dagar i matsedeln** — Möjlighet att markera en eller flera dagar som "ledig" (AW, äter ute, etc.) innan eller efter generering. Blockerade dagar får inget recept och räknas inte in i inköpslistan.
 
-## Senaste session — Session 21 (2026-04-06 — KLAR)
+### VSA-förbättringsplan (tillagd session 22, 2026-04-07)
+Baserad på kodgranskning av nuvarande struktur. Tre prioritetsnivåer:
+
+#### 🔴 Fas A — Backend-duplikation (hög prioritet)
+- **[VSA-A1] Extrahera delad receptpool till `api/_shared/recipe-pool.js`** — `fetchRecipes`, `fetchHistory`, `recentlyUsedIds`, `shuffle` är identiskt duplicerade i `generate.js` och `replace-recipe.js`. Buggfix i en fil sprids inte till den andra idag.
+
+#### 🟡 Fas B — Stora moduler (medel prioritet)
+- **[VSA-B1] Dela upp `plan-viewer.js` (376 rader)** — Har fyra ansvarsområden: replace-läge, swap-läge, receptdetaljpanel, bekräftelseflöde. Förslag: `plan-grid.js` + `recipe-detail-panel.js`.
+- **[VSA-B2] Dela upp `shopping-list.js` (276 rader)** — Checkbox-vyn och textvyn duplicerar kategori-rendering (rader 42–59 ≈ 115–125). Förslag: extrahera `buildTextView()` som intern hjälpfunktion.
+- **[VSA-B3] Exportera delfunktioner ur `api/_shared/shopping-builder.js` (376 rader)** — `parseIngredient`, `categorize`, `normalize` är idag oåtkomliga utifrån, vilket omöjliggör isolerad testning.
+
+#### 🟢 Fas C — Konsistens och städning (lägre prioritet)
+- **[VSA-C1] Flytta `PROTEIN_LABEL` ur `plan-viewer.js` (rad 209)** — Konstanten finns redan i `utils.js`, bör importeras därifrån istället för att definieras lokalt.
+- **[VSA-C2] Extrahera gemensam modalinit** — `recipe-editor.js` rader 12–19 ≈ `recipe-import.js` rader 107–114. En `initModal(id)`-hjälpare i `js/modal.js` tar bort duplikationen.
+- **[VSA-C3] Standardisera API-svarsformat** — `/api/recipes` (update) returnerar `{ ok: true }` men (add) returnerar `{ ok: true, recipe: {...} }`. Bör vara konsekvent per action-typ.
+
+**Rekommenderad ordning:** A1 → B1 → B2 → B3 → C1–C3. A1 är enklast och ger störst nytta direkt.
+
+## Senaste session — Session 22 (2026-04-07 — KLAR)
+- **VSA-kodgranskning genomförd** — Alla 24 JS-moduler (frontend + backend) granskade. Inga kodfixar gjorda, bara analys och dokumentation.
+- **VSA-förbättringsplan tillagd i backlog** — 7 åtgärdspunkter i tre prioritetsnivåer (se ovan). Tyngsta fynden: historik/receptpool duplicerad i generate.js + replace-recipe.js, plan-viewer.js (376 rader) har för många ansvarsområden, shopping-builder.js (376 rader) exporterar inga delfunktioner.
+- **Nästa session:** Välj en VSA-förbättring att genomföra, eller fortsätt med ContextBridge (punkt 17).
+
+## Föregående session — Session 21 (2026-04-06 — KLAR)
 - **VSA-refaktorering genomförd** i tre faser:
   - **Fas 1 — Backend:** Delad infrastruktur extraherad till `api/_shared/` (`constants.js`, `github.js`, `handler.js`). 7 endpoints refaktorerade, ~266 rader duplicerad kod borttagna.
   - **Fas 2 — CSS:** `css/styles.css` skapad (1620 rader). `<style>`-block i index.html ersatt med `<link>`.
