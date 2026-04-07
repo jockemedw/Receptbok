@@ -187,6 +187,7 @@ Receptbok/
 
 ### Nya features (tillagda session 20, 2026-04-06)
 - **[FEATURE] Blockera dagar i matsedeln** — Möjlighet att markera en eller flera dagar som "ledig" (AW, äter ute, etc.) innan eller efter generering. Blockerade dagar får inget recept och räknas inte in i inköpslistan.
+- **[FEATURE] Dynamiska tagggrupper i receptfilter** — Filterknapparna i receptboken byggs automatiskt från taggarna som faktiskt finns i `recipes.json` (inga hårdkodade knappar). Taggarna grupperas i kategorier: **Tillagningstid** (`vardag30`, `helg60`), **Recepttyp** (`soppa`, `pasta`, `wok`, `ugn`, `sallad`, `gryta`, `ramen`, m.fl.), och i framtiden **Kök** (t.ex. `italienskt`, `asiatiskt`) när sådana taggar läggs till i receptdatabasen. Varje grupp får en rubrik. Okategoriserade taggar hamnar i en "Övrigt"-grupp.
 
 ## Senaste session — Session 21 (2026-04-06 — KLAR)
 - **VSA-refaktorering genomförd** i tre faser:
