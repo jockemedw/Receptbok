@@ -72,7 +72,7 @@
     {
       "id": 3,
       "title": "Stekta rödspättafiléer med stuvade morötter",
-      "tested": false,
+      "tested": true,
       "servings": 4,
       "time": 40,
       "timeNote": null,
