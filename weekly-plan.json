@@ -12,74 +12,75 @@
     {
       "date": "2026-04-08",
       "day": "Onsdag",
-      "recipe": "Kålcurry med gröna ärter och koriander",
-      "recipeId": 37
+      "recipe": null,
+      "recipeId": null,
+      "blocked": true
     },
     {
       "date": "2026-04-09",
       "day": "Torsdag",
-      "recipe": "Ugnspannkaka med vitkål och brynt smör med rå lingon",
-      "recipeId": 34
+      "recipe": "Kålcurry med gröna ärter och koriander",
+      "recipeId": 37
     },
     {
       "date": "2026-04-10",
       "day": "Fredag",
-      "recipe": "Gnocchi med snabbpesto",
-      "recipeId": 26
+      "recipe": "Ugnspannkaka med vitkål och brynt smör med rå lingon",
+      "recipeId": 34
     },
     {
       "date": "2026-04-11",
       "day": "Lördag",
-      "recipe": "Sötpotatissallad med fetaost och hot honey-dressing",
-      "recipeId": 43
+      "recipe": "Gnocchi med snabbpesto",
+      "recipeId": 26
     },
     {
       "date": "2026-04-12",
       "day": "Söndag",
-      "recipe": "Quinoabollar",
-      "recipeId": 11
+      "recipe": "Sötpotatissallad med fetaost och hot honey-dressing",
+      "recipeId": 43
     },
     {
       "date": "2026-04-13",
       "day": "Måndag",
-      "recipe": "Röd linsgryta med potatis",
-      "recipeId": 46
+      "recipe": "Quinoabollar",
+      "recipeId": 11
     },
     {
       "date": "2026-04-14",
       "day": "Tisdag",
-      "recipe": "Fisk med örtsås",
-      "recipeId": 50
+      "recipe": "Röd linsgryta med potatis",
+      "recipeId": 46
     },
     {
       "date": "2026-04-15",
       "day": "Onsdag",
-      "recipe": "Breakfast burrito med kål och äggröra",
-      "recipeId": 32
+      "recipe": "Fisk med örtsås",
+      "recipeId": 50
     },
     {
       "date": "2026-04-16",
       "day": "Torsdag",
-      "recipe": "Pasta med lax och sås på vitt vin, grädde och spenat",
-      "recipeId": 51
+      "recipe": "Breakfast burrito med kål och äggröra",
+      "recipeId": 32
     },
     {
       "date": "2026-04-17",
       "day": "Fredag",
-      "recipe": "Indisk gryta med spenat, kikärter, senap & yoghurt",
-      "recipeId": 53
+      "recipe": "Pasta med lax och sås på vitt vin, grädde och spenat",
+      "recipeId": 51
     },
     {
       "date": "2026-04-18",
       "day": "Lördag",
-      "recipe": "Krispiga ostquesadillas med grönkål och potatis med syrlig koriandersås",
-      "recipeId": 33
+      "recipe": "Indisk gryta med spenat, kikärter, senap & yoghurt",
+      "recipeId": 53
     },
     {
       "date": "2026-04-19",
       "day": "Söndag",
-      "recipe": "Matvetesallad med gröna ärter och krispig halloumi",
-      "recipeId": 2
+      "recipe": "Krispiga ostquesadillas med grönkål och potatis med syrlig koriandersås",
+      "recipeId": 33
     }
   ],
   "confirmedAt": "2026-04-06T13:31:53.908Z"
