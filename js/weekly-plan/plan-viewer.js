@@ -210,7 +210,8 @@ export function openWeekRecipe(recipeId, title, cardEl) {
 
   const replaceBtns = window.planConfirmed ? '' : `
     <button class="replace-recipe-btn" onclick="enterReplaceMode('${date}', '${dayName}')">Välj annat recept</button>
-    <button class="replace-recipe-btn" onclick="replaceRecipe(${r.id}, '${date}', this)">Slumpa nytt recept</button>`;
+    <button class="replace-recipe-btn" onclick="replaceRecipe(${r.id}, '${date}', this)">Slumpa nytt recept</button>
+    <button class="replace-recipe-btn" onclick="enterSwapMode('${date}')">Byt dag</button>`;
   const dayActionBtns = `<div class="day-action-btns">
     <button class="day-action-btn" onclick="skipDay('${date}')">Hoppa över — skjut recept →</button>
     <button class="day-action-btn day-action-block" onclick="blockDay('${date}')">Blockera dag</button>
