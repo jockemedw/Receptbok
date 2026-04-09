@@ -738,6 +738,106 @@
     margin-top: 0.35rem;
   }
 
+  /* ── Blockerade dagar ── */
+  .week-day-card.blocked {
+    opacity: 0.5;
+    border-style: dashed;
+    cursor: default;
+    background: var(--cream);
+  }
+  .week-day-card.blocked:hover {
+    border-color: var(--border);
+    box-shadow: none;
+    opacity: 0.5;
+  }
+  .blocked-recipe-text {
+    font-style: italic;
+    color: var(--text-muted);
+  }
+
+  /* ── Block / skip-knappar i detaljpanel ── */
+  .day-action-btns {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1.1rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid var(--border);
+  }
+  .day-action-btn {
+    flex: 1;
+    background: none;
+    border: 1.5px solid var(--text-muted);
+    color: var(--text-muted);
+    border-radius: 8px;
+    padding: 0.45rem 0.6rem;
+    font-size: 0.78rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+  .day-action-btn:hover {
+    border-color: var(--warm-brown);
+    color: var(--warm-brown);
+  }
+  .day-action-btn.day-action-block:hover {
+    border-color: var(--terracotta);
+    color: var(--terracotta);
+  }
+
+  /* ── Dagväljare (pre-generering) ── */
+  .day-toggles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    justify-content: center;
+    padding: 0.5rem 0 0.25rem;
+  }
+  .day-toggles-hint {
+    width: 100%;
+    text-align: center;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 0.15rem;
+  }
+  .day-toggle-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.1rem;
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 0.35rem 0.5rem;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, opacity 0.15s;
+    min-width: 42px;
+  }
+  .day-toggle-chip:hover {
+    border-color: var(--terracotta);
+  }
+  .day-toggle-chip.blocked {
+    opacity: 0.45;
+    background: var(--cream);
+    border-style: dashed;
+    text-decoration: line-through;
+    color: var(--text-muted);
+  }
+  .day-toggle-abbr {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    font-weight: 500;
+  }
+  .day-toggle-num {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--warm-brown);
+  }
+  .day-toggle-chip.blocked .day-toggle-num {
+    color: var(--text-muted);
+  }
+
   .week-day-name {
     font-size: 0.68rem;
     text-transform: uppercase;

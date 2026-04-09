@@ -200,6 +200,7 @@ export default createHandler(async (req, res, pat) => {
     untested_count = 0,
     vegetarian_days = 0,
     skip_shopping = false,
+    blocked_dates = [],
   } = req.body;
 
   if (!start_date || !end_date) {
@@ -223,8 +224,18 @@ export default createHandler(async (req, res, pat) => {
   }
 
   const recentIds = recentlyUsedIds(historyData);
-  const dayList = buildDayList(start_date, end_date);
-  const days = selectRecipes(filtered, dayList, constraints, recentIds, historyData.usedOn || {});
+  const allDays = buildDayList(start_date, end_date);
+  const blockedSet = new Set(blocked_dates);
+  const activeDays = allDays.filter((d) => !blockedSet.has(d.date));
+  const selectedDays = selectRecipes(filtered, activeDays, constraints, recentIds, historyData.usedOn || {});
+
+  // Merge: blockerade dagar infogas med recipe: null
+  const days = allDays.map((d) => {
+    if (blockedSet.has(d.date)) {
+      return { date: d.date, day: d.day, recipe: null, recipeId: null, blocked: true };
+    }
+    return selectedDays.find((s) => s.date === d.date);
+  });
 
   const today = new Date().toISOString().slice(0, 10);
   const weeklyPlan = { generated: today, startDate: start_date, endDate: end_date, days };

@@ -106,6 +106,7 @@ Receptbok/
 │   │   └── handler.js      # createHandler (CORS, auth, errors)
 │   ├── generate.js         # Receptval + matsedel + inköpslista
 │   ├── replace-recipe.js   # Byt enskilt recept
+│   ├── skip-day.js         # Blockera dag / hoppa över (skjut framåt)
 │   ├── swap-days.js        # Byt plats på två dagar
 │   ├── confirm.js          # Bekräfta matsedel
 │   ├── recipes.js          # CRUD recept
@@ -185,11 +186,19 @@ Receptbok/
 - **[BUGG] Slumpa nytt recept ignorerar regler** — När ett enskilt recept i matsedeln ersätts via "slumpa nytt" tillämpas inte samma regler som vid initial generering (historikfiltrering, proteinbalans, vardag/helg-tagg, veg-dagar).
 
 ### Nya features (tillagda session 20, 2026-04-06)
-- **[FEATURE] Blockera dagar i matsedeln** — Möjlighet att markera en eller flera dagar som "ledig" (AW, äter ute, etc.) innan eller efter generering. Blockerade dagar får inget recept och räknas inte in i inköpslistan.
+- ~~**[FEATURE] Blockera dagar i matsedeln**~~ — **KLAR** (session 22, 2026-04-09). Inkluderar även "Hoppa över — skjut recept framåt".
 - **[FEATURE] Dynamiska tagggrupper i receptfilter** — Filterknapparna i receptboken byggs automatiskt från taggarna som faktiskt finns i `recipes.json` (inga hårdkodade knappar). Taggarna grupperas i kategorier: **Tillagningstid** (`vardag30`, `helg60`), **Recepttyp** (`soppa`, `pasta`, `wok`, `ugn`, `sallad`, `gryta`, `ramen`, m.fl.), och i framtiden **Kök** (t.ex. `italienskt`, `asiatiskt`) när sådana taggar läggs till i receptdatabasen. Varje grupp får en rubrik. Okategoriserade taggar hamnar i en "Övrigt"-grupp.
 
 ## Senaste session — Session 22 (2026-04-09)
 - **ContextBridge struken** — borttagen ur backlog och alla kommentarer i `js/state.js` och CLAUDE.md. `window.*`-mönstret behålls som det är.
+- **[FEATURE] Blockera dagar + Hoppa över ("skjut framåt")** — två nya funktioner:
+  - **Pre-generering:** Dagväljare visas efter datumval. Tryck på en dag för att blockera den — blockerade dagar exkluderas från receptval och inköpslista.
+  - **Post-generering — Blockera dag:** Tar bort receptet från en dag utan att påverka övriga dagar. Tillgänglig via detaljpanelen.
+  - **Post-generering — Hoppa över (skjut framåt):** Markerar dagen som fri och skjuter alla efterföljande recept framåt ett steg. Sista receptet faller bort.
+  - Om matsedeln är bekräftad byggs inköpslistan om automatiskt.
+  - Nytt API-endpoint: `api/skip-day.js` (actions: `skip`, `block`).
+  - `api/generate.js` accepterar nu `blocked_dates`-array.
+  - Blockerade dagar visas med streckad ram, "Fri dag"-text, och lägre opacitet.
 
 ## Session 21 (2026-04-06 — KLAR)
 - **VSA-refaktorering genomförd** i tre faser:

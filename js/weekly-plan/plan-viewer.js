@@ -208,9 +208,14 @@ export function openWeekRecipe(recipeId, title, cardEl) {
 
   const PROTEIN_LABEL = { fisk: 'Fisk', kyckling: 'Kyckling', kött: 'Kött', fläsk: 'Fläsk', vegetarisk: 'Vegetarisk' };
 
-  const actionBtns = window.planConfirmed ? '' : `
+  const replaceBtns = window.planConfirmed ? '' : `
     <button class="replace-recipe-btn" onclick="enterReplaceMode('${date}', '${dayName}')">Välj annat recept</button>
     <button class="replace-recipe-btn" onclick="replaceRecipe(${r.id}, '${date}', this)">Slumpa nytt recept</button>`;
+  const dayActionBtns = `<div class="day-action-btns">
+    <button class="day-action-btn" onclick="skipDay('${date}')">Hoppa över — skjut recept →</button>
+    <button class="day-action-btn day-action-block" onclick="blockDay('${date}')">Blockera dag</button>
+  </div>`;
+  const actionBtns = replaceBtns + dayActionBtns;
 
   panel.innerHTML = `<div class="detail-inner">
     <div class="week-recipe-header">
@@ -239,6 +244,51 @@ export function openWeekRecipe(recipeId, title, cardEl) {
   const top = panel.getBoundingClientRect().top + window.scrollY - hh - 8;
   window.smoothScrollTo(top, 380);
 }
+
+// ── Blockera / Hoppa över ────────────────────────────────────────────────────
+
+async function modifyDay(date, action) {
+  const cards = document.querySelectorAll('.week-day-card');
+  cards.forEach(c => c.style.pointerEvents = 'none');
+
+  try {
+    const res = await fetch('/api/skip-day', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date, action }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Okänt fel');
+
+    // Stäng detaljpanelen
+    const panel = document.getElementById('weekRecipeDetail');
+    panel.classList.remove('open');
+    panel.innerHTML = '';
+    document.querySelectorAll('.week-day-card').forEach(c => c.classList.remove('selected'));
+
+    // Re-rendera planen
+    const shop = data.shoppingList || null;
+    renderWeeklyPlanData(data.weeklyPlan, shop);
+
+    // Uppdatera inköpslistan om den finns
+    if (shop && window.renderShoppingData) {
+      window.renderShoppingData(shop);
+    }
+  } catch (e) {
+    const panel = document.getElementById('weekRecipeDetail');
+    const errEl = document.createElement('p');
+    errEl.style.cssText = 'color:var(--terracotta);font-size:0.82rem;padding:0.5rem 1rem';
+    errEl.textContent = `Kunde inte ${action === 'skip' ? 'hoppa över' : 'blockera'} dagen — prova igen.`;
+    panel.innerHTML = '';
+    panel.appendChild(errEl);
+    panel.classList.add('open');
+  } finally {
+    cards.forEach(c => c.style.pointerEvents = '');
+  }
+}
+
+export function skipDay(date) { return modifyDay(date, 'skip'); }
+export function blockDay(date) { return modifyDay(date, 'block'); }
 
 // ── Bekräftelse ───────────────────────────────────────────────────────────────
 
@@ -294,11 +344,20 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false) {
 
   const todayIso = fmtIso(new Date());
   document.getElementById('weekGrid').innerHTML = plan.days.map(d => {
-    const isToday = d.date === todayIso;
-    const isPast  = d.date < todayIso;
-    const cls     = isToday ? ' today' : isPast ? ' past' : '';
-    const dot     = isToday ? '<span class="today-dot"></span>' : '';
-    const safeTitle    = d.recipe.replace(/'/g, "\\'");
+    const isToday  = d.date === todayIso;
+    const isPast   = d.date < todayIso;
+    const isBlocked = d.blocked && !d.recipeId;
+    const cls = (isBlocked ? ' blocked' : '') + (isToday ? ' today' : isPast ? ' past' : '');
+    const dot = isToday ? '<span class="today-dot"></span>' : '';
+
+    if (isBlocked) {
+      return `<div class="week-day-card${cls}" data-date="${d.date || ''}" data-day="${d.day || ''}">
+        <div class="week-day-name">${d.day}${d.date ? ' · ' + fmtShort(d.date) : ''}${dot}</div>
+        <div class="week-day-recipe blocked-recipe-text">Fri dag</div>
+      </div>`;
+    }
+
+    const safeTitle    = (d.recipe || '').replace(/'/g, "\\'");
     const rid          = d.recipeId || '';
     const recipe       = rid ? window.RECIPES.find(r => r.id === rid) : null;
     const proteinColor = recipe ? (PROTEIN_COLOR[recipe.protein] || '') : '';
@@ -370,6 +429,8 @@ window.cancelSwapMode      = cancelSwapMode;
 window.swapDays            = swapDays;
 window.replaceRecipe       = replaceRecipe;
 window.openWeekRecipe      = openWeekRecipe;
+window.skipDay             = skipDay;
+window.blockDay            = blockDay;
 window.confirmPlan         = confirmPlan;
 window.renderWeeklyPlanData = renderWeeklyPlanData;
 window.loadWeeklyPlan      = loadWeeklyPlan;

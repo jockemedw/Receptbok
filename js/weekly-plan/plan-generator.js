@@ -82,12 +82,14 @@ export function updateSettingsPreview() {
   preview.style.color  = matching.length < 3 ? 'var(--terracotta)' : 'var(--warm-brown)';
 }
 
+const DAY_ABBR = ['Sön', 'Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör'];
+
 export function updateDateHint() {
   const startVal = document.getElementById('startDate').value;
   const endVal   = document.getElementById('endDate').value;
   const hint     = document.getElementById('dateHint');
 
-  if (!startVal || !endVal) { hint.textContent = ''; return; }
+  if (!startVal || !endVal) { hint.textContent = ''; renderDayToggles([]); return; }
 
   const diff = Math.round(
     (new Date(endVal + 'T12:00:00') - new Date(startVal + 'T12:00:00')) / 864e5
@@ -96,15 +98,61 @@ export function updateDateHint() {
   if (diff < 1) {
     hint.textContent = 'Slutdatum måste vara efter startdatum';
     hint.style.color = 'var(--terracotta)';
+    renderDayToggles([]);
     return;
   }
   if (diff > 15) {
     hint.textContent = 'Max 15 dagar';
     hint.style.color = 'var(--terracotta)';
+    renderDayToggles([]);
     return;
   }
-  hint.textContent = `${diff} dag${diff !== 1 ? 'ar' : ''} planeras`;
   hint.style.color = 'var(--warm-brown)';
+
+  // Bygg dagslista och rendera toggles
+  const days = [];
+  const cur  = new Date(startVal + 'T12:00:00');
+  for (let i = 0; i < diff; i++) {
+    days.push({
+      date: cur.toISOString().slice(0, 10),
+      abbr: DAY_ABBR[cur.getDay()],
+      day:  cur.getDate(),
+    });
+    cur.setDate(cur.getDate() + 1);
+  }
+  renderDayToggles(days);
+
+  const blocked = getBlockedDates();
+  const active  = diff - blocked.length;
+  hint.textContent = active < diff
+    ? `${active} av ${diff} dagar planeras (${blocked.length} blockerade)`
+    : `${diff} dag${diff !== 1 ? 'ar' : ''} planeras`;
+}
+
+function renderDayToggles(days) {
+  const container = document.getElementById('dayToggles');
+  if (!container) return;
+  if (!days.length) { container.innerHTML = ''; container.style.display = 'none'; return; }
+
+  container.style.display = '';
+  container.innerHTML = '<p class="day-toggles-hint">Tryck på en dag för att blockera den</p>' +
+    days.map(d =>
+      `<button class="day-toggle-chip" data-date="${d.date}" onclick="toggleDayBlock(this)">
+        <span class="day-toggle-abbr">${d.abbr}</span>
+        <span class="day-toggle-num">${d.day}</span>
+      </button>`
+    ).join('');
+}
+
+export function toggleDayBlock(btn) {
+  btn.classList.toggle('blocked');
+  updateDateHint();
+  updateSettingsPreview();
+}
+
+export function getBlockedDates() {
+  return Array.from(document.querySelectorAll('.day-toggle-chip.blocked'))
+    .map(b => b.dataset.date);
 }
 
 export async function generatePlan() {
@@ -135,6 +183,7 @@ export async function generatePlan() {
       untested_count:   parseInt(document.getElementById('untestedCount').value) || 0,
       vegetarian_days:  parseInt(document.getElementById('vegetarianDays').value) || 0,
       skip_shopping: true,
+      blocked_dates:    getBlockedDates(),
     };
     const res  = await fetch('/api/generate', {
       method: 'POST',
@@ -166,5 +215,7 @@ window.toggleProtein        = toggleProtein;
 window.toggleSettings       = toggleSettings;
 window.updateSettingsPreview = updateSettingsPreview;
 window.updateDateHint       = updateDateHint;
+window.toggleDayBlock       = toggleDayBlock;
+window.getBlockedDates      = getBlockedDates;
 window.generatePlan         = generatePlan;
 window.toggleTrigger        = toggleTrigger;
