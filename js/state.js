@@ -1,5 +1,4 @@
-// Delad app-state — förberedelse för ContextBridge (fas 4).
-// Alla moduler läser/skriver via window.* tills ContextBridge kopplas in.
+// Delad app-state — globala variabler som delas mellan moduler via window.*.
 window.RECIPES            = [];
 window.activeFilters      = new Set(['alla']);
 window.replaceMode        = null;    // { date, dayName } under receptbyte
