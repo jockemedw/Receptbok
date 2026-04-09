@@ -264,6 +264,20 @@ export function copyShoppingList() {
   });
 }
 
+// Renderar ett shop-objekt från API-svar (används av plan-viewer efter skip/block)
+export function renderShoppingData(shop) {
+  const recipeItemsData = shop.recipeItems || shop.categories || null;
+  const hasRecipe = shop.recipeItemsMovedAt &&
+    recipeItemsData && Object.values(recipeItemsData).some(v => v.length > 0);
+  const hasManual = (shop.manualItems || []).length > 0;
+  if (!hasRecipe && !hasManual) return;
+  if (shop.checkedItems) window._checkedItems = shop.checkedItems;
+  renderFullShoppingList(hasRecipe ? recipeItemsData : null, shop.manualItems || []);
+  document.getElementById('shopLoading').style.display = 'none';
+  document.getElementById('shopNoData').style.display  = 'none';
+  document.getElementById('shopContent').style.display = '';
+}
+
 // Exponera på window för inline onclick-attribut
 window.setShopMode        = setShopMode;
 window.toggleShopItem     = toggleShopItem;
@@ -272,4 +286,5 @@ window.clearShoppingList  = clearShoppingList;
 window.copyShoppingList   = copyShoppingList;
 window.addManualItem      = addManualItem;
 window.loadShoppingTab    = loadShoppingTab;
+window.renderShoppingData = renderShoppingData;
 window.renderFullShoppingList = renderFullShoppingList;

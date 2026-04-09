@@ -40,8 +40,34 @@ export function fmtShort(isoStr) {
   return d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
 }
 
+export function daysBetween(startIso, endIso) {
+  return Math.round(
+    (new Date(endIso + 'T12:00:00') - new Date(startIso + 'T12:00:00')) / 864e5
+  ) + 1;
+}
+
+export function renderDetailInner(r) {
+  const ingHtml   = (r.ingredients || []).map(renderIngredient).join('');
+  const stepsHtml = (r.instructions || []).map(s =>
+    `<li onclick="toggleStep(this)"><span>${s}</span></li>`
+  ).join('');
+  const notesHtml = r.notes
+    ? `<div class="detail-section"><h3>Noteringar</h3><div class="notes-box">💡 ${r.notes}</div></div>` : '';
+  return `
+    <div class="detail-section">
+      <h3>Ingredienser · ${r.servings} portioner</h3>
+      <ul class="ingredients-list">${ingHtml}</ul>
+    </div>
+    <div class="detail-section">
+      <h3>Tillagning</h3>
+      <ol class="steps-list">${stepsHtml}</ol>
+    </div>
+    ${notesHtml}
+    <button class="edit-recipe-btn" onclick="openEditModal(event, ${r.id})">✏️ Redigera recept</button>`;
+}
+
 // Exponera på window för inline onclick-attribut och icke-modul-kod
-window.timeStr        = timeStr;
+window.timeStr          = timeStr;
 window.renderIngredient = renderIngredient;
-window.fmtIso         = fmtIso;
-window.fmtShort       = fmtShort;
+window.fmtIso           = fmtIso;
+window.fmtShort         = fmtShort;

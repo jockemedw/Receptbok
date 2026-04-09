@@ -15,6 +15,10 @@ export default createHandler(async (req, res, pat) => {
 
   if (idx1 === -1 || idx2 === -1) return res.status(404).json({ error: "En eller båda dagarna finns inte i planen." });
 
+  if (plan.days[idx1].blocked || plan.days[idx2].blocked) {
+    return res.status(400).json({ error: "Blockerade dagar kan inte bytas." });
+  }
+
   // Byt bara recipe och recipeId — datum och dagnamn stannar på sin plats
   const { recipe: r1, recipeId: rid1 } = plan.days[idx1];
   plan.days[idx1].recipe   = plan.days[idx2].recipe;

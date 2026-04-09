@@ -25,6 +25,7 @@ async function init() {
     document.getElementById('countDisplay').textContent    = `${window.RECIPES.length} recept`;
     document.getElementById('footerEl').textContent        =
       `Receptboken · ${data.meta?.lastUpdated || ''} · ${window.RECIPES.length} recept`;
+    window.initFilters(window.RECIPES);
     window.applyFilters();
     window.initDatePickers();
   } catch (err) {

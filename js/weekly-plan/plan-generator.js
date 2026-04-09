@@ -1,6 +1,6 @@
 // Matsedelsgenerering: datumväljare, inställningar, genereringsknapp.
 
-import { fmtIso, fmtShort } from '../utils.js';
+import { fmtIso, fmtShort, daysBetween } from '../utils.js';
 
 export function initDatePickers() {
   const today = new Date();
@@ -70,9 +70,7 @@ export function updateSettingsPreview() {
   const endVal   = document.getElementById('endDate').value;
   const vegDays  = parseInt(document.getElementById('vegetarianDays').value) || 0;
   if (startVal && endVal) {
-    const diff = Math.round(
-      (new Date(endVal + 'T12:00:00') - new Date(startVal + 'T12:00:00')) / 864e5
-    ) + 1;
+    const diff = daysBetween(startVal, endVal);
     if (vegDays > diff) document.getElementById('vegetarianDays').value = diff;
     document.getElementById('vegetarianDays').max  = diff;
     document.getElementById('untestedCount').max   = diff;
@@ -91,9 +89,7 @@ export function updateDateHint() {
 
   if (!startVal || !endVal) { hint.textContent = ''; renderDayToggles([]); return; }
 
-  const diff = Math.round(
-    (new Date(endVal + 'T12:00:00') - new Date(startVal + 'T12:00:00')) / 864e5
-  ) + 1;
+  const diff = daysBetween(startVal, endVal);
 
   if (diff < 1) {
     hint.textContent = 'Slutdatum måste vara efter startdatum';
@@ -166,9 +162,7 @@ export async function generatePlan() {
     status.className   = 'trigger-status error';
     return;
   }
-  const diff = Math.round(
-    (new Date(endVal + 'T12:00:00') - new Date(startVal + 'T12:00:00')) / 864e5
-  ) + 1;
+  const diff = daysBetween(startVal, endVal);
   if (diff < 1 || diff > 15) return;
 
   btn.disabled       = true;

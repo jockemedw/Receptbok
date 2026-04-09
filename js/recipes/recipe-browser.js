@@ -2,17 +2,26 @@
 // Läser state: RECIPES, activeFilters, isSnapping, scrollUpAccum
 // Skriver state: isSnapping, scrollUpAccum
 
-import { proteinLabel, timeStr, renderIngredient } from '../utils.js';
+import { proteinLabel, timeStr, renderIngredient, renderDetailInner } from '../utils.js';
+
+// ── Filter-grupper ────────────────────────────────────────────────────────────
+const TIME_TAGS    = ['vardag30', 'helg60'];
+const TYPE_TAGS    = ['soppa', 'pasta', 'wok', 'ugn', 'sallad', 'gryta', 'ramen', 'curry'];
+const CUISINE_TAGS = ['asiatiskt', 'indiskt', 'japanskt', 'koreanskt'];
+const TAG_LABELS   = {
+  vardag30: 'Vardag ≤30 min', helg60: 'Helg ≤60 min',
+  soppa: 'Soppa', pasta: 'Pasta', wok: 'Wok', ugn: 'Ugn',
+  sallad: 'Sallad', gryta: 'Gryta', ramen: 'Ramen', curry: 'Curry',
+  asiatiskt: 'Asiatiskt', indiskt: 'Indiskt', japanskt: 'Japanskt', koreanskt: 'Koreanskt',
+};
+const HIDDEN_TAGS = new Set([
+  'fisk', 'kyckling', 'kött', 'fläsk', 'vegetarisk', 'veg',
+  'vardag', 'middag', 'snabb', 'snabb30',
+]);
+const CATEGORIZED = new Set([...TIME_TAGS, ...TYPE_TAGS, ...CUISINE_TAGS]);
 
 export function renderCard(r) {
-  const t        = timeStr(r);
-  const ingHtml  = r.ingredients.map(renderIngredient).join('');
-  const stepsHtml = r.instructions.map(s =>
-    `<li onclick="toggleStep(this)"><span>${s}</span></li>`
-  ).join('');
-  const notesHtml = r.notes
-    ? `<div class="detail-section"><h3>Noteringar</h3><div class="notes-box">💡 ${r.notes}</div></div>`
-    : '';
+  const t = timeStr(r);
 
   return `
 <div class="recipe-card"
@@ -40,18 +49,7 @@ export function renderCard(r) {
     <span class="card-chevron">›</span>
   </div>
   <div class="recipe-detail">
-    <div class="detail-inner">
-      <div class="detail-section">
-        <h3>Ingredienser · ${r.servings} portioner</h3>
-        <ul class="ingredients-list">${ingHtml}</ul>
-      </div>
-      <div class="detail-section">
-        <h3>Tillagning</h3>
-        <ol class="steps-list">${stepsHtml}</ol>
-      </div>
-      ${notesHtml}
-      <button class="edit-recipe-btn" onclick="openEditModal(event, ${r.id})">✏️ Redigera recept</button>
-    </div>
+    <div class="detail-inner">${renderDetailInner(r)}</div>
   </div>
 </div>`;
 }
@@ -151,8 +149,41 @@ export async function toggleTested(event, id) {
   }
 }
 
+export function initFilters(recipes) {
+  const allTags = new Set();
+  for (const r of recipes) for (const t of (r.tags || [])) allTags.add(t);
+
+  const cap     = s => s.charAt(0).toUpperCase() + s.slice(1);
+  const lbl     = name => `<span class="filter-group-label">${name}</span>`;
+  const btn     = (f, text) => `<button class="filter-btn" data-filter="${f}">${text}</button>`;
+  const tagBtns = tags => tags.filter(t => allTags.has(t)).map(t => btn(t, TAG_LABELS[t] || cap(t))).join('');
+
+  const timeBtns    = tagBtns(TIME_TAGS);
+  const typeBtns    = tagBtns(TYPE_TAGS);
+  const cuisineBtns = tagBtns(CUISINE_TAGS);
+  const otherTags   = [...allTags].filter(t => !CATEGORIZED.has(t) && !HIDDEN_TAGS.has(t)).sort();
+  const otherBtns   = otherTags.map(t => btn(t, cap(t))).join('');
+
+  const parts = [
+    btn('alla', 'Alla'),
+    ...(timeBtns    ? [lbl('Tid'),    timeBtns]    : []),
+    lbl('Protein'),
+    btn('snabb', 'Snabb &lt;30 min'),
+    ...['fisk', 'kyckling', 'kött', 'fläsk', 'vegetarisk'].map(p => btn(p, proteinLabel[p] || p)),
+    lbl('Provat'),
+    btn('provat', '✓ Provat'),
+    btn('oprovat', '✗ Oprövat'),
+    ...(typeBtns    ? [lbl('Typ'),    typeBtns]    : []),
+    ...(cuisineBtns ? [lbl('Kök'),    cuisineBtns] : []),
+    ...(otherBtns   ? [lbl('Övrigt'), otherBtns]   : []),
+  ];
+
+  document.getElementById('filters').innerHTML = parts.join('');
+}
+
 window.renderCard    = renderCard;
 window.toggleCard    = toggleCard;
 window.applyFilters  = applyFilters;
 window.jumpToRecipe  = jumpToRecipe;
 window.toggleTested  = toggleTested;
+window.initFilters   = initFilters;
