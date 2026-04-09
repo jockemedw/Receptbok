@@ -181,8 +181,8 @@ Receptbok/
 17. **ContextBridge** — `js/state.js` förberett, implementation ej påbörjad
 
 ### Buggar (tillagda session 20, 2026-04-06)
-- **[BUGG] Inköpslista-bockningar synkas inte** — Bockningar sparas lokalt i webbläsaren hos respektive användare. Ska sparas centralt (GitHub JSON) så att hela familjen ser samma bockar i realtid.
-- **[BUGG] Bockningar försvinner vid flikbyte** — Bockar en ingrediens och byter till "Kopiera lista"-fliken → bockningarna är borta när man går tillbaka.
+- ~~**[BUGG] Inköpslista-bockningar synkas inte**~~ — **FIXAD**
+- ~~**[BUGG] Bockningar försvinner vid flikbyte**~~ — **FIXAD**
 - **[BUGG] Slumpa nytt recept ignorerar regler** — När ett enskilt recept i matsedeln ersätts via "slumpa nytt" tillämpas inte samma regler som vid initial generering (historikfiltrering, proteinbalans, vardag/helg-tagg, veg-dagar).
 
 ### Nya features (tillagda session 20, 2026-04-06)
