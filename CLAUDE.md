@@ -189,6 +189,11 @@ Receptbok/
 - ~~**[FEATURE] Blockera dagar i matsedeln**~~ — **KLAR** (session 22, 2026-04-09). Inkluderar även "Hoppa över — skjut recept framåt".
 - ~~**[FEATURE] Dynamiska tagggrupper i receptfilter**~~ — **KLAR** (session 23, 2026-04-09). Filterknapparna byggs dynamiskt från `recipes.json`-taggar, grupperade: Tid, Protein, Provat, Typ, Kök, Övrigt.
 
+### Nya features (tillagda session 24, 2026-04-10)
+- **[FEATURE] Extrapriser → receptförslag** — Hämta aktuella extrapriser från t.ex. Willys Ekholmen och identifiera recept som matchar. Kräver research om hur prisdata kan hämtas (API, scraping, RSS, tredjepartstjänst).
+- **[FEATURE] Automatisk varukorgsfyllning** — Ge en agent (t.ex. Claude in Chrome) uppdraget att fylla en varukorg på Willys/Mat.se med varorna i inköpslistan. Kräver research om automationsväg.
+- **[FEATURE] Receptimport från internationella sidor** — Utöka importfunktionen så att den klarar icke-svenska format (t.ex. amerikanska sidor som Dishing Out Health). Innebär enhetskonvertering (cups → dl, oz → g), översättning av ingredienser, och hantering av andra JSON-LD/markup-varianter.
+
 ## Senaste session — Session 23 (2026-04-09)
 - **Total projektöversyn genomförd** — samtliga prioriterade förbättringar implementerade:
   - **A1:** `var(--brown)` → `var(--warm-brown)` i CSS (7 ställen) — fixar svart fallback-färg
