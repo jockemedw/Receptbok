@@ -196,6 +196,8 @@ Receptbok/
 
 ### Delprojekt
 - **[ANALYS] App Store-konvertering & monetisering** — Utred vad som krävs för att göra Receptboken till en riktig app i App Store (och ev. Google Play). Inkluderar: teknisk väg (PWA vs React Native vs native wrapper), kostnad (Apple Developer Program, hosting, drift), monetiseringsmodeller (freemium, prenumeration, engångsköp), samt vad som behöver ändras i arkitekturen (autentisering, användardata, betalning).
+  - **Marknadsanalys klar** → `docs/marknadsanalys-2026-04.md`
+  - **Researchplan** → `docs/researchplan-app-expansion.md` (5 faser, betas av löpande)
 
 ## Senaste session — Session 23 (2026-04-09)
 - **Total projektöversyn genomförd** — samtliga prioriterade förbättringar implementerade:
