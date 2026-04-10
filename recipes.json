@@ -1310,7 +1310,7 @@
     {
       "id": 37,
       "title": "Kålcurry med gröna ärter och koriander",
-      "tested": false,
+      "tested": true,
       "servings": 4,
       "time": 30,
       "timeNote": null,
