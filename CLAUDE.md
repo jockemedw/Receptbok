@@ -194,6 +194,9 @@ Receptbok/
 - **[FEATURE] Automatisk varukorgsfyllning** — Ge en agent (t.ex. Claude in Chrome) uppdraget att fylla en varukorg på Willys/Mat.se med varorna i inköpslistan. Kräver research om automationsväg.
 - **[FEATURE] Receptimport från internationella sidor** — Utöka importfunktionen så att den klarar icke-svenska format (t.ex. amerikanska sidor som Dishing Out Health). Innebär enhetskonvertering (cups → dl, oz → g), översättning av ingredienser, och hantering av andra JSON-LD/markup-varianter.
 
+### Delprojekt
+- **[ANALYS] App Store-konvertering & monetisering** — Utred vad som krävs för att göra Receptboken till en riktig app i App Store (och ev. Google Play). Inkluderar: teknisk väg (PWA vs React Native vs native wrapper), kostnad (Apple Developer Program, hosting, drift), monetiseringsmodeller (freemium, prenumeration, engångsköp), samt vad som behöver ändras i arkitekturen (autentisering, användardata, betalning).
+
 ## Senaste session — Session 23 (2026-04-09)
 - **Total projektöversyn genomförd** — samtliga prioriterade förbättringar implementerade:
   - **A1:** `var(--brown)` → `var(--warm-brown)` i CSS (7 ställen) — fixar svart fallback-färg
