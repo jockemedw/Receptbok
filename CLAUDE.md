@@ -48,7 +48,7 @@ Innan "klart" deklareras ska Claude alltid:
 ## Frontend-moduler (VSA)
 Varje feature-slice är en fristående JS-fil. En agent som jobbar med en feature behöver bara läsa 1–2 filer.
 - `js/app.js` — entry point, importerar alla moduler, kör `init()` + `loadWeeklyPlan()`
-- `js/state.js` — alla globala `window.*`-variabler (förberedelse för ContextBridge)
+- `js/state.js` — alla globala `window.*`-variabler
 - `js/utils.js` — delade hjälpfunktioner (`proteinLabel`, `timeStr`, `renderIngredient`, `fmtIso`, `fmtShort`)
 - `js/ui/scroll.js` — scroll-logik, header show/hide, smoothScrollTo
 - `js/ui/navigation.js` — `switchTab()`
@@ -84,7 +84,7 @@ Receptbok/
 │   └── styles.css          # All CSS (1620 rader, extraherad från index.html)
 ├── js/
 │   ├── app.js              # Entry point — importerar alla moduler
-│   ├── state.js            # Globala variabler (ContextBridge-förberedelse)
+│   ├── state.js            # Globala variabler
 │   ├── utils.js            # Delade hjälpfunktioner
 │   ├── ui/
 │   │   ├── scroll.js       # Scroll, header, smoothScrollTo
@@ -178,7 +178,7 @@ Receptbok/
 14. ~~**Handplocka recept**~~ — **KLAR** (session 17, 2026-03-30)
 15. ~~**Receptimport via URL och foto**~~ — **KLAR** (session 18, 2026-04-01)
 16. ~~**VSA-refaktorering**~~ — **KLAR** (session 21, 2026-04-06)
-17. **ContextBridge** — `js/state.js` förberett, implementation ej påbörjad
+
 
 ### Buggar (tillagda session 20, 2026-04-06)
 - **[BUGG] Inköpslista-bockningar synkas inte** — Bockningar sparas lokalt i webbläsaren hos respektive användare. Ska sparas centralt (GitHub JSON) så att hela familjen ser samma bockar i realtid.
@@ -195,8 +195,7 @@ Receptbok/
   - **Fas 2 — CSS:** `css/styles.css` skapad (1620 rader). `<style>`-block i index.html ersatt med `<link>`.
   - **Fas 3 — Frontend JS:** 11 feature-moduler skapade under `js/`. Entry point `js/app.js` med ES-modulimport. `index.html` reducerad från 3305 → 290 rader.
 - **Designbeslut:** Cross-modul-anrop via `window.*` (inga cirkulära ES6-imports). Domänlogik stannar i varje slice — delar bara teknisk infrastruktur. Optimerat för att agenter ska kunna jobba med en feature genom att läsa 1–2 filer.
-- **ContextBridge ej implementerad** — `js/state.js` förberett med alla `window.*`-globaler, men `getState()`/`setState()`/`subscribe()` återstår som separat fas.
-- **Nästa session:** Testa VSA-ändringarna live. Sedan ContextBridge om allt fungerar.
+- **Nästa session:** Testa VSA-ändringarna live.
 
 ## Session 19 (2026-04-02 — PÅGÅENDE)
 - **Fotoimport-felsökning:** Gemini-modellnamnet har behövt justeras flera gånger — `gemini-2.0-flash` (quota 0 på free tier) → `gemini-1.5-flash` (not found, pensionerad) → `gemini-2.5-flash` via `v1beta` (nuvarande gratisflash-modell)
