@@ -2,7 +2,7 @@
 // Läser state: RECIPES, editingId
 // Skriver state: RECIPES, editingId
 
-import { proteinLabel, timeStr, renderIngredient } from '../utils.js';
+import { proteinLabel, timeStr, renderIngredient, renderDetailInner } from '../utils.js';
 
 export function openEditModal(event, id) {
   event.stopPropagation();
@@ -43,13 +43,29 @@ export async function saveRecipe() {
 
   const isNew    = (window.editingId === null);
   const tagsRaw  = document.getElementById('edit-tags').value;
+  const title    = document.getElementById('edit-title').value.trim();
+  const ingredients = document.getElementById('edit-ingredients').value.split('\n').map(s => s.trim()).filter(Boolean);
+
+  if (!title) {
+    feedback.textContent = 'Receptet behöver en titel.';
+    feedback.style.color = 'var(--terracotta)';
+    saveBtn.disabled = false;
+    return;
+  }
+  if (!ingredients.length) {
+    feedback.textContent = 'Lägg till minst en ingrediens.';
+    feedback.style.color = 'var(--terracotta)';
+    saveBtn.disabled = false;
+    return;
+  }
+
   const formData = {
-    title:        document.getElementById('edit-title').value.trim(),
+    title,
     protein:      document.getElementById('edit-protein').value,
     time:         parseInt(document.getElementById('edit-time').value) || null,
     servings:     parseInt(document.getElementById('edit-servings').value) || 4,
     tags:         tagsRaw.split(',').map(t => t.trim()).filter(Boolean),
-    ingredients:  document.getElementById('edit-ingredients').value.split('\n').map(s => s.trim()).filter(Boolean),
+    ingredients,
     instructions: document.getElementById('edit-instructions').value.split('\n').map(s => s.trim()).filter(Boolean),
     notes:        document.getElementById('edit-notes').value.trim() || null,
   };
@@ -106,23 +122,7 @@ export async function saveRecipe() {
         ${t ? `<span class="pill pill-time">⏱ ${t}</span>` : ''}
         <span class="pill ${updated.tested ? 'pill-tested' : 'pill-untested'} pill-toggle"
               onclick="toggleTested(event, ${updated.id})">${updated.tested ? '✓ Provat' : 'Ej provat'}</span>`;
-      const ingHtml   = updated.ingredients.map(renderIngredient).join('');
-      const stepsHtml = updated.instructions.map(s =>
-        `<li onclick="toggleStep(this)"><span>${s}</span></li>`
-      ).join('');
-      const notesHtml = updated.notes
-        ? `<div class="detail-section"><h3>Noteringar</h3><div class="notes-box">💡 ${updated.notes}</div></div>` : '';
-      card.querySelector('.detail-inner').innerHTML = `
-        <div class="detail-section">
-          <h3>Ingredienser · ${updated.servings} portioner</h3>
-          <ul class="ingredients-list">${ingHtml}</ul>
-        </div>
-        <div class="detail-section">
-          <h3>Tillagning</h3>
-          <ol class="steps-list">${stepsHtml}</ol>
-        </div>
-        ${notesHtml}
-        <button class="edit-recipe-btn" onclick="openEditModal(event, ${updated.id})">✏️ Redigera recept</button>`;
+      card.querySelector('.detail-inner').innerHTML = renderDetailInner(updated);
     }
     closeEditModal();
   } catch {

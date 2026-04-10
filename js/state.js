@@ -1,4 +1,4 @@
-// Delad app-state — globala variabler som alla moduler läser/skriver via window.*
+// Delad app-state — globala variabler som delas mellan moduler via window.*.
 window.RECIPES            = [];
 window.activeFilters      = new Set(['alla']);
 window.replaceMode        = null;    // { date, dayName } under receptbyte

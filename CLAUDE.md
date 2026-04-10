@@ -48,8 +48,8 @@ Innan "klart" deklareras ska Claude alltid:
 ## Frontend-moduler (VSA)
 Varje feature-slice är en fristående JS-fil. En agent som jobbar med en feature behöver bara läsa 1–2 filer.
 - `js/app.js` — entry point, importerar alla moduler, kör `init()` + `loadWeeklyPlan()`
-- `js/state.js` — alla globala `window.*`-variabler
-- `js/utils.js` — delade hjälpfunktioner (`proteinLabel`, `timeStr`, `renderIngredient`, `fmtIso`, `fmtShort`)
+- `js/state.js` — alla globala `window.*`-variabler som delas mellan moduler
+- `js/utils.js` — delade hjälpfunktioner (`proteinLabel`, `timeStr`, `renderIngredient`, `fmtIso`, `fmtShort`, `daysBetween`, `renderDetailInner`)
 - `js/ui/scroll.js` — scroll-logik, header show/hide, smoothScrollTo
 - `js/ui/navigation.js` — `switchTab()`
 - `js/shopping/shopping-list.js` — hela inköpsliste-slicen
@@ -84,7 +84,7 @@ Receptbok/
 │   └── styles.css          # All CSS (1620 rader, extraherad från index.html)
 ├── js/
 │   ├── app.js              # Entry point — importerar alla moduler
-│   ├── state.js            # Globala variabler
+│   ├── state.js            # Globala variabler (delas mellan moduler)
 │   ├── utils.js            # Delade hjälpfunktioner
 │   ├── ui/
 │   │   ├── scroll.js       # Scroll, header, smoothScrollTo
@@ -106,6 +106,7 @@ Receptbok/
 │   │   └── handler.js      # createHandler (CORS, auth, errors)
 │   ├── generate.js         # Receptval + matsedel + inköpslista
 │   ├── replace-recipe.js   # Byt enskilt recept
+│   ├── skip-day.js         # Blockera dag / hoppa över (skjut framåt)
 │   ├── swap-days.js        # Byt plats på två dagar
 │   ├── confirm.js          # Bekräfta matsedel
 │   ├── recipes.js          # CRUD recept
@@ -179,17 +180,45 @@ Receptbok/
 15. ~~**Receptimport via URL och foto**~~ — **KLAR** (session 18, 2026-04-01)
 16. ~~**VSA-refaktorering**~~ — **KLAR** (session 21, 2026-04-06)
 
-
 ### Buggar (tillagda session 20, 2026-04-06)
-- **[BUGG] Inköpslista-bockningar synkas inte** — Bockningar sparas lokalt i webbläsaren hos respektive användare. Ska sparas centralt (GitHub JSON) så att hela familjen ser samma bockar i realtid.
-- **[BUGG] Bockningar försvinner vid flikbyte** — Bockar en ingrediens och byter till "Kopiera lista"-fliken → bockningarna är borta när man går tillbaka.
-- **[BUGG] Slumpa nytt recept ignorerar regler** — När ett enskilt recept i matsedeln ersätts via "slumpa nytt" tillämpas inte samma regler som vid initial generering (historikfiltrering, proteinbalans, vardag/helg-tagg, veg-dagar).
+- ~~**[BUGG] Inköpslista-bockningar synkas inte**~~ — **FIXAD**
+- ~~**[BUGG] Bockningar försvinner vid flikbyte**~~ — **FIXAD**
+- ~~**[BUGG] Slumpa nytt recept ignorerar regler**~~ — **FIXAD** (session 23, 2026-04-09). Respekterar nu vardag30/helg60-tagg och proteinbalans.
 
 ### Nya features (tillagda session 20, 2026-04-06)
-- **[FEATURE] Blockera dagar i matsedeln** — Möjlighet att markera en eller flera dagar som "ledig" (AW, äter ute, etc.) innan eller efter generering. Blockerade dagar får inget recept och räknas inte in i inköpslistan.
-- **[FEATURE] Dynamiska tagggrupper i receptfilter** — Filterknapparna i receptboken byggs automatiskt från taggarna som faktiskt finns i `recipes.json` (inga hårdkodade knappar). Taggarna grupperas i kategorier: **Tillagningstid** (`vardag30`, `helg60`), **Recepttyp** (`soppa`, `pasta`, `wok`, `ugn`, `sallad`, `gryta`, `ramen`, m.fl.), och i framtiden **Kök** (t.ex. `italienskt`, `asiatiskt`) när sådana taggar läggs till i receptdatabasen. Varje grupp får en rubrik. Okategoriserade taggar hamnar i en "Övrigt"-grupp.
+- ~~**[FEATURE] Blockera dagar i matsedeln**~~ — **KLAR** (session 22, 2026-04-09). Inkluderar även "Hoppa över — skjut recept framåt".
+- ~~**[FEATURE] Dynamiska tagggrupper i receptfilter**~~ — **KLAR** (session 23, 2026-04-09). Filterknapparna byggs dynamiskt från `recipes.json`-taggar, grupperade: Tid, Protein, Provat, Typ, Kök, Övrigt.
 
-## Senaste session — Session 21 (2026-04-06 — KLAR)
+## Senaste session — Session 23 (2026-04-09)
+- **Total projektöversyn genomförd** — samtliga prioriterade förbättringar implementerade:
+  - **A1:** `var(--brown)` → `var(--warm-brown)` i CSS (7 ställen) — fixar svart fallback-färg
+  - **A2:** `renderShoppingData` exponerad i `js/shopping/shopping-list.js` — dött anrop i `plan-viewer.js` fungerar nu
+  - **A3:** Döda recept-ID (19) borttagna ur `recipe-history.json`
+  - **A4:** `swap-days.js` kontrollerar nu om dagarna är blockerade och returnerar 400 om så är fallet
+  - **A5:** `generate.js` validerar att startdatum < slutdatum och returnerar tydligt fel
+  - **A6:** `replace-recipe.js` omskriven med 5-prioritets pool: respekterar vardag30/helg60, proteinbalans, historik
+  - **B1:** `fetchHistory`, `recentlyUsedIds`, `shuffle` extraherade till `api/_shared/history.js`
+  - **C1:** Receptredigeraren validerar tom titel och tomma ingredienser innan sparning
+  - **C2:** Dynamiska tagggrupper i receptfilter — `initFilters(recipes)` i `recipe-browser.js`, grupperade: Tid, Protein, Provat, Typ, Kök, Övrigt. Hårdkodade knappar borttagna från `index.html`.
+  - **C3:** `aria-label="Till toppen"` tillagd på `#scrolltop`-knappen
+  - **D1:** `#4a7d4e`, `#5a8a5a`, `#b04030` → CSS-variabler (`--color-success-dark`, `--color-success`, `--color-danger`) i `:root`
+  - **D2:** `@media (max-width: 400px) { .modal-box { width: 95vw; } }` tillagd
+  - **E1:** `renderDetailInner(r)` extraherad till `js/utils.js` — återanvänds från `recipe-browser.js` och `recipe-editor.js`
+  - **E2:** `daysBetween(startIso, endIso)` extraherad till `js/utils.js` — ersätter duplicerad beräkning i `plan-generator.js`
+- **Hård regel inlagd:** Befintlig veckoplan får aldrig förstöras som sidoeffekt av kod-ändringar
+- **Byt dag-knapp** återinförd i detaljpanelen (saknades i veckovyn)
+
+## Senaste session — Session 22 (2026-04-09)
+- **[FEATURE] Blockera dagar + Hoppa över ("skjut framåt")** — två nya funktioner:
+  - **Pre-generering:** Dagväljare visas efter datumval. Tryck på en dag för att blockera den — blockerade dagar exkluderas från receptval och inköpslista.
+  - **Post-generering — Blockera dag:** Tar bort receptet från en dag utan att påverka övriga dagar. Tillgänglig via detaljpanelen.
+  - **Post-generering — Hoppa över (skjut framåt):** Markerar dagen som fri och skjuter alla efterföljande recept framåt ett steg. Sista receptet faller bort.
+  - Om matsedeln är bekräftad byggs inköpslistan om automatiskt.
+  - Nytt API-endpoint: `api/skip-day.js` (actions: `skip`, `block`).
+  - `api/generate.js` accepterar nu `blocked_dates`-array.
+  - Blockerade dagar visas med streckad ram, "Fri dag"-text, och lägre opacitet.
+
+## Session 21 (2026-04-06 — KLAR)
 - **VSA-refaktorering genomförd** i tre faser:
   - **Fas 1 — Backend:** Delad infrastruktur extraherad till `api/_shared/` (`constants.js`, `github.js`, `handler.js`). 7 endpoints refaktorerade, ~266 rader duplicerad kod borttagna.
   - **Fas 2 — CSS:** `css/styles.css` skapad (1620 rader). `<style>`-block i index.html ersatt med `<link>`.

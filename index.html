@@ -30,19 +30,7 @@
       <span class="search-icon">🔍</span>
       <input id="search" type="search" placeholder="Sök på namn, ingrediens, tagg…" autocomplete="off">
     </div>
-    <div class="filters" id="filters">
-      <button class="filter-btn active" data-filter="alla">Alla</button>
-      <button class="filter-btn" data-filter="provat">✓ Provat</button>
-      <button class="filter-btn" data-filter="oprovat">✗ Oprövat</button>
-      <button class="filter-btn" data-filter="fisk">Fisk</button>
-      <button class="filter-btn" data-filter="kyckling">Kyckling</button>
-      <button class="filter-btn" data-filter="vegetarisk">Vegetarisk</button>
-      <button class="filter-btn" data-filter="kött">Kött</button>
-      <button class="filter-btn" data-filter="fläsk">Fläsk</button>
-      <button class="filter-btn" data-filter="snabb">Snabb &lt;30 min</button>
-      <button class="filter-btn" data-filter="soppa">Soppa</button>
-      <button class="filter-btn" data-filter="pasta">Pasta</button>
-    </div>
+    <div class="filters" id="filters"></div>
   </div>
 </header>
 
@@ -121,6 +109,7 @@
       </div>
     </div>
     <p class="date-hint" id="dateHint"></p>
+    <div class="day-toggles" id="dayToggles" style="display:none"></div>
 
     <div class="settings-toggle-wrap">
       <button class="settings-toggle" id="settingsToggle" onclick="toggleSettings()">
@@ -222,7 +211,7 @@
 </div>
 
 <footer id="footerEl">Receptboken</footer>
-<button id="scrolltop" title="Till toppen">↑</button>
+<button id="scrolltop" title="Till toppen" aria-label="Till toppen">↑</button>
 <button class="fab-import" id="fabImport" onclick="openImportModal()" title="Importera recept" aria-label="Importera recept">＋</button>
 
 <div id="editModal" class="modal-overlay" style="display:none" onclick="handleModalOverlayClick(event)">

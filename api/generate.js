@@ -2,6 +2,7 @@ import { buildShoppingList } from "./_shared/shopping-builder.js";
 import { createHandler } from "./_shared/handler.js";
 import { readFile, readFileRaw, writeFile } from "./_shared/github.js";
 import { REPO_OWNER, REPO_NAME, BRANCH } from "./_shared/constants.js";
+import { fetchHistory, recentlyUsedIds, shuffle } from "./_shared/history.js";
 
 const DAY_NAMES = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag", "Lördag", "Söndag"];
 
@@ -49,26 +50,6 @@ async function fetchRecipes() {
   }));
 }
 
-// Läser historik via GitHub API (inte raw-URL) för att undvika CDN-cache.
-async function fetchHistory(pat) {
-  try {
-    const { content: parsed } = await readFile("recipe-history.json", pat);
-    // Migrering från gammalt format { history: [...] } → nytt { usedOn: { id: date } }
-    if (parsed.history && !parsed.usedOn) {
-      const usedOn = {};
-      for (const entry of parsed.history) {
-        for (const id of entry.recipeIds || []) {
-          if (!usedOn[id] || entry.date > usedOn[id]) usedOn[id] = entry.date;
-        }
-      }
-      return { usedOn };
-    }
-    return parsed;
-  } catch {
-    return { usedOn: {} };
-  }
-}
-
 async function fetchShoppingList() {
   try {
     const data = await readFileRaw("shopping-list.json");
@@ -78,31 +59,10 @@ async function fetchShoppingList() {
   }
 }
 
-// Returnerar Set med recept-ID:n använda de senaste `days` dagarna.
-function recentlyUsedIds(history, days = 14) {
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - days);
-  const cutoffStr = cutoff.toISOString().slice(0, 10);
-  const ids = new Set();
-  for (const [id, date] of Object.entries(history.usedOn || {})) {
-    if (date >= cutoffStr) ids.add(parseInt(id, 10));
-  }
-  return ids;
-}
-
 function updateHistory(history, newIds, date) {
   const usedOn = { ...(history.usedOn || {}) };
   for (const id of newIds) usedOn[String(id)] = date;
   return { usedOn };
-}
-
-function shuffle(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
 }
 
 // ── Deterministisk receptväljare ─────────────────────────────────────────────
@@ -200,10 +160,14 @@ export default createHandler(async (req, res, pat) => {
     untested_count = 0,
     vegetarian_days = 0,
     skip_shopping = false,
+    blocked_dates = [],
   } = req.body;
 
   if (!start_date || !end_date) {
     return res.status(400).json({ error: "start_date och end_date krävs" });
+  }
+  if (start_date > end_date) {
+    return res.status(400).json({ error: "Startdatum måste vara före slutdatum." });
   }
 
   const constraints = {
@@ -223,8 +187,18 @@ export default createHandler(async (req, res, pat) => {
   }
 
   const recentIds = recentlyUsedIds(historyData);
-  const dayList = buildDayList(start_date, end_date);
-  const days = selectRecipes(filtered, dayList, constraints, recentIds, historyData.usedOn || {});
+  const allDays = buildDayList(start_date, end_date);
+  const blockedSet = new Set(blocked_dates);
+  const activeDays = allDays.filter((d) => !blockedSet.has(d.date));
+  const selectedDays = selectRecipes(filtered, activeDays, constraints, recentIds, historyData.usedOn || {});
+
+  // Merge: blockerade dagar infogas med recipe: null
+  const days = allDays.map((d) => {
+    if (blockedSet.has(d.date)) {
+      return { date: d.date, day: d.day, recipe: null, recipeId: null, blocked: true };
+    }
+    return selectedDays.find((s) => s.date === d.date);
+  });
 
   const today = new Date().toISOString().slice(0, 10);
   const weeklyPlan = { generated: today, startDate: start_date, endDate: end_date, days };
