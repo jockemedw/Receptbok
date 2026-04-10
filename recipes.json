@@ -899,7 +899,7 @@
     {
       "id": 26,
       "title": "Gnocchi med snabbpesto",
-      "tested": false,
+      "tested": true,
       "servings": 4,
       "time": 15,
       "timeNote": "snabb",
