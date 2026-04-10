@@ -191,61 +191,38 @@ Receptbok/
 
 ### Roadmap — features & delprojekt (session 24, 2026-04-10)
 
-Prioritetsordning baserad på edge-värde och svårighetsgrad. Varje punkt har en detaljerad researchplan i `docs/`.
+Prioritetsordning baserad på edge-värde och svårighetsgrad.
+Detaljplaner i `docs/`. Övergripande plan: `docs/researchplan-app-expansion.md`
 
-#### Fas 1 — Extrapriser → receptförslag ⭐ (unik hook)
-Hämta aktuella extrapriser från svensk dagligvarubutik (primärt Willys Ekholmen) och matcha mot recept. "Appen som planerar efter veckans billigaste ingredienser."
+**Fas 1 — Extrapriser → receptförslag** (unik hook, `docs/research-extrapriser.md`)
+- [ ] 1A — Testa Tjek/eTilbudsavis API (täcker alla kedjor)
+- [ ] 1B — Testa ICA inofficiellt API (komplement)
+- [ ] 1C — Willys-appen reverse engineering (om 1A–1B misslyckas)
+- [ ] 1D — Matchningslogik: receptingrediens ↔ erbjudande
+- [ ] 1E — UX-design (var visas det i appen?)
+- [ ] 1F — Implementation
 
-| Steg | Vad | Status |
-|------|-----|--------|
-| 1A | Testa Tjek/eTilbudsavis API (täcker alla kedjor) | ⬜ |
-| 1B | Testa ICA inofficiellt API (komplement) | ⬜ |
-| 1C | Willys-appen reverse engineering (om 1A–1B misslyckas) | ⬜ |
-| 1D | Matchningslogik: receptingrediens ↔ erbjudande | ⬜ |
-| 1E | UX-design (var visas det i appen?) | ⬜ |
-| 1F | Implementation | ⬜ |
+**Fas 2 — Familjelärande algoritm** (billigast att bygga, data finns redan)
+- [ ] 2A — Analysera befintlig data (history + tested-flaggor)
+- [ ] 2B — Designa viktningsmodell för `selectRecipes()`
+- [ ] 2C — Implementation + eventuell "Favoriter"-vy
 
-📄 Detaljplan: `docs/research-extrapriser.md`
+**Fas 3 — Receptimport från internationella sidor** (quality-of-life)
+- [ ] 3A — Kartlägg format och sajter — stöd-matris
+- [ ] 3B — Bygg konverteringsmodul (cups→dl, oz→g, översättning)
+- [ ] 3C — Testa mot 10+ receptsidor
 
-#### Fas 2 — Familjelärande algoritm (billigast att bygga)
-Receptboken lär sig vad familjen gillar baserat på `recipe-history.json` + `tested`-flaggor. Vikta receptval mot proteiner/taggar familjen föredrar. Deterministiskt, ingen AI-kostnad.
+**Fas 4 — Automatisk varukorgsfyllning** (svårast, starkast)
+- [ ] 4A — Teknisk research: Claude in Chrome, Playwright, juridik
+- [ ] 4B — Proof of concept med en butik
+- [ ] 4C — UX-design + felhantering
+- [ ] 4D — Implementation
 
-| Steg | Vad | Status |
-|------|-----|--------|
-| 2A | Analysera befintlig data — vilka mönster finns? | ⬜ |
-| 2B | Designa viktningsmodell för `selectRecipes()` | ⬜ |
-| 2C | Implementation + eventuell "Favoriter"-vy | ⬜ |
-
-#### Fas 3 — Receptimport från internationella sidor
-Utöka importfunktionen: amerikanska sidor (Dishing Out Health, AllRecipes, BBC Good Food m.fl.). Enhetskonvertering (cups → dl, oz → g), ingrediensöversättning, andra JSON-LD-varianter.
-
-| Steg | Vad | Status |
-|------|-----|--------|
-| 3A | Kartlägg format och sajter — stöd-matris | ⬜ |
-| 3B | Bygg konverteringsmodul (enheter + översättning) | ⬜ |
-| 3C | Testa mot 10+ receptsidor | ⬜ |
-
-#### Fas 4 — Automatisk varukorgsfyllning (svårast, starkast)
-Ge en agent (t.ex. Claude in Chrome) uppdraget att fylla en varukorg på Willys/Mat.se med varorna i inköpslistan. Ingen annan app i Sverige gör detta.
-
-| Steg | Vad | Status |
-|------|-----|--------|
-| 4A | Teknisk research: Claude in Chrome, Playwright, juridik | ⬜ |
-| 4B | Proof of concept med en butik | ⬜ |
-| 4C | UX-design + felhantering | ⬜ |
-| 4D | Implementation | ⬜ |
-
-#### Fas 5 — App Store-konvertering & monetisering
-Utred och eventuellt genomför konvertering till App Store (och ev. Google Play). PWA vs React Native vs native wrapper. Autentisering, multi-tenant, kostnads-/intäktskalkyl.
-
-| Steg | Vad | Status |
-|------|-----|--------|
-| 5A | Teknisk väg (PWA/Capacitor/React Native) | ⬜ |
-| 5B | Autentisering & datamodell för multi-tenant | ⬜ |
-| 5C | Kostnads- och intäktskalkyl | ⬜ |
-| — | **Marknadsanalys** | ✅ `docs/marknadsanalys-2026-04.md` |
-
-📄 Övergripande researchplan: `docs/researchplan-app-expansion.md`
+**Fas 5 — App Store & monetisering** (`docs/marknadsanalys-2026-04.md`)
+- [x] Marknadsanalys — klar
+- [ ] 5A — Teknisk väg (PWA / Capacitor / React Native)
+- [ ] 5B — Autentisering & datamodell för multi-tenant
+- [ ] 5C — Kostnads- och intäktskalkyl
 
 ## Senaste session — Session 24 (2026-04-10)
 - **ContextBridge borttagen** — alla referenser rensade ur `js/state.js` och CLAUDE.md
