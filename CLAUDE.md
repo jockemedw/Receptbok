@@ -189,17 +189,73 @@ Receptbok/
 - ~~**[FEATURE] Blockera dagar i matsedeln**~~ — **KLAR** (session 22, 2026-04-09). Inkluderar även "Hoppa över — skjut recept framåt".
 - ~~**[FEATURE] Dynamiska tagggrupper i receptfilter**~~ — **KLAR** (session 23, 2026-04-09). Filterknapparna byggs dynamiskt från `recipes.json`-taggar, grupperade: Tid, Protein, Provat, Typ, Kök, Övrigt.
 
-### Nya features (tillagda session 24, 2026-04-10)
-- **[FEATURE] Extrapriser → receptförslag** — Hämta aktuella extrapriser från t.ex. Willys Ekholmen och identifiera recept som matchar. Kräver research om hur prisdata kan hämtas (API, scraping, RSS, tredjepartstjänst).
-- **[FEATURE] Automatisk varukorgsfyllning** — Ge en agent (t.ex. Claude in Chrome) uppdraget att fylla en varukorg på Willys/Mat.se med varorna i inköpslistan. Kräver research om automationsväg.
-- **[FEATURE] Receptimport från internationella sidor** — Utöka importfunktionen så att den klarar icke-svenska format (t.ex. amerikanska sidor som Dishing Out Health). Innebär enhetskonvertering (cups → dl, oz → g), översättning av ingredienser, och hantering av andra JSON-LD/markup-varianter.
+### Roadmap — features & delprojekt (session 24, 2026-04-10)
 
-### Delprojekt
-- **[ANALYS] App Store-konvertering & monetisering** — Utred vad som krävs för att göra Receptboken till en riktig app i App Store (och ev. Google Play). Inkluderar: teknisk väg (PWA vs React Native vs native wrapper), kostnad (Apple Developer Program, hosting, drift), monetiseringsmodeller (freemium, prenumeration, engångsköp), samt vad som behöver ändras i arkitekturen (autentisering, användardata, betalning).
-  - **Marknadsanalys klar** → `docs/marknadsanalys-2026-04.md`
-  - **Researchplan** → `docs/researchplan-app-expansion.md` (5 faser, betas av löpande)
+Prioritetsordning baserad på edge-värde och svårighetsgrad. Varje punkt har en detaljerad researchplan i `docs/`.
 
-## Senaste session — Session 23 (2026-04-09)
+#### Fas 1 — Extrapriser → receptförslag ⭐ (unik hook)
+Hämta aktuella extrapriser från svensk dagligvarubutik (primärt Willys Ekholmen) och matcha mot recept. "Appen som planerar efter veckans billigaste ingredienser."
+
+| Steg | Vad | Status |
+|------|-----|--------|
+| 1A | Testa Tjek/eTilbudsavis API (täcker alla kedjor) | ⬜ |
+| 1B | Testa ICA inofficiellt API (komplement) | ⬜ |
+| 1C | Willys-appen reverse engineering (om 1A–1B misslyckas) | ⬜ |
+| 1D | Matchningslogik: receptingrediens ↔ erbjudande | ⬜ |
+| 1E | UX-design (var visas det i appen?) | ⬜ |
+| 1F | Implementation | ⬜ |
+
+📄 Detaljplan: `docs/research-extrapriser.md`
+
+#### Fas 2 — Familjelärande algoritm (billigast att bygga)
+Receptboken lär sig vad familjen gillar baserat på `recipe-history.json` + `tested`-flaggor. Vikta receptval mot proteiner/taggar familjen föredrar. Deterministiskt, ingen AI-kostnad.
+
+| Steg | Vad | Status |
+|------|-----|--------|
+| 2A | Analysera befintlig data — vilka mönster finns? | ⬜ |
+| 2B | Designa viktningsmodell för `selectRecipes()` | ⬜ |
+| 2C | Implementation + eventuell "Favoriter"-vy | ⬜ |
+
+#### Fas 3 — Receptimport från internationella sidor
+Utöka importfunktionen: amerikanska sidor (Dishing Out Health, AllRecipes, BBC Good Food m.fl.). Enhetskonvertering (cups → dl, oz → g), ingrediensöversättning, andra JSON-LD-varianter.
+
+| Steg | Vad | Status |
+|------|-----|--------|
+| 3A | Kartlägg format och sajter — stöd-matris | ⬜ |
+| 3B | Bygg konverteringsmodul (enheter + översättning) | ⬜ |
+| 3C | Testa mot 10+ receptsidor | ⬜ |
+
+#### Fas 4 — Automatisk varukorgsfyllning (svårast, starkast)
+Ge en agent (t.ex. Claude in Chrome) uppdraget att fylla en varukorg på Willys/Mat.se med varorna i inköpslistan. Ingen annan app i Sverige gör detta.
+
+| Steg | Vad | Status |
+|------|-----|--------|
+| 4A | Teknisk research: Claude in Chrome, Playwright, juridik | ⬜ |
+| 4B | Proof of concept med en butik | ⬜ |
+| 4C | UX-design + felhantering | ⬜ |
+| 4D | Implementation | ⬜ |
+
+#### Fas 5 — App Store-konvertering & monetisering
+Utred och eventuellt genomför konvertering till App Store (och ev. Google Play). PWA vs React Native vs native wrapper. Autentisering, multi-tenant, kostnads-/intäktskalkyl.
+
+| Steg | Vad | Status |
+|------|-----|--------|
+| 5A | Teknisk väg (PWA/Capacitor/React Native) | ⬜ |
+| 5B | Autentisering & datamodell för multi-tenant | ⬜ |
+| 5C | Kostnads- och intäktskalkyl | ⬜ |
+| — | **Marknadsanalys** | ✅ `docs/marknadsanalys-2026-04.md` |
+
+📄 Övergripande researchplan: `docs/researchplan-app-expansion.md`
+
+## Senaste session — Session 24 (2026-04-10)
+- **ContextBridge borttagen** — alla referenser rensade ur `js/state.js` och CLAUDE.md
+- **Prövad-pill klickbar i veckovyn** — `plan-viewer.js` fick `pill-toggle` + `onclick="toggleTested()"`, samma som receptbläddraren
+- **Marknadsanalys genomförd** → `docs/marknadsanalys-2026-04.md` — konkurrenter, prismodeller, marknadsstorlek, användarinsikter, positionering
+- **Roadmap skapad** — 5 faser med stegvisa planer, prioriterade efter edge-värde och svårighetsgrad
+- **Extrapris-research** → `docs/research-extrapriser.md` — 6 datakällor kartlagda (Tjek API mest lovande), 6 steg att beta av
+- **Nyckelslutsats:** Receptbokens nisch (gratis + svensk + familj + ingen inloggning) är tom på marknaden. Starkaste edge: extrapriser → receptförslag + familjelärande + varukorgsfyllning.
+
+## Session 23 (2026-04-09)
 - **Total projektöversyn genomförd** — samtliga prioriterade förbättringar implementerade:
   - **A1:** `var(--brown)` → `var(--warm-brown)` i CSS (7 ställen) — fixar svart fallback-färg
   - **A2:** `renderShoppingData` exponerad i `js/shopping/shopping-list.js` — dött anrop i `plan-viewer.js` fungerar nu
