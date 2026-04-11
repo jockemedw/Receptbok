@@ -2,7 +2,7 @@
   "meta": {
     "version": "1.0",
     "lastUpdated": "2026-04-11",
-    "totalRecipes": 64
+    "totalRecipes": 63
   },
   "recipes": [
     {
@@ -2197,51 +2197,6 @@
         "Hacka alla grönsaker till salladen i små tärningar. Lägg på ett stort fat och lägg på kikärtor. Häll på dressingen och rör om. Strö på valnötter och lite extra koriander och basilika. Använd de tunna brödchipsen att skopa upp den goda salladen med och ät gärna med händerna. Njut!"
       ],
       "notes": "Krispigt, krämigt och fullt av smak – Jennie Walldén bjuder här på en fräsch och matig sallad med rostade kikärtor, krispiga brödchips och en krämig ört- och avokadodressing. Servera gärna allt på ett…"
-    },
-    {
-      "id": 64,
-      "title": "LAMMFÄRSSÅS FRÅN GOTLAND",
-      "tested": false,
-      "servings": 10,
-      "time": 90,
-      "timeNote": null,
-      "tags": [
-        "kött",
-        "helg60",
-        "gryta",
-        "pasta"
-      ],
-      "protein": "kött",
-      "ingredients": [
-        "3–4 gula lökar",
-        "150 g rotselleri",
-        "1 stor morot",
-        "3 msk olivolja",
-        "1 kilo lammfärs",
-        "2 burkar tomater",
-        "2 dl vatten",
-        "1 lagerblad",
-        "3 dl rött eller vitt vin",
-        "3 msk tomatpuré",
-        "1–2 msk oregano",
-        "2 tsk salt",
-        "1 tsk socker",
-        "svartpeppar ur kvarn",
-        "2 vitlöksklyftor"
-      ],
-      "instructions": [
-        "Skala och finhacka löken. Skala och skär selleri och morot i små fina tärningar.",
-        "Fräs lök, selleri och morot i lite olja i en stekpanna och flytta sedan över grönsakshacket till en rymlig gryta.",
-        "Fräs lammfärsen, lite i taget, i stekpannan och lägg efter hand över de frästa grönsakerna i grytan.",
-        "Vispa ur stekpannan med lite vatten och häll skyn i grytan.",
-        "Häll också i tomaterna med sitt spad och späd med vatten.",
-        "Lägg i lagerblad. Vänta med salt, vin och kryddor.",
-        "Koka såsen med locket lite på glänt i 1 1/2 timme. Rör om i grytan då och då. Späd efter hand med en aning mer vatten om det behövs.",
-        "Efter ungefär halva koktiden (ca 45 minuter), tillsätt vin, tomatpuré, oregano, salt, socker och peppar.",
-        "Smaksätt sista kvarten med pressad vitlök och eventuellt lite mer oregano. Lyft samtidigt av locket så att såsen kan koka ihop och bli lite tjockare.",
-        "Smaka av såsen. Oftast behövs mer salt och peppar. Kanske också vitlök. Koka i så fall såsen ett par minuter efter den sista smaksättningen."
-      ],
-      "notes": "Gotländsk lammfärsröra med inspiration från Italien. Lite rotselleri är mycket gott att ta med. Säsen ska på italienskt vis koka sakta och länge. Det här blir en stor sats så frys gärna in det som inte går åt. Såsen är härlig till spaghetti eller annan pasta, till ris, linser och bönor."
     },
     {
       "id": 65,
