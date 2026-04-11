@@ -79,17 +79,42 @@ export async function saveRecipe() {
       });
       if (!res.ok) throw new Error();
       const { recipe: saved } = await res.json();
-      window.RECIPES.push(saved);
-      const grid = document.getElementById('recipeGrid');
-      const tmp  = document.createElement('div');
-      tmp.innerHTML = window.renderCard(saved);
-      const newCard = tmp.firstChild;
-      newCard.classList.add('recipe-card-new');
-      grid.prepend(newCard);
       closeEditModal();
 
-      // Visa receptfliken, nollställ filter så kortet syns
+      // Visa receptfliken med laddningsindikator
       window.switchTab('recept');
+      feedback.textContent = '';
+      const grid = document.getElementById('recipeGrid');
+      grid.style.opacity = '0.5';
+
+      // Vänta kort så GitHub hinner uppdatera, sedan hämta med cache-bust
+      await new Promise(r => setTimeout(r, 2000));
+      let loaded = false;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const freshRes = await fetch(`recipes.json?t=${Date.now()}`);
+        if (freshRes.ok) {
+          const freshData = await freshRes.json();
+          if (freshData.recipes.some(r => r.id === saved.id)) {
+            window.RECIPES     = freshData.recipes;
+            window._allRecipes = window.RECIPES;
+            grid.innerHTML     = window.RECIPES.map(window.renderCard).join('');
+            document.getElementById('countDisplay').textContent = `${window.RECIPES.length} recept`;
+            window.initFilters(window.RECIPES);
+            loaded = true;
+            break;
+          }
+        }
+        await new Promise(r => setTimeout(r, 2000));
+      }
+      if (!loaded) {
+        // Fallback: lägg till lokalt om servern inte hunnit uppdatera
+        window.RECIPES.push(saved);
+        grid.innerHTML = window.RECIPES.map(window.renderCard).join('');
+      }
+
+      grid.style.opacity = '';
+
+      // Nollställ filter så kortet syns
       window.activeFilters = new Set(['alla']);
       document.getElementById('search').value = '';
       document.querySelectorAll('.filter-btn').forEach(b => {
@@ -97,15 +122,17 @@ export async function saveRecipe() {
       });
       window.applyFilters();
 
-      // Scrolla till det nya kortet
-      requestAnimationFrame(() => {
-        const hh  = document.querySelector('header').offsetHeight;
-        const top = newCard.getBoundingClientRect().top + window.scrollY - hh - 12;
-        window.smoothScrollTo(top, 420);
-      });
-
-      // Ta bort highlight efter animationen
-      setTimeout(() => newCard.classList.remove('recipe-card-new'), 3000);
+      // Hitta det nya kortet, markera och scrolla
+      const newCard = document.querySelector(`.recipe-card[data-id="${saved.id}"]`);
+      if (newCard) {
+        newCard.classList.add('recipe-card-new');
+        requestAnimationFrame(() => {
+          const hh  = document.querySelector('header').offsetHeight;
+          const top = newCard.getBoundingClientRect().top + window.scrollY - hh - 12;
+          window.smoothScrollTo(top, 420);
+        });
+        setTimeout(() => newCard.classList.remove('recipe-card-new'), 3000);
+      }
     } catch {
       feedback.textContent = 'Kunde inte spara — prova igen.';
       feedback.style.color = 'var(--terracotta)';
