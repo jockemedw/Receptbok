@@ -1,7 +1,10 @@
 import { createHandler } from "./_shared/handler.js";
 
-const GEMINI_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+const GEMINI_MODELS = [
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+];
+const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
 const GEMINI_SCHEMA_PROMPT = `Du är en expert på matlagning och dataextraktion. Extrahera receptet och returnera BARA ett JSON-objekt (ingen annan text, ingen markdown) med exakt dessa fält:
 {
@@ -169,21 +172,37 @@ async function handlePhoto(imageBase64, mimeType, res) {
 
 async function callGemini(parts, apiKey) {
   let geminiRes;
-  try {
-    geminiRes = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: [{ parts }] }),
-      signal: AbortSignal.timeout(25000),
-    });
-  } catch {
-    throw new Error("Kunde inte nå Google — prova igen om en stund.");
+  let lastError = "";
+
+  for (const model of GEMINI_MODELS) {
+    try {
+      geminiRes = await fetch(`${GEMINI_BASE}/${model}:generateContent?key=${apiKey}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ parts }] }),
+        signal: AbortSignal.timeout(25000),
+      });
+    } catch {
+      lastError = "Kunde inte nå Google — prova igen om en stund.";
+      continue;
+    }
+
+    if (geminiRes.status === 429 || geminiRes.status === 503) {
+      lastError = `${model} har hög belastning`;
+      continue;
+    }
+
+    if (!geminiRes.ok) {
+      let detail = "";
+      try { detail = (await geminiRes.json())?.error?.message || ""; } catch {}
+      throw new Error(detail || `Gemini svarade ${geminiRes.status} — prova igen.`);
+    }
+
+    break;
   }
 
-  if (!geminiRes.ok) {
-    let detail = "";
-    try { detail = (await geminiRes.json())?.error?.message || ""; } catch {}
-    throw new Error(detail || `Gemini svarade ${geminiRes.status} — prova igen.`);
+  if (!geminiRes || !geminiRes.ok) {
+    throw new Error(lastError || "Alla modeller har hög belastning — prova igen om en stund.");
   }
 
   const data = await geminiRes.json();
