@@ -40,7 +40,10 @@ Browser → Vercel /api/generate → Deterministisk receptväljare (JS) → GitH
 - **Stanna och bekräfta** — om ett meddelande är feedback eller återkoppling (inte en tydlig instruktion), tolka det INTE som en order att agera. Ställ en kort fråga och invänta svar innan du gör ändringar.
 
 ## Dashboard (visas vid sessionstart)
-Vid varje ny session: visa denna dashboard för användaren. Git-status hämtas live av SessionStart-hooken.
+Vid varje ny session: visa denna dashboard för användaren EXAKT som den ser ut nedan.
+Ändra ingenting — slå inte ihop rader, kollapsera inte checkboxar, lägg inte till egna rubriker.
+Kopiera sektionerna rakt av (markdown-format). Enda tillagda info är git-status från SessionStart-hooken,
+som visas som tre rader i klartext (branch, status, senaste commit) överst.
 
 ### Roadmap
 **Fas 1 — Extrapriser → receptförslag** (research klar → `docs/research-extrapriser.md`)
