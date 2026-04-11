@@ -2,7 +2,7 @@
   "meta": {
     "version": "1.0",
     "lastUpdated": "2026-04-11",
-    "totalRecipes": 62
+    "totalRecipes": 61
   },
   "recipes": [
     {
@@ -2197,39 +2197,6 @@
         "Hacka alla grönsaker till salladen i små tärningar. Lägg på ett stort fat och lägg på kikärtor. Häll på dressingen och rör om. Strö på valnötter och lite extra koriander och basilika. Använd de tunna brödchipsen att skopa upp den goda salladen med och ät gärna med händerna. Njut!"
       ],
       "notes": "Krispigt, krämigt och fullt av smak – Jennie Walldén bjuder här på en fräsch och matig sallad med rostade kikärtor, krispiga brödchips och en krämig ört- och avokadodressing. Servera gärna allt på ett…"
-    },
-    {
-      "id": 64,
-      "title": "AUBERGINER, FLÄSKKÖTT OCH RÄKOR",
-      "tested": false,
-      "servings": 4,
-      "time": 45,
-      "timeNote": null,
-      "tags": [
-        "fläsk",
-        "fisk",
-        "ugn"
-      ],
-      "protein": "fläsk",
-      "ingredients": [
-        "450 g små asiatiska auberginer",
-        "340 g fläskfärs",
-        "115 g skalade och hackade råa räkor*",
-        "1 msk fisksås",
-        "Peppar",
-        "Vegetabilisk olja till stekning",
-        "Salladslöksås (sid 34) efter smak"
-      ],
-      "instructions": [
-        "1. Värm ugnen till 180 grader. Picka auberginerna med gaffel runtom på några ställen, lägg dem på en ugnsplåt, sätt in dem i ugnen och baka i 30 minuter eller tills auberginerna är helt genomstekta. Ta ut plåten och låt auberginerna svalna.",
-        "2. När auberginerna är ljumma nog att kunna hanteras, avlägsna det gröna stjälkfästet och skär auberginerna i lagom stora munsbitar som läggs upp på ett fat.",
-        "3. Lägg fläskfärs och räkor i en skål, häll över 1 matsked fisksås, peppra och blanda väl.",
-        "4. Hetta upp en stekpanna till medelhög/hög värme, häll i lite olja och fräs fläskfärs- och räkblandningen i 5 minuter.",
-        "5. Tillsätt auberginerna.",
-        "6. Garnera med salladslöksås.",
-        "7. Servera tillsammans med en liten skål utspädd fisksås."
-      ],
-      "notes": null
     }
   ]
 }
