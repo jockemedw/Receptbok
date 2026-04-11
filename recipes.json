@@ -2,7 +2,7 @@
   "meta": {
     "version": "1.0",
     "lastUpdated": "2026-04-11",
-    "totalRecipes": 62
+    "totalRecipes": 61
   },
   "recipes": [
     {
@@ -2197,41 +2197,6 @@
         "Hacka alla grönsaker till salladen i små tärningar. Lägg på ett stort fat och lägg på kikärtor. Häll på dressingen och rör om. Strö på valnötter och lite extra koriander och basilika. Använd de tunna brödchipsen att skopa upp den goda salladen med och ät gärna med händerna. Njut!"
       ],
       "notes": "Krispigt, krämigt och fullt av smak – Jennie Walldén bjuder här på en fräsch och matig sallad med rostade kikärtor, krispiga brödchips och en krämig ört- och avokadodressing. Servera gärna allt på ett…"
-    },
-    {
-      "id": 64,
-      "title": "Ljummen sallad på sallatsipomea och nötkött",
-      "tested": false,
-      "servings": 4,
-      "time": 30,
-      "timeNote": null,
-      "tags": [
-        "vardag30",
-        "kött",
-        "sallad"
-      ],
-      "protein": "kött",
-      "ingredients": [
-        "1 knippe sallatsipomea",
-        "Jordnötsolja till stekning",
-        "225 g ryggbiff skuren i tunna skivor",
-        "1 gul lök skuren som blomblad",
-        "1 hackad vitlöksklyfta",
-        "2 msk fisksås",
-        "4 msk schalottenlök i vinäger",
-        "4 msk krossade jordnötter",
-        "Utspädd fisksås efter smak"
-      ],
-      "instructions": [
-        "Använd en riktigt vass kniv för att skära sallatsipomean i långa strimlor och lägg dem efter hand i en stor skål med kallt vatten.",
-        "När alla strimlor har krullat sig ordentligt tas de upp ur vattnet och får rinna av i ett durkslag några minuter. Vänd dem några gånger under tiden.",
-        "Hetta upp lite olja i en stekpanna med non stick-beläggning på hög värme och fräs lök och vitlök i 1 minut.",
-        "Tillsätt nötkött i skivor och stek i ytterligare 1 minut.",
-        "Häll i fisksås och rör om väl.",
-        "Lägg strimlorna av sallatsipomea i en salladsskål, tillsätt nötkött med sky, schalottenlök och jordnötter och blanda väl.",
-        "Servera salladen ljummen och ställ fram små skålar med utspädd fisksås."
-      ],
-      "notes": "Sallatsipomean kan ersättas med vattenkrasse eller frisésallad."
     }
   ]
 }
