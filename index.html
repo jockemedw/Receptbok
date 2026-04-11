@@ -247,31 +247,46 @@
 <div id="importModal" class="modal-overlay import-overlay" style="display:none" onclick="if(event.target===this)closeImportModal()">
   <div class="import-sheet">
     <div class="import-handle"></div>
-    <h2 class="import-title">Importera recept</h2>
-    <div class="import-tabs">
-      <button class="import-tab active" id="importTabUrl" onclick="switchImportTab('url')">🔗 Webbadress</button>
-      <button class="import-tab" id="importTabPhoto" onclick="switchImportTab('photo')">📷 Bild</button>
+    <div class="import-header">
+      <h2>Lägg till recept</h2>
+      <button class="import-close" onclick="closeImportModal()" aria-label="Stäng">✕</button>
     </div>
-    <div id="importUrlSection">
-      <input type="url" id="importUrlInput" placeholder="https://www.ica.se/recept/..." class="import-input">
-      <button class="btn-import-action" id="importUrlBtn" onclick="importFromUrl()">Hämta recept</button>
-    </div>
-    <div id="importPhotoSection" style="display:none">
-      <div class="import-photo-options">
-        <label class="import-photo-btn" tabindex="0">
-          <input type="file" id="importCameraInput" accept="image/*" capture="environment" hidden>
-          <span class="import-photo-icon">📸</span>
-          <span>Ta foto</span>
-        </label>
-        <label class="import-photo-btn" tabindex="0">
-          <input type="file" id="importFileInput" accept="image/*" hidden>
-          <span class="import-photo-icon">📁</span>
-          <span>Välj fil</span>
-        </label>
+    <div class="import-body">
+      <div class="import-tabs">
+        <button class="import-tab active" id="importTabUrl" onclick="switchImportTab('url')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          Länk
+        </button>
+        <button class="import-tab" id="importTabPhoto" onclick="switchImportTab('photo')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+          Bild
+        </button>
       </div>
-      <button class="btn-import-action" id="importPhotoBtn" onclick="importFromPhoto()" disabled>Tolka recept</button>
+      <div class="import-content">
+        <div id="importUrlSection">
+          <p class="import-hint">Klistra in länken till ett recept</p>
+          <input type="url" id="importUrlInput" placeholder="https://www.ica.se/recept/..." class="import-input">
+          <button class="btn-import-action" id="importUrlBtn" onclick="importFromUrl()">Hämta recept</button>
+        </div>
+        <div id="importPhotoSection" style="display:none">
+          <p class="import-hint">Fotografera eller välj en bild på ett recept</p>
+          <div class="import-photo-options">
+            <label class="import-photo-btn" tabindex="0">
+              <input type="file" id="importCameraInput" accept="image/*" capture="environment" hidden>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              <span>Kamera</span>
+            </label>
+            <label class="import-photo-btn" tabindex="0">
+              <input type="file" id="importFileInput" accept="image/*" hidden>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+              <span>Bildbibliotek</span>
+            </label>
+          </div>
+          <button class="btn-import-action" id="importPhotoBtn" onclick="importFromPhoto()" disabled>Tolka recept</button>
+        </div>
+      </div>
+      <div class="import-feedback" id="importFeedback"></div>
     </div>
-    <div class="modal-feedback" id="importFeedback"></div>
   </div>
 </div>
 
