@@ -95,6 +95,8 @@ Receptbok/
 │   │   ├── plan-generator.js  # Generering + inställningar
 │   │   ├── plan-viewer.js     # Veckoplan + swap/replace/confirm
 │   │   └── ingredient-preview.js
+│   ├── offers/
+│   │   └── offers-display.js  # Erbjudande-badges + detaljvisning
 │   └── recipes/
 │       ├── recipe-browser.js  # Listning, filter, sökning
 │       ├── recipe-editor.js   # Redigera/spara/ta bort
@@ -103,7 +105,9 @@ Receptbok/
 │   ├── _shared/
 │   │   ├── constants.js    # REPO_OWNER, REPO_NAME, BRANCH
 │   │   ├── github.js       # readFile, readFileRaw, writeFile
-│   │   └── handler.js      # createHandler (CORS, auth, errors)
+│   │   ├── handler.js      # createHandler (CORS, auth, errors)
+│   │   ├── offer-adapter.js  # Erbjudande-källa (mock/tjek/ica)
+│   │   └── offer-matcher.js  # Ingrediens↔erbjudande-matchning
 │   ├── generate.js         # Receptval + matsedel + inköpslista
 │   ├── replace-recipe.js   # Byt enskilt recept
 │   ├── skip-day.js         # Blockera dag / hoppa över (skjut framåt)
@@ -111,8 +115,11 @@ Receptbok/
 │   ├── confirm.js          # Bekräfta matsedel
 │   ├── recipes.js          # CRUD recept
 │   ├── shopping.js         # Inköpsliste-API
-│   └── import-recipe.js    # Receptimport (Gemini)
+│   ├── import-recipe.js    # Receptimport (Gemini)
+│   └── offers.js           # Erbjudande-matchning + cache
 ├── recipes.json            # Receptdatabasen (62 recept, rör ej strukturen)
+├── offers.json             # Mock-erbjudanden (35 st, Willys-stil)
+├── offers-cache.json       # Genererad cache — erbjudande↔recept-matchningar
 ├── weekly-plan.json        # Genereras av /api/generate
 ├── shopping-list.json      # Genereras av /api/generate
 ├── recipe-history.json     # Recepthistorik — undviker upprepning
@@ -195,12 +202,12 @@ Prioritetsordning baserad på edge-värde och svårighetsgrad.
 Detaljplaner i `docs/`. Övergripande plan: `docs/researchplan-app-expansion.md`
 
 **Fas 1 — Extrapriser → receptförslag** (unik hook, `docs/research-extrapriser.md`)
-- [ ] 1A — Testa Tjek/eTilbudsavis API (täcker alla kedjor)
-- [ ] 1B — Testa ICA inofficiellt API (komplement)
-- [ ] 1C — Willys-appen reverse engineering (om 1A–1B misslyckas)
-- [ ] 1D — Matchningslogik: receptingrediens ↔ erbjudande
-- [ ] 1E — UX-design (var visas det i appen?)
-- [ ] 1F — Implementation
+- [x] 1D — Matchningslogik: receptingrediens ↔ erbjudande — **KLAR** (session 25)
+- [x] 1E — UX-design (diskret badge + toggle) — **KLAR** (session 25)
+- [x] 1F — Implementation (mock-data) — **KLAR** (session 25)
+- [ ] 1A — Registrera Tjek API-konto (eleaflet.com/developers) → lägg `TJEK_API_KEY` + `OFFER_SOURCE=tjek` i Vercel env vars
+- [ ] 1B — Testa ICA inofficiellt API (komplement, om Tjek inte funkar)
+- [ ] 1C — Willys-appen reverse engineering (sista utväg)
 
 **Fas 2 — Familjelärande algoritm** (billigast att bygga, data finns redan)
 - [ ] 2A — Analysera befintlig data (history + tested-flaggor)
@@ -224,7 +231,18 @@ Detaljplaner i `docs/`. Övergripande plan: `docs/researchplan-app-expansion.md`
 - [ ] 5B — Autentisering & datamodell för multi-tenant
 - [ ] 5C — Kostnads- och intäktskalkyl
 
-## Senaste session — Session 24 (2026-04-10)
+## Senaste session — Session 25 (2026-04-11)
+- **Extrapriser → smartare receptval implementerat** — erbjudanden viktar `selectRecipes()` så recept med billiga ingredienser föredras
+  - **offer-adapter.js**: Adapter-mönster (mock/tjek/ica). Default: mock med 35 Willys-erbjudanden. Tjek/ICA-stubs redo för API-nyckel.
+  - **offer-matcher.js**: Matchar erbjudanden mot receptingredienser via `NORMALIZATION_TABLE` (~150 varianter). Scoring: exact (100), word-boundary (80), substring (60). Varje recept får `offerScore` (0–1).
+  - **api/offers.js**: Hämtar, matchar och cachar i `offers-cache.json` (max 1x/dag).
+  - **generate.js**: `selectRecipes()` samlar giltiga kandidater → sorterar efter `offerScore` → väljer bästa. Alla befintliga constraints bibehålls. `prefer_offers` parameter (default `true`).
+  - **offers-display.js**: Frontend hämtar cache, dekorerar dagkort med diskret "3 på rea"-badge, visar matchlista i expanderad detaljvy.
+  - **Toggle**: "Prioritera extrapriser" i inställningspanelen (dold om ingen offer-data finns).
+  - **shopping-builder.js**: 5 parsing-funktioner exporterade för återanvändning (`parseIngredient`, `normalizeName`, `cleanIngredient`, `NORMALIZATION_TABLE`, `PANTRY_ALWAYS_SKIP`).
+- **Nästa steg**: Registrera Tjek API-konto (eleaflet.com/developers) → lägg `TJEK_API_KEY` + `OFFER_SOURCE=tjek` i Vercel env vars. Koordinater för Willys Ekholmen förinställda.
+
+## Session 24 (2026-04-10)
 - **ContextBridge borttagen** — alla referenser rensade ur `js/state.js` och CLAUDE.md
 - **Prövad-pill klickbar i veckovyn** — `plan-viewer.js` fick `pill-toggle` + `onclick="toggleTested()"`, samma som receptbläddraren
 - **Marknadsanalys genomförd** → `docs/marknadsanalys-2026-04.md` — konkurrenter, prismodeller, marknadsstorlek, användarinsikter, positionering
