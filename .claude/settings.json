@@ -1,5 +1,15 @@
 {
   "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '--- GIT STATUS ---' && git branch --show-current && git status --short && echo '--- SENASTE COMMIT ---' && git log -1 --oneline && echo '--- INSTRUKTION ---' && echo 'Visa dashboarden från CLAUDE.md för användaren. Inkludera git-infon ovan.'"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Edit|Write",
