@@ -36,6 +36,7 @@ Browser → Vercel /api/generate → Deterministisk receptväljare (JS) → GitH
 - Frontend-JS ligger i `js/`-moduler — redigera rätt modulfil, inte index.html
 - Rör aldrig `recipes.json`-strukturen utan explicit instruktion
 - Appen ska fungera på alla enheter. Mobilanvändning prioriteras vid designbeslut (touch-first, inga hover-states som primär interaktion)
+- **Mergea till main** — efter varje push, mergea feature-branchen till `main` och pusha. Skippa bara om användaren explicit ber om det.
 - **Stanna och bekräfta** — om ett meddelande är feedback eller återkoppling (inte en tydlig instruktion), tolka det INTE som en order att agera. Ställ en kort fråga och invänta svar innan du gör ändringar.
 
 ## Dashboard (visas vid sessionstart)
