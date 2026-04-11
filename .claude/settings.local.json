@@ -22,7 +22,9 @@
       "Bash(node -e \"const d = JSON.parse\\(require\\(''fs''\\).readFileSync\\(''recipes.json'',''utf-8''\\)\\); const non4 = d.recipes.filter\\(r => r.servings !== 4\\); console.log\\(''Non-4:'', non4.length\\); non4.forEach\\(r => console.log\\(r.id, r.title, r.servings\\)\\); console.log\\(''Total:'', d.recipes.length\\);\")",
       "Bash(node verify.cjs)",
       "mcp__Claude_Preview__preview_start",
-      "Bash(node --check api/generate.js)"
+      "Bash(node --check api/generate.js)",
+      "mcp__ad716c0c-348c-4941-86d1-931aeafba278__list_projects",
+      "mcp__ad716c0c-348c-4941-86d1-931aeafba278__get_runtime_logs"
     ]
   }
 }
