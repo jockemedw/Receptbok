@@ -83,8 +83,29 @@ export async function saveRecipe() {
       const grid = document.getElementById('recipeGrid');
       const tmp  = document.createElement('div');
       tmp.innerHTML = window.renderCard(saved);
-      grid.prepend(tmp.firstChild);
+      const newCard = tmp.firstChild;
+      newCard.classList.add('recipe-card-new');
+      grid.prepend(newCard);
       closeEditModal();
+
+      // Visa receptfliken, nollställ filter så kortet syns
+      window.switchTab('recept');
+      window.activeFilters = new Set(['alla']);
+      document.getElementById('search').value = '';
+      document.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.filter === 'alla');
+      });
+      window.applyFilters();
+
+      // Scrolla till det nya kortet
+      requestAnimationFrame(() => {
+        const hh  = document.querySelector('header').offsetHeight;
+        const top = newCard.getBoundingClientRect().top + window.scrollY - hh - 12;
+        window.smoothScrollTo(top, 420);
+      });
+
+      // Ta bort highlight efter animationen
+      setTimeout(() => newCard.classList.remove('recipe-card-new'), 3000);
     } catch {
       feedback.textContent = 'Kunde inte spara — prova igen.';
       feedback.style.color = 'var(--terracotta)';

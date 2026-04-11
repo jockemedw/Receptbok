@@ -291,6 +291,19 @@
     box-shadow: 0 4px 20px rgba(194,82,43,0.1);
   }
 
+  .recipe-card.recipe-card-new {
+    animation: newRecipePulse 2.5s ease-out;
+    border-color: var(--sage);
+    box-shadow: 0 0 0 3px var(--light-sage);
+  }
+
+  @keyframes newRecipePulse {
+    0%   { box-shadow: 0 0 0 0 rgba(122,158,126,0.5); }
+    30%  { box-shadow: 0 0 0 8px rgba(122,158,126,0.25); }
+    70%  { box-shadow: 0 0 0 4px rgba(122,158,126,0.15); }
+    100% { box-shadow: 0 0 0 3px var(--light-sage); }
+  }
+
   .card-header {
     display: flex;
     align-items: center;
