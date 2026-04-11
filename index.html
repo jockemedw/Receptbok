@@ -244,31 +244,32 @@
   </div>
 </div>
 
-<div id="importModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeImportModal()">
-  <div class="modal-box">
-    <div class="modal-header">
-      <h2>Importera recept</h2>
-      <button onclick="closeImportModal()">✕</button>
-    </div>
+<div id="importModal" class="modal-overlay import-overlay" style="display:none" onclick="if(event.target===this)closeImportModal()">
+  <div class="import-sheet">
+    <div class="import-handle"></div>
+    <h2 class="import-title">Importera recept</h2>
     <div class="import-tabs">
-      <button class="import-tab active" id="importTabUrl" onclick="switchImportTab('url')">Webbadress</button>
-      <button class="import-tab" id="importTabPhoto" onclick="switchImportTab('photo')">Foto</button>
+      <button class="import-tab active" id="importTabUrl" onclick="switchImportTab('url')">🔗 Webbadress</button>
+      <button class="import-tab" id="importTabPhoto" onclick="switchImportTab('photo')">📷 Bild</button>
     </div>
     <div id="importUrlSection">
-      <label>Klistra in receptets webbadress
-        <input type="url" id="importUrlInput" placeholder="https://www.ica.se/recept/...">
-      </label>
-      <div class="modal-actions">
-        <button class="btn-save" id="importUrlBtn" onclick="importFromUrl()">Hämta recept</button>
-      </div>
+      <input type="url" id="importUrlInput" placeholder="https://www.ica.se/recept/..." class="import-input">
+      <button class="btn-import-action" id="importUrlBtn" onclick="importFromUrl()">Hämta recept</button>
     </div>
     <div id="importPhotoSection" style="display:none">
-      <label>Ta foto eller välj bild på receptet
-        <input type="file" id="importPhotoInput" accept="image/*" capture="environment">
-      </label>
-      <div class="modal-actions">
-        <button class="btn-save" id="importPhotoBtn" onclick="importFromPhoto()">Tolka recept</button>
+      <div class="import-photo-options">
+        <label class="import-photo-btn" tabindex="0">
+          <input type="file" id="importCameraInput" accept="image/*" capture="environment" hidden>
+          <span class="import-photo-icon">📸</span>
+          <span>Ta foto</span>
+        </label>
+        <label class="import-photo-btn" tabindex="0">
+          <input type="file" id="importFileInput" accept="image/*" hidden>
+          <span class="import-photo-icon">📁</span>
+          <span>Välj fil</span>
+        </label>
       </div>
+      <button class="btn-import-action" id="importPhotoBtn" onclick="importFromPhoto()" disabled>Tolka recept</button>
     </div>
     <div class="modal-feedback" id="importFeedback"></div>
   </div>

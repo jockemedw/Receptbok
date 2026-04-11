@@ -1695,6 +1695,39 @@
     font-size: 0.9rem;
     min-height: 1.2em;
   }
+  /* ── Import bottom-sheet ── */
+  .import-overlay.open {
+    display: flex;
+    align-items: flex-end;
+    padding: 0;
+  }
+  .import-sheet {
+    background: var(--cream);
+    width: 100%;
+    max-width: 580px;
+    margin: 0 auto;
+    border-radius: 16px 16px 0 0;
+    padding: 0.75rem 1.5rem 2rem;
+    animation: slideUp 0.3s ease-out;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to   { transform: translateY(0); }
+  }
+  .import-handle {
+    width: 36px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto 1rem;
+  }
+  .import-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.2rem;
+    color: var(--warm-brown);
+    margin: 0 0 1rem;
+    text-align: center;
+  }
   .import-tabs {
     display: flex;
     gap: 0.5rem;
@@ -1702,19 +1735,98 @@
   }
   .import-tab {
     flex: 1;
-    padding: 0.45rem 1rem;
-    border-radius: 20px;
-    border: 1px solid rgba(92,61,30,0.25);
+    padding: 0.6rem 1rem;
+    border-radius: 10px;
+    border: 1px solid rgba(92,61,30,0.2);
     background: transparent;
     color: var(--warm-brown);
     font-family: 'DM Sans', sans-serif;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     cursor: pointer;
+    transition: background 0.15s, color 0.15s;
   }
   .import-tab.active {
     background: var(--warm-brown);
     color: #fff;
     border-color: var(--warm-brown);
+  }
+  .import-input {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    color: var(--warm-brown);
+    background: #fff;
+    border: 1px solid rgba(92,61,30,0.2);
+    border-radius: 8px;
+    padding: 0.7rem 0.9rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .btn-import-action {
+    display: block;
+    width: 100%;
+    margin-top: 1rem;
+    background: var(--terracotta);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 0.75rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+  .btn-import-action:disabled { opacity: 0.5; cursor: default; }
+  .import-photo-options {
+    display: flex;
+    gap: 0.75rem;
+  }
+  .import-photo-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 1.2rem 0.5rem;
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    background: var(--warm-white);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--warm-brown);
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .import-photo-btn:active,
+  .import-photo-btn.selected {
+    border-color: var(--terracotta);
+    background: var(--light-terra);
+  }
+  .import-photo-icon {
+    font-size: 1.8rem;
+    line-height: 1;
+  }
+  /* ── Loading spinner ── */
+  .import-spinner {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 2.5px solid var(--border);
+    border-top-color: var(--terracotta);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 0.4rem;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  .recipe-grid-loading {
+    text-align: center;
+    padding: 2rem 0;
+    color: var(--text-muted);
+    font-size: 0.95rem;
   }
   .fab-import {
     position: fixed;

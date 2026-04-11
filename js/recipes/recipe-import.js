@@ -1,18 +1,27 @@
-// Receptimport: modal för URL och fotoimport via Gemini.
+// Receptimport: bottom-sheet modal för URL och fotoimport via Gemini.
+
+let selectedPhotoFile = null;
 
 export function openImportModal() {
   document.getElementById('importFeedback').textContent  = '';
   document.getElementById('importUrlInput').value        = '';
-  document.getElementById('importPhotoInput').value      = '';
+  document.getElementById('importCameraInput').value     = '';
+  document.getElementById('importFileInput').value       = '';
   document.getElementById('importUrlBtn').disabled       = false;
-  document.getElementById('importPhotoBtn').disabled     = false;
+  document.getElementById('importPhotoBtn').disabled     = true;
+  selectedPhotoFile = null;
+  document.querySelectorAll('.import-photo-btn').forEach(b => b.classList.remove('selected'));
   switchImportTab('url');
-  document.getElementById('importModal').style.display   = 'block';
+  const modal = document.getElementById('importModal');
+  modal.style.display = '';
+  modal.classList.add('open');
   document.body.style.overflow = 'hidden';
 }
 
 export function closeImportModal() {
-  document.getElementById('importModal').style.display = 'none';
+  const modal = document.getElementById('importModal');
+  modal.classList.remove('open');
+  modal.style.display = 'none';
   document.body.style.overflow = '';
 }
 
@@ -24,6 +33,20 @@ export function switchImportTab(tab) {
   document.getElementById('importFeedback').textContent = '';
 }
 
+// Hantera bildval från kamera eller filväljare
+function handlePhotoSelect(input) {
+  const file = input.files[0];
+  if (!file) return;
+  selectedPhotoFile = file;
+  document.getElementById('importPhotoBtn').disabled = false;
+  // Markera vald källa
+  document.querySelectorAll('.import-photo-btn').forEach(b => b.classList.remove('selected'));
+  input.closest('.import-photo-btn').classList.add('selected');
+  const fb = document.getElementById('importFeedback');
+  fb.style.color   = 'var(--text-muted)';
+  fb.textContent   = `Vald: ${file.name.length > 25 ? file.name.slice(0, 22) + '…' : file.name}`;
+}
+
 export async function importFromUrl() {
   const url = document.getElementById('importUrlInput').value.trim();
   const fb  = document.getElementById('importFeedback');
@@ -31,7 +54,7 @@ export async function importFromUrl() {
   if (!url) { fb.textContent = 'Ange en webbadress.'; return; }
   btn.disabled     = true;
   fb.style.color   = 'var(--text-muted)';
-  fb.textContent   = 'Hämtar recept…';
+  fb.innerHTML     = '<span class="import-spinner"></span>Hämtar recept…';
   try {
     const res  = await fetch('/api/import-recipe', {
       method: 'POST',
@@ -50,23 +73,22 @@ export async function importFromUrl() {
 }
 
 export async function importFromPhoto() {
-  const file = document.getElementById('importPhotoInput').files[0];
   const fb   = document.getElementById('importFeedback');
   const btn  = document.getElementById('importPhotoBtn');
-  if (!file) { fb.textContent = 'Välj en bild.'; return; }
+  if (!selectedPhotoFile) { fb.textContent = 'Välj en bild först.'; return; }
   btn.disabled = true;
 
   const messages = ['Analyserar bild…', 'Identifierar ingredienser…', 'Formaterar recept…'];
   let msgIdx = 0;
   fb.style.color = 'var(--text-muted)';
-  fb.textContent = messages[0];
+  fb.innerHTML   = `<span class="import-spinner"></span>${messages[0]}`;
   const msgTimer = setInterval(() => {
     msgIdx = (msgIdx + 1) % messages.length;
-    fb.textContent = messages[msgIdx];
+    fb.innerHTML = `<span class="import-spinner"></span>${messages[msgIdx]}`;
   }, 2500);
 
   try {
-    const imageBase64 = await resizeAndEncodeImage(file, 1200);
+    const imageBase64 = await resizeAndEncodeImage(selectedPhotoFile, 1200);
     const res  = await fetch('/api/import-recipe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -101,10 +123,20 @@ export function resizeAndEncodeImage(file, maxPx) {
   });
 }
 
+function toSentenceCase(str) {
+  if (!str) return '';
+  const letters = str.replace(/[^a-zA-ZåäöÅÄÖ]/g, '');
+  const upper   = letters.replace(/[^A-ZÅÄÖ]/g, '').length;
+  if (letters.length > 0 && upper / letters.length > 0.5) {
+    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+  }
+  return str;
+}
+
 export function openImportPreview(recipe) {
   window.editingId = null;
   document.getElementById('editModalTitle').textContent      = 'Nytt recept';
-  document.getElementById('edit-title').value                = recipe.title || '';
+  document.getElementById('edit-title').value                = toSentenceCase(recipe.title);
   document.getElementById('edit-protein').value              = recipe.protein || 'vegetarisk';
   document.getElementById('edit-time').value                 = recipe.time || '';
   document.getElementById('edit-servings').value             = recipe.servings || 4;
@@ -117,6 +149,10 @@ export function openImportPreview(recipe) {
   document.getElementById('editModal').style.display         = 'block';
   document.body.style.overflow = 'hidden';
 }
+
+// Event listeners för kamera/fil-inputs
+document.getElementById('importCameraInput').addEventListener('change', function() { handlePhotoSelect(this); });
+document.getElementById('importFileInput').addEventListener('change', function() { handlePhotoSelect(this); });
 
 window.openImportModal    = openImportModal;
 window.closeImportModal   = closeImportModal;

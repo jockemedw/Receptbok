@@ -88,11 +88,15 @@ export async function saveRecipe() {
       return;
     }
 
-    // Steg 2: Receptet är sparat — stäng modal och ladda om listan
+    // Steg 2: Receptet är sparat — stäng modal och visa laddning
     closeEditModal();
     window.switchTab('recept');
     const grid = document.getElementById('recipeGrid');
-    grid.style.opacity = '0.5';
+    grid.style.opacity = '0.4';
+    const spinner = document.createElement('div');
+    spinner.className = 'recipe-grid-loading';
+    spinner.innerHTML = '<span class="import-spinner"></span> Laddar receptlistan…';
+    grid.parentNode.insertBefore(spinner, grid);
 
     try {
       // Vänta kort så GitHub hinner uppdatera, sedan hämta med cache-bust
@@ -125,6 +129,7 @@ export async function saveRecipe() {
     }
 
     grid.style.opacity = '';
+    spinner.remove();
 
     // Nollställ filter så kortet syns
     window.activeFilters = new Set(['alla']);
