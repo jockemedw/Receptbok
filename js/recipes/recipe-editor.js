@@ -205,6 +205,7 @@ export async function deleteRecipe() {
     window.RECIPES = window.RECIPES.filter(r => r.id !== window.editingId);
     const card = document.querySelector(`.recipe-card[data-id="${window.editingId}"]`);
     if (card) card.remove();
+    delBtn.disabled = false;
     closeEditModal();
   } catch {
     feedback.textContent = 'Kunde inte ta bort — prova igen.';
