@@ -349,6 +349,7 @@
   .pill-time     { background: #f2ede8; color: var(--text-muted); }
   .pill-tested   { background: var(--light-sage); color: var(--color-success-dark); }
   .pill-untested { background: #f4f2ef; color: #b0a090; }
+  .pill-offer    { background: #fef3cd; color: #856404; }
   .pill-toggle   { cursor: pointer; }
   .pill-toggle:active { opacity: 0.6; }
 
@@ -391,6 +392,38 @@
     font-weight: 500;
     margin-bottom: 0.75rem;
   }
+
+  /* ── OFFER SECTION ── */
+  .offer-section {
+    background: #fef9e7;
+    border-radius: 8px;
+    padding: 0.75rem;
+  }
+  .offer-section-title {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #856404;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+  .offer-match-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .offer-match-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.25rem 0;
+    border-bottom: 1px solid #f5e6c3;
+    font-size: 0.82rem;
+  }
+  .offer-match-item:last-child { border-bottom: none; }
+  .offer-ingredient { font-weight: 500; color: var(--ink); }
+  .offer-product { color: var(--text-muted); font-size: 0.78rem; flex: 1; text-align: center; padding: 0 0.5rem; }
+  .offer-discount { color: var(--color-success-dark); font-weight: 600; white-space: nowrap; }
 
   /* ── INGREDIENTS ── */
   .ingredients-list {

@@ -12,6 +12,7 @@ import './recipes/recipe-editor.js';
 import './recipes/recipe-import.js';
 import './weekly-plan/plan-generator.js';
 import './weekly-plan/plan-viewer.js';
+import './offers/offers-display.js';
 
 async function init() {
   try {
@@ -57,3 +58,4 @@ document.getElementById('filters').addEventListener('click', e => {
 
 init();
 window.loadWeeklyPlan();
+window.loadOffers();

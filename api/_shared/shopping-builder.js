@@ -1,7 +1,7 @@
 // ─── INGREDIENT PARSER — 5-stegspipeline ───────────────────────────────────
 
 // Steg 3: Varianter → kanoniskt namn
-const NORMALIZATION_TABLE = {
+export const NORMALIZATION_TABLE = {
   // Lök
   "gul lök": "lök", "gula lökar": "lök", "lökar": "lök",
   "hackad lök": "lök", "finhackad lök": "lök", "hackad gul lök": "lök",
@@ -198,7 +198,7 @@ const SKAFFERI_OVERRIDE = new Set([
 
 const SMALL_UNITS = new Set(["tsk", "krm", "msk", "nypa", "tumme"]);
 
-const PANTRY_ALWAYS_SKIP = new Set([
+export const PANTRY_ALWAYS_SKIP = new Set([
   "salt", "svartpeppar", "vitpeppar", "vatten", "salt & peppar", "salt och svartpeppar",
   "salt och peppar", "lite vatten", "valfria grönsaker",
 ]);
@@ -233,7 +233,7 @@ function parseFraction(str) {
   return parseFloat(s.replace(",", ".")) || null;
 }
 
-function cleanIngredient(raw) {
+export function cleanIngredient(raw) {
   let s = raw.includes(":") ? raw.split(":")[1].trim() : raw.trim();
   s = s.replace(/\s*\(.*?\)\s*/g, " ").trim();
   s = s.replace(/^(ev\.?\s+|eventuellt\s+|ca\s+)/i, "");
@@ -257,7 +257,7 @@ function cleanIngredient(raw) {
   return s;
 }
 
-function parseIngredient(raw) {
+export function parseIngredient(raw) {
   const cleaned = cleanIngredient(raw);
   let remaining = cleaned;
   const amountMatch = remaining.match(
@@ -279,7 +279,7 @@ function parseIngredient(raw) {
   return { amount, unit, name };
 }
 
-function normalizeName(name) {
+export function normalizeName(name) {
   return NORMALIZATION_TABLE[name] || name;
 }
 

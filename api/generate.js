@@ -66,7 +66,7 @@ function updateHistory(history, newIds, date) {
 }
 
 // ── Deterministisk receptväljare ─────────────────────────────────────────────
-function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), usedOn = {}) {
+function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), usedOn = {}, offerScores = {}) {
   const MAX_PER_PROTEIN = 2;
 
   // ── 1. Historikfiltrering ─────────────────────────────────────────────────
@@ -100,31 +100,57 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
   const result = [];
   let untestedSoFar = 0;
 
+  const hasOffers = Object.keys(offerScores).length > 0;
+
+  function sortByOffer(candidates) {
+    if (hasOffers && candidates.length > 1) {
+      candidates.sort((a, b) => (offerScores[b.id] || 0) - (offerScores[a.id] || 0));
+    }
+    return candidates[0] || null;
+  }
+
   function pick(dayPool, altPool, mustBeVeg) {
     const maxForProtein = (p) => p === "vegetarisk" ? maxVeg : MAX_PER_PROTEIN;
+
+    // Primär pool — alla constraints
+    const primary = [];
     for (const r of dayPool) {
       if (usedIds.has(r.id)) continue;
       if (mustBeVeg && r.protein !== "vegetarisk") continue;
       if (!mustBeVeg && r.protein === "vegetarisk") continue;
       if ((proteinUsage[r.protein] || 0) >= maxForProtein(r.protein)) continue;
       if (!r.tested && untestedSoFar >= constraints.untested_count) continue;
-      return r;
+      primary.push(r);
     }
+    if (primary.length) return sortByOffer(primary);
+
+    // Relaxerad primär — skippa protein/tested-constraints
+    const relaxed = [];
     for (const r of dayPool) {
       if (usedIds.has(r.id)) continue;
       if (mustBeVeg && r.protein !== "vegetarisk") continue;
-      return r;
+      relaxed.push(r);
     }
+    if (relaxed.length) return sortByOffer(relaxed);
+
+    // Alternativ pool
+    const alt = [];
     for (const r of altPool) {
       if (usedIds.has(r.id)) continue;
       if (mustBeVeg && r.protein !== "vegetarisk") continue;
-      return r;
+      alt.push(r);
     }
+    if (alt.length) return sortByOffer(alt);
+
+    // Sista utväg — hela receptlistan
+    const any = [];
     for (const r of recipes) {
       if (usedIds.has(r.id)) continue;
       if (mustBeVeg && r.protein !== "vegetarisk") continue;
-      return r;
+      any.push(r);
     }
+    if (any.length) return sortByOffer(any);
+
     return null;
   }
 
@@ -161,6 +187,7 @@ export default createHandler(async (req, res, pat) => {
     vegetarian_days = 0,
     skip_shopping = false,
     blocked_dates = [],
+    prefer_offers = true,
   } = req.body;
 
   if (!start_date || !end_date) {
@@ -187,10 +214,24 @@ export default createHandler(async (req, res, pat) => {
   }
 
   const recentIds = recentlyUsedIds(historyData);
+
+  // Hämta erbjudande-score om prefer_offers är aktivt
+  let offerScores = {};
+  if (prefer_offers) {
+    try {
+      const cache = await readFileRaw("offers-cache.json");
+      if (cache?.recipeMatches) {
+        offerScores = Object.fromEntries(
+          Object.entries(cache.recipeMatches).map(([id, m]) => [id, m.offerScore || 0])
+        );
+      }
+    } catch { /* ingen cache — kör utan erbjudanden */ }
+  }
+
   const allDays = buildDayList(start_date, end_date);
   const blockedSet = new Set(blocked_dates);
   const activeDays = allDays.filter((d) => !blockedSet.has(d.date));
-  const selectedDays = selectRecipes(filtered, activeDays, constraints, recentIds, historyData.usedOn || {});
+  const selectedDays = selectRecipes(filtered, activeDays, constraints, recentIds, historyData.usedOn || {}, offerScores);
 
   // Merge: blockerade dagar infogas med recipe: null
   const days = allDays.map((d) => {

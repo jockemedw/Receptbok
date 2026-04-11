@@ -235,6 +235,7 @@ export function openWeekRecipe(recipeId, title, cardEl) {
       <ol class="steps-list">${stepsHtml}</ol>
     </div>
     ${notesHtml}
+    ${window.getOfferDetailHtml ? window.getOfferDetailHtml(r.id) : ''}
     ${actionBtns}
   </div>`;
 
@@ -378,6 +379,7 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false) {
       onclick="openWeekRecipe(${rid || 'null'}, '${safeTitle}', this)">
       <div class="week-day-name">${d.day}${d.date ? ' · ' + fmtShort(d.date) : ''}${dot}</div>
       <div class="week-day-recipe">${d.recipe}</div>
+      ${window.getOfferBadgeHtml ? window.getOfferBadgeHtml(rid) : ''}
       ${swapBtn}
     </div>`;
   }).join('');

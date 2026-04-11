@@ -178,6 +178,7 @@ export async function generatePlan() {
       vegetarian_days:  parseInt(document.getElementById('vegetarianDays').value) || 0,
       skip_shopping: true,
       blocked_dates:    getBlockedDates(),
+      prefer_offers:    document.getElementById('preferOffersBtn')?.classList.contains('active') ?? true,
     };
     const res  = await fetch('/api/generate', {
       method: 'POST',
@@ -203,6 +204,18 @@ export function toggleTrigger() {
   document.getElementById('triggerSection').classList.remove('collapsed');
 }
 
+export function togglePreferOffers(btn) {
+  btn.classList.toggle('active');
+  btn.textContent = btn.classList.contains('active') ? 'På' : 'Av';
+}
+
+export function showOfferToggle() {
+  if (!window._offerMatches) return;
+  const hasMatches = Object.values(window._offerMatches).some(m => m.matchCount > 0);
+  const row = document.getElementById('offerSettingRow');
+  if (row) row.style.display = hasMatches ? '' : 'none';
+}
+
 window.initDatePickers      = initDatePickers;
 window.getSelectedProteins  = getSelectedProteins;
 window.toggleProtein        = toggleProtein;
@@ -213,3 +226,5 @@ window.toggleDayBlock       = toggleDayBlock;
 window.getBlockedDates      = getBlockedDates;
 window.generatePlan         = generatePlan;
 window.toggleTrigger        = toggleTrigger;
+window.togglePreferOffers   = togglePreferOffers;
+window.showOfferToggle      = showOfferToggle;
