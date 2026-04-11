@@ -2,7 +2,7 @@
   "meta": {
     "version": "1.0",
     "lastUpdated": "2026-04-11",
-    "totalRecipes": 61
+    "totalRecipes": 62
   },
   "recipes": [
     {
@@ -2197,6 +2197,43 @@
         "Hacka alla grönsaker till salladen i små tärningar. Lägg på ett stort fat och lägg på kikärtor. Häll på dressingen och rör om. Strö på valnötter och lite extra koriander och basilika. Använd de tunna brödchipsen att skopa upp den goda salladen med och ät gärna med händerna. Njut!"
       ],
       "notes": "Krispigt, krämigt och fullt av smak – Jennie Walldén bjuder här på en fräsch och matig sallad med rostade kikärtor, krispiga brödchips och en krämig ört- och avokadodressing. Servera gärna allt på ett…"
+    },
+    {
+      "id": 64,
+      "title": "FÄRGSTARK GRÖNSAKSWOK",
+      "tested": false,
+      "servings": 3,
+      "time": null,
+      "timeNote": null,
+      "tags": [
+        "wok",
+        "vegetarisk"
+      ],
+      "protein": "vegetarisk",
+      "ingredients": [
+        "2 rejäla rödlökar",
+        "1 purjolök",
+        "1 röd + 1 gul paprika",
+        "1 stor morot",
+        "4 stjälkar bladselleri",
+        "2 msk olivolja",
+        "grovt milt salt (ca 1 tsk)",
+        "ca 1 tsk garam masala",
+        "lite svartpeppar ur kvarn"
+      ],
+      "instructions": [
+        "Skala rödlökarna och skär dem först i halvor, sedan i strimlor.",
+        "Ansa och skölj purjon noga, skär den i rätt tjocka strimlor på snedden.",
+        "Kärna ur och dela paprikorna, skär bort det vita på insidan och strimla dem ganska grovt.",
+        "Skala moroten och skär den med potatisskalare i långa remsor.",
+        "Skiva selleristjälkarna. Dessa förberedelser kan göras i förväg.",
+        "Hetta upp en wok, häll i oljan.",
+        "Börja med att woka rödlöken någon minut.",
+        "Lägg sedan i de övriga förberedda grönsakerna (purjolök, paprika, morot och selleri).",
+        "Strö över salt och kryddor.",
+        "Woka ett par minuter på ganska stark värme tills grönsakerna fallit ihop lite men ändå fortfarande är spänstiga och fina."
+      ],
+      "notes": "Snabblagad, färgstark och underbart god grönsakswok. Brukar serveras med saffranscouscous (se s. 89), tjock naturell yoghurt och thaichilisås. Kan även tillsättas med 2 dl kokta puylinser (en grön, läcker fransk variant av linser)."
     }
   ]
 }
