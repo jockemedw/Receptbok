@@ -38,12 +38,65 @@ Browser → Vercel /api/generate → Deterministisk receptväljare (JS) → GitH
 - Appen ska fungera på alla enheter. Mobilanvändning prioriteras vid designbeslut (touch-first, inga hover-states som primär interaktion)
 - **Stanna och bekräfta** — om ett meddelande är feedback eller återkoppling (inte en tydlig instruktion), tolka det INTE som en order att agera. Ställ en kort fråga och invänta svar innan du gör ändringar.
 
+## Dashboard (visas vid sessionstart)
+Vid varje ny session: visa denna dashboard för användaren. Git-status hämtas live av SessionStart-hooken.
+
+### Roadmap
+**Fas 1 — Extrapriser → receptförslag** (research klar → `docs/research-extrapriser.md`)
+- [ ] 1A — Testa Tjek/eTilbudsavis API
+- [ ] 1B — Testa ICA inofficiellt API
+- [ ] 1C — Willys-appen reverse engineering (om 1A–1B misslyckas)
+- [ ] 1D — Matchningslogik: receptingrediens ↔ erbjudande
+- [ ] 1E — UX-design
+- [ ] 1F — Implementation
+
+**Fas 2 — Familjelärande algoritm**
+- [ ] 2A — Analysera befintlig data
+- [ ] 2B — Designa viktningsmodell
+- [ ] 2C — Implementation + "Favoriter"-vy
+
+**Fas 3 — Internationell receptimport**
+- [ ] 3A — Kartlägg format och sajter
+- [ ] 3B — Konverteringsmodul (cups→dl, oz→g, översättning)
+- [ ] 3C — Testa mot 10+ receptsidor
+
+**Fas 4 — Automatisk varukorgsfyllning**
+- [ ] 4A — Teknisk research
+- [ ] 4B — Proof of concept
+- [ ] 4C — UX-design + felhantering
+- [ ] 4D — Implementation
+
+**Fas 5 — App Store & monetisering** (marknadsanalys klar → `docs/marknadsanalys-2026-04.md`)
+- [x] Marknadsanalys
+- [ ] 5A — Teknisk väg (PWA / Capacitor / React Native)
+- [ ] 5B — Autentisering & datamodell
+- [ ] 5C — Kostnads- och intäktskalkyl
+
+### Kända buggar
+Inga just nu.
+
+### Öppna utredningar
+Inga just nu.
+
+### Idéer (användarens)
+_(Tom — lägg till idéer här under sessioner)_
+
+### Claudes idéer
+- Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
+- "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
+- Säsongsfilter — automatiskt vikta recept efter säsong (soppa/gryta höst-vinter, sallad sommar)
+
+### Senaste session — Session 25 (2026-04-11)
+- Dashboard tillagd i CLAUDE.md
+- SessionStart-hook konfigurerad
+- Definition of Done uppdaterad
+
 ## Definition of Done (följ alltid)
 Innan "klart" deklareras ska Claude alltid:
 1. Läsa tillbaka den editerade filen och verifiera att ändringen landade rätt (Edit-hooken fångar syntaxfel automatiskt)
 2. Kontrollera att relaterade funktioner inte brutits — Grep efter berörda funktionsnamn om tveksamt
 3. Committa och pusha till `main`
-4. Uppdatera "Senaste session"-sektionen i CLAUDE.md
+4. Uppdatera Dashboard-sektionen i CLAUDE.md (senaste session, buggar, roadmap-checkboxar)
 
 ## Frontend-moduler (VSA)
 Varje feature-slice är en fristående JS-fil. En agent som jobbar med en feature behöver bara läsa 1–2 filer.
@@ -162,75 +215,7 @@ Receptbok/
 { "history": [{ "date": "2026-03-14", "recipeIds": [47, 62, 51] }] }
 ```
 
-## Nästa steg (prioritetsordning)
-1. ~~**Migrera till Vercel-URL**~~ — **KLAR** (session 10, 2026-03-23)
-2. ~~**Inköpslistan**~~ — **KLAR** (session 10, 2026-03-23)
-3. ~~**Standardvärden**~~ — **KLAR** (session 9)
-4. ~~**Matlagningsläge**~~ — **KLAR** (session 10, 2026-03-23)
-5. **Receptimport** — klistra in URL, hämta/tolka/översätt till `recipes.json`-format
-6. ~~**Inköpsliste-ombyggnad**~~ — **KLAR** (session 12, 2026-03-25)
-7. ~~**Portionsanpassning**~~ — **KLAR** (session 12, 2026-03-25)
-8. ~~**Flerval i receptfilter**~~ — **KLAR** (session 16, avbruten)
-9. ~~**Prövat/Oprövat-filter**~~ — **KLAR** (session 16, avbruten)
-10. ~~**Förbättrad receptväljare**~~ — **KLAR** (session 12, 2026-03-25)
-11. ~~**Expanderbara receptkort i veckovyn**~~ — **KLAR** (session 16, avbruten)
-12. ~~**Ytterligare kvalitetskontroll av inköpslistan**~~ — **KLAR** (session 13, 2026-03-26)
-13. ~~**Sortering inom inköpslistans kategorier**~~ — **KLAR** (session 13, 2026-03-26)
-14. ~~**Handplocka recept**~~ — **KLAR** (session 17, 2026-03-30)
-15. ~~**Receptimport via URL och foto**~~ — **KLAR** (session 18, 2026-04-01)
-16. ~~**VSA-refaktorering**~~ — **KLAR** (session 21, 2026-04-06)
-
-### Buggar (tillagda session 20, 2026-04-06)
-- ~~**[BUGG] Inköpslista-bockningar synkas inte**~~ — **FIXAD**
-- ~~**[BUGG] Bockningar försvinner vid flikbyte**~~ — **FIXAD**
-- ~~**[BUGG] Slumpa nytt recept ignorerar regler**~~ — **FIXAD** (session 23, 2026-04-09). Respekterar nu vardag30/helg60-tagg och proteinbalans.
-
-### Nya features (tillagda session 20, 2026-04-06)
-- ~~**[FEATURE] Blockera dagar i matsedeln**~~ — **KLAR** (session 22, 2026-04-09). Inkluderar även "Hoppa över — skjut recept framåt".
-- ~~**[FEATURE] Dynamiska tagggrupper i receptfilter**~~ — **KLAR** (session 23, 2026-04-09). Filterknapparna byggs dynamiskt från `recipes.json`-taggar, grupperade: Tid, Protein, Provat, Typ, Kök, Övrigt.
-
-### Roadmap — features & delprojekt (session 24, 2026-04-10)
-
-Prioritetsordning baserad på edge-värde och svårighetsgrad.
-Detaljplaner i `docs/`. Övergripande plan: `docs/researchplan-app-expansion.md`
-
-**Fas 1 — Extrapriser → receptförslag** (unik hook, `docs/research-extrapriser.md`)
-- [ ] 1A — Testa Tjek/eTilbudsavis API (täcker alla kedjor)
-- [ ] 1B — Testa ICA inofficiellt API (komplement)
-- [ ] 1C — Willys-appen reverse engineering (om 1A–1B misslyckas)
-- [ ] 1D — Matchningslogik: receptingrediens ↔ erbjudande
-- [ ] 1E — UX-design (var visas det i appen?)
-- [ ] 1F — Implementation
-
-**Fas 2 — Familjelärande algoritm** (billigast att bygga, data finns redan)
-- [ ] 2A — Analysera befintlig data (history + tested-flaggor)
-- [ ] 2B — Designa viktningsmodell för `selectRecipes()`
-- [ ] 2C — Implementation + eventuell "Favoriter"-vy
-
-**Fas 3 — Receptimport från internationella sidor** (quality-of-life)
-- [ ] 3A — Kartlägg format och sajter — stöd-matris
-- [ ] 3B — Bygg konverteringsmodul (cups→dl, oz→g, översättning)
-- [ ] 3C — Testa mot 10+ receptsidor
-
-**Fas 4 — Automatisk varukorgsfyllning** (svårast, starkast)
-- [ ] 4A — Teknisk research: Claude in Chrome, Playwright, juridik
-- [ ] 4B — Proof of concept med en butik
-- [ ] 4C — UX-design + felhantering
-- [ ] 4D — Implementation
-
-**Fas 5 — App Store & monetisering** (`docs/marknadsanalys-2026-04.md`)
-- [x] Marknadsanalys — klar
-- [ ] 5A — Teknisk väg (PWA / Capacitor / React Native)
-- [ ] 5B — Autentisering & datamodell för multi-tenant
-- [ ] 5C — Kostnads- och intäktskalkyl
-
-## Senaste session — Session 24 (2026-04-10)
-- **ContextBridge borttagen** — alla referenser rensade ur `js/state.js` och CLAUDE.md
-- **Prövad-pill klickbar i veckovyn** — `plan-viewer.js` fick `pill-toggle` + `onclick="toggleTested()"`, samma som receptbläddraren
-- **Marknadsanalys genomförd** → `docs/marknadsanalys-2026-04.md` — konkurrenter, prismodeller, marknadsstorlek, användarinsikter, positionering
-- **Roadmap skapad** — 5 faser med stegvisa planer, prioriterade efter edge-värde och svårighetsgrad
-- **Extrapris-research** → `docs/research-extrapriser.md` — 6 datakällor kartlagda (Tjek API mest lovande), 6 steg att beta av
-- **Nyckelslutsats:** Receptbokens nisch (gratis + svensk + familj + ingen inloggning) är tom på marknaden. Starkaste edge: extrapriser → receptförslag + familjelärande + varukorgsfyllning.
+## Sessionshistorik
 
 ## Session 23 (2026-04-09)
 - **Total projektöversyn genomförd** — samtliga prioriterade förbättringar implementerade:
