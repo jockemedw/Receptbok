@@ -18,11 +18,11 @@ export default createHandler(async (req, res, pat) => {
 
   const today = new Date().toISOString().slice(0, 10);
 
-  // Hämta befintlig shopping-list för att bevara manuella varor
-  let existingManual = [];
+  // Hämta befintlig shopping-list för att bevara manuella varor och bockningar
+  let existingShop = null;
   try {
-    const { content: existingShop } = await readFile("shopping-list.json", pat);
-    existingManual = existingShop?.manualItems || [];
+    const { content } = await readFile("shopping-list.json", pat);
+    existingShop = content;
   } catch { /* ingen befintlig lista — OK */ }
 
   const shoppingList = {
@@ -31,7 +31,8 @@ export default createHandler(async (req, res, pat) => {
     endDate: plan.endDate,
     recipeItems: shoppingCategories,
     recipeItemsMovedAt: null,
-    manualItems: existingManual,
+    manualItems: existingShop?.manualItems || [],
+    checkedItems: existingShop?.checkedItems || {},
   };
 
   const confirmedPlan = { ...plan, confirmedAt: new Date().toISOString() };

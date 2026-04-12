@@ -1,4 +1,5 @@
 import { createHandler } from "./_shared/handler.js";
+import { lookup } from "node:dns/promises";
 
 const GEMINI_MODELS = [
   "gemini-2.5-flash",
@@ -30,9 +31,46 @@ export default createHandler(async (req, res) => {
 
 // ── URL-import ──────────────────────────────────────────────────────────────
 
+function isPrivateIp(ip) {
+  // IPv4
+  if (/^\d+\.\d+\.\d+\.\d+$/.test(ip)) {
+    const [a, b] = ip.split(".").map(Number);
+    if (a === 10) return true;
+    if (a === 127) return true;
+    if (a === 0) return true;
+    if (a === 169 && b === 254) return true; // link-local + cloud metadata
+    if (a === 172 && b >= 16 && b <= 31) return true;
+    if (a === 192 && b === 168) return true;
+    if (a >= 224) return true; // multicast + reserved
+    return false;
+  }
+  // IPv6
+  const low = ip.toLowerCase();
+  if (low === "::1" || low === "::") return true;
+  if (low.startsWith("fc") || low.startsWith("fd")) return true; // ULA
+  if (low.startsWith("fe80")) return true; // link-local
+  return false;
+}
+
 async function handleUrl(url, res) {
   if (!url || !/^https?:\/\//i.test(url)) {
     return res.status(400).json({ error: "Ange en giltig webbadress." });
+  }
+
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return res.status(400).json({ error: "Ange en giltig webbadress." });
+  }
+
+  try {
+    const { address } = await lookup(parsed.hostname);
+    if (isPrivateIp(address)) {
+      return res.status(400).json({ error: "Den här adressen stöds inte — prova en annan receptsajt." });
+    }
+  } catch {
+    return res.status(400).json({ error: "Kunde inte nå sidan — kontrollera adressen." });
   }
 
   let html;

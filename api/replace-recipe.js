@@ -1,3 +1,4 @@
+import { buildShoppingList } from "./_shared/shopping-builder.js";
 import { createHandler } from "./_shared/handler.js";
 import { readFile, readFileRaw, writeFile } from "./_shared/github.js";
 import { fetchHistory, recentlyUsedIds, shuffle } from "./_shared/history.js";
@@ -20,6 +21,9 @@ export default createHandler(async (req, res, pat) => {
 
   const dayIdx = plan.days.findIndex(d => d.date === date);
   if (dayIdx === -1) return res.status(404).json({ error: "Dagen hittades inte i veckoplanen." });
+  if (plan.days[dayIdx].blocked) {
+    return res.status(400).json({ error: "Blockerade dagar kan inte bytas — avblockera dagen först." });
+  }
 
   let picked;
   if (newRecipeId) {
@@ -86,7 +90,36 @@ export default createHandler(async (req, res, pat) => {
   };
 
   const today = new Date().toISOString().slice(0, 10);
-  await writeFile("weekly-plan.json", plan, pat, `Receptbyte ${today} — autogenererad`);
+  const commitMsg = `Receptbyte ${today} — autogenererad`;
 
+  if (plan.confirmedAt) {
+    const selectedIds = plan.days.map((d) => d.recipeId).filter(Boolean);
+    const shoppingCategories = buildShoppingList(selectedIds, allRecipes);
+
+    let existingShop = null;
+    try {
+      const { content } = await readFile("shopping-list.json", pat);
+      existingShop = content;
+    } catch { /* ingen befintlig lista */ }
+
+    const shoppingList = {
+      generated: today,
+      startDate: plan.startDate,
+      endDate: plan.endDate,
+      recipeItems: shoppingCategories,
+      recipeItemsMovedAt: existingShop?.recipeItemsMovedAt ?? null,
+      manualItems: existingShop?.manualItems || [],
+      checkedItems: existingShop?.checkedItems || {},
+    };
+
+    await Promise.all([
+      writeFile("weekly-plan.json", plan, pat, commitMsg),
+      writeFile("shopping-list.json", shoppingList, pat, commitMsg),
+    ]);
+
+    return res.status(200).json({ recipe: picked.title, recipeId: picked.id, shoppingList });
+  }
+
+  await writeFile("weekly-plan.json", plan, pat, commitMsg);
   return res.status(200).json({ recipe: picked.title, recipeId: picked.id });
 });

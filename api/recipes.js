@@ -28,17 +28,21 @@ export default createHandler(async (req, res, pat) => {
   } else if (action === "delete") {
     const idx = recipes.findIndex(r => r.id === id);
     if (idx === -1) return res.status(404).json({ error: "Recept hittades inte." });
+    const deletedId = recipes[idx].id;
     recipes.splice(idx, 1);
     content.meta.totalRecipes = recipes.length;
+    content.meta.nextId = Math.max(content.meta.nextId || 0, deletedId);
     content.meta.lastUpdated  = new Date().toISOString().slice(0, 10);
     await writeFile("recipes.json", content, pat, "Receptdatabasen uppdaterad");
     return res.status(200).json({ ok: true });
 
   } else if (action === "add") {
     if (!recipe) return res.status(400).json({ error: "Recept saknas." });
-    const maxId = recipes.reduce((max, r) => Math.max(max, r.id), 0);
+    const existingMax = recipes.reduce((max, r) => Math.max(max, r.id), 0);
+    const nextId = Math.max(existingMax, content.meta.nextId || 0) + 1;
+    content.meta.nextId = nextId;
     const newRecipe = {
-      id: maxId + 1,
+      id: nextId,
       title: recipe.title,
       tested: false,
       servings: recipe.servings || 4,

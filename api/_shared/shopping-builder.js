@@ -364,9 +364,10 @@ export function buildShoppingList(selectedIds, allRecipes) {
     if (!alreadyCovered) categories[categorize(normalized)].push(normalized);
   }
 
+  // Sortera på namnet (som är början på strängen i formatet "namn (qty)").
+  // å/ä/ö mappas sist — localeCompare med sv-locale är opålitligt i Vercels serverless-miljö.
   const svKey = (s) =>
-    s.replace(/^[0-9½¼¾][0-9,.\s]*(?:dl|g|kg|msk|tsk|krm|st|frp|påsar?|burk|kruka|liter|l)\s+/i, "")
-     .trim().toLowerCase()
+    s.trim().toLowerCase()
      .replace(/å/g, "z\u0001").replace(/ä/g, "z\u0002").replace(/ö/g, "z\u0003");
   for (const arr of Object.values(categories)) {
     arr.sort((a, b) => svKey(a).localeCompare(svKey(b)));

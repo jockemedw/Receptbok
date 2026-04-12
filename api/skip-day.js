@@ -46,10 +46,10 @@ export default createHandler(async (req, res, pat) => {
     const selectedIds = plan.days.map((d) => d.recipeId).filter(Boolean);
     const shoppingCategories = buildShoppingList(selectedIds, allRecipesData.recipes);
 
-    let existingManual = [];
+    let existingShop = null;
     try {
-      const { content: existingShop } = await readFile("shopping-list.json", pat);
-      existingManual = existingShop?.manualItems || [];
+      const { content } = await readFile("shopping-list.json", pat);
+      existingShop = content;
     } catch { /* ingen befintlig lista */ }
 
     const shoppingList = {
@@ -57,8 +57,9 @@ export default createHandler(async (req, res, pat) => {
       startDate: plan.startDate,
       endDate: plan.endDate,
       recipeItems: shoppingCategories,
-      recipeItemsMovedAt: today,
-      manualItems: existingManual,
+      recipeItemsMovedAt: existingShop?.recipeItemsMovedAt ?? null,
+      manualItems: existingShop?.manualItems || [],
+      checkedItems: existingShop?.checkedItems || {},
     };
 
     await Promise.all([

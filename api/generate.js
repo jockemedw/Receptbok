@@ -220,6 +220,7 @@ export default createHandler(async (req, res, pat) => {
     recipeItems: shoppingCategories,
     recipeItemsMovedAt: null,
     manualItems: existingShop?.manualItems || [],
+    checkedItems: existingShop?.checkedItems || {},
   };
 
   await Promise.all([
