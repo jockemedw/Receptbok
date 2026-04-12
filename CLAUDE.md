@@ -90,7 +90,18 @@ _(Tom — lägg till idéer här under sessioner)_
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 - Säsongsfilter — automatiskt vikta recept efter säsong (soppa/gryta höst-vinter, sallad sommar)
 
-### Senaste session — Session 25 (2026-04-11)
+### Senaste session — Session 26 (2026-04-12)
+- **Code review backend + frontend genomförd** — 10 buggar identifierade och fixade:
+  - `replace-recipe`: bygger om inköpslistan vid bekräftad plan + blockerar replace på blockerad dag
+  - `generate/confirm/skip-day`: bevarar `checkedItems` och `recipeItemsMovedAt` vid ombyggnad
+  - `import-recipe`: DNS-lookup + privat-IP-blockering (SSRF-skydd)
+  - `recipes`: `meta.nextId` förhindrar ID-återanvändning efter delete
+  - `shopping-builder`: död quantity-strip-regex borttagen
+  - `plan-viewer`: `replaceRecipe`/`selectRecipeForDay` uppdaterar nu ingrediensvy + inköpslista efter receptbyte på bekräftad plan
+  - `shopping-list`: bevarar in-memory bockar vid snabb bockning + manual-tillägg (race condition)
+  - `recipe-import`: `URL.revokeObjectURL` frigörs efter bildladdning
+
+### Session 25 (2026-04-11)
 - Dashboard tillagd i CLAUDE.md
 - SessionStart-hook konfigurerad
 - Definition of Done uppdaterad
