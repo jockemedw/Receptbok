@@ -166,9 +166,12 @@ export async function loadShoppingTab() {
   document.getElementById('shopNoData').style.display   = 'none';
   try {
     let shop;
+    let preserveChecked = false;
     if (window._freshShopContent) {
       shop = window._freshShopContent;
       window._freshShopContent = null;
+      // Manuella add/remove ändrar inte bock-state — behåll in-memory _checkedItems
+      preserveChecked = true;
     } else {
       const res = await fetch('shopping-list.json?' + Date.now());
       if (!res.ok) throw new Error();
@@ -185,7 +188,7 @@ export async function loadShoppingTab() {
       return;
     }
     document.getElementById('shopContent').style.display = '';
-    window._checkedItems = shop.checkedItems || {};
+    if (!preserveChecked) window._checkedItems = shop.checkedItems || {};
     renderFullShoppingList(hasRecipe ? recipeItemsData : null, shop.manualItems || []);
   } catch {
     document.getElementById('shopLoading').style.display = 'none';

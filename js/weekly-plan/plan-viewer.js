@@ -35,10 +35,19 @@ export async function selectRecipeForDay(event, recipeId, title) {
     });
     if (!res.ok) throw new Error();
 
+    const data = await res.json();
     const card = document.querySelector(`.week-day-card[data-date="${date}"]`);
     if (card) {
       card.dataset.recipeid = recipeId;
       card.querySelector('.week-day-recipe').textContent = title;
+    }
+    if (data.shoppingList) {
+      window.renderIngredientPreview(
+        data.shoppingList.recipeItems || null,
+        data.shoppingList.recipeItemsMovedAt || null,
+        false
+      );
+      if (window.renderShoppingData) window.renderShoppingData(data.shoppingList);
     }
     exitReplaceMode();
     window.switchTab('vecka');
@@ -155,6 +164,14 @@ export async function replaceRecipe(currentId, date, btnEl) {
       selectedCard.querySelector('.week-day-recipe').textContent = data.recipe;
       selectedCard.classList.remove('selected');
       openWeekRecipe(data.recipeId, data.recipe, selectedCard);
+    }
+    if (data.shoppingList) {
+      window.renderIngredientPreview(
+        data.shoppingList.recipeItems || null,
+        data.shoppingList.recipeItemsMovedAt || null,
+        false
+      );
+      if (window.renderShoppingData) window.renderShoppingData(data.shoppingList);
     }
   } catch (e) {
     btnEl.disabled    = false;
