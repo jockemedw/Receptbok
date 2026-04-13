@@ -47,11 +47,12 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 
 ### Roadmap
 **Fas 1 — Extrapriser → receptförslag** (research klar → `docs/research-extrapriser.md`)
-- [ ] 1A — Testa Tjek/eTilbudsavis API
-- [ ] 1B — Testa ICA inofficiellt API
-- [ ] 1C — Willys-appen reverse engineering (om 1A–1B misslyckas)
-- [ ] 1D — Matchningslogik: receptingrediens ↔ erbjudande
-- [ ] 1E — UX-design
+- [x] 1A — Tjek/eTilbudsavis API — **utredd, otillräcklig** (endast 14% täckning)
+- [ ] 1B — ICA inofficiellt API — **hoppas över** (Willys räcker för Ekholmen-fallet)
+- [x] 1C — Willys API reverse engineering — **klart**: `GET /search/campaigns/online?q=<storeId>&type=PERSONAL_GENERAL&size=500` (ingen auth, ingen CSRF, ingen session). Store 2160 = Ekholmen → 199 erbjudanden
+- [ ] 1C2 — Willys+ medlemserbjudanden — **utforskning pågår** (Fas A/B/C, se Öppna utredningar)
+- [~] 1D — Matchningslogik: prototyp klar (`match-offers-v2.py` lokalt). 44/62 recept matchar, 22/62 får ≥10 kr besparing. Kräver lexikon-utökning från 66 → ~150 termer och stemming på receptsidan
+- [x] 1E — UX-design — **beslutad** (se nedan)
 - [ ] 1F — Implementation
 
 **Fas 2 — Familjelärande algoritm**
@@ -80,7 +81,14 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 Inga just nu.
 
 ### Öppna utredningar
-Inga just nu.
+**Willys+ medlemserbjudanden — 3-fas utforskning (nästa session):**
+- **Fas A — Rekon:** Vilka inloggningsmetoder erbjuder willys.se? BankID? E-post+lösenord? "Kom ihåg mig"-cookies? Mobilapp-OAuth? Claude läser login-sidan.
+- **Fas B — Validering:** Hur ser `PERSONAL_SEGMENTED`-svaret faktiskt ut när man är inloggad? Är det 10 extra produkter eller 100 helt andra priser? Kräver att användaren loggar in manuellt på willys.se och hämtar `https://www.willys.se/search/campaigns/online?q=2160&type=PERSONAL_SEGMENTED&page=0&size=500` i devtools och klistrar in svaret. Avgör om Fas C är värd tid.
+- **Fas C — Automatiseringsväg** (välj baserat på A+B):
+  - Väg 1: Manuell cookie-export → Vercel env var (lätt, skört, cookies går ut efter veckor)
+  - Väg 2: Scripted email/password-login (medelsvårt, bara om Willys tillåter lösenord)
+  - Väg 3: BankID — **dödsvägen**, ingen lovlig automatisering
+  - Väg 4: Acceptera anonyma priser, märk UI:t tydligt ("dina faktiska priser kan vara lägre")
 
 ### Idéer (användarens)
 _(Tom — lägg till idéer här under sessioner)_
@@ -90,7 +98,20 @@ _(Tom — lägg till idéer här under sessioner)_
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 - Säsongsfilter — automatiskt vikta recept efter säsong (soppa/gryta höst-vinter, sallad sommar)
 
-### Senaste session — Session 26 (2026-04-12)
+### Senaste session — Session 27 (2026-04-13)
+- **Willys API reverse engineering klart.** Endpointen är plain GET utan auth/CSRF/session: `GET https://www.willys.se/search/campaigns/online?q=<storeId>&type=PERSONAL_GENERAL&page=0&size=500`. `q`-parametern är **storeId** (inte sökfråga — felläsning av bundlen kostade en timme). Store 2160 = Willys Linköping Ekholmen → **199 erbjudanden** anonymt, 485 KB JSON.
+- **Probe-batteri genomförd** — endpointen är stabil: olika storeId ger olika sortiment (nationella priser), pagination via size=500 fungerar, inga rate-limits vid 5 rapid calls (CDN-cachat), graceful 400 på ogiltiga stores, 500 bara om `q` saknas helt. `type=WHATEVER` ignoreras och default:ar till GENERAL.
+- **Datastruktur dokumenterad:** 190 MixMatchPricePromotion + 9 SubtotalOrderPromotion (filtreras bort, inte matchningsbara) + 2 MixMatchPercentagePromotion. 50 av 190 är "realMixAndMatch" (köp X för Y kr). `validUntil` spänner 2026-04-19 → 2026-06-28 med bara 6 unika slutdatum (batch-rotationer). Normalpris = `priceValue + savingsAmount`.
+- **Matchningsprototyp körd** (`match-offers-v2.py` lokalt): 44/62 recept matchar, 22/62 får ≥10 kr realistisk besparing. Median 3,9 kr, snitt 14 kr per matchat recept. Strukturen är viable men lexikonet (66 termer idag) är primära flaskhalsen — varje ny term låser upp 1–3 erbjudanden och 2–5 recept. Receptsidan har en bugg med sammansatta tokens ("kycklingfärs", "laxfiléer", "körsbärstomater") som inte exakt-matchar CANON — fixbart med stemming eller substring-scan.
+- **UX beslutat tillsammans med användaren (fyra punkter):**
+  1. **Opt-in toggle** "Prisoptimera min matsedel" i inställningspanelen, default AV. Hovrande i-ikon förklarar vad det gör, begränsningar (Willys+ saknas, tunna veckor, att filter alltid respekteras).
+  2. **Hård optimering inom befintliga filter:** låsta recept, historik (14 dagar), veg-dagar, proteinbalans, oprövade, datumintervall, blockerade dagar — alla respekteras fullt. Optimeringen byter bara **vilket konkret recept som hamnar i varje slot**, inte strukturen.
+  3. **Kör alltid** även när veckans erbjudanden är tunna. Degraderar graciöst.
+  4. **Besparings-indikation** i veckovyn: "💰 Sparat ca X kr" jämfört med **normalpris** (`priceValue + savingsAmount`) — det enda ärliga jämförelsevärdet. Tröskel ≥10 kr för att undvika brus.
+- **Datakälla för implementation:** `api/willys-offers.js` (ny endpoint) med 1h cache, anropar Willys-endpointen, normaliserar bort SubtotalOrder, returnerar `{code, name, regularPrice, promoPrice, savingPerUnit, qualifyingCount, validUntil}` — ~30 KB istället för 485 KB.
+- **Recon-artefakter gitignorade** (session-cookies, 1 MB JS-dumpar, probe-skript) — filerna ligger lokalt för nästa session men commitas inte.
+
+### Session 26 (2026-04-12)
 - **Code review backend + frontend genomförd** — 10 buggar identifierade och fixade:
   - `replace-recipe`: bygger om inköpslistan vid bekräftad plan + blockerar replace på blockerad dag
   - `generate/confirm/skip-day`: bevarar `checkedItems` och `recipeItemsMovedAt` vid ombyggnad
