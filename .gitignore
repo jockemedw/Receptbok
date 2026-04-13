@@ -27,3 +27,6 @@ pickup-campaigns.json
 delivery-mode-resp.json
 pdf-pages/
 .playwright-mcp/
+
+# Claude Code personlig tillståndsfil — dina verktygsgodkännanden, inte familjens
+.claude/settings.local.json
