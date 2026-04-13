@@ -47,7 +47,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "CHANGES=$(git status --porcelain 2>/dev/null | grep -v '^??'); if [ -n \"$CHANGES\" ]; then echo '{\"hookSpecificOutput\": {\"hookEventName\": \"Stop\", \"additionalContext\": \"Påminnelse: Det finns osparade git-ändringar. Committa och pusha till main om arbetet är klart.\"}}'; fi"
+            "command": "CHANGES=$(git status --porcelain 2>/dev/null | grep -v '^??'); if [ -n \"$CHANGES\" ]; then echo '{\"systemMessage\": \"Påminnelse: Det finns osparade git-ändringar. Committa och pusha till main om arbetet är klart.\"}'; fi"
           }
         ]
       }
