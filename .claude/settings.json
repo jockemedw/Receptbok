@@ -46,8 +46,8 @@
       {
         "hooks": [
           {
-            "type": "prompt",
-            "prompt": "Check if there are uncommitted git changes (staged or unstaged modified files). If yes, respond {\"ok\": false, \"reason\": \"Det finns osparade ändringar. Vill du att jag committar och pushar?\"} If no uncommitted changes, respond {\"ok\": true}."
+            "type": "command",
+            "command": "CHANGES=$(git status --porcelain 2>/dev/null | grep -v '^??'); if [ -n \"$CHANGES\" ]; then echo '{\"hookSpecificOutput\": {\"hookEventName\": \"Stop\", \"additionalContext\": \"Påminnelse: Det finns osparade git-ändringar. Committa och pusha till main om arbetet är klart.\"}}'; fi"
           }
         ]
       }
