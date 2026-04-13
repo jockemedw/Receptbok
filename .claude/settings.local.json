@@ -24,7 +24,16 @@
       "mcp__Claude_Preview__preview_start",
       "Bash(node --check api/generate.js)",
       "mcp__ad716c0c-348c-4941-86d1-931aeafba278__list_projects",
-      "mcp__ad716c0c-348c-4941-86d1-931aeafba278__get_runtime_logs"
+      "mcp__ad716c0c-348c-4941-86d1-931aeafba278__get_runtime_logs",
+      "Skill(code-review:code-review)",
+      "Bash(node --check api/replace-recipe.js)",
+      "Bash(node --check api/skip-day.js)",
+      "Bash(node --check api/confirm.js)",
+      "Bash(node --check api/recipes.js)",
+      "Bash(node --check api/import-recipe.js)",
+      "Bash(node --check js/weekly-plan/plan-viewer.js)",
+      "Bash(node --check js/shopping/shopping-list.js)",
+      "Bash(node --check js/recipes/recipe-import.js)"
     ]
   }
 }
