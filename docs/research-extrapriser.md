@@ -141,8 +141,116 @@ Erbjudanden uppdateras veckovis — vi behöver inte realtidsdata. En daglig cac
 
 ---
 
+## Tjek API — Djupdykning (session 27, 2026-04-13)
+
+### Teknisk bekräftelse
+- **Endpoint:** `GET https://api.etilbudsavis.dk/v2/offers/search?lat=<lat>&lng=<lng>&radius=<m>&query=<term>`
+- **Status:** HTTP 200, ingen API-nyckel krävs, ingen registrering
+- **Testad:** 2026-04-13 med `lat=58.41, lng=15.62, radius=5000, query=kyckling`
+- **Resultat:** 24 erbjudanden från ICA Supermarket, City Gross, Hemköp, Coop, Willys, Willys Hemma, Hypermat, Pekås, Tempo m.fl.
+- **Developer-portalen (`developers.shopgun.com`) är nedlagd** — API:et lever men finns inte längre dokumenterat publikt.
+
+### Svarsformat (relevanta fält)
+```json
+{
+  "id": "...",
+  "heading": "Kycklingfärs",                          // produktnamn (fritext, case varierar)
+  "description": "Obs! Max 2 st | 500 g | Kronfågel", // ofta varumärke + mängd
+  "pricing": { "price": 39, "pre_price": null, "currency": "SEK" },
+  "quantity": {
+    "unit": { "symbol": "g", "si": { "symbol": "kg", "factor": 0.001 } },
+    "size": { "from": 500, "to": 500 },
+    "pieces": { "from": 1, "to": 1 }
+  },
+  "run_from": "2026-04-12T22:00:00+0000",
+  "run_till": "2026-04-19T21:59:59+0000",
+  "dealer": { "name": "ICA Supermarket", "country": { "id": "SE" } },
+  "images": { "thumb": "...", "view": "...", "zoom": "..." }
+}
+```
+
+### Tjek som företag — hur datan faktiskt produceras
+
+**Tjek A/S är ett B2B-SaaS-företag**, inte en gratis konsumenttjänst som skrapar data. Butikskedjorna är **betalande kunder**:
+
+**Datapipeline (tre parallella spår, alla retailer-initierade):**
+1. **CMS-portal** (`cms.tjek.com`) — butikerna loggar in och publicerar erbjudanden manuellt
+2. **Incito-feeds** — proprietärt digitalt katalogformat; butikerna skickar produktfeed, Tjek genererar responsiv katalog med nästan-realtidsuppdatering
+3. **AI-driven PDF-ingest** — butikerna laddar upp reklamblads-PDF, Tjeks AI extraherar erbjudandena (ersatte manuell OCR)
+
+**Ingen skrapning av konkurrenters sajter.** Hela pipelinen förutsätter att butiken är en onboardad kund.
+
+**Intäktsmodell:**
+- Incito-licensavgifter (setup + hosting + 2 % årlig höjning)
+- CMS-prenumerationer
+- Insights (analytics sålt till butiker och varumärken)
+- SDK/API-integrationsavgifter för butiker som vill bygga egna appar
+
+**Konsumentapparna** (eTilbudsavis i DK, eReklamblad i SE, Mattilbud i NO) är **distributionskanalen** som gör B2B-produkten värdefull för butikerna. Räckvidd: 1,5 M MAU i Norden, 26 % av Danmarks befolkning (Kantar Gallup 2023).
+
+**Centralt insikt:** Butiker **betalar Tjek för att få sina erbjudanden publicerade**, eftersom Tjek når deras kunder. Det är **betald marknadsföring**, inte motvillig scraping. Butikerna vill att datan sprids — det är hela affärsidén.
+
+### Juridisk status för tredjepartsanvändning
+
+Tjeks Terms & Conditions (lydelse: dansk lag, Köpenhamn som jurisdiktion) säger uttryckligen:
+
+> "Any use of the Incito API outside Tjek's or the Customer's own platforms... must be agreed upon between the Parties in writing ahead of publication."
+
+**Vår användning ligger i en gråzon:**
+- Inte uttryckligen förbjudet (publika endpointen svarar utan auth)
+- Inte licensierat för oss
+- Community-projekt har använt legacy-API:et i flera år utan takedown
+- Ingen "free developer tier" finns
+
+**Risknivåer:**
+| Scenario | Risk | Motivering |
+|---|---|---|
+| Privat familjeapp (nu) | 🟢 Mycket låg | Typfall för tolererad användning — en familj, ingen redistribution, ingen kommersialisering |
+| Publicering i App Store (fas 5) | 🟡 Medel | Kräver skriftligt avtal — men datan är inte stulen, så samtalet är konstruktivt |
+| Ingen graceful fallback | 🔴 Teknisk | Endpoint kan rate-limitas eller kräva auth när som helst — appen måste tåla det |
+
+### Handlingsplan för framtida monetisering
+
+**Innan publicering i App Store / kommersialisering:**
+
+1. **Kontakta Tjek** — `services@tjek.com`. Beskriv appen som en liten konsumentapp som hjälper familjer matcha recept mot extrapriser. Fråga om:
+   - Hobby/small-app-licens för API-åtkomst
+   - Attribueringskrav (logga, länk tillbaka)
+   - Rate limits
+   - Kostnad (sannolikt rimlig eller gratis — mer exponering gynnar deras kunder)
+2. **Granska deras Terms & Conditions** före avtalsförhandling
+3. **Förbered fallback** — ICA API (inofficiellt) eller Matpriskollen som backup om Tjek säger nej
+4. **Överväg partneravtal** — om appen växer kan det bli värt att betala för direktintegration via Incito
+
+**Viktigt:** Eftersom butikerna redan betalar Tjek för att få datan spridd är incitamenten linjerade — Tjek tjänar på att datan når fler konsumenter. Samtalet bör vara konstruktivt.
+
+### Tekniska skyddsåtgärder (gäller även för familjeversionen)
+
+Oavsett om vi har avtal eller inte, designa integrationen så att Tjek är en **utbytbar datakälla, inte ett hårt beroende**:
+
+1. **Aggressiv caching** — max 1 anrop per ingrediens per dag, lagras i repo eller Edge Config
+2. **User-Agent** som identifierar oss: `"Receptboken/1.0 (hobby family app)"`
+3. **Graceful fallback** — om API:et returnerar 403/429/500, gå tyst i dvala, aldrig krascha appen
+4. **Datumstämpel i UI** — "Priser uppdaterade: YYYY-MM-DD" så användaren förstår att det är en ögonblicksbild
+5. **Abstraktionslager** — all API-logik i `api/offers.js`, matchning i separat modul. Byter vi datakälla ska bara `offers.js` behöva ändras.
+
+### Källor för denna djupdykning
+
+- [Tjek corporate site](https://tjek.com/)
+- [Tjek APIs and SDKs](https://tjek.com/apis-and-sdks)
+- [Tjek Terms & Conditions](https://tjek.com/terms)
+- [Tjek Incito product page](https://tjek.com/incito)
+- [Tjek Insights](https://tjek.com/insights)
+- [Tjek LinkedIn](https://www.linkedin.com/company/tjek/)
+- [Tjek Crunchbase](https://www.crunchbase.com/organization/tjek)
+- [Tjek JS SDK på GitHub](https://github.com/tjek/tjek-js-sdk)
+- [Kantar Gallup användarstatistik sep 2023](https://www.linkedin.com/pulse/26-danes-use-etilbudsavis-58-know-app-kantar-gallup-september-2023)
+
+---
+
 ## Logg
 
 | Datum | Session | Vad som gjordes |
 |-------|---------|-----------------|
 | 2026-04-10 | 24 | Initial research och plan skapad. 6 datakällor identifierade, Tjek API mest lovande. |
+| 2026-04-13 | 27 | Tjek API bekräftat live via direktanrop (24 erbjudanden för kyckling i Ekholmen). Djupdykning i Tjeks affärsmodell — B2B-SaaS där butiker är betalande kunder, datan är inte skrapad. Juridisk gråzon för tredjeparter dokumenterad. Handlingsplan för framtida monetisering fastställd. |
