@@ -51,7 +51,7 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 - [ ] 1B — ICA inofficiellt API — **hoppas över** (Willys räcker för Ekholmen-fallet)
 - [x] 1C — Willys API reverse engineering — **klart**: `GET /search/campaigns/online?q=<storeId>&type=PERSONAL_GENERAL&size=500` (ingen auth, ingen CSRF, ingen session). Store 2160 = Ekholmen → 199 erbjudanden
 - [ ] 1C2 — Willys+ medlemserbjudanden — **utforskning pågår** (Fas A/B/C, se Öppna utredningar)
-- [~] 1D — Matchningslogik: prototyp klar (`match-offers-v2.py` lokalt). 44/62 recept matchar, 22/62 får ≥10 kr besparing. Kräver lexikon-utökning från 66 → ~150 termer och stemming på receptsidan
+- [~] 1D — Matchningslogik: prototyp klar + lexikonresearch klar (`docs/research-lexikon-fas1d.md`, Session 28). 44/62 recept matchar idag, prognos 52–55/62 efter CANON-utökning. **Priority 1** (8 direktmatchande tabellrader: kycklingfärs, fläskfärs, vegofärs, pesto, ketchup, majonnäs, gnocchi, majs) redo att implementeras i `api/_shared/shopping-builder.js`. **Priority 2** (stemming + substring-scan för compounds som `laxfiléer`, `rökt bacon`) kräver kodändring utöver tabelltillägg — avvakta separat pass.
 - [x] 1E — UX-design — **beslutad** (se nedan)
 - [ ] 1F — Implementation
 
@@ -61,8 +61,8 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 - [ ] 2C — Implementation + "Favoriter"-vy
 
 **Fas 3 — Internationell receptimport**
-- [ ] 3A — Kartlägg format och sajter
-- [ ] 3B — Konverteringsmodul (cups→dl, oz→g, översättning)
+- [x] 3A — Kartlägg format och sajter — **klart** (`docs/research-internationell-import.md`, Session 28). 7/18 sajter bot-blockerade (Cloudflare: allrecipes, seriouseats, bbcgoodfood, bonappetit, chefkoch, marmiton, foodnetwork). Budgetbytes verifierad med komplett JSON-LD. 5 sajter helt utan JSON-LD (jamieoliver, kochbar.de, essen-und-trinken, giallozafferano ×2) → Gemini-fallback behövs, och den finns redan.
+- [ ] 3B — Konverteringsmodul (cups→dl, oz→g, översättning) — research innehåller färdig cheat-sheet + 3 konkreta kodändringar: (1) strip price-annoteringar `$0.17*` från budgetbytes, (2) lägg enhetskonvertering i `GEMINI_SCHEMA_PROMPT`, (3) `postProcessForeignRecipe()` efter `mapJsonLdToRecipe()` för icke-svenska recept
 - [ ] 3C — Testa mot 10+ receptsidor
 
 **Fas 4 — Automatisk varukorgsfyllning**
@@ -73,7 +73,7 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 
 **Fas 5 — App Store & monetisering** (marknadsanalys klar → `docs/marknadsanalys-2026-04.md`)
 - [x] Marknadsanalys
-- [ ] 5A — Teknisk väg (PWA / Capacitor / React Native)
+- [x] 5A — Teknisk väg (PWA / Capacitor / React Native) — **klart** (`docs/research-teknisk-vag-app.md`, Session 28). **Rekommendation: Capacitor** (3–5 veckor). PWA blockas av Apple Guideline 4.2 ("repackaged website") och Safari-eviktion 7d förstör offline på iOS. RN kräver full omskrivning av alla ~11 frontend-moduler (8–16 veckor) — överdrivet för MVP. Capacitor: vanilla ES modules fungerar direkt, enkel build-step + Service Worker + Capacitor Preferences. Slutlig payment-väg (Stripe vs IAP) beror på Fas 5C.
 - [ ] 5B — Autentisering & datamodell
 - [ ] 5C — Kostnads- och intäktskalkyl
 
@@ -98,7 +98,15 @@ _(Tom — lägg till idéer här under sessioner)_
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 - Säsongsfilter — automatiskt vikta recept efter säsong (soppa/gryta höst-vinter, sallad sommar)
 
-### Senaste session — Session 27 (2026-04-13)
+### Senaste session — Session 28 (2026-04-16)
+- **Tre parallella Sonnet-research dispatchade** för att nyttja Claude MAX-kapacitet. Opus koordinerade, Sonnet grävde, Opus granskade.
+- **Fas 1D — Lexikonresearch klar** (`docs/research-lexikon-fas1d.md`, ~28 KB). 62 recept + 202 Willys-erbjudanden analyserade live. **34 nya CANON-entries + ~90 synonymrader** föreslås, prognos 44/62 → 52–55/62 matchningar (+8–11 recept). Riskanalys fångar kritiska fällor: `gochugaru ≠ gochujang` (olika produkter), `gräddfil ≠ crème fraiche` (fetthalt), `havredryck ≠ mjölk` (funktionellt inkompatibelt). Opus-granskning: Priority 1 (8 direktmatchande rader) säkert nog för nästa implementation-pass; Priority 2 (stemming för laxfiléer/rökt bacon) kräver kod utöver tabelltillägg.
+- **Fas 3 — Internationell receptimport-research klar** (`docs/research-internationell-import.md`, ~17 KB). 18 sajter testade live. **Viktigaste fynd:** bot-blockering är största hindret — 7/18 sajter Cloudflare-blockerade inkl. allrecipes, seriouseats, bbcgoodfood. Existerande pipeline (JSON-LD + Gemini-fallback) hanterar redan båda fallen. Tre konkreta kodändringar identifierade för Fas 3B. 5 högrisksilenta fel dokumenterade (t.ex. `baking soda → bakpulver` FEL — ska vara `bikarbonat`).
+- **Fas 5A — Teknisk väg-research klar** (`docs/research-teknisk-vag-app.md`, ~21 KB). **Capacitor rekommenderat.** PWA dör mot Apple (Guideline 4.2). RN kräver full omskrivning (8–16 v). Capacitor bevarar hela vanilla-JS-koden + GitHub-as-DB utan backend-byte — 3–5 veckor arbete. Payment-strategi kopplad till Fas 5C (post-Epic v Apple + EU DMA).
+- **Roadmap-effekt:** 3A, 5A bockade. 1D fortsatt `[~]` (research klar, kod kvarstår). 3B har nu färdig kodplan.
+- **Inga kodändringar** denna session — research-only per användarinstruktion.
+
+### Session 27 (2026-04-13)
 - **Willys API reverse engineering klart.** Endpointen är plain GET utan auth/CSRF/session: `GET https://www.willys.se/search/campaigns/online?q=<storeId>&type=PERSONAL_GENERAL&page=0&size=500`. `q`-parametern är **storeId** (inte sökfråga — felläsning av bundlen kostade en timme). Store 2160 = Willys Linköping Ekholmen → **199 erbjudanden** anonymt, 485 KB JSON.
 - **Probe-batteri genomförd** — endpointen är stabil: olika storeId ger olika sortiment (nationella priser), pagination via size=500 fungerar, inga rate-limits vid 5 rapid calls (CDN-cachat), graceful 400 på ogiltiga stores, 500 bara om `q` saknas helt. `type=WHATEVER` ignoreras och default:ar till GENERAL.
 - **Datastruktur dokumenterad:** 190 MixMatchPricePromotion + 9 SubtotalOrderPromotion (filtreras bort, inte matchningsbara) + 2 MixMatchPercentagePromotion. 50 av 190 är "realMixAndMatch" (köp X för Y kr). `validUntil` spänner 2026-04-19 → 2026-06-28 med bara 6 unika slutdatum (batch-rotationer). Normalpris = `priceValue + savingsAmount`.
