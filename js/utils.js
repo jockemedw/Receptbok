@@ -46,6 +46,17 @@ export function daysBetween(startIso, endIso) {
   ) + 1;
 }
 
+// ISO 8601 veckonummer — måndag som första veckodag, v.1 innehåller 4 jan.
+export function isoWeekNumber(dateIso) {
+  if (!dateIso) return null;
+  const [y, m, d] = dateIso.split('-').map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+}
+
 export function renderDetailInner(r) {
   const ingHtml   = (r.ingredients || []).map(renderIngredient).join('');
   const stepsHtml = (r.instructions || []).map(s =>

@@ -596,6 +596,22 @@
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
+    position: relative;
+  }
+
+  /* Veckoseparator — streckad vertikal linje före varje måndag */
+  .timeline-day.week-start {
+    margin-left: 0.9rem;
+    padding-left: 0.9rem;
+  }
+  .timeline-day.week-start::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 22px;
+    bottom: 4px;
+    border-left: 2px dashed var(--border);
+    opacity: 0.9;
   }
 
   .timeline-day-top {
@@ -627,6 +643,15 @@
     line-height: 1;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  .timeline-week-tag {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--terracotta);
+    letter-spacing: 0.04em;
+    line-height: 1;
+    white-space: nowrap;
   }
 
   /* ── Plan-grupper: pastellfärgad bakgrundston per arkiverad plan ── */
@@ -663,11 +688,13 @@
   }
 
   .week-day-card.weekend:not(.plan-active):not(.plan-color-0):not(.plan-color-1):not(.plan-color-2):not(.plan-color-3):not(.gap):not(.today):not(.selected) {
-    background: #faf6f0;
+    background: #f3e8d4;
+    border-color: #e5d3ae;
   }
   .week-day-card.weekend .week-day-name {
     color: var(--terracotta);
-    opacity: 0.9;
+    font-weight: 700;
+    opacity: 1;
   }
 
   .holiday-dot {

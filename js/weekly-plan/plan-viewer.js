@@ -2,7 +2,7 @@
 // Läser state: RECIPES, planConfirmed, isSnapping, scrollUpAccum
 // Skriver state: planConfirmed, isSnapping, scrollUpAccum
 
-import { fmtIso, fmtShort, PROTEIN_COLOR, getHolidayName } from '../utils.js';
+import { fmtIso, fmtShort, PROTEIN_COLOR, getHolidayName, isoWeekNumber } from '../utils.js';
 
 const TIMELINE_DAYS_BACK = 14;
 const TIMELINE_DAYS_FORWARD = 14;
@@ -50,6 +50,7 @@ function buildTimeline(plan, archive) {
       dayShort: DAY_NAMES_SHORT[dow],
       dayNum: cur.getDate(),
       month: cur.getMonth(),
+      weekNumber: isoWeekNumber(iso),
       isPast: iso < todayIso,
       isToday: iso === todayIso,
       isWeekend: dow === 0 || dow === 6,
@@ -463,20 +464,27 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
   const timeline = buildTimeline(plan, archiveData);
   let prevPlanId = null;
   let prevMonth = null;
+  let prevWeek = null;
 
-  document.getElementById('weekGrid').innerHTML = timeline.map(d => {
+  document.getElementById('weekGrid').innerHTML = timeline.map((d, idx) => {
     const planChanged = d.planId && d.planId !== prevPlanId;
     const monthChanged = d.month !== prevMonth;
+    const weekChanged = idx > 0 && d.weekNumber !== prevWeek;
     prevPlanId = d.planId;
     prevMonth = d.month;
+    prevWeek = d.weekNumber;
 
     const monthLabel = monthChanged
       ? `<span class="timeline-month-tag">${MONTH_NAMES_LONG[d.month]}</span>`
       : '';
+    const weekLabel = weekChanged
+      ? `<span class="timeline-week-tag">v. ${d.weekNumber}</span>`
+      : '';
     const planLabel = planChanged
       ? `<span class="timeline-plan-tag">Matsedel ${d.planLabel}</span>`
       : '';
-    const topRow = `<div class="timeline-day-top">${monthLabel}${planLabel}</div>`;
+    const topRow = `<div class="timeline-day-top">${monthLabel}${weekLabel}${planLabel}</div>`;
+    const timelineDayCls = 'timeline-day' + (weekChanged ? ' week-start' : '');
 
     const clsParts = ['week-day-card'];
     if (d.isToday) clsParts.push('today');
@@ -501,7 +509,7 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
     // Gap (ingen plan) eller blockerad dag
     if (!d.recipeId) {
       const label = d.blocked ? 'Fri dag' : (d.planId ? 'Fri dag' : '—');
-      return `<div class="timeline-day">
+      return `<div class="${timelineDayCls}">
         ${topRow}
         <div class="${cls}" data-date="${d.date}" data-day="${d.day}">
           <div class="week-day-name">${d.dayShort} ${d.dayNum}${dot}${holidayDot}</div>
@@ -532,7 +540,7 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
       ? `<div class="week-day-saving" title="Uppskattad besparing jämfört med normalpris">💰 ${d.saving} kr</div>`
       : '';
     const readOnly = d.isArchive || d.isPast;
-    return `<div class="timeline-day">
+    return `<div class="${timelineDayCls}">
       ${topRow}
       <div class="${cls}"${borderStyle}
         data-recipeid="${rid}" data-date="${d.date}" data-day="${d.day}"
