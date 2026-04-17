@@ -140,6 +140,19 @@ const NORMALIZATION_TABLE = {
   "hackade nötter": "nötter", "grovhackade nötter": "nötter",
   "rostade nötter/frön": "nötter",
   "hackade cashewnötter": "cashewnötter",
+  // === Fas 1D Priority 1 — direktmatchande Willys-termer ===
+  // Färser
+  "kycklingfärs": "kycklingfärs",
+  "fläskfärs": "fläskfärs",
+  "vegofärs": "vegofärs", "vegofärs fryst": "vegofärs",
+  // Skafferi-färdigprodukter
+  "pesto": "pesto", "pesto basilico": "pesto", "grön pesto": "pesto",
+  "ketchup": "ketchup", "tomatketchup": "ketchup",
+  "majonnäs": "majonnäs", "majonäs": "majonnäs",
+  // Gnocchi
+  "gnocchi": "gnocchi", "färsk gnocchi": "gnocchi", "fylld gnocchi": "gnocchi",
+  // Majs
+  "majs": "majs", "majskorn": "majs", "frysta majskorn": "majs", "majs konserv": "majs",
 };
 
 // Steg 5: Kategorinyckelord (utökade)

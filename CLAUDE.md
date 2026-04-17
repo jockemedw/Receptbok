@@ -51,7 +51,7 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 - [ ] 1B — ICA inofficiellt API — **hoppas över** (Willys räcker för Ekholmen-fallet)
 - [x] 1C — Willys API reverse engineering — **klart**: `GET /search/campaigns/online?q=<storeId>&type=PERSONAL_GENERAL&size=500` (ingen auth, ingen CSRF, ingen session). Store 2160 = Ekholmen → 199 erbjudanden
 - [ ] 1C2 — Willys+ medlemserbjudanden — **utforskning pågår** (Fas A/B/C, se Öppna utredningar)
-- [~] 1D — Matchningslogik: prototyp klar + lexikonresearch klar (`docs/research-lexikon-fas1d.md`, Session 28). 44/62 recept matchar idag, prognos 52–55/62 efter CANON-utökning. **Priority 1** (8 direktmatchande tabellrader: kycklingfärs, fläskfärs, vegofärs, pesto, ketchup, majonnäs, gnocchi, majs) redo att implementeras i `api/_shared/shopping-builder.js`. **Priority 2** (stemming + substring-scan för compounds som `laxfiléer`, `rökt bacon`) kräver kodändring utöver tabelltillägg — avvakta separat pass.
+- [~] 1D — Matchningslogik: prototyp klar + lexikonresearch klar (`docs/research-lexikon-fas1d.md`, Session 28). 44/62 recept matchar idag, prognos 52–55/62 efter CANON-utökning. **Priority 1 implementerad** (Session 29): 8 direktmatchande termer (kycklingfärs, fläskfärs, vegofärs, pesto, ketchup, majonnäs, gnocchi, majs) + rimliga aliaser tillagda i `NORMALIZATION_TABLE`. **Priority 2** (stemming + substring-scan för compounds som `laxfiléer`, `rökt bacon`) kräver kodändring utöver tabelltillägg — avvakta separat pass.
 - [x] 1E — UX-design — **beslutad** (se nedan)
 - [ ] 1F — Implementation
 
@@ -98,7 +98,13 @@ _(Tom — lägg till idéer här under sessioner)_
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 - Säsongsfilter — automatiskt vikta recept efter säsong (soppa/gryta höst-vinter, sallad sommar)
 
-### Senaste session — Session 28 (2026-04-16)
+### Senaste session — Session 29 (2026-04-17)
+- **Fas 1D Priority 1 implementerad.** 8 direktmatchande Willys-termer + rimliga aliaser tillagda i `NORMALIZATION_TABLE` (`api/_shared/shopping-builder.js`): kycklingfärs, fläskfärs, vegofärs (+ `vegofärs fryst`), pesto (+ `pesto basilico`, `grön pesto`), ketchup (+ `tomatketchup`), majonnäs (+ felstavning `majonäs`), gnocchi (+ `färsk gnocchi`, `fylld gnocchi`), majs (+ `majskorn`, `frysta majskorn`, `majs konserv`).
+- **Bieffekt-fix:** `tomatketchup` kategoriserades tidigare felaktigt som Grönsaker (substring-match på "tomat") — normaliseras nu till `ketchup` → Skafferi. Ingen högriskentry (gochugaru/gräddfil/havredryck exkluderade per riskanalys i research).
+- **Verifierat:** node --check OK, alla 8 termer återfinns i riktiga recept (grep mot recipes.json), manuell trace av parseIngredient → normalizeName → categorize för alla 8 landar i förväntad kategori.
+- **Återstår för att låsa upp besparing:** Fas 1F (UI + matching-anrop mot Willys offers-endpoint). Prognosen 44→52-55/62 recept realiseras först när 1F kopplar CANON-lexikonet mot live Willys-data.
+
+### Session 28 (2026-04-16)
 - **Tre parallella Sonnet-research dispatchade** för att nyttja Claude MAX-kapacitet. Opus koordinerade, Sonnet grävde, Opus granskade.
 - **Fas 1D — Lexikonresearch klar** (`docs/research-lexikon-fas1d.md`, ~28 KB). 62 recept + 202 Willys-erbjudanden analyserade live. **34 nya CANON-entries + ~90 synonymrader** föreslås, prognos 44/62 → 52–55/62 matchningar (+8–11 recept). Riskanalys fångar kritiska fällor: `gochugaru ≠ gochujang` (olika produkter), `gräddfil ≠ crème fraiche` (fetthalt), `havredryck ≠ mjölk` (funktionellt inkompatibelt). Opus-granskning: Priority 1 (8 direktmatchande rader) säkert nog för nästa implementation-pass; Priority 2 (stemming för laxfiléer/rökt bacon) kräver kod utöver tabelltillägg.
 - **Fas 3 — Internationell receptimport-research klar** (`docs/research-internationell-import.md`, ~17 KB). 18 sajter testade live. **Viktigaste fynd:** bot-blockering är största hindret — 7/18 sajter Cloudflare-blockerade inkl. allrecipes, seriouseats, bbcgoodfood. Existerande pipeline (JSON-LD + Gemini-fallback) hanterar redan båda fallen. Tre konkreta kodändringar identifierade för Fas 3B. 5 högrisksilenta fel dokumenterade (t.ex. `baking soda → bakpulver` FEL — ska vara `bikarbonat`).
