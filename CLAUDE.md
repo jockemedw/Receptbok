@@ -98,7 +98,17 @@ _(Tom — lägg till idéer här under sessioner)_
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 - Säsongsfilter — automatiskt vikta recept efter säsong (soppa/gryta höst-vinter, sallad sommar)
 
-### Senaste session — Session 30 (2026-04-17)
+### Senaste session — Session 31 (2026-04-18)
+- **Polish-pass på ±14 tidslinjen** efter live-test i session 30:
+  - **Enhetlig kortstorlek:** `.week-day-card` har nu `height: 130px` + `display: flex; flex-direction: column`. `.week-day-recipe` fick `-webkit-line-clamp: 3` + `flex: 1`, så långa titlar klipps snyggt istället för att pusha kortet högre. `.week-day-name` och `.week-day-saving` fick `flex-shrink: 0`.
+  - **Trimmad topmarginal:** `#weekView` padding-top 1.5rem → 0.5rem. `.section-title` margin-bottom 0.6rem → 0.15rem. `.week-meta` margin-bottom 0.75rem → 0.4rem. "Aktiv matsedel:" landar nu tätare mot toppen.
+  - **Centrera idag vid tab-switch:** Ny `centerTodayCard({ smooth })` i `plan-viewer.js` räknar ut `scrollLeft` explicit på `.timeline-wrap` (scrollIntoView misskör när fliken är `display: none`). Anropas från `switchTab('vecka')` via `requestAnimationFrame` + efter varje render. Exponeras som `window.centerTodayCard`.
+  - **Veckoavgränsning:** Ny `isoWeekNumber(dateIso)` i `utils.js` (ISO 8601, måndag som första dag). I `buildTimeline` får varje dag `weekNumber`. I render spåras `prevWeek` — vid vecko-byte får `.timeline-day` klassen `.week-start` (streckad vertikal separator till vänster, 0.9rem margin + padding) + `v. NN`-etikett i toppraden. Första dagen i timelinen undantas (`idx > 0`).
+  - **Framhävda helger:** Weekend-kort bakgrund `#faf6f0` → `#f3e8d4` (ej pastell-överlagrade), border-color `#e5d3ae`. `.week-day-name` i weekend fick `font-weight: 700` + `opacity: 1` (var 0.9). Fungerar även över pastell — textstilen bär signalen.
+- **Pushade commits:** `fc79b4c` (Session 30 grund), `323d2cd` (polish), `cfa95a2` (vecka + helg).
+- **Återstår fortfarande:** Live-test att arkivering bygger upp `plan-archive.json` korrekt från nästa generering. Priority 2-stemming (Fas 1D) kvarstår.
+
+### Session 30 (2026-04-17)
 - **Veckans mat redesign — ±14 horisontell tidslinje** med tydlig plan-tillhörighet:
   - `js/weekly-plan/plan-viewer.js`: helt ombyggd renderingslogik. Ny `buildTimeline(plan, archive)` returnerar 29-dagars array (14 dagar bakåt + idag + 14 framåt) som sammanfogar aktiv plan + arkiv + tomma gap-dagar. Varje dagkort taggas `{ isPast, isToday, isWeekend, holiday, planColorIndex, isArchive, blocked }` och får månadsetikett + plan-etikett vid batchgränser.
   - **Plan-grupperad färgspråk:** 4 pastellfärger (ljusgrön/ljusblå/ljusgul/ljuslila) roteras över arkiverade planer så back-to-back-planer syns tydligt åtskilda. Aktiv plan = terrakotta-tint. Gap-dagar = streckad ram. Weekend = beige ton. Helgdagar = röd prick.
