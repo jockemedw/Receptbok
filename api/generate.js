@@ -3,6 +3,11 @@ import { createHandler } from "./_shared/handler.js";
 import { readFile, readFileRaw, writeFile } from "./_shared/github.js";
 import { REPO_OWNER, REPO_NAME, BRANCH } from "./_shared/constants.js";
 import { fetchHistory, recentlyUsedIds, shuffle } from "./_shared/history.js";
+import { normalizeOffers } from "./willys-offers.js";
+import { matchRecipe } from "./_shared/willys-matcher.js";
+
+const WILLYS_URL = "https://www.willys.se/search/campaigns/online?q=2160&type=PERSONAL_GENERAL&page=0&size=500";
+const SAVING_THRESHOLD = 10; // Recept med ≥10 kr besparing bucketas först i poolen.
 
 const DAY_NAMES = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag", "Lördag", "Söndag"];
 
@@ -65,8 +70,21 @@ function updateHistory(history, newIds, date) {
   return { usedOn };
 }
 
+// Bucketar en pool i två grupper (hög besparing först, övriga efter),
+// slumpar inom varje grupp. Ger optimeringen en chans att välja besparande
+// recept utan att bryta proteinbalans/veg-slot-logiken.
+function bucketBySaving(pool, savingsById) {
+  if (!savingsById) return shuffle(pool);
+  const high = [], low = [];
+  for (const r of pool) {
+    if ((savingsById[r.id] || 0) >= SAVING_THRESHOLD) high.push(r);
+    else low.push(r);
+  }
+  return [...shuffle(high), ...shuffle(low)];
+}
+
 // ── Deterministisk receptväljare ─────────────────────────────────────────────
-function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), usedOn = {}) {
+function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), usedOn = {}, savingsById = null) {
   const MAX_PER_PROTEIN = 2;
 
   // ── 1. Historikfiltrering ─────────────────────────────────────────────────
@@ -85,8 +103,8 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
   if (pool.length === 0) pool = recipes;
 
   // ── 2. Dela upp poolen per dag-typ ────────────────────────────────────────
-  const weekdayPool = shuffle(pool.filter((r) => r.tags.includes("vardag30")));
-  const weekendPool = shuffle(pool.filter((r) => r.tags.includes("helg60")));
+  const weekdayPool = bucketBySaving(pool.filter((r) => r.tags.includes("vardag30")), savingsById);
+  const weekendPool = bucketBySaving(pool.filter((r) => r.tags.includes("helg60")), savingsById);
 
   // ── 3. Vegetariska dagar ──────────────────────────────────────────────────
   const vegCount = constraints.vegetarian_days;
@@ -161,6 +179,7 @@ export default createHandler(async (req, res, pat) => {
     vegetarian_days = 0,
     skip_shopping = false,
     blocked_dates = [],
+    optimize_prices = false,
   } = req.body;
 
   if (!start_date || !end_date) {
@@ -190,14 +209,45 @@ export default createHandler(async (req, res, pat) => {
   const allDays = buildDayList(start_date, end_date);
   const blockedSet = new Set(blocked_dates);
   const activeDays = allDays.filter((d) => !blockedSet.has(d.date));
-  const selectedDays = selectRecipes(filtered, activeDays, constraints, recentIds, historyData.usedOn || {});
+
+  // Prisoptimering: hämta Willys-erbjudanden och räkna ut besparing per recept.
+  // Fallar graciöst — om hämtningen misslyckas körs vanligt urval utan optimering.
+  let savingsById = null;
+  if (optimize_prices) {
+    try {
+      const upstream = await fetch(WILLYS_URL, {
+        headers: {
+          "Accept": "application/json",
+          "User-Agent": "Receptbok/1.0 (familjematplanering)",
+        },
+        signal: AbortSignal.timeout(5000),
+      });
+      if (upstream.ok) {
+        const raw = await upstream.json();
+        const offers = normalizeOffers(raw.results || []);
+        savingsById = {};
+        for (const r of filtered) {
+          const m = matchRecipe(r, offers);
+          if (m.totalSaving > 0) savingsById[r.id] = m.totalSaving;
+        }
+      }
+    } catch {
+      savingsById = null;
+    }
+  }
+
+  const selectedDays = selectRecipes(filtered, activeDays, constraints, recentIds, historyData.usedOn || {}, savingsById);
 
   // Merge: blockerade dagar infogas med recipe: null
   const days = allDays.map((d) => {
     if (blockedSet.has(d.date)) {
       return { date: d.date, day: d.day, recipe: null, recipeId: null, blocked: true };
     }
-    return selectedDays.find((s) => s.date === d.date);
+    const picked = selectedDays.find((s) => s.date === d.date);
+    if (picked && savingsById && savingsById[picked.recipeId]) {
+      return { ...picked, saving: Math.round(savingsById[picked.recipeId]) };
+    }
+    return picked;
   });
 
   const today = new Date().toISOString().slice(0, 10);

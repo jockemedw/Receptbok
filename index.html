@@ -148,6 +148,32 @@
 
         <hr class="setting-divider">
 
+        <div class="setting-row">
+          <label class="setting-label" for="optimizePrices">
+            Prisoptimera matsedeln
+            <span class="setting-sublabel">Föredrar recept med Willys-erbjudanden</span>
+          </label>
+          <div class="setting-control">
+            <span class="setting-info" tabindex="0" aria-label="Om prisoptimering">
+              i
+              <span class="setting-info-popover">
+                Algoritmen väljer recept med extrapriser <strong>inom</strong> dina filter
+                (proteiner, vegetariska dagar, oprövade, historik).
+                Struktur och krav ändras inte — bara vilket konkret recept som hamnar i varje slot.
+                <br><br>
+                <strong>Begränsningar:</strong> Willys+ medlemserbjudanden saknas, tunna veckor ger liten vinst,
+                filter respekteras alltid framför besparing.
+              </span>
+            </span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="optimizePrices">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <hr class="setting-divider">
+
         <div class="setting-row setting-row-proteins">
           <label class="setting-label">
             Proteiner att inkludera

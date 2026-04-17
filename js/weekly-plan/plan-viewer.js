@@ -390,11 +390,15 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false) {
          <path d="M1 2.5h11M9 0.5l2.5 2L9 4.5"/>
          <path d="M12 7.5H1M4 5.5L1.5 7.5 4 9.5"/>
        </svg></button>`;
+    const savingBadge = (d.saving && d.saving >= 10)
+      ? `<div class="week-day-saving" title="Uppskattad besparing jämfört med normalpris">💰 ${d.saving} kr</div>`
+      : '';
     return `<div class="week-day-card${cls}"${borderStyle}
       data-recipeid="${rid}" data-date="${d.date || ''}" data-day="${d.day || ''}"
       onclick="openWeekRecipe(${rid || 'null'}, '${safeTitle}', this)">
       <div class="week-day-name">${d.day}${d.date ? ' · ' + fmtShort(d.date) : ''}${dot}</div>
       <div class="week-day-recipe">${d.recipe}</div>
+      ${savingBadge}
       ${swapBtn}
     </div>`;
   }).join('');

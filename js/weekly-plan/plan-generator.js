@@ -170,6 +170,7 @@ export async function generatePlan() {
   status.className   = 'trigger-status';
 
   try {
+    const optimizePricesEl = document.getElementById('optimizePrices');
     const body = {
       start_date:       startVal,
       end_date:         endVal,
@@ -178,6 +179,7 @@ export async function generatePlan() {
       vegetarian_days:  parseInt(document.getElementById('vegetarianDays').value) || 0,
       skip_shopping: true,
       blocked_dates:    getBlockedDates(),
+      optimize_prices:  !!(optimizePricesEl && optimizePricesEl.checked),
     };
     const res  = await fetch('/api/generate', {
       method: 'POST',
