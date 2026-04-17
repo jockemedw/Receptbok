@@ -10,6 +10,9 @@ export function switchTab(tab) {
   document.getElementById('headerSearchArea').classList.toggle('hidden', tab !== 'recept');
   document.getElementById('fabImport').style.display            = tab === 'recept' ? 'block' : 'none';
   if (tab === 'shop') window.loadShoppingTab();
+  if (tab === 'vecka' && window.centerTodayCard) {
+    requestAnimationFrame(() => window.centerTodayCard({ smooth: false }));
+  }
   window.scrollTo({ top: 0 });
 }
 

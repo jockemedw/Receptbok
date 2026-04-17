@@ -67,6 +67,20 @@ function buildTimeline(plan, archive) {
   return days;
 }
 
+// Centrerar dagens kort horisontellt i timeline-wrap. scrollIntoView funkar
+// dåligt när fliken är dold (display:none) — därför explicit scrollLeft.
+export function centerTodayCard({ smooth = true } = {}) {
+  const wrap = document.querySelector('.timeline-wrap');
+  const target = document.querySelector('.week-day-card.today')
+              || document.querySelector('.week-day-card:not(.past):not(.gap)');
+  if (!wrap || !target) return;
+  const container = target.closest('.timeline-day') || target;
+  const wantScroll = container.offsetLeft
+                   - (wrap.clientWidth / 2)
+                   + (container.offsetWidth / 2);
+  wrap.scrollTo({ left: Math.max(0, wantScroll), behavior: smooth ? 'smooth' : 'auto' });
+}
+
 // Laddar plan-archive.json — CDN-cachad, kan vara ~60s gammal men arkivet
 // ändras så sällan att det är OK.
 async function loadArchive() {
@@ -532,11 +546,7 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
     </div>`;
   }).join('');
 
-  setTimeout(() => {
-    const target = document.querySelector('.week-day-card.today')
-                || document.querySelector('.week-day-card:not(.past)');
-    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-  }, 150);
+  requestAnimationFrame(() => centerTodayCard({ smooth: false }));
 
   const confirmed = !!plan?.confirmedAt;
   window.planConfirmed = confirmed;
@@ -593,3 +603,4 @@ window.blockDay            = blockDay;
 window.confirmPlan         = confirmPlan;
 window.renderWeeklyPlanData = renderWeeklyPlanData;
 window.loadWeeklyPlan      = loadWeeklyPlan;
+window.centerTodayCard     = centerTodayCard;
