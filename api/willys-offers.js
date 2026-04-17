@@ -17,6 +17,38 @@ const MATCHABLE_PROMO_TYPES = new Set([
   "MixMatchPercentagePromotion",
 ]);
 
+// Willys campaigns-endpoint returnerar alla kampanjer i butiken, inte bara
+// mat. Filtrerar bort icke-mat via substring-blocklist så matcher/UI inte
+// falsk-matchar "Sterilcat Lax Kattmat" mot lax-recept, "Citron Allrent
+// Rengöring" mot citron-recept, etc.
+const NON_FOOD_RE = new RegExp(
+  [
+    // Djurmat
+    "kattmat", "kattgodis", "hundmat", "hundbajs", "djurmat", "djurfoder",
+    // Rengöring
+    "rengör", "allrent", "tvättmedel", "diskmedel", "maskinrengör", "golvmopp",
+    "diskborste", "avfallspåse",
+    // Hygien & kosmetika
+    "schampo", "shampo", "tandkräm", "tandborste", "deodorant", "deospray",
+    "handtvål", "handcreme", "bodylotion", "body lotion", "ansiktsrengör",
+    "ansiktmask", "ansiktskräm", "hårfärg", "rakgel", "duschcreme", "duschkräm",
+    "duschgel", "blöja", "byxblöjor", "tampong", "binda", "sun lotion",
+    "moisture bomb", "deo roll",
+    // Pappersvaror & förbrukning
+    "toalettpapper", "bakplåtspapper", "hushållspapper", "våtservett",
+    "fryspåsar", "plastpåse", "engångsmugg", "muffinsformar", "tändblock",
+    // Tillskott & ej livsmedel
+    "halstablett", "tuggtablett", "kapslar", "creatin",
+    // Ej mat
+    "rosor", "sneakers", "hårfärg",
+  ].join("|"),
+  "i"
+);
+
+function isNonFood(offer) {
+  return NON_FOOD_RE.test(`${offer.name} ${offer.brandLine || ""}`);
+}
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
@@ -66,6 +98,7 @@ export default async function handler(req, res) {
 export function normalizeOffers(results) {
   const offers = [];
   for (const item of results) {
+    if (isNonFood(item)) continue;
     const promo = (item.potentialPromotions || []).find((p) =>
       MATCHABLE_PROMO_TYPES.has(p.promotionType)
     );
