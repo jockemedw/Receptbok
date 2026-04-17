@@ -1,6 +1,6 @@
 // Matsedelsgenerering: datumväljare, inställningar, genereringsknapp.
 
-import { fmtIso, fmtShort, daysBetween } from '../utils.js';
+import { fmtIso, fmtShort, daysBetween, getHolidayName } from '../utils.js';
 
 export function initDatePickers() {
   const today = new Date();
@@ -132,12 +132,20 @@ function renderDayToggles(days) {
 
   container.style.display = '';
   container.innerHTML = '<p class="day-toggles-hint">Tryck på en dag för att blockera den</p>' +
-    days.map(d =>
-      `<button class="day-toggle-chip" data-date="${d.date}" onclick="toggleDayBlock(this)">
+    days.map(d => {
+      const holiday = getHolidayName(d.date);
+      const holidayDot = holiday
+        ? `<span class="holiday-dot" title="${holiday}" aria-label="${holiday}"></span>`
+        : '';
+      const isWeekend = d.abbr === 'Lör' || d.abbr === 'Sön';
+      const cls = 'day-toggle-chip' + (isWeekend ? ' weekend' : '') + (holiday ? ' holiday' : '');
+      return `<button class="${cls}" data-date="${d.date}" onclick="toggleDayBlock(this)"
+        ${holiday ? `title="${holiday}"` : ''}>
         <span class="day-toggle-abbr">${d.abbr}</span>
         <span class="day-toggle-num">${d.day}</span>
-      </button>`
-    ).join('');
+        ${holidayDot}
+      </button>`;
+    }).join('');
 }
 
 export function toggleDayBlock(btn) {
@@ -192,7 +200,15 @@ export async function generatePlan() {
     status.textContent = `✓ Klar! ${data.days} dagar planerade. Bekräfta matsedeln för att bygga inköpslistan.`;
     status.className   = 'trigger-status success';
     btn.disabled       = false;
-    if (data.weeklyPlan) window.renderWeeklyPlanData(data.weeklyPlan, null, true);
+    if (data.weeklyPlan) {
+      // Arkivet kan ha uppdaterats — hämta om det innan rendering.
+      let archive = { plans: [] };
+      try {
+        const ar = await fetch('plan-archive.json?t=' + Date.now());
+        if (ar.ok) archive = await ar.json();
+      } catch { /* OK, kör utan arkiv */ }
+      window.renderWeeklyPlanData(data.weeklyPlan, null, true, archive);
+    }
     window.switchTab('vecka');
   } catch (err) {
     status.textContent = `Fel: ${err.message}`;

@@ -70,6 +70,45 @@ function updateHistory(history, newIds, date) {
   return { usedOn };
 }
 
+// Arkivera tidigare plan-dagar innan weekly-plan.json skrivs över.
+// Plockar dagar som slutar före nya planens start, bundlar dem som en plan-batch
+// och lägger i plan-archive.json. Trimmar batches där alla dagar är äldre än 30 dagar.
+async function archiveOldPlan(newStartDate, pat) {
+  let oldPlan = null;
+  try {
+    ({ content: oldPlan } = await readFile("weekly-plan.json", pat));
+  } catch { return; }
+  if (!oldPlan?.days?.length) return;
+
+  const daysToArchive = oldPlan.days.filter((d) => d.date < newStartDate && d.recipeId);
+  if (daysToArchive.length === 0) return;
+
+  let archive = { plans: [] };
+  try {
+    ({ content: archive } = await readFile("plan-archive.json", pat));
+    if (!archive?.plans) archive = { plans: [] };
+  } catch { /* filen finns inte ännu */ }
+
+  archive.plans.push({
+    startDate: daysToArchive[0].date,
+    endDate: daysToArchive[daysToArchive.length - 1].date,
+    archivedAt: new Date().toISOString(),
+    days: daysToArchive.map((d) => ({
+      date: d.date,
+      day: d.day,
+      recipe: d.recipe,
+      recipeId: d.recipeId,
+      ...(d.saving ? { saving: d.saving } : {}),
+    })),
+  });
+
+  // Trimma: behåll bara plans där någon dag är inom de senaste 30 dagarna.
+  const cutoff = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
+  archive.plans = archive.plans.filter((p) => p.endDate >= cutoff);
+
+  await writeFile("plan-archive.json", archive, pat, `Arkivera plan ${daysToArchive[0].date}–${daysToArchive[daysToArchive.length - 1].date}`);
+}
+
 // Bucketar en pool i två grupper (hög besparing först, övriga efter),
 // slumpar inom varje grupp. Ger optimeringen en chans att välja besparande
 // recept utan att bryta proteinbalans/veg-slot-logiken.
@@ -254,6 +293,10 @@ export default createHandler(async (req, res, pat) => {
   const weeklyPlan = { generated: today, startDate: start_date, endDate: end_date, days };
   const updatedHistory = updateHistory(historyData, days.map((d) => d.recipeId).filter(Boolean), today);
   const commitMsg = `Matsedel ${today} — autogenererad`;
+
+  // Arkivera den gamla planens passerade dagar innan vi skriver över weekly-plan.json.
+  // Fallar tyst — arkiveringen får aldrig blockera en generering.
+  try { await archiveOldPlan(start_date, pat); } catch (e) { console.error("archive error:", e); }
 
   if (skip_shopping) {
     await Promise.all([

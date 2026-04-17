@@ -2,7 +2,80 @@
 // Läser state: RECIPES, planConfirmed, isSnapping, scrollUpAccum
 // Skriver state: planConfirmed, isSnapping, scrollUpAccum
 
-import { fmtIso, fmtShort, PROTEIN_COLOR } from '../utils.js';
+import { fmtIso, fmtShort, PROTEIN_COLOR, getHolidayName } from '../utils.js';
+
+const TIMELINE_DAYS_BACK = 14;
+const TIMELINE_DAYS_FORWARD = 14;
+const DAY_NAMES_SHORT = ['Sön', 'Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör'];
+const DAY_NAMES_LONG  = ['Söndag', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag'];
+const MONTH_NAMES_LONG = ['Januari', 'Februari', 'Mars', 'April', 'Maj', 'Juni', 'Juli', 'Augusti', 'September', 'Oktober', 'November', 'December'];
+
+// Bygger 29-dagars tidslinje (idag ±14) och taggar varje dag med planId, planLabel,
+// planColorIndex, holiday, isWeekend, isPast, isToday.
+function buildTimeline(plan, archive) {
+  const todayIso = fmtIso(new Date());
+  const byDate = new Map();
+
+  const sortedArchive = (archive?.plans || []).slice().sort((a, b) => a.startDate.localeCompare(b.startDate));
+  sortedArchive.forEach((p, idx) => {
+    const planId = `arch-${p.startDate}`;
+    const planLabel = `${fmtShort(p.startDate)} – ${fmtShort(p.endDate)}`;
+    const colorIndex = idx % 4;
+    for (const d of p.days) {
+      byDate.set(d.date, { ...d, planId, planLabel, planColorIndex: colorIndex, isArchive: true });
+    }
+  });
+
+  if (plan?.days?.length) {
+    const planId = 'active';
+    const planLabel = plan.startDate && plan.endDate
+      ? `${fmtShort(plan.startDate)} – ${fmtShort(plan.endDate)}`
+      : 'Aktuell matsedel';
+    for (const d of plan.days) {
+      byDate.set(d.date, { ...d, planId, planLabel, planColorIndex: -1, isArchive: false });
+    }
+  }
+
+  const days = [];
+  const todayDate = new Date(todayIso + 'T12:00:00');
+  for (let offset = -TIMELINE_DAYS_BACK; offset <= TIMELINE_DAYS_FORWARD; offset++) {
+    const cur = new Date(todayDate);
+    cur.setDate(cur.getDate() + offset);
+    const iso = fmtIso(cur);
+    const dow = cur.getDay();
+    const entry = byDate.get(iso) || {};
+    days.push({
+      date: iso,
+      day: DAY_NAMES_LONG[dow],
+      dayShort: DAY_NAMES_SHORT[dow],
+      dayNum: cur.getDate(),
+      month: cur.getMonth(),
+      isPast: iso < todayIso,
+      isToday: iso === todayIso,
+      isWeekend: dow === 0 || dow === 6,
+      holiday: getHolidayName(iso),
+      recipe: entry.recipe || null,
+      recipeId: entry.recipeId || null,
+      saving: entry.saving || null,
+      blocked: !!(entry.blocked && !entry.recipeId),
+      planId: entry.planId || null,
+      planLabel: entry.planLabel || null,
+      planColorIndex: entry.planColorIndex ?? null,
+      isArchive: !!entry.isArchive,
+    });
+  }
+  return days;
+}
+
+// Laddar plan-archive.json — CDN-cachad, kan vara ~60s gammal men arkivet
+// ändras så sällan att det är OK.
+async function loadArchive() {
+  try {
+    const res = await fetch('plan-archive.json?t=' + Date.now());
+    if (!res.ok) return { plans: [] };
+    return await res.json();
+  } catch { return { plans: [] }; }
+}
 
 // ── Replace-läge ─────────────────────────────────────────────────────────────
 
@@ -225,15 +298,19 @@ export function openWeekRecipe(recipeId, title, cardEl) {
 
   const PROTEIN_LABEL = { fisk: 'Fisk', kyckling: 'Kyckling', kött: 'Kött', fläsk: 'Fläsk', vegetarisk: 'Vegetarisk' };
 
-  const replaceBtns = window.planConfirmed ? '' : `
+  const readOnly = cardEl.dataset.readonly === '1';
+  const replaceBtns = (readOnly || window.planConfirmed) ? '' : `
     <button class="replace-recipe-btn" onclick="enterReplaceMode('${date}', '${dayName}')">Välj annat recept</button>
     <button class="replace-recipe-btn" onclick="replaceRecipe(${r.id}, '${date}', this)">Slumpa nytt recept</button>
     <button class="replace-recipe-btn" onclick="enterSwapMode('${date}')">Byt dag</button>`;
-  const dayActionBtns = `<div class="day-action-btns">
+  const dayActionBtns = readOnly ? '' : `<div class="day-action-btns">
     <button class="day-action-btn" onclick="skipDay('${date}')">Hoppa över — skjut recept →</button>
     <button class="day-action-btn day-action-block" onclick="blockDay('${date}')">Blockera dag</button>
   </div>`;
-  const actionBtns = replaceBtns + dayActionBtns;
+  const readOnlyNote = readOnly
+    ? `<p class="readonly-note">📜 Historisk plan — bara för referens.</p>`
+    : '';
+  const actionBtns = replaceBtns + dayActionBtns + readOnlyNote;
 
   panel.innerHTML = `<div class="detail-inner">
     <div class="week-recipe-header">
@@ -347,59 +424,111 @@ export async function confirmPlan() {
 
 // ── Rendering ─────────────────────────────────────────────────────────────────
 
-export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false) {
-  if (!plan?.days?.length) { document.getElementById('weekNoData').style.display = ''; return; }
+export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archive = null) {
+  const hasActivePlan = !!plan?.days?.length;
+  const archiveData = archive || window._planArchive || { plans: [] };
+  window._planArchive = archiveData;
+
+  if (!hasActivePlan && !(archiveData.plans && archiveData.plans.length)) {
+    document.getElementById('weekLoading').style.display = 'none';
+    document.getElementById('weekNoData').style.display = '';
+    return;
+  }
 
   document.getElementById('weekLoading').style.display = 'none';
   document.getElementById('weekNoData').style.display  = 'none';
   document.getElementById('weekContent').style.display = '';
 
   let metaText = '';
-  if (plan.startDate && plan.endDate)
-    metaText = `${fmtShort(plan.startDate)} – ${fmtShort(plan.endDate)}`;
-  else if (plan.week)
-    metaText = `Vecka ${plan.week}`;
+  if (hasActivePlan && plan.startDate && plan.endDate)
+    metaText = `Aktiv matsedel: ${fmtShort(plan.startDate)} – ${fmtShort(plan.endDate)}`;
+  else if (!hasActivePlan)
+    metaText = 'Ingen aktiv matsedel — generera en ny';
   document.getElementById('weekMeta').textContent = metaText;
 
-  const todayIso = fmtIso(new Date());
-  document.getElementById('weekGrid').innerHTML = plan.days.map(d => {
-    const isToday  = d.date === todayIso;
-    const isPast   = d.date < todayIso;
-    const isBlocked = d.blocked && !d.recipeId;
-    const cls = (isBlocked ? ' blocked' : '') + (isToday ? ' today' : isPast ? ' past' : '');
-    const dot = isToday ? '<span class="today-dot"></span>' : '';
+  const timeline = buildTimeline(plan, archiveData);
+  let prevPlanId = null;
+  let prevMonth = null;
 
-    if (isBlocked) {
-      return `<div class="week-day-card${cls}" data-date="${d.date || ''}" data-day="${d.day || ''}">
-        <div class="week-day-name">${d.day}${d.date ? ' · ' + fmtShort(d.date) : ''}${dot}</div>
-        <div class="week-day-recipe blocked-recipe-text">Fri dag</div>
+  document.getElementById('weekGrid').innerHTML = timeline.map(d => {
+    const planChanged = d.planId && d.planId !== prevPlanId;
+    const monthChanged = d.month !== prevMonth;
+    prevPlanId = d.planId;
+    prevMonth = d.month;
+
+    const monthLabel = monthChanged
+      ? `<span class="timeline-month-tag">${MONTH_NAMES_LONG[d.month]}</span>`
+      : '';
+    const planLabel = planChanged
+      ? `<span class="timeline-plan-tag">Matsedel ${d.planLabel}</span>`
+      : '';
+    const topRow = `<div class="timeline-day-top">${monthLabel}${planLabel}</div>`;
+
+    const clsParts = ['week-day-card'];
+    if (d.isToday) clsParts.push('today');
+    else if (d.isPast) clsParts.push('past');
+    if (d.isWeekend) clsParts.push('weekend');
+    if (d.holiday) clsParts.push('holiday');
+    if (d.blocked) clsParts.push('blocked');
+    if (d.isArchive) clsParts.push('archive');
+    if (!d.planId) clsParts.push('gap');
+    if (d.planColorIndex !== null && d.planColorIndex >= 0) {
+      clsParts.push(`plan-color-${d.planColorIndex}`);
+    } else if (d.planId === 'active') {
+      clsParts.push('plan-active');
+    }
+    const cls = clsParts.join(' ');
+
+    const dot = d.isToday ? '<span class="today-dot"></span>' : '';
+    const holidayDot = d.holiday
+      ? `<span class="holiday-dot" title="${d.holiday}" aria-label="${d.holiday}"></span>`
+      : '';
+
+    // Gap (ingen plan) eller blockerad dag
+    if (!d.recipeId) {
+      const label = d.blocked ? 'Fri dag' : (d.planId ? 'Fri dag' : '—');
+      return `<div class="timeline-day">
+        ${topRow}
+        <div class="${cls}" data-date="${d.date}" data-day="${d.day}">
+          <div class="week-day-name">${d.dayShort} ${d.dayNum}${dot}${holidayDot}</div>
+          <div class="week-day-recipe blocked-recipe-text">${label}</div>
+        </div>
       </div>`;
     }
 
-    const safeTitle    = (d.recipe || '').replace(/'/g, "\\'");
-    const rid          = d.recipeId || '';
-    const recipe       = rid ? window.RECIPES.find(r => r.id === rid) : null;
+    const safeTitle = (d.recipe || '').replace(/'/g, "\\'");
+    const rid = d.recipeId;
+    const recipe = rid ? window.RECIPES.find(r => r.id === rid) : null;
     const proteinColor = recipe ? (PROTEIN_COLOR[recipe.protein] || '') : '';
-    const borderStyle  = proteinColor ? ` style="border-left: 3px solid ${proteinColor}"` : '';
-    const swapBtn = window.planConfirmed ? '' :
-      `<button class="swap-icon-btn" title="Flytta till annan dag"
-         onclick="event.stopPropagation();enterSwapMode('${d.date || ''}')"
-       ><svg xmlns="http://www.w3.org/2000/svg" width="13" height="10" viewBox="0 0 13 10"
-         fill="none" stroke="currentColor" stroke-width="1.6"
-         stroke-linecap="round" stroke-linejoin="round">
-         <path d="M1 2.5h11M9 0.5l2.5 2L9 4.5"/>
-         <path d="M12 7.5H1M4 5.5L1.5 7.5 4 9.5"/>
-       </svg></button>`;
+    const borderStyle = proteinColor ? ` style="border-left: 3px solid ${proteinColor}"` : '';
+
+    // Swap-knappen bara på aktiv plan, icke-bekräftad
+    const showSwap = d.planId === 'active' && !window.planConfirmed && !d.isPast;
+    const swapBtn = showSwap
+      ? `<button class="swap-icon-btn" title="Flytta till annan dag"
+           onclick="event.stopPropagation();enterSwapMode('${d.date}')"
+         ><svg xmlns="http://www.w3.org/2000/svg" width="13" height="10" viewBox="0 0 13 10"
+           fill="none" stroke="currentColor" stroke-width="1.6"
+           stroke-linecap="round" stroke-linejoin="round">
+           <path d="M1 2.5h11M9 0.5l2.5 2L9 4.5"/>
+           <path d="M12 7.5H1M4 5.5L1.5 7.5 4 9.5"/>
+         </svg></button>`
+      : '';
     const savingBadge = (d.saving && d.saving >= 10)
       ? `<div class="week-day-saving" title="Uppskattad besparing jämfört med normalpris">💰 ${d.saving} kr</div>`
       : '';
-    return `<div class="week-day-card${cls}"${borderStyle}
-      data-recipeid="${rid}" data-date="${d.date || ''}" data-day="${d.day || ''}"
-      onclick="openWeekRecipe(${rid || 'null'}, '${safeTitle}', this)">
-      <div class="week-day-name">${d.day}${d.date ? ' · ' + fmtShort(d.date) : ''}${dot}</div>
-      <div class="week-day-recipe">${d.recipe}</div>
-      ${savingBadge}
-      ${swapBtn}
+    const readOnly = d.isArchive || d.isPast;
+    return `<div class="timeline-day">
+      ${topRow}
+      <div class="${cls}"${borderStyle}
+        data-recipeid="${rid}" data-date="${d.date}" data-day="${d.day}"
+        data-readonly="${readOnly ? '1' : ''}"
+        onclick="openWeekRecipe(${rid || 'null'}, '${safeTitle}', this)">
+        <div class="week-day-name">${d.dayShort} ${d.dayNum}${dot}${holidayDot}</div>
+        <div class="week-day-recipe">${d.recipe}</div>
+        ${savingBadge}
+        ${swapBtn}
+      </div>
     </div>`;
   }).join('');
 
@@ -409,17 +538,23 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false) {
     if (target) target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   }, 150);
 
-  const confirmed = !!plan.confirmedAt;
+  const confirmed = !!plan?.confirmedAt;
   window.planConfirmed = confirmed;
 
   const confirmWrap   = document.getElementById('confirmPlanWrap');
   const confirmStatus = document.getElementById('confirmStatus');
   const confirmBtn    = document.getElementById('confirmPlanBtn');
-  confirmWrap.style.display  = confirmed ? 'none' : '';
-  confirmBtn.disabled        = false;
-  confirmBtn.textContent     = '✓ Bekräfta och bygg inköpslista';
-  confirmStatus.textContent  = '';
-  confirmStatus.className    = 'confirm-status';
+  if (confirmWrap) {
+    confirmWrap.style.display = (hasActivePlan && !confirmed) ? '' : 'none';
+  }
+  if (confirmBtn) {
+    confirmBtn.disabled = false;
+    confirmBtn.textContent = '✓ Bekräfta och bygg inköpslista';
+  }
+  if (confirmStatus) {
+    confirmStatus.textContent = '';
+    confirmStatus.className = 'confirm-status';
+  }
 
   const recipeItems = shop?.recipeItems || shop?.categories || null;
   window.renderIngredientPreview(recipeItems, shop?.recipeItemsMovedAt || null, freshlyGenerated || confirmed);
@@ -428,16 +563,17 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false) {
 
 export async function loadWeeklyPlan() {
   try {
-    const [planRes, shopRes] = await Promise.all([
+    const [planRes, shopRes, archive] = await Promise.all([
       fetch('weekly-plan.json'),
       fetch('shopping-list.json'),
+      loadArchive(),
     ]);
     document.getElementById('weekLoading').style.display = 'none';
-    if (!planRes.ok) { document.getElementById('weekNoData').style.display = ''; return; }
-    const plan = await planRes.json();
+    const plan = planRes.ok ? await planRes.json() : null;
     const shop = shopRes.ok ? await shopRes.json() : null;
-    if (!plan?.days?.length) { document.getElementById('weekNoData').style.display = ''; return; }
-    renderWeeklyPlanData(plan, shop);
+    const hasAnything = (plan?.days?.length) || (archive?.plans?.length);
+    if (!hasAnything) { document.getElementById('weekNoData').style.display = ''; return; }
+    renderWeeklyPlanData(plan, shop, false, archive);
   } catch {
     document.getElementById('weekLoading').style.display = 'none';
     document.getElementById('weekNoData').style.display  = '';

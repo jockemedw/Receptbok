@@ -589,6 +589,123 @@
     gap: 0.6rem;
     width: max-content;
     padding: 0.25rem 0;
+    align-items: flex-end;
+  }
+
+  .timeline-day {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+
+  .timeline-day-top {
+    height: 38px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 2px;
+    margin-bottom: 4px;
+    width: 150px;
+    overflow: visible;
+  }
+
+  .timeline-month-tag {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--warm-brown);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .timeline-plan-tag {
+    font-size: 0.68rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    white-space: nowrap;
+    line-height: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ── Plan-grupper: pastellfärgad bakgrundston per arkiverad plan ── */
+  .week-day-card.plan-color-0:not(.today):not(.selected) { background: #f1f7ed; border-color: #d0e3c1; }
+  .week-day-card.plan-color-1:not(.today):not(.selected) { background: #edf4f7; border-color: #c1d8e3; }
+  .week-day-card.plan-color-2:not(.today):not(.selected) { background: #f7f3ed; border-color: #e3d6c1; }
+  .week-day-card.plan-color-3:not(.today):not(.selected) { background: #f5edf7; border-color: #d9c1e3; }
+
+  .week-day-card.archive {
+    opacity: 0.82;
+  }
+  .week-day-card.archive:hover {
+    opacity: 1;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  }
+  .week-day-card.archive.past { opacity: 0.72; }
+
+  .week-day-card.plan-active:not(.today):not(.selected) {
+    background: var(--light-terra);
+    border-color: rgba(194,82,43,0.35);
+  }
+
+  .week-day-card.gap {
+    background: transparent;
+    border-style: dashed;
+    border-color: var(--border);
+    opacity: 0.55;
+    cursor: default;
+  }
+  .week-day-card.gap:hover {
+    border-color: var(--border);
+    box-shadow: none;
+    opacity: 0.55;
+  }
+
+  .week-day-card.weekend:not(.plan-active):not(.plan-color-0):not(.plan-color-1):not(.plan-color-2):not(.plan-color-3):not(.gap):not(.today):not(.selected) {
+    background: #faf6f0;
+  }
+  .week-day-card.weekend .week-day-name {
+    color: var(--terracotta);
+    opacity: 0.9;
+  }
+
+  .holiday-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    background: #b04030;
+    border-radius: 50%;
+    margin-left: 4px;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 2px rgba(176,64,48,0.15);
+  }
+
+  .readonly-note {
+    margin: 0.8rem 0 0;
+    padding: 0.5rem 0.75rem;
+    background: var(--cream);
+    border-left: 3px solid var(--warm-brown);
+    border-radius: 6px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  /* ── Datumväljare: helgdags- och veckoslut-markering ── */
+  .day-toggle-chip.weekend .day-toggle-abbr { color: var(--terracotta); }
+  .day-toggle-chip.holiday {
+    position: relative;
+  }
+  .day-toggle-chip.holiday::after {
+    content: "";
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 5px;
+    height: 5px;
+    background: #b04030;
+    border-radius: 50%;
   }
 
   .week-day-card {
