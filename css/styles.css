@@ -1007,6 +1007,26 @@
   .confirm-plan-btn:hover { opacity: 0.88; }
   .confirm-plan-btn:disabled { opacity: 0.55; cursor: default; }
 
+  .discard-plan-btn {
+    width: 100%;
+    margin-top: 0.5rem;
+    background: none;
+    border: 1.5px solid var(--text-muted);
+    color: var(--text-muted);
+    border-radius: 10px;
+    padding: 0.55rem 1rem;
+    font-size: 0.82rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+  .discard-plan-btn:hover {
+    border-color: var(--color-danger, #b04030);
+    color: var(--color-danger, #b04030);
+    background: rgba(176,64,48,0.05);
+  }
+  .discard-plan-btn:disabled { opacity: 0.55; cursor: default; }
+
   .confirm-status {
     font-size: 0.8rem;
     color: var(--text-muted);
