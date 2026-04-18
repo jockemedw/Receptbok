@@ -647,8 +647,28 @@ export async function discardPlan() {
     panel.classList.remove('open');
     panel.innerHTML = '';
 
-    // Ladda om hela veckovyn så arkiv + ev. tidigare inköpslista visas korrekt
-    await loadWeeklyPlan();
+    // Använd returnerad tomma planen direkt — Vercels statiska weekly-plan.json
+    // har inte hunnit re-deploya efter API-commiten (~30 sek), så fetch skulle
+    // fortfarande leverera den gamla planen. Hämta arkiv/custom-days/inköpslista
+    // med cache-bust för att reflektera senaste tillstånd.
+    const emptyPlan = data.weeklyPlan || { days: [], startDate: null, endDate: null };
+    let archive = { plans: [] };
+    let customDays = window._customDays || { entries: {} };
+    let shop = window._lastShop || null;
+    try {
+      const [ar, cd, sh] = await Promise.all([
+        fetch('plan-archive.json?t=' + Date.now()),
+        fetch('custom-days.json?t=' + Date.now()),
+        fetch('shopping-list.json?t=' + Date.now()),
+      ]);
+      if (ar.ok) archive = await ar.json();
+      if (cd.ok) {
+        const cdData = await cd.json();
+        customDays = { entries: cdData.entries || {} };
+      }
+      if (sh.ok) shop = await sh.json();
+    } catch { /* kör med fallbacks */ }
+    renderWeeklyPlanData(emptyPlan, shop, false, archive, customDays);
   } catch (e) {
     btn.disabled = false;
     if (confirmBtn) confirmBtn.disabled = false;
@@ -706,7 +726,10 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
 
   if (!hasActivePlan && !(archiveData.plans && archiveData.plans.length) && !Object.keys(customData.entries || {}).length) {
     document.getElementById('weekLoading').style.display = 'none';
+    document.getElementById('weekContent').style.display = 'none';
     document.getElementById('weekNoData').style.display = '';
+    const confirmWrap = document.getElementById('confirmPlanWrap');
+    if (confirmWrap) confirmWrap.style.display = 'none';
     return;
   }
 
