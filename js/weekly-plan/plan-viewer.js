@@ -4,17 +4,25 @@
 
 import { fmtIso, fmtShort, PROTEIN_COLOR, getHolidayName, isoWeekNumber } from '../utils.js';
 
-const TIMELINE_DAYS_BACK = 14;
-const TIMELINE_DAYS_FORWARD = 14;
+const TIMELINE_DAYS_BACK_MIN = 14;
+const TIMELINE_DAYS_FORWARD_MIN = 14;
+const TIMELINE_DAYS_CAP = 45;
 const DAY_NAMES_SHORT = ['Sön', 'Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör'];
 const DAY_NAMES_LONG  = ['Söndag', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag'];
 const MONTH_NAMES_LONG = ['Januari', 'Februari', 'Mars', 'April', 'Maj', 'Juni', 'Juli', 'Augusti', 'September', 'Oktober', 'November', 'December'];
 
-// Bygger 29-dagars tidslinje (idag ±14) och taggar varje dag med planId, planLabel,
-// planColorIndex, holiday, isWeekend, isPast, isToday.
-function buildTimeline(plan, archive) {
+function diffDaysIso(a, b) {
+  const da = new Date(a + 'T12:00:00');
+  const db = new Date(b + 'T12:00:00');
+  return Math.round((db - da) / 86400000);
+}
+
+// Bygger tidslinje med dynamisk horisont: alltid minst ±14 dagar runt idag,
+// men expanderas så hela aktiv plan + äldsta arkivet alltid syns (cap 45 åt varje håll).
+function buildTimeline(plan, archive, customDays) {
   const todayIso = fmtIso(new Date());
   const byDate = new Map();
+  const customEntries = (customDays && customDays.entries) || {};
 
   const sortedArchive = (archive?.plans || []).slice().sort((a, b) => a.startDate.localeCompare(b.startDate));
   sortedArchive.forEach((p, idx) => {
@@ -36,14 +44,40 @@ function buildTimeline(plan, archive) {
     }
   }
 
+  // ── Dynamisk horisont ──────────────────────────────────────────────────────
+  let back = TIMELINE_DAYS_BACK_MIN;
+  let forward = TIMELINE_DAYS_FORWARD_MIN;
+
+  if (sortedArchive.length) {
+    const oldest = sortedArchive[0].startDate;
+    back = Math.max(back, diffDaysIso(oldest, todayIso));
+  }
+  if (plan?.endDate) {
+    forward = Math.max(forward, diffDaysIso(todayIso, plan.endDate));
+  }
+  if (plan?.startDate) {
+    back = Math.max(back, diffDaysIso(plan.startDate, todayIso));
+  }
+  // Custom-dagar kan ligga utanför plan/arkiv → se till att de kommer med
+  for (const dateIso of Object.keys(customEntries)) {
+    const d = diffDaysIso(todayIso, dateIso);
+    if (d >= 0) forward = Math.max(forward, d);
+    else back = Math.max(back, -d);
+  }
+
+  back = Math.min(Math.max(back, 0), TIMELINE_DAYS_CAP);
+  forward = Math.min(Math.max(forward, 0), TIMELINE_DAYS_CAP);
+
   const days = [];
   const todayDate = new Date(todayIso + 'T12:00:00');
-  for (let offset = -TIMELINE_DAYS_BACK; offset <= TIMELINE_DAYS_FORWARD; offset++) {
+  for (let offset = -back; offset <= forward; offset++) {
     const cur = new Date(todayDate);
     cur.setDate(cur.getDate() + offset);
     const iso = fmtIso(cur);
     const dow = cur.getDay();
     const entry = byDate.get(iso) || {};
+    const custom = customEntries[iso];
+    const isCustom = !!custom && !entry.recipeId && !entry.isArchive;
     days.push({
       date: iso,
       day: DAY_NAMES_LONG[dow],
@@ -63,23 +97,32 @@ function buildTimeline(plan, archive) {
       planLabel: entry.planLabel || null,
       planColorIndex: entry.planColorIndex ?? null,
       isArchive: !!entry.isArchive,
+      isCustom,
+      customNote: isCustom ? (custom.note || '') : '',
     });
   }
   return days;
 }
 
-// Centrerar dagens kort horisontellt i timeline-wrap. scrollIntoView funkar
-// dåligt när fliken är dold (display:none) — därför explicit scrollLeft.
-export function centerTodayCard({ smooth = true } = {}) {
+// Centrerar en given dag (eller dagens kort som fallback) horisontellt i timeline-wrap.
+// scrollIntoView funkar dåligt när fliken är dold (display:none) — därför explicit scrollLeft.
+export function centerOnDate(dateIso, { smooth = true } = {}) {
   const wrap = document.querySelector('.timeline-wrap');
-  const target = document.querySelector('.week-day-card.today')
-              || document.querySelector('.week-day-card:not(.past):not(.gap)');
-  if (!wrap || !target) return;
+  if (!wrap) return;
+  let target = null;
+  if (dateIso) target = document.querySelector(`.week-day-card[data-date="${dateIso}"]`);
+  if (!target) target = document.querySelector('.week-day-card.today')
+                     || document.querySelector('.week-day-card:not(.past):not(.gap)');
+  if (!target) return;
   const container = target.closest('.timeline-day') || target;
   const wantScroll = container.offsetLeft
                    - (wrap.clientWidth / 2)
                    + (container.offsetWidth / 2);
   wrap.scrollTo({ left: Math.max(0, wantScroll), behavior: smooth ? 'smooth' : 'auto' });
+}
+
+export function centerTodayCard(opts = {}) {
+  return centerOnDate(null, opts);
 }
 
 // Laddar plan-archive.json — CDN-cachad, kan vara ~60s gammal men arkivet
@@ -90,6 +133,15 @@ async function loadArchive() {
     if (!res.ok) return { plans: [] };
     return await res.json();
   } catch { return { plans: [] }; }
+}
+
+async function loadCustomDays() {
+  try {
+    const res = await fetch('custom-days.json?t=' + Date.now());
+    if (!res.ok) return { entries: {} };
+    const data = await res.json();
+    return { entries: data.entries || {} };
+  } catch { return { entries: {} }; }
 }
 
 // ── Replace-läge ─────────────────────────────────────────────────────────────
@@ -439,12 +491,16 @@ export async function confirmPlan() {
 
 // ── Rendering ─────────────────────────────────────────────────────────────────
 
-export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archive = null) {
+export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archive = null, customDays = null) {
   const hasActivePlan = !!plan?.days?.length;
   const archiveData = archive || window._planArchive || { plans: [] };
+  const customData = customDays || window._customDays || { entries: {} };
   window._planArchive = archiveData;
+  window._customDays = customData;
+  window._lastPlan = plan;
+  window._lastShop = shop;
 
-  if (!hasActivePlan && !(archiveData.plans && archiveData.plans.length)) {
+  if (!hasActivePlan && !(archiveData.plans && archiveData.plans.length) && !Object.keys(customData.entries || {}).length) {
     document.getElementById('weekLoading').style.display = 'none';
     document.getElementById('weekNoData').style.display = '';
     return;
@@ -461,7 +517,23 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
     metaText = 'Ingen aktiv matsedel — generera en ny';
   document.getElementById('weekMeta').textContent = metaText;
 
-  const timeline = buildTimeline(plan, archiveData);
+  const confirmed = !!plan?.confirmedAt;
+  window.planConfirmed = confirmed;
+  const pendingPlan = hasActivePlan && !confirmed;
+
+  // ── Nav-chips (Idag + Matsedel →) ──────────────────────────────────────────
+  const navWrap = document.getElementById('timelineNav');
+  if (navWrap) {
+    const chips = ['<button class="timeline-chip" onclick="centerOnDate(null, { smooth: true })">Idag</button>'];
+    if (hasActivePlan && plan.startDate) {
+      const planLabel = pendingPlan ? 'Ny matsedel →' : 'Matsedel →';
+      chips.push(`<button class="timeline-chip timeline-chip-plan${pendingPlan ? ' pending' : ''}" onclick="centerOnDate('${plan.startDate}', { smooth: true })">${planLabel}</button>`);
+    }
+    navWrap.innerHTML = chips.join('');
+    navWrap.style.display = '';
+  }
+
+  const timeline = buildTimeline(plan, archiveData, customData);
   let prevPlanId = null;
   let prevMonth = null;
   let prevWeek = null;
@@ -484,7 +556,12 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
       ? `<span class="timeline-plan-tag">Matsedel ${d.planLabel}</span>`
       : '';
     const topRow = `<div class="timeline-day-top">${monthLabel}${weekLabel}${planLabel}</div>`;
-    const timelineDayCls = 'timeline-day' + (weekChanged ? ' week-start' : '');
+
+    const isPendingActive = d.planId === 'active' && pendingPlan;
+    const timelineDayClsParts = ['timeline-day'];
+    if (weekChanged) timelineDayClsParts.push('week-start');
+    if (d.isCustom || (!d.planId && !d.recipeId)) timelineDayClsParts.push('slim');
+    const timelineDayCls = timelineDayClsParts.join(' ');
 
     const clsParts = ['week-day-card'];
     if (d.isToday) clsParts.push('today');
@@ -493,25 +570,45 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
     if (d.holiday) clsParts.push('holiday');
     if (d.blocked) clsParts.push('blocked');
     if (d.isArchive) clsParts.push('archive');
-    if (!d.planId) clsParts.push('gap');
+    if (d.isCustom) clsParts.push('custom');
+    if (!d.planId && !d.isCustom) clsParts.push('gap');
     if (d.planColorIndex !== null && d.planColorIndex >= 0) {
       clsParts.push(`plan-color-${d.planColorIndex}`);
     } else if (d.planId === 'active') {
       clsParts.push('plan-active');
     }
+    if (isPendingActive) clsParts.push('plan-pending');
     const cls = clsParts.join(' ');
 
     const dot = d.isToday ? '<span class="today-dot"></span>' : '';
     const holidayDot = d.holiday
       ? `<span class="holiday-dot" title="${d.holiday}" aria-label="${d.holiday}"></span>`
       : '';
+    const pendingBadge = isPendingActive
+      ? '<span class="pending-badge" title="Ingår i matsedeln du ska godkänna">NY</span>'
+      : '';
 
-    // Gap (ingen plan) eller blockerad dag
-    if (!d.recipeId) {
-      const label = d.blocked ? 'Fri dag' : (d.planId ? 'Fri dag' : '—');
+    // Custom-dag (egen planering)
+    if (d.isCustom) {
+      const noteEsc = (d.customNote || '').replace(/"/g, '&quot;');
       return `<div class="${timelineDayCls}">
         ${topRow}
-        <div class="${cls}" data-date="${d.date}" data-day="${d.day}">
+        <div class="${cls}" data-date="${d.date}" data-day="${d.day}"
+          onclick="openCustomDay('${d.date}', '${d.day}')">
+          <div class="week-day-name">${d.dayShort} ${d.dayNum}${dot}${holidayDot}</div>
+          <div class="week-day-recipe custom-note" title="${noteEsc}">${d.customNote ? d.customNote : '✏️ Egen'}</div>
+        </div>
+      </div>`;
+    }
+
+    // Gap (ingen plan, inget custom) eller blockerad dag utan recept
+    if (!d.recipeId) {
+      const label = d.blocked ? 'Fri dag' : '—';
+      const clickable = !d.isPast && !d.blocked && !d.planId;
+      const onclick = clickable ? ` onclick="openCustomDay('${d.date}', '${d.day}')"` : '';
+      return `<div class="${timelineDayCls}">
+        ${topRow}
+        <div class="${cls}" data-date="${d.date}" data-day="${d.day}"${onclick}>
           <div class="week-day-name">${d.dayShort} ${d.dayNum}${dot}${holidayDot}</div>
           <div class="week-day-recipe blocked-recipe-text">${label}</div>
         </div>
@@ -549,15 +646,23 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
         <div class="week-day-name">${d.dayShort} ${d.dayNum}${dot}${holidayDot}</div>
         <div class="week-day-recipe">${d.recipe}</div>
         ${savingBadge}
+        ${pendingBadge}
         ${swapBtn}
       </div>
     </div>`;
   }).join('');
 
-  requestAnimationFrame(() => centerTodayCard({ smooth: false }));
+  // ── Bulk "markera som egen planering" för tomma dagar före planstart ─────
+  renderCustomBulkBanner(timeline, plan);
 
-  const confirmed = !!plan?.confirmedAt;
-  window.planConfirmed = confirmed;
+  // ── Scroll: till planstart om ny/opåbörjad plan, annars till idag ──────
+  requestAnimationFrame(() => {
+    if (pendingPlan && plan.startDate) {
+      centerOnDate(plan.startDate, { smooth: false });
+    } else {
+      centerOnDate(null, { smooth: false });
+    }
+  });
 
   const confirmWrap   = document.getElementById('confirmPlanWrap');
   const confirmStatus = document.getElementById('confirmStatus');
@@ -581,21 +686,196 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
 
 export async function loadWeeklyPlan() {
   try {
-    const [planRes, shopRes, archive] = await Promise.all([
+    const [planRes, shopRes, archive, customDays] = await Promise.all([
       fetch('weekly-plan.json'),
       fetch('shopping-list.json'),
       loadArchive(),
+      loadCustomDays(),
     ]);
     document.getElementById('weekLoading').style.display = 'none';
     const plan = planRes.ok ? await planRes.json() : null;
     const shop = shopRes.ok ? await shopRes.json() : null;
-    const hasAnything = (plan?.days?.length) || (archive?.plans?.length);
+    const hasAnything = (plan?.days?.length) || (archive?.plans?.length) || Object.keys(customDays.entries || {}).length;
     if (!hasAnything) { document.getElementById('weekNoData').style.display = ''; return; }
-    renderWeeklyPlanData(plan, shop, false, archive);
+    renderWeeklyPlanData(plan, shop, false, archive, customDays);
   } catch {
     document.getElementById('weekLoading').style.display = 'none';
     document.getElementById('weekNoData').style.display  = '';
   }
+}
+
+// ── Egen planering (custom days) ──────────────────────────────────────────────
+
+function renderCustomBulkBanner(timeline, plan) {
+  const banner = document.getElementById('customBulkBanner');
+  if (!banner) return;
+
+  // Bara visa banner när det finns en aktiv plan i framtiden — annars är
+  // "alla tomma dagar" en oändlig hink som är meningslös att markera.
+  const cutoff = plan?.startDate;
+  if (!cutoff) {
+    banner.style.display = 'none';
+    banner.innerHTML = '';
+    return;
+  }
+
+  const emptyDates = timeline
+    .filter(d => !d.isPast && !d.isToday && !d.recipeId && !d.isCustom && !d.planId && !d.blocked)
+    .filter(d => d.date < cutoff)
+    .map(d => d.date);
+
+  if (emptyDates.length < 1) {
+    banner.style.display = 'none';
+    banner.innerHTML = '';
+    return;
+  }
+
+  banner.style.display = '';
+  banner.innerHTML = `
+    <span class="custom-bulk-text">
+      ${emptyDates.length} tom${emptyDates.length === 1 ? ' dag' : 'ma dagar'} innan matsedeln (${fmtShort(cutoff)})
+    </span>
+    <button class="custom-bulk-btn" onclick='openCustomBulk(${JSON.stringify(emptyDates)})'>
+      ✏️ Markera ${emptyDates.length === 1 ? 'dagen' : 'alla'} som egen planering
+    </button>
+  `;
+}
+
+export function openCustomDay(dateIso, dayName) {
+  const panel = document.getElementById('weekRecipeDetail');
+  const existing = (window._customDays?.entries || {})[dateIso];
+  const note = existing?.note || '';
+  const hasExisting = !!existing;
+
+  document.querySelectorAll('.week-day-card').forEach(c => c.classList.remove('selected'));
+  const card = document.querySelector(`.week-day-card[data-date="${dateIso}"]`);
+  if (card) card.classList.add('selected');
+
+  panel.innerHTML = `<div class="detail-inner custom-day-editor">
+    <div class="week-recipe-header">
+      <div class="week-recipe-title">✏️ ${dayName} — egen planering</div>
+    </div>
+    <label class="custom-day-label">
+      Notering (valfritt)
+      <input type="text" id="customDayNote" maxlength="140"
+             placeholder="T.ex. Pizza, rester, ute och äter…"
+             value="${note.replace(/"/g, '&quot;')}">
+    </label>
+    <div class="custom-day-actions">
+      <button class="replace-recipe-btn" onclick="saveCustomDay('${dateIso}')">Spara</button>
+      ${hasExisting ? `<button class="day-action-btn day-action-block" onclick="clearCustomDay('${dateIso}')">Ta bort markering</button>` : ''}
+    </div>
+  </div>`;
+  panel.classList.add('open');
+  window.isSnapping = true;
+  window.scrollUpAccum = 0;
+  document.querySelector('header').classList.remove('header-hidden');
+  const hh = document.querySelector('header').offsetHeight;
+  const top = panel.getBoundingClientRect().top + window.scrollY - hh - 8;
+  window.smoothScrollTo(top, 380);
+}
+
+export function openCustomBulk(dates) {
+  const panel = document.getElementById('weekRecipeDetail');
+  const count = Array.isArray(dates) ? dates.length : 0;
+  if (!count) return;
+
+  panel.innerHTML = `<div class="detail-inner custom-day-editor">
+    <div class="week-recipe-header">
+      <div class="week-recipe-title">✏️ Egen planering — ${count} dagar</div>
+    </div>
+    <label class="custom-day-label">
+      Notering (valfritt, samma för alla ${count} dagarna)
+      <input type="text" id="customDayNote" maxlength="140"
+             placeholder="T.ex. Rester / improvisera / äter ute">
+    </label>
+    <div class="custom-day-actions">
+      <button class="replace-recipe-btn" onclick='saveCustomDaysBulk(${JSON.stringify(dates)})'>Markera ${count} dagar</button>
+    </div>
+  </div>`;
+  panel.classList.add('open');
+  window.isSnapping = true;
+  document.querySelector('header').classList.remove('header-hidden');
+  const hh = document.querySelector('header').offsetHeight;
+  const top = panel.getBoundingClientRect().top + window.scrollY - hh - 8;
+  window.smoothScrollTo(top, 380);
+}
+
+async function postCustomDays(action, dates, note) {
+  const res = await fetch('/api/custom-days', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, dates, note }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Okänt fel');
+  window._customDays = data.customDays || { entries: {} };
+  return data;
+}
+
+export async function saveCustomDay(dateIso) {
+  const input = document.getElementById('customDayNote');
+  const note = input ? input.value : '';
+  const btn = document.querySelector('.custom-day-actions .replace-recipe-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sparar…'; }
+  try {
+    await postCustomDays('set', [dateIso], note);
+    const panel = document.getElementById('weekRecipeDetail');
+    panel.classList.remove('open');
+    panel.innerHTML = '';
+    renderWeeklyPlanData(
+      window._lastPlan || null,
+      window._lastShop || null,
+      false,
+      window._planArchive,
+      window._customDays
+    );
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Spara'; }
+    const panel = document.getElementById('weekRecipeDetail');
+    const err = document.createElement('p');
+    err.style.cssText = 'color:var(--terracotta);font-size:0.82rem;padding:0.5rem 0';
+    err.textContent = 'Kunde inte spara — prova igen.';
+    panel.querySelector('.custom-day-editor')?.appendChild(err);
+  }
+}
+
+export async function saveCustomDaysBulk(dates) {
+  const input = document.getElementById('customDayNote');
+  const note = input ? input.value : '';
+  const btn = document.querySelector('.custom-day-actions .replace-recipe-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sparar…'; }
+  try {
+    await postCustomDays('set', dates, note);
+    const panel = document.getElementById('weekRecipeDetail');
+    panel.classList.remove('open');
+    panel.innerHTML = '';
+    renderWeeklyPlanData(
+      window._lastPlan || null,
+      window._lastShop || null,
+      false,
+      window._planArchive,
+      window._customDays
+    );
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = `Markera ${dates.length} dagar`; }
+  }
+}
+
+export async function clearCustomDay(dateIso) {
+  try {
+    await postCustomDays('clear', [dateIso]);
+    const panel = document.getElementById('weekRecipeDetail');
+    panel.classList.remove('open');
+    panel.innerHTML = '';
+    renderWeeklyPlanData(
+      window._lastPlan || null,
+      window._lastShop || null,
+      false,
+      window._planArchive,
+      window._customDays
+    );
+  } catch (e) { /* tyst — knappen står kvar */ }
 }
 
 window.enterReplaceMode    = enterReplaceMode;
@@ -612,3 +892,9 @@ window.confirmPlan         = confirmPlan;
 window.renderWeeklyPlanData = renderWeeklyPlanData;
 window.loadWeeklyPlan      = loadWeeklyPlan;
 window.centerTodayCard     = centerTodayCard;
+window.centerOnDate        = centerOnDate;
+window.openCustomDay       = openCustomDay;
+window.openCustomBulk      = openCustomBulk;
+window.saveCustomDay       = saveCustomDay;
+window.saveCustomDaysBulk  = saveCustomDaysBulk;
+window.clearCustomDay      = clearCustomDay;

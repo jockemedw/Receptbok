@@ -201,13 +201,21 @@ export async function generatePlan() {
     status.className   = 'trigger-status success';
     btn.disabled       = false;
     if (data.weeklyPlan) {
-      // Arkivet kan ha uppdaterats — hämta om det innan rendering.
+      // Arkivet + custom-dagar kan ha uppdaterats — hämta om dem innan rendering.
       let archive = { plans: [] };
+      let customDays = window._customDays || { entries: {} };
       try {
-        const ar = await fetch('plan-archive.json?t=' + Date.now());
+        const [ar, cd] = await Promise.all([
+          fetch('plan-archive.json?t=' + Date.now()),
+          fetch('custom-days.json?t=' + Date.now()),
+        ]);
         if (ar.ok) archive = await ar.json();
-      } catch { /* OK, kör utan arkiv */ }
-      window.renderWeeklyPlanData(data.weeklyPlan, null, true, archive);
+        if (cd.ok) {
+          const cdData = await cd.json();
+          customDays = { entries: cdData.entries || {} };
+        }
+      } catch { /* OK, kör utan uppdatering */ }
+      window.renderWeeklyPlanData(data.weeklyPlan, null, true, archive, customDays);
     }
     window.switchTab('vecka');
   } catch (err) {
