@@ -1,87 +1,105 @@
 {
-  "generated": "2026-04-06",
-  "startDate": "2026-04-07",
-  "endDate": "2026-04-19",
+  "generated": "2026-04-18",
+  "startDate": "2026-04-27",
+  "endDate": "2026-05-10",
   "days": [
     {
-      "date": "2026-04-07",
-      "day": "Tisdag",
-      "recipe": "Stekta rödspättafiléer med stuvade morötter",
-      "recipeId": 3
-    },
-    {
-      "date": "2026-04-08",
-      "day": "Onsdag",
-      "recipe": null,
-      "recipeId": null,
-      "blocked": true
-    },
-    {
-      "date": "2026-04-09",
-      "day": "Torsdag",
-      "recipe": "Ugnspannkaka med vitkål och brynt smör med rå lingon",
-      "recipeId": 34
-    },
-    {
-      "date": "2026-04-10",
-      "day": "Fredag",
-      "recipe": "Gnocchi med snabbpesto",
-      "recipeId": 26
-    },
-    {
-      "date": "2026-04-11",
-      "day": "Lördag",
-      "recipe": "Kålcurry med gröna ärter och koriander",
-      "recipeId": 37
-    },
-    {
-      "date": "2026-04-12",
-      "day": "Söndag",
-      "recipe": "Sötpotatissallad med fetaost och hot honey-dressing",
-      "recipeId": 43
-    },
-    {
-      "date": "2026-04-13",
+      "date": "2026-04-27",
       "day": "Måndag",
-      "recipe": "Quinoabollar",
-      "recipeId": 11
+      "recipe": "Pasta Rosso med champinjoner",
+      "recipeId": 56,
+      "saving": 24
     },
     {
-      "date": "2026-04-14",
+      "date": "2026-04-28",
       "day": "Tisdag",
-      "recipe": "Röd linsgryta med potatis",
-      "recipeId": 46
+      "recipe": "Stekt curryris med färs och salladslök",
+      "recipeId": 29,
+      "saving": 33
     },
     {
-      "date": "2026-04-15",
+      "date": "2026-04-29",
       "day": "Onsdag",
-      "recipe": "Fisk med örtsås",
-      "recipeId": 50
+      "recipe": "Pastasallad med kyckling, feta och basilika",
+      "recipeId": 6,
+      "saving": 19
     },
     {
-      "date": "2026-04-16",
+      "date": "2026-04-30",
       "day": "Torsdag",
-      "recipe": "Breakfast burrito med kål och äggröra",
-      "recipeId": 32
+      "recipe": "Buljongprimörsoppa med kycklingfrikadeller",
+      "recipeId": 8,
+      "saving": 21
     },
     {
-      "date": "2026-04-17",
+      "date": "2026-05-01",
       "day": "Fredag",
-      "recipe": "Pasta med lax och sås på vitt vin, grädde och spenat",
-      "recipeId": 51
+      "recipe": "Minestrone",
+      "recipeId": 23,
+      "saving": 14
     },
     {
-      "date": "2026-04-18",
+      "date": "2026-05-02",
       "day": "Lördag",
-      "recipe": "Indisk gryta med spenat, kikärter, senap & yoghurt",
-      "recipeId": 53
+      "recipe": "Stekta rödspättafiléer med stuvade morötter",
+      "recipeId": 3,
+      "saving": 13
     },
     {
-      "date": "2026-04-19",
+      "date": "2026-05-03",
       "day": "Söndag",
-      "recipe": "Krispiga ostquesadillas med grönkål och potatis med syrlig koriandersås",
-      "recipeId": 33
+      "recipe": "Tikka masala med kikärtor och vitlöksnaan",
+      "recipeId": 15,
+      "saving": 20
+    },
+    {
+      "date": "2026-05-04",
+      "day": "Måndag",
+      "recipe": "Krämig bönmasala",
+      "recipeId": 59,
+      "saving": 21
+    },
+    {
+      "date": "2026-05-05",
+      "day": "Tisdag",
+      "recipe": "Buljongsoppa med shiitakesvamp och pocherat ägg",
+      "recipeId": 5,
+      "saving": 13
+    },
+    {
+      "date": "2026-05-06",
+      "day": "Onsdag",
+      "recipe": "Majsplättar med kokosmjölk",
+      "recipeId": 54,
+      "saving": 6
+    },
+    {
+      "date": "2026-05-07",
+      "day": "Torsdag",
+      "recipe": "Senapsdressad pärlcouscous",
+      "recipeId": 49,
+      "saving": 4
+    },
+    {
+      "date": "2026-05-08",
+      "day": "Fredag",
+      "recipe": "Gazpacho",
+      "recipeId": 25,
+      "saving": 45
+    },
+    {
+      "date": "2026-05-09",
+      "day": "Lördag",
+      "recipe": "Pepprig pastasås med aubergine",
+      "recipeId": 31,
+      "saving": 10
+    },
+    {
+      "date": "2026-05-10",
+      "day": "Söndag",
+      "recipe": "Belugabouillabaisse",
+      "recipeId": 14,
+      "saving": 13
     }
-  ],
-  "confirmedAt": "2026-04-06T13:31:53.908Z"
+  ]
 }
