@@ -2,10 +2,11 @@ import { createHandler } from "./_shared/handler.js";
 import { readFile, writeFile } from "./_shared/github.js";
 
 // Lagringsformat i custom-days.json:
-// { "entries": { "2026-04-25": { "note": "Pizza hemma" }, ... } }
+// { "entries": { "2026-04-25": { "note": "...", "recipeId": 42, "recipeTitle": "..." } } }
+// Antingen note, recipeId eller båda.
 
 export default createHandler(async (req, res, pat) => {
-  const { action, dates, note } = req.body || {};
+  const { action, dates, note, recipeId, recipeTitle } = req.body || {};
   if (!["set", "clear"].includes(action)) {
     return res.status(400).json({ error: "action måste vara 'set' eller 'clear'" });
   }
@@ -22,9 +23,17 @@ export default createHandler(async (req, res, pat) => {
   } catch { /* filen kan saknas, OK */ }
 
   if (action === "set") {
-    const trimmed = typeof note === "string" ? note.trim().slice(0, 140) : "";
+    const trimmedNote = typeof note === "string" ? note.trim().slice(0, 140) : "";
+    const rid = Number.isInteger(recipeId) ? recipeId : null;
+    const rTitle = typeof recipeTitle === "string" ? recipeTitle.trim().slice(0, 200) : "";
     for (const d of dates) {
-      current.entries[d] = { note: trimmed };
+      const entry = {};
+      if (trimmedNote) entry.note = trimmedNote;
+      if (rid) {
+        entry.recipeId = rid;
+        if (rTitle) entry.recipeTitle = rTitle;
+      }
+      current.entries[d] = entry;
     }
   } else {
     for (const d of dates) {

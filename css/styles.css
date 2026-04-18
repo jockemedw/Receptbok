@@ -839,6 +839,30 @@
     gap: 0.5rem;
     flex-wrap: wrap;
   }
+  .custom-day-editor .custom-day-section {
+    padding: 0.75rem 0;
+    border-top: 1px solid var(--border);
+  }
+  .custom-day-editor .custom-day-section:first-of-type {
+    border-top: none;
+  }
+  .custom-day-editor .custom-day-section-title {
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--warm-brown);
+    margin-bottom: 0.5rem;
+  }
+  .custom-day-editor .custom-day-section .custom-day-label {
+    margin-bottom: 0.5rem;
+  }
+  .custom-day-editor .custom-day-section .replace-recipe-btn {
+    width: 100%;
+  }
+
+  .week-day-card.custom.custom-has-recipe .week-day-recipe {
+    font-style: normal;
+    font-weight: 500;
+  }
 
   .week-day-card.weekend:not(.plan-active):not(.plan-color-0):not(.plan-color-1):not(.plan-color-2):not(.plan-color-3):not(.gap):not(.today):not(.selected) {
     background: #f3e8d4;
@@ -1707,7 +1731,8 @@
     align-self: center;
   }
   .select-btn:hover { opacity: 0.88; }
-  #receptView.replace-mode .select-btn { display: inline-block; }
+  #receptView.replace-mode .select-btn,
+  #receptView.custom-pick-mode .select-btn { display: inline-block; }
 
   .replace-banner {
     display: none;
@@ -1723,6 +1748,21 @@
   }
   #receptView.replace-mode .replace-banner { display: flex; }
   .replace-banner strong { color: var(--terracotta); }
+
+  .custom-pick-banner {
+    display: none;
+    align-items: center;
+    gap: 0.75rem;
+    background: var(--light-terra);
+    border: 1.5px solid var(--terracotta);
+    border-radius: 10px;
+    padding: 0.7rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.88rem;
+    color: var(--warm-brown);
+  }
+  #receptView.custom-pick-mode .custom-pick-banner { display: flex; }
+  .custom-pick-banner strong { color: var(--terracotta); }
   .replace-banner-cancel {
     margin-left: auto;
     background: none;
