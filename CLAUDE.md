@@ -81,7 +81,40 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 Inga just nu.
 
 ### Öppna utredningar
-**Willys+ medlemserbjudanden — 3-fas utforskning (nästa session):**
+**Lexikon- och matchningsaudit — KÖRS NÄSTA SESSION** (planerad i Session 34, ska inte granskas — Claude kör fullt ut och rapporterar):
+
+Rotorsak som triggade utredningen: "Spraygrädde Vispgrädde 35%" matchades mot pastasås-recept eftersom `NORMALIZATION_TABLE` har `"vispgrädde": "grädde"`. Samma klass av felmatchningar finns sannolikt för havregrädde, kokosmjölk/komjölk, gochugaru/gochujang, olika buljong-typer, etc.
+
+- **Fas A — Datainsamling (~30 min):**
+  - Hämta live `/api/willys-offers` för Ekholmen (butik 2160) + 2–3 andra butiker för generaliseringstest
+  - Spara snapshot till `docs/snapshots/willys-YYYY-MM-DD.json` för framtida regressionskörningar
+  - Inventera alla 62 recept — lista tvetydiga ingredienser ("grädde", "mjölk", "buljong", "olja" utan kvalificerare)
+
+- **Fas B — Klassifiering (~45 min):**
+  - Kör `matchRecipe()` över full kryssprodukt (62 × ~200 erbjudanden). Klassa varje match: ✅ korrekt · ⚠️ fel produkttyp · ⚠️ fel funktion · ⚠️ icke-mat · ⚠️ kompositord
+  - **LLM-assist i batch (offline, INTE runtime)** via Gemini för oklara fall — designprincipen "Ingen AI i runtime" gäller bara appen, inte dev-verktyg
+  - Recall-check: vilka recept *borde* matcha något i butiken men gör det inte? Ger Priority 2-stemming-kandidater
+
+- **Fas C — Modellrevidering (~60 min):**
+  - Ersätt platt `NORMALIZATION_TABLE` med **funktionell klassmodell**: varje canon får en class (`grädde-matlagning`, `grädde-vispad`, `mjölk-komjölk`, `mjölk-växtbaserad`, `buljong-kött`, `buljong-grönsak`…). Match kräver **samma klass** — löser hela buggklassen
+  - Implementera **Priority 2 stemming** för sammansatta ord (`laxfiléer → lax + filé`, `kycklingfärs → kyckling + färs`, `körsbärstomater → tomat`)
+  - Utöka `NON_FOOD_RE` för nya kategorier (kosttillskott, icke-mat-bakingredienser, etc.)
+
+- **Fas D — Regressiontester (~30 min):**
+  - `tests/match.test.js` (Node, inga deps) — fixtures med 20–30 guld-matches (produkt + recept + förväntat resultat)
+  - Hook i `.claude/settings.json` — blockerar commit om regression detekteras när `shopping-builder.js` eller `willys-matcher.js` ändras
+
+- **Fas E — Implementation + deploy (~30 min):**
+  - Alla ändringar appliceras direkt (ingen review-gate)
+  - Commit + push + merge till main
+  - Live-verifiering mot Vercel
+  - Uppdaterad prognos i roadmap — trolig effekt: recall 44→52–55 recept, precision ~70% → ~92%
+
+- **Fas F — Rapport:** `docs/match-audit-YYYY-MM-DD.md` + uppdaterad roadmap + dashboard-uppdatering.
+
+**Total tid:** ~3 timmar. Kan köras i ett svep. **Avgränsningar:** Willys+ medlemspriser separat; ingen AI i runtime; rör inte `recipes.json`-strukturen.
+
+**Willys+ medlemserbjudanden — 3-fas utforskning (parkerad, kör efter lexikon-auditen):**
 - **Fas A — Rekon:** Vilka inloggningsmetoder erbjuder willys.se? BankID? E-post+lösenord? "Kom ihåg mig"-cookies? Mobilapp-OAuth? Claude läser login-sidan.
 - **Fas B — Validering:** Hur ser `PERSONAL_SEGMENTED`-svaret faktiskt ut när man är inloggad? Är det 10 extra produkter eller 100 helt andra priser? Kräver att användaren loggar in manuellt på willys.se och hämtar `https://www.willys.se/search/campaigns/online?q=2160&type=PERSONAL_SEGMENTED&page=0&size=500` i devtools och klistrar in svaret. Avgör om Fas C är värd tid.
 - **Fas C — Automatiseringsväg** (välj baserat på A+B):
@@ -107,7 +140,9 @@ _(Tom — lägg till idéer här under sessioner)_
   - **CSS:** Nya klasser `.has-details`, `.saving-overlay/-box/-row/-canon/-product/-brand/-prices/-promo/-regular/-valid/-delta/-footnote`. Bygger på befintlig `.modal-overlay`/`.modal-box`-grund.
 - **Rea-varning för planer långt fram:** `generatePlan` kontrollerar pre-fetch: om `optimize_prices` är på **och** `end_date` är mer än 7 dagar från idag → `confirm()`-dialog: *"Reapriserna gäller oftast bara innevarande vecka. Din matsedel sträcker sig till [datum] — en del erbjudanden kan ha löpt ut när du handlar. Fortsätta med prisoptimering?"*. Avbryt → ingen åtgärd (formuläret oförändrat). Fortsätt → vanlig generering.
 - **Filer ändrade:** `api/generate.js`, `js/weekly-plan/plan-viewer.js`, `js/weekly-plan/plan-generator.js`, `css/styles.css`.
-- **Återstår:** Live-test i Vercel.
+- **Uppföljning efter live-test (samma session):** Kassera-refreshen funkade inte — cache-bust räcker inte eftersom Vercel inte hunnit re-deploya statiska `weekly-plan.json` på ~30 sek. Bytt till att rendera `data.weeklyPlan` direkt från API-svaret (samma mönster som `generatePlan`); cache-bust kvar bara för arkiv/custom-days/inköpslista. Lade också till att `weekContent` + `confirmPlanWrap` döljs när vyn blir helt tom. Commit `d26ef15`.
+- **Spraygrädde-buggen upptäckt:** "Pepprig pastasås med aubergine" fick falsk match mot "Spraygrädde Vispgrädde 35%" — `NORMALIZATION_TABLE` har `"vispgrädde": "grädde"` (shopping-builder.js:38). Hela klassen av fel-produkttyp-matchningar kartläggs i **Lexikon- och matchningsaudit** (se Öppna utredningar, körs nästa session).
+- **Planering nästa session:** Utökad audit med funktionell klassmodell + Priority 2-stemming + regressiontester. Full plan i "Öppna utredningar". Claude kör fullt ut utan granskningsgate.
 
 ### Session 33 (2026-04-18)
 - **Tre-vägs-editor på tom dag:** klick på en tom (eller redan custom) dag i tidslinjen öppnar nu tre sektioner i detaljpanelen:
