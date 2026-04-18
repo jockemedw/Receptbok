@@ -92,6 +92,7 @@ function buildTimeline(plan, archive, customDays) {
       recipe: entry.recipe || null,
       recipeId: entry.recipeId || null,
       saving: entry.saving || null,
+      savingMatches: entry.savingMatches || null,
       blocked: !!(entry.blocked && !entry.recipeId),
       planId: entry.planId || null,
       planLabel: entry.planLabel || null,
@@ -561,6 +562,68 @@ async function modifyDay(date, action) {
 export function skipDay(date) { return modifyDay(date, 'skip'); }
 export function blockDay(date) { return modifyDay(date, 'block'); }
 
+// ── Besparings-popover ───────────────────────────────────────────────────────
+
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function fmtKr(value) {
+  if (value == null) return '–';
+  const rounded = Math.round(value * 10) / 10;
+  return Number.isInteger(rounded) ? `${rounded} kr` : `${rounded.toFixed(1).replace('.', ',')} kr`;
+}
+
+export function openSavingPopover(dateIso) {
+  const day = window._timelineByDate?.[dateIso];
+  if (!day || !day.savingMatches?.length) return;
+
+  const rows = day.savingMatches.map((m) => {
+    const brand = m.brandLine ? `<div class="saving-brand">${esc(m.brandLine)}</div>` : '';
+    const validStr = m.validUntil
+      ? `Gäller t.o.m. ${fmtShort(m.validUntil.slice(0, 10))}`
+      : '';
+    return `
+      <li class="saving-row">
+        <div class="saving-row-main">
+          <div class="saving-canon">${esc(m.canon)}</div>
+          <div class="saving-product">${esc(m.name)}</div>
+          ${brand}
+          <div class="saving-prices">
+            <span class="saving-promo">${fmtKr(m.promoPrice)}</span>
+            <span class="saving-regular">normalt ${fmtKr(m.regularPrice)}</span>
+          </div>
+          ${validStr ? `<div class="saving-valid">${esc(validStr)}</div>` : ''}
+        </div>
+        <div class="saving-delta">−${fmtKr(m.savingPerUnit)}</div>
+      </li>`;
+  }).join('');
+
+  const title = day.recipe ? esc(day.recipe) : `${day.dayShort} ${day.dayNum}`;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay saving-overlay';
+  overlay.onclick = (e) => { if (e.target === overlay) closeSavingPopover(); };
+  overlay.innerHTML = `
+    <div class="modal-box saving-box" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <h2>💰 Sparat ca ${day.saving} kr</h2>
+        <button type="button" aria-label="Stäng" onclick="closeSavingPopover()">✕</button>
+      </div>
+      <p class="saving-sub">På <strong>${title}</strong> — jämfört med normalpris på Willys Ekholmen.</p>
+      <ul class="saving-list">${rows}</ul>
+      <p class="saving-footnote">Besparingen räknas per enhet och förutsätter att du handlar erbjudandet. Reapriser kan ändras eller löpa ut.</p>
+    </div>`;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add('open'));
+}
+
+export function closeSavingPopover() {
+  document.querySelectorAll('.saving-overlay').forEach((el) => el.remove());
+}
+
 // ── Bekräftelse ───────────────────────────────────────────────────────────────
 
 export async function discardPlan() {
@@ -675,6 +738,7 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
   }
 
   const timeline = buildTimeline(plan, archiveData, customData);
+  window._timelineByDate = Object.fromEntries(timeline.map((d) => [d.date, d]));
   let prevPlanId = null;
   let prevMonth = null;
   let prevWeek = null;
@@ -789,9 +853,16 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
            <path d="M12 7.5H1M4 5.5L1.5 7.5 4 9.5"/>
          </svg></button>`
       : '';
-    const savingBadge = (d.saving && d.saving >= 10)
-      ? `<div class="week-day-saving" title="Uppskattad besparing jämfört med normalpris">💰 ${d.saving} kr</div>`
-      : '';
+    let savingBadge = '';
+    if (d.saving && d.saving >= 10) {
+      if (d.savingMatches?.length) {
+        savingBadge = `<button type="button" class="week-day-saving has-details"
+           title="Tryck för att se var besparingen sker"
+           onclick="event.stopPropagation();openSavingPopover('${d.date}')">💰 ${d.saving} kr</button>`;
+      } else {
+        savingBadge = `<div class="week-day-saving" title="Uppskattad besparing jämfört med normalpris">💰 ${d.saving} kr</div>`;
+      }
+    }
     const readOnly = d.isArchive || d.isPast;
     return `<div class="${timelineDayCls}">
       ${topRow}
@@ -848,8 +919,8 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
 export async function loadWeeklyPlan() {
   try {
     const [planRes, shopRes, archive, customDays] = await Promise.all([
-      fetch('weekly-plan.json'),
-      fetch('shopping-list.json'),
+      fetch('weekly-plan.json?t=' + Date.now()),
+      fetch('shopping-list.json?t=' + Date.now()),
       loadArchive(),
       loadCustomDays(),
     ]);
@@ -1082,6 +1153,8 @@ window.replaceRecipe       = replaceRecipe;
 window.openWeekRecipe      = openWeekRecipe;
 window.skipDay             = skipDay;
 window.blockDay            = blockDay;
+window.openSavingPopover   = openSavingPopover;
+window.closeSavingPopover  = closeSavingPopover;
 window.confirmPlan         = confirmPlan;
 window.discardPlan         = discardPlan;
 window.renderWeeklyPlanData = renderWeeklyPlanData;

@@ -98,7 +98,18 @@ _(Tom — lägg till idéer här under sessioner)_
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 - Säsongsfilter — automatiskt vikta recept efter säsong (soppa/gryta höst-vinter, sallad sommar)
 
-### Senaste session — Session 33 (2026-04-18)
+### Senaste session — Session 34 (2026-04-18)
+- **Kassera förslag — refresh:** `loadWeeklyPlan` cache-bustar nu `weekly-plan.json` + `shopping-list.json` med `?t=Date.now()` (arkiv/custom-days hade redan `?t=`). Fixar CDN-staleness efter discard så vyn omedelbart reflekterar tomma weekly-plan.json.
+- **Besparingsdetaljer — var skedde besparingen?:**
+  - **Backend (`api/generate.js`):** `savingsById`-shapen utökad från `number` → `{ total, matches: [{canon, name, brandLine, regularPrice, promoPrice, savingPerUnit, validUntil}] }`. En match per canon-term (högst `savingPerUnit` vinner, samma logik som `willys-matcher.totalSaving`). Per dag returneras nu `saving: <kr>` + `savingMatches: [...]`. `bucketBySaving` uppdaterad för nya shapen.
+  - **Frontend — tidslinje:** `buildTimeline` passerar igenom `savingMatches`. `_timelineByDate` exponeras på window för popover-lookup. 💰-badgen renderas som `<button class="week-day-saving has-details">` när `savingMatches` finns, annars oförändrad `<div>` (för arkiv-dagar där bara totalen bevaras).
+  - **Popover:** Klick på badge → `openSavingPopover(dateIso)` bygger modal-overlay med kanonisk term + produktnamn + brandLine + promoPrice/regularPrice + `−X kr` per match + validUntil + footnote om att reapriser kan ändras. Klick utanför eller ✕ stänger. `event.stopPropagation()` på badge så att dagkortet inte toggleras.
+  - **CSS:** Nya klasser `.has-details`, `.saving-overlay/-box/-row/-canon/-product/-brand/-prices/-promo/-regular/-valid/-delta/-footnote`. Bygger på befintlig `.modal-overlay`/`.modal-box`-grund.
+- **Rea-varning för planer långt fram:** `generatePlan` kontrollerar pre-fetch: om `optimize_prices` är på **och** `end_date` är mer än 7 dagar från idag → `confirm()`-dialog: *"Reapriserna gäller oftast bara innevarande vecka. Din matsedel sträcker sig till [datum] — en del erbjudanden kan ha löpt ut när du handlar. Fortsätta med prisoptimering?"*. Avbryt → ingen åtgärd (formuläret oförändrat). Fortsätt → vanlig generering.
+- **Filer ändrade:** `api/generate.js`, `js/weekly-plan/plan-viewer.js`, `js/weekly-plan/plan-generator.js`, `css/styles.css`.
+- **Återstår:** Live-test i Vercel.
+
+### Session 33 (2026-04-18)
 - **Tre-vägs-editor på tom dag:** klick på en tom (eller redan custom) dag i tidslinjen öppnar nu tre sektioner i detaljpanelen:
   1. **🍳 Välj recept ur receptboken** — startar `enterCustomPickMode(date, day)` som sätter `window.customPickMode`, byter till recept-fliken och visar en ny banner (`#customPickBanner`, kopia av replace-bannern). Befintlig "Välj"-knapp på receptkorten återanvänds via ny branch i `selectRecipeForDay` som delegerar till `selectRecipeForCustomDay` när `customPickMode` är aktiv. Posten skickas till `/api/custom-days` med `{ action:'set', dates:[date], recipeId, recipeTitle }` (ev. befintlig note behålls).
   2. **📝 Egen notering** — oförändrat spar-flöde via `saveCustomDay`.
