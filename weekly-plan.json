@@ -1,63 +1,6 @@
 {
-  "generated": "2026-04-18",
-  "startDate": "2026-04-27",
-  "endDate": "2026-05-04",
-  "days": [
-    {
-      "date": "2026-04-27",
-      "day": "Måndag",
-      "recipe": "Gazpacho",
-      "recipeId": 25,
-      "saving": 45
-    },
-    {
-      "date": "2026-04-28",
-      "day": "Tisdag",
-      "recipe": "Krämig bönmasala",
-      "recipeId": 59,
-      "saving": 21
-    },
-    {
-      "date": "2026-04-29",
-      "day": "Onsdag",
-      "recipe": "Pasta Rosso med champinjoner",
-      "recipeId": 56,
-      "saving": 24
-    },
-    {
-      "date": "2026-04-30",
-      "day": "Torsdag",
-      "recipe": "Oreganokyckling",
-      "recipeId": 60,
-      "saving": 6
-    },
-    {
-      "date": "2026-05-01",
-      "day": "Fredag",
-      "recipe": "Majsplättar med kokosmjölk",
-      "recipeId": 54,
-      "saving": 6
-    },
-    {
-      "date": "2026-05-02",
-      "day": "Lördag",
-      "recipe": "Stekta rödspättafiléer med stuvade morötter",
-      "recipeId": 3,
-      "saving": 13
-    },
-    {
-      "date": "2026-05-03",
-      "day": "Söndag",
-      "recipe": "Pulled chicken",
-      "recipeId": 48,
-      "saving": 6
-    },
-    {
-      "date": "2026-05-04",
-      "day": "Måndag",
-      "recipe": "Stekt curryris med färs och salladslök",
-      "recipeId": 29,
-      "saving": 33
-    }
-  ]
+  "generated": null,
+  "startDate": null,
+  "endDate": null,
+  "days": []
 }
