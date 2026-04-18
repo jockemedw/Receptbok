@@ -173,12 +173,30 @@ export async function generatePlan() {
   const diff = daysBetween(startVal, endVal);
   if (diff < 1 || diff > 15) return;
 
+  // Rea-varning: Willys-kampanjer gäller oftast bara innevarande vecka.
+  // Slutdatum mer än 7 dagar bort = hög risk att erbjudanden hunnit löpa ut
+  // innan familjen handlar. Fråga användaren innan vi kör optimeringen.
+  const optimizePricesEl = document.getElementById('optimizePrices');
+  const wantsOptimize = !!(optimizePricesEl && optimizePricesEl.checked);
+  if (wantsOptimize) {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const end = new Date(endVal + 'T00:00:00');
+    const daysAhead = Math.round((end - today) / 86400000);
+    if (daysAhead > 7) {
+      const ok = confirm(
+        'Reapriserna gäller oftast bara innevarande vecka. Din matsedel sträcker sig ' +
+        `till ${endVal} — en del erbjudanden kan ha löpt ut när du handlar.\n\n` +
+        'Fortsätta med prisoptimering?'
+      );
+      if (!ok) return;
+    }
+  }
+
   btn.disabled       = true;
   status.textContent = 'Genererar matsedel…';
   status.className   = 'trigger-status';
 
   try {
-    const optimizePricesEl = document.getElementById('optimizePrices');
     const body = {
       start_date:       startVal,
       end_date:         endVal,
@@ -187,7 +205,7 @@ export async function generatePlan() {
       vegetarian_days:  parseInt(document.getElementById('vegetarianDays').value) || 0,
       skip_shopping: true,
       blocked_dates:    getBlockedDates(),
-      optimize_prices:  !!(optimizePricesEl && optimizePricesEl.checked),
+      optimize_prices:  wantsOptimize,
     };
     const res  = await fetch('/api/generate', {
       method: 'POST',

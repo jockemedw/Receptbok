@@ -116,7 +116,8 @@ function bucketBySaving(pool, savingsById) {
   if (!savingsById) return shuffle(pool);
   const high = [], low = [];
   for (const r of pool) {
-    if ((savingsById[r.id] || 0) >= SAVING_THRESHOLD) high.push(r);
+    const total = savingsById[r.id]?.total || 0;
+    if (total >= SAVING_THRESHOLD) high.push(r);
     else low.push(r);
   }
   return [...shuffle(high), ...shuffle(low)];
@@ -267,7 +268,30 @@ export default createHandler(async (req, res, pat) => {
         savingsById = {};
         for (const r of filtered) {
           const m = matchRecipe(r, offers);
-          if (m.totalSaving > 0) savingsById[r.id] = m.totalSaving;
+          if (m.totalSaving > 0) {
+            // Plocka en match per canon (högst savingPerUnit vinner) — samma
+            // logik som totalSaving i willys-matcher. Frontend visar produktnamn,
+            // priser och giltighet i popovern.
+            const byCanon = new Map();
+            for (const { canon, offer } of m.matches) {
+              const cur = byCanon.get(canon);
+              if (!cur || (offer.savingPerUnit || 0) > (cur.savingPerUnit || 0)) {
+                byCanon.set(canon, {
+                  canon,
+                  name: offer.name,
+                  brandLine: offer.brandLine || null,
+                  regularPrice: offer.regularPrice,
+                  promoPrice: offer.promoPrice,
+                  savingPerUnit: offer.savingPerUnit,
+                  validUntil: offer.validUntil,
+                });
+              }
+            }
+            savingsById[r.id] = {
+              total: m.totalSaving,
+              matches: [...byCanon.values()],
+            };
+          }
         }
       }
     } catch {
@@ -284,7 +308,12 @@ export default createHandler(async (req, res, pat) => {
     }
     const picked = selectedDays.find((s) => s.date === d.date);
     if (picked && savingsById && savingsById[picked.recipeId]) {
-      return { ...picked, saving: Math.round(savingsById[picked.recipeId]) };
+      const entry = savingsById[picked.recipeId];
+      return {
+        ...picked,
+        saving: Math.round(entry.total),
+        savingMatches: entry.matches,
+      };
     }
     return picked;
   });
