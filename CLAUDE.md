@@ -107,7 +107,8 @@ _(Tom — lägg till idéer här under sessioner)_
   - **`.plan-pending` + NY-badge:** Alla kort i en aktiv men oconfirmad plan får klassen `.plan-pending` — terrakotta border + pulserande ring (keyframes `planPendingPulse`, 2.4s) + liten "NY"-badge i top-right. Försvinner direkt när `planConfirmed` sätts.
   - **Nav-chips [Idag] [Matsedel →]:** Ny `.timeline-nav` ovanför tidslinjen. Chippen för matsedeln pulsar (keyframes `chipPulse`) när planen är pending.
 - **Filer ändrade:** `js/weekly-plan/plan-viewer.js`, `js/weekly-plan/plan-generator.js`, `css/styles.css`, `index.html`. **Filer tillagda:** `api/custom-days.js`, `custom-days.json`.
-- **Återstår:** Live-test i Vercel av alla sex ändringarna tillsammans.
+- **Kassera förslag (tillägg):** Ny `api/discard-plan.js` — tömmer `weekly-plan.json` och plockar bort planens recipeIds ur `recipe-history.json` så de blir valbara direkt igen. Rör inte `shopping-list.json` eller `plan-archive.json`. Frontend: sekundär "Kassera förslag"-knapp under "✓ Bekräfta" i `confirmPlanWrap`, grå border → röd vid hover. Bekräftelsedialog innan anrop. Bara synlig medan planen är pending.
+- **Återstår:** Live-test i Vercel av alla ändringar tillsammans.
 
 ### Session 31 (2026-04-18)
 - **Polish-pass på ±14 tidslinjen** efter live-test i session 30:

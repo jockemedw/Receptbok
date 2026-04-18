@@ -455,6 +455,37 @@ export function blockDay(date) { return modifyDay(date, 'block'); }
 
 // ── Bekräftelse ───────────────────────────────────────────────────────────────
 
+export async function discardPlan() {
+  if (!confirm('Kassera den här föreslagna matsedeln? Dina tidigare matsedlar och inköpslista påverkas inte.')) return;
+  const btn = document.getElementById('discardPlanBtn');
+  const confirmBtn = document.getElementById('confirmPlanBtn');
+  const statusEl = document.getElementById('confirmStatus');
+  btn.disabled = true;
+  if (confirmBtn) confirmBtn.disabled = true;
+  btn.textContent = 'Kasserar…';
+  statusEl.textContent = '';
+
+  try {
+    const res = await fetch('/api/discard-plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Okänt fel');
+
+    window.planConfirmed = false;
+    const panel = document.getElementById('weekRecipeDetail');
+    panel.classList.remove('open');
+    panel.innerHTML = '';
+
+    // Ladda om hela veckovyn så arkiv + ev. tidigare inköpslista visas korrekt
+    await loadWeeklyPlan();
+  } catch (e) {
+    btn.disabled = false;
+    if (confirmBtn) confirmBtn.disabled = false;
+    btn.textContent = 'Kassera förslag';
+    statusEl.textContent = 'Kunde inte kassera — prova igen.';
+    statusEl.className = 'confirm-status';
+  }
+}
+
 export async function confirmPlan() {
   const btn      = document.getElementById('confirmPlanBtn');
   const statusEl = document.getElementById('confirmStatus');
@@ -674,6 +705,11 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
     confirmBtn.disabled = false;
     confirmBtn.textContent = '✓ Bekräfta och bygg inköpslista';
   }
+  const discardBtn = document.getElementById('discardPlanBtn');
+  if (discardBtn) {
+    discardBtn.disabled = false;
+    discardBtn.textContent = 'Kassera förslag';
+  }
   if (confirmStatus) {
     confirmStatus.textContent = '';
     confirmStatus.className = 'confirm-status';
@@ -889,6 +925,7 @@ window.openWeekRecipe      = openWeekRecipe;
 window.skipDay             = skipDay;
 window.blockDay            = blockDay;
 window.confirmPlan         = confirmPlan;
+window.discardPlan         = discardPlan;
 window.renderWeeklyPlanData = renderWeeklyPlanData;
 window.loadWeeklyPlan      = loadWeeklyPlan;
 window.centerTodayCard     = centerTodayCard;
