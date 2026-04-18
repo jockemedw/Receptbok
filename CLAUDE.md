@@ -106,8 +106,16 @@ _(Tom — lägg till idéer här under sessioner)_
 - **Bakåt-dagar:** visar bara notering-sektionen (inga recept- eller plan-knappar).
 - **Custom-dag med recept (rendering):** slim-kort visar `🍳 Titel`. Klick öppnar `openWeekRecipe(recipeId, title)` med `data-custom="1"` + `data-readonly="1"` så replace/swap/skip-knapparna döljs. Detaljpanelen visar "Redigera egen planering"-knapp (går tillbaka till tre-vägs-editorn) + läge-notis "✏️ Egen planering".
 - **Backend:** `api/custom-days.js` accepterar `recipeId: Number` och `recipeTitle: String`. Lagringsformat: `{ entries: { "YYYY-MM-DD": { note?, recipeId?, recipeTitle? } } }`.
-- **CSS:** `.custom-pick-banner` speglar `.replace-banner` (synlig när `#receptView` har `.custom-pick-mode`). `.custom-day-section`/`.custom-day-section-title` för de tre sektionerna i editorn.
+- **CSS:** `.custom-pick-banner` speglar `.replace-banner` (synlig när `#receptView` har `.custom-pick-mode`).
+- **Designpolish (andra pass):** Första iterationen hade rubrik + knapp per sektion → dubbeltext. Bytt till **option-cards** (iOS settings-stil):
+  - Varje val är en hel tappbar yta: ikon + rad + chevron. Ingen separat rubrik.
+  - Noteringen är alltid inline i sitt kort (input + diskret "Spara notering"-knapp), samma formform som de andra korten men expanderad.
+  - Ny header: Playfair-titel med dagnamn + liten grå subtitel med datum (+ "egen planering" om befintlig).
+  - "Ta bort markering" blev en diskret understruken länk i terrakotta under korten.
+  - Hover/focus: terrakotta border + `var(--light-terra)` bakgrund + subtil scale-press.
+  - Gamla `.custom-day-section`/`-title`/`-label`/`-actions`-reglerna borttagna. Nya klasser: `.custom-day-header`, `.custom-day-title`, `.custom-day-sub`, `.custom-options`, `.custom-option`, `.custom-option-note`, `.custom-option-icon/-label/-chev/-head`, `.custom-note-input`, `.custom-note-save`, `.custom-day-remove`.
 - **Filer ändrade:** `api/custom-days.js`, `js/weekly-plan/plan-viewer.js`, `index.html`, `css/styles.css`.
+- **Commits:** `68aeeb6` (första pass), `fb8ad80` (designpolish). Båda mergade till main (`ecf5e00`, `6d772e2`).
 - **Återstår:** Live-test i Vercel av hela flödet.
 
 ### Session 32 (2026-04-18)
