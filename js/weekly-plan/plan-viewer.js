@@ -467,8 +467,9 @@ export async function discardPlan() {
 
   try {
     const res = await fetch('/api/discard-plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Okänt fel');
+    let data = {};
+    try { data = await res.json(); } catch { /* ingen JSON */ }
+    if (!res.ok) throw new Error(data.error || `Serverfel ${res.status}`);
 
     window.planConfirmed = false;
     const panel = document.getElementById('weekRecipeDetail');
@@ -481,8 +482,9 @@ export async function discardPlan() {
     btn.disabled = false;
     if (confirmBtn) confirmBtn.disabled = false;
     btn.textContent = 'Kassera förslag';
-    statusEl.textContent = 'Kunde inte kassera — prova igen.';
+    statusEl.textContent = `Kunde inte kassera: ${e.message || 'okänt fel'} — prova igen.`;
     statusEl.className = 'confirm-status';
+    console.error('discardPlan error:', e);
   }
 }
 

@@ -8,11 +8,12 @@ import { readFile, writeFile } from "./_shared/github.js";
 export default createHandler(async (req, res, pat) => {
   let plan = null;
   try {
-    ({ content: plan } = await readFile("weekly-plan.json", pat));
-  } catch {
-    return res.status(404).json({ error: "Ingen matsedel att kassera." });
+    const result = await readFile("weekly-plan.json", pat);
+    plan = result.content;
+  } catch (e) {
+    return res.status(404).json({ error: `Ingen matsedel att kassera (${e.message}).` });
   }
-  if (!plan?.days?.length) {
+  if (!plan || !Array.isArray(plan.days) || plan.days.length === 0) {
     return res.status(400).json({ error: "Matsedeln är redan tom." });
   }
   if (plan.confirmedAt) {
@@ -20,13 +21,15 @@ export default createHandler(async (req, res, pat) => {
   }
 
   const planRecipeIds = plan.days.map((d) => d.recipeId).filter(Boolean);
-  const commitMsg = `Kassera förslag ${plan.startDate || ""}–${plan.endDate || ""}`.trim();
+  const startLabel = plan.startDate || "";
+  const endLabel = plan.endDate || "";
+  const commitMsg = `Kassera förslag ${startLabel}${startLabel && endLabel ? "–" : ""}${endLabel}`.trim() || "Kassera förslag";
 
   // Rensa history för planens recept så de blir valbara direkt igen.
   let history = { usedOn: {} };
   try {
-    ({ content: history } = await readFile("recipe-history.json", pat));
-    if (!history?.usedOn) history = { usedOn: {} };
+    const hRes = await readFile("recipe-history.json", pat);
+    history = hRes.content && hRes.content.usedOn ? hRes.content : { usedOn: {} };
   } catch { /* ingen history, OK */ }
   for (const rid of planRecipeIds) {
     delete history.usedOn[String(rid)];
@@ -39,10 +42,9 @@ export default createHandler(async (req, res, pat) => {
     days: [],
   };
 
-  await Promise.all([
-    writeFile("weekly-plan.json", emptyPlan, pat, commitMsg),
-    writeFile("recipe-history.json", history, pat, commitMsg),
-  ]);
+  // Sekventiellt för att undvika parallella SHA-konflikter på samma commit-tillfälle.
+  await writeFile("weekly-plan.json", emptyPlan, pat, commitMsg);
+  await writeFile("recipe-history.json", history, pat, commitMsg);
 
   return res.status(200).json({ ok: true, weeklyPlan: emptyPlan });
 });
