@@ -98,7 +98,19 @@ _(Tom — lägg till idéer här under sessioner)_
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 - Säsongsfilter — automatiskt vikta recept efter säsong (soppa/gryta höst-vinter, sallad sommar)
 
-### Senaste session — Session 32 (2026-04-18)
+### Senaste session — Session 33 (2026-04-18)
+- **Tre-vägs-editor på tom dag:** klick på en tom (eller redan custom) dag i tidslinjen öppnar nu tre sektioner i detaljpanelen:
+  1. **🍳 Välj recept ur receptboken** — startar `enterCustomPickMode(date, day)` som sätter `window.customPickMode`, byter till recept-fliken och visar en ny banner (`#customPickBanner`, kopia av replace-bannern). Befintlig "Välj"-knapp på receptkorten återanvänds via ny branch i `selectRecipeForDay` som delegerar till `selectRecipeForCustomDay` när `customPickMode` är aktiv. Posten skickas till `/api/custom-days` med `{ action:'set', dates:[date], recipeId, recipeTitle }` (ev. befintlig note behålls).
+  2. **📝 Egen notering** — oförändrat spar-flöde via `saveCustomDay`.
+  3. **📅 Skapa veckomatsedel från denna dag** — `startPlanFromDate(date)` fyller `#startDate`/`#endDate` (startdatum + 6 dagar), anropar `updateDateHint`/`updateSettingsPreview`/`toggleTrigger` och scrollar till generator-sektionen. Ingen POST.
+- **Bakåt-dagar:** visar bara notering-sektionen (inga recept- eller plan-knappar).
+- **Custom-dag med recept (rendering):** slim-kort visar `🍳 Titel`. Klick öppnar `openWeekRecipe(recipeId, title)` med `data-custom="1"` + `data-readonly="1"` så replace/swap/skip-knapparna döljs. Detaljpanelen visar "Redigera egen planering"-knapp (går tillbaka till tre-vägs-editorn) + läge-notis "✏️ Egen planering".
+- **Backend:** `api/custom-days.js` accepterar `recipeId: Number` och `recipeTitle: String`. Lagringsformat: `{ entries: { "YYYY-MM-DD": { note?, recipeId?, recipeTitle? } } }`.
+- **CSS:** `.custom-pick-banner` speglar `.replace-banner` (synlig när `#receptView` har `.custom-pick-mode`). `.custom-day-section`/`.custom-day-section-title` för de tre sektionerna i editorn.
+- **Filer ändrade:** `api/custom-days.js`, `js/weekly-plan/plan-viewer.js`, `index.html`, `css/styles.css`.
+- **Återstår:** Live-test i Vercel av hela flödet.
+
+### Session 32 (2026-04-18)
 - **Scroll-/datum-översyn av tidslinjen** — sex ändringar i ett pass:
   - **Dynamisk horisont:** `TIMELINE_DAYS_BACK/FORWARD = 14` blev `..._MIN`. `buildTimeline` räknar nu ut verklig horisont = `max(MIN, avstånd till aktiv plans slutdatum / äldsta arkiv / utanförliggande custom-dag)` med cap på 45 dagar åt varje håll. Löser fallet där en ny plan börjar om 7 dagar och löper 14 dagar — hela planen syns.
   - **Egen planering (custom-days):** Ny backend-endpoint `api/custom-days.js` + `custom-days.json` i repot. `openCustomDay(date, day)` visar editor i detaljpanelen med notering (max 140 tecken). `openCustomBulk(dates)` gör samma för flera dagar samtidigt. Gap-dagar är nu klickbara → öppnar samma editor. Banner ovanför tidslinjen: "N tomma dagar innan matsedeln — markera alla som egen planering".

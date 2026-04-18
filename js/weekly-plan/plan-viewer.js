@@ -99,6 +99,8 @@ function buildTimeline(plan, archive, customDays) {
       isArchive: !!entry.isArchive,
       isCustom,
       customNote: isCustom ? (custom.note || '') : '',
+      customRecipeId: isCustom ? (custom.recipeId || null) : null,
+      customRecipeTitle: isCustom ? (custom.recipeTitle || '') : '',
     });
   }
   return days;
@@ -160,6 +162,9 @@ export function exitReplaceMode() {
 
 export async function selectRecipeForDay(event, recipeId, title) {
   event.stopPropagation();
+  if (window.customPickMode) {
+    return selectRecipeForCustomDay(event, recipeId, title);
+  }
   if (!window.replaceMode) return;
   const { date } = window.replaceMode;
 
@@ -202,6 +207,102 @@ export async function selectRecipeForDay(event, recipeId, title) {
       e.textContent   = 'Kunde inte spara — prova igen.';
       banner.insertBefore(e, banner.querySelector('.replace-banner-cancel'));
     }
+  }
+}
+
+// ── Custom-pick-läge (välj enstaka recept till egen-planering-dag) ──────────
+
+export function enterCustomPickMode(dateIso, dayName) {
+  window.customPickMode = { date: dateIso, dayName };
+  window.replaceMode = null;
+  const label = document.getElementById('customPickBannerDay');
+  if (label) label.textContent = `${dayName} ${fmtShort(dateIso)}`;
+  document.getElementById('receptView').classList.remove('replace-mode');
+  document.getElementById('receptView').classList.add('custom-pick-mode');
+  window.switchTab('recept');
+}
+
+export function exitCustomPickMode() {
+  window.customPickMode = null;
+  document.getElementById('receptView').classList.remove('custom-pick-mode');
+}
+
+export async function selectRecipeForCustomDay(event, recipeId, title) {
+  event.stopPropagation();
+  if (!window.customPickMode) return;
+  const { date } = window.customPickMode;
+
+  const btn = event.currentTarget;
+  btn.disabled = true;
+  btn.textContent = 'Sparar…';
+
+  try {
+    const existing = (window._customDays?.entries || {})[date] || {};
+    const res = await fetch('/api/custom-days', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'set',
+        dates: [date],
+        note: existing.note || '',
+        recipeId,
+        recipeTitle: title,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Okänt fel');
+    window._customDays = data.customDays || { entries: {} };
+    exitCustomPickMode();
+    renderWeeklyPlanData(
+      window._lastPlan || null,
+      window._lastShop || null,
+      false,
+      window._planArchive,
+      window._customDays
+    );
+    window.switchTab('vecka');
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'Välj';
+    const banner = document.getElementById('customPickBanner');
+    if (banner && !banner.querySelector('.replace-err')) {
+      const err = document.createElement('span');
+      err.className = 'replace-err';
+      err.style.cssText = 'color:var(--terracotta);font-size:0.8rem';
+      err.textContent = 'Kunde inte spara — prova igen.';
+      banner.insertBefore(err, banner.querySelector('.replace-banner-cancel'));
+    }
+  }
+}
+
+// ── Starta matsedelsgenerering från vald dag ────────────────────────────────
+
+export function startPlanFromDate(dateIso) {
+  const startEl = document.getElementById('startDate');
+  const endEl = document.getElementById('endDate');
+  if (!startEl || !endEl) return;
+
+  const start = new Date(dateIso + 'T12:00:00');
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+
+  startEl.value = fmtIso(start);
+  endEl.value = fmtIso(end);
+
+  if (window.updateDateHint) window.updateDateHint();
+  if (window.updateSettingsPreview) window.updateSettingsPreview();
+  if (window.toggleTrigger) window.toggleTrigger();
+
+  const panel = document.getElementById('weekRecipeDetail');
+  panel.classList.remove('open');
+  panel.innerHTML = '';
+  document.querySelectorAll('.week-day-card').forEach(c => c.classList.remove('selected'));
+
+  const trigger = document.getElementById('triggerSection');
+  if (trigger) {
+    const hh = document.querySelector('header').offsetHeight || 0;
+    const top = trigger.getBoundingClientRect().top + window.scrollY - hh - 8;
+    window.smoothScrollTo(top, 380);
   }
 }
 
@@ -366,6 +467,7 @@ export function openWeekRecipe(recipeId, title, cardEl) {
   const PROTEIN_LABEL = { fisk: 'Fisk', kyckling: 'Kyckling', kött: 'Kött', fläsk: 'Fläsk', vegetarisk: 'Vegetarisk' };
 
   const readOnly = cardEl.dataset.readonly === '1';
+  const isCustom = cardEl.dataset.custom === '1';
   const replaceBtns = (readOnly || window.planConfirmed) ? '' : `
     <button class="replace-recipe-btn" onclick="enterReplaceMode('${date}', '${dayName}')">Välj annat recept</button>
     <button class="replace-recipe-btn" onclick="replaceRecipe(${r.id}, '${date}', this)">Slumpa nytt recept</button>
@@ -374,10 +476,16 @@ export function openWeekRecipe(recipeId, title, cardEl) {
     <button class="day-action-btn" onclick="skipDay('${date}')">Hoppa över — skjut recept →</button>
     <button class="day-action-btn day-action-block" onclick="blockDay('${date}')">Blockera dag</button>
   </div>`;
-  const readOnlyNote = readOnly
+  const customEditBtn = isCustom
+    ? `<button class="replace-recipe-btn" onclick="openCustomDay('${date}', '${dayName}')">Redigera egen planering</button>`
+    : '';
+  const readOnlyNote = readOnly && !isCustom
     ? `<p class="readonly-note">📜 Historisk plan — bara för referens.</p>`
     : '';
-  const actionBtns = replaceBtns + dayActionBtns + readOnlyNote;
+  const customNote = isCustom
+    ? `<p class="readonly-note">✏️ Egen planering — inget recept från matsedeln.</p>`
+    : '';
+  const actionBtns = replaceBtns + dayActionBtns + customEditBtn + readOnlyNote + customNote;
 
   panel.innerHTML = `<div class="detail-inner">
     <div class="week-recipe-header">
@@ -623,6 +731,21 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
 
     // Custom-dag (egen planering)
     if (d.isCustom) {
+      // Med valt recept: öppna receptet i read-only-läge (knapparna döljs via data-readonly="1")
+      if (d.customRecipeId) {
+        const title = d.customRecipeTitle || '';
+        const safeTitle = title.replace(/'/g, "\\'");
+        return `<div class="${timelineDayCls}">
+          ${topRow}
+          <div class="${cls} custom-has-recipe" data-date="${d.date}" data-day="${d.day}"
+            data-recipeid="${d.customRecipeId}" data-readonly="1" data-custom="1"
+            onclick="openWeekRecipe(${d.customRecipeId}, '${safeTitle}', this)">
+            <div class="week-day-name">${d.dayShort} ${d.dayNum}${dot}${holidayDot}</div>
+            <div class="week-day-recipe">🍳 ${title}</div>
+          </div>
+        </div>`;
+      }
+      // Bara notering
       const noteEsc = (d.customNote || '').replace(/"/g, '&quot;');
       return `<div class="${timelineDayCls}">
         ${topRow}
@@ -784,25 +907,55 @@ export function openCustomDay(dateIso, dayName) {
   const existing = (window._customDays?.entries || {})[dateIso];
   const note = existing?.note || '';
   const hasExisting = !!existing;
+  const todayIso = fmtIso(new Date());
+  const isPastDay = dateIso < todayIso;
 
   document.querySelectorAll('.week-day-card').forEach(c => c.classList.remove('selected'));
   const card = document.querySelector(`.week-day-card[data-date="${dateIso}"]`);
   if (card) card.classList.add('selected');
 
+  const escDayName = (dayName || '').replace(/'/g, "\\'");
+
+  const pickRecipeSection = !isPastDay ? `
+    <div class="custom-day-section">
+      <div class="custom-day-section-title">🍳 Välj recept ur receptboken</div>
+      <button class="replace-recipe-btn" onclick="enterCustomPickMode('${dateIso}', '${escDayName}')">
+        Bläddra i receptboken →
+      </button>
+    </div>` : '';
+
+  const noteLabel = isPastDay ? 'Notering' : 'Egen notering';
+  const noteSection = `
+    <div class="custom-day-section">
+      <div class="custom-day-section-title">📝 ${noteLabel}</div>
+      <label class="custom-day-label">
+        <input type="text" id="customDayNote" maxlength="140"
+               placeholder="T.ex. Pizza, rester, ute och äter…"
+               value="${note.replace(/"/g, '&quot;')}">
+      </label>
+      <button class="replace-recipe-btn" onclick="saveCustomDay('${dateIso}')">Spara notering</button>
+    </div>`;
+
+  const planSection = !isPastDay ? `
+    <div class="custom-day-section">
+      <div class="custom-day-section-title">📅 Skapa veckomatsedel från denna dag</div>
+      <button class="replace-recipe-btn" onclick="startPlanFromDate('${dateIso}')">
+        Öppna matsedelsväljare →
+      </button>
+    </div>` : '';
+
+  const removeBtn = hasExisting
+    ? `<button class="day-action-btn day-action-block" onclick="clearCustomDay('${dateIso}')">Ta bort markering</button>`
+    : '';
+
   panel.innerHTML = `<div class="detail-inner custom-day-editor">
     <div class="week-recipe-header">
       <div class="week-recipe-title">✏️ ${dayName} — egen planering</div>
     </div>
-    <label class="custom-day-label">
-      Notering (valfritt)
-      <input type="text" id="customDayNote" maxlength="140"
-             placeholder="T.ex. Pizza, rester, ute och äter…"
-             value="${note.replace(/"/g, '&quot;')}">
-    </label>
-    <div class="custom-day-actions">
-      <button class="replace-recipe-btn" onclick="saveCustomDay('${dateIso}')">Spara</button>
-      ${hasExisting ? `<button class="day-action-btn day-action-block" onclick="clearCustomDay('${dateIso}')">Ta bort markering</button>` : ''}
-    </div>
+    ${pickRecipeSection}
+    ${noteSection}
+    ${planSection}
+    ${removeBtn ? `<div class="custom-day-actions">${removeBtn}</div>` : ''}
   </div>`;
   panel.classList.add('open');
   window.isSnapping = true;
@@ -937,3 +1090,7 @@ window.openCustomBulk      = openCustomBulk;
 window.saveCustomDay       = saveCustomDay;
 window.saveCustomDaysBulk  = saveCustomDaysBulk;
 window.clearCustomDay      = clearCustomDay;
+window.enterCustomPickMode = enterCustomPickMode;
+window.exitCustomPickMode  = exitCustomPickMode;
+window.selectRecipeForCustomDay = selectRecipeForCustomDay;
+window.startPlanFromDate   = startPlanFromDate;
