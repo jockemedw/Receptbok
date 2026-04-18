@@ -915,47 +915,50 @@ export function openCustomDay(dateIso, dayName) {
   if (card) card.classList.add('selected');
 
   const escDayName = (dayName || '').replace(/'/g, "\\'");
+  const dateLabel = fmtShort(dateIso);
+  const noteValue = note.replace(/"/g, '&quot;');
 
-  const pickRecipeSection = !isPastDay ? `
-    <div class="custom-day-section">
-      <div class="custom-day-section-title">🍳 Välj recept ur receptboken</div>
-      <button class="replace-recipe-btn" onclick="enterCustomPickMode('${dateIso}', '${escDayName}')">
-        Bläddra i receptboken →
-      </button>
-    </div>` : '';
+  const pickRecipeOption = !isPastDay ? `
+    <button type="button" class="custom-option" onclick="enterCustomPickMode('${dateIso}', '${escDayName}')">
+      <span class="custom-option-icon" aria-hidden="true">🍳</span>
+      <span class="custom-option-label">Välj recept ur receptboken</span>
+      <span class="custom-option-chev" aria-hidden="true">›</span>
+    </button>` : '';
 
-  const noteLabel = isPastDay ? 'Notering' : 'Egen notering';
-  const noteSection = `
-    <div class="custom-day-section">
-      <div class="custom-day-section-title">📝 ${noteLabel}</div>
-      <label class="custom-day-label">
-        <input type="text" id="customDayNote" maxlength="140"
-               placeholder="T.ex. Pizza, rester, ute och äter…"
-               value="${note.replace(/"/g, '&quot;')}">
-      </label>
-      <button class="replace-recipe-btn" onclick="saveCustomDay('${dateIso}')">Spara notering</button>
+  const noteOption = `
+    <div class="custom-option custom-option-note">
+      <div class="custom-option-head">
+        <span class="custom-option-icon" aria-hidden="true">📝</span>
+        <span class="custom-option-label">Egen notering</span>
+      </div>
+      <input type="text" id="customDayNote" class="custom-note-input" maxlength="140"
+             placeholder="T.ex. pizza, rester, äter ute…"
+             value="${noteValue}">
+      <button type="button" class="custom-note-save" onclick="saveCustomDay('${dateIso}')">Spara notering</button>
     </div>`;
 
-  const planSection = !isPastDay ? `
-    <div class="custom-day-section">
-      <div class="custom-day-section-title">📅 Skapa veckomatsedel från denna dag</div>
-      <button class="replace-recipe-btn" onclick="startPlanFromDate('${dateIso}')">
-        Öppna matsedelsväljare →
-      </button>
-    </div>` : '';
+  const planOption = !isPastDay ? `
+    <button type="button" class="custom-option" onclick="startPlanFromDate('${dateIso}')">
+      <span class="custom-option-icon" aria-hidden="true">📅</span>
+      <span class="custom-option-label">Starta matsedel från denna dag</span>
+      <span class="custom-option-chev" aria-hidden="true">›</span>
+    </button>` : '';
 
   const removeBtn = hasExisting
-    ? `<button class="day-action-btn day-action-block" onclick="clearCustomDay('${dateIso}')">Ta bort markering</button>`
+    ? `<button type="button" class="custom-day-remove" onclick="clearCustomDay('${dateIso}')">Ta bort markering</button>`
     : '';
 
   panel.innerHTML = `<div class="detail-inner custom-day-editor">
-    <div class="week-recipe-header">
-      <div class="week-recipe-title">✏️ ${dayName} — egen planering</div>
+    <div class="custom-day-header">
+      <div class="custom-day-title">${dayName}</div>
+      <div class="custom-day-sub">${dateLabel}${hasExisting ? ' · egen planering' : ''}</div>
     </div>
-    ${pickRecipeSection}
-    ${noteSection}
-    ${planSection}
-    ${removeBtn ? `<div class="custom-day-actions">${removeBtn}</div>` : ''}
+    <div class="custom-options">
+      ${pickRecipeOption}
+      ${noteOption}
+      ${planOption}
+    </div>
+    ${removeBtn}
   </div>`;
   panel.classList.add('open');
   window.isSnapping = true;
@@ -1007,7 +1010,7 @@ async function postCustomDays(action, dates, note) {
 export async function saveCustomDay(dateIso) {
   const input = document.getElementById('customDayNote');
   const note = input ? input.value : '';
-  const btn = document.querySelector('.custom-day-actions .replace-recipe-btn');
+  const btn = document.querySelector('.custom-note-save');
   if (btn) { btn.disabled = true; btn.textContent = 'Sparar…'; }
   try {
     await postCustomDays('set', [dateIso], note);
@@ -1022,7 +1025,7 @@ export async function saveCustomDay(dateIso) {
       window._customDays
     );
   } catch (e) {
-    if (btn) { btn.disabled = false; btn.textContent = 'Spara'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Spara notering'; }
     const panel = document.getElementById('weekRecipeDetail');
     const err = document.createElement('p');
     err.style.cssText = 'color:var(--terracotta);font-size:0.82rem;padding:0.5rem 0';

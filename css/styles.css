@@ -811,52 +811,139 @@
   }
 
   /* Editor för egen planering i detaljpanelen */
-  .custom-day-editor .custom-day-label {
-    display: block;
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    margin-bottom: 0.75rem;
+  .custom-day-editor {
+    padding: 0.25rem 0;
   }
-  .custom-day-editor .custom-day-label input {
-    display: block;
+  .custom-day-header {
+    padding: 0 0.25rem 1rem;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 1rem;
+  }
+  .custom-day-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--warm-brown);
+    line-height: 1.15;
+  }
+  .custom-day-sub {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-top: 0.2rem;
+    letter-spacing: 0.01em;
+  }
+
+  .custom-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .custom-option {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
     width: 100%;
-    margin-top: 0.3rem;
-    padding: 0.55rem 0.75rem;
+    padding: 0.9rem 1rem;
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    color: var(--warm-brown);
+    cursor: pointer;
+    text-align: left;
+    transition: border-color 0.15s, background 0.15s, transform 0.08s;
+    box-sizing: border-box;
+  }
+  button.custom-option:hover,
+  button.custom-option:focus-visible {
+    border-color: var(--terracotta);
+    background: var(--light-terra);
+    outline: none;
+  }
+  button.custom-option:active {
+    transform: scale(0.985);
+  }
+  .custom-option-icon {
+    font-size: 1.25rem;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .custom-option-label {
+    flex: 1;
+    font-weight: 500;
+  }
+  .custom-option-chev {
+    color: var(--terracotta);
+    font-size: 1.4rem;
+    line-height: 1;
+    opacity: 0.7;
+    flex-shrink: 0;
+  }
+
+  /* Noteringskortet — samma form men "expanderat" */
+  .custom-option-note {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.65rem;
+    cursor: default;
+  }
+  .custom-option-note .custom-option-head {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+  }
+  .custom-note-input {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
     border: 1.5px solid var(--border);
     border-radius: 8px;
     font-family: inherit;
     font-size: 0.9rem;
     color: var(--warm-brown);
-    background: white;
+    background: #fdfaf5;
     box-sizing: border-box;
   }
-  .custom-day-editor .custom-day-label input:focus {
+  .custom-note-input:focus {
     outline: none;
     border-color: var(--terracotta);
+    background: white;
   }
-  .custom-day-editor .custom-day-actions {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
+  .custom-note-save {
+    align-self: flex-end;
+    background: var(--terracotta);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.45rem 1rem;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.15s;
   }
-  .custom-day-editor .custom-day-section {
-    padding: 0.75rem 0;
-    border-top: 1px solid var(--border);
+  .custom-note-save:hover { opacity: 0.88; }
+  .custom-note-save:disabled { opacity: 0.5; cursor: default; }
+
+  .custom-day-remove {
+    display: block;
+    margin: 1rem auto 0;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.82rem;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+    padding: 0.35rem 0.6rem;
+    transition: color 0.15s;
   }
-  .custom-day-editor .custom-day-section:first-of-type {
-    border-top: none;
-  }
-  .custom-day-editor .custom-day-section-title {
-    font-weight: 600;
-    font-size: 0.88rem;
-    color: var(--warm-brown);
-    margin-bottom: 0.5rem;
-  }
-  .custom-day-editor .custom-day-section .custom-day-label {
-    margin-bottom: 0.5rem;
-  }
-  .custom-day-editor .custom-day-section .replace-recipe-btn {
-    width: 100%;
+  .custom-day-remove:hover,
+  .custom-day-remove:focus-visible {
+    color: var(--terracotta);
+    outline: none;
   }
 
   .week-day-card.custom.custom-has-recipe .week-day-recipe {
