@@ -1,6 +1,232 @@
 {
-  "generated": null,
-  "startDate": null,
-  "endDate": null,
-  "days": []
+  "generated": "2026-04-19",
+  "startDate": "2026-04-27",
+  "endDate": "2026-05-03",
+  "days": [
+    {
+      "date": "2026-04-27",
+      "day": "Måndag",
+      "recipe": "Tonfiskpasta",
+      "recipeId": 24,
+      "saving": 26,
+      "savingMatches": [
+        {
+          "canon": "lök",
+          "name": "Lök Röd i Påse Klass 1",
+          "brandLine": "GARANT, 1kg",
+          "regularPrice": 16.9,
+          "promoPrice": 9.9,
+          "savingPerUnit": 7,
+          "validUntil": "2026-04-19T21:59:59.000Z"
+        },
+        {
+          "canon": "tomat",
+          "name": "Tomat Babyplommon Kl 1",
+          "brandLine": "300g",
+          "regularPrice": 39.9,
+          "promoPrice": 24.9,
+          "savingPerUnit": 15,
+          "validUntil": "2026-04-19T21:59:59.000Z"
+        },
+        {
+          "canon": "tonfisk",
+          "name": "Tonfisk Vatten 3x80g",
+          "brandLine": "GARANT, 240/168g",
+          "regularPrice": 37.76,
+          "promoPrice": 33.87,
+          "savingPerUnit": 3.89,
+          "validUntil": "2026-05-03T21:59:59.000Z"
+        }
+      ]
+    },
+    {
+      "date": "2026-04-28",
+      "day": "Tisdag",
+      "recipe": "Nudlar i röd curry",
+      "recipeId": 13,
+      "saving": 18,
+      "savingMatches": [
+        {
+          "canon": "lime",
+          "name": "Lime Klass 1",
+          "brandLine": "75g",
+          "regularPrice": 5.5,
+          "promoPrice": 2.5,
+          "savingPerUnit": 12,
+          "validUntil": "2026-04-19T21:59:59.000Z"
+        },
+        {
+          "canon": "vitlöksklyftor",
+          "name": "Vitlök Klass 1",
+          "brandLine": "250g",
+          "regularPrice": 25.4,
+          "promoPrice": 19.9,
+          "savingPerUnit": 5.5,
+          "validUntil": "2026-04-19T21:59:59.000Z"
+        }
+      ]
+    },
+    {
+      "date": "2026-04-29",
+      "day": "Onsdag",
+      "recipe": "Oreganokyckling",
+      "recipeId": 60,
+      "saving": 6,
+      "savingMatches": [
+        {
+          "canon": "vitlöksklyftor",
+          "name": "Vitlök Klass 1",
+          "brandLine": "250g",
+          "regularPrice": 25.4,
+          "promoPrice": 19.9,
+          "savingPerUnit": 5.5,
+          "validUntil": "2026-04-19T21:59:59.000Z"
+        }
+      ]
+    },
+    {
+      "date": "2026-04-30",
+      "day": "Torsdag",
+      "recipe": "Buljongsoppa med shiitakesvamp och pocherat ägg",
+      "recipeId": 5,
+      "saving": 13,
+      "savingMatches": [
+        {
+          "canon": "lök",
+          "name": "Lök Röd i Påse Klass 1",
+          "brandLine": "GARANT, 1kg",
+          "regularPrice": 16.9,
+          "promoPrice": 9.9,
+          "savingPerUnit": 7,
+          "validUntil": "2026-04-19T21:59:59.000Z"
+        },
+        {
+          "canon": "vitlöksklyftor",
+          "name": "Vitlök Klass 1",
+          "brandLine": "250g",
+          "regularPrice": 25.4,
+          "promoPrice": 19.9,
+          "savingPerUnit": 5.5,
+          "validUntil": "2026-04-19T21:59:59.000Z"
+        }
+      ]
+    },
+    {
+      "date": "2026-05-01",
+      "day": "Fredag",
+      "recipe": "Pasta Rosso med champinjoner",
+      "recipeId": 56,
+      "saving": 43,
+      "savingMatches": [
+        {
+          "canon": "basilika",
+          "name": "Basilika i Kruka Ekologisk",
+          "brandLine": "ca100g",
+          "regularPrice": 18.8,
+          "promoPrice": 14.9,
+          "savingPerUnit": 3.9,
+          "validUntil": "2026-04-19T21:59:59.000Z"
+        },
+        {
+          "canon": "lök",
+          "name": "Lök Röd i Påse Klass 1",
+          "brandLine": "GARANT, 1kg",
+          "regularPrice": 16.9,
+          "promoPrice": 9.9,
+          "savingPerUnit": 7,
+          "validUntil": "2026-04-19T21:59:59.000Z"
+        },
+        {
+          "canon": "champinjoner",
+          "name": "Champinjoner Klass 1",
+          "brandLine": "250g",
+          "regularPrice": 17.8,
+          "promoPrice": 14.9,
+          "savingPerUnit": 2.9,
+          "validUntil": "2026-04-19T21:59:59.000Z"
+        },
+        {
+          "canon": "morot",
+          "name": "Morötter Mix Klass 1",
+          "brandLine": "GARANT, 1kg",
+          "regularPrice": 23.5,
+          "promoPrice": 14.9,
+          "savingPerUnit": 8.6,
+          "validUntil": "2026-04-19T21:59:59.000Z"
+        },
+        {
+          "canon": "tomat",
+          "name": "Tomat Babyplommon Kl 1",
+          "brandLine": "300g",
+          "regularPrice": 39.9,
+          "promoPrice": 24.9,
+          "savingPerUnit": 15,
+          "validUntil": "2026-04-19T21:59:59.000Z"
+        },
+        {
+          "canon": "vitlöksklyftor",
+          "name": "Vitlök Klass 1",
+          "brandLine": "250g",
+          "regularPrice": 25.4,
+          "promoPrice": 19.9,
+          "savingPerUnit": 5.5,
+          "validUntil": "2026-04-19T21:59:59.000Z"
+        }
+      ]
+    },
+    {
+      "date": "2026-05-02",
+      "day": "Lördag",
+      "recipe": "Stekta rödspättafiléer med stuvade morötter",
+      "recipeId": 3,
+      "saving": 9,
+      "savingMatches": [
+        {
+          "canon": "morot",
+          "name": "Morötter Mix Klass 1",
+          "brandLine": "GARANT, 1kg",
+          "regularPrice": 23.5,
+          "promoPrice": 14.9,
+          "savingPerUnit": 8.6,
+          "validUntil": "2026-04-19T21:59:59.000Z"
+        }
+      ]
+    },
+    {
+      "date": "2026-05-03",
+      "day": "Söndag",
+      "recipe": "Belugabouillabaisse",
+      "recipeId": 14,
+      "saving": 28,
+      "savingMatches": [
+        {
+          "canon": "lök",
+          "name": "Lök Röd i Påse Klass 1",
+          "brandLine": "GARANT, 1kg",
+          "regularPrice": 16.9,
+          "promoPrice": 9.9,
+          "savingPerUnit": 7,
+          "validUntil": "2026-04-19T21:59:59.000Z"
+        },
+        {
+          "canon": "tomat",
+          "name": "Tomat Babyplommon Kl 1",
+          "brandLine": "300g",
+          "regularPrice": 39.9,
+          "promoPrice": 24.9,
+          "savingPerUnit": 15,
+          "validUntil": "2026-04-19T21:59:59.000Z"
+        },
+        {
+          "canon": "vitlöksklyftor",
+          "name": "Vitlök Klass 1",
+          "brandLine": "250g",
+          "regularPrice": 25.4,
+          "promoPrice": 19.9,
+          "savingPerUnit": 5.5,
+          "validUntil": "2026-04-19T21:59:59.000Z"
+        }
+      ]
+    }
+  ]
 }
