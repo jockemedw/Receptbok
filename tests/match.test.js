@@ -148,6 +148,125 @@ assertTrue(CANON_REJECT_PATTERNS.grädde instanceof RegExp, "CANON_REJECT_PATTER
 assertTrue(CANON_REJECT_PATTERNS.grädde.test("Spraygrädde Vispgrädde 35%"), "reject-mönster fångar spraygrädde");
 assertFalse(CANON_REJECT_PATTERNS.grädde.test("Matlagningsgrädde 15%"), "reject-mönster släpper matlagningsgrädde");
 
+// ─── Small-usage filter (Session 36): små mängder ska INTE krediteras ──
+// Vitlöksklyftor: 2 klyftor av ett huvud → full huvud-saving är missvisande.
+{
+  const recipe = {
+    id: 1001,
+    title: "Pasta aglio olio",
+    ingredients: ["2 vitlöksklyftor", "400 g pasta", "2 msk olivolja"],
+  };
+  const offers = [
+    { name: "Vitlök", brandLine: null, regularPrice: 15, promoPrice: 8, savingPerUnit: 7 },
+  ];
+  const result = matchRecipe(recipe, offers);
+  assertEq(result.matches.length, 0, "SMALL-USAGE: 2 vitlöksklyftor ska INTE matcha hela huvudet");
+  assertEq(result.totalSaving, 0, "SMALL-USAGE: vitlöksklyftor ger 0 saving vid små mängder");
+}
+
+// 1 gul lök (av en 1 kg-påse) → ingen saving-kredit.
+{
+  const recipe = {
+    id: 1002,
+    title: "Snabb tomatsoppa",
+    ingredients: ["1 gul lök", "2 burkar krossade tomater", "3 dl grädde"],
+  };
+  const offers = [
+    { name: "Gul Lök Klass 1", brandLine: "ICA", regularPrice: 20, promoPrice: 12, savingPerUnit: 8 },
+  ];
+  const result = matchRecipe(recipe, offers);
+  assertEq(result.matches.length, 0, "SMALL-USAGE: 1 gul lök ska INTE kreditera hela påsen");
+}
+
+// 1 citron (för skal + saft) → ingen saving-kredit.
+{
+  const recipe = {
+    id: 1003,
+    title: "Citronsill",
+    ingredients: ["1 citron", "200 g sill"],
+  };
+  const offers = [
+    { name: "Citron Gul", brandLine: null, regularPrice: 30, promoPrice: 20, savingPerUnit: 10 },
+  ];
+  const result = matchRecipe(recipe, offers);
+  assertEq(result.matches.length, 0, "SMALL-USAGE: 1 citron ska INTE kreditera hela citronnätet");
+}
+
+// "2 kvistar timjan" → ingen saving-kredit.
+{
+  const recipe = {
+    id: 1004,
+    title: "Örtsmörstekt kyckling",
+    ingredients: ["2 kvistar timjan", "600 g kycklingfilé"],
+  };
+  const offers = [
+    { name: "Timjan Färsk", brandLine: null, regularPrice: 25, promoPrice: 15, savingPerUnit: 10 },
+    { name: "Kycklingfilé 600g", brandLine: "KRONFÅGEL", regularPrice: 100, promoPrice: 70, savingPerUnit: 30 },
+  ];
+  const result = matchRecipe(recipe, offers);
+  assertEq(result.matches.length, 1, "SMALL-USAGE: kvistar timjan droppar, kyckling behålls");
+  assertEq(result.matches[0].canon, "kycklingfilé", "SMALL-USAGE: bara kyckling-matchen kvar");
+  assertEq(result.totalSaving, 30, "SMALL-USAGE: totalSaving = bara kyckling (timjan droppas)");
+}
+
+// "2 msk smör" → ingen saving-kredit (smör-paket räcker veckor).
+{
+  const recipe = {
+    id: 1005,
+    title: "Smörstekt fisk",
+    ingredients: ["2 msk smör", "400 g torsk"],
+  };
+  const offers = [
+    { name: "Smör Normalsaltat", brandLine: "ARLA", regularPrice: 40, promoPrice: 30, savingPerUnit: 10 },
+  ];
+  const result = matchRecipe(recipe, offers);
+  assertEq(result.matches.length, 0, "SMALL-USAGE: 2 msk smör ska INTE kreditera hela paketet");
+}
+
+// POSITIVT: substantiell mängd lök (200 g) → full saving kvar.
+{
+  const recipe = {
+    id: 1006,
+    title: "Löksoppa",
+    ingredients: ["500 g lök", "1 liter buljong"],
+  };
+  const offers = [
+    { name: "Gul Lök", brandLine: null, regularPrice: 20, promoPrice: 12, savingPerUnit: 8 },
+  ];
+  const result = matchRecipe(recipe, offers);
+  assertEq(result.matches.length, 1, "SUBSTANTIAL: 500 g lök behåller saving");
+  assertEq(result.totalSaving, 8, "SUBSTANTIAL: lök-saving bevaras vid stor mängd");
+}
+
+// POSITIVT: icke-aromat (lax) med liten mängd → saving kvar (inte i small-usage-listan).
+{
+  const recipe = {
+    id: 1007,
+    title: "Laxtartar",
+    ingredients: ["1 laxfilé", "1 dl creme fraiche"],
+  };
+  const offers = [
+    { name: "Laxfilé ASC", brandLine: null, regularPrice: 100, promoPrice: 75, savingPerUnit: 25 },
+  ];
+  const result = matchRecipe(recipe, offers);
+  assertEq(result.matches.length, 1, "POSITIVT: lax är inte small-usage — saving bevaras");
+  assertEq(result.totalSaving, 25, "POSITIVT: lax-saving bevaras oavsett mängd");
+}
+
+// EDGE: blandad användning av samma canon — om NÅGON rad är substantiell, behåll saving.
+{
+  const recipe = {
+    id: 1008,
+    title: "Stekt lök överallt",
+    ingredients: ["1 liten lök", "400 g gul lök"],
+  };
+  const offers = [
+    { name: "Gul Lök", brandLine: null, regularPrice: 20, promoPrice: 12, savingPerUnit: 8 },
+  ];
+  const result = matchRecipe(recipe, offers);
+  assertEq(result.matches.length, 1, "MIXED: substantiell rad räddar saving även när small finns");
+}
+
 // ─── Slutrapport ──────────────────────────────────────────────────
 console.log(`\n${passed} passerade, ${failed} failade.`);
 if (failed) {

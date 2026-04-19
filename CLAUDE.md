@@ -100,7 +100,20 @@ _(Tom — lägg till idéer här under sessioner)_
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 - Säsongsfilter — automatiskt vikta recept efter säsong (soppa/gryta höst-vinter, sallad sommar)
 
-### Senaste session — Session 35 (2026-04-19) — Lexikon- och matchningsaudit
+### Senaste session — Session 36 (2026-04-19) — Rättvis besparingskalkyl
+Problem: Matsedelns 💰-badge överskattade besparing kraftigt när ett recept använde små mängder av en produkt som fanns på rea — t.ex. "2 vitlöksklyftor" eller "1 gul lök" krediterades hela förpackningens `savingPerUnit` (8–10 kr för vitlökshuvud / löksäck som räcker i veckor).
+
+- **Fix i `api/_shared/willys-matcher.js`:** Ny `SMALL_USAGE_CANONS`-uppsättning (lök/rödlök/schalottenlök/purjolök/vitlöksklyftor, citron/lime, ingefära/chili, färska örter, smör) + `SMALL_UNIT_MARKERS` (klyfta/kvist/skiva/nypa/krm/tsk/msk/tumme/cm/näve/bit). `isSmallUsage(canon, usages)` kollar alla recept-rader för canonen — om ALLA är "små" (unitless ≤3, eller small-unit, eller `<100 g` / `<50 ml` / `<0.5 dl`) droppas matchen helt ur både `matches`-listan och `totalSaving`. Om någon rad är substantiell (t.ex. "500 g lök") behålls full saving.
+- **Byte av return-shape internt:** `extractRecipeCanons` → `extractRecipeCanonUsages` returnerar nu `Map<canon, [{amount, unit}]>` så mängdinfo bevaras genom matchningen. Publika signaturen (`matchRecipe`/`matchRecipes`) är oförändrad — `api/generate.js` och popover får fixen gratis.
+- **Regressiontester:** 13 nya i `tests/match.test.js` (totalt 54 passerar): vitlöksklyftor/gul lök/citron/kvistar timjan/msk smör → droppas; 500 g lök/substantiell lax → bevaras; blandad användning med en substantiell rad → bevaras.
+- **Effekter:**
+  - Recept som bara använder aromater på rea → saving försvinner (korrekt — reell besparing är öresnivå).
+  - Recept med protein på rea + lök → bara protein-saving kvar (korrekt).
+  - Popover visar bara äkta besparing-rader, inga fantommatchar.
+- **Filer:** `api/_shared/willys-matcher.js`, `tests/match.test.js`.
+- **Återstår:** Live-verifiering efter Vercel-deploy.
+
+### Session 35 (2026-04-19) — Lexikon- och matchningsaudit
 Kördes oavbrutet medan användaren sov, per eget direktiv. Fas A → F i ett pass.
 
 - **Fas A — Datainsamling:** Snapshot `docs/snapshots/willys-2026-04-19.json` (143.6 KB) — 2 butiker (2160 Ekholmen + 2102), 148 matchbara erbjudanden per butik efter NON_FOOD-filter. 75 stemming-kandidater identifierade i 62 recept.
