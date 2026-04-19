@@ -30,3 +30,6 @@ pdf-pages/
 
 # Claude Code personlig tillståndsfil — dina verktygsgodkännanden, inte familjens
 .claude/settings.local.json
+
+# Audit-tmp — lokala scratch-filer för lexikon-audit (Session 34)
+.audit-tmp/

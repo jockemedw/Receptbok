@@ -2,10 +2,25 @@
 // i shopping-builder.js. Återanvänder samma parseIngredient/normalizeName
 // så matchningen är konsekvent med inköpslistan.
 
-import { NORMALIZATION_TABLE, parseIngredient, normalizeName } from "./shopping-builder.js";
+import {
+  NORMALIZATION_TABLE,
+  parseIngredient,
+  normalizeName,
+  CANON_SET,
+  CANON_REJECT_PATTERNS,
+} from "./shopping-builder.js";
 
-const CANON_SET = new Set(Object.values(NORMALIZATION_TABLE));
 const MAX_NGRAM = 3;
+
+// Kontrollera om offer-texten funktionellt/produktmässigt passar canon.
+// Se CANON_REJECT_PATTERNS i shopping-builder.js — löser t.ex.
+// spraygrädde-vispgrädde-felmatchningen mot matlagningsgrädde-recept.
+function rejectsMatch(canon, offer) {
+  const pattern = CANON_REJECT_PATTERNS[canon];
+  if (!pattern) return false;
+  const text = `${offer.name} ${offer.brandLine || ""}`;
+  return pattern.test(text);
+}
 
 // Extrahera EN kanonisk huvudterm ur ett erbjudandenamn.
 // Prioritet: längre fras före kortare, tidigare position före senare.
@@ -44,9 +59,9 @@ export function matchRecipe(recipe, offers) {
   const matches = [];
   for (const offer of offers) {
     const canon = extractOfferCanon(offer);
-    if (canon && recipeCanons.has(canon)) {
-      matches.push({ canon, offer });
-    }
+    if (!canon || !recipeCanons.has(canon)) continue;
+    if (rejectsMatch(canon, offer)) continue;
+    matches.push({ canon, offer });
   }
 
   const savingsByCanon = new Map();

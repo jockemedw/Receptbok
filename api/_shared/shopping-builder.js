@@ -153,6 +153,18 @@ export const NORMALIZATION_TABLE = {
   "gnocchi": "gnocchi", "färsk gnocchi": "gnocchi", "fylld gnocchi": "gnocchi",
   // Majs
   "majs": "majs", "majskorn": "majs", "frysta majskorn": "majs", "majs konserv": "majs",
+  // === Session 34 lexikon-audit — nya self-canons för grönsaker ===
+  "aubergine": "aubergine", "auberginer": "aubergine",
+  "gurka": "gurka", "gurkor": "gurka", "inlagd gurka": "gurka",
+  "zucchini": "zucchini", "zucchinis": "zucchini",
+  "paprika": "paprika", "paprikor": "paprika",
+  "chili": "chili", "röd chili": "chili", "grön chili": "chili",
+  "sallad": "sallad", "salladsblad": "sallad",
+  // Plural-mappings för sammansatta/böjda former som stemming ej fångar
+  "tortillas": "tortilla",
+  "potatisar": "potatis", "sötpotatisar": "sötpotatis",
+  "citroner": "citron", "limefrukter": "lime", "lime frukter": "lime",
+  "rödlökar": "rödlök",
 };
 
 // Steg 5: Kategorinyckelord (utökade)
@@ -217,13 +229,13 @@ const PANTRY_ALWAYS_SKIP = new Set([
 ]);
 
 const SWEDISH_UNITS = [
-  "förpackning", "stycken",
+  "förpackning", "förpackningar", "stycken",
   "dl", "cl", "ml", "kg", "msk", "tsk", "krm",
-  "burk", "frp", "förp", "pkt", "paket", "påsar", "påse",
+  "burk", "burkar", "frp", "förp", "pkt", "paket", "påsar", "påse",
   "krukor", "kruka", "knippe", "skivor", "klyftor", "bitar", "kvistar",
   "skiva", "klyfta", "kvist", "bit",
-  "huvud", "näve", "nypa", "tumme", "st",
-  "g", "liter", "l",
+  "huvud", "näve", "nypa", "tumme", "tummar", "st",
+  "g", "liter", "l", "cm",
 ];
 
 const UNIT_REGEX = new RegExp(
@@ -254,6 +266,8 @@ function cleanIngredient(raw) {
   s = s.replace(/^(nykokt|nykokta|kokt|kokta|stekt|stekta|rostad|rostade|tinad|tinade)\s+/i, "");
   s = s.replace(/\s+till\s+\S+(\s+\S+)?$/i, "");
   s = s.replace(/\s*\+.*$/, "");
+  // Strippa "à ca 170 g"-suffix och liknande storleksangivelser
+  s = s.replace(/\s+à\s+.*$/i, "");
   if (/^\d/.test(s) && s.includes(" eller ")) {
     const ADJEKTIV = new Set(["färsk", "tinad", "fryst", "varm", "kall", "riven", "hackad", "malen"]);
     const beforeEller = s.split(" eller ")[0].trim();
@@ -292,8 +306,65 @@ export function parseIngredient(raw) {
   return { amount, unit, name };
 }
 
+// === Session 34 — Kanonisk uppsättning (används av matchern för token-scan) ===
+export const CANON_SET = new Set(Object.values(NORMALIZATION_TABLE));
+
+// === Session 34 — Avvisningsmönster per canon ===
+// När en canon extraheras från ett erbjudande men produkttexten indikerar
+// att den funktionellt eller produktmässigt inte passar receptets
+// canon-användning. Förhindrar t.ex. att "Spraygrädde Vispgrädde 35%" matchar
+// matlagningsgrädde-recept (som skriver "grädde" i ingredienslistan).
+export const CANON_REJECT_PATTERNS = {
+  "grädde": /\b(spray|sprayvispgrädde|gräddfil|havregrädde|kokosgrädde|sojagrädde|växtgrädde)\b|\bvispgrädde\b(?!.*\bmatlagning)/i,
+  "mjölk": /\b(havredryck|mandeldryck|sojadryck|kokosdryck|havremjölk|mandelmjölk|sojamjölk|gräddfil|syrad mjölk|kokosmjölk)\b/i,
+  "smör": /\b(margarin|bregott|becel|flora|milda växtfett)\b/i,
+  "fisk": /\b(fiskpinnar|fiskbullar|fiskbullar)\b/i,
+};
+
+// Adjektiv-prefix som strippas i fallback-stemming (Session 34).
+// Skilt från cleanIngredient — denna lista är säker att applicera efter
+// amount+unit redan strippats och direktlookup misslyckats.
+const STEM_ADJ_PREFIX = /^(liten|små|smått|stor|stora|rejäl|rejäla|färsk|färska|fryst|frysta|torkad|torkade|skalad|skalade|riven|rivna|hackad|hackade|finhackad|finhackade|grovhackad|grovhackade|skivad|skivade|strimlad|strimlade|finstrimlad|tärnad|tärnade|krossad|krossade|pressad|pressade|passerad|passerade|inlagd|inlagda|salt|salta|söt|söta|naturell|naturella|smulad|smulade|blandad|blandade|tunt|tunn|tunna|grovt|grov|hel|hela|halv|halva|röd|röda|gul|gula|grön|gröna|vit|vita|några|lite|litet|mycket|ett|en|valfri|valfria|några)\s+/i;
+
+// Token som aldrig får bli canon via last-word-fallback (fyllnadsord + pantry).
+const TOKEN_BLOCKLIST = new Set([
+  "i", "och", "eller", "till", "av", "à", "ca", "cm", "dl", "cl", "ml", "kg", "g", "l",
+  "vatten", "salt", "peppar", "socker", "svartpeppar",
+]);
+
 export function normalizeName(name) {
-  return NORMALIZATION_TABLE[name] || name;
+  if (NORMALIZATION_TABLE[name]) return NORMALIZATION_TABLE[name];
+  if (CANON_SET.has(name)) return name;
+
+  // Fallback 1: strippa ett adjektiv-prefix
+  const stripped = name.replace(STEM_ADJ_PREFIX, "").trim();
+  if (stripped !== name && stripped) {
+    if (NORMALIZATION_TABLE[stripped]) return NORMALIZATION_TABLE[stripped];
+    if (CANON_SET.has(stripped)) return stripped;
+  }
+
+  // Fallback 2: skanna tokens baklänges efter första canon-träff
+  // (t.ex. "burkar tonfisk i vatten" → tonfisk)
+  const tokens = name.split(/\s+/).filter(Boolean);
+  if (tokens.length > 1) {
+    for (let i = tokens.length - 1; i >= 0; i--) {
+      const t = tokens[i];
+      if (TOKEN_BLOCKLIST.has(t)) continue;
+      if (NORMALIZATION_TABLE[t]) return NORMALIZATION_TABLE[t];
+      if (CANON_SET.has(t)) return t;
+    }
+    // Fallback 3: n-gram sökning (2- och 3-gram) för compounds som
+    // "tonfisk i vatten" eller "färsk mozzarella".
+    for (let n = Math.min(3, tokens.length); n >= 2; n--) {
+      for (let i = 0; i <= tokens.length - n; i++) {
+        const phrase = tokens.slice(i, i + n).join(" ");
+        if (NORMALIZATION_TABLE[phrase]) return NORMALIZATION_TABLE[phrase];
+        if (CANON_SET.has(phrase)) return phrase;
+      }
+    }
+  }
+
+  return name;
 }
 
 function categorize(name) {

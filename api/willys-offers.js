@@ -24,10 +24,11 @@ const MATCHABLE_PROMO_TYPES = new Set([
 const NON_FOOD_RE = new RegExp(
   [
     // Djurmat
-    "kattmat", "kattgodis", "hundmat", "hundbajs", "djurmat", "djurfoder",
+    "kattmat", "kattgodis", "kattmos", "kattsnacks", "hundmat", "hundgodis",
+    "hundbajs", "djurmat", "djurfoder", "våtfoder", "torrfoder",
     // Rengöring
     "rengör", "allrent", "tvättmedel", "diskmedel", "maskinrengör", "golvmopp",
-    "diskborste", "avfallspåse",
+    "diskborste", "avfallspåse", "soppåse", "madrasskydd",
     // Hygien & kosmetika
     "schampo", "shampo", "tandkräm", "tandborste", "deodorant", "deospray",
     "handtvål", "handcreme", "bodylotion", "body lotion", "ansiktsrengör",
@@ -38,7 +39,9 @@ const NON_FOOD_RE = new RegExp(
     "toalettpapper", "bakplåtspapper", "hushållspapper", "våtservett",
     "fryspåsar", "plastpåse", "engångsmugg", "muffinsformar", "tändblock",
     // Tillskott & ej livsmedel
-    "halstablett", "tuggtablett", "kapslar", "creatin",
+    "halstablett", "tuggtablett", "kapslar", "creatin", "kosttillskott",
+    "proteinpulver", "protein pulver", "protein shake", "protein bar",
+    "viktminskning", "näringsdryck", "vitaminer",
     // Ej mat
     "rosor", "sneakers", "hårfärg",
   ].join("|"),

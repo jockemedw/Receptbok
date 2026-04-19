@@ -51,7 +51,7 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 - [ ] 1B — ICA inofficiellt API — **hoppas över** (Willys räcker för Ekholmen-fallet)
 - [x] 1C — Willys API reverse engineering — **klart**: `GET /search/campaigns/online?q=<storeId>&type=PERSONAL_GENERAL&size=500` (ingen auth, ingen CSRF, ingen session). Store 2160 = Ekholmen → 199 erbjudanden
 - [ ] 1C2 — Willys+ medlemserbjudanden — **utforskning pågår** (Fas A/B/C, se Öppna utredningar)
-- [~] 1D — Matchningslogik: prototyp klar + lexikonresearch klar (`docs/research-lexikon-fas1d.md`, Session 28). 44/62 recept matchar idag, prognos 52–55/62 efter CANON-utökning. **Priority 1 implementerad** (Session 29): 8 direktmatchande termer (kycklingfärs, fläskfärs, vegofärs, pesto, ketchup, majonnäs, gnocchi, majs) + rimliga aliaser tillagda i `NORMALIZATION_TABLE`. **Priority 2** (stemming + substring-scan för compounds som `laxfiléer`, `rökt bacon`) kräver kodändring utöver tabelltillägg — avvakta separat pass.
+- [x] 1D — Matchningslogik **klar** (audit genomförd Session 35, rapport: `docs/match-audit-2026-04-19.md`). 53/62 recept matchar (upp från 51), 149 matches totalt (upp från 125), **spraygrädde-buggklassen eliminerad** via `CANON_REJECT_PATTERNS`. Priority 2-stemming implementerad via adjektiv-strip + token-scan + n-gram-fallback i `normalizeName`. Nya self-canons (aubergine/gurka/zucchini/paprika/chili/sallad) + utökad NON_FOOD_RE. 41 regressiontester i `tests/match.test.js` bevakade av PostToolUse-hook.
 - [x] 1E — UX-design — **beslutad** (se nedan)
 - [~] 1F — Implementation pågår: Steg 1 (CANON Priority 1), Steg 2 (`willys-offers`-endpoint + `willys-matcher`), Steg 3 (integration: `optimize_prices`-toggle, backend bucketar poolen efter besparing, UI visar "💰 Sparat ca X kr" per dag) klara. Kvarstår: live-test i Vercel + ev. Priority 2-stemming.
 
@@ -81,40 +81,9 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 Inga just nu.
 
 ### Öppna utredningar
-**Lexikon- och matchningsaudit — KÖRS NÄSTA SESSION** (planerad i Session 34, ska inte granskas — Claude kör fullt ut och rapporterar):
+**Lexikon- och matchningsaudit — ✅ KLAR** (Session 35, 2026-04-19). Rapport: `docs/match-audit-2026-04-19.md`. Spraygrädde-buggklassen eliminerad via `CANON_REJECT_PATTERNS` + Priority 2-stemming implementerad. 125 → 149 matches, 51 → 53 recept, 0 wrong-function/wrong-product-buggar kvar. 41 regressiontester bevakade av PostToolUse-hook.
 
-Rotorsak som triggade utredningen: "Spraygrädde Vispgrädde 35%" matchades mot pastasås-recept eftersom `NORMALIZATION_TABLE` har `"vispgrädde": "grädde"`. Samma klass av felmatchningar finns sannolikt för havregrädde, kokosmjölk/komjölk, gochugaru/gochujang, olika buljong-typer, etc.
-
-- **Fas A — Datainsamling (~30 min):**
-  - Hämta live `/api/willys-offers` för Ekholmen (butik 2160) + 2–3 andra butiker för generaliseringstest
-  - Spara snapshot till `docs/snapshots/willys-YYYY-MM-DD.json` för framtida regressionskörningar
-  - Inventera alla 62 recept — lista tvetydiga ingredienser ("grädde", "mjölk", "buljong", "olja" utan kvalificerare)
-
-- **Fas B — Klassifiering (~45 min):**
-  - Kör `matchRecipe()` över full kryssprodukt (62 × ~200 erbjudanden). Klassa varje match: ✅ korrekt · ⚠️ fel produkttyp · ⚠️ fel funktion · ⚠️ icke-mat · ⚠️ kompositord
-  - **LLM-assist i batch (offline, INTE runtime)** via Gemini för oklara fall — designprincipen "Ingen AI i runtime" gäller bara appen, inte dev-verktyg
-  - Recall-check: vilka recept *borde* matcha något i butiken men gör det inte? Ger Priority 2-stemming-kandidater
-
-- **Fas C — Modellrevidering (~60 min):**
-  - Ersätt platt `NORMALIZATION_TABLE` med **funktionell klassmodell**: varje canon får en class (`grädde-matlagning`, `grädde-vispad`, `mjölk-komjölk`, `mjölk-växtbaserad`, `buljong-kött`, `buljong-grönsak`…). Match kräver **samma klass** — löser hela buggklassen
-  - Implementera **Priority 2 stemming** för sammansatta ord (`laxfiléer → lax + filé`, `kycklingfärs → kyckling + färs`, `körsbärstomater → tomat`)
-  - Utöka `NON_FOOD_RE` för nya kategorier (kosttillskott, icke-mat-bakingredienser, etc.)
-
-- **Fas D — Regressiontester (~30 min):**
-  - `tests/match.test.js` (Node, inga deps) — fixtures med 20–30 guld-matches (produkt + recept + förväntat resultat)
-  - Hook i `.claude/settings.json` — blockerar commit om regression detekteras när `shopping-builder.js` eller `willys-matcher.js` ändras
-
-- **Fas E — Implementation + deploy (~30 min):**
-  - Alla ändringar appliceras direkt (ingen review-gate)
-  - Commit + push + merge till main
-  - Live-verifiering mot Vercel
-  - Uppdaterad prognos i roadmap — trolig effekt: recall 44→52–55 recept, precision ~70% → ~92%
-
-- **Fas F — Rapport:** `docs/match-audit-YYYY-MM-DD.md` + uppdaterad roadmap + dashboard-uppdatering.
-
-**Total tid:** ~3 timmar. Kan köras i ett svep. **Avgränsningar:** Willys+ medlemspriser separat; ingen AI i runtime; rör inte `recipes.json`-strukturen.
-
-**Willys+ medlemserbjudanden — 3-fas utforskning (parkerad, kör efter lexikon-auditen):**
+**Willys+ medlemserbjudanden — 3-fas utforskning (nu primär öppen utredning):**
 - **Fas A — Rekon:** Vilka inloggningsmetoder erbjuder willys.se? BankID? E-post+lösenord? "Kom ihåg mig"-cookies? Mobilapp-OAuth? Claude läser login-sidan.
 - **Fas B — Validering:** Hur ser `PERSONAL_SEGMENTED`-svaret faktiskt ut när man är inloggad? Är det 10 extra produkter eller 100 helt andra priser? Kräver att användaren loggar in manuellt på willys.se och hämtar `https://www.willys.se/search/campaigns/online?q=2160&type=PERSONAL_SEGMENTED&page=0&size=500` i devtools och klistrar in svaret. Avgör om Fas C är värd tid.
 - **Fas C — Automatiseringsväg** (välj baserat på A+B):
@@ -131,7 +100,23 @@ _(Tom — lägg till idéer här under sessioner)_
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 - Säsongsfilter — automatiskt vikta recept efter säsong (soppa/gryta höst-vinter, sallad sommar)
 
-### Senaste session — Session 34 (2026-04-18)
+### Senaste session — Session 35 (2026-04-19) — Lexikon- och matchningsaudit
+Kördes oavbrutet medan användaren sov, per eget direktiv. Fas A → F i ett pass.
+
+- **Fas A — Datainsamling:** Snapshot `docs/snapshots/willys-2026-04-19.json` (143.6 KB) — 2 butiker (2160 Ekholmen + 2102), 148 matchbara erbjudanden per butik efter NON_FOOD-filter. 75 stemming-kandidater identifierade i 62 recept.
+- **Fas B — Klassifiering:** Kryssprodukt 62 recept × 148 erbjudanden = 125 matches. Klassificerades via heuristik. Wrong-function: 8 fall (alla spraygrädde → matlagningsgrädde-recept). Wrong-product: 0. Non-food läckor: 0.
+- **Fas C — Modellrevidering (lättviktigare än planerat):** Istället för full funktionell klassmodell infördes **CANON_REJECT_PATTERNS** (offer-textregex per canon) — samma effekt med mindre kod. Täcker grädde, mjölk, smör, fisk. `normalizeName` fick tre fallback-nivåer: adjektiv-prefix-strip (~60 adjektiv), token-scan baklänges med TOKEN_BLOCKLIST, och n-gram-sökning (2+3-gram). Nya self-canons (aubergine/gurka/zucchini/paprika/chili/sallad) + plural-mappings (tortillas/citroner/potatisar). Nya units (burkar/tummar/cm/förpackningar) + `à ca X g`-suffix-strip i `cleanIngredient`. Utökad NON_FOOD_RE (kosttillskott, proteinpulver, våtfoder, kattmos m.fl.).
+- **Fas D — Regressiontester:** `tests/match.test.js` — 41 assertions utan externa deps. Täcker stemming-fallbacks, nya self-canons, nya units, CANON_REJECT_PATTERNS, spraygrädde-bugfix, positiva kontroller. **PostToolUse-hook** i `.claude/settings.json` kör testerna automatiskt vid edit av `shopping-builder.js`/`willys-matcher.js` och blockerar commit vid regression.
+- **Fas E — Deploy:** En commit med alla ändringar + push till main.
+- **Resultat (store 2160, verifierat mot snapshot):**
+  - Matches: **125 → 149** (+24, +19%)
+  - Recept med match: **51/62 → 53/62** (85.5%)
+  - Wrong-function buggar: **8 → 0**
+  - Alla 41 regressiontester passerar
+- **Filer:** `api/_shared/shopping-builder.js`, `api/_shared/willys-matcher.js`, `api/willys-offers.js`, `tests/match.test.js` (ny), `.claude/settings.json`, `.gitignore`, `docs/snapshots/willys-2026-04-19.json` (ny), `docs/match-audit-2026-04-19.md` (ny).
+- **Återstår:** Live-verifiering mot Vercel efter deploy (~30 sek efter push). `api/generate.js` oförändrad — använder `matchRecipe` genom samma signatur och får fixarna gratis.
+
+### Session 34 (2026-04-18)
 - **Kassera förslag — refresh:** `loadWeeklyPlan` cache-bustar nu `weekly-plan.json` + `shopping-list.json` med `?t=Date.now()` (arkiv/custom-days hade redan `?t=`). Fixar CDN-staleness efter discard så vyn omedelbart reflekterar tomma weekly-plan.json.
 - **Besparingsdetaljer — var skedde besparingen?:**
   - **Backend (`api/generate.js`):** `savingsById`-shapen utökad från `number` → `{ total, matches: [{canon, name, brandLine, regularPrice, promoPrice, savingPerUnit, validUntil}] }`. En match per canon-term (högst `savingPerUnit` vinner, samma logik som `willys-matcher.totalSaving`). Per dag returneras nu `saving: <kr>` + `savingMatches: [...]`. `bucketBySaving` uppdaterad för nya shapen.

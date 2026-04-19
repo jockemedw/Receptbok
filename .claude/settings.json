@@ -38,6 +38,10 @@
           {
             "type": "command",
             "command": "INPUT=$(cat); FILE=$(echo \"$INPUT\" | grep -o '\"file_path\"[[:space:]]*:[[:space:]]*\"[^\"]*\"' | head -1 | sed 's/.*\"\\([^\"]*\\)\"/\\1/'); case \"$FILE\" in *.js) node --check \"$FILE\" 2>&1 && echo \"Syntax OK: $FILE\" || echo \"SYNTAXFEL i $FILE — åtgärda innan push\" >&2;; esac; exit 0"
+          },
+          {
+            "type": "command",
+            "command": "INPUT=$(cat); FILE=$(echo \"$INPUT\" | grep -o '\"file_path\"[[:space:]]*:[[:space:]]*\"[^\"]*\"' | head -1 | sed 's/.*\"\\([^\"]*\\)\"/\\1/'); case \"$FILE\" in *shopping-builder.js|*willys-matcher.js) node tests/match.test.js >&2 || { echo 'BLOCKERAD: match-regressiontester failade — kör node tests/match.test.js för detaljer.' >&2; exit 2; };; esac; exit 0"
           }
         ]
       }
