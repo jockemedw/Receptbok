@@ -100,7 +100,17 @@ _(Tom — lägg till idéer här under sessioner)_
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 - Säsongsfilter — automatiskt vikta recept efter säsong (soppa/gryta höst-vinter, sallad sommar)
 
-### Senaste session — Session 35 (2026-04-19) — Lexikon- och matchningsaudit
+### Senaste session — Session 36 (2026-04-20) — Testtäckning shopping-builder + selectRecipes
+- **Motivering:** Session 35 bevakar bara `shopping-builder.js`/`willys-matcher.js`. Clean→Parse→Normalize→Merge→Categorize-pipelinen och receptväljaren saknade regressionstester — lätt att råka regressa historiska buggfixar (kycklingfilé→Mejeri, cashewnötter-dedupe, citron-strip, proteinbalans, veg-slot) vid framtida ändringar.
+- **Nya testfiler (Node-only, inga externa deps):**
+  - `tests/shopping.test.js` — 62 assertions: parsing (mängder, bråk, intervall), normalisering (~15 aliaser), dedupe/merge, kategorisering (med fokus på historiska buggar: rostad-substring-false-positive, kryddor→Skafferi, PANTRY_ALWAYS_SKIP).
+  - `tests/select-recipes.test.js` — 136 assertions i 8 grupper: grundfall, historikfiltrering, "längst sedan"-fallback, proteinbalans (20 iter), vardag/helg-matchning, veg-slot (30 iter), låsta recept, blockerade datum, bucketBySaving. Inline-kopia av `selectRecipes`/`bucketBySaving` från `api/generate.js` med varningskommentar om sync-plikt.
+- **Flakefix (veg-slot):** Första fixturen läckte flaky ~6% över 50 körningar. Rotorsak: när `vegDaySet` placerade båda veg-dagar på helg + shuffle gav fisk+kött vardagar → söndag hade båda helg-proteinerna (fisk, kött) vid cap=2, tier 1 svalt, tier 2 returnerade veg. Fixat genom att lägga till 2 kyckling-helg60 i fixturen så tier 1 alltid hittar okappat non-veg-alternativ. Verifierat 200/200 rena körningar.
+- **PostToolUse-hooks utökade** (`.claude/settings.json`): edits av `shopping-builder.js` kör `shopping.test.js`, edits av `generate.js` kör `select-recipes.test.js`. Misslyckade tester blockerar commit (exit 2). Matchern-hooken från Session 35 oförändrad.
+- **Filer:** `tests/shopping.test.js` (ny), `tests/select-recipes.test.js` (ny), `.claude/settings.json` (utökad), `CLAUDE.md` (denna post).
+- **Totalt regressionstester:** 41 (match) + 62 (shopping) + 136 (select-recipes) = **239 assertions** bevakade av hooks.
+
+### Session 35 (2026-04-19) — Lexikon- och matchningsaudit
 Kördes oavbrutet medan användaren sov, per eget direktiv. Fas A → F i ett pass.
 
 - **Fas A — Datainsamling:** Snapshot `docs/snapshots/willys-2026-04-19.json` (143.6 KB) — 2 butiker (2160 Ekholmen + 2102), 148 matchbara erbjudanden per butik efter NON_FOOD-filter. 75 stemming-kandidater identifierade i 62 recept.
