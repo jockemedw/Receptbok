@@ -33,3 +33,7 @@ pdf-pages/
 
 # Audit-tmp — lokala scratch-filer för lexikon-audit (Session 34)
 .audit-tmp/
+
+# Willys cart PoC (Session 36) — cookies är privata
+scripts/.willys-cookies.local
+scripts/willys-cart-poc-*.log

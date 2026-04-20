@@ -65,11 +65,13 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 - [ ] 3B — Konverteringsmodul (cups→dl, oz→g, översättning) — research innehåller färdig cheat-sheet + 3 konkreta kodändringar: (1) strip price-annoteringar `$0.17*` från budgetbytes, (2) lägg enhetskonvertering i `GEMINI_SCHEMA_PROMPT`, (3) `postProcessForeignRecipe()` efter `mapJsonLdToRecipe()` för icke-svenska recept
 - [ ] 3C — Testa mot 10+ receptsidor
 
-**Fas 4 — Automatisk varukorgsfyllning**
-- [ ] 4A — Teknisk research
-- [ ] 4B — Proof of concept
-- [ ] 4C — UX-design + felhantering
-- [ ] 4D — Implementation
+**Fas 4 — Automatisk varukorgsfyllning** (design klar, se `docs/superpowers/specs/2026-04-20-willys-dispatch-design.md`)
+- [x] 4A — Teknisk research (PoC verifierade endpoint, auth, CSRF-livslängd)
+- [x] 4B — Proof of concept (`scripts/willys-cart-poc.mjs`, session 36)
+- [x] 4C — UX-design + felhantering (klar i spec)
+- [ ] 4D — Implementation (MVP: bara reavaror via befintlig canon-matcher)
+- [ ] 4E — Produkt-sökning för icke-reavaror (planerad nästa-steg). Ny PoC behövs: hitta Willys söknings-API (troligen `/axfood/rest/products/search?q=<canon>`), matcha icke-rea-ingredienser mot första träffen. Höjer täckning från ~20–30% (bara rea) till ~75%+. Byggs efter 4D.
+- [ ] 4F — Automatisera cookie-refresh (senare). Väg A: Chrome-extension som skickar cookies+CSRF till Vercel via webhook vid varje willys.se-besök. Bygg bara om manuell uppdatering var 3:e mån blir friktion.
 
 **Fas 5 — App Store & monetisering** (marknadsanalys klar → `docs/marknadsanalys-2026-04.md`)
 - [x] Marknadsanalys
@@ -100,7 +102,15 @@ _(Tom — lägg till idéer här under sessioner)_
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 - Säsongsfilter — automatiskt vikta recept efter säsong (soppa/gryta höst-vinter, sallad sommar)
 
-### Senaste session — Session 36 (2026-04-20) — Testtäckning shopping-builder + selectRecipes
+### Senaste session — Session 37 (2026-04-20) — Willys cart-API PoC + design-spec
+- **Motivering:** Användaren vill kunna trycka på en knapp i Receptboken och få veckans inköpslista automatiskt inlagd i Willys-korgen (Fas 4). Ursprunglig plan: Claude-in-Chrome-automation. Beslut att i stället utforska reverse-engineered HTTP-API för att köra från Vercel backend.
+- **PoC (`scripts/willys-cart-poc.mjs`):** Verifierade empiriskt att `POST https://www.willys.se/axfood/rest/cart/addProducts` accepterar bulk-array med produktkoder. Auth = sessioncookies (`JSESSIONID` + `axfoodRememberMe` + `AWSALB`/`CORS`) + `x-csrf-token`-header. CSRF-token är långlivad (timmar+, troligen = `axfoodRememberMe` ≈ 3 mån). Token kan **inte** hämtas programmatiskt utan browser — sätts via XHR efter SPA-boot. Slutsats: manuell cookie+CSRF-export till Vercel env vars räcker för MVP.
+- **Design-spec:** `docs/superpowers/specs/2026-04-20-willys-dispatch-design.md`. Kort arkitektur: ny endpoint `/api/dispatch-to-willys` som återanvänder canon-matcher från Session 35 → bulk-POST till Willys → verifiering via GET cart. Env vars: `WILLYS_COOKIE`, `WILLYS_CSRF`, `WILLYS_STORE_ID`. Qty alltid 1. Ingen auto-checkout — användaren betalar själv.
+- **Material fynd i self-review:** Befintlig matcher returnerar **bara reavaror** (se `api/willys-offers.js:108` — offer-pool filtreras till produkter med `potentialPromotions`). MVP-täckning = 5–10 av 20–30 inköpslist-varor. Full täckning kräver Fas 4E (produkt-sökning för icke-reavaror) som separat PoC + spec.
+- **Status:** Design godkänd, spec skriven, roadmap uppdaterad (4A–4C klara, 4D = implementation, 4E = produkt-sök, 4F = auto cookie-refresh). writing-plans-skill **inte** invocerad än — användaren stoppade för dagen ("vi nöjer oss för idag"). Nästa session: starta implementation-plan för 4D, eller utforska 4E först om hellre det.
+- **Filer:** `scripts/willys-cart-poc.mjs` (ny), `scripts/.willys-cookies.local` (ny, gitignorerad), `.gitignore` (utökad), `docs/superpowers/specs/2026-04-20-willys-dispatch-design.md` (ny), `CLAUDE.md` (roadmap + session-post).
+
+### Session 36 (2026-04-20) — Testtäckning shopping-builder + selectRecipes
 - **Motivering:** Session 35 bevakar bara `shopping-builder.js`/`willys-matcher.js`. Clean→Parse→Normalize→Merge→Categorize-pipelinen och receptväljaren saknade regressionstester — lätt att råka regressa historiska buggfixar (kycklingfilé→Mejeri, cashewnötter-dedupe, citron-strip, proteinbalans, veg-slot) vid framtida ändringar.
 - **Nya testfiler (Node-only, inga externa deps):**
   - `tests/shopping.test.js` — 62 assertions: parsing (mängder, bråk, intervall), normalisering (~15 aliaser), dedupe/merge, kategorisering (med fokus på historiska buggar: rostad-substring-false-positive, kryddor→Skafferi, PANTRY_ALWAYS_SKIP).
