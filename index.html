@@ -239,7 +239,20 @@
         </div>
       </div>
       <button class="shop-clear-btn" id="modeBtnClear" onclick="clearShoppingList()">Rensa lista</button>
+      <button class="shop-dispatch-btn" id="dispatchToWillysBtn" style="display:none" onclick="openDispatchConfirm()">
+        📤 Skicka till Willys
+      </button>
     </div>
+  </div>
+</div>
+
+<div id="dispatchModal" class="modal-overlay" style="display:none" onclick="handleDispatchOverlayClick(event)">
+  <div class="modal-box dispatch-modal-box">
+    <div class="modal-header">
+      <h2 id="dispatchModalTitle">Skicka till Willys</h2>
+      <button onclick="closeDispatchModal()">✕</button>
+    </div>
+    <div id="dispatchModalBody"></div>
   </div>
 </div>
 

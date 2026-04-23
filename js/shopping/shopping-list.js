@@ -188,6 +188,7 @@ export async function loadShoppingTab() {
       return;
     }
     document.getElementById('shopContent').style.display = '';
+    if (typeof window.initDispatchUI === 'function') window.initDispatchUI();
     if (!preserveChecked) window._checkedItems = shop.checkedItems || {};
     renderFullShoppingList(hasRecipe ? recipeItemsData : null, shop.manualItems || []);
   } catch {

@@ -6,6 +6,7 @@ import './utils.js';
 import './ui/scroll.js';
 import './ui/navigation.js';
 import './shopping/shopping-list.js';
+import './shopping/dispatch-ui.js';
 import './weekly-plan/ingredient-preview.js';
 import './recipes/recipe-browser.js';
 import './recipes/recipe-editor.js';
