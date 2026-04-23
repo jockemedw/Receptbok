@@ -3,6 +3,7 @@
 // Hook: se .claude/settings.json — blockerar commit vid regression.
 
 import { extractOfferCanon, rejectsMatch } from "../api/_shared/willys-matcher.js";
+import { fetchOffersFromWillys } from "../api/willys-offers.js";
 
 let passed = 0;
 let failed = 0;
@@ -25,6 +26,9 @@ assertEq(extractOfferCanon({ name: "Mellanmjölk 1,5%", brandLine: "" }), "mjöl
 assertEq(extractOfferCanon({ name: "Laxfilé", brandLine: "" }), "lax", "extractOfferCanon laxfilé");
 assertTrue(rejectsMatch("grädde", { name: "Spraygrädde Vispgrädde 35%", brandLine: "" }), "rejectsMatch spraygrädde för grädde");
 assertFalse(rejectsMatch("grädde", { name: "Matlagningsgrädde 15%", brandLine: "" }), "rejectsMatch tillåter matlagningsgrädde");
+
+// ─── Task 2: fetchOffersFromWillys-export ─────────────────────────
+assertEq(typeof fetchOffersFromWillys, "function", "fetchOffersFromWillys är en funktion");
 
 console.log(`\n${passed} passerade, ${failed} failade`);
 if (failed > 0) {

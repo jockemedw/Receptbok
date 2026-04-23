@@ -52,6 +52,23 @@ function isNonFood(offer) {
   return NON_FOOD_RE.test(`${offer.name} ${offer.brandLine || ""}`);
 }
 
+// Återanvändbar fetch av offers utan HTTP-hop — används av dispatch-to-willys.
+// Tar en storeId och en optional fetchImpl (för testbarhet).
+export async function fetchOffersFromWillys(store, fetchImpl = fetch) {
+  const url = `${WILLYS_BASE}?q=${store}&type=PERSONAL_GENERAL&page=0&size=500`;
+  const upstream = await fetchImpl(url, {
+    headers: {
+      "Accept": "application/json",
+      "User-Agent": "Receptbok/1.0 (familjematplanering)",
+    },
+  });
+  if (!upstream.ok) {
+    throw new Error(`Willys svarade ${upstream.status}`);
+  }
+  const data = await upstream.json();
+  return normalizeOffers(data.results || []);
+}
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
@@ -66,23 +83,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const url = `${WILLYS_BASE}?q=${store}&type=PERSONAL_GENERAL&page=0&size=500`;
-    const upstream = await fetch(url, {
-      headers: {
-        "Accept": "application/json",
-        "User-Agent": "Receptbok/1.0 (familjematplanering)",
-      },
-    });
-
-    if (!upstream.ok) {
-      return res.status(502).json({
-        error: `Willys svarade ${upstream.status} — prova igen om en stund.`,
-      });
-    }
-
-    const data = await upstream.json();
-    const offers = normalizeOffers(data.results || []);
-
+    const offers = await fetchOffersFromWillys(store);
     res.setHeader("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=7200");
     return res.status(200).json({
       generated: new Date().toISOString(),
@@ -92,7 +93,7 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     console.error("willys-offers error:", err);
-    return res.status(500).json({
+    return res.status(502).json({
       error: "Kunde inte hämta Willys-erbjudanden — prova igen om en stund.",
     });
   }
