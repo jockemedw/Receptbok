@@ -15,7 +15,7 @@ const MAX_NGRAM = 3;
 // Kontrollera om offer-texten funktionellt/produktmässigt passar canon.
 // Se CANON_REJECT_PATTERNS i shopping-builder.js — löser t.ex.
 // spraygrädde-vispgrädde-felmatchningen mot matlagningsgrädde-recept.
-function rejectsMatch(canon, offer) {
+export function rejectsMatch(canon, offer) {
   const pattern = CANON_REJECT_PATTERNS[canon];
   if (!pattern) return false;
   const text = `${offer.name} ${offer.brandLine || ""}`;
@@ -26,7 +26,7 @@ function rejectsMatch(canon, offer) {
 // Prioritet: längre fras före kortare, tidigare position före senare.
 // Detta undviker "Fylld Gnocchi Tomat Mozzarella" → tomat/mozzarella
 // (produkten är gnocchi). 2-gram "fylld gnocchi" träffar först → "gnocchi".
-function extractOfferCanon(offer) {
+export function extractOfferCanon(offer) {
   const text = `${offer.name} ${offer.brandLine || ""}`.toLowerCase();
   const tokens = text.split(/[\s,\-()\/]+/).filter(Boolean);
   for (let n = Math.min(MAX_NGRAM, tokens.length); n >= 1; n--) {
