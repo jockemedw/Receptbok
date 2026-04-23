@@ -2556,3 +2556,81 @@
   @media (max-width: 400px) {
     .modal-box { width: 95vw; }
   }
+
+/* ─── Dispatch-till-Willys ──────────────────────────────────────── */
+.shop-dispatch-btn {
+  display: block;
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.9rem 1.2rem;
+  background: #c2522b;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.shop-dispatch-btn:hover { background: #a6431f; }
+.shop-dispatch-btn:disabled { opacity: 0.6; cursor: default; }
+
+.dispatch-modal-box {
+  max-width: 480px;
+  padding: 1.5rem;
+}
+.dispatch-modal-box p { margin: 0.5rem 0; line-height: 1.5; }
+.dispatch-note { color: #5c3d1e; font-size: 0.9rem; opacity: 0.85; }
+.dispatch-missing-header { font-weight: 600; margin-top: 1rem !important; }
+.dispatch-missing {
+  margin: 0.5rem 0 1rem 1.2rem;
+  padding: 0;
+  color: #5c3d1e;
+  font-size: 0.95rem;
+}
+.dispatch-missing li { margin: 0.15rem 0; }
+.dispatch-sources {
+  color: #5c3d1e;
+  font-size: 0.88rem;
+  opacity: 0.75;
+  margin-top: 0.2rem !important;
+}
+.dispatch-loader {
+  font-size: 2rem;
+  text-align: center;
+  margin: 1rem 0;
+}
+.dispatch-actions {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 1.2rem;
+  flex-wrap: wrap;
+}
+.dispatch-actions .btn-primary,
+.dispatch-actions .btn-secondary {
+  flex: 1;
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+}
+.dispatch-actions .btn-primary {
+  background: #c2522b;
+  color: #fff;
+}
+.dispatch-actions .btn-primary:hover { background: #a6431f; }
+.dispatch-actions .btn-secondary {
+  background: #e8dfd0;
+  color: #5c3d1e;
+}
+.dispatch-actions .btn-secondary:hover { background: #d9ccb8; }
+
+@media (max-width: 600px) {
+  .dispatch-actions { flex-direction: column; }
+  .dispatch-modal-box { max-width: calc(100vw - 2rem); }
+}
