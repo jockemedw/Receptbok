@@ -474,12 +474,12 @@ function fakeSearch(map) {
 {
   const offers = [
     { code: "spray_ST", name: "Spraygrädde Vispgrädde 35%", brandLine: "", savingPerUnit: 5 },
-    { code: "matl_ST", name: "Matlagningsgrädde", brandLine: "", savingPerUnit: 2 },
+    { code: "visp_matl_ST", name: "Vispgrädde Matlagning 35%", brandLine: "", savingPerUnit: 2 },
   ];
   const search = fakeSearch({});
   const result = await matchCanons(["grädde"], offers, search);
   assertEq(result.matched.length, 1, "en match efter rejectsMatch");
-  assertEq(result.matched[0].code, "matl_ST", "spray rejects, matlagnings väljs");
+  assertEq(result.matched[0].code, "visp_matl_ST", "spray rejects, vispgrädde matlagning väljs");
 }
 ```
 
