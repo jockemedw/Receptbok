@@ -6,6 +6,7 @@ import { extractOfferCanon, rejectsMatch } from "../api/_shared/willys-matcher.j
 import { fetchOffersFromWillys } from "../api/willys-offers.js";
 import { createSearchClient } from "../api/_shared/willys-search.js";
 import { matchCanons } from "../api/_shared/dispatch-matcher.js";
+import { createCartClient } from "../api/_shared/willys-cart-client.js";
 
 let passed = 0;
 let failed = 0;
@@ -192,6 +193,79 @@ function fakeSearch(map) {
   const result = await matchCanons(["grädde"], offers, search);
   assertEq(result.matched.length, 1, "en match efter rejectsMatch");
   assertEq(result.matched[0].code, "visp_matl_ST", "spray rejects, vispgrädde matlagning väljs");
+}
+
+// ─── Task 5: willys-cart-client ───────────────────────────────────
+
+// Fake fetch som spelar in requests och returnerar canned responses
+function makeRecordingFetch(responses) {
+  const calls = [];
+  const fn = async (url, opts = {}) => {
+    calls.push({ url, method: opts.method || "GET", headers: opts.headers || {}, body: opts.body });
+    const key = `${opts.method || "GET"} ${url.includes("addProducts") ? "addProducts" : "cart"}`;
+    const spec = responses[key] || { ok: false, status: 500, body: {} };
+    return {
+      ok: spec.ok,
+      status: spec.status,
+      json: async () => spec.body,
+      text: async () => JSON.stringify(spec.body),
+    };
+  };
+  fn.calls = calls;
+  return fn;
+}
+
+// A. Preflight OK
+{
+  const fetchImpl = makeRecordingFetch({
+    "GET cart": { ok: true, status: 200, body: { entries: [] } },
+  });
+  const client = createCartClient({ fetchImpl, cookies: "x=1", csrf: "tok" });
+  const pf = await client.preflight();
+  assertEq(pf.ok, true, "preflight OK");
+  assertEq(pf.status, 200, "preflight status 200");
+}
+
+// B. Preflight 401
+{
+  const fetchImpl = makeRecordingFetch({
+    "GET cart": { ok: false, status: 401, body: {} },
+  });
+  const client = createCartClient({ fetchImpl, cookies: "x=1", csrf: "tok" });
+  const pf = await client.preflight();
+  assertEq(pf.ok, false, "preflight fail 401");
+  assertEq(pf.status, 401, "preflight status 401");
+}
+
+// C. addProducts skickar rätt body-shape
+{
+  const fetchImpl = makeRecordingFetch({
+    "POST addProducts": { ok: true, status: 200, body: { cartModifications: [] } },
+  });
+  const client = createCartClient({ fetchImpl, cookies: "x=1", csrf: "tok" });
+  const result = await client.addProducts(["a_ST", "b_ST"]);
+  assertEq(result.ok, true, "addProducts returnerar ok");
+  const call = fetchImpl.calls.find(c => c.url.includes("addProducts"));
+  assertTrue(call, "POST-anrop registrerat");
+  assertEq(call.method, "POST", "metod är POST");
+  assertEq(call.headers["x-csrf-token"], "tok", "x-csrf-token-header satt");
+  assertEq(call.headers.cookie, "x=1", "cookie-header satt");
+  const body = JSON.parse(call.body);
+  assertEq(body.products.length, 2, "body har 2 produkter");
+  assertEq(body.products[0].productCodePost, "a_ST", "första productCodePost");
+  assertEq(body.products[0].qty, 1, "qty=1 (spec)");
+  assertEq(body.products[0].pickUnit, "pieces", "pickUnit=pieces (spec)");
+}
+
+// D. verifyCart returnerar entries
+{
+  const fetchImpl = makeRecordingFetch({
+    "GET cart": { ok: true, status: 200, body: { entries: [{ product: { code: "a_ST" }, quantity: 1 }] } },
+  });
+  const client = createCartClient({ fetchImpl, cookies: "x=1", csrf: "tok" });
+  const verified = await client.verifyCart();
+  assertEq(verified.ok, true, "verifyCart ok");
+  assertEq(verified.entries.length, 1, "verifyCart returnerar 1 entry");
 }
 
 console.log(`\n${passed} passerade, ${failed} failade`);
