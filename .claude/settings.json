@@ -50,6 +50,10 @@
           {
             "type": "command",
             "command": "INPUT=$(cat); FILE=$(echo \"$INPUT\" | grep -o '\"file_path\"[[:space:]]*:[[:space:]]*\"[^\"]*\"' | head -1 | sed 's/.*\"\\([^\"]*\\)\"/\\1/'); case \"$FILE\" in *generate.js) node tests/select-recipes.test.js >&2 || { echo 'BLOCKERAD: select-recipes-regressiontester failade — kör node tests/select-recipes.test.js för detaljer.' >&2; exit 2; };; esac; exit 0"
+          },
+          {
+            "type": "command",
+            "command": "INPUT=$(cat); FILE=$(echo \"$INPUT\" | grep -o '\"file_path\"[[:space:]]*:[[:space:]]*\"[^\"]*\"' | head -1 | sed 's/.*\"\\([^\"]*\\)\"/\\1/'); case \"$FILE\" in *dispatch-to-willys.js|*willys-search.js|*willys-cart-client.js|*dispatch-matcher.js|*willys-matcher.js) node tests/dispatch-to-willys.test.js >&2 || { echo 'BLOCKERAD: dispatch-regressiontester failade — kör node tests/dispatch-to-willys.test.js för detaljer.' >&2; exit 2; };; esac; exit 0"
           }
         ]
       }
