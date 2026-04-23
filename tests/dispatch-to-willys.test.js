@@ -7,6 +7,7 @@ import { fetchOffersFromWillys } from "../api/willys-offers.js";
 import { createSearchClient } from "../api/_shared/willys-search.js";
 import { matchCanons } from "../api/_shared/dispatch-matcher.js";
 import { createCartClient } from "../api/_shared/willys-cart-client.js";
+import { runDispatch } from "../api/dispatch-to-willys.js";
 
 let passed = 0;
 let failed = 0;
@@ -266,6 +267,85 @@ function makeRecordingFetch(responses) {
   const verified = await client.verifyCart();
   assertEq(verified.ok, true, "verifyCart ok");
   assertEq(verified.entries.length, 1, "verifyCart returnerar 1 entry");
+}
+
+// ─── Task 6: endpoint integration (ren logikfunktion) ─────────────
+// Endpoint-handlern testas inte direkt (kräver Vercel-miljö) — istället
+// testar vi den rena dispatch-funktionen som den delegerar till.
+
+// A. Happy path med blandning av rea + search
+// OBS: "Vispgrädde Matlagning 35%" ger canon "grädde" via NORMALIZATION_TABLE["vispgrädde"]="grädde".
+// rejectsMatch("grädde", {name:"Vispgrädde Matlagning 35%"}) = false (matlagning-undantaget i regex).
+{
+  const shoppingList = {
+    generated: "2026-04-21",
+    recipeItems: {
+      Mejeri: ["mjölk (1 l)", "grädde (2 dl)"],
+      Grönsaker: ["purjolök (1)"],
+    },
+    categories: null,
+  };
+  const offers = [
+    { code: "rea_gradde_ST", name: "Vispgrädde Matlagning 35%", brandLine: "Arla", savingPerUnit: 5 },
+  ];
+  const searchClient = {
+    findProductByCanon: async (canon) => {
+      if (canon === "mjölk") return { code: "s_mjolk_ST", name: "Mellanmjölk 1,5%", brandLine: "Garant" };
+      if (canon === "purjolök") return { code: "s_purjo_ST", name: "Purjolök Klass 1", brandLine: "" };
+      return null;
+    },
+  };
+  let captured = null;
+  const cartClient = {
+    preflight: async () => ({ ok: true, status: 200 }),
+    addProducts: async (codes) => {
+      captured = codes;
+      return { ok: true, status: 200, response: {} };
+    },
+    verifyCart: async () => ({ ok: true, status: 200, entries: [] }),
+  };
+
+  const result = await runDispatch({ shoppingList, offers, searchClient, cartClient });
+  assertEq(result.ok, true, "dispatch ok");
+  assertTrue(captured, "addProducts anropades");
+  assertTrue(captured.includes("rea_gradde_ST"), "rea-grädde med");
+  assertTrue(captured.includes("s_mjolk_ST"), "search-mjölk med");
+  assertTrue(captured.includes("s_purjo_ST"), "search-purjolök med");
+  assertEq(result.missing.length, 0, "inga unmatched");
+}
+
+// B. Preflight 401 → avbryter utan POST
+{
+  const shoppingList = { recipeItems: { Mejeri: ["mjölk (1 l)"] } };
+  const offers = [];
+  const searchClient = { findProductByCanon: async () => null };
+  let posted = false;
+  const cartClient = {
+    preflight: async () => ({ ok: false, status: 401 }),
+    addProducts: async () => { posted = true; return { ok: true, status: 200 }; },
+    verifyCart: async () => ({ ok: true, entries: [] }),
+  };
+  const result = await runDispatch({ shoppingList, offers, searchClient, cartClient });
+  assertEq(result.ok, false, "dispatch fail vid 401");
+  assertEq(result.error, "auth_expired", "felkod auth_expired");
+  assertFalse(posted, "POST avbröts innan det skickades");
+}
+
+// C. Tom shopping-list → ingen POST, tydligt fel
+{
+  const shoppingList = { recipeItems: {} };
+  const offers = [];
+  const searchClient = { findProductByCanon: async () => null };
+  let posted = false;
+  const cartClient = {
+    preflight: async () => ({ ok: true, status: 200 }),
+    addProducts: async () => { posted = true; return { ok: true }; },
+    verifyCart: async () => ({ ok: true, entries: [] }),
+  };
+  const result = await runDispatch({ shoppingList, offers, searchClient, cartClient });
+  assertEq(result.ok, false, "tom lista → fail");
+  assertEq(result.error, "no_matches", "felkod no_matches");
+  assertFalse(posted, "inget POST vid tom lista");
 }
 
 console.log(`\n${passed} passerade, ${failed} failade`);
