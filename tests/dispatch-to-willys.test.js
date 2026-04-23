@@ -5,6 +5,7 @@
 import { extractOfferCanon, rejectsMatch } from "../api/_shared/willys-matcher.js";
 import { fetchOffersFromWillys } from "../api/willys-offers.js";
 import { createSearchClient } from "../api/_shared/willys-search.js";
+import { matchCanons } from "../api/_shared/dispatch-matcher.js";
 
 let passed = 0;
 let failed = 0;
@@ -124,6 +125,73 @@ function makeFakeFetch(responsesByUrl) {
   });
   const hit = await client.findProductByCanon("grädde");
   assertEq(hit?.code, "regular_ST", "spraygrädde rejectsMatch → regular grädde väljs");
+}
+
+// ─── Task 4: dispatch-matcher — matchCanons ───────────────────────
+
+// Fake searchClient
+function fakeSearch(map) {
+  return {
+    findProductByCanon: async (canon) => map[canon] || null,
+  };
+}
+
+// A. Rea-träff väljs före sökning
+{
+  const offers = [
+    { code: "rea_mjölk_ST", name: "Mellanmjölk 1,5% Eko", brandLine: "", savingPerUnit: 3 },
+  ];
+  const search = fakeSearch({
+    mjölk: { code: "search_mjölk_ST", name: "Mellanmjölk 1,5%", brandLine: "", source: "search" },
+  });
+  const result = await matchCanons(["mjölk"], offers, search);
+  assertEq(result.matched.length, 1, "en match");
+  assertEq(result.matched[0].code, "rea_mjölk_ST", "rea väljs före search");
+  assertEq(result.matched[0].source, "rea", "source=rea");
+}
+
+// B. Ingen rea → sök-fallback
+{
+  const offers = [];
+  const search = fakeSearch({
+    mjölk: { code: "search_mjölk_ST", name: "Mellanmjölk 1,5%", brandLine: "", source: "search" },
+  });
+  const result = await matchCanons(["mjölk"], offers, search);
+  assertEq(result.matched.length, 1, "sök-fallback matchar");
+  assertEq(result.matched[0].code, "search_mjölk_ST", "sök-code väljs");
+  assertEq(result.matched[0].source, "search", "source=search");
+}
+
+// C. Varken rea eller sök → unmatched
+{
+  const offers = [];
+  const search = fakeSearch({});
+  const result = await matchCanons(["obskyrbär"], offers, search);
+  assertEq(result.matched.length, 0, "ingen match");
+  assertEq(result.unmatched.length, 1, "en unmatched");
+  assertEq(result.unmatched[0], "obskyrbär", "obskyrbär är unmatched");
+}
+
+// D. Dedupe av canon-listan
+{
+  const offers = [
+    { code: "rea_mjölk_ST", name: "Mjölk 1,5%", brandLine: "", savingPerUnit: 3 },
+  ];
+  const search = fakeSearch({});
+  const result = await matchCanons(["mjölk", "mjölk", "mjölk"], offers, search);
+  assertEq(result.matched.length, 1, "dubbletter reduceras till 1 match");
+}
+
+// E. rejectsMatch-filter i rea-steget
+{
+  const offers = [
+    { code: "spray_ST", name: "Spraygrädde Vispgrädde 35%", brandLine: "", savingPerUnit: 5 },
+    { code: "visp_matl_ST", name: "Vispgrädde Matlagning 35%", brandLine: "", savingPerUnit: 2 },
+  ];
+  const search = fakeSearch({});
+  const result = await matchCanons(["grädde"], offers, search);
+  assertEq(result.matched.length, 1, "en match efter rejectsMatch");
+  assertEq(result.matched[0].code, "visp_matl_ST", "spray rejects, vispgrädde matlagning väljs");
 }
 
 console.log(`\n${passed} passerade, ${failed} failade`);
