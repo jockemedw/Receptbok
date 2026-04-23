@@ -348,6 +348,41 @@ function makeRecordingFetch(responses) {
   assertFalse(posted, "inget POST vid tom lista");
 }
 
+// D. addProducts fail (post_failed-path — code-reviewer request)
+{
+  const shoppingList = { recipeItems: { Mejeri: ["mjölk (1 l)"] } };
+  const offers = [];
+  const searchClient = {
+    findProductByCanon: async (canon) =>
+      canon === "mjölk" ? { code: "s_mjolk_ST", name: "Mellanmjölk", brandLine: "" } : null,
+  };
+  const cartClient = {
+    preflight: async () => ({ ok: true, status: 200 }),
+    addProducts: async () => ({ ok: false, status: 500, response: {} }),
+    verifyCart: async () => ({ ok: true, entries: [] }),
+  };
+  const result = await runDispatch({ shoppingList, offers, searchClient, cartClient });
+  assertEq(result.ok, false, "post_failed: ok=false");
+  assertEq(result.error, "post_failed", "post_failed: felkod");
+}
+
+// E. addProducts 401 (auth_expired även vid POST-stadiet)
+{
+  const shoppingList = { recipeItems: { Mejeri: ["mjölk (1 l)"] } };
+  const offers = [];
+  const searchClient = {
+    findProductByCanon: async (canon) =>
+      canon === "mjölk" ? { code: "s_mjolk_ST", name: "Mellanmjölk", brandLine: "" } : null,
+  };
+  const cartClient = {
+    preflight: async () => ({ ok: true, status: 200 }),
+    addProducts: async () => ({ ok: false, status: 401, response: {} }),
+    verifyCart: async () => ({ ok: true, entries: [] }),
+  };
+  const result = await runDispatch({ shoppingList, offers, searchClient, cartClient });
+  assertEq(result.error, "auth_expired", "POST 401 → auth_expired");
+}
+
 console.log(`\n${passed} passerade, ${failed} failade`);
 if (failed > 0) {
   console.log("\nFailures:");
