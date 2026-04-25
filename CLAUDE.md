@@ -97,14 +97,30 @@ Inga just nu.
   - Väg 4: Acceptera anonyma priser, märk UI:t tydligt ("dina faktiska priser kan vara lägre")
 
 ### Idéer (användarens)
-- **Mobil bottom-tab-navigering** (Session 40, planerad till Session 41) — flytta flik-navigeringen från toppen till botten på mobil där tummen når. Mer "knapp"-känsla än rubriker som idag. Standard-mönster i native appar. Berör `index.html` (struktur) + `css/styles.css` (mobile-only flytt) + ev. `js/ui/navigation.js`.
+*(Inga öppna idéer just nu — Mobil bottom-tab-nav implementerad i Session 41.)*
 
 ### Claudes idéer
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 - Säsongsfilter — automatiskt vikta recept efter säsong (soppa/gryta höst-vinter, sallad sommar)
 
-### Senaste session — Session 40 (2026-04-25) — Brainstorming Fas 4F (cookie-refresh-automatisering)
+### Senaste session — Session 41 (2026-04-25) — Mobil bottom-tab-navigering implementerad
+- **Motivering:** UX-förberedelse inför Fas 5A (Capacitor-paketering). Flik-navigeringen flyttades från toppen till botten på mobil — där tummen når naturligt och där native mobil-appar konsekvent placerar primär-nav. Toppheaderns textflikar duplicerade då bottom-bar och kunde gömmas.
+- **Brainstorming-flöde:** 7 A/B/C-frågor i `superpowers:brainstorming` låste designen: (1) ikon + text under, (2) inline SVG line-ikoner (Lucide-stil), (3) mobil-toppheader minimerad — titel kvar, flikar bort, sökruta kvar inom header, (4) aktiv flik = krämvit pille bakom + terracotta ikon/text, (5) bar:n alltid synlig på mobil (ingen autohide), (6) FAB/scrolltop lyfts via CSS-variabel, (7) två separata `<nav>`-element + delad `data-tab`-baserad switchTab.
+- **Spec:** `docs/superpowers/specs/2026-04-25-mobile-bottom-tab-nav-design.md` (398 rader). Plan: `docs/superpowers/plans/2026-04-25-mobile-bottom-tab-nav.md` (599 rader, 7 tasks med konkreta SVG-paths från Lucide Book/CalendarDays/ClipboardCheck).
+- **Implementation (inline execution, 7 tasks pushade direkt till main):**
+  1. `--bottom-nav-h` CSS-variabel + body-padding + lyft FAB/scrolltop (`e3ad33e`)
+  2. `data-tab`-attribut + switchTab refaktor till `querySelectorAll('[data-tab]')` (`9d4dcad`, inkl. CLAUDE.md-fix av "Antigravity"-rad → "verifiering på mobil mot live Vercel")
+  3. Bottom-nav markup med 3 SVG-ikoner (`a31bd22`)
+  4. Bottom-nav CSS — synlig knapp-rad, terracotta pille bakom aktiv flik (`e0adbe5`)
+  5. Höjd-justering (+30%, 52→68 min-height, 64→84 --bottom-nav-h) efter visuell verifiering (`d365dd8`)
+  6. Mobil-toppheader minimering + `viewport-fit=cover` (`73af9e3` + rollback i `221f6c9` efter feltolkning av "Ja"-svar)
+- **Live-justeringar baserat på visuell feedback:** (a) bar:n var för låg → +30% höjd, (b) misstolkat "Ja" som "göm hela toppheadern" istället för bara textflikarna → rullade tillbaka, sökrutan tillbaka in i `<header>` så bakgrundsfärgen sträcker sig full bredd. Lärdom: tydligare frågor när användaren ger korta svar.
+- **Filer ändrade:** `index.html` (data-tab på topp-nav, ny `<nav class="bottom-nav">`, `viewport-fit=cover`), `css/styles.css` (--bottom-nav-h, .bottom-nav-block ~58 rader, mobil-minimering av .header-bar), `js/ui/navigation.js` (querySelectorAll-refaktor), `CLAUDE.md` (Antigravity → mobil-mot-Vercel).
+- **Status:** Live på https://receptbok-six.vercel.app/. Capacitor-redo via `env(safe-area-inset-bottom)` + `viewport-fit=cover`. Inga API/JSON-ändringar. Ingen automatiserad testtäckning för UI (per repots befintliga praxis), all verifiering manuell på mobil.
+- **Nästa session (42):** Tillbaka till Fas 4F (cookie-refresh-automatisering) — implementation-plan via `writing-plans` skill för specen från Session 40, eller annan prioritering om användaren önskar.
+
+### Session 40 (2026-04-25) — Brainstorming Fas 4F (cookie-refresh-automatisering)
 - **Motivering:** Manuell cookie-refresh-rutin från Session 39 kräver ~5 min DevTools-extraktion var 3:e månad. För en familjeapp är 4 manuella interventioner per år för mycket friktion. Sessionen: utforska de fyra vägarna i öppna utredningar och låsa en design.
 - **Brainstorming-flöde via superpowers:brainstorming-skill:**
   1. **Ambitionsnivå:** Användaren valde "noll touch" (alternativ A). Det stryker direkt vägar som kräver manuellt klick eller manuell extraktion (bookmarklet, förenklad CLI).
