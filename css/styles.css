@@ -13,6 +13,13 @@
     --color-success: var(--color-success);
     --color-success-dark: #4a7d4e;
     --color-danger: #b04030;
+    --bottom-nav-h: 0px;
+  }
+
+  @media (max-width: 599px) {
+    :root {
+      --bottom-nav-h: calc(64px + env(safe-area-inset-bottom, 0px));
+    }
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -22,6 +29,7 @@
     background: var(--cream);
     color: var(--ink);
     min-height: 100vh;
+    padding-bottom: var(--bottom-nav-h);
   }
 
   /* ── HEADER ── */
@@ -515,7 +523,7 @@
   /* ── SCROLL TO TOP ── */
   #scrolltop {
     position: fixed;
-    bottom: 1.5rem;
+    bottom: calc(var(--bottom-nav-h) + 1.5rem);
     right: 1.5rem;
     background: var(--warm-brown);
     color: white;
@@ -2535,7 +2543,7 @@
   }
   .fab-import {
     position: fixed;
-    bottom: 1.5rem;
+    bottom: calc(var(--bottom-nav-h) + 1.5rem);
     left: 1.5rem;
     width: 56px;
     height: 56px;
