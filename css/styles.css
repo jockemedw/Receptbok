@@ -112,8 +112,12 @@
     border-bottom-color: var(--gold);
   }
 
-  /* ── SEARCH AREA (collapsible) ── */
+  /* ── SEARCH AREA (sticky inom recept-vyn) ── */
   .header-search-area {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: var(--warm-brown);
     padding: 0.6rem 1.25rem 0.85rem;
     overflow: hidden;
     max-height: 500px;

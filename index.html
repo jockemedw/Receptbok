@@ -25,6 +25,9 @@
       <button class="header-tab" id="tabShop" data-tab="shop" onclick="switchTab('shop')">Inköpslista</button>
     </nav>
   </div>
+</header>
+
+<main id="receptView">
   <div class="header-search-area" id="headerSearchArea">
     <div class="search-wrap">
       <span class="search-icon">🔍</span>
@@ -32,9 +35,6 @@
     </div>
     <div class="filters" id="filters"></div>
   </div>
-</header>
-
-<main id="receptView">
   <div class="replace-banner" id="replaceBanner">
     Väljer recept till <strong id="replaceBannerDay"></strong> — tryck på ett recept nedan
     <button class="replace-banner-cancel" onclick="exitReplaceMode()">Avbryt</button>
