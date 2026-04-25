@@ -71,7 +71,7 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 - [x] 4C — UX-design + felhantering (klar i spec)
 - [x] 4D — Implementation **live-verifierad** (Session 39, 2026-04-25). Endpoint `/api/dispatch-to-willys` (GET=featureAvailable, POST=runDispatch). Tre nya shared-moduler: `willys-search.js`, `willys-cart-client.js`, `dispatch-matcher.js`. Full plan: `docs/superpowers/plans/2026-04-23-willys-dispatch.md`. 56 assertions i `tests/dispatch-to-willys.test.js` bevakade av PostToolUse-hook.
 - [x] 4E — Söknings-fallback **live-verifierad** (Session 39). Endpoint: `GET https://www.willys.se/search?q=<canon>`, publik. Canon-guard via befintlig `extractOfferCanon` + `CANON_REJECT_PATTERNS` löser vitlök→"Lök Vit"- och grädde→spraygrädde-buggar. Första live-dispatch (Kefir → Arla Cultura Kefir Naturell) lyckades.
-- [~] 4F — **Automatisera cookie-refresh — prioriterad utredning från Session 40.** Manuell rutin fungerar (verifierad Session 39) men `axfoodRememberMe` löper ut ca 2026-07-15. Väg A: Chrome-extension som skickar cookies+CSRF till Vercel via webhook vid varje willys.se-besök. Andra vägar att utvärdera: bookmarklet, headless-login (om Willys tillåter lösenord), manuell men förenklad pipeline (kopiera ett värde i stället för cURL-extraktion).
+- [~] 4F — **Cookie-refresh-automatisering — design klar (Session 40).** Spec: `docs/superpowers/specs/2026-04-25-cookie-refresh-automation-design.md`. Vald väg: Chrome-extension (Manifest V3) → ny endpoint `POST /api/cookies/willys` → secret gist på GitHub. Klient-agnostisk endpoint så Capacitor-WebView i Fas 5A återanvänder samma backend. Förkastat: headless-login (BankID-risk), bookmarklet (manuellt klick + httpOnly), Vercel Blob (nytt SDK för en JSON-fil), preflight-validering (YAGNI). Implementation-plan ej skriven än — användaren prioriterar mobil bottom-tab-nav-UI för Session 41 först.
 
 **Fas 5 — App Store & monetisering** (marknadsanalys klar → `docs/marknadsanalys-2026-04.md`)
 - [x] Marknadsanalys
@@ -83,12 +83,7 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 Inga just nu.
 
 ### Öppna utredningar
-**Cookie-refresh-automatisering (Fas 4F) — primär utredning för Session 40.** Manuell dispatch fungerar live (Session 39) men `axfoodRememberMe` har ca 3 mån livslängd (utgång 2026-07-15) och `WILLYS_CSRF` följer samma session. När de dör måste användaren öppna willys.se → DevTools → kopiera cURL → extrahera värden → uppdatera Vercel env vars → redeploya. Det är friktion 4× per år. Sessionen ska kartlägga alternativ:
-- **Väg A — Chrome/Edge-extension:** Lyssnar på `willys.se`-requests, plockar ut sessionscookies + CSRF, POSTar till en ny Vercel-endpoint `/api/refresh-willys-secrets` som uppdaterar env vars via Vercel API. Pro: helt automatiskt vid varje besök på willys.se. Con: kräver manifest v3-extension + Vercel API-token.
-- **Väg B — Bookmarklet:** Användaren klickar ett bokmärke på willys.se. JS plockar `document.cookie` + token (eller utlöser samma flow som extensionen). Pro: enklare distribution. Con: kräver manuellt klick, blockas möjligen av httpOnly-cookies.
-- **Väg C — Headless-login med email/lösenord:** Vercel-cron loggar in via Willys-formulär (om sådant finns) en gång i veckan. Pro: helt server-side. Con: Willys kanske bara tillåter BankID/SMS, vilket dödar vägen.
-- **Väg D — Förenklad manuell rutin:** Bygg en CLI eller webbsida som tar emot raw-cURL och extraherar+pushar värdena. Pro: minimal kod. Con: fortfarande manuellt var 3:e månad.
-Mål: utvärdera vilken väg som är lättast att bygga utan att dra i sig stort underhåll. Kartlägga `httpOnly`-status på `axfoodRememberMe` (avgör om JS i extension/bookmarklet kan läsa den). Slutprodukt: research-doc + rekommendation.
+**Cookie-refresh-automatisering (Fas 4F) — ✅ DESIGN KLAR** (Session 40, 2026-04-25). Spec: `docs/superpowers/specs/2026-04-25-cookie-refresh-automation-design.md`. Brainstorming gick från fyra vägar (extension/bookmarklet/headless-login/förenklad manuell) till en vald: Chrome-extension Manifest V3 som passivt fångar cookies + CSRF vid willys.se-besök, POSTar till ny endpoint `/api/cookies/willys`, sparas i secret gist på GitHub. Implementation-plan via writing-plans-skill väntar — användaren prioriterar UI-jobb (bottom-tab-nav) för Session 41 först.
 
 **Lexikon- och matchningsaudit — ✅ KLAR** (Session 35, 2026-04-19). Rapport: `docs/match-audit-2026-04-19.md`. Spraygrädde-buggklassen eliminerad via `CANON_REJECT_PATTERNS` + Priority 2-stemming implementerad. 125 → 149 matches, 51 → 53 recept, 0 wrong-function/wrong-product-buggar kvar. 41 regressiontester bevakade av PostToolUse-hook.
 
@@ -102,14 +97,27 @@ Mål: utvärdera vilken väg som är lättast att bygga utan att dra i sig stort
   - Väg 4: Acceptera anonyma priser, märk UI:t tydligt ("dina faktiska priser kan vara lägre")
 
 ### Idéer (användarens)
-_(Tom — lägg till idéer här under sessioner)_
+- **Mobil bottom-tab-navigering** (Session 40, planerad till Session 41) — flytta flik-navigeringen från toppen till botten på mobil där tummen når. Mer "knapp"-känsla än rubriker som idag. Standard-mönster i native appar. Berör `index.html` (struktur) + `css/styles.css` (mobile-only flytt) + ev. `js/ui/navigation.js`.
 
 ### Claudes idéer
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 - Säsongsfilter — automatiskt vikta recept efter säsong (soppa/gryta höst-vinter, sallad sommar)
 
-### Senaste session — Session 39 (2026-04-25) — Willys-dispatch live + tre buggfixar
+### Senaste session — Session 40 (2026-04-25) — Brainstorming Fas 4F (cookie-refresh-automatisering)
+- **Motivering:** Manuell cookie-refresh-rutin från Session 39 kräver ~5 min DevTools-extraktion var 3:e månad. För en familjeapp är 4 manuella interventioner per år för mycket friktion. Sessionen: utforska de fyra vägarna i öppna utredningar och låsa en design.
+- **Brainstorming-flöde via superpowers:brainstorming-skill:**
+  1. **Ambitionsnivå:** Användaren valde "noll touch" (alternativ A). Det stryker direkt vägar som kräver manuellt klick eller manuell extraktion (bookmarklet, förenklad CLI).
+  2. **Besöksmönster:** Var 2:a–3:e vecka på willys.se (när auto-genererad varukorg ska beställas). Bekvämt inom 3-månadersfönstret för passiv refresh → extension viabel.
+  3. **Vägval mellan extension och headless-login:** Extension vinner — headless-login kräver BankID/SMS-OTP-bekräftelse vilket Willys+ troligen kräver, och Vercel-cron med headless browser är tungt + risk för anti-bot-detektion. Min rekommendation = A (Chrome-extension).
+  4. **Multi-user & App Store-fråga:** Användaren frågade om vägen skalar. Ärligt svar: extension dör på mobil (Chrome Android = inga extensions, Safari iOS = bara via native app-värd). Skalbar lösning för Capacitor-app i Fas 5A = in-app WebView-capture. Backend designas klient-agnostiskt från dag ett (`{userId, cookie, csrf, storeId}`-payload) så samma endpoint funkar för båda klienter.
+  5. **Rekommendationer i designen:** (a) lagring = secret gist på GitHub (återanvänder GITHUB_PAT-mönster, undviker Vercel Blob-SDK), (b) ingen preflight-validering (YAGNI), (c) refresh-trösklar 7d/60d/80d (skip/aggressivt/varning), (d) shared secret i popup-inställningar (lätt att rotera), (e) migration utan downtime via env-var-fallback under övergång.
+- **Spec klar:** `docs/superpowers/specs/2026-04-25-cookie-refresh-automation-design.md` (274 rader). Self-review hittade två fixes som applicerades inline: (1) "privat gist" → "secret gist" (GitHub-term, plus säkerhetsmodell-anteckning), (2) `storeId`-fält tillagt i popup-inställningar för konsekvens med edge-case-beskrivningen.
+- **Status:** Spec committad (commit `b556464`). Implementation-plan (writing-plans-skill) **inte** invocerad — användaren stoppade för dagen och flaggade UI-jobb för nästa session.
+- **Nästa session (41):** Mobil bottom-tab-navigering. Användaren vill flytta flik-orienteringen från toppen till botten där tummen når på mobil. Mer "knapp"-känsla än dagens rubrik-stil. Berör `index.html`, `css/styles.css`, ev. `js/ui/navigation.js`. Standard-mönster i native appar — viktigt UX-steg innan Fas 5 (Capacitor-paketering).
+- **Filer:** `docs/superpowers/specs/2026-04-25-cookie-refresh-automation-design.md` (ny), `CLAUDE.md` (denna post + roadmap + öppna utredningar + idéer).
+
+### Session 39 (2026-04-25) — Willys-dispatch live + tre buggfixar
 - **Motivering:** Session 38 lämnade 4D+4E "klar i kod, live-test kvar". Sessionen: sätta Vercel env vars (`WILLYS_COOKIE`, `WILLYS_CSRF`, `WILLYS_STORE_ID=2160`), klicka knappen, verifiera mot willys.se/cart. Tre oavsiktliga gap upptäcktes under sanity-check och åtgärdades direkt.
 - **Bugg 1 — Manuella tillägg gick ej att lägga till på tom lista:** `loadShoppingTab` returnerade tidigt om `!hasRecipe && !hasManual` och gömde hela `shopContent` (där manual-add-inputen låg). Fix: speglade manual-add-widgeten i `shopNoData` med egna IDs (`*Empty`) och parametriserade `addManualItem(inputId, btnId)` med defaults. Filer: `index.html`, `js/shopping/shopping-list.js`, `css/styles.css` (ny `.manual-add-empty`).
 - **Bugg 2 — Dispatch ignorerade manuella tillägg:** Både `extractCanonsFromShoppingList` (backend) och `openDispatchConfirm` (frontend) tittade bara på `recipeItems`. Manuell `Kefir` triggade "Inköpslistan är tom — inget att skicka". Fix: båda läser nu också `manualItems` och kanoniserar dem på samma sätt som recept-ingredienser. Nytt regressionstest C2 i `tests/dispatch-to-willys.test.js` (53 → 56 assertions).
