@@ -2217,6 +2217,12 @@
   }
   .manual-add-btn:hover { background: #4a3018; }
   .manual-add-btn:disabled { opacity: 0.6; }
+  .manual-add-empty {
+    max-width: 380px;
+    margin: 1.5rem auto 0;
+    border-top: none;
+    text-align: left;
+  }
   .remove-manual-btn {
     margin-left: auto;
     background: none;

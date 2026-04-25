@@ -197,11 +197,11 @@ export async function loadShoppingTab() {
   }
 }
 
-export async function addManualItem() {
-  const input = document.getElementById('manualItemInput');
+export async function addManualItem(inputId = 'manualItemInput', btnId = 'manualAddBtn') {
+  const input = document.getElementById(inputId);
   const item  = input.value.trim();
   if (!item) return;
-  const btn = document.getElementById('manualAddBtn');
+  const btn = document.getElementById(btnId);
   btn.disabled = true;
   try {
     const res = await fetch('/api/shopping', {

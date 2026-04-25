@@ -219,6 +219,16 @@
   <div id="shopNoData" class="no-data" style="display:none">
     <div class="no-data-icon">🛒</div>
     <p>Ingen inköpslista ännu — generera en matsedel och flytta ingredienserna hit.</p>
+    <div class="manual-add-section manual-add-empty">
+      <div class="manual-add-title">Eller lägg till varor manuellt</div>
+      <div class="manual-add-row">
+        <input type="text" id="manualItemInputEmpty" class="manual-add-input"
+               placeholder="T.ex. Toalettpapper"
+               onkeydown="if(event.key==='Enter')addManualItem('manualItemInputEmpty','manualAddBtnEmpty')">
+        <button class="manual-add-btn" id="manualAddBtnEmpty"
+                onclick="addManualItem('manualItemInputEmpty','manualAddBtnEmpty')">Lägg till</button>
+      </div>
+    </div>
   </div>
   <div id="shopContent" style="display:none">
     <div class="week-section">
