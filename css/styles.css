@@ -85,7 +85,17 @@
   }
 
   @media (max-width: 599px) {
-    .header-bar { display: none; }
+    .header-bar {
+      flex-direction: row;
+      padding: 0.4rem 1rem;
+      align-items: center;
+      justify-content: center;
+    }
+    header h1 {
+      font-size: 1.05rem;
+      padding-bottom: 0;
+    }
+    .header-nav { display: none; }
   }
 
   .header-tab {
@@ -112,12 +122,8 @@
     border-bottom-color: var(--gold);
   }
 
-  /* ── SEARCH AREA (sticky inom recept-vyn) ── */
+  /* ── SEARCH AREA (collapsible) ── */
   .header-search-area {
-    position: sticky;
-    top: 0;
-    z-index: 50;
-    background: var(--warm-brown);
     padding: 0.6rem 1.25rem 0.85rem;
     overflow: hidden;
     max-height: 500px;
