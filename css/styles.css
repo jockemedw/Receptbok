@@ -2648,3 +2648,61 @@
   .dispatch-actions { flex-direction: column; }
   .dispatch-modal-box { max-width: calc(100vw - 2rem); }
 }
+
+/* ─── BOTTOM NAV (mobil-only) ────────────────────────────────────── */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--warm-white);
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -2px 16px rgba(0,0,0,0.06);
+  padding: 6px 4px env(safe-area-inset-bottom, 0px);
+  z-index: 100;
+}
+
+@media (max-width: 599px) {
+  .bottom-nav { display: flex; }
+}
+
+.bottom-nav-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 6px 4px;
+  background: none;
+  border: none;
+  border-radius: 14px;
+  color: var(--text-muted);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 52px;
+}
+
+.bottom-nav-icon {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+}
+
+.bottom-nav-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.bottom-nav-tab.active {
+  color: var(--terracotta);
+  background: var(--light-terra);
+}
+
+.bottom-nav-tab:active { transform: scale(0.96); }
