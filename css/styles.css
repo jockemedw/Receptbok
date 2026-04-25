@@ -84,6 +84,20 @@
     .header-nav { gap: 0.25rem; }
   }
 
+  @media (max-width: 599px) {
+    .header-bar {
+      flex-direction: row;
+      padding: 0.4rem 1rem;
+      align-items: center;
+      justify-content: center;
+    }
+    header h1 {
+      font-size: 1.05rem;
+      padding-bottom: 0;
+    }
+    .header-nav { display: none; }
+  }
+
   .header-tab {
     background: none;
     border: none;
