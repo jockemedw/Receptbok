@@ -71,7 +71,7 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 - [x] 4C — UX-design + felhantering (klar i spec)
 - [x] 4D — Implementation **live-verifierad** (Session 39, 2026-04-25). Endpoint `/api/dispatch-to-willys` (GET=featureAvailable, POST=runDispatch). Tre nya shared-moduler: `willys-search.js`, `willys-cart-client.js`, `dispatch-matcher.js`. Full plan: `docs/superpowers/plans/2026-04-23-willys-dispatch.md`. 56 assertions i `tests/dispatch-to-willys.test.js` bevakade av PostToolUse-hook.
 - [x] 4E — Söknings-fallback **live-verifierad** (Session 39). Endpoint: `GET https://www.willys.se/search?q=<canon>`, publik. Canon-guard via befintlig `extractOfferCanon` + `CANON_REJECT_PATTERNS` löser vitlök→"Lök Vit"- och grädde→spraygrädde-buggar. Första live-dispatch (Kefir → Arla Cultura Kefir Naturell) lyckades.
-- [ ] 4F — Automatisera cookie-refresh (senare). Väg A: Chrome-extension som skickar cookies+CSRF till Vercel via webhook vid varje willys.se-besök. Bygg bara om manuell uppdatering var 3:e mån blir friktion.
+- [~] 4F — **Automatisera cookie-refresh — prioriterad utredning från Session 40.** Manuell rutin fungerar (verifierad Session 39) men `axfoodRememberMe` löper ut ca 2026-07-15. Väg A: Chrome-extension som skickar cookies+CSRF till Vercel via webhook vid varje willys.se-besök. Andra vägar att utvärdera: bookmarklet, headless-login (om Willys tillåter lösenord), manuell men förenklad pipeline (kopiera ett värde i stället för cURL-extraktion).
 
 **Fas 5 — App Store & monetisering** (marknadsanalys klar → `docs/marknadsanalys-2026-04.md`)
 - [x] Marknadsanalys
@@ -83,6 +83,13 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 Inga just nu.
 
 ### Öppna utredningar
+**Cookie-refresh-automatisering (Fas 4F) — primär utredning för Session 40.** Manuell dispatch fungerar live (Session 39) men `axfoodRememberMe` har ca 3 mån livslängd (utgång 2026-07-15) och `WILLYS_CSRF` följer samma session. När de dör måste användaren öppna willys.se → DevTools → kopiera cURL → extrahera värden → uppdatera Vercel env vars → redeploya. Det är friktion 4× per år. Sessionen ska kartlägga alternativ:
+- **Väg A — Chrome/Edge-extension:** Lyssnar på `willys.se`-requests, plockar ut sessionscookies + CSRF, POSTar till en ny Vercel-endpoint `/api/refresh-willys-secrets` som uppdaterar env vars via Vercel API. Pro: helt automatiskt vid varje besök på willys.se. Con: kräver manifest v3-extension + Vercel API-token.
+- **Väg B — Bookmarklet:** Användaren klickar ett bokmärke på willys.se. JS plockar `document.cookie` + token (eller utlöser samma flow som extensionen). Pro: enklare distribution. Con: kräver manuellt klick, blockas möjligen av httpOnly-cookies.
+- **Väg C — Headless-login med email/lösenord:** Vercel-cron loggar in via Willys-formulär (om sådant finns) en gång i veckan. Pro: helt server-side. Con: Willys kanske bara tillåter BankID/SMS, vilket dödar vägen.
+- **Väg D — Förenklad manuell rutin:** Bygg en CLI eller webbsida som tar emot raw-cURL och extraherar+pushar värdena. Pro: minimal kod. Con: fortfarande manuellt var 3:e månad.
+Mål: utvärdera vilken väg som är lättast att bygga utan att dra i sig stort underhåll. Kartlägga `httpOnly`-status på `axfoodRememberMe` (avgör om JS i extension/bookmarklet kan läsa den). Slutprodukt: research-doc + rekommendation.
+
 **Lexikon- och matchningsaudit — ✅ KLAR** (Session 35, 2026-04-19). Rapport: `docs/match-audit-2026-04-19.md`. Spraygrädde-buggklassen eliminerad via `CANON_REJECT_PATTERNS` + Priority 2-stemming implementerad. 125 → 149 matches, 51 → 53 recept, 0 wrong-function/wrong-product-buggar kvar. 41 regressiontester bevakade av PostToolUse-hook.
 
 **Willys+ medlemserbjudanden — 3-fas utforskning (nu primär öppen utredning):**
