@@ -127,5 +127,10 @@ function extractCanonsFromShoppingList(shoppingList) {
       if (canon) seen.add(canon);
     }
   }
+  for (const raw of shoppingList.manualItems || []) {
+    const { name } = parseIngredient(raw);
+    const canon = normalizeName(name);
+    if (canon) seen.add(canon);
+  }
   return [...seen];
 }

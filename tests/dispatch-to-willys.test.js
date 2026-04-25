@@ -348,6 +348,29 @@ function makeRecordingFetch(responses) {
   assertFalse(posted, "inget POST vid tom lista");
 }
 
+// C2. Manuella varor matchas och skickas (ingen recipeItems)
+{
+  const shoppingList = { recipeItems: {}, manualItems: ["Kefir", "mjölk (1 l)"] };
+  const offers = [];
+  const searchClient = {
+    findProductByCanon: async (canon) => {
+      if (canon === "kefir") return { code: "s_kefir_ST", name: "Kefir Naturell", brandLine: "Skånemejerier" };
+      if (canon === "mjölk") return { code: "s_mjolk_ST", name: "Mellanmjölk 1,5%", brandLine: "Garant" };
+      return null;
+    },
+  };
+  let captured = null;
+  const cartClient = {
+    preflight: async () => ({ ok: true, status: 200 }),
+    addProducts: async (codes) => { captured = codes; return { ok: true, status: 200, response: {} }; },
+    verifyCart: async () => ({ ok: true, entries: [] }),
+  };
+  const result = await runDispatch({ shoppingList, offers, searchClient, cartClient });
+  assertEq(result.ok, true, "manualItems → dispatch ok");
+  assertTrue(captured && captured.includes("s_kefir_ST"), "kefir från manualItems med");
+  assertTrue(captured && captured.includes("s_mjolk_ST"), "mjölk från manualItems med");
+}
+
 // D. addProducts fail (post_failed-path — code-reviewer request)
 {
   const shoppingList = { recipeItems: { Mejeri: ["mjölk (1 l)"] } };

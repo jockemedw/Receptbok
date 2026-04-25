@@ -19,7 +19,9 @@ export async function initDispatchUI() {
 
 export function openDispatchConfirm() {
   const items = window._shopRecipeItems || {};
-  const totalCount = Object.values(items).reduce((sum, arr) => sum + (arr?.length || 0), 0);
+  const recipeCount = Object.values(items).reduce((sum, arr) => sum + (arr?.length || 0), 0);
+  const manualCount = (window._shopManualItems || []).length;
+  const totalCount = recipeCount + manualCount;
   if (totalCount === 0) {
     showResult(`
       <p>Inköpslistan är tom — inget att skicka.</p>
