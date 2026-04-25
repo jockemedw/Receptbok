@@ -18,7 +18,7 @@
 
   @media (max-width: 599px) {
     :root {
-      --bottom-nav-h: calc(64px + env(safe-area-inset-bottom, 0px));
+      --bottom-nav-h: calc(84px + env(safe-area-inset-bottom, 0px));
     }
   }
 
@@ -2686,7 +2686,7 @@
   cursor: pointer;
   transition: background 0.18s ease, color 0.18s ease;
   -webkit-tap-highlight-color: transparent;
-  min-height: 52px;
+  min-height: 68px;
 }
 
 .bottom-nav-icon {
