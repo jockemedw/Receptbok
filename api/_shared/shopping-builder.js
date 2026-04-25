@@ -153,6 +153,8 @@ export const NORMALIZATION_TABLE = {
   "gnocchi": "gnocchi", "färsk gnocchi": "gnocchi", "fylld gnocchi": "gnocchi",
   // Majs
   "majs": "majs", "majskorn": "majs", "frysta majskorn": "majs", "majs konserv": "majs",
+  // Mejeri-self-canons (produkter utan vanliga aliaser)
+  "kefir": "kefir", "kefir naturell": "kefir", "naturell kefir": "kefir",
   // === Session 34 lexikon-audit — nya self-canons för grönsaker ===
   "aubergine": "aubergine", "auberginer": "aubergine",
   "gurka": "gurka", "gurkor": "gurka", "inlagd gurka": "gurka",
@@ -175,7 +177,7 @@ const CATEGORY_KEYWORDS = {
     "smör", "margarin",
     "ost", "parmesan", "pecorino", "mozzarella", "fetaost", "halloumi",
     "cheddar", "chèvre", "gruyère", "ricotta", "mascarpone", "kvarg", "keso",
-    "crème fraiche", "yoghurt", "turkisk yoghurt", "filmjölk",
+    "crème fraiche", "yoghurt", "turkisk yoghurt", "filmjölk", "kefir",
     "ägg", "äggula", "äggvita",
   ],
   Grönsaker: [

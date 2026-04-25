@@ -11,7 +11,7 @@
 // eller willys-matcher.js och blockerar commit om en test failar.
 
 import { parseIngredient, normalizeName, CANON_SET, CANON_REJECT_PATTERNS } from "../api/_shared/shopping-builder.js";
-import { matchRecipe } from "../api/_shared/willys-matcher.js";
+import { matchRecipe, extractOfferCanon } from "../api/_shared/willys-matcher.js";
 
 let passed = 0;
 let failed = 0;
@@ -63,8 +63,11 @@ assertEq(normalizeName("gurka"), "gurka", "gurka är canon");
 assertEq(normalizeName("zucchini"), "zucchini", "zucchini är canon");
 assertEq(normalizeName("paprika"), "paprika", "paprika är canon");
 assertEq(normalizeName("chili"), "chili", "chili är canon");
+assertEq(normalizeName("kefir"), "kefir", "kefir är canon");
+assertEq(extractOfferCanon({ name: "Kefir Naturell Cultura Laktosfri 2,5%", brandLine: "ARLA" }), "kefir", "produktnamn med kefir → kefir-canon");
 assertTrue(CANON_SET.has("aubergine"), "CANON_SET innehåller aubergine");
 assertTrue(CANON_SET.has("gurka"), "CANON_SET innehåller gurka");
+assertTrue(CANON_SET.has("kefir"), "CANON_SET innehåller kefir");
 
 // ─── parseIngredient med nya units + à-suffix ────────────────────
 {
