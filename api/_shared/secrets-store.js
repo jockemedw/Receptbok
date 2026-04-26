@@ -5,6 +5,12 @@
 //
 // Cache: 5 min in-memory (TTL-baserad). Minskar GitHub-API-anrop när dispatch
 // körs flera gånger inom kort tid.
+//
+// Concurrency: GitHub Gists API har ingen SHA-baserad concurrency control
+// (till skillnad från Contents API i _shared/github.js). Skrivningar är
+// last-write-wins. För single-user single-extension-flödet är race-risken
+// försumbar; writeUser läser ändå fresh state innan PATCH för att inte
+// stomp:a ev. parallella users.
 
 const GIST_API = "https://api.github.com/gists";
 const SECRETS_FILE = "willys-secrets.json";
