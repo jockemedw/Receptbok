@@ -54,10 +54,18 @@ $("settingsForm").addEventListener("submit", async (e) => {
 $("refreshBtn").addEventListener("click", async () => {
   $("refreshBtn").disabled = true;
   $("refreshBtn").textContent = "Uppdaterar…";
-  await chrome.runtime.sendMessage({ type: "manual-refresh" });
-  await load();
-  $("refreshBtn").disabled = false;
-  $("refreshBtn").textContent = "Uppdatera nu";
+  try {
+    await chrome.runtime.sendMessage({ type: "manual-refresh" });
+    await load();
+  } catch (err) {
+    await chrome.storage.local.set({ lastError: `Refresh failade: ${err.message}` });
+    await load().catch(() => { /* render-failure hanteras nedan */ });
+  } finally {
+    $("refreshBtn").disabled = false;
+    $("refreshBtn").textContent = "Uppdatera nu";
+  }
 });
 
-load();
+load().catch((err) => {
+  $("statusLabel").textContent = `Kunde inte läsa inställningar: ${err.message}`;
+});
