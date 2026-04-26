@@ -71,6 +71,11 @@ async function forceRefresh() {
 }
 
 async function doRefresh() {
+  // Race-skydd är "best-effort": chrome.storage.local saknar atomic CAS, så
+  // två triggers (t.ex. webRequest + alarm) i samma tick kan båda läsa null
+  // och båda POSTa. Sannolikheten är låg vid 6h-cadence + endpointen är
+  // idempotent (last-write-wins på gist). TTL:en (30s) säkerställer också
+  // att flagan självläker om service worker dör mid-fetch.
   const inFlight = await chrome.storage.local.get(["refreshInFlight"]);
   if (inFlight.refreshInFlight && Date.now() - inFlight.refreshInFlight < IN_FLIGHT_TTL_MS) {
     return { ok: true, skipped: "in_flight" };
