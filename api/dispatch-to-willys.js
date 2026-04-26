@@ -27,7 +27,9 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(200).end();
 
-  const pat = process.env.GITHUB_PAT;
+  // GITHUB_GIST_PAT = classic token med gist-scope (krävs för gist-läsning;
+  // fine-grained tokens stödjer inte gists). Fallback till GITHUB_PAT för bakåtkomp.
+  const pat = process.env.GITHUB_GIST_PAT || process.env.GITHUB_PAT;
   const gistId = process.env.WILLYS_SECRETS_GIST_ID;
   const store = (pat && gistId) ? createSecretsStore({ pat, gistId }) : null;
   const secrets = await resolveWillysSecrets({ store, env: process.env, userId: "joakim" });

@@ -18,7 +18,10 @@ export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Metod ej tillåten" });
 
   const expectedSecret = process.env.WILLYS_REFRESH_SECRET;
-  const pat = process.env.GITHUB_PAT;
+  // GITHUB_GIST_PAT = classic token med gist-scope. Fallback till GITHUB_PAT
+  // för bakåtkomp; fine-grained tokens stödjer inte gists, så GITHUB_PAT
+  // är otillräcklig om den är fine-grained.
+  const pat = process.env.GITHUB_GIST_PAT || process.env.GITHUB_PAT;
   const gistId = process.env.WILLYS_SECRETS_GIST_ID;
   if (!expectedSecret || !pat || !gistId) {
     return res.status(500).json({ error: "Server saknar konfiguration (env vars)." });
