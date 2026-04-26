@@ -22,7 +22,7 @@ import { matchCanons } from "./_shared/dispatch-matcher.js";
 import { parseIngredient, normalizeName } from "./_shared/shopping-builder.js";
 import { createSecretsStore } from "./_shared/secrets-store.js";
 
-const CART_URL = "https://www.willys.se/cart";
+const CART_URL = "https://www.willys.se/";
 const SHOPPING_LIST_URL = "https://raw.githubusercontent.com/jockemedw/Receptbok/main/shopping-list.json";
 
 export default async function handler(req, res) {

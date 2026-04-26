@@ -2,7 +2,9 @@
 // Läser state: window._shopRecipeItems (för räkning i confirm-dialog)
 // Feature-toggled via GET /api/dispatch-to-willys vid tab-load.
 
-const CART_URL = "https://www.willys.se/cart";
+// Startsidan istället för /cart (som 404:ar). willys.se kommer ihåg
+// användarens valda butik (Ekholmen 2160) via session-cookie.
+const CART_URL = "https://www.willys.se/";
 
 export async function initDispatchUI() {
   const btn = document.getElementById("dispatchToWillysBtn");
@@ -77,7 +79,7 @@ function renderResult(data) {
       ${sourceNote}
       ${missingHtml}
       <div class="dispatch-actions">
-        <a class="btn-primary" href="${CART_URL}" target="_blank" rel="noopener">Öppna din korg på willys.se →</a>
+        <a class="btn-primary" href="${CART_URL}" target="_blank" rel="noopener">Öppna willys.se →</a>
         <button class="btn-secondary" onclick="closeDispatchModal()">Stäng</button>
       </div>
     `);
