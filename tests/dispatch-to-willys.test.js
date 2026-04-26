@@ -7,7 +7,7 @@ import { fetchOffersFromWillys } from "../api/willys-offers.js";
 import { createSearchClient } from "../api/_shared/willys-search.js";
 import { matchCanons } from "../api/_shared/dispatch-matcher.js";
 import { createCartClient } from "../api/_shared/willys-cart-client.js";
-import { runDispatch } from "../api/dispatch-to-willys.js";
+import { runDispatch, resolveWillysSecrets } from "../api/dispatch-to-willys.js";
 
 let passed = 0;
 let failed = 0;
@@ -404,6 +404,75 @@ function makeRecordingFetch(responses) {
   };
   const result = await runDispatch({ shoppingList, offers, searchClient, cartClient });
   assertEq(result.error, "auth_expired", "POST 401 → auth_expired");
+}
+
+// ─── Task R: resolveWillysSecrets — gist + env-var fallback ───────
+
+// R1. Gist har user → använder gist-värden
+{
+  const store = {
+    readUser: async (id) => id === "joakim"
+      ? { cookie: "g_cookie", csrf: "g_csrf", storeId: "g_store" }
+      : null,
+  };
+  const env = { WILLYS_COOKIE: "e_cookie", WILLYS_CSRF: "e_csrf", WILLYS_STORE_ID: "e_store" };
+  const out = await resolveWillysSecrets({ store, env, userId: "joakim" });
+  assertEq(out?.cookies, "g_cookie", "gist-cookie föredras");
+  assertEq(out?.csrf, "g_csrf", "gist-csrf föredras");
+  assertEq(out?.storeId, "g_store", "gist-storeId föredras");
+  assertEq(out?.source, "gist", "source=gist");
+}
+
+// R2. Gist tom + env vars satta → faller tillbaka till env
+{
+  const store = { readUser: async () => null };
+  const env = { WILLYS_COOKIE: "e_cookie", WILLYS_CSRF: "e_csrf", WILLYS_STORE_ID: "e_store" };
+  const out = await resolveWillysSecrets({ store, env, userId: "joakim" });
+  assertEq(out?.cookies, "e_cookie", "fallback till env-cookie");
+  assertEq(out?.csrf, "e_csrf", "fallback till env-csrf");
+  assertEq(out?.storeId, "e_store", "fallback till env-storeId");
+  assertEq(out?.source, "env", "source=env");
+}
+
+// R3. Gist kastar → fallback till env (loggar internt)
+{
+  const store = { readUser: async () => { throw new Error("gist 502"); } };
+  const env = { WILLYS_COOKIE: "e_cookie", WILLYS_CSRF: "e_csrf", WILLYS_STORE_ID: "e_store" };
+  const out = await resolveWillysSecrets({ store, env, userId: "joakim" });
+  assertEq(out?.source, "env", "gist-fel → env-fallback");
+}
+
+// R4. Gist tom + env vars saknas → null (featureAvailable=false)
+{
+  const store = { readUser: async () => null };
+  const env = {};
+  const out = await resolveWillysSecrets({ store, env, userId: "joakim" });
+  assertEq(out, null, "ingen källa → null");
+}
+
+// R5. store=null → använder bara env
+{
+  const env = { WILLYS_COOKIE: "e", WILLYS_CSRF: "t", WILLYS_STORE_ID: "2160" };
+  const out = await resolveWillysSecrets({ store: null, env, userId: "joakim" });
+  assertEq(out?.source, "env", "store=null → env-källa");
+}
+
+// R6. Gist har bara cookie utan csrf → räknas som tom, fallback till env
+{
+  const store = { readUser: async () => ({ cookie: "g", csrf: "", storeId: "2160" }) };
+  const env = { WILLYS_COOKIE: "e", WILLYS_CSRF: "t", WILLYS_STORE_ID: "2160" };
+  const out = await resolveWillysSecrets({ store, env, userId: "joakim" });
+  assertEq(out?.source, "env", "gist utan csrf → env-fallback");
+}
+
+// R7. Gist har user men saknar storeId → fallback till env eller default 2160
+{
+  const store = { readUser: async () => ({ cookie: "g", csrf: "t", storeId: "" }) };
+  const env = { WILLYS_STORE_ID: "9999" };
+  const out = await resolveWillysSecrets({ store, env, userId: "joakim" });
+  // Cookie+CSRF räcker för att klassas som gist-källa, storeId fyller från env
+  assertEq(out?.source, "gist", "gist-källa OK när cookie+csrf finns");
+  assertEq(out?.storeId, "9999", "storeId från env när gist saknar");
 }
 
 console.log(`\n${passed} passerade, ${failed} failade`);

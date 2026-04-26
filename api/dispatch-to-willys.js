@@ -15,6 +15,7 @@ import { createSearchClient } from "./_shared/willys-search.js";
 import { createCartClient } from "./_shared/willys-cart-client.js";
 import { matchCanons } from "./_shared/dispatch-matcher.js";
 import { parseIngredient, normalizeName } from "./_shared/shopping-builder.js";
+import { createSecretsStore } from "./_shared/secrets-store.js";
 
 const CART_URL = "https://www.willys.se/cart";
 const SHOPPING_LIST_URL = "https://raw.githubusercontent.com/jockemedw/Receptbok/main/shopping-list.json";
@@ -25,10 +26,11 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(200).end();
 
-  const cookies = process.env.WILLYS_COOKIE;
-  const csrf = process.env.WILLYS_CSRF;
-  const storeId = process.env.WILLYS_STORE_ID || "2160";
-  const featureAvailable = !!(cookies && csrf);
+  const pat = process.env.GITHUB_PAT;
+  const gistId = process.env.WILLYS_SECRETS_GIST_ID;
+  const store = (pat && gistId) ? createSecretsStore({ pat, gistId }) : null;
+  const secrets = await resolveWillysSecrets({ store, env: process.env, userId: "joakim" });
+  const featureAvailable = !!secrets;
 
   if (req.method === "GET") {
     return res.status(200).json({ featureAvailable });
@@ -42,9 +44,9 @@ export default async function handler(req, res) {
 
   try {
     const shoppingList = await (await fetch(SHOPPING_LIST_URL + "?t=" + Date.now())).json();
-    const offers = await fetchOffersFromWillys(storeId);
+    const offers = await fetchOffersFromWillys(secrets.storeId);
     const searchClient = createSearchClient({});
-    const cartClient = createCartClient({ cookies, csrf });
+    const cartClient = createCartClient({ cookies: secrets.cookies, csrf: secrets.csrf });
     const result = await runDispatch({ shoppingList, offers, searchClient, cartClient });
 
     if (!result.ok && result.error === "auth_expired") {
@@ -83,6 +85,39 @@ export default async function handler(req, res) {
       message: "Något gick fel vid dispatch — prova igen om en stund.",
     });
   }
+}
+
+// Avgör vilken cookie/csrf-källa som ska användas för dispatch.
+// Föredrar gist (Chrome-extensionen håller den fräsch); faller tillbaka till
+// env vars (manuell rotation, samma värden som körde live före Fas 4F).
+//
+// Returnerar { cookies, csrf, storeId, source } eller null om ingen källa har
+// både cookie och csrf.
+export async function resolveWillysSecrets({ store, env, userId = "joakim" }) {
+  if (store) {
+    try {
+      const user = await store.readUser(userId);
+      if (user?.cookie && user?.csrf) {
+        return {
+          cookies: user.cookie,
+          csrf: user.csrf,
+          storeId: user.storeId || env.WILLYS_STORE_ID || "2160",
+          source: "gist",
+        };
+      }
+    } catch (err) {
+      console.error("resolveWillysSecrets gist-läsning failade:", err?.message || err);
+    }
+  }
+  if (env.WILLYS_COOKIE && env.WILLYS_CSRF) {
+    return {
+      cookies: env.WILLYS_COOKIE,
+      csrf: env.WILLYS_CSRF,
+      storeId: env.WILLYS_STORE_ID || "2160",
+      source: "env",
+    };
+  }
+  return null;
 }
 
 // Exporterad för testbarhet. Ren funktion — inga globala sidoeffekter.
