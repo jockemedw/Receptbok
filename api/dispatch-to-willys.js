@@ -3,10 +3,11 @@
 // GET  /api/dispatch-to-willys                → { featureAvailable: bool }
 // POST /api/dispatch-to-willys { date? }      → { ok, addedCount, missing, cartUrl } | { ok:false, error, message }
 //
-// Env vars (alla krävs för featureAvailable=true):
-//   WILLYS_COOKIE    — raw cookie-sträng från inloggad browser-session
-//   WILLYS_CSRF      — x-csrf-token från samma session
-//   WILLYS_STORE_ID  — default 2160 (Ekholmen)
+// Cred-källor (minst en krävs för featureAvailable=true):
+//   1. Secret gist (föredragen) — kräver GITHUB_PAT + WILLYS_SECRETS_GIST_ID,
+//      populeras av Chrome-extension via /api/cookies/willys
+//   2. Env-fallback (legacy) — WILLYS_COOKIE + WILLYS_CSRF (manuell rotation)
+//   WILLYS_STORE_ID — default 2160 (Ekholmen), används av båda källorna
 //
 // Säkerhet: returnerar aldrig cookies eller CSRF-token i loggning eller response.
 
@@ -43,6 +44,7 @@ export default async function handler(req, res) {
   }
 
   try {
+    console.log(`dispatch source=${secrets.source}`);
     const shoppingList = await (await fetch(SHOPPING_LIST_URL + "?t=" + Date.now())).json();
     const offers = await fetchOffersFromWillys(secrets.storeId);
     const searchClient = createSearchClient({});
