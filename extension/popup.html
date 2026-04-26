@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <main>
+    <h1>Willys-cookies</h1>
+
+    <section class="status" id="status">
+      <span class="dot" id="statusDot"></span>
+      <span class="label" id="statusLabel">Laddar…</span>
+    </section>
+
+    <p class="last" id="lastRefresh"></p>
+
+    <button id="refreshBtn" type="button">Uppdatera nu</button>
+
+    <details>
+      <summary>Inställningar</summary>
+      <form id="settingsForm">
+        <label>
+          Shared secret
+          <input type="password" id="secretInput" autocomplete="off" required>
+        </label>
+        <label>
+          Butiks-ID
+          <input type="text" id="storeIdInput" value="2160" required>
+        </label>
+        <button type="submit">Spara</button>
+        <p class="saved" id="savedMsg"></p>
+      </form>
+    </details>
+  </main>
+  <script src="popup.js"></script>
+</body>
+</html>
