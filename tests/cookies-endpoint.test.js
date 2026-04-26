@@ -3,6 +3,7 @@
 // Hook: se .claude/settings.json — blockerar commit vid regression.
 
 import { createSecretsStore } from "../api/_shared/secrets-store.js";
+import { runRefresh } from "../api/cookies/willys.js";
 
 let passed = 0;
 let failed = 0;
@@ -138,6 +139,124 @@ function makeGistFetch(initial) {
   assertTrue(patch, "PATCH skickades");
   const body = JSON.parse(patch.body);
   assertTrue(body.files?.["willys-secrets.json"]?.content, "PATCH-body har files['willys-secrets.json'].content");
+}
+
+// ─── cookies-endpoint: runRefresh ─────────────────────────────────
+
+function fakeStore(initial = {}) {
+  const users = { ...initial };
+  return {
+    writeUser: async (userId, payload) => {
+      users[userId] = { ...payload, updatedAt: new Date().toISOString() };
+      return users[userId];
+    },
+    _users: users,
+  };
+}
+
+// I. Saknad secret-header → 401
+{
+  const store = fakeStore();
+  const result = await runRefresh({
+    secretHeader: undefined,
+    expectedSecret: "abc",
+    payload: { userId: "joakim", cookie: "c", csrf: "t", storeId: "2160" },
+    store,
+  });
+  assertEq(result.status, 401, "saknad secret → 401");
+  assertEq(result.body.error, "unauthorized", "felkod unauthorized");
+}
+
+// J. Fel secret → 401
+{
+  const store = fakeStore();
+  const result = await runRefresh({
+    secretHeader: "wrong",
+    expectedSecret: "abc",
+    payload: { userId: "joakim", cookie: "c", csrf: "t", storeId: "2160" },
+    store,
+  });
+  assertEq(result.status, 401, "fel secret → 401");
+}
+
+// K. Tom cookie → 400
+{
+  const store = fakeStore();
+  const result = await runRefresh({
+    secretHeader: "abc",
+    expectedSecret: "abc",
+    payload: { userId: "joakim", cookie: "", csrf: "t", storeId: "2160" },
+    store,
+  });
+  assertEq(result.status, 400, "tom cookie → 400");
+}
+
+// L. Tom csrf → 400
+{
+  const store = fakeStore();
+  const result = await runRefresh({
+    secretHeader: "abc",
+    expectedSecret: "abc",
+    payload: { userId: "joakim", cookie: "c", csrf: "", storeId: "2160" },
+    store,
+  });
+  assertEq(result.status, 400, "tom csrf → 400");
+}
+
+// M. Saknat userId → 400
+{
+  const store = fakeStore();
+  const result = await runRefresh({
+    secretHeader: "abc",
+    expectedSecret: "abc",
+    payload: { cookie: "c", csrf: "t", storeId: "2160" },
+    store,
+  });
+  assertEq(result.status, 400, "saknat userId → 400");
+}
+
+// N. Tom storeId → 400
+{
+  const store = fakeStore();
+  const result = await runRefresh({
+    secretHeader: "abc",
+    expectedSecret: "abc",
+    payload: { userId: "joakim", cookie: "c", csrf: "t", storeId: "" },
+    store,
+  });
+  assertEq(result.status, 400, "tom storeId → 400");
+}
+
+// O. Happy path → 200 + writeUser anropad
+{
+  const store = fakeStore();
+  const result = await runRefresh({
+    secretHeader: "abc",
+    expectedSecret: "abc",
+    payload: { userId: "joakim", cookie: "c", csrf: "t", storeId: "2160" },
+    store,
+  });
+  assertEq(result.status, 200, "happy path → 200");
+  assertEq(result.body.ok, true, "ok=true");
+  assertTrue(result.body.updatedAt, "response har updatedAt");
+  assertEq(store._users.joakim?.cookie, "c", "store fick joakim.cookie");
+  assertEq(store._users.joakim?.csrf, "t", "store fick joakim.csrf");
+  assertEq(store._users.joakim?.storeId, "2160", "store fick joakim.storeId");
+}
+
+// P. Store-skrivning failar → 502
+{
+  const failingStore = {
+    writeUser: async () => { throw new Error("gist 503"); },
+  };
+  const result = await runRefresh({
+    secretHeader: "abc",
+    expectedSecret: "abc",
+    payload: { userId: "joakim", cookie: "c", csrf: "t", storeId: "2160" },
+    store: failingStore,
+  });
+  assertEq(result.status, 502, "store-fel → 502");
+  assertEq(result.body.error, "store_write_failed", "felkod store_write_failed");
 }
 
 console.log(`\n${passed} passerade, ${failed} failade`);
