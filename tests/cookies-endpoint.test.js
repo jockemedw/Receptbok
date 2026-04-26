@@ -3,7 +3,7 @@
 // Hook: se .claude/settings.json — blockerar commit vid regression.
 
 import { createSecretsStore } from "../api/_shared/secrets-store.js";
-import { runRefresh } from "../api/cookies/willys.js";
+import { runRefresh } from "../api/dispatch-to-willys.js";
 
 let passed = 0;
 let failed = 0;

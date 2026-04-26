@@ -73,7 +73,7 @@ Kör dessa **innan** du installerar extensionen — annars får du 401 från end
 - **"Inga cookies"** → logga in på willys.se igen
 - **"Endpoint svarade 401"** → secret matchar inte; jämför mot Vercel env var
 - **"Endpoint svarade 502"** → gist-skrivning failade; kontrollera GITHUB_PAT har `gist`-scope
-- **"Endpoint svarade 500"** → en env var saknas i Vercel (`WILLYS_REFRESH_SECRET`, `GITHUB_PAT`, `WILLYS_SECRETS_GIST_ID`)
+- **"Endpoint svarade 500"** → en env var saknas i Vercel (`WILLYS_REFRESH_SECRET`, `GITHUB_GIST_PAT`, `WILLYS_SECRETS_GIST_ID`)
 
 ## Out of scope
 

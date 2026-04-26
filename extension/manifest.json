@@ -6,7 +6,7 @@
   "permissions": ["cookies", "webRequest", "storage", "alarms"],
   "host_permissions": [
     "https://www.willys.se/*",
-    "https://receptbok-six.vercel.app/api/cookies/*"
+    "https://receptbok-six.vercel.app/api/dispatch-to-willys*"
   ],
   "background": {
     "service_worker": "background.js"

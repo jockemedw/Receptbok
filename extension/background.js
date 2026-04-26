@@ -12,7 +12,7 @@
 //
 // Race-skydd: refresh_in_flight-flag i chrome.storage.local med 30s TTL.
 
-const ENDPOINT = "https://receptbok-six.vercel.app/api/cookies/willys";
+const ENDPOINT = "https://receptbok-six.vercel.app/api/dispatch-to-willys?op=refresh-cookies";
 const USER_ID = "joakim";
 const REFRESH_THRESHOLD_MS = 7 * 24 * 60 * 60 * 1000; // 7 dagar
 const IN_FLIGHT_TTL_MS = 30_000;

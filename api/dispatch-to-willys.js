@@ -1,11 +1,15 @@
 // Dispatch-endpoint: fyller användarens Willys-korg med veckans inköpslista.
+// Plus sub-route för cookie-refresh från Chrome-extensionen (kombinerat för att
+// hålla oss under Vercel Hobby-planens 12-funktioner-tak).
 //
-// GET  /api/dispatch-to-willys                → { featureAvailable: bool }
-// POST /api/dispatch-to-willys { date? }      → { ok, addedCount, missing, cartUrl } | { ok:false, error, message }
+// GET  /api/dispatch-to-willys                                → { featureAvailable: bool }
+// POST /api/dispatch-to-willys { date? }                      → { ok, addedCount, missing, cartUrl } | { ok:false, error, message }
+// POST /api/dispatch-to-willys?op=refresh-cookies + body      → { ok, updatedAt } | { error }
+//   Header: X-Refresh-Secret krävs på refresh-cookies-vägen
 //
 // Cred-källor (minst en krävs för featureAvailable=true):
-//   1. Secret gist (föredragen) — kräver GITHUB_PAT + WILLYS_SECRETS_GIST_ID,
-//      populeras av Chrome-extension via /api/cookies/willys
+//   1. Secret gist (föredragen) — kräver GITHUB_GIST_PAT + WILLYS_SECRETS_GIST_ID,
+//      populeras av Chrome-extension via POST ?op=refresh-cookies
 //   2. Env-fallback (legacy) — WILLYS_COOKIE + WILLYS_CSRF (manuell rotation)
 //   WILLYS_STORE_ID — default 2160 (Ekholmen), används av båda källorna
 //
@@ -24,8 +28,13 @@ const SHOPPING_LIST_URL = "https://raw.githubusercontent.com/jockemedw/Receptbok
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Refresh-Secret");
   if (req.method === "OPTIONS") return res.status(200).end();
+
+  // Sub-route: cookie-refresh från Chrome-extensionen
+  if (req.query?.op === "refresh-cookies") {
+    return handleRefreshCookies(req, res);
+  }
 
   // GITHUB_GIST_PAT = classic token med gist-scope (krävs för gist-läsning;
   // fine-grained tokens stödjer inte gists). Fallback till GITHUB_PAT för bakåtkomp.
@@ -88,6 +97,59 @@ export default async function handler(req, res) {
       error: "internal",
       message: "Något gick fel vid dispatch — prova igen om en stund.",
     });
+  }
+}
+
+// Sub-route ?op=refresh-cookies: tar emot cookie+CSRF från Chrome-extensionen
+// och skriver till secret gist via secrets-store.
+//
+// Säkerhet: shared secret-header krävs. Cookies returneras aldrig i response/loggning.
+async function handleRefreshCookies(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Metod ej tillåten" });
+  }
+
+  const expectedSecret = process.env.WILLYS_REFRESH_SECRET;
+  const pat = process.env.GITHUB_GIST_PAT || process.env.GITHUB_PAT;
+  const gistId = process.env.WILLYS_SECRETS_GIST_ID;
+  if (!expectedSecret || !pat || !gistId) {
+    return res.status(500).json({ error: "Server saknar konfiguration (env vars)." });
+  }
+
+  const store = createSecretsStore({ pat, gistId });
+  const result = await runRefresh({
+    secretHeader: req.headers["x-refresh-secret"],
+    expectedSecret,
+    payload: req.body || {},
+    store,
+  });
+  return res.status(result.status).json(result.body);
+}
+
+// Ren funktion — exporterad för test. Sidoeffekter sker bara via store.writeUser.
+export async function runRefresh({ secretHeader, expectedSecret, payload, store }) {
+  if (!secretHeader || secretHeader !== expectedSecret) {
+    return { status: 401, body: { error: "unauthorized" } };
+  }
+  const { userId, cookie, csrf, storeId } = payload;
+  if (!userId || typeof userId !== "string") {
+    return { status: 400, body: { error: "bad_request", field: "userId" } };
+  }
+  if (!cookie || typeof cookie !== "string") {
+    return { status: 400, body: { error: "bad_request", field: "cookie" } };
+  }
+  if (!csrf || typeof csrf !== "string") {
+    return { status: 400, body: { error: "bad_request", field: "csrf" } };
+  }
+  if (!storeId || typeof storeId !== "string") {
+    return { status: 400, body: { error: "bad_request", field: "storeId" } };
+  }
+  try {
+    const written = await store.writeUser(userId, { cookie, csrf, storeId });
+    return { status: 200, body: { ok: true, updatedAt: written.updatedAt } };
+  } catch (err) {
+    console.error("refresh-cookies store error:", err?.message || err);
+    return { status: 502, body: { error: "store_write_failed" } };
   }
 }
 
