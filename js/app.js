@@ -58,3 +58,9 @@ document.getElementById('filters').addEventListener('click', e => {
 
 init();
 window.loadWeeklyPlan();
+
+// Deep-link via query param: ?tab=recept|vecka|shop
+const _tabParam = new URLSearchParams(window.location.search).get('tab');
+if (_tabParam && ['recept', 'vecka', 'shop'].includes(_tabParam)) {
+  window.switchTab(_tabParam);
+}
