@@ -35,7 +35,7 @@ export function toggleSettings() {
   const panel = document.getElementById('settingsPanel');
   const arrow = document.getElementById('settingsArrow');
   const open  = panel.classList.toggle('open');
-  arrow.textContent = open ? '▴' : '▾';
+  arrow.classList.toggle('open', open);
 }
 
 export function updateSettingsPreview() {
@@ -77,7 +77,7 @@ export function updateSettingsPreview() {
   }
 
   preview.textContent  = `${matching.length} recept matchar dina filter`;
-  preview.style.color  = matching.length < 3 ? 'var(--terracotta)' : 'var(--warm-brown)';
+  preview.style.color  = matching.length < 3 ? 'var(--rust)' : 'var(--lichen)';
 }
 
 const DAY_ABBR = ['Sön', 'Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör'];
@@ -93,17 +93,17 @@ export function updateDateHint() {
 
   if (diff < 1) {
     hint.textContent = 'Slutdatum måste vara efter startdatum';
-    hint.style.color = 'var(--terracotta)';
+    hint.style.color = 'var(--rust)';
     renderDayToggles([]);
     return;
   }
   if (diff > 15) {
     hint.textContent = 'Max 15 dagar';
-    hint.style.color = 'var(--terracotta)';
+    hint.style.color = 'var(--rust)';
     renderDayToggles([]);
     return;
   }
-  hint.style.color = 'var(--warm-brown)';
+  hint.style.color = 'var(--lichen)';
 
   // Bygg dagslista och rendera toggles
   const days = [];

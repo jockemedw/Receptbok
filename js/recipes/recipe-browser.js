@@ -142,7 +142,7 @@ export async function toggleTested(event, id) {
     pill.textContent = tested ? '✓ Provat' : 'Ej provat';
     pill.closest('.recipe-card').dataset.tested = tested;
   } catch {
-    pill.style.outline = '2px solid var(--terracotta)';
+    pill.style.outline = '2px solid var(--rust)';
     setTimeout(() => { pill.style.outline = ''; }, 1500);
   } finally {
     pill.style.opacity = '';

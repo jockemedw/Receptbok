@@ -11,7 +11,7 @@ export const CAT_ICONS = {
 };
 
 export const PROTEIN_COLOR = {
-  fisk: '#5b9bd5', kyckling: '#e8a735', vegetarisk: '#4a7d4e',
+  fisk: '#5b9bd5', kyckling: '#e8a735', vegetarisk: '#5e7a68',
   kött: '#b05040', fläsk: '#b05040',
 };
 

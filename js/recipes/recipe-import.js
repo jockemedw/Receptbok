@@ -66,7 +66,7 @@ export async function importFromUrl() {
     closeImportModal();
     openImportPreview(data.recipe);
   } catch (e) {
-    fb.style.color = 'var(--terracotta)';
+    fb.style.color = 'var(--rust)';
     fb.textContent = e.message || 'Kunde inte hämta receptet — kontrollera adressen.';
     btn.disabled   = false;
   }
@@ -99,7 +99,7 @@ export async function importFromPhoto() {
     closeImportModal();
     openImportPreview(data.recipe);
   } catch (e) {
-    fb.style.color = 'var(--terracotta)';
+    fb.style.color = 'var(--rust)';
     fb.textContent = e.message || 'Kunde inte tolka bilden — prova med klarare ljus eller närmre avstånd.';
     btn.disabled   = false;
   } finally {

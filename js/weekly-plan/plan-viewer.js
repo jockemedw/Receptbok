@@ -4,6 +4,11 @@
 
 import { fmtIso, fmtShort, PROTEIN_COLOR, getHolidayName, isoWeekNumber } from '../utils.js';
 
+const ICON_COIN = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 7.5v9 M9.5 9.7c.6-.7 1.5-1 2.5-1s2 .3 2.4 1c.5.8 0 1.7-1 2-.7.2-2.7.3-3.4.7-.9.4-1.4 1.3-.9 2.1.5.7 1.6 1 2.5 1s1.9-.3 2.5-1"/></svg>';
+const ICON_POT = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13c0-3.5 3.5-6 8-6s8 2.5 8 6"/><path d="M3 13h18"/><path d="M5.5 13v2c0 1.5 1 2.5 2.5 2.5h8c1.5 0 2.5-1 2.5-2.5v-2"/><path d="M11 4.5c0-.8.5-1.5 1-1.5s1 .7 1 1.5"/></svg>';
+const ICON_NOTE = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h11l3 3v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><path d="M8 11h8 M8 14h8 M8 17h5"/></svg>';
+const ICON_CALENDAR = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>';
+
 const TIMELINE_DAYS_BACK_MIN = 14;
 const TIMELINE_DAYS_FORWARD_MIN = 14;
 const TIMELINE_DAYS_CAP = 45;
@@ -204,7 +209,7 @@ export async function selectRecipeForDay(event, recipeId, title) {
     if (!banner.querySelector('.replace-err')) {
       const e = document.createElement('span');
       e.className  = 'replace-err';
-      e.style.cssText = 'color:var(--terracotta);font-size:0.8rem';
+      e.style.cssText = 'color:var(--rust);font-size:0.8rem';
       e.textContent   = 'Kunde inte spara — prova igen.';
       banner.insertBefore(e, banner.querySelector('.replace-banner-cancel'));
     }
@@ -269,7 +274,7 @@ export async function selectRecipeForCustomDay(event, recipeId, title) {
     if (banner && !banner.querySelector('.replace-err')) {
       const err = document.createElement('span');
       err.className = 'replace-err';
-      err.style.cssText = 'color:var(--terracotta);font-size:0.8rem';
+      err.style.cssText = 'color:var(--rust);font-size:0.8rem';
       err.textContent = 'Kunde inte spara — prova igen.';
       banner.insertBefore(err, banner.querySelector('.replace-banner-cancel'));
     }
@@ -373,7 +378,7 @@ export async function swapDays(date1, date2) {
   } catch (e) {
     applySwap(card1, orig2, card2, orig1); // återställ vid fel
     const errEl = document.createElement('p');
-    errEl.style.cssText = 'color:var(--terracotta);font-size:0.82rem;padding:0.5rem 1rem';
+    errEl.style.cssText = 'color:var(--rust);font-size:0.82rem;padding:0.5rem 1rem';
     errEl.textContent   = 'Kunde inte byta dag — prova igen.';
     panel.innerHTML = '';
     panel.appendChild(errEl);
@@ -423,7 +428,7 @@ export async function replaceRecipe(currentId, date, btnEl) {
     if (!errEl) {
       const p = document.createElement('p');
       p.className    = 'replace-error';
-      p.style.cssText = 'color:var(--terracotta);font-size:0.82rem;margin-top:0.5rem';
+      p.style.cssText = 'color:var(--rust);font-size:0.82rem;margin-top:0.5rem';
       p.textContent   = 'Kunde inte byta recept — prova igen.';
       btnEl.after(p);
     }
@@ -549,7 +554,7 @@ async function modifyDay(date, action) {
   } catch (e) {
     const panel = document.getElementById('weekRecipeDetail');
     const errEl = document.createElement('p');
-    errEl.style.cssText = 'color:var(--terracotta);font-size:0.82rem;padding:0.5rem 1rem';
+    errEl.style.cssText = 'color:var(--rust);font-size:0.82rem;padding:0.5rem 1rem';
     errEl.textContent = `Kunde inte ${action === 'skip' ? 'hoppa över' : 'blockera'} dagen — prova igen.`;
     panel.innerHTML = '';
     panel.appendChild(errEl);
@@ -609,7 +614,7 @@ export function openSavingPopover(dateIso) {
   overlay.innerHTML = `
     <div class="modal-box saving-box" role="dialog" aria-modal="true">
       <div class="modal-header">
-        <h2>💰 Sparat ca ${day.saving} kr</h2>
+        <h2>${ICON_COIN} Sparat ca ${day.saving} kr</h2>
         <button type="button" aria-label="Stäng" onclick="closeSavingPopover()">✕</button>
       </div>
       <p class="saving-sub">På <strong>${title}</strong> — jämfört med normalpris på Willys Ekholmen.</p>
@@ -828,7 +833,7 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
             data-recipeid="${d.customRecipeId}" data-readonly="1" data-custom="1"
             onclick="openWeekRecipe(${d.customRecipeId}, '${safeTitle}', this)">
             <div class="week-day-name">${d.dayShort} ${d.dayNum}${dot}${holidayDot}</div>
-            <div class="week-day-recipe">🍳 ${title}</div>
+            <div class="week-day-recipe">${ICON_POT} ${title}</div>
           </div>
         </div>`;
       }
@@ -881,9 +886,9 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
       if (d.savingMatches?.length) {
         savingBadge = `<button type="button" class="week-day-saving has-details"
            title="Tryck för att se var besparingen sker"
-           onclick="event.stopPropagation();openSavingPopover('${d.date}')">💰 ${d.saving} kr</button>`;
+           onclick="event.stopPropagation();openSavingPopover('${d.date}')">${ICON_COIN} ${d.saving} kr</button>`;
       } else {
-        savingBadge = `<div class="week-day-saving" title="Uppskattad besparing jämfört med normalpris">💰 ${d.saving} kr</div>`;
+        savingBadge = `<div class="week-day-saving" title="Uppskattad besparing jämfört med normalpris">${ICON_COIN} ${d.saving} kr</div>`;
       }
     }
     const readOnly = d.isArchive || d.isPast;
@@ -1014,7 +1019,7 @@ export function openCustomDay(dateIso, dayName) {
 
   const pickRecipeOption = !isPastDay ? `
     <button type="button" class="custom-option" onclick="enterCustomPickMode('${dateIso}', '${escDayName}')">
-      <span class="custom-option-icon" aria-hidden="true">🍳</span>
+      <span class="custom-option-icon" aria-hidden="true">${ICON_POT}</span>
       <span class="custom-option-label">Välj recept ur receptboken</span>
       <span class="custom-option-chev" aria-hidden="true">›</span>
     </button>` : '';
@@ -1022,7 +1027,7 @@ export function openCustomDay(dateIso, dayName) {
   const noteOption = `
     <div class="custom-option custom-option-note">
       <div class="custom-option-head">
-        <span class="custom-option-icon" aria-hidden="true">📝</span>
+        <span class="custom-option-icon" aria-hidden="true">${ICON_NOTE}</span>
         <span class="custom-option-label">Egen notering</span>
       </div>
       <input type="text" id="customDayNote" class="custom-note-input" maxlength="140"
@@ -1033,7 +1038,7 @@ export function openCustomDay(dateIso, dayName) {
 
   const planOption = !isPastDay ? `
     <button type="button" class="custom-option" onclick="startPlanFromDate('${dateIso}')">
-      <span class="custom-option-icon" aria-hidden="true">📅</span>
+      <span class="custom-option-icon" aria-hidden="true">${ICON_CALENDAR}</span>
       <span class="custom-option-label">Starta matsedel från denna dag</span>
       <span class="custom-option-chev" aria-hidden="true">›</span>
     </button>` : '';
@@ -1122,7 +1127,7 @@ export async function saveCustomDay(dateIso) {
     if (btn) { btn.disabled = false; btn.textContent = 'Spara notering'; }
     const panel = document.getElementById('weekRecipeDetail');
     const err = document.createElement('p');
-    err.style.cssText = 'color:var(--terracotta);font-size:0.82rem;padding:0.5rem 0';
+    err.style.cssText = 'color:var(--rust);font-size:0.82rem;padding:0.5rem 0';
     err.textContent = 'Kunde inte spara — prova igen.';
     panel.querySelector('.custom-day-editor')?.appendChild(err);
   }

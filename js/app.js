@@ -32,7 +32,7 @@ async function init() {
   } catch (err) {
     document.getElementById('loadingState').innerHTML = `
       <div style="font-size:2rem;margin-bottom:1rem">⚠️</div>
-      <p style="color:var(--terracotta)">${err.message}</p>`;
+      <p style="color:var(--rust)">${err.message}</p>`;
   }
 }
 

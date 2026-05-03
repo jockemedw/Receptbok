@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#5c3d1e">
+<meta name="theme-color" content="#7a9482">
 <title>Receptboken</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
@@ -27,7 +27,7 @@
   </div>
   <div class="header-search-area" id="headerSearchArea">
     <div class="search-wrap">
-      <span class="search-icon">🔍</span>
+      <span class="search-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
       <input id="search" type="search" placeholder="Sök på namn, ingrediens, tagg…" autocomplete="off">
     </div>
     <div class="filters" id="filters"></div>
@@ -53,19 +53,19 @@
   <div class="recipe-grid" id="recipeGrid"></div>
 
   <div class="empty" id="emptyState" style="display:none">
-    <div style="font-size:2.5rem;margin-bottom:1rem">🍽️</div>
+    <div class="no-data-icon"><svg class="icon icon-em-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11h18a9 9 0 0 1-9 9 9 9 0 0 1-9-9z"/><path d="M7 11V8 M12 11V6 M17 11V8"/></svg></div>
     <p>Inga recept matchade sökningen.</p>
   </div>
 </main>
 
 <div id="weekView">
   <div id="weekLoading" class="no-data">
-    <div class="no-data-icon">⏳</div>
+    <div class="no-data-icon"><svg class="icon icon-em-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12 M6 20h12 M6 4l6 8-6 8 M18 4l-6 8 6 8"/></svg></div>
     <p>Laddar matsedeln…</p>
   </div>
 
   <div id="weekNoData" class="no-data" style="display:none">
-    <div class="no-data-icon">📋</div>
+    <div class="no-data-icon"><svg class="icon icon-em-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></div>
     <p>Ingen veckoplan genererad ännu.</p>
   </div>
 
@@ -79,7 +79,7 @@
         <div class="timeline" id="weekGrid"></div>
       </div>
       <div class="confirm-plan-wrap" id="confirmPlanWrap" style="display:none">
-        <button class="confirm-plan-btn" id="confirmPlanBtn" onclick="confirmPlan()">✓ Bekräfta och bygg inköpslista</button>
+        <button class="confirm-plan-btn" id="confirmPlanBtn" onclick="confirmPlan()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5 9.5 17.5 19.5 6.8"/></svg> Bekräfta och bygg inköpslista</button>
         <button class="discard-plan-btn" id="discardPlanBtn" onclick="discardPlan()">Kassera förslag</button>
         <p class="confirm-status" id="confirmStatus"></p>
       </div>
@@ -100,7 +100,7 @@
 
   <div class="trigger-section" id="triggerSection">
     <div class="trigger-toggle-row">
-      <button class="trigger-toggle-btn" onclick="toggleTrigger()">＋ Ny plan</button>
+      <button class="trigger-toggle-btn" onclick="toggleTrigger()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Ny plan</button>
     </div>
     <div class="trigger-body">
     <h3 class="trigger-title">Generera ny plan</h3>
@@ -120,7 +120,7 @@
 
     <div class="settings-toggle-wrap">
       <button class="settings-toggle" id="settingsToggle" onclick="toggleSettings()">
-        ⚙ Inställningar <span id="settingsArrow">▾</span>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Inställningar <span id="settingsArrow" class="settings-chevron"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>
       </button>
     </div>
 
@@ -204,7 +204,7 @@
     </div>
 
     <button class="generate-btn" id="generateBtn" onclick="generatePlan()">
-      ✨ Generera ny plan
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 13.2 10.8 19 12 13.2 13.2 12 20 10.8 13.2 5 12 10.8 10.8z"/><path d="M19 5l.5 2 M5 19l-.5-2" opacity=".7"/></svg> Generera ny plan
     </button>
     <div class="trigger-status" id="triggerStatus"></div>
     </div>
@@ -213,11 +213,11 @@
 
 <div id="shopView">
   <div id="shopLoading" class="no-data">
-    <div class="no-data-icon">⏳</div>
+    <div class="no-data-icon"><svg class="icon icon-em-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12 M6 20h12 M6 4l6 8-6 8 M18 4l-6 8 6 8"/></svg></div>
     <p>Laddar inköpslistan…</p>
   </div>
   <div id="shopNoData" class="no-data" style="display:none">
-    <div class="no-data-icon">🛒</div>
+    <div class="no-data-icon"><svg class="icon icon-em-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h13l-1.5 9.5a1.5 1.5 0 0 1-1.5 1.3H8a1.5 1.5 0 0 1-1.5-1.3z"/><path d="M9 7V5.5a1.5 1.5 0 0 1 1.5-1.5h2A1.5 1.5 0 0 1 14 5.5V7"/></svg></div>
     <p>Ingen inköpslista ännu — generera en matsedel och flytta ingredienserna hit.</p>
     <div class="manual-add-section manual-add-empty">
       <div class="manual-add-title">Eller lägg till varor manuellt</div>
@@ -232,7 +232,7 @@
   </div>
   <div id="shopContent" style="display:none">
     <div class="week-section">
-      <h2 class="section-title">🛒 Inköpslista</h2>
+      <h2 class="section-title"><svg class="icon icon-em-1-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h13l-1.5 9.5a1.5 1.5 0 0 1-1.5 1.3H8a1.5 1.5 0 0 1-1.5-1.3z"/><path d="M9 7V5.5a1.5 1.5 0 0 1 1.5-1.5h2A1.5 1.5 0 0 1 14 5.5V7"/></svg> Inköpslista</h2>
       <div class="shop-mode-bar">
         <button class="shop-mode-btn active" id="modeBtnHandla" onclick="setShopMode('handla')">✓ Handla</button>
         <button class="shop-mode-btn" id="modeBtnText" onclick="setShopMode('text')">Kopiera lista</button>
@@ -250,7 +250,7 @@
       </div>
       <button class="shop-clear-btn" id="modeBtnClear" onclick="clearShoppingList()">Rensa lista</button>
       <button class="shop-dispatch-btn" id="dispatchToWillysBtn" style="display:none" onclick="openDispatchConfirm()">
-        📤 Skicka till Willys
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19 19 5"/><path d="M9 5h10v10"/></svg> Skicka till Willys
       </button>
     </div>
   </div>
@@ -268,7 +268,7 @@
 
 <footer id="footerEl">Receptboken</footer>
 <button id="scrolltop" title="Till toppen" aria-label="Till toppen">↑</button>
-<button class="fab-import" id="fabImport" onclick="openImportModal()" title="Importera recept" aria-label="Importera recept">＋</button>
+<button class="fab-import" id="fabImport" onclick="openImportModal()" title="Importera recept" aria-label="Importera recept"><svg class="icon icon-em-1-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
 
 <nav class="bottom-nav" aria-label="Huvudnavigering">
   <button class="bottom-nav-tab active" data-tab="recept" onclick="switchTab('recept')" aria-label="Recept">
