@@ -4,6 +4,8 @@
 
 import { CAT_ICONS } from '../utils.js';
 
+const ICON_NOTE = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h11l3 3v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><path d="M8 11h8 M8 14h8 M8 17h5"/></svg>';
+
 export function setShopMode(mode) {
   const isHandla = mode === 'handla';
   document.getElementById('modeBtnHandla').classList.toggle('active', isHandla);
@@ -63,7 +65,7 @@ export function rebuildShopText() {
   if (uncheckedManual.length) {
     textParts.push(`Egna tillägg:\n${uncheckedManual.map(i => '• ' + i).join('\n')}`);
     textBlocksHtml += `<div class="shop-text-category">
-      <div class="shop-text-cat-name">📝 Egna tillägg</div>
+      <div class="shop-text-cat-name">${ICON_NOTE} Egna tillägg</div>
       <div class="shop-text-items">${uncheckedManual.map(i => '• ' + i).join('\n')}</div>
     </div>`;
   }
@@ -137,7 +139,7 @@ export function renderFullShoppingList(recipeItems, manualItems) {
     }).join('');
     checkHtml += `<div class="shopping-category">
       <div class="shopping-cat-header">
-        <span class="shopping-cat-name">📝 Egna tillägg</span>
+        <span class="shopping-cat-name">${ICON_NOTE} Egna tillägg</span>
         <span class="shopping-cat-count">${manualItems.length} varor</span>
       </div>
       <ul class="shopping-items">${manualHtml}</ul>
@@ -147,7 +149,7 @@ export function renderFullShoppingList(recipeItems, manualItems) {
     if (uncheckedManual.length) {
       textParts.push(`Egna tillägg:\n${uncheckedManual.map(i => '• ' + i).join('\n')}`);
       textBlocksHtml += `<div class="shop-text-category">
-        <div class="shop-text-cat-name">📝 Egna tillägg</div>
+        <div class="shop-text-cat-name">${ICON_NOTE} Egna tillägg</div>
         <div class="shop-text-items">${uncheckedManual.map(i => '• ' + i).join('\n')}</div>
       </div>`;
     }
