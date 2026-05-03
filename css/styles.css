@@ -774,10 +774,10 @@
   }
 
   /* ── Plan-grupper: pastellfärgad bakgrundston per arkiverad plan ── */
-  .week-day-card.plan-color-0:not(.today):not(.selected) { background: #f1f7ed; border-color: #d0e3c1; }
-  .week-day-card.plan-color-1:not(.today):not(.selected) { background: #edf4f7; border-color: #c1d8e3; }
-  .week-day-card.plan-color-2:not(.today):not(.selected) { background: #f7f3ed; border-color: #e3d6c1; }
-  .week-day-card.plan-color-3:not(.today):not(.selected) { background: #f5edf7; border-color: #d9c1e3; }
+  .week-day-card.plan-color-0:not(.today):not(.selected) { background: #e3eadd; border-color: #c8d2c2; }
+  .week-day-card.plan-color-1:not(.today):not(.selected) { background: #dde4e5; border-color: #c1cfd1; }
+  .week-day-card.plan-color-2:not(.today):not(.selected) { background: #ede4d3; border-color: #d8c9b0; }
+  .week-day-card.plan-color-3:not(.today):not(.selected) { background: #ecd9cb; border-color: #dcc1ae; }
 
   .week-day-card.archive {
     opacity: 0.82;
