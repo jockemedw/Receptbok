@@ -48,13 +48,13 @@ export async function saveRecipe() {
 
   if (!title) {
     feedback.textContent = 'Receptet behöver en titel.';
-    feedback.style.color = 'var(--terracotta)';
+    feedback.style.color = 'var(--rust)';
     saveBtn.disabled = false;
     return;
   }
   if (!ingredients.length) {
     feedback.textContent = 'Lägg till minst en ingrediens.';
-    feedback.style.color = 'var(--terracotta)';
+    feedback.style.color = 'var(--rust)';
     saveBtn.disabled = false;
     return;
   }
@@ -83,7 +83,7 @@ export async function saveRecipe() {
       saved = (await res.json()).recipe;
     } catch {
       feedback.textContent = 'Kunde inte spara — prova igen.';
-      feedback.style.color = 'var(--terracotta)';
+      feedback.style.color = 'var(--rust)';
       saveBtn.disabled = false;
       return;
     }
@@ -187,7 +187,7 @@ export async function saveRecipe() {
     closeEditModal();
   } catch {
     feedback.textContent = 'Kunde inte spara — prova igen.';
-    feedback.style.color = 'var(--terracotta)';
+    feedback.style.color = 'var(--rust)';
     saveBtn.disabled = false;
   }
 }
@@ -214,7 +214,7 @@ export async function deleteRecipe() {
     closeEditModal();
   } catch {
     feedback.textContent = 'Kunde inte ta bort — prova igen.';
-    feedback.style.color = 'var(--terracotta)';
+    feedback.style.color = 'var(--rust)';
     delBtn.disabled = false;
   }
 }

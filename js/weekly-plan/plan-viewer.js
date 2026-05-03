@@ -209,7 +209,7 @@ export async function selectRecipeForDay(event, recipeId, title) {
     if (!banner.querySelector('.replace-err')) {
       const e = document.createElement('span');
       e.className  = 'replace-err';
-      e.style.cssText = 'color:var(--terracotta);font-size:0.8rem';
+      e.style.cssText = 'color:var(--rust);font-size:0.8rem';
       e.textContent   = 'Kunde inte spara — prova igen.';
       banner.insertBefore(e, banner.querySelector('.replace-banner-cancel'));
     }
@@ -274,7 +274,7 @@ export async function selectRecipeForCustomDay(event, recipeId, title) {
     if (banner && !banner.querySelector('.replace-err')) {
       const err = document.createElement('span');
       err.className = 'replace-err';
-      err.style.cssText = 'color:var(--terracotta);font-size:0.8rem';
+      err.style.cssText = 'color:var(--rust);font-size:0.8rem';
       err.textContent = 'Kunde inte spara — prova igen.';
       banner.insertBefore(err, banner.querySelector('.replace-banner-cancel'));
     }
@@ -378,7 +378,7 @@ export async function swapDays(date1, date2) {
   } catch (e) {
     applySwap(card1, orig2, card2, orig1); // återställ vid fel
     const errEl = document.createElement('p');
-    errEl.style.cssText = 'color:var(--terracotta);font-size:0.82rem;padding:0.5rem 1rem';
+    errEl.style.cssText = 'color:var(--rust);font-size:0.82rem;padding:0.5rem 1rem';
     errEl.textContent   = 'Kunde inte byta dag — prova igen.';
     panel.innerHTML = '';
     panel.appendChild(errEl);
@@ -428,7 +428,7 @@ export async function replaceRecipe(currentId, date, btnEl) {
     if (!errEl) {
       const p = document.createElement('p');
       p.className    = 'replace-error';
-      p.style.cssText = 'color:var(--terracotta);font-size:0.82rem;margin-top:0.5rem';
+      p.style.cssText = 'color:var(--rust);font-size:0.82rem;margin-top:0.5rem';
       p.textContent   = 'Kunde inte byta recept — prova igen.';
       btnEl.after(p);
     }
@@ -554,7 +554,7 @@ async function modifyDay(date, action) {
   } catch (e) {
     const panel = document.getElementById('weekRecipeDetail');
     const errEl = document.createElement('p');
-    errEl.style.cssText = 'color:var(--terracotta);font-size:0.82rem;padding:0.5rem 1rem';
+    errEl.style.cssText = 'color:var(--rust);font-size:0.82rem;padding:0.5rem 1rem';
     errEl.textContent = `Kunde inte ${action === 'skip' ? 'hoppa över' : 'blockera'} dagen — prova igen.`;
     panel.innerHTML = '';
     panel.appendChild(errEl);
@@ -1127,7 +1127,7 @@ export async function saveCustomDay(dateIso) {
     if (btn) { btn.disabled = false; btn.textContent = 'Spara notering'; }
     const panel = document.getElementById('weekRecipeDetail');
     const err = document.createElement('p');
-    err.style.cssText = 'color:var(--terracotta);font-size:0.82rem;padding:0.5rem 0';
+    err.style.cssText = 'color:var(--rust);font-size:0.82rem;padding:0.5rem 0';
     err.textContent = 'Kunde inte spara — prova igen.';
     panel.querySelector('.custom-day-editor')?.appendChild(err);
   }
