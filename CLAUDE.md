@@ -104,7 +104,22 @@ Inga just nu.
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 - Säsongsfilter — automatiskt vikta recept efter säsong (soppa/gryta höst-vinter, sallad sommar)
 
-### Senaste session — Session 42 (2026-04-26) — Fas 4F implementation: cookie-refresh-automation
+### Senaste session — Session 43 (2026-05-03) — Design-system-migration (Scandi/nature-pivot)
+- **Motivering:** Användaren iterativt designat ny visuell identitet i Claude Design (handoff-bundle: `receptboken-design-system`). Pivot från warm-brown/terracotta/cream/gold → lichen-grön/forest/rust/ochre/linen ("Scandi/nature"). Plus hand-tecknade lo-fi line-SVG-ikoner istället för färgglada emoji.
+- **Spec:** `docs/superpowers/specs/2026-05-03-design-system-migration-design.md`
+- **Plan:** `docs/superpowers/plans/2026-05-03-design-system-migration.md` (15 tasks, big-bang per användarval)
+- **Token-pivot i `css/styles.css`:** `:root` skrivet om — 9 gamla tokens (--cream/--warm-brown/--terracotta/--sage/--gold/--ink/--light-sage/--light-terra/--warm-white) bytta mot 14 nya (--linen/--linen-card/--paper/--stone/--lichen/--lichen-deep/--moss-soft/--forest/--forest-deep/--rust/--rust-deep/--clay/--birch/--birch-soft/--moss-muted/--ochre). Semantic aliases (--border, --text-muted, --color-success, --color-success-dark, --color-danger) pekar nu till nya tokens. ~163 references uppdaterade via global rename. 8 strö-hex tokeniserade. Plan-pastels (timeline-arkiv) bytta från grön/blå/beige/lila → moss/slate/birch/clay (earth-tone). Pill-radie 20px → 4px (lo-fi/Scandi).
+- **JS inline-style-fix (efter plan-task-13-grep):** 19 references till gamla token-namn i `js/{app,recipes/*,weekly-plan/*}.js` som dynamiskt sätter `.style.color`/`.style.cssText`/`.style.outline` med `var(--terracotta)` etc. — bytta till `var(--rust)`/`var(--lichen)`. De fallback:ade till browser default eftersom tokens inte finns längre. Plus `<meta name="theme-color">` i `index.html` (`#5c3d1e` → `#7a9482`) och `PROTEIN_COLOR.vegetarisk` i `js/utils.js` (`#4a7d4e` → `#5e7a68`).
+- **Emoji → inline-SVG:** 13 emoji i `index.html` och 8 dynamiskt-renderade i `plan-viewer.js`/`shopping-list.js`/`dispatch-ui.js` bytta mot hand-tecknade line-SVG:er i `currentColor` enligt mönstret från Session 41 (bottom-nav). SVG-paths från `brand-iconography.html` i designbundlen. Ny `.icon`-utility-klass följer text-storlek (1em) med `vertical-align: -0.125em`. Storleks-modifiers `.icon-em-1-2/-1-5/-2` för section-titles, FAB respektive empty-states. Bottom-nav-SVG:erna oförändrade (redan Lucide-stil).
+- **toggleSettings JS-fix:** Settings-chevron tidigare swap:ade textContent (`▾`/`▴`). Eftersom SVG nu sitter där bytt till `classList.toggle('open')` + CSS-rotation via `.settings-chevron.open svg { transform: rotate(180deg); }`.
+- **Centrala konsekvenser:** Top-header brun → lichen-grön. Active tab/CTA terracotta → rust. Today-state: rust-ring runt hela kortet → lichen-ring + moss-soft fyllning + rust-prick (rust används bara som liten saturated punkt). Selected/open recipe-card-border terracotta → lichen ("selected = lugn", inte "alarm"). Tested-pill, savings-text och success-states sage → lichen-deep.
+- **Inga JSON/data/backend-ändringar.** 341 backend-asserts passerar oförändrat (44 match + 62 shopping + 136 select-recipes + 70 dispatch + 29 cookies-endpoint).
+- **Out of scope:** Knapp-geometri-harmonisering (spec nämnde 38px hög, 8px radie för primary/secondary, 5 tiers). Receptboken har 10+ knapp-klasser (`.generate-btn`, `.confirm-plan-btn`, `.flytta-btn`, `.shop-mode-btn`, `.btn-save`, etc.) — separat layout-pass om behovet känns kvar efter live.
+- **15 commits** på feature-branch `claude/design-system-scandi`, mergead till `main`. Verifiering: läst tillbaka varje editerad fil + grep för 0 träffar på gamla token-namn, gamla brand-hex och emoji i appens kod (3 separata kontroller).
+- **Status:** Live på https://receptbok-six.vercel.app/. Användaren har inte mobil-access just nu — verifiering deferred enligt explicit OK. Rollback om regression upptäcks: `git revert <merge-commit>` på main.
+- **Nästa session (44):** Mobil-verifiering av nya paletten (när användaren är vid telefonen). Eventuell knapp-geometri-harmonisering om något knapp-pass känns inkonsistent.
+
+### Session 42 (2026-04-26) — Fas 4F implementation: cookie-refresh-automation
 - **Motivering:** Session 40 lämnade specen klar (`docs/superpowers/specs/2026-04-25-cookie-refresh-automation-design.md`). Session 41 prioriterade UI-jobb. Den här sessionen exekverade en 7-task implementation-plan via `superpowers:writing-plans` + `superpowers:subagent-driven-development` (fresh implementer per task + spec-review + code-quality-review). Mål: eliminera manuell quarterly-rotation av `WILLYS_COOKIE`/`WILLYS_CSRF`.
 - **Plan:** `docs/superpowers/plans/2026-04-26-cookie-refresh-automation.md` (~830 rader, 7 tasks).
 - **Backend:**
@@ -263,7 +278,7 @@ Varje feature-slice är en fristående fil — en agent som jobbar med en featur
 - **Cross-modul-anrop:** Funktioner exponeras via `window.*`. Moduler anropar varandra via `window.funktionsNamn()` — inga cirkulära ES6-imports. Domänlogik stannar i varje slice; bara teknisk infrastruktur delas.
 
 ## Tekniska beslut
-- **Färgtema:** Krämvitt `#faf7f2`, brun header `#5c3d1e`, terrakotta `#c2522b`
+- **Färgtema:** Linen-canvas `#f5f1e8`, lichen-grön header `#7a9482`, rust-accent `#b56a4c` (CTA + today). Forest `#3d5544` text, ochre `#c89a3e` wordmark-suffix, lichen-deep `#5e7a68` success/savings. Scandi/nature-paletten — designad i Claude Design, migrerad i Session 43.
 - **Receptval:** Deterministisk JS-algoritm i `selectRecipes()` — historikfiltrering (14 dagar) → proteinfördelning (max 2 per typ) → vardag30/helg60-matchning → slump. Ingen AI.
 - **Inköpslista:** Byggs deterministiskt i JS från receptdata — ingen AI. Pipeline: Clean → Parse → Normalize → Merge → Categorize. Sortering A–Ö per kategori, format `"ingrediensnamn (mängd)"`.
 - **Recepthistorik:** `recipe-history.json` format `{ usedOn: { "5": "2026-03-26" } }` — ett datum per recept, läses via GitHub API (ej CDN-cache). 14-dagarsfönster. Fallback sorterad på "längst sedan".
