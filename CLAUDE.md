@@ -104,7 +104,28 @@ Inga just nu.
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 - Säsongsfilter — automatiskt vikta recept efter säsong (soppa/gryta höst-vinter, sallad sommar)
 
-### Senaste session — Session 43 (2026-05-03) — Design-system-migration (Scandi/nature-pivot)
+### Senaste session — Session 44 (2026-05-03) — Knapp-harmonisering (fem tiers)
+- **Motivering:** Session 43 lämnade knapp-geometri som "out of scope" eftersom färg-pivoten redan var stor. Användaren bad direkt efter ("Kör allt, om jag inte gillar det justerar vi efteråt") att exekvera även detta i samma kvällssession. Designens button-card från bundlen specade en (1) geometri + fem tiers; mappade Receptbokens 25 knapp-klasser mot designens system.
+- **Spec/plan/exekvering:** Skippad formell brainstorming/writing-plans-pipeline eftersom designen är fullt specificerad i `components-buttons.html` och användaren explicit delegerade. Brainstorm-output dokumenterad i förra sessionens chat.
+- **Geometri (alla fem tiers):** 8px radie, 1.5px border (även filled-knappar har border = bg-color så höjden räknas konsekvent), font-weight 500 (förut blandat 500/600), `line-height: 1`. Vertikal padding ~0.65–0.75rem ger ~38–42px höjd. Horisontell varierar med knappens roll (kompakt 1rem, normal 1.2rem, CTA 1.5rem) — håller den funktionella visuella vikten där den behövs utan att bryta höjd-rytmen.
+- **Tier-mappning:**
+  - PRIMARY (rust filled): `.generate-btn`, `.confirm-plan-btn`, `.btn-save`, `.flytta-btn`, `.shop-dispatch-btn` (5 knappar — alla "commit"-handlingar)
+  - SECONDARY (lichen filled): `.btn-import-action`, `.manual-add-btn` (2 knappar — positiva supporting-actions)
+  - OUTLINE (transparent + birch border + forest text): `.replace-recipe-btn`, `.discard-plan-btn`, `.day-action-btn`, `.shop-copy-btn`, `.trigger-toggle-btn`, `.custom-bulk-btn` (6 knappar). Hover: border-color → forest, bg → moss-soft.
+  - GHOST/DANGER (transparent + rust-deep): `.shop-clear-btn`, `.btn-delete` (2 knappar). Hover: rgba(181,106,76,0.08) bg.
+- **Visuella skiften att vara medveten om:**
+  - `.trigger-toggle-btn` var capsule (radius 20) — nu rektangulär (radius 8). "+ Ny plan"-toggle tappar pill-form.
+  - `.replace-recipe-btn` hade rust-border (signalerade "öppen handling" i tidslinjen) — nu birch (neutralt). Möjlig regression: knappen kan kännas mindre inbjudande att klicka. Kan rullas tillbaka till rust om visuell test säger det.
+  - `.shop-copy-btn` hade clay-tinted bg — nu helt transparent. Subtil minskning av visual weight.
+  - `.btn-delete` hade rust-deep border — nu transparent (designens danger = ghost med rust-deep text + bg-tint på hover).
+- **Lämnat utanför 5-tier-systemet** (kontextspecifika, inte CTA): `.filter-btn` (chip i mörk header), `.swap-icon-btn` (tiny icon), `.prot-btn` (pill-toggle), `.select-btn` (mini), `.shop-mode-btn` (toggle-tab), `.remove-manual-btn` (× knapp), `.edit-recipe-btn` (link-style), `.import-photo-btn` (stor card-tile). 8 utility-knappar oförändrade.
+- **`.trigger-btn`** är dead code (definierad i CSS men ingen markup använder klassen). Lämnad orörd — kan rensas i en separat housekeeping-pass.
+- **341 backend-asserts passerar oförändrat.** Inga JSON/data/JS-ändringar — ren CSS-refaktor.
+- **1 commit på feature-branch `claude/button-harmonization`**, +99/−73 rader. Push och merge till main följer i samma session.
+- **Status:** Live på Vercel ~30 sek efter push. Mobil-verifiering deferred (inte åtkomlig nu). Rollback: `git revert <merge-commit>` om något ser knepigt ut.
+- **Nästa session (45):** Mobil-verifiering av både Session 43 (palett) och Session 44 (knappar). Eventuella iterationer baserat på faktiskt visuellt utfall — t.ex. om någon knapp blev för liten för thumb-target på mobil, höj till 44px Apple HIG. Eller om en outline-knapp tappade för mycket "klickbarhet" via birch-border, byt tillbaka till rust på just den.
+
+### Session 43 (2026-05-03) — Design-system-migration (Scandi/nature-pivot)
 - **Motivering:** Användaren iterativt designat ny visuell identitet i Claude Design (handoff-bundle: `receptboken-design-system`). Pivot från warm-brown/terracotta/cream/gold → lichen-grön/forest/rust/ochre/linen ("Scandi/nature"). Plus hand-tecknade lo-fi line-SVG-ikoner istället för färgglada emoji.
 - **Spec:** `docs/superpowers/specs/2026-05-03-design-system-migration-design.md`
 - **Plan:** `docs/superpowers/plans/2026-05-03-design-system-migration.md` (15 tasks, big-bang per användarval)
