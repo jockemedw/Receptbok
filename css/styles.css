@@ -685,19 +685,21 @@
     color: var(--text-muted);
   }
   .custom-bulk-btn {
-    background: none;
-    border: 1.5px solid var(--lichen);
-    color: var(--lichen);
+    background: transparent;
+    border: 1.5px solid var(--birch);
+    color: var(--forest);
     border-radius: 8px;
-    padding: 0.4rem 0.85rem;
-    font-size: 0.8rem;
+    padding: 0.5rem 0.85rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    line-height: 1;
     font-family: inherit;
     cursor: pointer;
-    transition: background 0.15s, color 0.15s;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
   }
   .custom-bulk-btn:hover {
-    background: var(--lichen);
-    color: white;
+    border-color: var(--forest);
+    background: var(--moss-soft);
   }
 
   .timeline-wrap {
@@ -1247,18 +1249,20 @@
   .replace-recipe-btn {
     margin-top: 1.1rem;
     display: inline-block;
-    background: none;
-    border: 1.5px solid var(--rust);
-    color: var(--rust);
+    background: transparent;
+    border: 1.5px solid var(--birch);
+    color: var(--forest);
     border-radius: 8px;
-    padding: 0.45rem 1rem;
-    font-size: 0.82rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    line-height: 1;
     font-family: inherit;
     cursor: pointer;
-    transition: background 0.15s, color 0.15s;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
   }
 
-  .replace-recipe-btn:hover { background: var(--clay); }
+  .replace-recipe-btn:hover { border-color: var(--forest); background: var(--moss-soft); }
   .replace-recipe-btn:disabled { opacity: 0.55; cursor: default; }
 
   .confirm-plan-wrap {
@@ -1269,12 +1273,13 @@
     width: 100%;
     background: var(--rust);
     color: white;
-    border: none;
-    border-radius: 10px;
-    padding: 0.7rem 1rem;
+    border: 1.5px solid var(--rust);
+    border-radius: 8px;
+    padding: 0.65rem 1rem;
     font-size: 0.9rem;
     font-family: inherit;
-    font-weight: 600;
+    font-weight: 500;
+    line-height: 1;
     cursor: pointer;
     transition: opacity 0.15s;
   }
@@ -1285,12 +1290,14 @@
   .discard-plan-btn {
     width: 100%;
     margin-top: 0.5rem;
-    background: none;
-    border: 1.5px solid var(--text-muted);
-    color: var(--text-muted);
-    border-radius: 10px;
-    padding: 0.55rem 1rem;
-    font-size: 0.82rem;
+    background: transparent;
+    border: 1.5px solid var(--birch);
+    color: var(--forest);
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    line-height: 1;
     font-family: inherit;
     cursor: pointer;
     transition: border-color 0.15s, color 0.15s, background 0.15s;
@@ -1392,19 +1399,21 @@
   }
   .day-action-btn {
     flex: 1;
-    background: none;
-    border: 1.5px solid var(--text-muted);
-    color: var(--text-muted);
+    background: transparent;
+    border: 1.5px solid var(--birch);
+    color: var(--forest);
     border-radius: 8px;
-    padding: 0.45rem 0.6rem;
-    font-size: 0.78rem;
+    padding: 0.5rem 0.6rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    line-height: 1;
     font-family: inherit;
     cursor: pointer;
     transition: border-color 0.15s, color 0.15s, background 0.15s;
   }
   .day-action-btn:hover {
-    border-color: var(--lichen);
-    color: var(--lichen);
+    border-color: var(--forest);
+    background: var(--moss-soft);
   }
   .day-action-btn.day-action-block:hover {
     border-color: var(--rust);
@@ -1618,21 +1627,22 @@
   }
 
   .trigger-toggle-btn {
-    background: none;
-    border: 1.5px solid var(--rust);
-    color: var(--rust);
-    border-radius: 20px;
-    padding: 0.4rem 1.1rem;
+    background: transparent;
+    border: 1.5px solid var(--birch);
+    color: var(--forest);
+    border-radius: 8px;
+    padding: 0.55rem 1.1rem;
     font-family: 'DM Sans', sans-serif;
     font-size: 0.9rem;
     font-weight: 500;
+    line-height: 1;
     cursor: pointer;
-    transition: background 0.15s, color 0.15s;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
   }
 
   .trigger-toggle-btn:hover {
-    background: var(--rust);
-    color: #fff;
+    border-color: var(--forest);
+    background: var(--moss-soft);
   }
 
   .trigger-body {
@@ -2049,12 +2059,13 @@
     width: 100%;
     background: var(--rust);
     color: white;
-    border: none;
-    border-radius: 12px;
-    padding: 0.9rem 1.5rem;
+    border: 1.5px solid var(--rust);
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
     font-family: 'DM Sans', sans-serif;
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 500;
+    line-height: 1;
     cursor: pointer;
     transition: opacity 0.2s, transform 0.1s;
     margin-top: 0.25rem;
@@ -2104,15 +2115,19 @@
     display: block;
     width: 100%;
     margin-top: 2rem;
-    padding: 0.6rem;
-    background: none;
-    border: none;
-    color: var(--color-danger);
+    padding: 0.6rem 1rem;
+    background: transparent;
+    border: 1.5px solid transparent;
+    border-radius: 8px;
+    color: var(--rust-deep);
     font-family: 'DM Sans', sans-serif;
     font-size: 0.85rem;
+    font-weight: 500;
+    line-height: 1;
     cursor: pointer;
-    opacity: 0.7;
+    transition: background 0.15s;
   }
+  .shop-clear-btn:hover { background: rgba(181,106,76,0.08); }
   .shop-clear-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
   /* ── SHOPPING TEXT VIEW ── */
@@ -2137,18 +2152,19 @@
   }
   .shop-copy-btn {
     margin-top: 0.75rem;
-    background: var(--clay);
-    border: 1.5px solid var(--border);
-    color: var(--lichen);
+    background: transparent;
+    border: 1.5px solid var(--birch);
+    color: var(--forest);
     border-radius: 8px;
-    padding: 0.5rem 1.1rem;
+    padding: 0.6rem 1.1rem;
     font-family: 'DM Sans', sans-serif;
     font-size: 0.85rem;
     font-weight: 500;
+    line-height: 1;
     cursor: pointer;
-    transition: background 0.15s;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
   }
-  .shop-copy-btn:hover { background: #f5e5dd; }
+  .shop-copy-btn:hover { border-color: var(--forest); background: var(--moss-soft); }
 
   /* ── SHOP VIEW ── */
   #shopView {
@@ -2227,13 +2243,14 @@
     display: block;
     width: calc(100% - 2rem);
     margin: 1.2rem 1rem 0;
-    padding: 0.9rem;
+    padding: 0.7rem 1rem;
     background: var(--rust);
     color: white;
-    border: none;
-    border-radius: 12px;
+    border: 1.5px solid var(--rust);
+    border-radius: 8px;
     font-size: 0.95rem;
-    font-weight: 600;
+    font-weight: 500;
+    line-height: 1;
     cursor: pointer;
     font-family: 'DM Sans', sans-serif;
   }
@@ -2268,9 +2285,11 @@
     padding: 0.6rem 1rem;
     background: var(--lichen);
     color: white;
-    border: none;
+    border: 1.5px solid var(--lichen);
     border-radius: 8px;
     font-size: 0.9rem;
+    font-weight: 500;
+    line-height: 1;
     font-family: 'DM Sans', sans-serif;
     cursor: pointer;
   }
@@ -2382,25 +2401,30 @@
     flex: 1;
     background: var(--rust);
     color: #fff;
-    border: none;
+    border: 1.5px solid var(--rust);
     border-radius: 8px;
     padding: 0.65rem 1.2rem;
     font-family: 'DM Sans', sans-serif;
     font-size: 0.95rem;
-    font-weight: 600;
+    font-weight: 500;
+    line-height: 1;
     cursor: pointer;
   }
   .btn-save:disabled { opacity: 0.6; cursor: default; }
   .btn-delete {
-    background: none;
-    border: 1px solid var(--rust-deep);
+    background: transparent;
+    border: 1.5px solid transparent;
     color: var(--rust-deep);
     border-radius: 8px;
     padding: 0.65rem 1rem;
     font-family: 'DM Sans', sans-serif;
     font-size: 0.9rem;
+    font-weight: 500;
+    line-height: 1;
     cursor: pointer;
+    transition: background 0.15s;
   }
+  .btn-delete:hover { background: rgba(181,106,76,0.08); }
   .modal-feedback {
     margin-top: 0.75rem;
     font-size: 0.9rem;
@@ -2520,12 +2544,13 @@
     margin-top: 1rem;
     background: var(--lichen);
     color: #fff;
-    border: none;
-    border-radius: 12px;
-    padding: 0.8rem;
+    border: 1.5px solid var(--lichen);
+    border-radius: 8px;
+    padding: 0.7rem 1rem;
     font-family: 'DM Sans', sans-serif;
     font-size: 0.95rem;
-    font-weight: 600;
+    font-weight: 500;
+    line-height: 1;
     cursor: pointer;
     transition: background 0.15s, opacity 0.15s;
   }
@@ -2627,13 +2652,14 @@
   display: block;
   width: 100%;
   margin-top: 1rem;
-  padding: 0.9rem 1.2rem;
+  padding: 0.7rem 1.2rem;
   background: var(--rust);
   color: #fff;
-  border: none;
-  border-radius: 10px;
-  font-size: 1.05rem;
-  font-weight: 600;
+  border: 1.5px solid var(--rust);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1;
   cursor: pointer;
   transition: background 0.15s;
 }
