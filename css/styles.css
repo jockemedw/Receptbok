@@ -1,18 +1,37 @@
   :root {
-    --cream: #faf7f2;
-    --warm-white: #fff9f2;
-    --ink: #1a1209;
-    --warm-brown: #5c3d1e;
-    --terracotta: #c2522b;
-    --sage: #7a9e7e;
-    --gold: #d4a847;
-    --light-sage: #eaf2eb;
-    --light-terra: #fdf0eb;
-    --border: #e8ddd0;
-    --text-muted: #7a6a58;
-    --color-success: var(--color-success);
-    --color-success-dark: #4a7d4e;
-    --color-danger: #b04030;
+    /* Surfaces */
+    --linen: #f5f1e8;
+    --linen-card: #fdfcf8;
+    --paper: #ffffff;
+    --stone: #ebe6da;
+
+    /* Brand */
+    --lichen: #7a9482;
+    --lichen-deep: #5e7a68;
+    --moss-soft: #e3eadd;
+    --forest: #3d5544;
+    --forest-deep: #2c3f33;
+
+    /* Accent (sparingly) */
+    --rust: #b56a4c;
+    --rust-deep: #9c5840;
+    --clay: #f1e2d8;
+
+    /* Neutrals */
+    --birch: #a89e8a;
+    --birch-soft: #d8d2c4;
+    --moss-muted: #7d8579;
+
+    /* Highlight */
+    --ochre: #c89a3e;
+
+    /* Semantic aliases (för bakåtkompatibilitet under migrationen) */
+    --border: var(--birch-soft);
+    --text-muted: var(--moss-muted);
+    --color-success: var(--lichen-deep);
+    --color-success-dark: var(--lichen-deep);
+    --color-danger: var(--rust-deep);
+
     --bottom-nav-h: 0px;
   }
 
