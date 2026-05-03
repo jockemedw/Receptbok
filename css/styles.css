@@ -45,16 +45,16 @@
 
   body {
     font-family: 'DM Sans', sans-serif;
-    background: var(--cream);
-    color: var(--ink);
+    background: var(--linen);
+    color: var(--forest);
     min-height: 100vh;
     padding-bottom: var(--bottom-nav-h);
   }
 
   /* ── HEADER ── */
   header {
-    background: var(--warm-brown);
-    color: var(--cream);
+    background: var(--lichen);
+    color: var(--linen);
     position: fixed;
     top: 0;
     left: 0;
@@ -77,7 +77,7 @@
     font-size: 1.25rem;
     font-weight: 400;
     letter-spacing: 0.02em;
-    color: var(--cream);
+    color: var(--linen);
     display: flex;
     align-items: center;
     padding-bottom: 0.4rem;
@@ -85,7 +85,7 @@
 
   header h1 em {
     font-style: italic;
-    color: var(--gold);
+    color: var(--ochre);
   }
 
   .header-nav {
@@ -137,8 +137,8 @@
   .header-tab:hover { color: rgba(250,247,242,0.75); }
 
   .header-tab.active {
-    color: var(--cream);
-    border-bottom-color: var(--gold);
+    color: var(--linen);
+    border-bottom-color: var(--ochre);
   }
 
   /* ── SEARCH AREA (collapsible) ── */
@@ -166,7 +166,7 @@
     border-radius: 8px;
     border: 1px solid rgba(255,255,255,0.12);
     background: rgba(0,0,0,0.18);
-    color: var(--cream);
+    color: var(--linen);
     font-family: 'DM Sans', sans-serif;
     font-size: 0.92rem;
     outline: none;
@@ -225,13 +225,13 @@
 
   .filter-btn:hover {
     background: rgba(255,255,255,0.14);
-    color: var(--cream);
+    color: var(--linen);
   }
 
   .filter-btn.active {
-    background: var(--terracotta);
-    border-color: var(--terracotta);
-    color: var(--cream);
+    background: var(--rust);
+    border-color: var(--rust);
+    color: var(--linen);
   }
 
   .recipe-count { display: none; }
@@ -252,7 +252,7 @@
 
   /* ── WEEKLY PLAN BANNER ── */
   .plan-banner {
-    background: var(--light-terra);
+    background: var(--clay);
     border: 1px solid #f0d5c8;
     border-radius: 12px;
     padding: 1rem 1.1rem;
@@ -265,7 +265,7 @@
   .plan-banner-title {
     font-size: 0.78rem;
     font-weight: 500;
-    color: var(--terracotta);
+    color: var(--rust);
     text-transform: uppercase;
     letter-spacing: 0.06em;
     margin-bottom: 0.6rem;
@@ -287,7 +287,7 @@
   }
 
   .plan-day:hover {
-    border-color: var(--terracotta);
+    border-color: var(--rust);
     box-shadow: 0 2px 8px rgba(194,82,43,0.1);
   }
 
@@ -302,7 +302,7 @@
   .plan-day-recipe {
     font-family: 'Playfair Display', serif;
     font-size: 0.88rem;
-    color: var(--ink);
+    color: var(--forest);
     line-height: 1.3;
     margin-top: 0.15rem;
   }
@@ -328,21 +328,21 @@
   }
 
   .recipe-card.open {
-    border-color: var(--terracotta);
+    border-color: var(--rust);
     box-shadow: 0 4px 20px rgba(194,82,43,0.1);
   }
 
   .recipe-card.recipe-card-new {
     animation: newRecipePulse 2.5s ease-out;
-    border-color: var(--sage);
-    box-shadow: 0 0 0 3px var(--light-sage);
+    border-color: var(--lichen-deep);
+    box-shadow: 0 0 0 3px var(--moss-soft);
   }
 
   @keyframes newRecipePulse {
     0%   { box-shadow: 0 0 0 0 rgba(122,158,126,0.5); }
     30%  { box-shadow: 0 0 0 8px rgba(122,158,126,0.25); }
     70%  { box-shadow: 0 0 0 4px rgba(122,158,126,0.15); }
-    100% { box-shadow: 0 0 0 3px var(--light-sage); }
+    100% { box-shadow: 0 0 0 3px var(--moss-soft); }
   }
 
   .card-header {
@@ -369,7 +369,7 @@
     font-size: 1.05rem;
     font-weight: 400;
     line-height: 1.3;
-    color: var(--ink);
+    color: var(--forest);
     margin-bottom: 0.4rem;
   }
 
@@ -386,9 +386,9 @@
     font-weight: 500;
   }
 
-  .pill-protein  { background: var(--light-terra); color: var(--terracotta); }
+  .pill-protein  { background: var(--clay); color: var(--rust); }
   .pill-time     { background: #f2ede8; color: var(--text-muted); }
-  .pill-tested   { background: var(--light-sage); color: var(--color-success-dark); }
+  .pill-tested   { background: var(--moss-soft); color: var(--color-success-dark); }
   .pill-untested { background: #f4f2ef; color: #b0a090; }
   .pill-toggle   { cursor: pointer; }
   .pill-toggle:active { opacity: 0.6; }
@@ -404,7 +404,7 @@
   .recipe-card.open .card-chevron {
     transform: rotate(90deg);
     opacity: 1;
-    color: var(--terracotta);
+    color: var(--rust);
   }
 
   /* ── DETAIL ── */
@@ -421,7 +421,7 @@
     padding: 1.2rem 1.1rem 1.4rem;
     display: grid;
     gap: 1.4rem;
-    background: var(--warm-white);
+    background: var(--linen-card);
   }
 
   .detail-section h3 {
@@ -448,12 +448,12 @@
     display: flex;
     gap: 0.5rem;
     align-items: baseline;
-    color: var(--ink);
+    color: var(--forest);
   }
 
   .ingredients-list li::before {
     content: '·';
-    color: var(--terracotta);
+    color: var(--rust);
     flex-shrink: 0;
     font-size: 1.1rem;
     line-height: 1;
@@ -493,7 +493,7 @@
     gap: 0.65rem;
     font-size: 0.9rem;
     line-height: 1.65;
-    color: var(--ink);
+    color: var(--forest);
     cursor: pointer;
     user-select: none;
     -webkit-tap-highlight-color: transparent;
@@ -512,7 +512,7 @@
     font-size: 0.7rem;
     font-weight: 600;
     color: white;
-    background: var(--warm-brown);
+    background: var(--lichen);
     width: 1.5rem;
     height: 1.5rem;
     border-radius: 50%;
@@ -527,7 +527,7 @@
   .notes-box {
     background: #fffbf0;
     border: 1px solid #f0dfa0;
-    border-left: 3px solid var(--gold);
+    border-left: 3px solid var(--ochre);
     border-radius: 6px;
     padding: 0.75rem 0.9rem;
     font-size: 0.85rem;
@@ -558,7 +558,7 @@
     position: fixed;
     bottom: calc(var(--bottom-nav-h) + 1.5rem);
     right: 1.5rem;
-    background: var(--warm-brown);
+    background: var(--lichen);
     color: white;
     border: none;
     border-radius: 50%;
@@ -604,7 +604,7 @@
     font-family: 'Playfair Display', serif;
     font-size: 1.25rem;
     font-weight: 400;
-    color: var(--warm-brown);
+    color: var(--lichen);
     margin: 0 0 0.15rem;
     display: flex;
     align-items: center;
@@ -622,7 +622,7 @@
   .timeline-chip {
     background: white;
     border: 1.5px solid var(--border);
-    color: var(--warm-brown);
+    color: var(--lichen);
     border-radius: 999px;
     padding: 0.32rem 0.85rem;
     font-size: 0.78rem;
@@ -632,17 +632,17 @@
     transition: border-color 0.15s, background 0.15s, color 0.15s;
   }
   .timeline-chip:hover {
-    border-color: var(--terracotta);
-    color: var(--terracotta);
+    border-color: var(--rust);
+    color: var(--rust);
   }
   .timeline-chip-plan.pending {
-    border-color: var(--terracotta);
-    background: var(--terracotta);
+    border-color: var(--rust);
+    background: var(--rust);
     color: white;
     animation: chipPulse 2.2s ease-in-out infinite;
   }
   .timeline-chip-plan.pending:hover {
-    background: var(--terracotta);
+    background: var(--rust);
     opacity: 0.9;
   }
   @keyframes chipPulse {
@@ -653,7 +653,7 @@
   .custom-bulk-banner {
     margin: 0.3rem 1rem 0.5rem;
     padding: 0.6rem 0.9rem;
-    background: var(--cream);
+    background: var(--linen);
     border: 1px dashed var(--border);
     border-radius: 10px;
     display: flex;
@@ -668,8 +668,8 @@
   }
   .custom-bulk-btn {
     background: none;
-    border: 1.5px solid var(--warm-brown);
-    color: var(--warm-brown);
+    border: 1.5px solid var(--lichen);
+    color: var(--lichen);
     border-radius: 8px;
     padding: 0.4rem 0.85rem;
     font-size: 0.8rem;
@@ -678,7 +678,7 @@
     transition: background 0.15s, color 0.15s;
   }
   .custom-bulk-btn:hover {
-    background: var(--warm-brown);
+    background: var(--lichen);
     color: white;
   }
 
@@ -747,7 +747,7 @@
   .timeline-month-tag {
     font-size: 0.7rem;
     font-weight: 600;
-    color: var(--warm-brown);
+    color: var(--lichen);
     text-transform: uppercase;
     letter-spacing: 0.06em;
     line-height: 1;
@@ -767,7 +767,7 @@
   .timeline-week-tag {
     font-size: 0.68rem;
     font-weight: 600;
-    color: var(--terracotta);
+    color: var(--rust);
     letter-spacing: 0.04em;
     line-height: 1;
     white-space: nowrap;
@@ -789,7 +789,7 @@
   .week-day-card.archive.past { opacity: 0.72; }
 
   .week-day-card.plan-active:not(.today):not(.selected) {
-    background: var(--light-terra);
+    background: var(--clay);
     border-color: rgba(194,82,43,0.35);
   }
 
@@ -801,7 +801,7 @@
     cursor: pointer;
   }
   .week-day-card.gap:hover {
-    border-color: var(--warm-brown);
+    border-color: var(--lichen);
     opacity: 0.85;
     box-shadow: none;
   }
@@ -813,12 +813,12 @@
     cursor: pointer;
   }
   .week-day-card.custom:hover {
-    border-color: var(--warm-brown);
+    border-color: var(--lichen);
     background: #f7eed4;
   }
   .week-day-card.custom .custom-note {
     font-style: italic;
-    color: var(--warm-brown);
+    color: var(--lichen);
     font-weight: 500;
     word-break: break-word;
     overflow: hidden;
@@ -829,7 +829,7 @@
 
   /* Förslag att godkänna — alla kort i en icke-bekräftad plan */
   .week-day-card.plan-pending:not(.today):not(.selected) {
-    border: 2px solid var(--terracotta);
+    border: 2px solid var(--rust);
     box-shadow: 0 0 0 3px rgba(194,82,43,0.12), 0 2px 10px rgba(194,82,43,0.18);
     animation: planPendingPulse 2.4s ease-in-out infinite;
   }
@@ -841,7 +841,7 @@
     position: absolute;
     top: 6px;
     right: 6px;
-    background: var(--terracotta);
+    background: var(--rust);
     color: white;
     font-size: 0.58rem;
     font-weight: 700;
@@ -864,7 +864,7 @@
     font-family: 'Playfair Display', serif;
     font-size: 1.35rem;
     font-weight: 700;
-    color: var(--warm-brown);
+    color: var(--lichen);
     line-height: 1.15;
   }
   .custom-day-sub {
@@ -891,7 +891,7 @@
     border-radius: 12px;
     font-family: inherit;
     font-size: 0.95rem;
-    color: var(--warm-brown);
+    color: var(--lichen);
     cursor: pointer;
     text-align: left;
     transition: border-color 0.15s, background 0.15s, transform 0.08s;
@@ -899,8 +899,8 @@
   }
   button.custom-option:hover,
   button.custom-option:focus-visible {
-    border-color: var(--terracotta);
-    background: var(--light-terra);
+    border-color: var(--rust);
+    background: var(--clay);
     outline: none;
   }
   button.custom-option:active {
@@ -916,7 +916,7 @@
     font-weight: 500;
   }
   .custom-option-chev {
-    color: var(--terracotta);
+    color: var(--rust);
     font-size: 1.4rem;
     line-height: 1;
     opacity: 0.7;
@@ -942,18 +942,18 @@
     border-radius: 8px;
     font-family: inherit;
     font-size: 0.9rem;
-    color: var(--warm-brown);
+    color: var(--lichen);
     background: #fdfaf5;
     box-sizing: border-box;
   }
   .custom-note-input:focus {
     outline: none;
-    border-color: var(--terracotta);
+    border-color: var(--rust);
     background: white;
   }
   .custom-note-save {
     align-self: flex-end;
-    background: var(--terracotta);
+    background: var(--rust);
     color: white;
     border: none;
     border-radius: 8px;
@@ -983,7 +983,7 @@
   }
   .custom-day-remove:hover,
   .custom-day-remove:focus-visible {
-    color: var(--terracotta);
+    color: var(--rust);
     outline: none;
   }
 
@@ -997,7 +997,7 @@
     border-color: #e5d3ae;
   }
   .week-day-card.weekend .week-day-name {
-    color: var(--terracotta);
+    color: var(--rust);
     font-weight: 700;
     opacity: 1;
   }
@@ -1016,8 +1016,8 @@
   .readonly-note {
     margin: 0.8rem 0 0;
     padding: 0.5rem 0.75rem;
-    background: var(--cream);
-    border-left: 3px solid var(--warm-brown);
+    background: var(--linen);
+    border-left: 3px solid var(--lichen);
     border-radius: 6px;
     font-size: 0.8rem;
     color: var(--text-muted);
@@ -1025,7 +1025,7 @@
   }
 
   /* ── Datumväljare: helgdags- och veckoslut-markering ── */
-  .day-toggle-chip.weekend .day-toggle-abbr { color: var(--terracotta); }
+  .day-toggle-chip.weekend .day-toggle-abbr { color: var(--rust); }
   .day-toggle-chip.holiday {
     position: relative;
   }
@@ -1058,23 +1058,23 @@
   .week-day-card.past { opacity: 0.45; }
 
   .week-day-card.today {
-    border-color: var(--terracotta);
+    border-color: var(--rust);
     box-shadow: 0 2px 14px rgba(194,82,43,0.18);
-    background: var(--light-terra);
+    background: var(--clay);
   }
 
-  .week-day-card.today .week-day-name { color: var(--terracotta); }
+  .week-day-card.today .week-day-name { color: var(--rust); }
 
   .week-day-card:hover {
     opacity: 1;
-    border-color: var(--terracotta);
+    border-color: var(--rust);
     box-shadow: 0 2px 10px rgba(194,82,43,0.12);
   }
 
   .week-day-card.selected {
-    border: 2.5px solid var(--terracotta);
+    border: 2.5px solid var(--rust);
     box-shadow: 0 3px 18px rgba(194,82,43,0.28);
-    background: var(--light-terra);
+    background: var(--clay);
   }
 
   .week-day-saving {
@@ -1145,7 +1145,7 @@
   }
   .saving-product {
     font-size: 0.95rem;
-    color: var(--warm-brown);
+    color: var(--lichen);
     font-weight: 600;
     line-height: 1.3;
   }
@@ -1222,7 +1222,7 @@
     font-family: 'Playfair Display', serif;
     font-size: 1.1rem;
     font-weight: 700;
-    color: var(--warm-brown);
+    color: var(--lichen);
     flex: 1 1 100%;
   }
 
@@ -1230,8 +1230,8 @@
     margin-top: 1.1rem;
     display: inline-block;
     background: none;
-    border: 1.5px solid var(--terracotta);
-    color: var(--terracotta);
+    border: 1.5px solid var(--rust);
+    color: var(--rust);
     border-radius: 8px;
     padding: 0.45rem 1rem;
     font-size: 0.82rem;
@@ -1240,7 +1240,7 @@
     transition: background 0.15s, color 0.15s;
   }
 
-  .replace-recipe-btn:hover { background: var(--light-terra); }
+  .replace-recipe-btn:hover { background: var(--clay); }
   .replace-recipe-btn:disabled { opacity: 0.55; cursor: default; }
 
   .confirm-plan-wrap {
@@ -1249,7 +1249,7 @@
 
   .confirm-plan-btn {
     width: 100%;
-    background: var(--terracotta);
+    background: var(--rust);
     color: white;
     border: none;
     border-radius: 10px;
@@ -1321,12 +1321,12 @@
   .week-day-card.selected .swap-icon-btn {
     opacity: 1;
     pointer-events: auto;
-    color: var(--terracotta);
+    color: var(--rust);
   }
 
   .week-day-card.swap-source {
-    border: 2px dashed var(--terracotta);
-    background: var(--light-terra);
+    border: 2px dashed var(--rust);
+    background: var(--clay);
     animation: wiggle 0.35s ease-in-out;
   }
 
@@ -1352,7 +1352,7 @@
     opacity: 0.5;
     border-style: dashed;
     cursor: default;
-    background: var(--cream);
+    background: var(--linen);
   }
   .week-day-card.blocked:hover {
     border-color: var(--border);
@@ -1385,12 +1385,12 @@
     transition: border-color 0.15s, color 0.15s, background 0.15s;
   }
   .day-action-btn:hover {
-    border-color: var(--warm-brown);
-    color: var(--warm-brown);
+    border-color: var(--lichen);
+    color: var(--lichen);
   }
   .day-action-btn.day-action-block:hover {
-    border-color: var(--terracotta);
-    color: var(--terracotta);
+    border-color: var(--rust);
+    color: var(--rust);
   }
 
   /* ── Dagväljare (pre-generering) ── */
@@ -1422,11 +1422,11 @@
     min-width: 42px;
   }
   .day-toggle-chip:hover {
-    border-color: var(--terracotta);
+    border-color: var(--rust);
   }
   .day-toggle-chip.blocked {
     opacity: 0.45;
-    background: var(--cream);
+    background: var(--linen);
     border-style: dashed;
     text-decoration: line-through;
     color: var(--text-muted);
@@ -1441,7 +1441,7 @@
   .day-toggle-num {
     font-size: 0.85rem;
     font-weight: 600;
-    color: var(--warm-brown);
+    color: var(--lichen);
   }
   .day-toggle-chip.blocked .day-toggle-num {
     color: var(--text-muted);
@@ -1464,7 +1464,7 @@
     display: inline-block;
     width: 6px;
     height: 6px;
-    background: var(--terracotta);
+    background: var(--rust);
     border-radius: 50%;
     flex-shrink: 0;
   }
@@ -1472,7 +1472,7 @@
   .week-day-recipe {
     font-family: 'Playfair Display', serif;
     font-size: 0.88rem;
-    color: var(--ink);
+    color: var(--forest);
     line-height: 1.3;
     transition: opacity 0.15s;
     display: -webkit-box;
@@ -1516,7 +1516,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--warm-brown);
+    color: var(--lichen);
   }
 
   .shopping-cat-count {
@@ -1566,14 +1566,14 @@
   }
 
   .shopping-item.checked .item-checkbox {
-    background: var(--sage);
-    border-color: var(--sage);
+    background: var(--lichen-deep);
+    border-color: var(--lichen-deep);
     color: white;
   }
 
   .item-text {
     font-size: 0.9rem;
-    color: var(--ink);
+    color: var(--forest);
     line-height: 1.4;
   }
 
@@ -1601,8 +1601,8 @@
 
   .trigger-toggle-btn {
     background: none;
-    border: 1.5px solid var(--terracotta);
-    color: var(--terracotta);
+    border: 1.5px solid var(--rust);
+    color: var(--rust);
     border-radius: 20px;
     padding: 0.4rem 1.1rem;
     font-family: 'DM Sans', sans-serif;
@@ -1613,7 +1613,7 @@
   }
 
   .trigger-toggle-btn:hover {
-    background: var(--terracotta);
+    background: var(--rust);
     color: #fff;
   }
 
@@ -1627,7 +1627,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    background: var(--terracotta);
+    background: var(--rust);
     color: white;
     border: none;
     border-radius: 30px;
@@ -1657,7 +1657,7 @@
     font-family: 'Playfair Display', serif;
     font-size: 1.1rem;
     font-weight: 400;
-    color: var(--warm-brown);
+    color: var(--lichen);
     margin-bottom: 1.1rem;
   }
 
@@ -1690,14 +1690,14 @@
     border-radius: 8px;
     font-family: 'DM Sans', sans-serif;
     font-size: 0.9rem;
-    color: var(--ink);
+    color: var(--forest);
     background: white;
     cursor: pointer;
     outline: none;
     transition: border-color 0.2s;
   }
 
-  .date-input:focus { border-color: var(--terracotta); }
+  .date-input:focus { border-color: var(--rust); }
   .date-input::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.6; }
 
   .date-sep {
@@ -1708,7 +1708,7 @@
 
   .date-hint {
     font-size: 0.85rem;
-    color: var(--warm-brown);
+    color: var(--lichen);
     font-weight: 500;
     min-height: 1.3em;
     margin-bottom: 1rem;
@@ -1721,7 +1721,7 @@
     border-radius: 8px;
     padding: 0.7rem 1rem;
     font-size: 0.82rem;
-    color: var(--ink);
+    color: var(--forest);
     font-family: monospace;
     line-height: 1.8;
     text-align: left;
@@ -1759,8 +1759,8 @@
   }
 
   .settings-toggle:hover {
-    border-color: var(--warm-brown);
-    color: var(--warm-brown);
+    border-color: var(--lichen);
+    color: var(--lichen);
   }
 
   .settings-panel {
@@ -1794,7 +1794,7 @@
 
   .setting-label {
     font-size: 0.82rem;
-    color: var(--ink);
+    color: var(--forest);
     font-weight: 500;
     flex: 1;
   }
@@ -1820,13 +1820,13 @@
     border-radius: 6px;
     font-family: 'DM Sans', sans-serif;
     font-size: 0.9rem;
-    color: var(--ink);
+    color: var(--forest);
     text-align: center;
     outline: none;
     transition: border-color 0.2s;
   }
 
-  .setting-num:focus { border-color: var(--terracotta); }
+  .setting-num:focus { border-color: var(--rust); }
 
   .setting-unit {
     font-size: 0.78rem;
@@ -1866,9 +1866,9 @@
   }
 
   .prot-btn.active {
-    background: var(--light-terra);
-    border-color: var(--terracotta);
-    color: var(--terracotta);
+    background: var(--clay);
+    border-color: var(--rust);
+    color: var(--rust);
   }
 
   .toggle-switch {
@@ -1898,10 +1898,10 @@
     border-radius: 50%;
     transition: transform 0.2s;
   }
-  .toggle-switch input:checked + .toggle-slider { background: var(--terracotta); }
+  .toggle-switch input:checked + .toggle-slider { background: var(--rust); }
   .toggle-switch input:checked + .toggle-slider::before { transform: translateX(18px); }
   .toggle-switch input:focus-visible + .toggle-slider {
-    outline: 2px solid var(--terracotta);
+    outline: 2px solid var(--rust);
     outline-offset: 2px;
   }
 
@@ -1912,8 +1912,8 @@
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    background: var(--light-terra);
-    color: var(--terracotta);
+    background: var(--clay);
+    color: var(--rust);
     font-size: 0.72rem;
     font-weight: 700;
     font-style: italic;
@@ -1934,7 +1934,7 @@
     font-weight: 400;
     font-style: normal;
     line-height: 1.4;
-    color: var(--ink);
+    color: var(--forest);
     text-align: left;
     box-shadow: 0 6px 20px rgba(0,0,0,0.12);
     opacity: 0;
@@ -1951,7 +1951,7 @@
 
   .select-btn {
     display: none;
-    background: var(--terracotta);
+    background: var(--rust);
     color: white;
     border: none;
     border-radius: 6px;
@@ -1971,37 +1971,37 @@
     display: none;
     align-items: center;
     gap: 0.75rem;
-    background: var(--light-terra);
-    border: 1.5px solid var(--terracotta);
+    background: var(--clay);
+    border: 1.5px solid var(--rust);
     border-radius: 10px;
     padding: 0.7rem 1rem;
     margin-bottom: 1rem;
     font-size: 0.88rem;
-    color: var(--warm-brown);
+    color: var(--lichen);
   }
   #receptView.replace-mode .replace-banner { display: flex; }
-  .replace-banner strong { color: var(--terracotta); }
+  .replace-banner strong { color: var(--rust); }
 
   .custom-pick-banner {
     display: none;
     align-items: center;
     gap: 0.75rem;
-    background: var(--light-terra);
-    border: 1.5px solid var(--terracotta);
+    background: var(--clay);
+    border: 1.5px solid var(--rust);
     border-radius: 10px;
     padding: 0.7rem 1rem;
     margin-bottom: 1rem;
     font-size: 0.88rem;
-    color: var(--warm-brown);
+    color: var(--lichen);
   }
   #receptView.custom-pick-mode .custom-pick-banner { display: flex; }
-  .custom-pick-banner strong { color: var(--terracotta); }
+  .custom-pick-banner strong { color: var(--rust); }
   .replace-banner-cancel {
     margin-left: auto;
     background: none;
-    border: 1.5px solid var(--terracotta);
+    border: 1.5px solid var(--rust);
     border-radius: 6px;
-    color: var(--terracotta);
+    color: var(--rust);
     padding: 0.2rem 0.65rem;
     font-size: 0.82rem;
     cursor: pointer;
@@ -2010,7 +2010,7 @@
 
   .settings-warning {
     font-size: 0.75rem;
-    color: var(--terracotta);
+    color: var(--rust);
     font-style: italic;
     margin-top: 0.25rem;
     display: none;
@@ -2029,7 +2029,7 @@
   /* ── GENERATE BUTTON & STATUS ── */
   .generate-btn {
     width: 100%;
-    background: var(--terracotta);
+    background: var(--rust);
     color: white;
     border: none;
     border-radius: 12px;
@@ -2052,8 +2052,8 @@
     min-height: 1.4em;
     color: var(--text-muted);
   }
-  .trigger-status.error { color: var(--terracotta); }
-  .trigger-status.success { color: var(--sage); font-weight: 500; }
+  .trigger-status.error { color: var(--rust); }
+  .trigger-status.success { color: var(--lichen-deep); font-weight: 500; }
 
   /* ── SHOPPING LIST MODE TOGGLE ── */
   .shop-mode-bar {
@@ -2079,7 +2079,7 @@
   }
   .shop-mode-btn.active {
     background: white;
-    color: var(--warm-brown);
+    color: var(--lichen);
     box-shadow: 0 1px 4px rgba(0,0,0,0.1);
   }
   .shop-clear-btn {
@@ -2106,7 +2106,7 @@
   .shop-text-cat-name {
     font-weight: 600;
     font-size: 0.85rem;
-    color: var(--warm-brown);
+    color: var(--lichen);
     margin-bottom: 0.35rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -2114,14 +2114,14 @@
   .shop-text-items {
     font-size: 0.9rem;
     line-height: 1.7;
-    color: var(--ink);
+    color: var(--forest);
     white-space: pre-wrap;
   }
   .shop-copy-btn {
     margin-top: 0.75rem;
-    background: var(--light-terra);
+    background: var(--clay);
     border: 1.5px solid var(--border);
-    color: var(--warm-brown);
+    color: var(--lichen);
     border-radius: 8px;
     padding: 0.5rem 1.1rem;
     font-family: 'DM Sans', sans-serif;
@@ -2184,7 +2184,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--warm-brown);
+    color: var(--lichen);
   }
   .ingredient-preview-cat-count {
     font-size: 0.75rem;
@@ -2199,7 +2199,7 @@
   .ingredient-preview-list li {
     padding: 0.55rem 1rem;
     font-size: 0.88rem;
-    color: var(--ink);
+    color: var(--forest);
     border-bottom: 1px solid var(--border);
   }
   .ingredient-preview-list li:last-child { border-bottom: none; }
@@ -2210,7 +2210,7 @@
     width: calc(100% - 2rem);
     margin: 1.2rem 1rem 0;
     padding: 0.9rem;
-    background: var(--terracotta);
+    background: var(--rust);
     color: white;
     border: none;
     border-radius: 12px;
@@ -2233,7 +2233,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--warm-brown);
+    color: var(--lichen);
     margin-bottom: 0.6rem;
   }
   .manual-add-row { display: flex; gap: 0.5rem; }
@@ -2248,7 +2248,7 @@
   }
   .manual-add-btn {
     padding: 0.6rem 1rem;
-    background: var(--warm-brown);
+    background: var(--lichen);
     color: white;
     border: none;
     border-radius: 8px;
@@ -2275,7 +2275,7 @@
     line-height: 1;
     flex-shrink: 0;
   }
-  .remove-manual-btn:hover { color: var(--terracotta); }
+  .remove-manual-btn:hover { color: var(--rust); }
 
   /* ── REDIGERINGSKNAPP ── */
   .edit-recipe-btn {
@@ -2283,7 +2283,7 @@
     margin-top: 1.2rem;
     background: none;
     border: 1px solid rgba(92,61,30,0.2);
-    color: var(--warm-brown);
+    color: var(--lichen);
     padding: 0.45rem 1rem;
     border-radius: 6px;
     font-size: 0.85rem;
@@ -2303,7 +2303,7 @@
     padding: 1rem;
   }
   .modal-box {
-    background: var(--cream);
+    background: var(--linen);
     margin: 0 auto;
     max-width: 580px;
     border-radius: 12px;
@@ -2318,7 +2318,7 @@
   .modal-header h2 {
     font-family: 'Playfair Display', serif;
     font-size: 1.2rem;
-    color: var(--warm-brown);
+    color: var(--lichen);
     margin: 0;
   }
   .modal-header button {
@@ -2345,7 +2345,7 @@
   .modal-box textarea {
     font-family: 'DM Sans', sans-serif;
     font-size: 0.95rem;
-    color: var(--warm-brown);
+    color: var(--lichen);
     background: #fff;
     border: 1px solid rgba(92,61,30,0.2);
     border-radius: 6px;
@@ -2362,7 +2362,7 @@
   }
   .btn-save {
     flex: 1;
-    background: var(--terracotta);
+    background: var(--rust);
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -2424,7 +2424,7 @@
   .import-header h2 {
     font-family: 'Playfair Display', serif;
     font-size: 1.15rem;
-    color: var(--warm-brown);
+    color: var(--lichen);
     margin: 0;
   }
   .import-close {
@@ -2441,7 +2441,7 @@
   }
   .import-tabs {
     display: flex;
-    background: var(--cream);
+    background: var(--linen);
     border-radius: 10px;
     padding: 3px;
     gap: 0;
@@ -2466,7 +2466,7 @@
   }
   .import-tab.active {
     background: #fff;
-    color: var(--warm-brown);
+    color: var(--lichen);
     box-shadow: 0 1px 3px rgba(0,0,0,0.08);
     font-weight: 600;
   }
@@ -2483,8 +2483,8 @@
   .import-input {
     font-family: 'DM Sans', sans-serif;
     font-size: 0.95rem;
-    color: var(--ink);
-    background: var(--cream);
+    color: var(--forest);
+    background: var(--linen);
     border: 1.5px solid var(--border);
     border-radius: 10px;
     padding: 0.75rem 0.9rem;
@@ -2494,13 +2494,13 @@
   }
   .import-input:focus {
     outline: none;
-    border-color: var(--warm-brown);
+    border-color: var(--lichen);
   }
   .btn-import-action {
     display: block;
     width: 100%;
     margin-top: 1rem;
-    background: var(--warm-brown);
+    background: var(--lichen);
     color: #fff;
     border: none;
     border-radius: 12px;
@@ -2511,7 +2511,7 @@
     cursor: pointer;
     transition: background 0.15s, opacity 0.15s;
   }
-  .btn-import-action:active { background: var(--terracotta); }
+  .btn-import-action:active { background: var(--rust); }
   .btn-import-action:disabled { opacity: 0.4; cursor: default; }
   .import-photo-options {
     display: flex;
@@ -2527,7 +2527,7 @@
     padding: 1.1rem 0.5rem;
     border: 1.5px solid var(--border);
     border-radius: 12px;
-    background: var(--cream);
+    background: var(--linen);
     cursor: pointer;
     font-family: 'DM Sans', sans-serif;
     font-size: 0.8rem;
@@ -2536,15 +2536,15 @@
     transition: all 0.15s ease;
   }
   .import-photo-btn svg {
-    color: var(--warm-brown);
+    color: var(--lichen);
     opacity: 0.7;
     transition: opacity 0.15s;
   }
   .import-photo-btn:active,
   .import-photo-btn.selected {
-    border-color: var(--warm-brown);
-    background: var(--warm-white);
-    color: var(--warm-brown);
+    border-color: var(--lichen);
+    background: var(--linen-card);
+    color: var(--lichen);
   }
   .import-photo-btn.selected svg { opacity: 1; }
   .import-feedback {
@@ -2559,7 +2559,7 @@
     width: 16px;
     height: 16px;
     border: 2px solid var(--border);
-    border-top-color: var(--warm-brown);
+    border-top-color: var(--lichen);
     border-radius: 50%;
     animation: spin 0.65s linear infinite;
     vertical-align: middle;
@@ -2689,7 +2689,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: var(--warm-white);
+  background: var(--linen-card);
   border-top: 1px solid var(--border);
   box-shadow: 0 -2px 16px rgba(0,0,0,0.06);
   padding: 6px 4px env(safe-area-inset-bottom, 0px);
@@ -2734,8 +2734,8 @@
 }
 
 .bottom-nav-tab.active {
-  color: var(--terracotta);
-  background: var(--light-terra);
+  color: var(--rust);
+  background: var(--clay);
 }
 
 .bottom-nav-tab:active { transform: scale(0.96); }
