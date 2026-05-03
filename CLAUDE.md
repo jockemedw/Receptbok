@@ -83,6 +83,8 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 Inga just nu.
 
 ### Öppna utredningar
+**Engångs-scrape av dishingouthealth.com (2026-05-03) — ⏸ FLYTTAD TILL LOKAL KÖRNING.** Plan: `docs/superpowers/plans/2026-05-03-dishingouthealth-scrape.md`. Beslutade förutsättningar: Sonnet via Anthropic SDK lokalt (inte Gemini), curl + browser-UA först (Playwright vid behov), filtrera bort dessert/baking/drinks/frukost (estimat 200–300 av ~500 recept), staging till `recipes-import-pending.json` + `recipes-import-quality-report.md`, manuell promotion via separat script. **Webb-sessionens sandbox-allowlist 403:ade `dishingouthealth.com` ("Host not in allowlist", inte Cloudflare)** — körningen flyttas därför till användarens Mac. Nästa session ska börja med Fas 0 (curl-gate från lokalmiljön) enligt planen.
+
 **Cookie-refresh-automatisering (Fas 4F) — ✅ IMPLEMENTATION KLAR** (Session 42, 2026-04-26). Implementation av Session 40-specen via subagent-driven-development (7 tasks). Chrome-extension MV3 + `/api/cookies/willys` + secret gist + dispatch-fallback. Manuell rotation eliminerad i kodvägen — väntar bara på engångs-setup (gist + env vars + extension-install) för att gå live.
 
 **Lexikon- och matchningsaudit — ✅ KLAR** (Session 35, 2026-04-19). Rapport: `docs/match-audit-2026-04-19.md`. Spraygrädde-buggklassen eliminerad via `CANON_REJECT_PATTERNS` + Priority 2-stemming implementerad. 125 → 149 matches, 51 → 53 recept, 0 wrong-function/wrong-product-buggar kvar. 41 regressiontester bevakade av PostToolUse-hook.
