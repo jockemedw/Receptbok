@@ -408,6 +408,9 @@
   .icon-em-1-5 { width: 1.5em; height: 1.5em; }
   .icon-em-2 { width: 2em; height: 2em; vertical-align: middle; }
 
+  .settings-chevron svg { transition: transform 0.2s ease; }
+  .settings-chevron.open svg { transform: rotate(180deg); }
+
   .card-chevron {
     color: var(--text-muted);
     font-size: 1.4rem;

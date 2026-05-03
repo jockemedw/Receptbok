@@ -35,7 +35,7 @@ export function toggleSettings() {
   const panel = document.getElementById('settingsPanel');
   const arrow = document.getElementById('settingsArrow');
   const open  = panel.classList.toggle('open');
-  arrow.textContent = open ? '▴' : '▾';
+  arrow.classList.toggle('open', open);
 }
 
 export function updateSettingsPreview() {
