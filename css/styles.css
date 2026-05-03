@@ -393,6 +393,21 @@
   .pill-toggle   { cursor: pointer; }
   .pill-toggle:active { opacity: 0.6; }
 
+  /* ── ICON UTILITY (inline SVG follows text) ── */
+  .icon {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.125em;
+    flex-shrink: 0;
+    stroke: currentColor;
+    fill: none;
+  }
+  .icon-rotate-90 { transform: rotate(90deg); display: inline-block; }
+  .icon-em-1-2 { width: 1.2em; height: 1.2em; }
+  .icon-em-1-5 { width: 1.5em; height: 1.5em; }
+  .icon-em-2 { width: 2em; height: 2em; vertical-align: middle; }
+
   .card-chevron {
     color: var(--text-muted);
     font-size: 1.4rem;
