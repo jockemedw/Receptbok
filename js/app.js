@@ -22,12 +22,10 @@ async function init() {
     window.RECIPES      = data.recipes;
     window._allRecipes  = window.RECIPES;
     document.getElementById('loadingState').style.display  = 'none';
-    document.getElementById('recipeGrid').innerHTML        = window.RECIPES.map(window.renderCard).join('');
     document.getElementById('countDisplay').textContent    = `${window.RECIPES.length} recept`;
     document.getElementById('footerEl').textContent        =
       `Receptboken · ${data.meta?.lastUpdated || ''} · ${window.RECIPES.length} recept`;
-    window.initFilters(window.RECIPES);
-    window.applyFilters();
+    window.renderRecipeBrowser();
     window.initDatePickers();
   } catch (err) {
     document.getElementById('loadingState').innerHTML = `
@@ -37,23 +35,15 @@ async function init() {
 }
 
 // Event listeners
-document.getElementById('search').addEventListener('input', () => window.applyFilters());
+document.getElementById('search').addEventListener('input', () => window.renderRecipeBrowser());
+document.getElementById('groupBy').addEventListener('change', e => window.setGroupBy(e.target.value));
 
-document.getElementById('filters').addEventListener('click', e => {
-  const btn = e.target.closest('.filter-btn');
-  if (!btn) return;
-  const f = btn.dataset.filter;
-  if (f === 'alla') {
-    window.activeFilters = new Set(['alla']);
-  } else {
-    window.activeFilters.delete('alla');
-    window.activeFilters.has(f) ? window.activeFilters.delete(f) : window.activeFilters.add(f);
-    if (window.activeFilters.size === 0) window.activeFilters.add('alla');
+// "Rensa filter"-knapp i empty state
+document.getElementById('emptyState').addEventListener('click', e => {
+  if (e.target.closest('.empty-reset-btn')) {
+    document.getElementById('search').value = '';
+    window.renderRecipeBrowser();
   }
-  document.querySelectorAll('.filter-btn').forEach(b => {
-    b.classList.toggle('active', window.activeFilters.has(b.dataset.filter));
-  });
-  window.applyFilters();
 });
 
 init();

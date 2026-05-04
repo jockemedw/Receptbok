@@ -9,7 +9,7 @@
 <title>Receptboken</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=46">
+<link rel="stylesheet" href="css/styles.css?v=47">
 <style>/* tömd — CSS flyttad till css/styles.css */
 
 </style>
@@ -30,7 +30,16 @@
       <span class="search-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
       <input id="search" type="search" placeholder="Sök på namn, ingrediens, tagg…" autocomplete="off">
     </div>
-    <div class="filters" id="filters"></div>
+    <div class="group-by-wrap">
+      <label for="groupBy" class="group-by-label">Sortera per</label>
+      <select id="groupBy" class="group-by-select">
+        <option value="tested">Provat-status</option>
+        <option value="protein">Protein</option>
+        <option value="time">Tid</option>
+        <option value="type">Typ</option>
+        <option value="cuisine">Kök</option>
+      </select>
+    </div>
   </div>
 </header>
 
@@ -55,6 +64,7 @@
   <div class="empty" id="emptyState" style="display:none">
     <div class="no-data-icon"><svg class="icon icon-em-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11h18a9 9 0 0 1-9 9 9 9 0 0 1-9-9z"/><path d="M7 11V8 M12 11V6 M17 11V8"/></svg></div>
     <p>Inga recept matchade sökningen.</p>
+    <button class="empty-reset-btn">Rensa sökning</button>
   </div>
 </main>
 
@@ -379,6 +389,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=46"></script>
+<script type="module" src="js/app.js?v=47"></script>
 </body>
 </html>

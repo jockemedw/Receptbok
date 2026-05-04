@@ -1,28 +1,64 @@
-// Receptbläddrare: rendering av receptkort, filtrering, sökning.
-// Läser state: RECIPES, activeFilters, isSnapping, scrollUpAccum
+// Receptbläddrare: rendering av receptkort, gruppering, sökning.
+// Läser state: RECIPES, groupBy, isSnapping, scrollUpAccum
 // Skriver state: isSnapping, scrollUpAccum
 
-import { proteinLabel, timeStr, renderIngredient, renderDetailInner } from '../utils.js';
+import { proteinLabel, timeStr, renderDetailInner } from '../utils.js';
 
-// ── Filter-grupper ────────────────────────────────────────────────────────────
-const TIME_TAGS    = ['vardag30', 'helg60'];
-const TYPE_TAGS    = ['soppa', 'pasta', 'wok', 'ugn', 'sallad', 'gryta', 'ramen', 'curry'];
+// ── Grupperingsdefinitioner ───────────────────────────────────────────────────
+// Varje grupp är en lista av sektioner. Sektionerna utvärderas i ordning;
+// första matchen vinner (ett recept hamnar bara i en sektion).
+const TYPE_TAGS    = ['soppa', 'pasta', 'wok', 'curry', 'gryta', 'sallad', 'ramen', 'ugn'];
 const CUISINE_TAGS = ['asiatiskt', 'indiskt', 'japanskt', 'koreanskt'];
-const TAG_LABELS   = {
-  vardag30: 'Vardag ≤30 min', helg60: 'Helg ≤60 min',
-  soppa: 'Soppa', pasta: 'Pasta', wok: 'Wok', ugn: 'Ugn',
-  sallad: 'Sallad', gryta: 'Gryta', ramen: 'Ramen', curry: 'Curry',
-  asiatiskt: 'Asiatiskt', indiskt: 'Indiskt', japanskt: 'Japanskt', koreanskt: 'Koreanskt',
-};
-const HIDDEN_TAGS = new Set([
-  'fisk', 'kyckling', 'kött', 'fläsk', 'vegetarisk', 'veg',
-  'vardag', 'middag', 'snabb', 'snabb30',
-]);
-const CATEGORIZED = new Set([...TIME_TAGS, ...TYPE_TAGS, ...CUISINE_TAGS]);
 
+const GROUP_DEFS = {
+  tested: {
+    sections: [
+      { id: 'provat',  label: '✓ Provat',                 match: r => r.tested },
+      { id: 'oprovat', label: 'Oprövat',                  match: r => !r.tested && !r.tags.includes('doh') },
+      { id: 'doh',     label: 'Importerat — granska',     match: r => !r.tested && r.tags.includes('doh') },
+    ],
+  },
+  protein: {
+    sections: [
+      { id: 'fisk',        label: 'Fisk' },
+      { id: 'kyckling',    label: 'Kyckling' },
+      { id: 'kött',        label: 'Kött' },
+      { id: 'fläsk',       label: 'Fläsk' },
+      { id: 'vegetarisk',  label: 'Vegetariskt' },
+    ].map(s => ({ ...s, match: r => r.protein === s.id })),
+  },
+  time: {
+    sections: [
+      { id: 'vardag30', label: 'Vardag · ≤30 min',     match: r => r.time && r.time <= 30 },
+      { id: 'helg60',   label: 'Helg · 31–60 min',     match: r => r.time && r.time > 30 && r.time <= 60 },
+      { id: 'longer',   label: 'Längre eller okänt',   match: r => !r.time || r.time > 60 },
+    ],
+  },
+  type: {
+    sections: [
+      ...TYPE_TAGS.map(tag => ({
+        id: tag,
+        label: tag.charAt(0).toUpperCase() + tag.slice(1),
+        match: r => r.tags.includes(tag),
+      })),
+      { id: 'ovrig', label: 'Övrigt', match: r => !TYPE_TAGS.some(t => r.tags.includes(t)) },
+    ],
+  },
+  cuisine: {
+    sections: [
+      ...CUISINE_TAGS.map(tag => ({
+        id: tag,
+        label: tag.charAt(0).toUpperCase() + tag.slice(1),
+        match: r => r.tags.includes(tag),
+      })),
+      { id: 'ovrig', label: 'Övrigt', match: r => !CUISINE_TAGS.some(t => r.tags.includes(t)) },
+    ],
+  },
+};
+
+// ── Receptkort ────────────────────────────────────────────────────────────────
 export function renderCard(r) {
   const t = timeStr(r);
-
   return `
 <div class="recipe-card"
      data-id="${r.id}"
@@ -30,9 +66,7 @@ export function renderCard(r) {
      data-protein="${r.protein}"
      data-tags="${r.tags.join(' ')}"
      data-tested="${r.tested}"
-     data-time="${r.time || 999}"
-     data-ingredients="${r.ingredients.join(' ').toLowerCase()}"
-     data-instructions="${r.instructions.join(' ').toLowerCase()}">
+     data-time="${r.time || 999}">
   <div class="card-header" onclick="toggleCard(this.closest('.recipe-card'))">
     <div class="recipe-num">${r.id}</div>
     <div class="card-info">
@@ -70,58 +104,79 @@ export function toggleCard(card) {
   }
 }
 
-export function applyFilters() {
-  const q     = document.getElementById('search').value.toLowerCase().trim();
-  const cards = document.querySelectorAll('.recipe-card');
-  let shown   = 0;
+// ── Sökning + gruppering + render ─────────────────────────────────────────────
+function matchesSearch(r, q) {
+  if (!q) return true;
+  if (r.title.toLowerCase().includes(q))                               return true;
+  if (r.protein.toLowerCase().includes(q))                             return true;
+  if (r.tags.some(t => t.toLowerCase().includes(q)))                   return true;
+  if (r.ingredients.some(i => i.toLowerCase().includes(q)))            return true;
+  if (r.instructions.some(s => s.toLowerCase().includes(q)))           return true;
+  return false;
+}
 
-  cards.forEach(card => {
-    const protein = card.dataset.protein;
-    const tags    = card.dataset.tags;
-    const tested  = card.dataset.tested === 'true';
-    const time    = parseInt(card.dataset.time);
-    const title   = card.dataset.title;
-    const ings    = card.dataset.ingredients;
-    const steps   = card.dataset.instructions;
+export function renderRecipeBrowser() {
+  const grid    = document.getElementById('recipeGrid');
+  const empty   = document.getElementById('emptyState');
+  const info    = document.getElementById('resultsInfo');
+  const q       = document.getElementById('search').value.toLowerCase().trim();
+  const groupBy = window.groupBy || 'tested';
+  const def     = GROUP_DEFS[groupBy] || GROUP_DEFS.tested;
 
-    let passFilter = window.activeFilters.has('alla');
-    if (!passFilter) {
-      for (const f of window.activeFilters) {
-        if (f === 'provat'  && tested)          { passFilter = true; break; }
-        if (f === 'oprovat' && !tested)         { passFilter = true; break; }
-        if (f === 'snabb'   && time <= 30)      { passFilter = true; break; }
-        if (protein === f || tags.includes(f))  { passFilter = true; break; }
-      }
-    }
+  const matched = window.RECIPES.filter(r => matchesSearch(r, q));
 
-    const passSearch = !q || title.includes(q) || protein.includes(q) || tags.includes(q)
-      || ings.includes(q) || steps.includes(q);
+  const buckets = def.sections.map(s => ({ ...s, recipes: [] }));
+  for (const r of matched) {
+    const bucket = buckets.find(b => b.match(r));
+    if (bucket) bucket.recipes.push(r);
+  }
+  for (const b of buckets) {
+    b.recipes.sort((a, b) => a.title.localeCompare(b.title, 'sv'));
+  }
+  const nonEmpty = buckets.filter(b => b.recipes.length > 0);
 
-    const show = passFilter && passSearch;
-    card.style.display = show ? '' : 'none';
-    if (!show) card.classList.remove('open');
-    if (show) shown++;
-  });
+  const total = window.RECIPES.length;
 
-  document.getElementById('emptyState').style.display   = shown === 0 ? 'block' : 'none';
-  document.getElementById('resultsInfo').textContent    = (q || !window.activeFilters.has('alla'))
-    ? `Visar ${shown} av ${window.RECIPES.length} recept` : '';
+  if (nonEmpty.length === 0) {
+    grid.innerHTML  = '';
+    empty.style.display = 'block';
+    info.textContent = '';
+    return;
+  }
+  empty.style.display = 'none';
+
+  grid.innerHTML = nonEmpty.map(b => `
+    <section class="recipe-section" data-section="${b.id}">
+      <h3 class="recipe-section-header">
+        <span class="recipe-section-label">${b.label}</span>
+        <span class="recipe-section-count">${b.recipes.length}</span>
+      </h3>
+      <div class="recipe-section-cards">${b.recipes.map(renderCard).join('')}</div>
+    </section>
+  `).join('');
+
+  info.textContent = q
+    ? `Visar ${matched.length} av ${total} recept`
+    : `${total} recept totalt`;
+}
+
+export function setGroupBy(value) {
+  window.groupBy = value;
+  renderRecipeBrowser();
 }
 
 export function jumpToRecipe(title) {
   window.switchTab('recept');
-  window.activeFilters = new Set(['alla']);
   document.getElementById('search').value = '';
-  document.querySelectorAll('.filter-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.filter === 'alla');
-  });
-  applyFilters();
-  document.querySelectorAll('.recipe-card').forEach(card => {
-    if (card.dataset.title === title.toLowerCase()) {
-      toggleCard(card);
-      setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
-    }
-  });
+  renderRecipeBrowser();
+  setTimeout(() => {
+    document.querySelectorAll('.recipe-card').forEach(card => {
+      if (card.dataset.title === title.toLowerCase()) {
+        toggleCard(card);
+        setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+      }
+    });
+  }, 50);
 }
 
 export async function toggleTested(event, id) {
@@ -149,41 +204,14 @@ export async function toggleTested(event, id) {
   }
 }
 
-export function initFilters(recipes) {
-  const allTags = new Set();
-  for (const r of recipes) for (const t of (r.tags || [])) allTags.add(t);
+// Bakåtkompatibla stubs — recipe-editor.js anropar dessa
+function initFilters() { /* no-op: gruppering ersätter filtersystemet */ }
 
-  const cap     = s => s.charAt(0).toUpperCase() + s.slice(1);
-  const lbl     = name => `<span class="filter-group-label">${name}</span>`;
-  const btn     = (f, text) => `<button class="filter-btn" data-filter="${f}">${text}</button>`;
-  const tagBtns = tags => tags.filter(t => allTags.has(t)).map(t => btn(t, TAG_LABELS[t] || cap(t))).join('');
-
-  const timeBtns    = tagBtns(TIME_TAGS);
-  const typeBtns    = tagBtns(TYPE_TAGS);
-  const cuisineBtns = tagBtns(CUISINE_TAGS);
-  const otherTags   = [...allTags].filter(t => !CATEGORIZED.has(t) && !HIDDEN_TAGS.has(t)).sort();
-  const otherBtns   = otherTags.map(t => btn(t, cap(t))).join('');
-
-  const parts = [
-    btn('alla', 'Alla'),
-    ...(timeBtns    ? [lbl('Tid'),    timeBtns]    : []),
-    lbl('Protein'),
-    btn('snabb', 'Snabb &lt;30 min'),
-    ...['fisk', 'kyckling', 'kött', 'fläsk', 'vegetarisk'].map(p => btn(p, proteinLabel[p] || p)),
-    lbl('Provat'),
-    btn('provat', '✓ Provat'),
-    btn('oprovat', '✗ Oprövat'),
-    ...(typeBtns    ? [lbl('Typ'),    typeBtns]    : []),
-    ...(cuisineBtns ? [lbl('Kök'),    cuisineBtns] : []),
-    ...(otherBtns   ? [lbl('Övrigt'), otherBtns]   : []),
-  ];
-
-  document.getElementById('filters').innerHTML = parts.join('');
-}
-
-window.renderCard    = renderCard;
-window.toggleCard    = toggleCard;
-window.applyFilters  = applyFilters;
-window.jumpToRecipe  = jumpToRecipe;
-window.toggleTested  = toggleTested;
-window.initFilters   = initFilters;
+window.renderCard          = renderCard;
+window.toggleCard          = toggleCard;
+window.renderRecipeBrowser = renderRecipeBrowser;
+window.setGroupBy          = setGroupBy;
+window.applyFilters        = renderRecipeBrowser;  // alias för bakåtkompat
+window.jumpToRecipe        = jumpToRecipe;
+window.toggleTested        = toggleTested;
+window.initFilters         = initFilters;
