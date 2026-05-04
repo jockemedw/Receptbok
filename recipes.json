@@ -337,7 +337,8 @@
       "tags": [
         "helg60",
         "ramen",
-        "soppa"
+        "soppa",
+        "japanskt"
       ],
       "protein": "vegetarisk",
       "ingredients": [
@@ -455,7 +456,8 @@
       "tags": [
         "vardag30",
         "curry",
-        "nudlar"
+        "nudlar",
+        "thailändskt"
       ],
       "protein": "vegetarisk",
       "ingredients": [
@@ -2527,7 +2529,8 @@
       "tags": [
         "vardag30",
         "veg",
-        "doh"
+        "doh",
+        "asiatiskt"
       ],
       "protein": "vegetarisk",
       "ingredients": [
@@ -3055,7 +3058,8 @@
         "vardag30",
         "pasta",
         "veg",
-        "doh"
+        "doh",
+        "medelhavet"
       ],
       "protein": "vegetarisk",
       "ingredients": [
@@ -3578,7 +3582,8 @@
         "helg60",
         "veg",
         "sallad",
-        "doh"
+        "doh",
+        "koreanskt"
       ],
       "protein": "vegetarisk",
       "ingredients": [
@@ -3728,7 +3733,8 @@
       "tags": [
         "vardag30",
         "wok",
-        "doh"
+        "doh",
+        "vietnamesiskt"
       ],
       "protein": "fisk",
       "ingredients": [
@@ -3874,7 +3880,8 @@
       "tags": [
         "helg60",
         "ugn",
-        "doh"
+        "doh",
+        "medelhavet"
       ],
       "protein": "fisk",
       "ingredients": [
@@ -4530,7 +4537,8 @@
         "vardag30",
         "wok",
         "veg",
-        "doh"
+        "doh",
+        "thailändskt"
       ],
       "protein": "vegetarisk",
       "ingredients": [
@@ -6021,7 +6029,8 @@
       "tags": [
         "vardag30",
         "ugn",
-        "doh"
+        "doh",
+        "mexikanskt"
       ],
       "protein": "kött",
       "ingredients": [
@@ -6675,7 +6684,8 @@
       "tags": [
         "vardag30",
         "sallad",
-        "doh"
+        "doh",
+        "thailändskt"
       ],
       "protein": "fisk",
       "ingredients": [
@@ -7104,7 +7114,8 @@
         "vardag30",
         "veg",
         "wok",
-        "doh"
+        "doh",
+        "japanskt"
       ],
       "protein": "vegetarisk",
       "ingredients": [
@@ -7514,7 +7525,8 @@
       "timeNote": "",
       "tags": [
         "vardag30",
-        "doh"
+        "doh",
+        "indiskt"
       ],
       "protein": "fisk",
       "ingredients": [
@@ -8077,7 +8089,8 @@
       "tags": [
         "helg60",
         "ugn",
-        "doh"
+        "doh",
+        "japanskt"
       ],
       "protein": "fisk",
       "ingredients": [
@@ -8157,7 +8170,8 @@
         "helg60",
         "veg",
         "sallad",
-        "doh"
+        "doh",
+        "mellanöstern"
       ],
       "protein": "vegetarisk",
       "ingredients": [
@@ -8432,7 +8446,8 @@
       "tags": [
         "helg60",
         "ugn",
-        "doh"
+        "doh",
+        "japanskt"
       ],
       "protein": "fisk",
       "ingredients": [
@@ -8514,7 +8529,8 @@
         "helg60",
         "soppa",
         "veg",
-        "doh"
+        "doh",
+        "thailändskt"
       ],
       "protein": "vegetarisk",
       "ingredients": [
@@ -8598,7 +8614,8 @@
       "tags": [
         "vardag30",
         "ramen",
-        "doh"
+        "doh",
+        "japanskt"
       ],
       "protein": "vegetarisk",
       "ingredients": [
@@ -9206,7 +9223,8 @@
         "vardag30",
         "sallad",
         "veg",
-        "doh"
+        "doh",
+        "thailändskt"
       ],
       "protein": "vegetarisk",
       "ingredients": [
@@ -9484,7 +9502,8 @@
       "tags": [
         "vardag30",
         "ugn",
-        "doh"
+        "doh",
+        "japanskt"
       ],
       "protein": "fisk",
       "ingredients": [
@@ -9596,7 +9615,8 @@
         "helg60",
         "ugn",
         "veg",
-        "doh"
+        "doh",
+        "mellanöstern"
       ],
       "protein": "vegetarisk",
       "ingredients": [
@@ -9903,7 +9923,8 @@
         "vardag30",
         "veg",
         "wok",
-        "doh"
+        "doh",
+        "kinesiskt"
       ],
       "protein": "vegetarisk",
       "ingredients": [

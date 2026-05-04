@@ -9,7 +9,7 @@
 <title>Receptboken</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=53">
+<link rel="stylesheet" href="css/styles.css?v=54">
 <style>/* tömd — CSS flyttad till css/styles.css */
 
 </style>
@@ -400,7 +400,7 @@
     <h3 class="bottom-sheet-title" id="sortSheetTitle">Sortera per</h3>
     <div class="bs-options">
       <label class="bs-option"><input type="radio" name="groupBy" value="tested"><span class="bs-option-label">Status</span></label>
-      <label class="bs-option"><input type="radio" name="groupBy" value="protein"><span class="bs-option-label">Protein</span></label>
+      <label class="bs-option"><input type="radio" name="groupBy" value="mainIngredient"><span class="bs-option-label">Huvudingrediens</span></label>
       <label class="bs-option"><input type="radio" name="groupBy" value="time"><span class="bs-option-label">Tid</span></label>
       <label class="bs-option"><input type="radio" name="groupBy" value="type"><span class="bs-option-label">Typ</span></label>
       <label class="bs-option"><input type="radio" name="groupBy" value="cuisine" checked><span class="bs-option-label">Kök</span></label>
@@ -423,13 +423,19 @@
       </div>
     </div>
     <div class="bs-group">
-      <h4 class="bs-group-title">Protein</h4>
+      <h4 class="bs-group-title">Huvudingrediens</h4>
       <div class="bs-checks">
-        <label class="bs-check"><input type="checkbox" data-fgroup="protein" value="fisk"><span>Fisk</span></label>
-        <label class="bs-check"><input type="checkbox" data-fgroup="protein" value="kyckling"><span>Kyckling</span></label>
-        <label class="bs-check"><input type="checkbox" data-fgroup="protein" value="kött"><span>Kött</span></label>
-        <label class="bs-check"><input type="checkbox" data-fgroup="protein" value="fläsk"><span>Fläsk</span></label>
-        <label class="bs-check"><input type="checkbox" data-fgroup="protein" value="vegetarisk"><span>Vegetariskt</span></label>
+        <label class="bs-check"><input type="checkbox" data-fgroup="mainIngredient" value="lax"><span>Lax</span></label>
+        <label class="bs-check"><input type="checkbox" data-fgroup="mainIngredient" value="räkor"><span>Räkor</span></label>
+        <label class="bs-check"><input type="checkbox" data-fgroup="mainIngredient" value="kyckling"><span>Kyckling</span></label>
+        <label class="bs-check"><input type="checkbox" data-fgroup="mainIngredient" value="tofu"><span>Tofu</span></label>
+        <label class="bs-check"><input type="checkbox" data-fgroup="mainIngredient" value="tempeh"><span>Tempeh</span></label>
+        <label class="bs-check"><input type="checkbox" data-fgroup="mainIngredient" value="kikärtor"><span>Kikärtor</span></label>
+        <label class="bs-check"><input type="checkbox" data-fgroup="mainIngredient" value="linser"><span>Linser</span></label>
+        <label class="bs-check"><input type="checkbox" data-fgroup="mainIngredient" value="bönor"><span>Bönor</span></label>
+        <label class="bs-check"><input type="checkbox" data-fgroup="mainIngredient" value="quinoa"><span>Quinoa</span></label>
+        <label class="bs-check"><input type="checkbox" data-fgroup="mainIngredient" value="svamp"><span>Svamp</span></label>
+        <label class="bs-check"><input type="checkbox" data-fgroup="mainIngredient" value="annat"><span>Annat</span></label>
       </div>
     </div>
     <div class="bs-group">
@@ -447,6 +453,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=53"></script>
+<script type="module" src="js/app.js?v=54"></script>
 </body>
 </html>

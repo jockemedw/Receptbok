@@ -10,6 +10,29 @@ import { proteinLabel, timeStr, renderDetailInner } from '../utils.js';
 const TYPE_TAGS    = ['soppa', 'pasta', 'wok', 'curry', 'gryta', 'sallad', 'ramen', 'ugn'];
 const CUISINE_TAGS = ['italienskt', 'mexikanskt', 'medelhavet', 'mellanöstern', 'indiskt', 'thailändskt', 'japanskt', 'koreanskt', 'kinesiskt', 'vietnamesiskt', 'asiatiskt', 'franskt'];
 
+// Huvudingrediens — keyword-matchning över ingredient-listan, första match vinner.
+// Ordning är viktig: specifik före bred. Returnerar null = "annat".
+const MAIN_INGREDIENT_RULES = [
+  ['lax',       /\blax(filé)?(\b|er|en)/i],
+  ['räkor',     /\bräkor\b|\bräka\b/i],
+  ['kyckling',  /\bkyckling/i],
+  ['tofu',      /\btofu\b/i],
+  ['tempeh',    /\btempeh\b/i],
+  ['kikärtor',  /\bkikärt/i],
+  ['linser',    /\blinser\b/i],
+  ['bönor',     /\b(svarta|vita|röda|kidney|cannellini|borlotti|pinto|adzuki)\s*bönor\b|\bbönor\b|\bedamame\b/i],
+  ['quinoa',    /\bquinoa\b/i],
+  ['svamp',     /\b(svamp(ar)?|champinjon|portobello|shiitake|kantarell|karljohan|trattkantarell)\b/i],
+];
+
+function mainIngredientOf(r) {
+  const text = r.ingredients.join('\n');
+  for (const [name, pattern] of MAIN_INGREDIENT_RULES) {
+    if (pattern.test(text)) return name;
+  }
+  return 'annat';
+}
+
 const GROUP_DEFS = {
   tested: {
     sections: [
@@ -18,14 +41,20 @@ const GROUP_DEFS = {
       { id: 'doh',     label: 'Importerat — granska',     match: r => !r.tested && r.tags.includes('doh') },
     ],
   },
-  protein: {
+  mainIngredient: {
     sections: [
-      { id: 'fisk',        label: 'Fisk' },
-      { id: 'kyckling',    label: 'Kyckling' },
-      { id: 'kött',        label: 'Kött' },
-      { id: 'fläsk',       label: 'Fläsk' },
-      { id: 'vegetarisk',  label: 'Vegetariskt' },
-    ].map(s => ({ ...s, match: r => r.protein === s.id })),
+      { id: 'lax',       label: 'Lax' },
+      { id: 'räkor',     label: 'Räkor' },
+      { id: 'kyckling',  label: 'Kyckling' },
+      { id: 'tofu',      label: 'Tofu' },
+      { id: 'tempeh',    label: 'Tempeh' },
+      { id: 'kikärtor',  label: 'Kikärtor' },
+      { id: 'linser',    label: 'Linser' },
+      { id: 'bönor',     label: 'Bönor' },
+      { id: 'quinoa',    label: 'Quinoa' },
+      { id: 'svamp',     label: 'Svamp' },
+      { id: 'annat',     label: 'Annat' },
+    ].map(s => ({ ...s, match: r => mainIngredientOf(r) === s.id })),
   },
   time: {
     sections: [
@@ -130,9 +159,9 @@ function statusBucket(r) {
 function passesFilters(r) {
   const f = window.recipeFilters;
   if (!f) return true;
-  if (f.tested.size  > 0 && !f.tested.has(statusBucket(r)))  return false;
-  if (f.protein.size > 0 && !f.protein.has(r.protein))       return false;
-  if (f.time.size    > 0 && !f.time.has(timeBucket(r)))      return false;
+  if (f.tested.size         > 0 && !f.tested.has(statusBucket(r)))               return false;
+  if (f.mainIngredient.size > 0 && !f.mainIngredient.has(mainIngredientOf(r)))   return false;
+  if (f.time.size           > 0 && !f.time.has(timeBucket(r)))                   return false;
   return true;
 }
 
@@ -178,7 +207,7 @@ export function renderRecipeBrowser() {
 
   const filtersActive =
     window.recipeFilters &&
-    (window.recipeFilters.tested.size + window.recipeFilters.protein.size + window.recipeFilters.time.size > 0);
+    (window.recipeFilters.tested.size + window.recipeFilters.mainIngredient.size + window.recipeFilters.time.size > 0);
 
   info.textContent = (q || filtersActive)
     ? `Visar ${matched.length} av ${total} recept`
