@@ -106,22 +106,70 @@ Inga just nu.
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 - Säsongsfilter — automatiskt vikta recept efter säsong (soppa/gryta höst-vinter, sallad sommar)
 
-### Senaste session — Session 46 (2026-05-04) — Receptbrowser: chip-filter ut, "Sortera per"-gruppering in
-- **Motivering:** Efter att 197 doh-recept promoterades i samma session blev receptbokens lista 62 → 259 recept i ID-ordning (= meningslös för användaren). Användarens egen formulering: "ogenomtänkt — bara evig scroll utan inbördes ordning". Efter brainstorming valdes group-by-mönster (Apple Music, Notion-databaser, Things) framför sortering eftersom sticky-headers ger ankarpunkter hela vägen ner i listan, inte bara i toppen.
-- **Beslutskedja:** Min UX-analys föreslog 7 quick wins (filter AND/OR, sortering, compact-toggle, sticky-sök, smart-genvägar, empty recovery, alltid-synlig results-info). Användaren stoppade och bad om en sak att göra först. Efter en runda fram-och-tillbaka enades vi om "Sortera per:"-dropdown med 5 dimensioner: Provat-status (default) · Protein · Tid · Typ · Kök. Filterchips skalas ned: helt borta. Inom varje sektion alfabetisk på titel.
-- **Implementation, 5 filer:**
-  - `js/recipes/recipe-browser.js` — full omskrivning. Ny `GROUP_DEFS` (5 dimensioner), `renderRecipeBrowser()` ersätter chip-baserad `applyFilters()`. Sökning sker nu mot `window.RECIPES`-array, inte DOM-attribut (drog bort `data-ingredients`/`data-instructions` från renderCard — ~MB onödig DOM på 259 kort). `applyFilters` + `initFilters` kvar som no-op/alias för bakåtkompat med `recipe-editor.js`.
-  - `js/state.js` — `window.groupBy = 'tested'`. `window.activeFilters` lämnad oanvänd för bakåtkompat.
-  - `js/app.js` — borta: `initFilters`-anrop, filter-click-listener. In: groupBy change-listener, empty-state reset-button-handler.
-  - `index.html` — `<div class="filters" id="filters">` ersatt av `<select id="groupBy">` med 5 options. "Rensa sökning"-knapp i `#emptyState`. Cache-bust `?v=46` → `?v=47`.
-  - `css/styles.css` — `.filters/.filter-btn/.filter-group-label`-block ersatt av `.group-by-wrap/.group-by-label/.group-by-select` (mörk select i lichen-headern, custom chevron-SVG via background-image). `.recipe-section-header { position: sticky; top: 0 }` med Playfair-rubrik + `.recipe-section-count`-pill. `.empty-reset-btn` outline-tier-knapp.
-- **Verifiering:** Node `--check` på alla 3 ändrade JS-filer (OK). Torrkörning av grupperingslogiken mot `recipes.json` summerar till 259 i alla 5 dimensioner — inga recept faller mellan stolarna. Distribution: tested 21/41/197 · protein 53/10/4/6/186 · tid 117/139/3 · typ ugn=58/sallad=43/pasta=34/soppa=30/övrigt=63 · kök 252/259 i Övrigt (bara 7 recept har kök-tag — dropdown-valet kvar för framtida tagning).
-- **Bakåtkompat-noter:** `recipe-editor.js` rad 134-140 sätter `window.activeFilters` + ringer `window.applyFilters()` efter add/edit — fungerar fortfarande (Set lämnas, applyFilters är alias för renderRecipeBrowser). Rad 177-178 sätter `card.dataset.ingredients/instructions` på edited card — harmlöst dödattribut nu (ingen läser).
-- **Live-verifiering kvar:** Användaren testar på mobil mot Vercel-deployen efter push (~30 sek). Efter cache-bust ska gamla CSS/JS inte serveras.
-- **Ej gjort denna session (kvar i UX-analys):** Filter AND/OR (irrelevant nu när chips är borta), sortering inom dimension (stannar på alfabetisk), compact/expand-toggle, sticky-sök vid scroll, smart-genvägar, recept-tumnaglar/SVG-ikoner, group-by-protein som primär vy. Alla diskuterade som möjliga nästa steg om gruppering ensamt inte räcker.
-- **Nästa session (47):** Mobil-verifiering av group-by-vyn i action — fungerar sticky-headers OK på iOS Safari? Skum-känslan vid 197 doh-recept i sektionen "Importerat — granska"? Ev. utvärdera om alfabetisk sortering inom sektion borde vara "senast använda" istället. Eller helt annan prioritering.
+### Senaste session — Session 46 (2026-05-04) — Promotion av 197 doh-recept + komplett receptbrowser-refaktor
+- **Motivering:** Sessionen började med att Session 45:s 197 staging-recept skulle granskas och promoteras. Användaren bad om att tagga alla med `doh` så de gick att granska enkelt sen. Efter promotion (62 → 259 recept) blev befintliga receptbrowsern (platt vertikal lista i ID-ordning) oöverblickbar — användarens formulering: "ogenomtänkt — bara evig scroll utan inbördes ordning". Resten av sessionen var iterativ refaktor av receptbrowsern.
+- **13 commits totalt:** ab6e7a2 (promotion) → 1280d19 (group-by) → f6a95d9 (init-fix + pill-tabs) → ed86295 (bottom-sheets) → 9331467 (FAB-stack) → 62e88e0 (krymp avstånd) → 664b829 (scroll-lock) → 863a568 (37 kök-tags) → 986dfbd (21 fler kök + huvudingrediens) → 8009ac2 (chilaquiles-fix) → dd2ed03 (DOH-sektion) → ded0fee (FAB-ordning).
 
-### Session 45 (2026-05-04) — Dishingouthealth-scrape: 197 recept i staging, väntar manuell granskning
+#### 1. Promotion av 197 dishingouthealth-recept med doh-tag (ab6e7a2)
+- Skript: muterade `recipes-import-pending.json` att lägga `'doh'` i alla recipe.tags, sedan `node scripts/dish-scrape/promote.mjs`. recipes.json: 62 → 259 recept, `nextId` 63 → 262.
+- Resultat: alla 197 doh-recept finns med tag `["...", "doh"]` så de kan filtreras/granskas enkelt.
+
+#### 2. UX-analys + designbeslut group-by
+- Föreslog 7 quick wins (filter AND/OR, sortering, compact-toggle, sticky-sök, smart-genvägar, empty recovery, alltid-synlig results-info). Användaren stoppade och bad om en sak att göra först. Vi enades om group-by med 5 dimensioner: Provat-status · Protein · Tid · Typ · Kök. Inom sektion alfabetisk på titel.
+
+#### 3. Group-by-implementation (1280d19) — chip-filter ut, sortera-dropdown in
+- `js/recipes/recipe-browser.js` — full omskrivning. Ny `GROUP_DEFS` (5 dimensioner) + `renderRecipeBrowser()` ersätter chip-baserad `applyFilters()`. Sökning mot `window.RECIPES`-array, inte DOM-attribut (drog bort `data-ingredients`/`data-instructions` från renderCard — ~MB onödig DOM på 259 kort).
+- `js/state.js` — `window.groupBy = 'tested'`. `window.activeFilters` lämnad oanvänd för bakåtkompat med `recipe-editor.js`.
+- HTML — chip-filter-blocket ersatt av `<select id="groupBy">`. Sticky `.recipe-section-header` med Playfair-rubrik + count-pill.
+
+#### 4. Init-krasch + pill-tabs + notch-säker sticky (f6a95d9)
+- **Init-bugg:** `countDisplay`-elementet finns inte i HTML men `app.js` rad 25 satte `.textContent` på den → TypeError → init() föll i catch och visade varningsruta i stället för listan. Pre-existing bug exponerad när jag flyttade `renderRecipeBrowser()`-anropet bakom raden. Tog bort död `countDisplay`-referens.
+- Användaren rapporterade live: rull-list-fält för stort + sticky-header tunn (göms bakom selfie-kameran). Bytte select-dropdown mot 5 pill-tabs. Sticky fick `padding-top: max(0.85rem, env(safe-area-inset-top))` + tjockare typografi.
+
+#### 5. Bottom-sheets (ed86295) — Sortera + Filter
+- Användaren ville mer minimalistiskt med två separata knappar (Sortera + Filter) som öppnar bottom-sheets.
+- Två kontroller höger i headern → öppnar slide-up-paneler. Sortera = 5 radio-val (klick stänger automatiskt). Filter = checkbox-grupper Status / Protein / Tid med "Rensa alla" + "Klar". Rust-prick på Filter-knappen när något filter är aktivt. Backdrop-tap, ESC och "Klar" stänger.
+- Inga emoji — line-SVG chevrons enligt bottom-nav-stilen.
+
+#### 6. FAB-stack i höger nedre hörn (9331467)
+- Användaren ville cirkulära FAB-knappar nere höger som matchar scrolltop-pilen, alltid synliga.
+- Två lichen-FAB:s (2.8rem) + scrolltop i en flex-column på höger sida. Sortera + Filter via `body[data-active-tab="recept"]` så de syns bara på recept-fliken. Filter-pricken som notification-prick i FAB:ens övre högra hörn.
+
+#### 7. Krymp avstånd headern → första sektion (62e88e0)
+- Användaren rapporterade ~2 rubrikrader extra mellanrum mellan grön header och första sektionsrubriken.
+- Tre samtidiga orsaker: (a) sticky-headerns `padding-top: max(..., env(safe-area-inset-top))` tog plats ALLTID (även när inte sticky-fastnad) — bytt till `top: env(...)`. (b) `main` padding-top 0.5rem → 0. (c) "259 recept totalt"-raden gömd helt när inget filter/sökning är aktivt.
+
+#### 8. Scroll-lock + default Kök (664b829)
+- Bottom-sheet läckte scroll till bakomliggande receptlista (klassiskt iOS — `overflow:hidden` på body räcker inte). Bytt till position-fixed-trick: spara scrollY, lås body, återställ vid stängning. Plus `touch-action:none` på backdrop, `overscroll-behavior:contain` på panel.
+- Default-gruppering Status → Kök.
+
+#### 9. Klassificera 58 recept med ursprungskök (863a568 + 986dfbd)
+- Skript: `scripts/classify-cuisine.mjs`. Konservativ keyword-klassificerare med titel-signaturord (lasagne, tacos, miso, harissa) + distinkta ingredienser. Två iterationer:
+  - **Iteration 1** (90% konfidens, ≥1 titel ELLER ≥3 ingredienser, marginal ≥10): 37 recept.
+  - **Iteration 2** (~80% konfidens, ≥2 ingredienser räcker, marginal ≥5, plus utökade ingredient-signaturer + specialregel "röd/grön curry → thailändskt, inte indiskt"): +21 recept.
+- **Distribution:** mexikanskt 13, japanskt 9, medelhavet 9, indiskt 7, italienskt 6, mellanöstern 6, thailändskt 6, koreanskt 3, asiatiskt 2, franskt 2, vietnamesiskt 1, kinesiskt 1. **Totalt 65/259 (25%)**, 194 lämnas otaggade.
+- Utökat `CUISINE_TAGS` i `recipe-browser.js` med 8 nya kök så grupperingen plockar upp dem.
+- **Specialfall i koden:** I `classify()` finns explicit handling för `/röd\s+curry|grön\s+curry/i` → ger thailändskt-poäng + tar bort indiskt-poäng. Lade till för att curry-pattern annars överrider (typer av thai-curry är språkligt indisk-stämplade).
+
+#### 10. Huvudingrediens-filter ersätter Protein (986dfbd)
+- Användaren ville byta protein-filtret mot huvudingrediens. Beräknat dynamiskt via `mainIngredientOf()`-funktion i recipe-browser.js (keyword-matchning, första match vinner). Lista: Lax · Räkor · Kyckling · Tofu · Tempeh · Kikärtor · Linser · Bönor · Quinoa · Svamp · Annat.
+- `protein`-fältet i recipes.json **orört** (matsedeln-algoritmen i `api/generate.js` använder det fortfarande för proteinbalans). Bara UI-byte. `window.recipeFilters.protein` → `window.recipeFilters.mainIngredient`.
+
+#### 11. Chilaquiles-fix (8009ac2)
+- #151 "Blomkålschilaquiles med salsa roja" missades av mexikanskt-klassningen pga regex-bug — `\bchilaquile/i` har word-boundary före, men "blomkåls" + "chilaquiles" bildar ett sammansatt ord utan boundary. Manuellt taggad som mexikanskt. Klassificeraren fortfarande oförändrad — minimal scope.
+
+#### 12. Dishing out health-sektion (dd2ed03)
+- Doh-recept utan annat kök-tag samlas nu i egen sektion "Dishing out health" under Sortera på Kök, mellan vanliga kök och "Övrigt". Doh-recept som **också** har cuisine-tag (mexikanskt + doh) hamnar i sin cuisine-sektion via first-match-wins.
+
+#### 13. FAB-ordning: pilen överst (ded0fee)
+- Användaren ville ha pil-knappen överst i FAB-stacken istället för längst ned. HTML-ordning ändrad till [scrolltop, openSortBtn, openFilterBtn]. Eftersom containern är bottom-fixed, hoppar Sortera + Filter ALDRIG (de stannar nederst), pilen dyker bara upp ovanför vid scroll>400.
+
+- **Ej gjort (kvar i UX-analys):** Compact/expand-toggle, sticky-sök vid scroll, smart-genvägar, recept-tumnaglar, smartare sortering inom sektion (alfabetisk fortsatt). Diskuterade BBQ/Tex-mex/Cajun som ytterligare kreativa kök-tags men användaren skippade dem.
+- **Cache-bust:** `?v=46` → `?v=56` (10 bumpar genom sessionen).
+- **Status:** Allt live på https://receptbok-six.vercel.app/. recipes.json: 259 recept · 65 med kök-tag · 197 med doh-tag.
+- **Nästa session (47):** Mobil-verifiering av FAB-stack-ordningen + scroll-lock i sheets på iOS Safari. Eller annan prioritering — Fas 4F live-verifiering (övergång från env vars till gist-baserad cookie-rotation), Capacitor-kickoff (Fas 5A), eller fortsätta receptbrowserns finputsning (compact-mode, smartare sortering inom sektion, recept-tumnaglar).
+
+### Session 45 (2026-05-04) — Dishingouthealth-scrape: 197 recept i staging (promoterades i Session 46)
 - **Motivering:** Plan från Session 43-cloud (commit `dba699f` på `claude/scrape-dishingouthealth-recipes-gwRU5`) flyttades hit för lokal körning eftersom webb-sandbox 403:ade dishingouthealth.com. Mål: engångs-scrape som hämtar amerikanska blogg-recept, översätter till idiomatisk svenska + konverterar enheter (cup→dl, °F→°C, lb→g) via Sonnet, skriver till staging-fil för granskning innan promotion till `recipes.json`.
 - **Filer skapade:** `scripts/dish-scrape/` (ny katalog): `scrape.mjs` (~600 rader, Fas 1–4 sitemap→filter→Sonnet-loop→staging), `promote.mjs` (staging→`recipes.json`-merge), `finalize.mjs` (offline-staging-builder från progress-cachen), `package.json` (deps: `@anthropic-ai/sdk`), `pilot-urls.txt`. Staging-artefakter i repo-root: `recipes-import-pending.json` (197 recept) + `recipes-import-quality-report.md` (10 stickprov + varningsflaggor + distribution).
 - **Pilot-iterationer (5 hand-plockade URLer):** Första pilot exponerade tre systematiska problem: (1) `"vegetarisk"` hamnade som tag (är `protein`-fält, inte tag), (2) engelska kvarlevor som `"thinsliced"` i ingredienser, (3) recept-card-rubriker som `"Tillbehör:"` läckte in. Skärpt system-prompt med explicit FÖRBJUDET-lista för protein-i-tags, ~25 prep-method-översättningar (`thinly sliced→tunt skivad`, `finely chopped→fint hackad`, etc.), regel `5b` om att filtrera bort rubriker. Re-pilot verifierade alla tre fixar.
