@@ -9,7 +9,7 @@
 <title>Receptboken</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=55">
+<link rel="stylesheet" href="css/styles.css?v=56">
 <style>/* tömd — CSS flyttad till css/styles.css */
 
 </style>
@@ -269,15 +269,15 @@
 <footer id="footerEl">Receptboken</footer>
 
 <div class="bottom-right-stack" id="bottomRightStack">
+  <button id="scrolltop" title="Till toppen" aria-label="Till toppen">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+  </button>
   <button class="recipe-fab tab-recept-only" id="openSortBtn" aria-haspopup="dialog" aria-label="Sortera recept" title="Sortera">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h13"/><path d="M3 12h9"/><path d="M3 18h5"/></svg>
   </button>
   <button class="recipe-fab tab-recept-only" id="openFilterBtn" aria-haspopup="dialog" aria-label="Filtrera recept" title="Filter">
     <span class="filter-dot" id="filterDot" hidden></span>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 9v6l-4-2v-4z"/></svg>
-  </button>
-  <button id="scrolltop" title="Till toppen" aria-label="Till toppen">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
   </button>
 </div>
 
@@ -453,6 +453,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=55"></script>
+<script type="module" src="js/app.js?v=56"></script>
 </body>
 </html>
