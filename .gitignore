@@ -37,3 +37,15 @@ pdf-pages/
 # Willys cart PoC (Session 36) — cookies är privata
 scripts/.willys-cookies.local
 scripts/willys-cart-poc-*.log
+
+# Dishingouthealth-scrape (Session 43) — engångs-import-artefakter
+scripts/dish-scrape/.env
+scripts/dish-scrape/node_modules/
+scripts/dish-scrape/package-lock.json
+scripts/dish-scrape/progress.json
+scripts/dish-scrape/recipe-urls.txt
+scripts/dish-scrape/recipe-urls-filtered.txt
+scripts/dish-scrape/sitemap-*.xml
+scripts/dish-scrape/scrape.log
+scripts/dish-scrape/staging-pilot.json
+scripts/dish-scrape/staging-pilot-report.md
