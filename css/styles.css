@@ -445,7 +445,7 @@
 
   /* ── MAIN ── */
   main {
-    padding: 0.5rem 1rem 4rem;
+    padding: 0 1rem 4rem;
     max-width: 680px;
     margin: 0 auto;
   }
@@ -453,9 +453,11 @@
   .results-info {
     font-size: 0.78rem;
     color: var(--text-muted);
-    margin: 0.25rem 0 0.7rem;
+    margin: 0;
+    padding: 0.4rem 0.25rem;
     font-style: italic;
   }
+  .results-info:empty { display: none; }
 
   /* ── WEEKLY PLAN BANNER ── */
   .plan-banner {
@@ -527,11 +529,10 @@
 
   .recipe-section-header {
     position: sticky;
-    top: 0;
+    top: env(safe-area-inset-top, 0);
     background: var(--linen);
     margin: 0 -1rem 0.55rem;
-    padding: 0.85rem 1rem 0.7rem;
-    padding-top: max(0.85rem, env(safe-area-inset-top, 0.85rem));
+    padding: 0.55rem 1rem 0.5rem;
     font-family: 'Playfair Display', serif;
     font-size: 0.95rem;
     font-weight: 500;

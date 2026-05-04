@@ -182,7 +182,7 @@ export function renderRecipeBrowser() {
 
   info.textContent = (q || filtersActive)
     ? `Visar ${matched.length} av ${total} recept`
-    : `${total} recept totalt`;
+    : '';
 }
 
 export function setGroupBy(value) {
