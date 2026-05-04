@@ -8,7 +8,7 @@ import { proteinLabel, timeStr, renderDetailInner } from '../utils.js';
 // Varje grupp är en lista av sektioner. Sektionerna utvärderas i ordning;
 // första matchen vinner (ett recept hamnar bara i en sektion).
 const TYPE_TAGS    = ['soppa', 'pasta', 'wok', 'curry', 'gryta', 'sallad', 'ramen', 'ugn'];
-const CUISINE_TAGS = ['asiatiskt', 'indiskt', 'japanskt', 'koreanskt'];
+const CUISINE_TAGS = ['italienskt', 'mexikanskt', 'medelhavet', 'mellanöstern', 'indiskt', 'thailändskt', 'japanskt', 'koreanskt', 'kinesiskt', 'vietnamesiskt', 'asiatiskt', 'franskt'];
 
 const GROUP_DEFS = {
   tested: {
