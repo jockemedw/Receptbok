@@ -189,48 +189,64 @@
     pointer-events: none;
   }
 
-  /* ── RECIPE CONTROLS (Sortera + Filter knappar) ── */
-  .recipe-controls {
+  /* ── BOTTOM-RIGHT FAB STACK (Sortera, Filter, Till toppen) ── */
+  .bottom-right-stack {
+    position: fixed;
+    bottom: calc(var(--bottom-nav-h) + 1.5rem);
+    right: 1.5rem;
     display: flex;
-    gap: 0.5rem;
-    justify-content: flex-end;
-    margin-top: 0.55rem;
+    flex-direction: column;
+    gap: 0.6rem;
+    z-index: 99;
+    pointer-events: none;
   }
 
-  .recipe-control-btn {
-    display: inline-flex;
+  .bottom-right-stack > * { pointer-events: auto; }
+
+  .recipe-fab {
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 50%;
+    background: var(--lichen);
+    color: white;
+    border: none;
+    display: flex;
     align-items: center;
-    gap: 0.35rem;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.18);
-    color: var(--linen);
-    padding: 0.4rem 0.85rem;
-    border-radius: 8px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 0.85rem;
-    font-weight: 500;
+    justify-content: center;
     cursor: pointer;
-    transition: background 0.15s, border-color 0.15s;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
     position: relative;
+    padding: 0;
+    transition: transform 0.15s, background 0.15s;
   }
 
-  .recipe-control-btn:hover {
-    background: rgba(255,255,255,0.12);
+  .recipe-fab svg {
+    width: 1.25rem;
+    height: 1.25rem;
   }
 
-  .recipe-control-btn .icon {
-    width: 0.85em;
-    height: 0.85em;
-    opacity: 0.7;
+  .recipe-fab:active { transform: scale(0.93); }
+
+  @media (hover: hover) {
+    .recipe-fab:hover { background: var(--lichen-deep); }
   }
 
-  .filter-dot {
-    width: 7px;
-    height: 7px;
+  .recipe-fab .filter-dot {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 9px;
+    height: 9px;
     border-radius: 50%;
     background: var(--rust);
-    margin-left: 0.1rem;
-    flex-shrink: 0;
+    border: 2px solid var(--lichen);
+    box-sizing: content-box;
+    margin: 0;
+  }
+
+  /* Visa recept-FAB:s bara på recept-fliken */
+  body:not([data-active-tab="recept"]) .tab-recept-only {
+    display: none;
   }
 
   .recipe-count { display: none; }
@@ -429,15 +445,15 @@
 
   /* ── MAIN ── */
   main {
-    padding: 1.5rem 1rem 4rem;
+    padding: 0.5rem 1rem 4rem;
     max-width: 680px;
     margin: 0 auto;
   }
 
   .results-info {
-    font-size: 0.82rem;
+    font-size: 0.78rem;
     color: var(--text-muted);
-    margin-bottom: 1rem;
+    margin: 0.25rem 0 0.7rem;
     font-style: italic;
   }
 
@@ -823,23 +839,28 @@
 
   /* ── SCROLL TO TOP ── */
   #scrolltop {
-    position: fixed;
-    bottom: calc(var(--bottom-nav-h) + 1.5rem);
-    right: 1.5rem;
     background: var(--lichen);
     color: white;
     border: none;
     border-radius: 50%;
     width: 2.8rem;
     height: 2.8rem;
-    font-size: 1.2rem;
     cursor: pointer;
     display: none;
     align-items: center;
     justify-content: center;
     box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-    z-index: 99;
-    transition: transform 0.15s;
+    transition: transform 0.15s, background 0.15s;
+    padding: 0;
+  }
+
+  #scrolltop svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  @media (hover: hover) {
+    #scrolltop:hover { background: var(--lichen-deep); }
   }
 
   #scrolltop:hover { transform: scale(1.08); }

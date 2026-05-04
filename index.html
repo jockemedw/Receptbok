@@ -9,12 +9,12 @@
 <title>Receptboken</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=49">
+<link rel="stylesheet" href="css/styles.css?v=50">
 <style>/* tömd — CSS flyttad till css/styles.css */
 
 </style>
 </head>
-<body>
+<body data-active-tab="recept">
 
 <header>
   <div class="header-bar">
@@ -29,17 +29,6 @@
     <div class="search-wrap">
       <span class="search-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
       <input id="search" type="search" placeholder="Sök på namn, ingrediens, tagg…" autocomplete="off">
-    </div>
-    <div class="recipe-controls">
-      <button class="recipe-control-btn" id="openSortBtn" aria-haspopup="dialog">
-        Sortera
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-      </button>
-      <button class="recipe-control-btn" id="openFilterBtn" aria-haspopup="dialog">
-        Filter
-        <span class="filter-dot" id="filterDot" hidden></span>
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
-      </button>
     </div>
   </div>
 </header>
@@ -278,7 +267,20 @@
 </div>
 
 <footer id="footerEl">Receptboken</footer>
-<button id="scrolltop" title="Till toppen" aria-label="Till toppen">↑</button>
+
+<div class="bottom-right-stack" id="bottomRightStack">
+  <button class="recipe-fab tab-recept-only" id="openSortBtn" aria-haspopup="dialog" aria-label="Sortera recept" title="Sortera">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h13"/><path d="M3 12h9"/><path d="M3 18h5"/></svg>
+  </button>
+  <button class="recipe-fab tab-recept-only" id="openFilterBtn" aria-haspopup="dialog" aria-label="Filtrera recept" title="Filter">
+    <span class="filter-dot" id="filterDot" hidden></span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 9v6l-4-2v-4z"/></svg>
+  </button>
+  <button id="scrolltop" title="Till toppen" aria-label="Till toppen">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+  </button>
+</div>
+
 <button class="fab-import" id="fabImport" onclick="openImportModal()" title="Importera recept" aria-label="Importera recept"><svg class="icon icon-em-1-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
 
 <nav class="bottom-nav" aria-label="Huvudnavigering">
@@ -445,6 +447,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=49"></script>
+<script type="module" src="js/app.js?v=50"></script>
 </body>
 </html>

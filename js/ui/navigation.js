@@ -1,6 +1,7 @@
 // Tab-navigering: receptvy, veckovyn, inköpslistan.
 
 export function switchTab(tab) {
+  document.body.dataset.activeTab = tab;
   document.getElementById('receptView').style.display              = tab === 'recept' ? '' : 'none';
   document.getElementById('weekView').classList.toggle('visible',     tab === 'vecka');
   document.getElementById('shopView').classList.toggle('visible',     tab === 'shop');
