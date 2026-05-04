@@ -36,14 +36,73 @@ async function init() {
 // Event listeners
 document.getElementById('search').addEventListener('input', () => window.renderRecipeBrowser());
 
-document.getElementById('groupTabs').addEventListener('click', e => {
-  const btn = e.target.closest('.group-tab');
-  if (!btn) return;
-  document.querySelectorAll('.group-tab').forEach(b => b.classList.toggle('active', b === btn));
-  window.setGroupBy(btn.dataset.group);
+// ── Bottom-sheet (Sortera + Filter) ─────────────────────────────────────────
+function openSheet(id) {
+  const sheet = document.getElementById(id);
+  sheet.hidden = false;
+  // forcera reflow så .open-klassen triggar transition
+  void sheet.offsetWidth;
+  sheet.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSheet(id) {
+  const sheet = document.getElementById(id);
+  sheet.classList.remove('open');
+  document.body.style.overflow = '';
+  setTimeout(() => { sheet.hidden = true; }, 280);
+}
+
+document.getElementById('openSortBtn').addEventListener('click', () => openSheet('sortSheet'));
+document.getElementById('openFilterBtn').addEventListener('click', () => openSheet('filterSheet'));
+
+document.body.addEventListener('click', e => {
+  const close = e.target.closest('[data-sheet-close]');
+  if (close) closeSheet(close.dataset.sheetClose);
 });
 
-// "Rensa filter"-knapp i empty state
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  ['sortSheet', 'filterSheet'].forEach(id => {
+    const s = document.getElementById(id);
+    if (s && !s.hidden) closeSheet(id);
+  });
+});
+
+// Sortera: radio change
+document.querySelectorAll('#sortSheet input[name="groupBy"]').forEach(r => {
+  r.addEventListener('change', () => {
+    if (r.checked) {
+      window.setGroupBy(r.value);
+      closeSheet('sortSheet');
+    }
+  });
+});
+
+// Filter: checkbox change
+document.querySelectorAll('#filterSheet input[type="checkbox"]').forEach(c => {
+  c.addEventListener('change', () => {
+    const set = window.recipeFilters[c.dataset.fgroup];
+    if (c.checked) set.add(c.value); else set.delete(c.value);
+    updateFilterDot();
+    window.renderRecipeBrowser();
+  });
+});
+
+document.getElementById('filterClearBtn').addEventListener('click', () => {
+  for (const k of Object.keys(window.recipeFilters)) window.recipeFilters[k].clear();
+  document.querySelectorAll('#filterSheet input[type="checkbox"]').forEach(c => { c.checked = false; });
+  updateFilterDot();
+  window.renderRecipeBrowser();
+});
+
+function updateFilterDot() {
+  const f = window.recipeFilters;
+  const any = f.tested.size + f.protein.size + f.time.size > 0;
+  document.getElementById('filterDot').hidden = !any;
+}
+
+// "Rensa sökning"-knapp i empty state
 document.getElementById('emptyState').addEventListener('click', e => {
   if (e.target.closest('.empty-reset-btn')) {
     document.getElementById('search').value = '';

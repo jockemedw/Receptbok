@@ -1,7 +1,11 @@
 // Delad app-state — globala variabler som delas mellan moduler via window.*.
 window.RECIPES            = [];
 window.groupBy            = 'tested';   // gruppering i receptbrowsern
-window.activeFilters      = new Set(['alla']);  // (oanvänd, kvar för bakåtkompat)
+window.recipeFilters      = {           // multi-val checkbox-filter per grupp
+  tested:  new Set(),                   // tomt = visa alla
+  protein: new Set(),
+  time:    new Set(),
+};
 window.replaceMode        = null;    // { date, dayName } under receptbyte
 window.editingId          = null;    // ID vid redigering, null = nytt recept
 window.planConfirmed      = false;

@@ -9,7 +9,7 @@
 <title>Receptboken</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=48">
+<link rel="stylesheet" href="css/styles.css?v=49">
 <style>/* tömd — CSS flyttad till css/styles.css */
 
 </style>
@@ -30,12 +30,16 @@
       <span class="search-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
       <input id="search" type="search" placeholder="Sök på namn, ingrediens, tagg…" autocomplete="off">
     </div>
-    <div class="group-tabs" id="groupTabs" role="tablist" aria-label="Sortera recept">
-      <button class="group-tab active" data-group="tested">Status</button>
-      <button class="group-tab" data-group="protein">Protein</button>
-      <button class="group-tab" data-group="time">Tid</button>
-      <button class="group-tab" data-group="type">Typ</button>
-      <button class="group-tab" data-group="cuisine">Kök</button>
+    <div class="recipe-controls">
+      <button class="recipe-control-btn" id="openSortBtn" aria-haspopup="dialog">
+        Sortera
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
+      <button class="recipe-control-btn" id="openFilterBtn" aria-haspopup="dialog">
+        Filter
+        <span class="filter-dot" id="filterDot" hidden></span>
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+      </button>
     </div>
   </div>
 </header>
@@ -386,6 +390,61 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=48"></script>
+<!-- Sortera-sheet -->
+<div class="bottom-sheet" id="sortSheet" role="dialog" aria-modal="true" aria-labelledby="sortSheetTitle" hidden>
+  <div class="bottom-sheet-backdrop" data-sheet-close="sortSheet"></div>
+  <div class="bottom-sheet-panel">
+    <div class="bottom-sheet-handle"></div>
+    <h3 class="bottom-sheet-title" id="sortSheetTitle">Sortera per</h3>
+    <div class="bs-options">
+      <label class="bs-option"><input type="radio" name="groupBy" value="tested" checked><span class="bs-option-label">Status</span></label>
+      <label class="bs-option"><input type="radio" name="groupBy" value="protein"><span class="bs-option-label">Protein</span></label>
+      <label class="bs-option"><input type="radio" name="groupBy" value="time"><span class="bs-option-label">Tid</span></label>
+      <label class="bs-option"><input type="radio" name="groupBy" value="type"><span class="bs-option-label">Typ</span></label>
+      <label class="bs-option"><input type="radio" name="groupBy" value="cuisine"><span class="bs-option-label">Kök</span></label>
+    </div>
+  </div>
+</div>
+
+<!-- Filter-sheet -->
+<div class="bottom-sheet" id="filterSheet" role="dialog" aria-modal="true" aria-labelledby="filterSheetTitle" hidden>
+  <div class="bottom-sheet-backdrop" data-sheet-close="filterSheet"></div>
+  <div class="bottom-sheet-panel">
+    <div class="bottom-sheet-handle"></div>
+    <h3 class="bottom-sheet-title" id="filterSheetTitle">Filter</h3>
+    <div class="bs-group">
+      <h4 class="bs-group-title">Status</h4>
+      <div class="bs-checks">
+        <label class="bs-check"><input type="checkbox" data-fgroup="tested" value="provat"><span>Provat</span></label>
+        <label class="bs-check"><input type="checkbox" data-fgroup="tested" value="oprovat"><span>Oprövat</span></label>
+        <label class="bs-check"><input type="checkbox" data-fgroup="tested" value="doh"><span>Importerat</span></label>
+      </div>
+    </div>
+    <div class="bs-group">
+      <h4 class="bs-group-title">Protein</h4>
+      <div class="bs-checks">
+        <label class="bs-check"><input type="checkbox" data-fgroup="protein" value="fisk"><span>Fisk</span></label>
+        <label class="bs-check"><input type="checkbox" data-fgroup="protein" value="kyckling"><span>Kyckling</span></label>
+        <label class="bs-check"><input type="checkbox" data-fgroup="protein" value="kött"><span>Kött</span></label>
+        <label class="bs-check"><input type="checkbox" data-fgroup="protein" value="fläsk"><span>Fläsk</span></label>
+        <label class="bs-check"><input type="checkbox" data-fgroup="protein" value="vegetarisk"><span>Vegetariskt</span></label>
+      </div>
+    </div>
+    <div class="bs-group">
+      <h4 class="bs-group-title">Tid</h4>
+      <div class="bs-checks">
+        <label class="bs-check"><input type="checkbox" data-fgroup="time" value="vardag30"><span>Vardag ≤30 min</span></label>
+        <label class="bs-check"><input type="checkbox" data-fgroup="time" value="helg60"><span>Helg 31–60 min</span></label>
+        <label class="bs-check"><input type="checkbox" data-fgroup="time" value="longer"><span>Längre eller okänt</span></label>
+      </div>
+    </div>
+    <div class="bs-actions">
+      <button class="bs-clear-btn" id="filterClearBtn">Rensa alla</button>
+      <button class="bs-done-btn" data-sheet-close="filterSheet">Klar</button>
+    </div>
+  </div>
+</div>
+
+<script type="module" src="js/app.js?v=49"></script>
 </body>
 </html>

@@ -129,13 +129,9 @@ export async function saveRecipe() {
     grid.style.opacity = '';
     spinner.remove();
 
-    // Nollställ filter så kortet syns
-    window.activeFilters = new Set(['alla']);
+    // Nollställ sökning så det nya kortet syns
     document.getElementById('search').value = '';
-    document.querySelectorAll('.filter-btn').forEach(b => {
-      b.classList.toggle('active', b.dataset.filter === 'alla');
-    });
-    window.applyFilters();
+    window.renderRecipeBrowser();
 
     // Hitta det nya kortet, markera och scrolla
     const newCard = document.querySelector(`.recipe-card[data-id="${saved.id}"]`);

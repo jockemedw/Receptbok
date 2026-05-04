@@ -104,7 +104,7 @@ export function toggleCard(card) {
   }
 }
 
-// ── Sökning + gruppering + render ─────────────────────────────────────────────
+// ── Sökning + filter + gruppering + render ────────────────────────────────────
 function matchesSearch(r, q) {
   if (!q) return true;
   if (r.title.toLowerCase().includes(q))                               return true;
@@ -115,6 +115,27 @@ function matchesSearch(r, q) {
   return false;
 }
 
+function timeBucket(r) {
+  if (r.time && r.time <= 30) return 'vardag30';
+  if (r.time && r.time <= 60) return 'helg60';
+  return 'longer';
+}
+
+function statusBucket(r) {
+  if (r.tested) return 'provat';
+  if (r.tags.includes('doh')) return 'doh';
+  return 'oprovat';
+}
+
+function passesFilters(r) {
+  const f = window.recipeFilters;
+  if (!f) return true;
+  if (f.tested.size  > 0 && !f.tested.has(statusBucket(r)))  return false;
+  if (f.protein.size > 0 && !f.protein.has(r.protein))       return false;
+  if (f.time.size    > 0 && !f.time.has(timeBucket(r)))      return false;
+  return true;
+}
+
 export function renderRecipeBrowser() {
   const grid    = document.getElementById('recipeGrid');
   const empty   = document.getElementById('emptyState');
@@ -123,7 +144,7 @@ export function renderRecipeBrowser() {
   const groupBy = window.groupBy || 'tested';
   const def     = GROUP_DEFS[groupBy] || GROUP_DEFS.tested;
 
-  const matched = window.RECIPES.filter(r => matchesSearch(r, q));
+  const matched = window.RECIPES.filter(r => matchesSearch(r, q) && passesFilters(r));
 
   const buckets = def.sections.map(s => ({ ...s, recipes: [] }));
   for (const r of matched) {
@@ -155,7 +176,11 @@ export function renderRecipeBrowser() {
     </section>
   `).join('');
 
-  info.textContent = q
+  const filtersActive =
+    window.recipeFilters &&
+    (window.recipeFilters.tested.size + window.recipeFilters.protein.size + window.recipeFilters.time.size > 0);
+
+  info.textContent = (q || filtersActive)
     ? `Visar ${matched.length} av ${total} recept`
     : `${total} recept totalt`;
 }
