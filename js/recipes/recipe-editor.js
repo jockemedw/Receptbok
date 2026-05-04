@@ -110,8 +110,6 @@ export async function saveRecipe() {
             window.RECIPES     = freshData.recipes;
             window._allRecipes = window.RECIPES;
             grid.innerHTML     = window.RECIPES.map(window.renderCard).join('');
-            document.getElementById('countDisplay').textContent = `${window.RECIPES.length} recept`;
-            window.initFilters(window.RECIPES);
             loaded = true;
             break;
           }

@@ -22,7 +22,6 @@ async function init() {
     window.RECIPES      = data.recipes;
     window._allRecipes  = window.RECIPES;
     document.getElementById('loadingState').style.display  = 'none';
-    document.getElementById('countDisplay').textContent    = `${window.RECIPES.length} recept`;
     document.getElementById('footerEl').textContent        =
       `Receptboken · ${data.meta?.lastUpdated || ''} · ${window.RECIPES.length} recept`;
     window.renderRecipeBrowser();
@@ -36,7 +35,13 @@ async function init() {
 
 // Event listeners
 document.getElementById('search').addEventListener('input', () => window.renderRecipeBrowser());
-document.getElementById('groupBy').addEventListener('change', e => window.setGroupBy(e.target.value));
+
+document.getElementById('groupTabs').addEventListener('click', e => {
+  const btn = e.target.closest('.group-tab');
+  if (!btn) return;
+  document.querySelectorAll('.group-tab').forEach(b => b.classList.toggle('active', b === btn));
+  window.setGroupBy(btn.dataset.group);
+});
 
 // "Rensa filter"-knapp i empty state
 document.getElementById('emptyState').addEventListener('click', e => {

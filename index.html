@@ -9,7 +9,7 @@
 <title>Receptboken</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=47">
+<link rel="stylesheet" href="css/styles.css?v=48">
 <style>/* tömd — CSS flyttad till css/styles.css */
 
 </style>
@@ -30,15 +30,12 @@
       <span class="search-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
       <input id="search" type="search" placeholder="Sök på namn, ingrediens, tagg…" autocomplete="off">
     </div>
-    <div class="group-by-wrap">
-      <label for="groupBy" class="group-by-label">Sortera per</label>
-      <select id="groupBy" class="group-by-select">
-        <option value="tested">Provat-status</option>
-        <option value="protein">Protein</option>
-        <option value="time">Tid</option>
-        <option value="type">Typ</option>
-        <option value="cuisine">Kök</option>
-      </select>
+    <div class="group-tabs" id="groupTabs" role="tablist" aria-label="Sortera recept">
+      <button class="group-tab active" data-group="tested">Status</button>
+      <button class="group-tab" data-group="protein">Protein</button>
+      <button class="group-tab" data-group="time">Tid</button>
+      <button class="group-tab" data-group="type">Typ</button>
+      <button class="group-tab" data-group="cuisine">Kök</button>
     </div>
   </div>
 </header>
@@ -389,6 +386,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=47"></script>
+<script type="module" src="js/app.js?v=48"></script>
 </body>
 </html>

@@ -189,49 +189,40 @@
     pointer-events: none;
   }
 
-  /* ── GROUP-BY DROPDOWN ── */
-  .group-by-wrap {
+  /* ── GROUP-BY PILL-TABS ── */
+  .group-tabs {
     display: flex;
-    align-items: center;
-    gap: 0.55rem;
+    gap: 0.3rem;
     margin-top: 0.55rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
+  .group-tabs::-webkit-scrollbar { display: none; }
 
-  .group-by-label {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: rgba(250,247,242,0.55);
-    font-weight: 500;
-  }
-
-  .group-by-select {
-    flex: 1;
-    background: rgba(0,0,0,0.18);
-    color: var(--linen);
-    border: 1px solid rgba(255,255,255,0.14);
+  .group-tab {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.16);
+    color: rgba(250,247,242,0.72);
+    padding: 0.32rem 0.85rem;
     border-radius: 6px;
-    padding: 0.4rem 1.7rem 0.4rem 0.7rem;
     font-family: 'DM Sans', sans-serif;
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     font-weight: 500;
     cursor: pointer;
-    outline: none;
-    appearance: none;
-    -webkit-appearance: none;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23faf7f2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' opacity='0.7'><path d='M6 9l6 6 6-6'/></svg>");
-    background-repeat: no-repeat;
-    background-position: right 0.55rem center;
-    transition: background-color 0.2s, border-color 0.2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
   }
 
-  .group-by-select:focus {
-    background-color: rgba(0,0,0,0.28);
-    border-color: rgba(255,255,255,0.3);
+  .group-tab:hover {
+    background: rgba(255,255,255,0.12);
+    color: var(--linen);
   }
 
-  .group-by-select option {
-    background: var(--lichen-deep);
+  .group-tab.active {
+    background: var(--rust);
+    border-color: var(--rust);
     color: var(--linen);
   }
 
@@ -324,14 +315,16 @@
     top: 0;
     background: var(--linen);
     margin: 0 -1rem 0.55rem;
-    padding: 0.55rem 1rem 0.5rem;
+    padding: 0.85rem 1rem 0.7rem;
+    padding-top: max(0.85rem, env(safe-area-inset-top, 0.85rem));
     font-family: 'Playfair Display', serif;
-    font-size: 0.78rem;
+    font-size: 0.95rem;
     font-weight: 500;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--forest-deep);
     border-bottom: 1px solid var(--birch);
+    box-shadow: 0 2px 6px rgba(45,52,40,0.05);
     z-index: 5;
     display: flex;
     align-items: baseline;
@@ -340,8 +333,8 @@
 
   .recipe-section-count {
     font-family: 'DM Sans', sans-serif;
-    font-size: 0.7rem;
-    font-weight: 400;
+    font-size: 0.82rem;
+    font-weight: 500;
     letter-spacing: 0;
     text-transform: none;
     color: var(--text-muted);
