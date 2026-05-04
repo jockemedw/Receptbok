@@ -80,7 +80,8 @@ const GROUP_DEFS = {
         label: tag.charAt(0).toUpperCase() + tag.slice(1),
         match: r => r.tags.includes(tag),
       })),
-      { id: 'ovrig', label: 'Övrigt', match: r => !CUISINE_TAGS.some(t => r.tags.includes(t)) },
+      { id: 'doh',   label: 'Dishing out health', match: r => r.tags.includes('doh') },
+      { id: 'ovrig', label: 'Övrigt',             match: r => !CUISINE_TAGS.some(t => r.tags.includes(t)) },
     ],
   },
 };
