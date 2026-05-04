@@ -37,19 +37,42 @@ async function init() {
 document.getElementById('search').addEventListener('input', () => window.renderRecipeBrowser());
 
 // ── Bottom-sheet (Sortera + Filter) ─────────────────────────────────────────
+// iOS-säker scroll-lock: spara scrollY, fixa body, återställ vid stängning.
+let openSheetCount = 0;
+
 function openSheet(id) {
   const sheet = document.getElementById(id);
   sheet.hidden = false;
-  // forcera reflow så .open-klassen triggar transition
   void sheet.offsetWidth;
   sheet.classList.add('open');
-  document.body.style.overflow = 'hidden';
+
+  if (openSheetCount === 0) {
+    const scrollY = window.scrollY;
+    document.body.dataset.scrollLockY = scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top      = `-${scrollY}px`;
+    document.body.style.left     = '0';
+    document.body.style.right    = '0';
+    document.body.style.width    = '100%';
+  }
+  openSheetCount++;
 }
 
 function closeSheet(id) {
   const sheet = document.getElementById(id);
   sheet.classList.remove('open');
-  document.body.style.overflow = '';
+
+  openSheetCount = Math.max(0, openSheetCount - 1);
+  if (openSheetCount === 0) {
+    const scrollY = parseInt(document.body.dataset.scrollLockY || '0', 10);
+    document.body.style.position = '';
+    document.body.style.top      = '';
+    document.body.style.left     = '';
+    document.body.style.right    = '';
+    document.body.style.width    = '';
+    delete document.body.dataset.scrollLockY;
+    window.scrollTo(0, scrollY);
+  }
   setTimeout(() => { sheet.hidden = true; }, 280);
 }
 

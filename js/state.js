@@ -1,6 +1,6 @@
 // Delad app-state — globala variabler som delas mellan moduler via window.*.
 window.RECIPES            = [];
-window.groupBy            = 'tested';   // gruppering i receptbrowsern
+window.groupBy            = 'cuisine';  // gruppering i receptbrowsern (default: Kök)
 window.recipeFilters      = {           // multi-val checkbox-filter per grupp
   tested:  new Set(),                   // tomt = visa alla
   protein: new Set(),
