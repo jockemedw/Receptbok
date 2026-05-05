@@ -213,6 +213,25 @@ export function renderRecipeBrowser() {
   info.textContent = (q || filtersActive)
     ? `Visar ${matched.length} av ${total} recept`
     : '';
+
+  refreshStickyObserver();
+}
+
+let stickyObserver = null;
+function refreshStickyObserver() {
+  if (stickyObserver) stickyObserver.disconnect();
+
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:fixed;top:0;height:env(safe-area-inset-top, 0px);width:0;visibility:hidden;pointer-events:none;';
+  document.body.appendChild(probe);
+  const safeTopPx = probe.getBoundingClientRect().height;
+  probe.remove();
+
+  stickyObserver = new IntersectionObserver(
+    entries => entries.forEach(e => e.target.classList.toggle('stuck', e.intersectionRatio < 1)),
+    { threshold: [1], rootMargin: `-${safeTopPx + 1}px 0px 0px 0px` }
+  );
+  document.querySelectorAll('.recipe-section-header').forEach(h => stickyObserver.observe(h));
 }
 
 export function setGroupBy(value) {

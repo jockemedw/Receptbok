@@ -558,6 +558,12 @@
     height: env(safe-area-inset-top, 0);
     background: var(--linen);
     pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .recipe-section-header.stuck::before {
+    opacity: 1;
   }
 
   .recipe-section-count {
