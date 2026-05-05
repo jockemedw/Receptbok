@@ -106,7 +106,17 @@ Inga just nu.
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 - Säsongsfilter — automatiskt vikta recept efter säsong (soppa/gryta höst-vinter, sallad sommar)
 
-### Senaste session — Session 46 (2026-05-04) — Promotion av 197 doh-recept + komplett receptbrowser-refaktor
+### Senaste session — Session 47 (2026-05-05) — Mobil-verifiering av FAB-stack + safe-area sticky-header-fix
+- **Motivering:** Session 46 lämnade "mobil-verifiering kvar" som första kandidat för Session 47. Användaren testade FAB-stack-ordning + scroll-lock i bottom-sheets på iPhone Safari. Båda funktionerna OK. Hittade dock en grafikbugg: i recept-listan lyste scrollande receptkort igenom OVANFÖR sticky-sektionsrubriken — exakt 44 px (statusbar/safe-area-zonen).
+- **Rotorsak:** `.recipe-section-header` har `top: env(safe-area-inset-top, 0)` vilket fastsätter rubriken vid ~44 px från viewportens topp på iPhone. Den fasta gröna toppheadern göms vid scroll (`transform: translateY(-100%)`) och blottar de översta 44 px. Sticky-rubrikens linen-bakgrund slutar vid sticky-toppen → kort som scrollar förbi syns i glipan.
+- **Fix-iteration 1 (a0d5d19):** Lade till `::before`-pseudo-element på sticky-rubriken med `bottom: 100%; height: env(safe-area-inset-top, 0); background: var(--linen)`. Täckte glipan i sticky-läge — men eftersom pseudo-en är `position: absolute` relativt rubriken så fanns den ALLTID, även i naturligt flöde. Resultat: i naturligt läge la sig ::before-en ovanpå föregående sektions sista receptkort (44 px klippt bort).
+- **Fix-iteration 2 (39deaad):** Gate:a ::before bakom `.stuck`-klass via IntersectionObserver. Observern läser `env(safe-area-inset-top)` i px via en temporär probe-div (CSS env() går inte att läsa direkt från `getComputedStyle`), sätter `rootMargin: -${safeTopPx + 1}px 0px 0px 0px` och togglar `.stuck` när `intersectionRatio < 1`. Pseudo-en fade:as in/ut med 0.15s opacity-transition. Observern återskapas vid varje `renderRecipeBrowser()` för att fånga nyrenderade headers.
+- **Filer:** `css/styles.css` (::before + `.stuck`-regel), `js/recipes/recipe-browser.js` (`refreshStickyObserver()`-funktion + module-level `stickyObserver`-referens, anropad i slutet av `renderRecipeBrowser()`), `index.html` (cache-bust v=56→58).
+- **Live-verifiering kvar:** Användaren sov vid sista pushen. Behöver testa på iPhone att (a) glipan är fylld med linen i sticky-läge och (b) sticky-rubrikerna inte längre täcker föregående sektions sista kort i naturligt flöde.
+- **Commits:** `a0d5d19` (iteration 1), `39deaad` (iteration 2). Båda mergeade direkt till main.
+- **Ej gjort:** Övriga punkter från Session 46:s avslutsanteckning (Fas 4F live-verifiering, Capacitor-kickoff, receptbrowser-finputsning) är fortfarande öppna kandidater för Session 48.
+
+### Session 46 (2026-05-04) — Promotion av 197 doh-recept + komplett receptbrowser-refaktor
 - **Motivering:** Sessionen började med att Session 45:s 197 staging-recept skulle granskas och promoteras. Användaren bad om att tagga alla med `doh` så de gick att granska enkelt sen. Efter promotion (62 → 259 recept) blev befintliga receptbrowsern (platt vertikal lista i ID-ordning) oöverblickbar — användarens formulering: "ogenomtänkt — bara evig scroll utan inbördes ordning". Resten av sessionen var iterativ refaktor av receptbrowsern.
 - **13 commits totalt:** ab6e7a2 (promotion) → 1280d19 (group-by) → f6a95d9 (init-fix + pill-tabs) → ed86295 (bottom-sheets) → 9331467 (FAB-stack) → 62e88e0 (krymp avstånd) → 664b829 (scroll-lock) → 863a568 (37 kök-tags) → 986dfbd (21 fler kök + huvudingrediens) → 8009ac2 (chilaquiles-fix) → dd2ed03 (DOH-sektion) → ded0fee (FAB-ordning).
 
