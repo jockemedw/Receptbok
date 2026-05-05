@@ -549,6 +549,17 @@
     gap: 0.55rem;
   }
 
+  .recipe-section-header::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 100%;
+    height: env(safe-area-inset-top, 0);
+    background: var(--linen);
+    pointer-events: none;
+  }
+
   .recipe-section-count {
     font-family: 'DM Sans', sans-serif;
     font-size: 0.82rem;
