@@ -1,6 +1,91 @@
 {
-  "generated": null,
-  "startDate": null,
-  "endDate": null,
-  "days": []
+  "generated": "2026-05-06",
+  "startDate": "2026-05-09",
+  "endDate": "2026-05-22",
+  "days": [
+    {
+      "date": "2026-05-09",
+      "day": "Lördag",
+      "recipe": "Miso- och lönnsirapslax",
+      "recipeId": 213
+    },
+    {
+      "date": "2026-05-10",
+      "day": "Söndag",
+      "recipe": "Stekta rödspättafiléer med stuvade morötter",
+      "recipeId": 3
+    },
+    {
+      "date": "2026-05-11",
+      "day": "Måndag",
+      "recipe": "Senapsdressad pärlcouscous",
+      "recipeId": 49
+    },
+    {
+      "date": "2026-05-12",
+      "day": "Tisdag",
+      "recipe": "Buljongsoppa med shiitakesvamp och pocherat ägg",
+      "recipeId": 5
+    },
+    {
+      "date": "2026-05-13",
+      "day": "Onsdag",
+      "recipe": "Krispiga chipotle-böntacos",
+      "recipeId": 244
+    },
+    {
+      "date": "2026-05-14",
+      "day": "Torsdag",
+      "recipe": "Broccoli- och svampfettuccine med misogräddssås",
+      "recipeId": 152
+    },
+    {
+      "date": "2026-05-15",
+      "day": "Fredag",
+      "recipe": "Stekt curryris med färs och salladslök",
+      "recipeId": 29
+    },
+    {
+      "date": "2026-05-16",
+      "day": "Lördag",
+      "recipe": "Sötpotatisnudlar med tofu och kokosnötscurry",
+      "recipeId": 105
+    },
+    {
+      "date": "2026-05-17",
+      "day": "Söndag",
+      "recipe": "Pulled chicken",
+      "recipeId": 48
+    },
+    {
+      "date": "2026-05-18",
+      "day": "Måndag",
+      "recipe": "Oreganokyckling",
+      "recipeId": 60
+    },
+    {
+      "date": "2026-05-19",
+      "day": "Tisdag",
+      "recipe": "Gnocchi med snabbpesto",
+      "recipeId": 26
+    },
+    {
+      "date": "2026-05-20",
+      "day": "Onsdag",
+      "recipe": "Räkpasta Primavera med Zucchininudlar",
+      "recipeId": 112
+    },
+    {
+      "date": "2026-05-21",
+      "day": "Torsdag",
+      "recipe": "Blackened lax med avokadoranch",
+      "recipeId": 236
+    },
+    {
+      "date": "2026-05-22",
+      "day": "Fredag",
+      "recipe": "Honung- och gurkmejjeräkor med svartpeppar",
+      "recipeId": 217
+    }
+  ]
 }
