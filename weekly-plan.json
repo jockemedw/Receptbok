@@ -6,93 +6,92 @@
     {
       "date": "2026-05-09",
       "day": "Lördag",
-      "recipe": "Tonfisksmältare med snabbsyrad fänkål",
-      "recipeId": 84
+      "recipe": "Krispig lax med indiska kryddor och smyckad ris",
+      "recipeId": 87
     },
     {
       "date": "2026-05-10",
       "day": "Söndag",
-      "recipe": "Balsamicglaserad fläskkarré med rostad vitlökspolenta och grönt",
-      "recipeId": 92
+      "recipe": "Portobelloburgers med romescosås",
+      "recipeId": 157
     },
     {
       "date": "2026-05-11",
       "day": "Måndag",
-      "recipe": "Veggie-enchiladas med rostad paprikasås",
-      "recipeId": 153
+      "recipe": "Ugnsrostad lax med miso-ingefärssås och butternutpumpa",
+      "recipeId": 249
     },
     {
       "date": "2026-05-12",
       "day": "Tisdag",
-      "recipe": "Cobbsallad med jordgubbar, friterad fetaost och dragondressing",
-      "recipeId": 154
+      "recipe": "Majsplättar med kokosmjölk",
+      "recipeId": 54
     },
     {
       "date": "2026-05-13",
       "day": "Onsdag",
-      "recipe": "Grekisk kikärts- och citronssoppa",
-      "recipeId": 214
+      "recipe": "Taco-pizza",
+      "recipeId": 161
     },
     {
       "date": "2026-05-14",
       "day": "Torsdag",
-      "recipe": "Röd linsgryta med potatis",
-      "recipeId": 46
+      "recipe": "Pasta med rostad paprikasås och svamp",
+      "recipeId": 110
     },
     {
       "date": "2026-05-15",
       "day": "Fredag",
-      "recipe": "Quinoasallad med persika, majs och korianderdressing",
-      "recipeId": 172
+      "recipe": "Nudlar i röd curry",
+      "recipeId": 13
     },
     {
       "date": "2026-05-16",
       "day": "Lördag",
-      "recipe": "Blomkåls- och potatissoppa med cheddar",
-      "recipeId": 125
+      "recipe": "Bakad osttortellini med vodkasås",
+      "recipeId": 198
     },
     {
       "date": "2026-05-17",
       "day": "Söndag",
-      "recipe": "Miso- och svamprisotto",
-      "recipeId": 102
+      "recipe": "Pekannötscrustad lax med mangochutney",
+      "recipeId": 158
     },
     {
       "date": "2026-05-18",
       "day": "Måndag",
-      "recipe": "Tofu-wok med jordnötssås",
-      "recipeId": 166
+      "recipe": "Orecchiette med solrosfrö-romesco",
+      "recipeId": 86
     },
     {
       "date": "2026-05-19",
       "day": "Tisdag",
-      "recipe": "Thailändsk räknudelsallad",
-      "recipeId": 178
+      "recipe": "Laxbowls med jordnötssås",
+      "recipeId": 227
     },
     {
       "date": "2026-05-20",
       "day": "Onsdag",
-      "recipe": "Buffalo-broccoli och kikärtspitas med tahinicaesar",
-      "recipeId": 88
+      "recipe": "Vegansk krämig svampsoppa",
+      "recipeId": 210
     },
     {
       "date": "2026-05-21",
       "day": "Torsdag",
-      "recipe": "Medelhavspasta",
-      "recipeId": 162
+      "recipe": "Höstquinoabowl med apelsin- och timjanvinägrett",
+      "recipeId": 68
     },
     {
       "date": "2026-05-22",
       "day": "Fredag",
-      "recipe": "Pasta Rosso med champinjoner",
-      "recipeId": 56
+      "recipe": "Krämig cajunpasta med räkor",
+      "recipeId": 119
     },
     {
       "date": "2026-05-23",
       "day": "Lördag",
-      "recipe": "Spaghettipaj med kalkonfärs, grönkål och pumpa",
-      "recipeId": 79
+      "recipe": "Valnötshummus med ugnsrostade grönsaker",
+      "recipeId": 30
     }
-  ],
-  "confirmedAt": "2026-05-06T19:56:48.943Z"
+  ]
 }
