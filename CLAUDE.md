@@ -106,14 +106,10 @@ Inga just nu.
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 - Säsongsfilter — automatiskt vikta recept efter säsong (soppa/gryta höst-vinter, sallad sommar)
 
-### Senaste session — Session 48 (2026-05-06) — Buggfix inköpslista (doh-mängder) + komprimering av CLAUDE.md
-- **Bugg:** doh-receptens ingredienser (format `namn (mängd, notiser)`) fick fel eller inga mängder i inköpslistan. 5 rotorsaker i `parseIngredient()` / `cleanIngredient()`:
-  1. **Slash-bråk** `1/2`, `3/4`, `1/4`, `1/3` → `1` togs som mängd, `/2 tsk X` blev ingrediensnamn. Fix: normalisera till `½`/`¾`/`¼`/`0,33` innan parsning.
-  2. **Ord-gräns** på qtyPart: `1 litet huvud`, `2 msk + 2 tsk`, `3 generösa nävar` omarrangerades felaktigt. Fix: rearrangera bara vid ≤2 ord i qtyPart.
-  3. **Komma-bug i eller-hantering**: decimal-kommat i `1,2 dl` strippade ingrediensnamnet bort. Fix: `,.*$` → `,\s+.*$` i `lastWord`-extraktionen.
-  4. **Float-avrundning**: `1,7999...` → `Math.round(amount*100)/100` i `formatIngredient`.
-  5. **Okända enheter**: `nävar`/`huvuden` ej i `SWEDISH_UNITS` → lade till dem; `nävar`/`näve` även i `SMALL_UNITS` → droppar till noAmount.
-- **62 assertions passerar** oförändrat. CLAUDE.md komprimerades 434→251 rader.
+### Senaste session — Session 48 (2026-05-06) — Buggfix inköpslista (doh-mängder) + oprövade-fix
+- **Inköpslista doh-mängder:** 5 rotorsaker i `parseIngredient()`/`cleanIngredient()`: (1) slash-bråk `1/2`→`½` etc, (2) ord-gräns ≤2 på qtyPart stoppar `1 litet huvud`/`2 msk + 2 tsk`, (3) decimal-komma i eller-hantering `,.*$`→`,\s+.*$`, (4) float-avrundning `Math.round(x*100)/100`, (5) `nävar`/`huvuden` i SWEDISH_UNITS + `nävar`/`näve` i SMALL_UNITS. 62 assertions.
+- **Oprövade recept-gräns:** `untested_count`-limiten respekterades inte i fallback-looparna 2–4 i `pick()` i `api/generate.js` → med 197 oprövade doh-recept i poolen fick nästan alla dagar oprövade recept trots maxinställning. Fix: `underUntestedLimit()`-kontroll i alla loopar; loop 5 som sista utväg. Inline-kopia i `tests/select-recipes.test.js` synkad + nytt test 13. 151 assertions.
+- CLAUDE.md komprimerades 434→251 rader (sessionloggar 31–45).
 
 ### Session 47 (2026-05-05) — Mobil-verifiering av FAB-stack + safe-area sticky-header-fix
 - **Motivering:** Användaren testade FAB-stack-ordning + scroll-lock i bottom-sheets på iPhone Safari. Båda OK. Hittade grafikbugg: receptkort lyste igenom OVANFÖR sticky-sektionsrubriken — exakt 44 px (statusbar/safe-area-zonen).
