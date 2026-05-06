@@ -160,24 +160,38 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
 
   function pick(dayPool, altPool, mustBeVeg) {
     const maxForProtein = (p) => p === "vegetarisk" ? maxVeg : MAX_PER_PROTEIN;
+    const underUntestedLimit = (r) => r.tested || untestedSoFar < constraints.untested_count;
+    // Loop 1: full constraints (protein limits + untested limit)
     for (const r of dayPool) {
       if (usedIds.has(r.id)) continue;
       if (mustBeVeg && r.protein !== "vegetarisk") continue;
       if (!mustBeVeg && r.protein === "vegetarisk") continue;
       if ((proteinUsage[r.protein] || 0) >= maxForProtein(r.protein)) continue;
-      if (!r.tested && untestedSoFar >= constraints.untested_count) continue;
+      if (!underUntestedLimit(r)) continue;
       return r;
     }
+    // Loop 2: relax protein limits, keep untested limit
     for (const r of dayPool) {
       if (usedIds.has(r.id)) continue;
       if (mustBeVeg && r.protein !== "vegetarisk") continue;
+      if (!underUntestedLimit(r)) continue;
       return r;
     }
+    // Loop 3: altPool, keep untested limit
     for (const r of altPool) {
       if (usedIds.has(r.id)) continue;
       if (mustBeVeg && r.protein !== "vegetarisk") continue;
+      if (!underUntestedLimit(r)) continue;
       return r;
     }
+    // Loop 4: all recipes, keep untested limit
+    for (const r of recipes) {
+      if (usedIds.has(r.id)) continue;
+      if (mustBeVeg && r.protein !== "vegetarisk") continue;
+      if (!underUntestedLimit(r)) continue;
+      return r;
+    }
+    // Loop 5: last resort — ignore untested limit (tested pool exhausted)
     for (const r of recipes) {
       if (usedIds.has(r.id)) continue;
       if (mustBeVeg && r.protein !== "vegetarisk") continue;

@@ -71,24 +71,38 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
 
   function pick(dayPool, altPool, mustBeVeg) {
     const maxForProtein = (p) => p === "vegetarisk" ? maxVeg : MAX_PER_PROTEIN;
+    const underUntestedLimit = (r) => r.tested || untestedSoFar < constraints.untested_count;
+    // Loop 1: full constraints (protein limits + untested limit)
     for (const r of dayPool) {
       if (usedIds.has(r.id)) continue;
       if (mustBeVeg && r.protein !== "vegetarisk") continue;
       if (!mustBeVeg && r.protein === "vegetarisk") continue;
       if ((proteinUsage[r.protein] || 0) >= maxForProtein(r.protein)) continue;
-      if (!r.tested && untestedSoFar >= constraints.untested_count) continue;
+      if (!underUntestedLimit(r)) continue;
       return r;
     }
+    // Loop 2: relax protein limits, keep untested limit
     for (const r of dayPool) {
       if (usedIds.has(r.id)) continue;
       if (mustBeVeg && r.protein !== "vegetarisk") continue;
+      if (!underUntestedLimit(r)) continue;
       return r;
     }
+    // Loop 3: altPool, keep untested limit
     for (const r of altPool) {
       if (usedIds.has(r.id)) continue;
       if (mustBeVeg && r.protein !== "vegetarisk") continue;
+      if (!underUntestedLimit(r)) continue;
       return r;
     }
+    // Loop 4: all recipes, keep untested limit
+    for (const r of recipes) {
+      if (usedIds.has(r.id)) continue;
+      if (mustBeVeg && r.protein !== "vegetarisk") continue;
+      if (!underUntestedLimit(r)) continue;
+      return r;
+    }
+    // Loop 5: last resort — ignore untested limit (tested pool exhausted)
     for (const r of recipes) {
       if (usedIds.has(r.id)) continue;
       if (mustBeVeg && r.protein !== "vegetarisk") continue;
@@ -448,6 +462,30 @@ const DEFAULT_CONSTRAINTS = {
     const result = selectRecipes(recipes, TRE_VARDAGAR, constraints);
     const otestedCount = result.filter((d) => [2, 3].includes(d.recipeId)).length;
     assertTrue(otestedCount <= 1, `untested_count=1: max 1 oprovat recept per plan (iteration ${i}, got ${otestedCount})`);
+  }
+}
+
+// ─── Test 13: untested_count respekteras även när fallback-loopen triggas ─────
+// Scenario: många oprövade recept fyller poolen + protein-gränsen nås →
+// gamla koden föll igenom till loop 2 som ignorerade untested-gränsen.
+{
+  const mk = (id, protein, tested) => ({ id, title: `R${id}`, protein, tags: ["vardag30"], tested, ingredients: [] });
+  const recipes = [
+    mk(1,  "fisk",      true),   // testad
+    mk(2,  "kyckling",  true),   // testad
+    mk(3,  "kött",      true),   // testad
+    mk(4,  "fläsk",     true),   // testad
+    mk(5,  "vegetarisk",true),   // testad
+    // 20 oprövade av olika proteiner — simulerar doh-receptmassan
+    ...Array.from({length:20}, (_,i) =>
+      mk(10+i, ["fisk","kyckling","kött","fläsk","vegetarisk"][i%5], false)
+    ),
+  ];
+  const constraints = { ...DEFAULT_CONSTRAINTS, untested_count: 2, allowed_proteins: ["fisk","kyckling","kött","fläsk","vegetarisk"] };
+  for (let i = 0; i < 15; i++) {
+    const result = selectRecipes(recipes, TRE_VARDAGAR, constraints);
+    const untestedCount = result.filter(d => !recipes.find(r => r.id === d.recipeId).tested).length;
+    assertTrue(untestedCount <= 2, `Test13 iter ${i}: untested-gräns 2 respekteras i fallback (fick ${untestedCount})`);
   }
 }
 
