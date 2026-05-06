@@ -1,6 +1,97 @@
 {
-  "generated": null,
-  "startDate": null,
-  "endDate": null,
-  "days": []
+  "generated": "2026-05-06",
+  "startDate": "2026-05-09",
+  "endDate": "2026-05-23",
+  "days": [
+    {
+      "date": "2026-05-09",
+      "day": "Lördag",
+      "recipe": "Veggie-enchiladas med rostad paprikasås",
+      "recipeId": 153
+    },
+    {
+      "date": "2026-05-10",
+      "day": "Söndag",
+      "recipe": "Långsamt ugnsrostad lax med vitlök, rosmarin och citrus",
+      "recipeId": 187
+    },
+    {
+      "date": "2026-05-11",
+      "day": "Måndag",
+      "recipe": "Tonfisksmältare med snabbsyrad fänkål",
+      "recipeId": 84
+    },
+    {
+      "date": "2026-05-12",
+      "day": "Tisdag",
+      "recipe": "Cobbsallad med jordgubbar, friterad fetaost och dragondressing",
+      "recipeId": 154
+    },
+    {
+      "date": "2026-05-13",
+      "day": "Onsdag",
+      "recipe": "Grekisk kikärts- och citronssoppa",
+      "recipeId": 214
+    },
+    {
+      "date": "2026-05-14",
+      "day": "Torsdag",
+      "recipe": "Röd linsgryta med potatis",
+      "recipeId": 46
+    },
+    {
+      "date": "2026-05-15",
+      "day": "Fredag",
+      "recipe": "Quinoasallad med persika, majs och korianderdressing",
+      "recipeId": 172
+    },
+    {
+      "date": "2026-05-16",
+      "day": "Lördag",
+      "recipe": "Blomkåls- och potatissoppa med cheddar",
+      "recipeId": 125
+    },
+    {
+      "date": "2026-05-17",
+      "day": "Söndag",
+      "recipe": "Miso- och svamprisotto",
+      "recipeId": 102
+    },
+    {
+      "date": "2026-05-18",
+      "day": "Måndag",
+      "recipe": "Tofu-wok med jordnötssås",
+      "recipeId": 166
+    },
+    {
+      "date": "2026-05-19",
+      "day": "Tisdag",
+      "recipe": "Thailändsk räknudelsallad",
+      "recipeId": 178
+    },
+    {
+      "date": "2026-05-20",
+      "day": "Onsdag",
+      "recipe": "Buffalo-broccoli och kikärtspitas med tahinicaesar",
+      "recipeId": 88
+    },
+    {
+      "date": "2026-05-21",
+      "day": "Torsdag",
+      "recipe": "Medelhavspasta",
+      "recipeId": 162
+    },
+    {
+      "date": "2026-05-22",
+      "day": "Fredag",
+      "recipe": "Pasta Rosso med champinjoner",
+      "recipeId": 56
+    },
+    {
+      "date": "2026-05-23",
+      "day": "Lördag",
+      "recipe": "Grönsakssoppa i tryckkokare",
+      "recipeId": 207
+    }
+  ]
 }
