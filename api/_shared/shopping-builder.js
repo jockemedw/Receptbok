@@ -167,6 +167,10 @@ export const NORMALIZATION_TABLE = {
   "potatisar": "potatis", "sötpotatisar": "sötpotatis",
   "citroner": "citron", "limefrukter": "lime", "lime frukter": "lime",
   "rödlökar": "rödlök",
+  // Kål-varianter
+  "lacinatokål": "grönkål",
+  // Buljong plural
+  "fiskbuljongtärningar": "fiskbuljong",
 };
 
 // Steg 5: Kategorinyckelord (utökade)
@@ -188,7 +192,7 @@ const CATEGORY_KEYWORDS = {
     "paprika", "chili", "jalapeño",
     "tomat", "körsbärstomat", "krossade tomater", "passerade tomater", "soltorkade tomater",
     "gurka", "inlagd gurka", "zucchini", "aubergine",
-    "spenat", "fryst spenat",
+    "spenat", "fryst spenat", "mangold",
     "champinjoner", "svamp", "shiitake", "kantareller",
     "selleri", "palsternacka", "jordärtskocka", "fänkål", "rödbetor",
     "sparris", "majs", "ärtor", "ärter", "sockerärtor", "haricots verts",
@@ -221,6 +225,7 @@ const SKAFFERI_OVERRIDE = new Set([
   "ostronsås", "ostronssas",
   "hönsbuljong", "grönsaksbuljong", "köttbuljong", "buljongtärning",
   "tomatpuré", "chiliflakes", "paprikapulver",
+  "sweet chili",
 ]);
 
 const SMALL_UNITS = new Set(["tsk", "krm", "msk", "nypa", "tumme", "näve", "nävar"]);
@@ -270,6 +275,8 @@ function cleanIngredient(raw) {
   s = s.replace(/\s*\+.*$/, "");
   // Strippa "à ca 170 g"-suffix och liknande storleksangivelser
   s = s.replace(/\s+à\s+.*$/i, "");
+  // Strippa "efter smak"-suffix (förberedelseanvisning, inte en ingrediens)
+  s = s.replace(/\s+efter\s+smak$/i, "");
   if (/^\d/.test(s) && s.includes(" eller ")) {
     const ADJEKTIV = new Set(["färsk", "tinad", "fryst", "varm", "kall", "riven", "hackad", "malen"]);
     const beforeEller = s.split(" eller ")[0].trim();
@@ -278,7 +285,10 @@ function cleanIngredient(raw) {
       const lastWord = s.replace(/,\s+.*$/, "").trim().split(/\s+/).pop().toLowerCase();
       s = beforeEller.replace(new RegExp("\\s+" + lastBeforeWord + "$", "i"), " " + lastWord).trim();
     } else if (lastBeforeWord.endsWith("-")) {
-      s = beforeEller.replace(/-$/, "").trim();
+      // "grönsaks- eller kycklingbuljong" → extract base noun from afterEller
+      const afterEller = s.split(" eller ").slice(1).join(" eller ").trim();
+      const afterEllerBase = afterEller.split(/\s+/).pop();
+      s = beforeEller.replace(/\s+\S+-$/, " " + afterEllerBase).trim();
     } else {
       s = beforeEller;
     }
@@ -398,9 +408,15 @@ function categorize(name) {
     .replace(/^(rostad|rostade|stekt|stekta|tinad|tinade|nykokt|nykokta|kokt|kokta)\s+/, "");
   if (SKAFFERI_OVERRIDE.has(low)) return "Skafferi";
   if (/^(torkad|torkade|malen|mald)\s+/.test(low)) return "Skafferi";
+  // Dela upp i ord för att undvika falskt-positiva substring-träffar:
+  // "pankoströbröd" ska inte matcha "ost", "mangold" ska inte matcha "mango".
+  // Enkelspalts-nyckelord kräver exakt ordmatch; flerspalts-nyckelord tillåter includes.
+  const lowWords = new Set(low.split(/\s+/));
   for (const [cat, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
     if (cat === "Skafferi" || cat === "Övrigt") continue;
-    if (keywords.some((kw) => low === kw || low.includes(kw))) return cat;
+    if (keywords.some((kw) =>
+      kw.includes(" ") ? (low === kw || low.includes(kw)) : lowWords.has(kw)
+    )) return cat;
   }
   return "Skafferi";
 }
