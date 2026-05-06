@@ -4,6 +4,8 @@
   "endDate": "2026-04-19",
   "recipeItems": {},
   "recipeItemsMovedAt": null,
-  "manualItems": [],
+  "manualItems": [
+    "Prästost"
+  ],
   "checkedItems": {}
 }
