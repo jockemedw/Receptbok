@@ -287,6 +287,19 @@ function cleanIngredient(raw) {
 }
 
 export function parseIngredient(raw) {
+  // Handle doh-format: "ingredient name (qty[, prep notes])" → rearrange to "qty ingredient name"
+  // Only when string doesn't start with a digit/fraction (old format always starts with qty)
+  if (!/^[\d½¼¾]/.test(raw.trim())) {
+    const parenM = raw.match(/^(.+?)\s*\(([^)]+)\)/);
+    if (parenM) {
+      // Split on ", " (not bare "," to preserve decimal commas like "0,5 tsk")
+      // then strip any "à X g" size-notation suffix
+      const qtyPart = parenM[2].split(/, /)[0].replace(/\s+à\s+.*/i, '').trim();
+      if (/^[\d½¼¾]/.test(qtyPart)) {
+        raw = qtyPart + ' ' + parenM[1].trim();
+      }
+    }
+  }
   const cleaned = cleanIngredient(raw);
   let remaining = cleaned;
   const amountMatch = remaining.match(
