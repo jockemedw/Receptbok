@@ -1,6 +1,97 @@
 {
-  "generated": null,
-  "startDate": null,
-  "endDate": null,
-  "days": []
+  "generated": "2026-05-06",
+  "startDate": "2026-05-09",
+  "endDate": "2026-05-23",
+  "days": [
+    {
+      "date": "2026-05-09",
+      "day": "Lördag",
+      "recipe": "Quinoa- och grönsaksbowls",
+      "recipeId": 146
+    },
+    {
+      "date": "2026-05-10",
+      "day": "Söndag",
+      "recipe": "Honungs- och harissabakad lax med dillris",
+      "recipeId": 174
+    },
+    {
+      "date": "2026-05-11",
+      "day": "Måndag",
+      "recipe": "Vietnamesiska räkbowls med risnudlar",
+      "recipeId": 103
+    },
+    {
+      "date": "2026-05-12",
+      "day": "Tisdag",
+      "recipe": "Pasta med spenat och kronärtskocka",
+      "recipeId": 129
+    },
+    {
+      "date": "2026-05-13",
+      "day": "Onsdag",
+      "recipe": "Blomkålssoppa med bacontopping",
+      "recipeId": 9
+    },
+    {
+      "date": "2026-05-14",
+      "day": "Torsdag",
+      "recipe": "Röd linsgryta med potatis",
+      "recipeId": 46
+    },
+    {
+      "date": "2026-05-15",
+      "day": "Fredag",
+      "recipe": "Gnocchi med snabbpesto",
+      "recipeId": 26
+    },
+    {
+      "date": "2026-05-16",
+      "day": "Lördag",
+      "recipe": "Stekta rödspättafiléer med stuvade morötter",
+      "recipeId": 3
+    },
+    {
+      "date": "2026-05-17",
+      "day": "Söndag",
+      "recipe": "Skaldjurslasagne",
+      "recipeId": 47
+    },
+    {
+      "date": "2026-05-18",
+      "day": "Måndag",
+      "recipe": "Indisk gryta med spenat, kikärter, senap & yoghurt",
+      "recipeId": 53
+    },
+    {
+      "date": "2026-05-19",
+      "day": "Tisdag",
+      "recipe": "Krämig bönmasala",
+      "recipeId": 59
+    },
+    {
+      "date": "2026-05-20",
+      "day": "Onsdag",
+      "recipe": "Fisk med örtsås",
+      "recipeId": 50
+    },
+    {
+      "date": "2026-05-21",
+      "day": "Torsdag",
+      "recipe": "Pasta med lax och sås på vitt vin, grädde och spenat",
+      "recipeId": 51
+    },
+    {
+      "date": "2026-05-22",
+      "day": "Fredag",
+      "recipe": "Majsplättar med kokosmjölk",
+      "recipeId": 54
+    },
+    {
+      "date": "2026-05-23",
+      "day": "Lördag",
+      "recipe": "Rödbetsrisotto",
+      "recipeId": 62
+    }
+  ]
 }
