@@ -107,10 +107,13 @@ Inga just nu.
 - Säsongsfilter — automatiskt vikta recept efter säsong (soppa/gryta höst-vinter, sallad sommar)
 
 ### Senaste session — Session 48 (2026-05-06) — Buggfix inköpslista (doh-mängder) + komprimering av CLAUDE.md
-- **Bugg:** doh-receptens ingredienser (format `namn (mängd, notiser)`) fick inga mängder i inköpslistan. Rotorsak: `parseIngredient()` kallar `cleanIngredient()` som strippar ALL parentetisk text — alltså även mängden.
-- **Fix (`api/_shared/shopping-builder.js`):** Pre-processing i toppen av `parseIngredient()`: om strängen inte börjar med siffra/bråk → leta efter `namn (innehåll)`-mönster → splitta `innehåll` på `", "` (inte bara `,` — bevarar decimaltecken som `0,5 tsk`) → ta första delen → strippa eventuellt `à X g`-suffix → om resultat börjar med siffra, omvandla till `mängd namn` och låt befintlig logik köra. Övrig kod oförändrad.
-- **Edge-case löst:** `à`-suffix i parenteser (t.ex. `4 st à 170 g`) — `\bà\b` fungerar inte på Unicode (`à` är inte `\w`), löstes med `.replace(/\s+à\s+.*/i, '')` på qtyPart istället för split.
-- **106 assertions passerar** (44 match + 62 shopping). CLAUDE.md komprimerades 434→251 rader (sessionloggar 31–45 → kompakta notiser).
+- **Bugg:** doh-receptens ingredienser (format `namn (mängd, notiser)`) fick fel eller inga mängder i inköpslistan. 5 rotorsaker i `parseIngredient()` / `cleanIngredient()`:
+  1. **Slash-bråk** `1/2`, `3/4`, `1/4`, `1/3` → `1` togs som mängd, `/2 tsk X` blev ingrediensnamn. Fix: normalisera till `½`/`¾`/`¼`/`0,33` innan parsning.
+  2. **Ord-gräns** på qtyPart: `1 litet huvud`, `2 msk + 2 tsk`, `3 generösa nävar` omarrangerades felaktigt. Fix: rearrangera bara vid ≤2 ord i qtyPart.
+  3. **Komma-bug i eller-hantering**: decimal-kommat i `1,2 dl` strippade ingrediensnamnet bort. Fix: `,.*$` → `,\s+.*$` i `lastWord`-extraktionen.
+  4. **Float-avrundning**: `1,7999...` → `Math.round(amount*100)/100` i `formatIngredient`.
+  5. **Okända enheter**: `nävar`/`huvuden` ej i `SWEDISH_UNITS` → lade till dem; `nävar`/`näve` även i `SMALL_UNITS` → droppar till noAmount.
+- **62 assertions passerar** oförändrat. CLAUDE.md komprimerades 434→251 rader.
 
 ### Session 47 (2026-05-05) — Mobil-verifiering av FAB-stack + safe-area sticky-header-fix
 - **Motivering:** Användaren testade FAB-stack-ordning + scroll-lock i bottom-sheets på iPhone Safari. Båda OK. Hittade grafikbugg: receptkort lyste igenom OVANFÖR sticky-sektionsrubriken — exakt 44 px (statusbar/safe-area-zonen).
