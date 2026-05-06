@@ -106,7 +106,15 @@ Inga just nu.
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 - Säsongsfilter — automatiskt vikta recept efter säsong (soppa/gryta höst-vinter, sallad sommar)
 
-### Senaste session — Session 48 (2026-05-06) — Buggfix inköpslista (doh-mängder) + oprövade-fix
+### Senaste session — Session 49 (2026-05-06) — Buggfix inköpslista runda 3: kategorisering + truncering
+
+- **Kategori-bugg (substring-matching):** `categorize()` använde `low.includes(kw)` → `pankoströbröd` → Mejeri (träff på "ost"), `mangold` → Frukt (träff på "mango"), `asiatisk chili-vitlökssås` → Grönsaker. Fix: ersatt med ordmängd-matchning (`lowWords.has(kw)` för enkelspalts-nyckelord). Flerspalts-nyckelord behåller `includes`.
+- **Specifika kategorifixar:** `mangold` tillagd i Grönsaker-nyckelord. `sweet chili` i SKAFFERI_OVERRIDE (matchar "chili" som ord). NORMALIZATION_TABLE: `lacinatokål`→`grönkål`, `fiskbuljongtärningar`→`fiskbuljong`.
+- **Trunceringsbugg:** `grönsaks- eller kycklingbuljong` → namn=`grönsaks` pga `endsWith("-")`-grenen strippade bara bindestreck. Fix: hämta basnomen från afterEller-delen → `kycklingbuljong` → normaliseras till `hönsbuljong`. Regex `/\s+\S+-$/` matchar hela prefix+bindestreck.
+- **Filtrering:** `salt och svartpeppar efter smak` → `cleanIngredient()` strippade inte "efter smak". Tillagd rad: `s.replace(/\s+efter\s+smak$/i, "")` → landar i PANTRY_ALWAYS_SKIP.
+- **62 assertions** oförändrade (106 totalt: 44 match + 62 shopping).
+
+### Session 48 (2026-05-06) — Buggfix inköpslista (doh-mängder) + oprövade-fix
 - **Inköpslista doh-mängder:** 5 rotorsaker i `parseIngredient()`/`cleanIngredient()`: (1) slash-bråk `1/2`→`½` etc, (2) ord-gräns ≤2 på qtyPart stoppar `1 litet huvud`/`2 msk + 2 tsk`, (3) decimal-komma i eller-hantering `,.*$`→`,\s+.*$`, (4) float-avrundning `Math.round(x*100)/100`, (5) `nävar`/`huvuden` i SWEDISH_UNITS + `nävar`/`näve` i SMALL_UNITS. 62 assertions.
 - **Oprövade recept-gräns:** `untested_count`-limiten respekterades inte i fallback-looparna 2–4 i `pick()` i `api/generate.js` → med 197 oprövade doh-recept i poolen fick nästan alla dagar oprövade recept trots maxinställning. Fix: `underUntestedLimit()`-kontroll i alla loopar; loop 5 som sista utväg. Inline-kopia i `tests/select-recipes.test.js` synkad + nytt test 13. 151 assertions.
 - CLAUDE.md komprimerades 434→251 rader (sessionloggar 31–45).
