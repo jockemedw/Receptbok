@@ -223,7 +223,7 @@ const SKAFFERI_OVERRIDE = new Set([
   "tomatpuré", "chiliflakes", "paprikapulver",
 ]);
 
-const SMALL_UNITS = new Set(["tsk", "krm", "msk", "nypa", "tumme"]);
+const SMALL_UNITS = new Set(["tsk", "krm", "msk", "nypa", "tumme", "näve", "nävar"]);
 
 const PANTRY_ALWAYS_SKIP = new Set([
   "salt", "svartpeppar", "vitpeppar", "vatten", "salt & peppar", "salt och svartpeppar",
@@ -236,7 +236,7 @@ const SWEDISH_UNITS = [
   "burk", "burkar", "frp", "förp", "pkt", "paket", "påsar", "påse",
   "krukor", "kruka", "knippe", "skivor", "klyftor", "bitar", "kvistar",
   "skiva", "klyfta", "kvist", "bit",
-  "huvud", "näve", "nypa", "tumme", "tummar", "st",
+  "huvud", "huvuden", "näve", "nävar", "nypa", "tumme", "tummar", "st",
   "g", "liter", "l", "cm",
 ];
 
@@ -275,7 +275,7 @@ function cleanIngredient(raw) {
     const beforeEller = s.split(" eller ")[0].trim();
     const lastBeforeWord = beforeEller.split(/\s+/).pop().toLowerCase();
     if (ADJEKTIV.has(lastBeforeWord)) {
-      const lastWord = s.replace(/,.*$/, "").trim().split(/\s+/).pop().toLowerCase();
+      const lastWord = s.replace(/,\s+.*$/, "").trim().split(/\s+/).pop().toLowerCase();
       s = beforeEller.replace(new RegExp("\\s+" + lastBeforeWord + "$", "i"), " " + lastWord).trim();
     } else if (lastBeforeWord.endsWith("-")) {
       s = beforeEller.replace(/-$/, "").trim();
@@ -287,6 +287,13 @@ function cleanIngredient(raw) {
 }
 
 export function parseIngredient(raw) {
+  // Normalize slash fraction ranges like "1/4–1/2" (take max) before simple fractions
+  raw = raw.replace(/(\d+)\/(\d+)\s*[–-]\s*(\d+)\/(\d+)/g, (_, an, ad, bn, bd) =>
+    String(Math.round(Math.max(+an / +ad, +bn / +bd) * 100) / 100).replace('.', ','));
+  // Normalize simple slash fractions: 3/4→¾, 1/2→½, 1/4→¼, 1/3→0,33, 2/3→0,67
+  raw = raw.replace(/\b3\/4\b/g, '¾').replace(/\b1\/2\b/g, '½').replace(/\b1\/4\b/g, '¼')
+           .replace(/\b2\/3\b/g, '0,67').replace(/\b1\/3\b/g, '0,33');
+
   // Handle doh-format: "ingredient name (qty[, prep notes])" → rearrange to "qty ingredient name"
   // Only when string doesn't start with a digit/fraction (old format always starts with qty)
   if (!/^[\d½¼¾]/.test(raw.trim())) {
@@ -295,7 +302,11 @@ export function parseIngredient(raw) {
       // Split on ", " (not bare "," to preserve decimal commas like "0,5 tsk")
       // then strip any "à X g" size-notation suffix
       const qtyPart = parenM[2].split(/, /)[0].replace(/\s+à\s+.*/i, '').trim();
-      if (/^[\d½¼¾]/.test(qtyPart)) {
+      // Only rearrange for simple "qty unit" patterns (≤2 words).
+      // Multi-word content like "2 msk + 2 tsk", "1 litet huvud", "3 generösa nävar"
+      // would produce garbage names after rearrangement — skip those.
+      const wordCount = qtyPart.split(/\s+/).filter(Boolean).length;
+      if (/^[\d½¼¾]/.test(qtyPart) && wordCount <= 2) {
         raw = qtyPart + ' ' + parenM[1].trim();
       }
     }
@@ -396,6 +407,7 @@ function categorize(name) {
 
 function formatIngredient(amount, unit, name) {
   if (amount === null) return name;
+  amount = Math.round(amount * 100) / 100;
   const FRAC_DISPLAY = { 0.5: "½", 0.25: "¼", 0.75: "¾", 1.5: "1½", 2.5: "2½" };
   const amtStr = FRAC_DISPLAY[amount] ?? (Number.isInteger(amount) ? String(amount) : String(amount).replace(".", ","));
   const qty = unit ? `${amtStr} ${unit}` : amtStr;
