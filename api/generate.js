@@ -124,6 +124,8 @@ function bucketBySaving(pool, savingsById) {
 }
 
 // ── Deterministisk receptväljare ─────────────────────────────────────────────
+const hasTure = (r) => (r.tags || []).some((t) => t.toLowerCase() === "ture");
+
 function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), usedOn = {}, savingsById = null) {
   const MAX_PER_PROTEIN = 2;
 
@@ -148,7 +150,7 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
 
   // ── 3. Ture-dagar + Vegetariska dagar ──────────────────────────────────────
   const tureCount = constraints.ture_days;
-  const turePool = pool.filter((r) => r.tags.includes("ture"));
+  const turePool = pool.filter(hasTure);
   const shuffledIndices = shuffle(dayList.map((_, i) => i));
   const tureDaySet = new Set(shuffledIndices.slice(0, tureCount));
 
@@ -167,7 +169,7 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
   function pick(dayPool, altPool, mustBeVeg, mustBeTure) {
     const maxForProtein = (p) => p === "vegetarisk" ? maxVeg : MAX_PER_PROTEIN;
     const underUntestedLimit = (r) => r.tested || untestedSoFar < constraints.untested_count;
-    const tureOk = (r) => !mustBeTure || r.tags.includes("ture");
+    const tureOk = (r) => !mustBeTure || hasTure(r);
     const vegOk = (r) => {
       if (mustBeVeg) return r.protein === "vegetarisk";
       if (!mustBeTure) return r.protein !== "vegetarisk";
@@ -176,7 +178,7 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
     // Spara ture-taggade recept åt ture-dagar: på icke-ture-dagar, undvik
     // ture-recept i de första looparna (släpps i loop 2+).
     const saveTure = tureCount > 0 && !mustBeTure;
-    const preferNonTure = (r) => !saveTure || !r.tags.includes("ture");
+    const preferNonTure = (r) => !saveTure || !hasTure(r);
     // Loop 1: full constraints (protein limits + untested limit + save ture)
     for (const r of dayPool) {
       if (usedIds.has(r.id)) continue;
@@ -292,7 +294,7 @@ export default createHandler(async (req, res, pat) => {
   }
 
   if (constraints.ture_days > 0) {
-    const tureAvailable = filtered.filter((r) => (r.tags || []).includes("ture")).length;
+    const tureAvailable = filtered.filter(hasTure).length;
     if (tureAvailable === 0) {
       return res.status(400).json({ error: "Du har valt Ture-dagar men inga recept har taggen \"ture\". Tagga barnvänliga recept med \"ture\" först, eller sätt Ture-dagar till 0." });
     }
