@@ -158,6 +158,20 @@
         <hr class="setting-divider">
 
         <div class="setting-row">
+          <label class="setting-label">
+            Ture-dagar
+            <span class="setting-sublabel">Antal dagar med barnvänliga recept</span>
+          </label>
+          <div class="setting-control">
+            <input type="number" id="tureDays" class="setting-num"
+                   min="0" max="15" value="0" onchange="updateSettingsPreview()">
+            <span class="setting-unit">dagar</span>
+          </div>
+        </div>
+
+        <hr class="setting-divider">
+
+        <div class="setting-row">
           <label class="setting-label" for="optimizePrices">
             Prisoptimera matsedeln
             <span class="setting-sublabel">Föredrar recept med Willys-erbjudanden</span>

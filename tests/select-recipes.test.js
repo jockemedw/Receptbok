@@ -59,8 +59,13 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
   const weekdayPool = bucketBySaving(pool.filter((r) => r.tags.includes("vardag30")), savingsById);
   const weekendPool = bucketBySaving(pool.filter((r) => r.tags.includes("helg60")), savingsById);
 
+  const tureCount = constraints.ture_days || 0;
+  const shuffledIndices = shuffle(dayList.map((_, i) => i));
+  const tureDaySet = new Set(shuffledIndices.slice(0, tureCount));
+
   const vegCount = constraints.vegetarian_days;
-  const vegDaySet = new Set(shuffle(dayList.map((_, i) => i)).slice(0, vegCount));
+  const remainingIndices = shuffledIndices.filter((i) => !tureDaySet.has(i));
+  const vegDaySet = new Set(remainingIndices.slice(0, vegCount));
 
   const maxVeg = Math.max(2, vegCount);
 
@@ -69,43 +74,58 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
   const result = [];
   let untestedSoFar = 0;
 
-  function pick(dayPool, altPool, mustBeVeg) {
+  function pick(dayPool, altPool, mustBeVeg, mustBeTure) {
     const maxForProtein = (p) => p === "vegetarisk" ? maxVeg : MAX_PER_PROTEIN;
     const underUntestedLimit = (r) => r.tested || untestedSoFar < constraints.untested_count;
-    // Loop 1: full constraints (protein limits + untested limit)
+    const tureOk = (r) => !mustBeTure || r.tags.includes("ture");
+    const vegOk = (r) => {
+      if (mustBeVeg) return r.protein === "vegetarisk";
+      if (!mustBeTure) return r.protein !== "vegetarisk";
+      return true;
+    };
+    const saveTure = tureCount > 0 && !mustBeTure;
+    const preferNonTure = (r) => !saveTure || !r.tags.includes("ture");
+    // Loop 1: full constraints (protein limits + untested limit + save ture)
     for (const r of dayPool) {
       if (usedIds.has(r.id)) continue;
-      if (mustBeVeg && r.protein !== "vegetarisk") continue;
-      if (!mustBeVeg && r.protein === "vegetarisk") continue;
+      if (!tureOk(r)) continue;
+      if (!vegOk(r)) continue;
+      if (!preferNonTure(r)) continue;
       if ((proteinUsage[r.protein] || 0) >= maxForProtein(r.protein)) continue;
       if (!underUntestedLimit(r)) continue;
       return r;
     }
-    // Loop 2: relax protein limits, keep untested limit
+    // Loop 2: relax protein limits, keep ture-preference + untested limit
     for (const r of dayPool) {
       if (usedIds.has(r.id)) continue;
-      if (mustBeVeg && r.protein !== "vegetarisk") continue;
+      if (!tureOk(r)) continue;
+      if (!vegOk(r)) continue;
+      if (!preferNonTure(r)) continue;
       if (!underUntestedLimit(r)) continue;
       return r;
     }
-    // Loop 3: altPool, keep untested limit
+    // Loop 3: altPool, keep ture-preference + untested limit
     for (const r of altPool) {
       if (usedIds.has(r.id)) continue;
-      if (mustBeVeg && r.protein !== "vegetarisk") continue;
+      if (!tureOk(r)) continue;
+      if (!vegOk(r)) continue;
+      if (!preferNonTure(r)) continue;
       if (!underUntestedLimit(r)) continue;
       return r;
     }
     // Loop 4: all recipes, keep untested limit
     for (const r of recipes) {
       if (usedIds.has(r.id)) continue;
-      if (mustBeVeg && r.protein !== "vegetarisk") continue;
+      if (!tureOk(r)) continue;
+      if (!vegOk(r)) continue;
       if (!underUntestedLimit(r)) continue;
       return r;
     }
     // Loop 5: last resort — ignore untested limit (tested pool exhausted)
     for (const r of recipes) {
       if (usedIds.has(r.id)) continue;
-      if (mustBeVeg && r.protein !== "vegetarisk") continue;
+      if (!tureOk(r)) continue;
+      if (!vegOk(r)) continue;
       return r;
     }
     return null;
@@ -114,9 +134,10 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
   for (let i = 0; i < dayList.length; i++) {
     const day = dayList[i];
     const isVegDay = vegDaySet.has(i);
+    const isTureDay = tureDaySet.has(i);
     const dayPool = day.is_weekend ? weekendPool : weekdayPool;
     const altPool = day.is_weekend ? weekdayPool : weekendPool;
-    const recipe = pick(dayPool, altPool, isVegDay);
+    const recipe = pick(dayPool, altPool, isVegDay, isTureDay);
     if (!recipe) {
       throw new Error(`Kunde inte hitta recept för ${day.day} — ingen kandidat tillgänglig.`);
     }
@@ -193,6 +214,7 @@ const DEFAULT_CONSTRAINTS = {
   allowed_proteins: ["fisk", "kyckling", "kött", "fläsk", "vegetarisk"],
   untested_count: 10,
   vegetarian_days: 0,
+  ture_days: 0,
 };
 
 // ─── Test 1: Grundfall — rätt antal dagar returneras ─────────────────────────
@@ -301,6 +323,7 @@ const DEFAULT_CONSTRAINTS = {
     { id: 5, title: "Vardag5", protein: "vegetarisk", tags: ["vardag30", "veg"], tested: true, ingredients: [] },
     { id: 6, title: "Helg1",   protein: "fisk",    tags: ["helg60"],   tested: true, ingredients: [] },
     { id: 7, title: "Helg2",   protein: "kyckling", tags: ["helg60"],  tested: true, ingredients: [] },
+    { id: 8, title: "Helg3",   protein: "kött",    tags: ["helg60"],   tested: true, ingredients: [] },
   ];
   const result = selectRecipes(recipes, VECKA, DEFAULT_CONSTRAINTS);
   assertEq(result.length, 7, "helg-matchning: 7 dagar ger 7 recept");
@@ -372,6 +395,7 @@ const DEFAULT_CONSTRAINTS = {
     { id: 4, title: "Vardag4", protein: "fläsk",    tags: ["vardag30"], tested: true, ingredients: [] },
     { id: 5, title: "Vardag5", protein: "vegetarisk", tags: ["vardag30", "veg"], tested: true, ingredients: [] },
     { id: 6, title: "Helg2",   protein: "kyckling", tags: ["helg60"],   tested: true, ingredients: [] },
+    { id: 7, title: "Vardag6", protein: "fläsk",    tags: ["vardag30"], tested: true, ingredients: [] },
   ];
   // Märk det låsta receptet som nyligen använt — ska ändå kunna väljas
   const recentIds = new Set([lockedId]);
@@ -487,6 +511,50 @@ const DEFAULT_CONSTRAINTS = {
     const untestedCount = result.filter(d => !recipes.find(r => r.id === d.recipeId).tested).length;
     assertTrue(untestedCount <= 2, `Test13 iter ${i}: untested-gräns 2 respekteras i fallback (fick ${untestedCount})`);
   }
+}
+
+// Test 14 — ture_days: exakt N Ture-recept, inga dubbletter
+{
+  const mk = (id, protein, tags) => ({ id, title: `R${id}`, protein, tags, tested: true, ingredients: [] });
+  const recipes = [
+    mk(1, "kyckling", ["vardag30", "ture"]),
+    mk(2, "fisk",     ["vardag30", "ture"]),
+    mk(3, "kött",     ["vardag30", "ture"]),
+    mk(4, "fläsk",    ["vardag30"]),
+    mk(5, "kyckling", ["vardag30"]),
+    mk(6, "fisk",     ["vardag30"]),
+    mk(7, "kött",     ["vardag30"]),
+    mk(8, "fläsk",    ["helg60"]),
+    mk(9, "kyckling", ["helg60"]),
+  ];
+  const constraints = { ...DEFAULT_CONSTRAINTS, ture_days: 2, vegetarian_days: 0 };
+  for (let i = 0; i < 20; i++) {
+    const result = selectRecipes(recipes, VECKA, constraints);
+    const tureRecipes = result.filter(d => {
+      const r = recipes.find(r => r.id === d.recipeId);
+      return r && r.tags.includes("ture");
+    });
+    assertEq(tureRecipes.length, 2, `ture_days iter ${i}: exakt 2 Ture-recept`);
+    const tureIds = tureRecipes.map(d => d.recipeId);
+    assertEq(new Set(tureIds).size, tureIds.length, `ture_days iter ${i}: inga dubbla Ture-recept`);
+  }
+}
+
+// Test 15 — ture_days=0: inga Ture-recept tvingade
+{
+  const mk = (id, protein, tags) => ({ id, title: `R${id}`, protein, tags, tested: true, ingredients: [] });
+  const recipes = [
+    mk(1, "kyckling", ["vardag30", "ture"]),
+    mk(2, "fisk",     ["vardag30"]),
+    mk(3, "kött",     ["vardag30"]),
+    mk(4, "fläsk",    ["vardag30"]),
+    mk(5, "kyckling", ["helg60"]),
+    mk(6, "fisk",     ["helg60"]),
+    mk(7, "kött",     ["helg60"]),
+  ];
+  const constraints = { ...DEFAULT_CONSTRAINTS, ture_days: 0, vegetarian_days: 0 };
+  const result = selectRecipes(recipes, VECKA, constraints);
+  assertEq(result.length, 7, "ture_days=0: returnerar 7 recept");
 }
 
 // ─── Slutrapport ──────────────────────────────────────────────────────────────
