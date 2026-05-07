@@ -2,7 +2,7 @@
   "meta": {
     "version": "1.0",
     "lastUpdated": "2026-05-07",
-    "totalRecipes": 267,
+    "totalRecipes": 266,
     "nextId": 271
   },
   "recipes": [
@@ -4656,49 +4656,6 @@
         "Lägg en stekt tofubit på brödbottnen och toppa med coleslawen."
       ],
       "notes": "Källa: Chicken Fried Tofu Sandwiches, dishingouthealth.com"
-    },
-    {
-      "id": 128,
-      "title": "Tofu Picadillo",
-      "tested": false,
-      "servings": 4,
-      "time": 60,
-      "timeNote": "",
-      "tags": [
-        "helg60",
-        "veg",
-        "gryta",
-        "doh"
-      ],
-      "protein": "vegetarisk",
-      "ingredients": [
-        "olivolja (3 msk, uppdelat)",
-        "extra-fast tofu (400–450 g, avrunnen)",
-        "gul lök (3,6 dl, fint hackad)",
-        "grön paprika (1, fint hackad)",
-        "vitlöksklyfta (3, pressad)",
-        "rökt paprikapulver (1 tsk)",
-        "mald spiskummin (1 tsk)",
-        "torkad oregano (1 tsk)",
-        "mald koriander (0,5 tsk)",
-        "mald kanel (0,5 tsk)",
-        "hela skalade tomater på burk (800 g, avrunnna och krossade)",
-        "grönsaksbuljong (1,2 dl)",
-        "salt (1 tsk)",
-        "pimentofyllda oliver (0,8 dl)",
-        "rödvinsvinäger eller olivlake (2 msk)",
-        "russin (2 msk, valfritt)",
-        "färsk koriander (valfritt)"
-      ],
-      "instructions": [
-        "Linda in tofun i en ren kökshandduk och pressa den på alla sidor för att ta bort så mycket vätska som möjligt. Alternativt kan du lägga något tungt ovanpå (t.ex. en gjutjärnspanna) och låta den pressa i cirka 15–20 minuter eller längre för fastare tofu.",
-        "Smula tofun med händerna eller en gaffel till bitar i ungefär samma storlek som köttfärs — lämna några lite större bitar för texturen. Hetta upp 2 msk av olivoljan i en stor non-stick-stekpanna på medelhög värme. När oljan är varm, lägg i tofun och stek utan att röra i 3 minuter. Rör om och fortsätt steka, bara rörandes med några minuters mellanrum, i totalt ca 12 minuter tills tofun fått fin färg. Flytta över tofun till en skål.",
-        "Tillsätt återstående 1 msk olja i pannan tillsammans med lök och paprika. Stek 6–8 minuter under omrörning tills mjukt. Tillsätt vitlök, rökt paprikapulver, spiskummin, oregano, mald koriander och kanel; stek ytterligare 1 minut tills det doftar gott.",
-        "Lägg tillbaka tofun i pannan och rör om så att allt täcks av kryddorna. Tillsätt krossade tomater, grönsaksbuljong och salt; låt blandningen koka upp till en sjudning.",
-        "Sjud picadillon under lock i 15 minuter och rör bara om ett par gånger. Ta bort locket, tillsätt oliver och olivlake (eller vinäger) och fortsätt koka utan lock i ytterligare 15 minuter. Rör om så lite som möjligt för bästa bryning av tofun.",
-        "Rör i russin och/eller färsk koriander precis innan servering."
-      ],
-      "notes": "Källa: Tofu Picadillo, dishingouthealth.com"
     },
     {
       "id": 129,
