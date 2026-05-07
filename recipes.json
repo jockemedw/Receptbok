@@ -2,8 +2,8 @@
   "meta": {
     "version": "1.0",
     "lastUpdated": "2026-05-07",
-    "totalRecipes": 261,
-    "nextId": 265
+    "totalRecipes": 262,
+    "nextId": 266
   },
   "recipes": [
     {
@@ -10080,6 +10080,40 @@
         "Servera fisken med grönsaker, hackat ägg, persilja och sås, så kan alla ta vad de vill ha."
       ],
       "notes": null
+    },
+    {
+      "id": 266,
+      "title": "Ugnspannkaka 50/50",
+      "tested": false,
+      "servings": 4,
+      "time": 45,
+      "timeNote": null,
+      "tags": [
+        "vegetarisk",
+        "ugn",
+        "vardag30",
+        "Ture"
+      ],
+      "protein": "vegetarisk",
+      "ingredients": [
+        "2 dl vetemjöl",
+        "1 dl grahams- eller havremjöl",
+        "1 tsk salt",
+        "1 tsk bakpulver",
+        "6 dl mjölk",
+        "4 ägg",
+        "100 g färsk grönkål, utan stam",
+        "rapsolja att steka i och smörja formen med",
+        "1 dl riven ost (ca 40 g)"
+      ],
+      "instructions": [
+        "Sätt ugnen på 225 grader.",
+        "Mät upp mjöl, salt och bakpulver i en bunke. Tillsätt hälften av mjölken och vispa till en slät smet. Tillsätt resten av mjölken och äggen och vispa lite till.",
+        "Gör i ordning fyllningen: hacka och stek grönkålen mjuk på medelvärme i en stekpanna med lite olja. Riv osten.",
+        "Smörj en form i storleken 25 x 35 cm. Lägg grönkål och ost i halva och låt resten vara tom. Håll försiktigt över pannkakssmeten, börja med att hälla i den tomma delen, och balansera in den i mitten av ugnen.",
+        "Grädda i ca 30 minuter eller tills pannkakan stannat och fått fin färg. Ta ut den, låt den svalna lite och servera med önskade tillbehör."
+      ],
+      "notes": "Serveringsförslag: sylt och grädde, ajvar relish och hackade valnötter, eller grönsaker som morotsstavar och oliver. Tips för Grönkålschips: Om du får grönkål över kan du passa på att göra en plåt grönkålschips efter att pannkakan har gräddat klart. Sänk ugnen till 150 grader. Dra bladen från den grova stammen. Lägg på bakplåtspappersklädd plåt och ringla över olivolja. Vänd runt så att alla blad oljas in. Salta lite och ställ in i mitten av ugnen. Ta ut dem efter 15–20 minuter när de fått färg och ser krispiga ut."
     }
   ]
 }
