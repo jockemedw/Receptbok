@@ -1,9 +1,9 @@
 {
   "meta": {
     "version": "1.0",
-    "lastUpdated": "2026-05-04",
-    "totalRecipes": 259,
-    "nextId": 262
+    "lastUpdated": "2026-05-07",
+    "totalRecipes": 260,
+    "nextId": 263
   },
   "recipes": [
     {
@@ -9991,6 +9991,44 @@
         "Lägg grönkålen i en stor skål. Ringla över 2 tsk olivolja och en nypa salt. Massera in oljan och saltet i kålbladen med händerna tills de börjar mjukna, ca 30 sekunder. Tillsätt hälften av caesardressingen och blanda väl. Lägg upp grönkålen på ett serveringsfat eller i en skål och toppa med den rökta tempehen och resterande dressing. Strö tallkotts-parmesan över toppen om så önskas."
       ],
       "notes": "Källa: Vegan Kale Caesar with Smoky Tempeh Crumbles, dishingouthealth.com"
+    },
+    {
+      "id": 263,
+      "title": "Örtig tortellinisoppa",
+      "tested": false,
+      "servings": 4,
+      "time": 15,
+      "timeNote": null,
+      "tags": [
+        "soppa",
+        "pasta",
+        "vegetarisk"
+      ],
+      "protein": "vegetarisk",
+      "ingredients": [
+        "2 vitlöksklyftor",
+        "Olivolja",
+        "800 g passerade tomater",
+        "2 grönsaksbuljongtärningar",
+        "2-3 dl vatten",
+        "150 g torkad tortellini",
+        "0,5 dl grädde eller crème fraiche",
+        "Basilika eller oregano (torkad eller färsk)",
+        "En nypa socker",
+        "Salt",
+        "Peppar",
+        "Parmesanost eller annan god riven ost (för servering)",
+        "Färska örter, t.ex. oregano (för servering)"
+      ],
+      "instructions": [
+        "Hacka vitlöksklyftorna fint. Stek mjuka i olivolja i medelvärm gryta eller kastrull.",
+        "Tillsätt passerade tomater, buljongtärning och vatten. Låt koka upp.",
+        "Koka under tiden tortellini enligt anvisning på paketet.",
+        "Runda av soppan med ett par skedar grädde eller crème fraiche och smaka av med basilika eller oregano, socker, peppar och eventuellt salt.",
+        "Ringla lite olja över tortellinin så att den inte klibbar ihop.",
+        "Servera tortellini och soppa var för sig, så att alla kan ta för sig som de vill."
+      ],
+      "notes": null
     }
   ]
 }
