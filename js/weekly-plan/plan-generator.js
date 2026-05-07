@@ -69,10 +69,13 @@ export function updateSettingsPreview() {
   const startVal = document.getElementById('startDate').value;
   const endVal   = document.getElementById('endDate').value;
   const vegDays  = parseInt(document.getElementById('vegetarianDays').value) || 0;
+  const tureDays = parseInt(document.getElementById('tureDays').value) || 0;
   if (startVal && endVal) {
     const diff = daysBetween(startVal, endVal);
     if (vegDays > diff) document.getElementById('vegetarianDays').value = diff;
+    if (tureDays > diff) document.getElementById('tureDays').value = diff;
     document.getElementById('vegetarianDays').max  = diff;
+    document.getElementById('tureDays').max        = diff;
     document.getElementById('untestedCount').max   = diff;
   }
 
@@ -203,6 +206,7 @@ export async function generatePlan() {
       allowed_proteins: getSelectedProteins().join(','),
       untested_count:   parseInt(document.getElementById('untestedCount').value) || 0,
       vegetarian_days:  parseInt(document.getElementById('vegetarianDays').value) || 0,
+      ture_days:        parseInt(document.getElementById('tureDays').value) || 0,
       skip_shopping: true,
       blocked_dates:    getBlockedDates(),
       optimize_prices:  wantsOptimize,
