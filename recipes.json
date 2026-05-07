@@ -2,8 +2,8 @@
   "meta": {
     "version": "1.0",
     "lastUpdated": "2026-05-07",
-    "totalRecipes": 260,
-    "nextId": 263
+    "totalRecipes": 261,
+    "nextId": 264
   },
   "recipes": [
     {
@@ -10028,6 +10028,42 @@
         "Runda av soppan med ett par skedar grädde eller crème fraiche och smaka av med basilika eller oregano, socker, peppar och eventuellt salt.",
         "Ringla lite olja över tortellinin så att den inte klibbar ihop.",
         "Servera tortellini och soppa var för sig, så att alla kan ta för sig som de vill."
+      ],
+      "notes": null
+    },
+    {
+      "id": 264,
+      "title": "Väffeltoast med rökt kalkon, äpple och dijonkräm",
+      "tested": false,
+      "servings": 4,
+      "time": 20,
+      "timeNote": null,
+      "tags": [
+        "vardag30",
+        "kött",
+        "vegetarisk",
+        "Ture"
+      ],
+      "protein": "kött",
+      "ingredients": [
+        "1 dl crème fraiche",
+        "2 tsk dijonsenap",
+        "1 äpple, gärna syrligt",
+        "8 skivor bröd, gärna fullkornsbröd",
+        "4–8 skivor rökt kalkon alternativt rökt tofu, hyvlad i tunna skivor",
+        "1 tsk timjan",
+        "8 skivor ost",
+        "fett till våffeljärnet",
+        "plockgrönsaker (tillbehör)",
+        "mjölk (tillbehör)"
+      ],
+      "instructions": [
+        "Gör en dijonkräm genom att blanda crème fraiche och dijonsenap. Den får gärna vara ganska stark, så den liksom ”biter tillbaka” lite när du äter din toast sen.",
+        "Skiva äpplet tunt.",
+        "Bygg mackorna genom att först bre ett lager dijonkräm i botten, sedan lägga på skivad kalkon eller rökt tofu, krydda med timjan och lägg på skivat äpple och ost.",
+        "Hetta upp våffeljärnet och smörj det med fett.",
+        "Grädda mackorna tills de fått fin färg och osten smält.",
+        "Servera dem ljumma."
       ],
       "notes": null
     }
