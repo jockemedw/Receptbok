@@ -2,8 +2,8 @@
   "meta": {
     "version": "1.0",
     "lastUpdated": "2026-05-07",
-    "totalRecipes": 261,
-    "nextId": 264
+    "totalRecipes": 262,
+    "nextId": 265
   },
   "recipes": [
     {
@@ -10064,6 +10064,51 @@
         "Hetta upp våffeljärnet och smörj det med fett.",
         "Grädda mackorna tills de fått fin färg och osten smält.",
         "Servera dem ljumma."
+      ],
+      "notes": null
+    },
+    {
+      "id": 265,
+      "title": "Snabbrimmad torsk med ägg och persilja",
+      "tested": false,
+      "servings": 4,
+      "time": 25,
+      "timeNote": null,
+      "tags": [
+        "fisk",
+        "ugn",
+        "vardag30"
+      ],
+      "protein": "fisk",
+      "ingredients": [
+        "400 g torskfilé eller annan vit fisk, gärna miljömärkt",
+        "0,75 tsk salt",
+        "1 tsk socker",
+        "potatis för 4 pers",
+        "4 ägg",
+        "1 msk olivolja",
+        "grönsaker, t ex tomater och gröna ärtor",
+        "färsk persilja, gärna krusbladig",
+        "2 msk fett, t ex raps- och smörblandning (till såsen)",
+        "2 msk vetemjöl (till såsen)",
+        "4 dl mjölk (till såsen)",
+        "1 msk fiskfond (till såsen)",
+        "vitpeppar (till såsen)",
+        "ev lite rivet citronskal (till såsen)",
+        "1–2 msk grädde eller crème fraiche (till såsen)"
+      ],
+      "instructions": [
+        "Tina fisken och skär den i fyra bitar.",
+        "Blanda salt och socker och gnugga in i fisken. Låt fisken stå medan du förbereder resten.",
+        "Sätt ugnen på 200 °C.",
+        "Skala och koka potatisen. Se till att det finns lite extra plats i kastrullen så ryms äggen också. När vattnet kokar, lägg försiktigt ner äggen och låt dem koka i 9 minuter.",
+        "Ta upp äggen och spola dem med kallt vatten.",
+        "Lägg fisken i en smord, ugnssäker form, ringla över olivolja och ugnsbaka i mitten av ugnen i 10–15 minuter. Fisken ska vara fast och inte geleaktig i mitten.",
+        "Gör i ordning grönsakerna. Skala och hacka äggen. Hacka även persiljan, alternativt ställ krukan på bordet.",
+        "Hetta upp fettet till såsen i en kastrull. Strö över vetemjölet och rör runt så att det blandar sig med fettet.",
+        "Tillsätt mjölken lite i taget och vispa så att eventuella klumpar försvinner. Tillsätt fonden och låt såsen koka sig tjock ett par minuter.",
+        "Smaka av med vitpeppar och eventuellt rivet citronskal. Runda av med en sked grädde eller crème fraiche.",
+        "Servera fisken med grönsaker, hackat ägg, persilja och sås, så kan alla ta vad de vill ha."
       ],
       "notes": null
     }
