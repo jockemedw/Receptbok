@@ -2,8 +2,8 @@
   "meta": {
     "version": "1.0",
     "lastUpdated": "2026-05-07",
-    "totalRecipes": 263,
-    "nextId": 267
+    "totalRecipes": 264,
+    "nextId": 268
   },
   "recipes": [
     {
@@ -10157,6 +10157,43 @@
         "När potatisen är klar, slå av det mesta av potatisvattnet (spara ungefär en halv deciliter i kastrullen). Klicka i fett och pressa eller stöt till ett mos.",
         "Späd eventuellt med mjölk till önskad konsistens. Smaka av potatismoset med salt och peppar och eventuellt lite muskot.",
         "Gör i ordning grönsaker och servera allt tillsammans."
+      ],
+      "notes": null
+    },
+    {
+      "id": 268,
+      "title": "Nudelwok med thai-basilika och ostronsås",
+      "tested": false,
+      "servings": 4,
+      "time": null,
+      "timeNote": null,
+      "tags": [
+        "wok",
+        "vegetarisk",
+        "vardag30",
+        "Ture"
+      ],
+      "protein": "vegetarisk",
+      "ingredients": [
+        "700 g grönsaker, t ex 7 dl strimlad grönkål/vitkål/spetskål, 2 morötter, 1 paprika, 1 kålrabbi och några färska champinjoner",
+        "3 vitlöksklyftor",
+        "300 g fast tofu, vegobitar, kyckling, biff eller ägg",
+        "rapsolja att woka i",
+        "ca 0,75 dl ostronsås",
+        "250 g nudlar, t ex ägg- eller risnudlar",
+        "ca 1 msk japansk sojasås",
+        "hackade nötter, t ex cashew- eller jordnötter",
+        "salladslök",
+        "thaibasilika eller färsk koriander",
+        "1 limefrukt i klyftor",
+        "något starkt att ringla över för den som vill, t ex srirachasås"
+      ],
+      "instructions": [
+        "Skölj och strimla grönsakerna. Hacka vitlöken fint. Skär eventuell tofu/kyckling/biff i bitar.",
+        "Hetta upp olja i en wokpanna och börja med att lägga i alla grönsaker utom vitlök. Woka på ganska hög värme så att de verkligen wokas, inte \"koksteks\". Droppa i mer olja ifall det börjar se torrt ut.",
+        "Tillsätt tofu/vegobitar/kyckling/biff och låt woka med. Tillsätt även vitlöken. Fortsätt att vända runt så att allt blir genomstekt men inte bränt. Tillsätt ostronsåsen mot slutet.",
+        "Koka nudlarna enligt anvisning på paketet.",
+        "Tillsätt nudlarna i woken och blanda ner så gott det går. Stänk över sojasås och rör om. Smaka av och tillsätt eventuellt mer ostron- eller sojasås."
       ],
       "notes": null
     }
