@@ -7559,7 +7559,7 @@
     {
       "id": 201,
       "title": "Parmigiana med aubergine i stekpanna",
-      "tested": false,
+      "tested": true,
       "servings": 5,
       "time": 50,
       "timeNote": "",
