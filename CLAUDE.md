@@ -112,7 +112,11 @@ Inga just nu.
 - **Taggfiltrering:** Dynamiskt genererade tagg-checkboxar i filter-sheet. System-/protein-/kök-taggar exkluderade via `EXCLUDED_TAGS`. Normalisering till lowercase.
 - **Fliknamnsbyte:** "Veckans mat" → "Matsedeln" i header-tab, bottom-nav, aria-label.
 - **Ture-dagar (barnvänliga recept):** Ny parameter `ture_days` i inställningspanelen. Styr antal dagar med recept taggade "ture". Allokeras före veg-dagar, inga dubbletter. `preferNonTure`-logik i `pick()` sparar ture-recept åt ture-dagar (loops 1–3 undviker ture på vanliga dagar, loops 4–5 släpper igenom som fallback). Bugg hittad och fixad: utan preferNonTure kunde vanliga dagar förbruka alla ture-recept.
-- **Testfixar:** `DEFAULT_CONSTRAINTS` saknades `ture_days: 0` → alla dagar blev ture-dagar. Test 5+7 hade för få icke-veg recept (6 för 7 slots). Test 14 (ture_days=2, 20 iterationer) + Test 15 (ture_days=0). **192 assertions** (298 totalt: 44 match + 62 shopping + 192 select-recipes).
+- **Ture-helg-bugg:** Alla ture-recept var vardag30 — ture-dag på lördag kraschade. Fix: `processingOrder` sorterar ture-dagar först, `result.sort()` återställer datumordning. Test 16 (30 iter ture-på-helg).
+- **Case-bugg:** Taggen "Ture" (versalt) i databasen matchade inte `"ture"` i koden. Fix: `hasTure()` helper med case-insensitiv `.toLowerCase()`-jämförelse.
+- **Saknade tidstagger:** 3 ture-recept (id 263, 269, 270) saknade `vardag30`/`helg60` → filtrerades bort. Lade till `vardag30` (alla ≤30 min).
+- **Tidig validering:** Om ture_days>0 men inga ture-recept finns i poolen → begripligt felmeddelande istället för kryptiskt "ture helg".
+- **Testfixar:** `DEFAULT_CONSTRAINTS` saknades `ture_days: 0` → alla dagar blev ture-dagar. Test 5+7 hade för få icke-veg recept (6 för 7 slots). Test 14 (ture_days=2, 20 iter) + Test 15 (ture_days=0) + Test 16 (ture-på-helg, 30 iter). **432 assertions** (538 totalt: 44 match + 62 shopping + 432 select-recipes).
 
 ### Session 49 (2026-05-06) — Buggfix inköpslista runda 3: kategorisering + truncering
 
