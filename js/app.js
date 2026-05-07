@@ -24,6 +24,7 @@ async function init() {
     document.getElementById('loadingState').style.display  = 'none';
     document.getElementById('footerEl').textContent        =
       `Receptboken · ${data.meta?.lastUpdated || ''} · ${window.RECIPES.length} recept`;
+    buildTagFilterUI();
     window.renderRecipeBrowser();
     window.initDatePickers();
   } catch (err) {
@@ -102,7 +103,45 @@ document.querySelectorAll('#sortSheet input[name="groupBy"]').forEach(r => {
   });
 });
 
-// Filter: checkbox change
+// Taggar som redan täcks av andra filterdimensioner — exkluderas från tagg-UI
+const EXCLUDED_TAGS = new Set([
+  'vardag30', 'helg60', 'snabb30', 'vardag', 'doh', 'veg', 'vegetarisk',
+  'fisk', 'kyckling', 'kött', 'fläsk', 'tofu',
+  'italienskt', 'mexikanskt', 'medelhavet', 'mellanöstern', 'indiskt',
+  'thailändskt', 'japanskt', 'koreanskt', 'kinesiskt', 'vietnamesiskt',
+  'asiatiskt', 'franskt',
+]);
+
+function buildTagFilterUI() {
+  const counts = {};
+  for (const r of window.RECIPES) {
+    for (const t of r.tags) {
+      const low = t.toLowerCase();
+      if (EXCLUDED_TAGS.has(low)) continue;
+      counts[low] = (counts[low] || 0) + 1;
+    }
+  }
+  const sorted = Object.entries(counts).sort((a, b) => a[0].localeCompare(b[0], 'sv'));
+  if (sorted.length === 0) return;
+
+  const container = document.getElementById('tagFilterChecks');
+  container.innerHTML = sorted.map(([tag, count]) =>
+    `<label class="bs-check"><input type="checkbox" data-fgroup="tags" value="${tag}"><span>${tag} (${count})</span></label>`
+  ).join('');
+
+  document.getElementById('tagFilterGroup').style.display = '';
+
+  container.querySelectorAll('input[type="checkbox"]').forEach(c => {
+    c.addEventListener('change', () => {
+      const set = window.recipeFilters.tags;
+      if (c.checked) set.add(c.value); else set.delete(c.value);
+      updateFilterDot();
+      window.renderRecipeBrowser();
+    });
+  });
+}
+
+// Filter: checkbox change (statiska filter: tested, mainIngredient, time)
 document.querySelectorAll('#filterSheet input[type="checkbox"]').forEach(c => {
   c.addEventListener('change', () => {
     const set = window.recipeFilters[c.dataset.fgroup];
@@ -121,7 +160,7 @@ document.getElementById('filterClearBtn').addEventListener('click', () => {
 
 function updateFilterDot() {
   const f = window.recipeFilters;
-  const any = f.tested.size + f.protein.size + f.time.size > 0;
+  const any = f.tested.size + f.mainIngredient.size + f.time.size + f.tags.size > 0;
   document.getElementById('filterDot').hidden = !any;
 }
 
