@@ -2,8 +2,8 @@
   "meta": {
     "version": "1.0",
     "lastUpdated": "2026-05-07",
-    "totalRecipes": 266,
-    "nextId": 270
+    "totalRecipes": 267,
+    "nextId": 271
   },
   "recipes": [
     {
@@ -10275,6 +10275,52 @@
         "Pressa över citron och smaka av med salt och peppar."
       ],
       "notes": null
+    },
+    {
+      "id": 271,
+      "title": "Tikka Masala",
+      "tested": false,
+      "servings": 4,
+      "time": null,
+      "timeNote": null,
+      "tags": [
+        "vardag30",
+        "kyckling",
+        "vegetarisk",
+        "gryta",
+        "Ture"
+      ],
+      "protein": "kyckling",
+      "ingredients": [
+        "ris eller bulgur för 4 pers",
+        "1 liten gul lök",
+        "3 vitlöksklyftor",
+        "1 bit färsk ingefära motsvarande 3 msk hackad",
+        "rapsolja att steka i",
+        "1 påse tikka-masala kryddblandning (eller egen kryddblandning, se tips nedan)",
+        "1 morot (ca 70 g)",
+        "400 g krossade tomater",
+        "4 dl kokosmjölk",
+        "2 msk tomatpuré",
+        "salt efter smak",
+        "400 g av något att fylla basen med (t.ex. tärnad tofu, paneer, kikärtor, vegetariska grytbitar eller strimlad kyckling)",
+        "färsk koriander",
+        "mangotärningar (tinade frysta är enklast)",
+        "hackade jordnötter"
+      ],
+      "instructions": [
+        "Koka ris eller bulgur enligt anvisning på förpackningen.",
+        "Hacka lök, vitlök och ingefära.",
+        "Hetta upp generöst med olja i en kastrull och stek allt några minuter på medelvärme. Det ska bli blankt, men inte ta färg.",
+        "Tillsätt kryddorna.",
+        "Skölj eller skala moroten, riv ner den och rör om.",
+        "Tillsätt krossade tomater, kokosmjölk och tomatpuré och låt koka upp och puttra ihop under lock på glänt. Det räcker med 5 minuter men den kan gärna få gå längre om tid finns.",
+        "Mixa grytbasen slät, enklast med stavmixer.",
+        "Smaka av med salt om det behövs.",
+        "Vänd ner tofu, kikärtor, vegetariska grytbitar eller strimlad kyckling och låt koka tills allt blir genomvarmt. Om du använder kyckling är det viktigt att se att den hinner bli ordentligt tillagad, det vill säga den ska vara vit, inte rosa i köttet. Det tar 3-4 minuter beroende på hur stora bitarna är.",
+        "Förbered tillbehören, till exempel hacka nötterna och tärna mango (om du valt färsk)."
+      ],
+      "notes": "VILL DU GÖRA EGEN TIKKA-MASALA-KRYDDBLANDNING? Ta 2 tsk gurkmeja, 1 tsk spiskummin, 1 tsk malda korianderfrön, 1 tsk lökpulver, 1 tsk socker, 0,5 tsk paprikakrydda, 0,5 tsk ingefära, 0,5 tsk kardemumma, 0,5 tsk torkade korianderblad, 2 krm svartpeppar, 2 krm kanel och 1 krm cayennepeppar eller chilipeppar. Blanda!"
     }
   ]
 }
