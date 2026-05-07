@@ -917,7 +917,10 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
     } else {
       centerOnDate(null, { smooth: false });
     }
+    updateTimelineFades();
   });
+
+  initTimelineFadeListener();
 
   const confirmWrap   = document.getElementById('confirmPlanWrap');
   const confirmStatus = document.getElementById('confirmStatus');
@@ -1182,6 +1185,25 @@ window.openWeekRecipe      = openWeekRecipe;
 window.skipDay             = skipDay;
 window.blockDay            = blockDay;
 window.openSavingPopover   = openSavingPopover;
+function updateTimelineFades() {
+  const outer = document.getElementById('timelineOuter');
+  const wrap = outer?.querySelector('.timeline-wrap');
+  if (!outer || !wrap) return;
+  const threshold = 8;
+  outer.classList.toggle('fade-left', wrap.scrollLeft > threshold);
+  outer.classList.toggle('fade-right',
+    wrap.scrollLeft + wrap.clientWidth < wrap.scrollWidth - threshold);
+}
+
+let _fadeListenerAttached = false;
+function initTimelineFadeListener() {
+  if (_fadeListenerAttached) return;
+  const wrap = document.querySelector('#timelineOuter .timeline-wrap');
+  if (!wrap) return;
+  wrap.addEventListener('scroll', updateTimelineFades, { passive: true });
+  _fadeListenerAttached = true;
+}
+
 window.closeSavingPopover  = closeSavingPopover;
 window.confirmPlan         = confirmPlan;
 window.discardPlan         = discardPlan;
