@@ -106,7 +106,15 @@ Inga just nu.
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 - Säsongsfilter — automatiskt vikta recept efter säsong (soppa/gryta höst-vinter, sallad sommar)
 
-### Senaste session — Session 49 (2026-05-06) — Buggfix inköpslista runda 3: kategorisering + truncering
+### Senaste session — Session 50 (2026-05-07) — Desktop-tidslinje + taggfilter + Ture-dagar
+
+- **Desktop-anpassning:** Tidslinje bryter ut till full bredd (max 1400px) vid ≥900px via `left:50%; transform:translateX(-50%)`. Fade-gradienter (vänster/höger) med scroll-event-driven `.fade-left`/`.fade-right`.
+- **Taggfiltrering:** Dynamiskt genererade tagg-checkboxar i filter-sheet. System-/protein-/kök-taggar exkluderade via `EXCLUDED_TAGS`. Normalisering till lowercase.
+- **Fliknamnsbyte:** "Veckans mat" → "Matsedeln" i header-tab, bottom-nav, aria-label.
+- **Ture-dagar (barnvänliga recept):** Ny parameter `ture_days` i inställningspanelen. Styr antal dagar med recept taggade "ture". Allokeras före veg-dagar, inga dubbletter. `preferNonTure`-logik i `pick()` sparar ture-recept åt ture-dagar (loops 1–3 undviker ture på vanliga dagar, loops 4–5 släpper igenom som fallback). Bugg hittad och fixad: utan preferNonTure kunde vanliga dagar förbruka alla ture-recept.
+- **Testfixar:** `DEFAULT_CONSTRAINTS` saknades `ture_days: 0` → alla dagar blev ture-dagar. Test 5+7 hade för få icke-veg recept (6 för 7 slots). Test 14 (ture_days=2, 20 iterationer) + Test 15 (ture_days=0). **192 assertions** (298 totalt: 44 match + 62 shopping + 192 select-recipes).
+
+### Session 49 (2026-05-06) — Buggfix inköpslista runda 3: kategorisering + truncering
 
 - **Kategori-bugg (substring-matching):** `categorize()` använde `low.includes(kw)` → `pankoströbröd` → Mejeri (träff på "ost"), `mangold` → Frukt (träff på "mango"), `asiatisk chili-vitlökssås` → Grönsaker. Fix: ersatt med ordmängd-matchning (`lowWords.has(kw)` för enkelspalts-nyckelord). Flerspalts-nyckelord behåller `includes`.
 - **Specifika kategorifixar:** `mangold` tillagd i Grönsaker-nyckelord. `sweet chili` i SKAFFERI_OVERRIDE (matchar "chili" som ord). NORMALIZATION_TABLE: `lacinatokål`→`grönkål`, `fiskbuljongtärningar`→`fiskbuljong`.
