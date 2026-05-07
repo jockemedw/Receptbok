@@ -9,7 +9,7 @@
 <title>Receptboken</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=58">
+<link rel="stylesheet" href="css/styles.css?v=59">
 <style>/* tömd — CSS flyttad till css/styles.css */
 
 </style>
@@ -75,8 +75,10 @@
       <p class="week-meta" id="weekMeta"></p>
       <div class="timeline-nav" id="timelineNav" style="display:none"></div>
       <div class="custom-bulk-banner" id="customBulkBanner" style="display:none"></div>
-      <div class="timeline-wrap">
-        <div class="timeline" id="weekGrid"></div>
+      <div class="timeline-outer" id="timelineOuter">
+        <div class="timeline-wrap">
+          <div class="timeline" id="weekGrid"></div>
+        </div>
       </div>
       <div class="confirm-plan-wrap" id="confirmPlanWrap" style="display:none">
         <button class="confirm-plan-btn" id="confirmPlanBtn" onclick="confirmPlan()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5 9.5 17.5 19.5 6.8"/></svg> Bekräfta och bygg inköpslista</button>
@@ -446,6 +448,10 @@
         <label class="bs-check"><input type="checkbox" data-fgroup="time" value="longer"><span>Längre eller okänt</span></label>
       </div>
     </div>
+    <div class="bs-group" id="tagFilterGroup" style="display:none">
+      <h4 class="bs-group-title">Taggar</h4>
+      <div class="bs-checks" id="tagFilterChecks"></div>
+    </div>
     <div class="bs-actions">
       <button class="bs-clear-btn" id="filterClearBtn">Rensa alla</button>
       <button class="bs-done-btn" data-sheet-close="filterSheet">Klar</button>
@@ -453,6 +459,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=58"></script>
+<script type="module" src="js/app.js?v=59"></script>
 </body>
 </html>

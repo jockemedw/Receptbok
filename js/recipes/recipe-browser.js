@@ -163,6 +163,7 @@ function passesFilters(r) {
   if (f.tested.size         > 0 && !f.tested.has(statusBucket(r)))               return false;
   if (f.mainIngredient.size > 0 && !f.mainIngredient.has(mainIngredientOf(r)))   return false;
   if (f.time.size           > 0 && !f.time.has(timeBucket(r)))                   return false;
+  if (f.tags.size           > 0 && !r.tags.some(t => f.tags.has(t.toLowerCase()))) return false;
   return true;
 }
 
@@ -208,7 +209,7 @@ export function renderRecipeBrowser() {
 
   const filtersActive =
     window.recipeFilters &&
-    (window.recipeFilters.tested.size + window.recipeFilters.mainIngredient.size + window.recipeFilters.time.size > 0);
+    (window.recipeFilters.tested.size + window.recipeFilters.mainIngredient.size + window.recipeFilters.time.size + window.recipeFilters.tags.size > 0);
 
   info.textContent = (q || filtersActive)
     ? `Visar ${matched.length} av ${total} recept`
