@@ -223,7 +223,11 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
     return null;
   }
 
-  for (let i = 0; i < dayList.length; i++) {
+  // Bearbeta ture-dagar före vanliga dagar så de får förstval på ture-recepten.
+  const processingOrder = dayList.map((_, i) => i);
+  processingOrder.sort((a, b) => (tureDaySet.has(a) ? 0 : 1) - (tureDaySet.has(b) ? 0 : 1));
+
+  for (const i of processingOrder) {
     const day = dayList[i];
     const isVegDay = vegDaySet.has(i);
     const isTureDay = tureDaySet.has(i);
@@ -242,6 +246,8 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
     if (!recipe.tested) untestedSoFar++;
     result.push({ date: day.date, day: day.day, recipe: recipe.title, recipeId: recipe.id });
   }
+
+  result.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
 
   return result;
 }

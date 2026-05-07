@@ -131,7 +131,10 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
     return null;
   }
 
-  for (let i = 0; i < dayList.length; i++) {
+  const processingOrder = dayList.map((_, i) => i);
+  processingOrder.sort((a, b) => (tureDaySet.has(a) ? 0 : 1) - (tureDaySet.has(b) ? 0 : 1));
+
+  for (const i of processingOrder) {
     const day = dayList[i];
     const isVegDay = vegDaySet.has(i);
     const isTureDay = tureDaySet.has(i);
@@ -146,6 +149,8 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
     if (!recipe.tested) untestedSoFar++;
     result.push({ date: day.date, day: day.day, recipe: recipe.title, recipeId: recipe.id });
   }
+
+  result.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
 
   return result;
 }
@@ -555,6 +560,38 @@ const DEFAULT_CONSTRAINTS = {
   const constraints = { ...DEFAULT_CONSTRAINTS, ture_days: 0, vegetarian_days: 0 };
   const result = selectRecipes(recipes, VECKA, constraints);
   assertEq(result.length, 7, "ture_days=0: returnerar 7 recept");
+}
+
+// Test 16 — ture-dag på helg med enbart vardag30-ture-recept
+{
+  const mk = (id, protein, tags) => ({ id, title: `R${id}`, protein, tags, tested: true, ingredients: [] });
+  const recipes = [
+    mk(1, "kyckling", ["vardag30", "ture"]),
+    mk(2, "fisk",     ["vardag30", "ture"]),
+    mk(3, "kött",     ["vardag30"]),
+    mk(4, "fläsk",    ["vardag30"]),
+    mk(5, "kyckling", ["vardag30"]),
+    mk(6, "fisk",     ["vardag30"]),
+    mk(7, "kött",     ["helg60"]),
+    mk(8, "fläsk",    ["helg60"]),
+    mk(9, "kyckling", ["helg60"]),
+  ];
+  // Kör 30 iterationer — ture-dag kan hamna på lördag/söndag (inga helg60-ture finns).
+  // Ska alltid lyckas tack vare processingOrder (ture-dagar först) + altPool-fallback.
+  const constraints = { ...DEFAULT_CONSTRAINTS, ture_days: 2, vegetarian_days: 0 };
+  for (let i = 0; i < 30; i++) {
+    const result = selectRecipes(recipes, VECKA, constraints);
+    assertEq(result.length, 7, `ture-helg iter ${i}: 7 dagar`);
+    const tureCount = result.filter(d => {
+      const r = recipes.find(r => r.id === d.recipeId);
+      return r && r.tags.includes("ture");
+    }).length;
+    assertEq(tureCount, 2, `ture-helg iter ${i}: exakt 2 ture-recept`);
+    // Resultat ska vara i datumordning
+    for (let j = 1; j < result.length; j++) {
+      assertTrue(result[j].date >= result[j - 1].date, `ture-helg iter ${i}: datumordning bevarad`);
+    }
+  }
 }
 
 // ─── Slutrapport ──────────────────────────────────────────────────────────────
