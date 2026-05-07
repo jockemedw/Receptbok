@@ -291,6 +291,16 @@ export default createHandler(async (req, res, pat) => {
     return res.status(400).json({ error: "Inga recept kvar efter filtrering — justera inställningarna." });
   }
 
+  if (constraints.ture_days > 0) {
+    const tureAvailable = filtered.filter((r) => (r.tags || []).includes("ture")).length;
+    if (tureAvailable === 0) {
+      return res.status(400).json({ error: "Du har valt Ture-dagar men inga recept har taggen \"ture\". Tagga barnvänliga recept med \"ture\" först, eller sätt Ture-dagar till 0." });
+    }
+    if (tureAvailable < constraints.ture_days) {
+      return res.status(400).json({ error: `Du har valt ${constraints.ture_days} Ture-dagar men bara ${tureAvailable} recept har taggen "ture". Minska antalet eller tagga fler recept.` });
+    }
+  }
+
   const recentIds = recentlyUsedIds(historyData);
   const allDays = buildDayList(start_date, end_date);
   const blockedSet = new Set(blocked_dates);
