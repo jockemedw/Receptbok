@@ -2,7 +2,7 @@
   "meta": {
     "version": "1.0",
     "lastUpdated": "2026-05-07",
-    "totalRecipes": 262,
+    "totalRecipes": 261,
     "nextId": 265
   },
   "recipes": [
@@ -902,38 +902,6 @@
         "Häll på gazpachon och toppa med brödkrutongerna."
       ],
       "notes": "Tips: Grillad paprika på burk funkar bra."
-    },
-    {
-      "id": 26,
-      "title": "Gnocchi med snabbpesto",
-      "tested": true,
-      "servings": 4,
-      "time": 15,
-      "timeNote": "snabb",
-      "tags": [
-        "vardag30",
-        "veg",
-        "italienskt"
-      ],
-      "protein": "vegetarisk",
-      "ingredients": [
-        "4 msk olivolja",
-        "2 påsar färsk gnocchi (1 kg)",
-        "2 dl solroskärnor",
-        "2 vitlöksklyftor, pressade",
-        "1 kruka basilika",
-        "2 mozzarella (250 g), i bitar",
-        "4 dl riven parmesan",
-        "salt och svartpeppar"
-      ],
-      "instructions": [
-        "Hetta upp oljan i en stekpanna.",
-        "Stek gnocchi och solroskärnor tills gnocchin är genomvarm och fått stekyta, ca 5 minuter.",
-        "Tillsätt vitlöken och stek 1 minut.",
-        "Tillsätt basilika, mozzarella och parmesan och vänd runt tills allt är varmt.",
-        "Krydda med salt och peppar."
-      ],
-      "notes": null
     },
     {
       "id": 27,
