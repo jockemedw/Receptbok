@@ -2,7 +2,7 @@
   "meta": {
     "version": "1.0",
     "lastUpdated": "2026-05-07",
-    "totalRecipes": 266,
+    "totalRecipes": 265,
     "nextId": 271
   },
   "recipes": [
@@ -5372,48 +5372,6 @@
         "Fördela quinoa- och grönkålsblandningen i 4 skålar. Lägg de rostade grönsakerna ovanpå och ringla över dressingen. Toppa med skivad avokado och eventuella andra tillbehör."
       ],
       "notes": "Källa: Quinoa Power Bowls with Maple Chipotle Brussels and Smoky Butternut Squash, dishingouthealth.com"
-    },
-    {
-      "id": 147,
-      "title": "Näringsrik minestrone",
-      "tested": false,
-      "servings": 6,
-      "time": 60,
-      "timeNote": "",
-      "tags": [
-        "helg60",
-        "soppa",
-        "veg",
-        "doh",
-        "italienskt"
-      ],
-      "protein": "vegetarisk",
-      "ingredients": [
-        "olivolja, extra virgin (2 msk)",
-        "gul lök, tärnad (1 medelstor)",
-        "morötter, tunt skivade (2 stora)",
-        "selleri, fint hackad (1,8 dl)",
-        "tomatpuré (2 msk)",
-        "vitlöksklyftor, pressade (5)",
-        "potatis, skalad och tärnad i små bitar (4,8 dl) (sötpotatis, vanlig potatis eller Yukon gold)",
-        "grönsaksbuljong (1,4 liter)",
-        "vatten (4,8 dl)",
-        "kikärtor, avrunna och sköljda (440 g) (kan ersättas med vita bönor eller kidney-bönor)",
-        "brandrostad krossad tomat på burk (410 g)",
-        "timjankvistar, färska (8)",
-        "torkad oregano eller italiensk kryddning (2 tsk)",
-        "salt (0,75 tsk)",
-        "svartpeppar, grovmalen (0,5 tsk)",
-        "torr pasta, valfri sort (4,8 dl) (t.ex. fusilli eller snäckor)",
-        "grönkål, stjälkar borttagna och grovhackad (halvt knippe) (kan ersättas med 2 packade dl spenat eller mangold)",
-        "parmesan, riven (0,8 dl) (plus extra till garnering)"
-      ],
-      "instructions": [
-        "Hetta upp oljan i en stor gryta eller gjutjärnsgryta på medelvärme. Tillsätt lök, morötter och selleri när oljan är varm; sautera tills grönsakerna mjuknat, cirka 8 minuter. Rör ner vitlök, tomatpuré och potatis och stek ytterligare 3–5 minuter tills tomatpurén fått en mörkröd färg och vitlöken doftar gott.",
-        "Tillsätt grönsaksbuljongen, vattnet, kikärtorna, de brandrostade tomaterna, timjankvistarna, oreganon, saltet och peppar. Öka värmen tills soppan börjar sjuda. Låt sjuda utan lock i 15 minuter tills potatisen nästan är genomkokt. Rör ner pastan och fortsätt sjuda utan lock i ytterligare 10 minuter tills pastan är al dente.",
-        "Plocka upp timjankvistarna. Rör ner grönkålen och strö över parmesanen; koka 3 minuter till tills grönkålen vissnat. Servera soppan i djupa tallrikar och toppa med ytterligare parmesan, grovmalen svartpeppar och en skvätt god olivolja om du vill."
-      ],
-      "notes": "Källa: Nourishing Minestrone Soup, dishingouthealth.com"
     },
     {
       "id": 148,
