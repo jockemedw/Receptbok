@@ -2,7 +2,7 @@
   "meta": {
     "version": "1.0",
     "lastUpdated": "2026-05-07",
-    "totalRecipes": 265,
+    "totalRecipes": 264,
     "nextId": 271
   },
   "recipes": [
@@ -3797,48 +3797,6 @@
         "Lägg tillbaka sötpotatisnudlarna och tofun i pannan. Sjud 4–5 minuter under omrörning tills såsen tjocknar och börjar täcka nudlarna. Rör ner limejuice och garnera med koriander."
       ],
       "notes": "Källa: Sweet Potato Noodles with Tofu Coconut Curry, dishingouthealth.com"
-    },
-    {
-      "id": 106,
-      "title": "Tempeh Enchilada-soppa med Quinoa",
-      "tested": false,
-      "servings": 7,
-      "time": 30,
-      "timeNote": "",
-      "tags": [
-        "vardag30",
-        "soppa",
-        "veg",
-        "doh",
-        "mexikanskt"
-      ],
-      "protein": "vegetarisk",
-      "ingredients": [
-        "olivolja (1 msk)",
-        "gul lök, tärnad (1 liten)",
-        "röd paprika, tärnad (1)",
-        "sötpotatis, skalad och fint tärnad (ca 480 g / 1 stor)",
-        "tempeh, fint hackad (225 g)",
-        "svarta bönor, avrунnen och sköljd (1 burk à 425 g)",
-        "spiskummin (0,5 tsk)",
-        "chilipulver (0,25 tsk)",
-        "svartpeppar (0,25 tsk)",
-        "quinoa, okokt och sköljd (2,4 dl)",
-        "röd enchilasås, hemgjord eller köpt (4,8 dl)",
-        "grönsaksbuljong (4,8 dl)",
-        "vatten (4,8 dl)",
-        "limejuice (från 1 lime)",
-        "grekisk yoghurt, valfritt (efter smak)",
-        "koriander, valfritt (efter smak)",
-        "riven cheddar, valfritt (efter smak)",
-        "jalapeño, valfritt (efter smak)"
-      ],
-      "instructions": [
-        "Hetta upp oljan i en stor gryta på medelvärme. Tillsätt lök och paprika och stek i 2–3 minuter tills det mjuknat. Tillsätt sötpotatis och tempeh och stek ytterligare 4–5 minuter under omrörning tills sötpotatisen börjar mjukna.",
-        "Tillsätt svarta bönor, spiskummin, chilipulver, svartpeppar och quinoa. Blanda väl. Häll i enchilasås, buljong och vatten. Koka upp, sänk värmen, lägg på locket och låt sjuda tills quinoan är genomkokt, ca 15–20 minuter.",
-        "Ta av från värmen och rör ner limejuicen. Fördela soppan i skålar och toppa efter önskemål."
-      ],
-      "notes": "Källa: 30 Minute Tempeh Enchilada Quinoa Soup, dishingouthealth.com"
     },
     {
       "id": 107,
