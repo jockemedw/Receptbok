@@ -2,8 +2,8 @@
   "meta": {
     "version": "1.0",
     "lastUpdated": "2026-05-07",
-    "totalRecipes": 264,
-    "nextId": 268
+    "totalRecipes": 265,
+    "nextId": 269
   },
   "recipes": [
     {
@@ -10194,6 +10194,50 @@
         "Tillsätt tofu/vegobitar/kyckling/biff och låt woka med. Tillsätt även vitlöken. Fortsätt att vända runt så att allt blir genomstekt men inte bränt. Tillsätt ostronsåsen mot slutet.",
         "Koka nudlarna enligt anvisning på paketet.",
         "Tillsätt nudlarna i woken och blanda ner så gott det går. Stänk över sojasås och rör om. Smaka av och tillsätt eventuellt mer ostron- eller sojasås."
+      ],
+      "notes": null
+    },
+    {
+      "id": 269,
+      "title": "Gräddig Cashew-Kyckling med Curry",
+      "tested": false,
+      "servings": 4,
+      "time": null,
+      "timeNote": null,
+      "tags": [
+        "kyckling",
+        "gryta",
+        "vegetarisk",
+        "Ture"
+      ],
+      "protein": "kyckling",
+      "ingredients": [
+        "ris eller bulgur för 4 pers",
+        "300 g kyckling, tofu, vegobitar eller blomkålsbuketter",
+        "1 msk japansk sojasås",
+        "2 tsk limejuice",
+        "1 lök",
+        "2 vitlöksklyftor",
+        "1 msk curry",
+        "rapsolja att steka i",
+        "3 medelstora palsternackor (ca 200 g)",
+        "1 msk gurkmeja",
+        "5 dl vatten",
+        "1 grönsaksbuljongtärning",
+        "1 dl grädde av något slag",
+        "1 dl cashewnötter",
+        "100 g haricot verts",
+        "1 tsk japansk sojasås",
+        "kokosflingor, gärna snabbt rostade i torr stekpanna",
+        "grönsaker, t ex tomater och kikärtor",
+        "färsk koriander"
+      ],
+      "instructions": [
+        "Koka ris eller bulgur enligt anvisning på förpackningen. Skär kyckling eller tofu i bitar och låt marinera i 1 msk japansk sojasås och 2 tsk limejuice.",
+        "Hacka lök och vitlök fint. Fräs tillsammans med curry i lite olja på svag värme i en gryta medan du sköljer och tärnar palsternackorna. Låt dem steka med lökhacket i ett par minuter.",
+        "Tillsätt gurkmeja, vatten och buljongtärning. Låt koka i 5 minuter eller tills palsternackorna är mjuka. Tillsätt grädde och nötter och mixa till en krämig sås. Tillsätt lite mer vatten eller grädde om du vill ha såsen lösare.",
+        "Tillsätt kyckling eller tofu och låt puttra i såsen. Om du använder kyckling är det viktigt att den blir helt klar, det vill säga inte är rosa i mitten. Tofu eller vegobitar behöver bara bli varma. Vill du i stället använda blomkål delar du den i små buketter, bryner dem lätt i en stekpanna i någon minut och tillsätter dem i såsen precis innan servering. Då behåller de lite härligt tuggmotstånd.",
+        "Stek eventuella haricots verts hastigt i olja i varm stekpanna. Stänk över lite japansk sojasås precis mot slutet. Lägg i grytan eller servera vid sidan av med andra grönsaker, ris och lättrostad kokos att toppa med."
       ],
       "notes": null
     }
