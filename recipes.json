@@ -2,8 +2,8 @@
   "meta": {
     "version": "1.0",
     "lastUpdated": "2026-05-07",
-    "totalRecipes": 262,
-    "nextId": 266
+    "totalRecipes": 263,
+    "nextId": 267
   },
   "recipes": [
     {
@@ -10114,6 +10114,51 @@
         "Grädda i ca 30 minuter eller tills pannkakan stannat och fått fin färg. Ta ut den, låt den svalna lite och servera med önskade tillbehör."
       ],
       "notes": "Serveringsförslag: sylt och grädde, ajvar relish och hackade valnötter, eller grönsaker som morotsstavar och oliver. Tips för Grönkålschips: Om du får grönkål över kan du passa på att göra en plåt grönkålschips efter att pannkakan har gräddat klart. Sänk ugnen till 150 grader. Dra bladen från den grova stammen. Lägg på bakplåtspappersklädd plåt och ringla över olivolja. Vänd runt så att alla blad oljas in. Salta lite och ställ in i mitten av ugnen. Ta ut dem efter 15–20 minuter när de fått färg och ser krispiga ut."
+    },
+    {
+      "id": 267,
+      "title": "Örtiga minibiffar med potatismos",
+      "tested": false,
+      "servings": 4,
+      "time": 30,
+      "timeNote": null,
+      "tags": [
+        "Kött"
+      ],
+      "protein": "kött",
+      "ingredients": [
+        "1 kg potatis",
+        "ca 2 msk fett (t ex raps- och smörblandning)",
+        "ev en skvätt mjölk",
+        "salt (till potatismos)",
+        "peppar (till potatismos)",
+        "ev en knivsudd muskot",
+        "2 vitlöksklyftor",
+        "1 ägg",
+        "2 tsk italiensk salladskrydda",
+        "1 msk torkad oregano",
+        "1 krm svartpeppar (till biffar)",
+        "1 tsk salt (till biffar)",
+        "2 msk smulade havregryn",
+        "400 g färs (kött- eller formbar vegofärs)",
+        "ev oliver, fetaost, soltorkade tomater eller trattkantareller (att hacka ner i några av biffarna)",
+        "rapsolja (att steka i)",
+        "1 dl grädde (av något slag)",
+        "2 tsk japansk sojasås"
+      ],
+      "instructions": [
+        "Skala och skär potatisen i bitar. Koka i ca 15 minuter (eller tills de är mjuka) medan du gör biffarna.",
+        "Finhacka vitlöken. Blanda den med ägg, italiensk salladskrydda, torkad oregano, svartpeppar, salt och smulade havregryn.",
+        "Tillsätt färsen (kött- eller formbar vegofärs) och rör till en jämn smet. Om smeten känns lös, tillsätt lite ströbröd.",
+        "Om några av biffarna ska ha fyllning (t.ex. oliver eller fetaost), dela upp smeten i två delar, hacka ner fyllningen i den ena delen och låt den andra delen vara slät.",
+        "Forma små biffar och lägg dem på en skärbräda.",
+        "Hetta upp rapsolja i en stekpanna. Stek biffarna på medelstark värme ett par minuter på vardera sida tills de är genomstekta.",
+        "När biffarna är genomstekta, häll grädde över dem i pannan och smaksätt med japansk sojasås.",
+        "När potatisen är klar, slå av det mesta av potatisvattnet (spara ungefär en halv deciliter i kastrullen). Klicka i fett och pressa eller stöt till ett mos.",
+        "Späd eventuellt med mjölk till önskad konsistens. Smaka av potatismoset med salt och peppar och eventuellt lite muskot.",
+        "Gör i ordning grönsaker och servera allt tillsammans."
+      ],
+      "notes": null
     }
   ]
 }
