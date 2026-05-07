@@ -2,8 +2,8 @@
   "meta": {
     "version": "1.0",
     "lastUpdated": "2026-05-07",
-    "totalRecipes": 265,
-    "nextId": 269
+    "totalRecipes": 266,
+    "nextId": 270
   },
   "recipes": [
     {
@@ -10238,6 +10238,41 @@
         "Tillsätt gurkmeja, vatten och buljongtärning. Låt koka i 5 minuter eller tills palsternackorna är mjuka. Tillsätt grädde och nötter och mixa till en krämig sås. Tillsätt lite mer vatten eller grädde om du vill ha såsen lösare.",
         "Tillsätt kyckling eller tofu och låt puttra i såsen. Om du använder kyckling är det viktigt att den blir helt klar, det vill säga inte är rosa i mitten. Tofu eller vegobitar behöver bara bli varma. Vill du i stället använda blomkål delar du den i små buketter, bryner dem lätt i en stekpanna i någon minut och tillsätter dem i såsen precis innan servering. Då behåller de lite härligt tuggmotstånd.",
         "Stek eventuella haricots verts hastigt i olja i varm stekpanna. Stänk över lite japansk sojasås precis mot slutet. Lägg i grytan eller servera vid sidan av med andra grönsaker, ris och lättrostad kokos att toppa med."
+      ],
+      "notes": null
+    },
+    {
+      "id": 270,
+      "title": "Brysselkålbonara",
+      "tested": false,
+      "servings": 4,
+      "time": null,
+      "timeNote": null,
+      "tags": [
+        "vegetarisk",
+        "pasta",
+        "Ture"
+      ],
+      "protein": "vegetarisk",
+      "ingredients": [
+        "80 g parmesanost (ca 2 dl riven)",
+        "1 dl hasselnötter eller valnötter",
+        "2–3 nävar färsk brysselkål (ca 150 g)",
+        "olja att steka i",
+        "salt och peppar",
+        "spagetti för 4 pers",
+        "4 äggulor",
+        "ca 0,5 dl grädde av något slag",
+        "1 citron"
+      ],
+      "instructions": [
+        "Koka upp pastavattnet. Riv parmesanosten. Hacka nötterna.",
+        "Ansa och skär brysselkålen i kvartar. Stek dem i olja på medelvärme tills de mjuknar och tar lite färg. Du kan höja värmen mot slutet så att ytan blir lite krispig. Häll i nötterna och låt dem steka med under den sista minuten. Salta och peppra.",
+        "Koka under tiden spagettin enligt anvisning på paketet.",
+        "Separera äggulan från äggvitan och blanda gulan med den rivna osten. Spara vitan i kylen till nästa pannkakssmet. (Den går också bra att frysa.)",
+        "När spagettin kokat klart häller du av pastavattnet och rör ner äggblandningen i den varma pastan. Rör om tills osten har smält och äggen stelnat. Späd med grädde tills pastan känns lagom krämig.",
+        "Blanda ner brysselkålen och nötterna (till alla som vill ha kål och nötter – några kanske hellre äter bara parmesanpasta).",
+        "Pressa över citron och smaka av med salt och peppar."
       ],
       "notes": null
     }
