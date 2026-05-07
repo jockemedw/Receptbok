@@ -28,6 +28,8 @@ import { shuffle } from "../api/_shared/history.js";
 // selectRecipes i generate.js måste du uppdatera kopian här.
 const SAVING_THRESHOLD = 10;
 
+const hasTure = (r) => (r.tags || []).some((t) => t.toLowerCase() === "ture");
+
 function bucketBySaving(pool, savingsById) {
   if (!savingsById) return shuffle(pool);
   const high = [], low = [];
@@ -77,14 +79,14 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
   function pick(dayPool, altPool, mustBeVeg, mustBeTure) {
     const maxForProtein = (p) => p === "vegetarisk" ? maxVeg : MAX_PER_PROTEIN;
     const underUntestedLimit = (r) => r.tested || untestedSoFar < constraints.untested_count;
-    const tureOk = (r) => !mustBeTure || r.tags.includes("ture");
+    const tureOk = (r) => !mustBeTure || hasTure(r);
     const vegOk = (r) => {
       if (mustBeVeg) return r.protein === "vegetarisk";
       if (!mustBeTure) return r.protein !== "vegetarisk";
       return true;
     };
     const saveTure = tureCount > 0 && !mustBeTure;
-    const preferNonTure = (r) => !saveTure || !r.tags.includes("ture");
+    const preferNonTure = (r) => !saveTure || !hasTure(r);
     // Loop 1: full constraints (protein limits + untested limit + save ture)
     for (const r of dayPool) {
       if (usedIds.has(r.id)) continue;
@@ -537,7 +539,7 @@ const DEFAULT_CONSTRAINTS = {
     const result = selectRecipes(recipes, VECKA, constraints);
     const tureRecipes = result.filter(d => {
       const r = recipes.find(r => r.id === d.recipeId);
-      return r && r.tags.includes("ture");
+      return r && hasTure(r);
     });
     assertEq(tureRecipes.length, 2, `ture_days iter ${i}: exakt 2 Ture-recept`);
     const tureIds = tureRecipes.map(d => d.recipeId);
@@ -584,7 +586,7 @@ const DEFAULT_CONSTRAINTS = {
     assertEq(result.length, 7, `ture-helg iter ${i}: 7 dagar`);
     const tureCount = result.filter(d => {
       const r = recipes.find(r => r.id === d.recipeId);
-      return r && r.tags.includes("ture");
+      return r && hasTure(r);
     }).length;
     assertEq(tureCount, 2, `ture-helg iter ${i}: exakt 2 ture-recept`);
     // Resultat ska vara i datumordning
