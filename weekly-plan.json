@@ -72,8 +72,8 @@
     {
       "date": "2026-05-20",
       "day": "Onsdag",
-      "recipe": "Pulled chicken",
-      "recipeId": 48
+      "recipe": "Pasta Rosso med champinjoner",
+      "recipeId": 56
     },
     {
       "date": "2026-05-21",
@@ -90,8 +90,8 @@
     {
       "date": "2026-05-23",
       "day": "Lördag",
-      "recipe": "Pasta Rosso med champinjoner",
-      "recipeId": 56
+      "recipe": "Pulled chicken",
+      "recipeId": 48
     }
   ],
   "confirmedAt": "2026-05-07T19:52:22.405Z"
