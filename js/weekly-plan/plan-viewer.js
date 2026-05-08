@@ -326,7 +326,12 @@ export function enterSwapMode(fromDate) {
   fromCard.classList.remove('selected');
   fromCard.classList.add('swap-source');
   document.querySelectorAll('.week-day-card').forEach(c => {
-    if (c !== fromCard) c.classList.add('swap-target');
+    if (c !== fromCard
+      && c.dataset.recipeid
+      && c.dataset.readonly !== '1'
+      && !c.classList.contains('blocked')) {
+      c.classList.add('swap-target');
+    }
   });
 }
 
@@ -476,9 +481,9 @@ export function openWeekRecipe(recipeId, title, cardEl) {
   const isCustom = cardEl.dataset.custom === '1';
   const replaceBtns = (readOnly || window.planConfirmed) ? '' : `
     <button class="replace-recipe-btn" onclick="enterReplaceMode('${date}', '${dayName}')">Välj annat recept</button>
-    <button class="replace-recipe-btn" onclick="replaceRecipe(${r.id}, '${date}', this)">Slumpa nytt recept</button>
-    <button class="replace-recipe-btn" onclick="enterSwapMode('${date}')">Byt dag</button>`;
+    <button class="replace-recipe-btn" onclick="replaceRecipe(${r.id}, '${date}', this)">Slumpa nytt recept</button>`;
   const dayActionBtns = readOnly ? '' : `<div class="day-action-btns">
+    <button class="day-action-btn" onclick="enterSwapMode('${date}')">Byt dag</button>
     <button class="day-action-btn" onclick="skipDay('${date}')">Hoppa över — skjut recept →</button>
     <button class="day-action-btn day-action-block" onclick="blockDay('${date}')">Blockera dag</button>
   </div>`;
@@ -698,7 +703,7 @@ export async function confirmPlan() {
 
     window.planConfirmed = true;
     document.getElementById('confirmPlanWrap').style.display = 'none';
-    document.querySelectorAll('.swap-icon-btn').forEach(b => b.remove());
+    document.querySelectorAll('.swap-icon-btn').forEach(b => b.classList.add('confirmed'));
 
     const panel = document.getElementById('weekRecipeDetail');
     panel.classList.remove('open');
@@ -870,7 +875,7 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
     const borderStyle = proteinColor ? ` style="border-left: 3px solid ${proteinColor}"` : '';
 
     // Swap-knappen bara på aktiv plan, icke-bekräftad
-    const showSwap = d.planId === 'active' && !window.planConfirmed && !d.isPast;
+    const showSwap = d.planId === 'active' && !d.isPast && !d.blocked;
     const swapBtn = showSwap
       ? `<button class="swap-icon-btn" title="Flytta till annan dag"
            onclick="event.stopPropagation();enterSwapMode('${d.date}')"

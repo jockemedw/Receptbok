@@ -19,12 +19,13 @@ export default createHandler(async (req, res, pat) => {
     return res.status(400).json({ error: "Blockerade dagar kan inte bytas." });
   }
 
-  // Byt bara recipe och recipeId — datum och dagnamn stannar på sin plats
-  const { recipe: r1, recipeId: rid1 } = plan.days[idx1];
-  plan.days[idx1].recipe   = plan.days[idx2].recipe;
-  plan.days[idx1].recipeId = plan.days[idx2].recipeId;
-  plan.days[idx2].recipe   = r1;
-  plan.days[idx2].recipeId = rid1;
+  const d1 = plan.days[idx1];
+  const d2 = plan.days[idx2];
+  const swap = (key) => { const tmp = d1[key]; d1[key] = d2[key]; d2[key] = tmp; };
+  swap('recipe');
+  swap('recipeId');
+  swap('saving');
+  swap('savingMatches');
 
   const today = new Date().toISOString().slice(0, 10);
   await writeFile("weekly-plan.json", plan, pat, `Dagsbyte ${today} — autogenererad`);
