@@ -1,0 +1,502 @@
+# Receptkvalitetsrevision — 2026-05-09
+
+**Totalt antal recept:** 264
+**Genererat:** 2026-05-09 22:36:32
+
+## Sammanfattning
+
+| Kategori | 🔴 Kritisk | 🟡 Varning | 🟢 Info | Totalt |
+|----------|-----------|-----------|---------|--------|
+| 1. Strukturella fel | 0 | 0 | 0 | 0 |
+| 2. Tagg-inkonsekvenser | 0 | 14 | 0 | 14 |
+| 3. Ingrediens-parsningsproblem | 0 | 330 | 101 | 431 |
+| 4. Protein-korrekthet | 0 | 3 | 0 | 3 |
+| 5. Kokbarhetsproblem | 0 | 0 | 0 | 0 |
+| 6. DOH-specifika problem | 0 | 15 | 0 | 15 |
+| **Totalt** | 0 | 362 | 101 | 463 |
+
+---
+
+## 1. Strukturella fel
+
+Inga problem hittade.
+
+## 2. Tagg-inkonsekvenser
+
+- 🟡 **#15** Tikka masala med kikärtor och vitlöksnaan — time=90 men har helg60-tagg (överskrider 60 min)
+- 🟡 **#36** Snabbkimchi på salladskål — Saknar både vardag30 och helg60 → filtreras bort av filterRecipes() (tillbehör/sås — avsiktligt exkluderat)
+- 🟡 **#36** Snabbkimchi på salladskål — time=30 men saknar vardag30-tagg
+- 🟡 **#36** Snabbkimchi på salladskål — time=30 men saknar helg60-tagg
+- 🟡 **#40** Kålrabbi med citron och gräslök — Saknar både vardag30 och helg60 → filtreras bort av filterRecipes() (tillbehör/sås — avsiktligt exkluderat)
+- 🟡 **#40** Kålrabbi med citron och gräslök — time=15 men saknar vardag30-tagg
+- 🟡 **#40** Kålrabbi med citron och gräslök — time=15 men saknar helg60-tagg
+- 🟡 **#48** Pulled chicken — time=120 men har helg60-tagg (överskrider 60 min)
+- 🟡 **#58** Broccolipesto — Saknar både vardag30 och helg60 → filtreras bort av filterRecipes() (tillbehör/sås — avsiktligt exkluderat)
+- 🟡 **#58** Broccolipesto — time=15 men saknar vardag30-tagg
+- 🟡 **#58** Broccolipesto — time=15 men saknar helg60-tagg
+- 🟡 **#61** Citronisås (till fisk) — Saknar både vardag30 och helg60 → filtreras bort av filterRecipes() (tillbehör/sås — avsiktligt exkluderat)
+- 🟡 **#61** Citronisås (till fisk) — time=10 men saknar vardag30-tagg
+- 🟡 **#61** Citronisås (till fisk) — time=10 men saknar helg60-tagg
+
+## 3. Ingrediens-parsningsproblem
+
+- 🟡 **#9** Blomkålssoppa med bacontopping — Ingen mängd: "ev persilja, till garnering" → parsed name="persilja", normalized="persilja"
+- 🟡 **#10** Ramen med salladskål och champinjoner — Ingen mängd: "torrostade sesamfrön" → parsed name="torrostade sesamfrön", normalized="sesamfrön"
+- 🟡 **#10** Ramen med salladskål och champinjoner — Siffror i ingrediensnamn: "Buljong: ½–1 röd chili, skivad" → name="–1 röd chili"
+- 🟡 **#12** Vinterwok med brysselkål, svamp och jordärtskocka — Ingen mängd: "persilja, till garnering" → parsed name="persilja", normalized="persilja"
+- 🟡 **#13** Nudlar i röd curry — Ingen mängd: "Valfritt: rostad lök och sesamfrön" → parsed name="lök och sesamfrön", normalized="sesamfrön"
+- 🟡 **#15** Tikka masala med kikärtor och vitlöksnaan — Ingen mängd: "Till servering: nykokt ris" → parsed name="ris", normalized="ris"
+- 🟡 **#15** Tikka masala med kikärtor och vitlöksnaan — Ingen mängd: "Till servering: ev persilja" → parsed name="persilja", normalized="persilja"
+- 🟡 **#16** Bönstroganoff — Ingen mängd: "Till servering: nykokt ris" → parsed name="ris", normalized="ris"
+- 🟡 **#16** Bönstroganoff — Ingen mängd: "Till servering: ev persilja" → parsed name="persilja", normalized="persilja"
+- 🟡 **#17** Soppa med vermicelli och rotfrukter — Ingen mängd: "örtsalt (t ex Vegeta allkrydda)" → parsed name="örtsalt", normalized="örtsalt"
+- 🟡 **#20** Citronrisoni med rostad spetskål — Ingen mängd: "Till servering: ev persilja" → parsed name="persilja", normalized="persilja"
+- 🟡 **#21** Min bästa wok — Ingen mängd: "Till servering: lime i klyftor" → parsed name="lime i klyftor", normalized="lime"
+- 🟡 **#21** Min bästa wok — Ingen mängd: "Till servering: ev grovhackade salta jordnötter" → parsed name="grovhackade salta jordnötter", normalized="jordnötter"
+- 🟡 **#21** Min bästa wok — Ingen mängd: "Till servering: chiliflakes eller skivad färsk chili" → parsed name="chiliflakes eller skivad färsk chili", normalized="chili"
+- 🟡 **#21** Min bästa wok — Ingen mängd: "Till servering: ev strimlad salladslök" → parsed name="strimlad salladslök", normalized="salladslök"
+- 🟡 **#22** Parmesanpotatis med kallrökt lax — Ingen mängd: "salladsblad" → parsed name="salladsblad", normalized="sallad"
+- 🟡 **#23** Minestrone — Ingen mängd: "ev några basilikablad" → parsed name="några basilikablad", normalized="basilika"
+- 🟡 **#27** Hummusbowl — Ingen mängd: "pressad citron" → parsed name="pressad citron", normalized="citron"
+- 🟡 **#27** Hummusbowl — Ingen mängd: "libabröd eller lantbröd" → parsed name="libabröd eller lantbröd", normalized="pitabröd"
+- 🟡 **#29** Stekt curryris med färs och salladslök — Ingen mängd: "strimlad salladslök" → parsed name="strimlad salladslök", normalized="salladslök"
+- 🟡 **#29** Stekt curryris med färs och salladslök — Ingen mängd: "hackade nötter" → parsed name="hackade nötter", normalized="nötter"
+- 🟡 **#29** Stekt curryris med färs och salladslök — Ingen mängd: "Gott till: srirachasås" → parsed name="srirachasås", normalized="srirachasås"
+- 🟡 **#30** Valnötshummus med ugnsrostade grönsaker — Ingen mängd: "Ugnsrostade grönsaker: en plåt grönsaker/rotfrukter (t ex 400 g potatis, kålklyftor, morot, blomkål eller broccoli, 1 röd paprika, några jordärtskockor)" → parsed name="en plåt grönsaker/rotfrukter", normalized="en plåt grönsaker/rotfrukter"
+- 🟡 **#30** Valnötshummus med ugnsrostade grönsaker — Ingen mängd: "Valnötshummus: chilipulver, citronjuice och salt efter smak" → parsed name="chilipulver", normalized="chilipulver"
+- 🟡 **#30** Valnötshummus med ugnsrostade grönsaker — Ingen mängd: "Gott till: fetaost, oliver eller kapris, rökt tofu" → parsed name="fetaost", normalized="fetaost"
+- 🟡 **#31** Pepprig pastasås med aubergine — Ingen mängd: "en näve körsbärstomater (kan uteslutas)" → parsed name="en näve körsbärstomater", normalized="körsbärstomat"
+- 🟡 **#31** Pepprig pastasås med aubergine — Ingen mängd: "torkad oregano" → parsed name="torkad oregano", normalized="torkad oregano"
+- 🟡 **#31** Pepprig pastasås med aubergine — Ingen mängd: "pasta för 4 personer" → parsed name="pasta för 4 personer", normalized="pasta för 4 personer"
+- 🟡 **#31** Pepprig pastasås med aubergine — Siffror i ingrediensnamn: "pasta för 4 personer" → name="pasta för 4 personer"
+- 🟡 **#32** Breakfast burrito med kål och äggröra — Ingen mängd: "Till servering: chilisås" → parsed name="chilisås", normalized="chilisås"
+- 🟡 **#34** Ugnspannkaka med vitkål och brynt smör med rå lingon — Ingen mängd: "Till servering: smörgåskrasse" → parsed name="smörgåskrasse", normalized="smörgåskrasse"
+- 🟡 **#36** Snabbkimchi på salladskål — Ingen mängd: "Till servering: sesamfrön" → parsed name="sesamfrön", normalized="sesamfrön"
+- 🟡 **#37** Kålcurry med gröna ärter och koriander — Ingen mängd: "ev. en skvätt vatten" → parsed name="en skvätt vatten", normalized="en skvätt vatten"
+- 🟡 **#37** Kålcurry med gröna ärter och koriander — Ingen mängd: "Till servering: basmatiris" → parsed name="basmatiris", normalized="basmatiris"
+- 🟡 **#38** Sommargryta med vitkål, zucchini och dill — Ingen mängd: "zucchini (ca 400 g)" → parsed name="zucchini", normalized="zucchini"
+- 🟡 **#38** Sommargryta med vitkål, zucchini och dill — Ingen mängd: "Till servering: baguette eller annat rustikt bröd" → parsed name="baguette eller annat rustikt bröd", normalized="baguette eller annat rustikt bröd"
+- 🟡 **#41** Ägg i vitkål med gruyère och salladslök — Ingen mängd: "Till servering: rostat bröd" → parsed name="rostat bröd", normalized="rostat bröd"
+- 🟡 **#42** Pork ramen – nudelsoppa med chilistekt fläskfärs — Ingen mängd: "Buljong: japansk soja" → parsed name="japansk soja", normalized="soja"
+- 🟡 **#49** Senapsdressad pärlcouscous — Ingen mängd: "pärlcouscous (för 4 portioner)" → parsed name="pärlcouscous", normalized="pärlcouscous"
+- 🟡 **#51** Pasta med lax och sås på vitt vin, grädde och spenat — Ingen mängd: "ev. maizena till redning" → parsed name="maizena", normalized="maizena"
+- 🟡 **#52** Amandas pasta med morötter, lök & sweet chili — Ingen mängd: "hackade nötter (valfritt)" → parsed name="hackade nötter", normalized="nötter"
+- 🟡 **#55** Amandas laxbiffar — Ingen mängd: "örtkryddor" → parsed name="örtkryddor", normalized="örtkryddor"
+- 🟡 **#56** Pasta Rosso med champinjoner — Ingen mängd: "oregano eller basilika" → parsed name="oregano eller basilika", normalized="basilika"
+- 🟡 **#63** Chopped sallad med krämig dressing — Ingen mängd: "Rostade kikärtor" → parsed name="kikärtor", normalized="kikärtor"
+- 🟡 **#63** Chopped sallad med krämig dressing — Ingen mängd: "Tunna brödchips" → parsed name="tunna brödchips", normalized="tunna brödchips"
+- 🟡 **#63** Chopped sallad med krämig dressing — Ingen mängd: "Dressing" → parsed name="dressing", normalized="dressing"
+- 🟡 **#63** Chopped sallad med krämig dressing — Ingen mängd: "Sallad" → parsed name="sallad", normalized="sallad"
+- 🟡 **#64** Färgstark grönsakswok — Ingen mängd: "grovt milt salt (ca 1 tsk)" → parsed name="grovt milt salt", normalized="grovt milt salt"
+- 🟡 **#64** Färgstark grönsakswok — Ingen mängd: "lite svartpeppar ur kvarn" → parsed name="lite svartpeppar ur kvarn", normalized="lite svartpeppar ur kvarn"
+- 🟡 **#65** Gurkmeje-glaserad lax med bulgur — Ingen mängd: "apelsinskivor (valfritt, till garnering)" → parsed name="apelsinskivor", normalized="apelsinskivor"
+- 🟡 **#67** Citrongrässoppa med kokosmjölk, tofu och nudlar — Ingen mängd: "bruna risnudlar eller ris (till servering)" → parsed name="bruna risnudlar eller ris", normalized="bruna risnudlar eller ris"
+- 🟡 **#68** Höstquinoabowl med apelsin- och timjanvinägrett — Ingen mängd: "radicchio (1 litet huvud)" → parsed name="radicchio", normalized="radicchio"
+- 🟡 **#70** Kryddiga laxbowls med avokadosås — Ingen mängd: "skivad avokado (valfritt)" → parsed name="skivad avokado", normalized="skivad avokado"
+- 🟡 **#72** Honung- och sojaglaserad tofu med morot-ingefärssås — Ingen mängd: "morötter, skurna i grova bitar (2,4 dl / ca 1 stor eller 2 små)" → parsed name="morötter", normalized="morot"
+- 🟡 **#72** Honung- och sojaglaserad tofu med morot-ingefärssås — Ingen mängd: "sesamfrön och salladslök till garnering (valfritt)" → parsed name="sesamfrön och salladslök", normalized="salladslök"
+- 🟡 **#73** Kimchinos stekt ris med sesambrässerad tempeh — Ingen mängd: "salladslök, koriander, kimchi och rostade sesamfrön till garnering (valfritt)" → parsed name="salladslök", normalized="salladslök"
+- 🟡 **#74** Linssallad med sötpotatis, grönkål och tahini — Ingen mängd: "sötpotatis, skalad och tärnad (ca 300 g)" → parsed name="sötpotatis", normalized="sötpotatis"
+- 🟡 **#74** Linssallad med sötpotatis, grönkål och tahini — Ingen mängd: "färsk persilja eller basilika (valfritt)" → parsed name="färsk persilja eller basilika", normalized="basilika"
+- 🟡 **#77** Teriyakibowl med apelsin och tempeh — Ingen mängd: "färsk basilika och/eller koriander (valfritt, till garnering)" → parsed name="färsk basilika och/eller koriander", normalized="koriander"
+- 🟡 **#80** Rostade rotfrukter och getostpizza med chilihonungsglaze — Ingen mängd: "färsk basilika (valfritt)" → parsed name="färsk basilika", normalized="basilika"
+- 🟡 **#81** Rökig kikärts- och linssoppa — Ingen mängd: "osaltad grönsaksbuljong (ca 1 liter)" → parsed name="osaltad grönsaksbuljong", normalized="grönsaksbuljong"
+- 🟡 **#81** Rökig kikärts- och linssoppa — Ingen mängd: "riven parmesan eller näringsjäst till servering (valfritt)" → parsed name="riven parmesan eller näringsjäst", normalized="parmesan"
+- 🟡 **#82** Vårlig primavera med grönsaksnudlar — Ingen mängd: "sparris (5 tjocka stjälkar)" → parsed name="sparris", normalized="sparris"
+- 🟡 **#85** Gurkmeje- och tempehcurry med kokosmjölk — Ingen mängd: "kokt basmatirris (ca 10 dl)" → parsed name="basmatirris", normalized="basmatirris"
+- 🟡 **#85** Gurkmeje- och tempehcurry med kokosmjölk — Ingen mängd: "grekisk yoghurt (efter smak, valfritt)" → parsed name="grekisk yoghurt", normalized="turkisk yoghurt"
+- 🟡 **#85** Gurkmeje- och tempehcurry med kokosmjölk — Ingen mängd: "cashewnötter eller jordnötter, hackade (valfritt)" → parsed name="cashewnötter eller jordnötter", normalized="jordnötter"
+- 🟡 **#85** Gurkmeje- och tempehcurry med kokosmjölk — Ingen mängd: "salladslök, fint hackad (valfritt)" → parsed name="salladslök", normalized="salladslök"
+- 🟡 **#86** Orecchiette med solrosfrö-romesco — Ingen mängd: "broccolibuketter (ca 6 dl)" → parsed name="broccolibuketter", normalized="broccoli"
+- 🟡 **#86** Orecchiette med solrosfrö-romesco — Ingen mängd: "riven parmesan eller näringsjäst till garnering (valfritt)" → parsed name="riven parmesan eller näringsjäst", normalized="parmesan"
+- 🟡 **#87** Krispig lax med indiska kryddor och smyckad ris — Ingen mängd: "grekisk yoghurt naturell blandad med en skvätt färsk apelsinjuice (till garnering, valfritt)" → parsed name="grekisk yoghurt naturell blandad med en skvätt färsk apelsinjuice", normalized="apelsin"
+- 🟡 **#87** Krispig lax med indiska kryddor och smyckad ris — Långt ingrediensnamn (65 tecken): "grekisk yoghurt naturell blandad med en skvätt färsk apelsinjuice..."
+- 🟡 **#88** Buffalo-broccoli och kikärtspitas med tahinicaesar — Ingen mängd: "röd lök, tunt skivad (valfritt)" → parsed name="röd lök", normalized="rödlök"
+- 🟡 **#88** Buffalo-broccoli och kikärtspitas med tahinicaesar — Ingen mängd: "avokado (valfritt)" → parsed name="avokado", normalized="avokado"
+- 🟡 **#88** Buffalo-broccoli och kikärtspitas med tahinicaesar — Ingen mängd: "romansallad, fint hackad (valfritt)" → parsed name="romansallad", normalized="romansallad"
+- 🟡 **#88** Buffalo-broccoli och kikärtspitas med tahinicaesar — Ingen mängd: "koriander (valfritt)" → parsed name="koriander", normalized="koriander"
+- 🟡 **#91** Enkla lönnsirap- och dijonkotletter — Ingen mängd: "lönnsirap (1 msk + 2 tsk)" → parsed name="lönnsirap", normalized="lönnsirap"
+- 🟡 **#92** Balsamicglaserad fläskkarré med rostad vitlökspolenta och grönt — Ingen mängd: "granatäpplekärnor, pinjekärnor och extra örter (valfritt, till garnering)" → parsed name="granatäpplekärnor", normalized="granatäpplekärnor"
+- 🟡 **#93** Rökiga laxburgare med citron- och dillspread — Ingen mängd: "valfria tillbehör: sallad eller ruccola, avokado, rödlök tunt skivad" → parsed name="sallad eller ruccola", normalized="sallad"
+- 🟡 **#93** Rökiga laxburgare med citron- och dillspread — Ingen mängd: "färsk dill och gräslök, fint hackad (1–2 tsk av varje)" → parsed name="färsk dill och gräslök", normalized="gräslök"
+- 🟡 **#94** Currylaxbiffar med citronyoghurt — Ingen mängd: "kimchi, valfritt" → parsed name="kimchi", normalized="kimchi"
+- 🟡 **#94** Currylaxbiffar med citronyoghurt — Ingen mängd: "avokado, skivad, valfritt" → parsed name="avokado", normalized="avokado"
+- 🟡 **#94** Currylaxbiffar med citronyoghurt — Ingen mängd: "morötter, valfritt" → parsed name="morötter", normalized="morot"
+- 🟡 **#94** Currylaxbiffar med citronyoghurt — Ingen mängd: "mango, skivad, valfritt" → parsed name="mango", normalized="mango"
+- 🟡 **#94** Currylaxbiffar med citronyoghurt — Ingen mängd: "färsk koriander, valfritt" → parsed name="färsk koriander", normalized="koriander"
+- 🟡 **#97** Grillad romansallad med buffalo-tofu och tahini ranch — Ingen mängd: "fetaost, smulad (valfritt)" → parsed name="fetaost", normalized="fetaost"
+- 🟡 **#97** Grillad romansallad med buffalo-tofu och tahini ranch — Ingen mängd: "rödlök (valfritt)" → parsed name="rödlök", normalized="rödlök"
+- 🟡 **#97** Grillad romansallad med buffalo-tofu och tahini ranch — Ingen mängd: "färsk gräslök, finhackad (valfritt)" → parsed name="färsk gräslök", normalized="gräslök"
+- 🟡 **#98** Enchiladas med squash och quinoa — Ingen mängd: "limeklyftor, valfritt (efter smak)" → parsed name="limeklyftor", normalized="lime"
+- 🟡 **#98** Enchiladas med squash och quinoa — Ingen mängd: "koriander, valfritt (efter smak)" → parsed name="koriander", normalized="koriander"
+- 🟡 **#98** Enchiladas med squash och quinoa — Ingen mängd: "avokado, skivad, valfritt (efter smak)" → parsed name="avokado", normalized="avokado"
+- 🟡 **#98** Enchiladas med squash och quinoa — Ingen mängd: "rädisa, tunt skivad, valfritt (efter smak)" → parsed name="rädisa", normalized="rädisa"
+- 🟡 **#98** Enchiladas med squash och quinoa — Ingen mängd: "jalapeño, skivad, valfritt (efter smak)" → parsed name="jalapeño", normalized="jalapeño"
+- 🟡 **#100** Pasta med vegansk vodkasås — Ingen mängd: "färsk basilika efter smak" → parsed name="färsk basilika", normalized="basilika"
+- 🟡 **#101** Currystekta smörrisotto med krispiga brysselkål — Ingen mängd: "salladslök, tunt skivad (valfritt)" → parsed name="salladslök", normalized="salladslök"
+- 🟡 **#102** Miso- och svamprisotto — Ingen mängd: "ägg, pocherade eller löskokt (valfritt)" → parsed name="ägg", normalized="ägg"
+- 🟡 **#102** Miso- och svamprisotto — Ingen mängd: "sesamfrön (valfritt)" → parsed name="sesamfrön", normalized="sesamfrön"
+- 🟡 **#102** Miso- och svamprisotto — Ingen mängd: "microgreens (valfritt)" → parsed name="microgreens", normalized="microgreens"
+- 🟡 **#107** Medelhavslax med bulgur — Ingen mängd: "grekisk yoghurt (valfritt, som tillbehör)" → parsed name="grekisk yoghurt", normalized="turkisk yoghurt"
+- 🟡 **#107** Medelhavslax med bulgur — Ingen mängd: "ruccola (valfritt, som tillbehör)" → parsed name="ruccola", normalized="ruccola"
+- 🟡 **#107** Medelhavslax med bulgur — Ingen mängd: "citronklyftor (valfritt, som tillbehör)" → parsed name="citronklyftor", normalized="citronklyftor"
+- 🟡 **#108** Currysallad med ris — Ingen mängd: "naturell yoghurt, helfet (inte grekisk, 1,2 dl)" → parsed name="naturell yoghurt", normalized="yoghurt"
+- 🟡 **#109** Kokosnötscurry med kikärtor och mango — Ingen mängd: "broccolibuketter (ca 5 dl, från 1 stort huvud)" → parsed name="broccolibuketter", normalized="broccoli"
+- 🟡 **#109** Kokosnötscurry med kikärtor och mango — Ingen mängd: "kokt basmatirit, till servering" → parsed name="basmatirit", normalized="basmatirit"
+- 🟡 **#110** Pasta med rostad paprikasås och svamp — Ingen mängd: "parmesan, riven (valfritt)" → parsed name="parmesan", normalized="parmesan"
+- 🟡 **#110** Pasta med rostad paprikasås och svamp — Ingen mängd: "chilipulver (valfritt)" → parsed name="chilipulver", normalized="chilipulver"
+- 🟡 **#111** Spaghetti Pomodoro med grönkål och vita bönor — Ingen mängd: "färsk basilika, till servering" → parsed name="färsk basilika", normalized="basilika"
+- 🟡 **#112** Räkpasta Primavera med Zucchininudlar — Ingen mängd: "färsk babyspenat (3 generösa nävar)" → parsed name="färsk babyspenat", normalized="spenat"
+- 🟡 **#114** Medelhavsbowl med röd paprikasås — Ingen mängd: "färsk basilika och citronklyftor (valfritt), till servering" → parsed name="färsk basilika och citronklyftor", normalized="basilika"
+- 🟡 **#115** Sesamtofu med sötpotatinudlar — Ingen mängd: "sesamfrön (valfritt)" → parsed name="sesamfrön", normalized="sesamfrön"
+- 🟡 **#115** Sesamtofu med sötpotatinudlar — Ingen mängd: "färsk basilika (valfritt)" → parsed name="färsk basilika", normalized="basilika"
+- 🟡 **#115** Sesamtofu med sötpotatinudlar — Ingen mängd: "hackade nötter (valfritt)" → parsed name="hackade nötter", normalized="nötter"
+- 🟡 **#116** Stekt lax med rosmarin- och valnötssås — Ingen mängd: "kokt farro, pärlcouscous eller valfritt sädesslag (till servering)" → parsed name="farro", normalized="farro"
+- 🟡 **#117** Bruschettapannad lax med orzo — Ingen mängd: "färsk basilika, citronskal och citronsaft samt rostade pinjenötter (valfritt, till garnering)" → parsed name="färsk basilika", normalized="basilika"
+- 🟡 **#118** Tomat- och currykokta ägg — Ingen mängd: "cayennepeppar eller chilipulver för hetta (valfritt)" → parsed name="cayennepeppar eller chilipulver för hetta", normalized="cayennepeppar eller chilipulver för hetta"
+- 🟡 **#118** Tomat- och currykokta ägg — Ingen mängd: "färska örter till garnering, persilja, koriander, dill eller gräslök" → parsed name="färska örter till garnering", normalized="färska örter till garnering"
+- 🟡 **#118** Tomat- och currykokta ägg — Ingen mängd: "gott bröd eller kokt vitt ris till servering" → parsed name="gott bröd eller kokt vitt ris", normalized="gott bröd eller kokt vitt ris"
+- 🟡 **#122** Currysoppa med röda linser — Ingen mängd: "kokosmjölksyoghurt (valfritt)" → parsed name="kokosmjölksyoghurt", normalized="kokosmjölksyoghurt"
+- 🟡 **#122** Currysoppa med röda linser — Ingen mängd: "koriander (valfritt)" → parsed name="koriander", normalized="koriander"
+- 🟡 **#124** Svampstekt ris med röd curry och jordnötssås — Ingen mängd: "hackade jordnötter och rostad sesamolja till garnering (valfritt)" → parsed name="hackade jordnötter och rostad sesamolja", normalized="jordnötter"
+- 🟡 **#125** Blomkåls- och potatissoppa med cheddar — Ingen mängd: "blomkålsbuketter, små (ca 1,4 liter / 1 medelstor blomkål)" → parsed name="blomkålsbuketter", normalized="blomkålsbuketter"
+- 🟡 **#125** Blomkåls- och potatissoppa med cheddar — Ingen mängd: "grönsaksbuljong, lättsaltad (ca 1 liter)" → parsed name="grönsaksbuljong", normalized="grönsaksbuljong"
+- 🟡 **#125** Blomkåls- och potatissoppa med cheddar — Ingen mängd: "vita bönor (navybönor), avrunna och sköljda (1 burk, ca 440 g)" → parsed name="vita bönor", normalized="vita bönor"
+- 🟡 **#125** Blomkåls- och potatissoppa med cheddar — Ingen mängd: "gräslök, fint hackad (efter smak, valfritt)" → parsed name="gräslök", normalized="gräslök"
+- 🟡 **#126** Balsamikorostade portobellostekar med smörbönspuré — Ingen mängd: "färska timjanblad (valfritt, till garnering)" → parsed name="färska timjanblad", normalized="färska timjanblad"
+- 🟡 **#127** Stekt Tofu-Smörgås med Coleslaw — Ingen mängd: "sojasås med låg salthalt (2 msk + 2 tsk), uppdelat" → parsed name="sojasås med låg salthalt", normalized="sojasås med låg salthalt"
+- 🟡 **#130** Chili-lime-spett med tofu och persika — Ingen mängd: "limeskal (från 1 lime)" → parsed name="limeskal", normalized="lime"
+- 🟡 **#130** Chili-lime-spett med tofu och persika — Ingen mängd: "sojasås (1 msk + 1 tsk)" → parsed name="sojasås", normalized="sojasås"
+- 🟡 **#132** Gochujangtofu med ris och inlagda grönsaker — Ingen mängd: "rädisa (daikon eller vattenmelon), strimlad (0,6 dl)" → parsed name="rädisa", normalized="rädisa"
+- 🟡 **#133** Squash- och valnötsfritters med krämig vitlöks- och örtsås — Ingen mängd: "citronskal (från 1 citron, spara saften till såsen)" → parsed name="citronskal", normalized="citron"
+- 🟡 **#134** Veggie-quesadillas med chipotle-mangosås — Ingen mängd: "avokado, koriander, finhackad rödlök (valfritt, till servering)" → parsed name="avokado", normalized="avokado"
+- 🟡 **#135** Citronsmörpasta med broccoli — Ingen mängd: "broccolibuketter, små (ca 1,4 liter)" → parsed name="broccolibuketter", normalized="broccoli"
+- 🟡 **#137** Balsamicotofu — Ingen mängd: "jasminris till servering" → parsed name="jasminris", normalized="jasminris"
+- 🟡 **#139** BBQ-persika skillet-pizza — Ingen mängd: "färsk basilika och/eller ruccola (efter smak)" → parsed name="färsk basilika och/eller ruccola", normalized="basilika"
+- 🟡 **#140** Quinoa-fyllda paprikahalvor — Ingen mängd: "Valfria tillbehör: grekisk yoghurt eller gräddfil, extra salsa, ost" → parsed name="grekisk yoghurt eller gräddfil", normalized="yoghurt"
+- 🟡 **#141** Citronsmörsrisotto med squash — Ingen mängd: "grönsaksbuljongg (ca 1 liter)" → parsed name="grönsaksbuljongg", normalized="grönsaksbuljongg"
+- 🟡 **#141** Citronsmörsrisotto med squash — Ingen mängd: "karamelliserade citronklyftor och färsk timjan eller basilika (valfritt)" → parsed name="karamelliserade citronklyftor och färsk timjan eller basilika", normalized="basilika"
+- 🟡 **#141** Citronsmörsrisotto med squash — Långt ingrediensnamn (61 tecken): "karamelliserade citronklyftor och färsk timjan eller basilika..."
+- 🟡 **#142** Chili-soja-svampbullar med ingefärs- och salladslöksris — Ingen mängd: "lägre-natriumsojasås eller tamari (0,8 dl + 2 tsk, uppdelat)" → parsed name="lägre-natriumsojasås eller tamari", normalized="lägre-natriumsojasås eller tamari"
+- 🟡 **#142** Chili-soja-svampbullar med ingefärs- och salladslöksris — Ingen mängd: "rostade sesamfrön (valfritt, till garnering)" → parsed name="sesamfrön", normalized="sesamfrön"
+- 🟡 **#143** Kokosnöts- och currysoppa med majs — Ingen mängd: "färska majskorn, skurna från kolven (ca 9,5 dl, eller fryst/tinad eller konserverad majs)" → parsed name="färska majskorn", normalized="majs"
+- 🟡 **#143** Kokosnöts- och currysoppa med majs — Ingen mängd: "färsk koriander, grovhackad, och rostade saltade pumpafrön till garnering (efter smak)" → parsed name="färsk koriander", normalized="koriander"
+- 🟡 **#145** Thaiinspirerad pumpassoppa — Ingen mängd: "rostade pumpafrön, koriander, salladslök och granatäppelkärnor (valfritt, som garnering)" → parsed name="pumpafrön", normalized="pumpafrön"
+- 🟡 **#146** Quinoa- och grönsaksbowls — Ingen mängd: "butternutpumpa, skalad och tärnad (ca 7 dl, från 1 liten pumpa)" → parsed name="butternutpumpa", normalized="butternutpumpa"
+- 🟡 **#146** Quinoa- och grönsaksbowls — Ingen mängd: "lättsaltat grönsaks- eller kycklingbuljong (ca 5 dl)" → parsed name="lättsaltat grönsaks- eller kycklingbuljong", normalized="hönsbuljong"
+- 🟡 **#146** Quinoa- och grönsaksbowls — Ingen mängd: "avokado, skivad, valfritt" → parsed name="avokado", normalized="avokado"
+- 🟡 **#148** Spaghetti squash alfredo (vegansk) — Ingen mängd: "matolja spray" → parsed name="matolja spray", normalized="matolja spray"
+- 🟡 **#148** Spaghetti squash alfredo (vegansk) — Ingen mängd: "valfritt tillbehör: stekt broccoli eller strimlad brysselkål, soltorkade tomater, vissnad spenat" → parsed name="broccoli eller strimlad brysselkål", normalized="broccoli"
+- 🟡 **#149** Laxsallad med grönkål, brysselkål och misoglaserad lax — Ingen mängd: "laxfilé (4 x 170 g)" → parsed name="laxfilé", normalized="lax"
+- 🟡 **#151** Blomkålschilaquiles med salsa roja — Ingen mängd: "blomkål, delad i små buketter (1 litet huvud)" → parsed name="blomkål", normalized="blomkål"
+- 🟡 **#151** Blomkålschilaquiles med salsa roja — Ingen mängd: "avokado, tunt skivad (valfritt)" → parsed name="avokado", normalized="avokado"
+- 🟡 **#151** Blomkålschilaquiles med salsa roja — Ingen mängd: "lime-crème fraîche: gräddfil blandad med pressad lime, en nypa salt och lite vatten för drizzling (valfritt)" → parsed name="gräddfil blandad med pressad lime", normalized="lime"
+- 🟡 **#151** Blomkålschilaquiles med salsa roja — Ingen mängd: "färsk koriander, finhackad (valfritt)" → parsed name="färsk koriander", normalized="koriander"
+- 🟡 **#152** Broccoli- och svampfettuccine med misogräddssås — Ingen mängd: "broccolibuketter, grovhackade (ca 4 dl)" → parsed name="broccolibuketter", normalized="broccoli"
+- 🟡 **#153** Veggie-enchiladas med rostad paprikasås — Ingen mängd: "färsk babyspenat (3 generösa nävar)" → parsed name="färsk babyspenat", normalized="spenat"
+- 🟡 **#153** Veggie-enchiladas med rostad paprikasås — Ingen mängd: "färsk koriander, grovhackad, valfritt" → parsed name="färsk koriander", normalized="koriander"
+- 🟡 **#153** Veggie-enchiladas med rostad paprikasås — Ingen mängd: "avokado, skivad, valfritt" → parsed name="avokado", normalized="avokado"
+- 🟡 **#154** Cobbsallad med jordgubbar, friterad fetaost och dragondressing — Ingen mängd: "romansallat, riven i munsstora bitar (1 huvud eller 2 hjärtan)" → parsed name="romansallat", normalized="romansallat"
+- 🟡 **#155** Blomkålskorma — Ingen mängd: "blomkål, delad i buketter (ca 8 dl, ungefär 1 hel blomkål)" → parsed name="blomkål", normalized="blomkål"
+- 🟡 **#155** Blomkålskorma — Ingen mängd: "slivrade mandlar, valfritt (till garnering)" → parsed name="slivrade mandlar", normalized="slivrade mandlar"
+- 🟡 **#155** Blomkålskorma — Ingen mängd: "basmatiris eller quinoa (till servering)" → parsed name="basmatiris eller quinoa", normalized="basmatiris eller quinoa"
+- 🟡 **#156** Rostad blomkål- och potatissallad med dragon-tahini — Ingen mängd: "blomkål, delad i buketter (ca 1,4 liter)" → parsed name="blomkål", normalized="blomkål"
+- 🟡 **#157** Portobelloburgers med romescosås — Ingen mängd: "microgreens eller ruccola (efter smak, valfritt)" → parsed name="microgreens eller ruccola", normalized="microgreens eller ruccola"
+- 🟡 **#157** Portobelloburgers med romescosås — Ingen mängd: "hummus eller majonnäs (valfritt, till topping)" → parsed name="hummus eller majonnäs", normalized="majonnäs"
+- 🟡 **#158** Pekannötscrustad lax med mangochutney — Ingen mängd: "färsk basilika (valfritt, till garnering)" → parsed name="färsk basilika", normalized="basilika"
+- 🟡 **#161** Taco-pizza — Ingen mängd: "chilipulver till garnering, valfritt" → parsed name="chilipulver", normalized="chilipulver"
+- 🟡 **#164** Ingefärs- och sojagläserade fläskkotletter med päronskåls — Ingen mängd: "sesamfrön, valfritt" → parsed name="sesamfrön", normalized="sesamfrön"
+- 🟡 **#164** Ingefärs- och sojagläserade fläskkotletter med päronskåls — Ingen mängd: "salladslök, tunt skivad, valfritt" → parsed name="salladslök", normalized="salladslök"
+- 🟡 **#165** Miso- och tempehgryta — Ingen mängd: "vit miso (shiro miso, 3 msk)" → parsed name="vit miso", normalized="miso"
+- 🟡 **#166** Tofu-wok med jordnötssås — Ingen mängd: "rödkål (0,5 litet huvud), hackad i 3 cm bitar (ca 7–9 dl)" → parsed name="rödkål", normalized="rödkål"
+- 🟡 **#166** Tofu-wok med jordnötssås — Ingen mängd: "rostade sesamfrön (valfritt)" → parsed name="sesamfrön", normalized="sesamfrön"
+- 🟡 **#166** Tofu-wok med jordnötssås — Ingen mängd: "basilika (valfritt)" → parsed name="basilika", normalized="basilika"
+- 🟡 **#166** Tofu-wok med jordnötssås — Ingen mängd: "gryn, ris eller risnudlar till servering (valfritt)" → parsed name="gryn", normalized="gryn"
+- 🟡 **#167** Ruccola- och getostsallad med farro och honingsenap — Ingen mängd: "ruccola, packad (4 koppar / ca 4 dl)" → parsed name="ruccola", normalized="ruccola"
+- 🟡 **#167** Ruccola- och getostsallad med farro och honingsenap — Ingen mängd: "brysselkål, riven eller tunt hyvlad (170 g / ca 7 dl)" → parsed name="brysselkål", normalized="brysselkål"
+- 🟡 **#168** Buffalo-kikärtsbullar med yoghurtranch — Ingen mängd: "smulad blåmögelost och hackad gräslök till garnering (valfritt)" → parsed name="smulad blåmögelost och hackad gräslök", normalized="gräslök"
+- 🟡 **#169** Za'atar-marinerade tomater med stekt halloumi — Ingen mängd: "hummus, naturell eller med rostad vitlök (efter smak)" → parsed name="hummus", normalized="hummus"
+- 🟡 **#169** Za'atar-marinerade tomater med stekt halloumi — Ingen mängd: "pitabröd eller naan, grillat eller uppvärmt (efter smak)" → parsed name="pitabröd eller naan", normalized="pitabröd"
+- 🟡 **#171** Misorostad aubergine med gurkmeje-tahinisås — Ingen mängd: "rostade sesamfrön (efter smak, valfritt)" → parsed name="sesamfrön", normalized="sesamfrön"
+- 🟡 **#172** Quinoasallad med persika, majs och korianderdressing — Ingen mängd: "grillad majskärna (3,6 dl – från 2 kolvar, eller fryst/tinad ugnsrostad majs eller konservmajs)" → parsed name="grillad majskärna", normalized="grillad majskärna"
+- 🟡 **#173** Al Pastor-tacos med kikärtor — Ingen mängd: "ananasbitar på burk i 100% ananasjuice (570 g / 1 burk)" → parsed name="ananasbitar på burk i 100% ananasjuice", normalized="ananasbitar på burk i 100% ananasjuice"
+- 🟡 **#173** Al Pastor-tacos med kikärtor — Ingen mängd: "färsk koriander (efter smak, garnering)" → parsed name="färsk koriander", normalized="koriander"
+- 🟡 **#173** Al Pastor-tacos med kikärtor — Ingen mängd: "queso fresco eller avokado (valfritt, garnering)" → parsed name="queso fresco eller avokado", normalized="queso fresco eller avokado"
+- 🟡 **#173** Al Pastor-tacos med kikärtor — Ingen mängd: "limejuice (efter smak, garnering)" → parsed name="limejuice", normalized="limejuice"
+- 🟡 **#174** Honungs- och harissabakad lax med dillris — Ingen mängd: "färsk persilja, fint hackad (valfritt, till servering)" → parsed name="färsk persilja", normalized="persilja"
+- 🟡 **#175** Grillad majs- och avokadosallad med harissa ranch — Ingen mängd: "romansallad, grovhackad (ca 1 liter)" → parsed name="romansallad", normalized="romansallad"
+- 🟡 **#177** BBQ-blomkålstacos med grön tahinisås — Ingen mängd: "blomkålsbuketter (ca 700 g, från 1 mellanstor blomkålshuvud)" → parsed name="blomkålsbuketter", normalized="blomkålsbuketter"
+- 🟡 **#177** BBQ-blomkålstacos med grön tahinisås — Ingen mängd: "rödkål, tunt strimlad (efter smak, valfritt)" → parsed name="rödkål", normalized="rödkål"
+- 🟡 **#177** BBQ-blomkålstacos med grön tahinisås — Ingen mängd: "avokado, skivad (valfritt)" → parsed name="avokado", normalized="avokado"
+- 🟡 **#177** BBQ-blomkålstacos med grön tahinisås — Ingen mängd: "koriander, färsk (valfritt)" → parsed name="koriander", normalized="koriander"
+- 🟡 **#179** Zesty Quinoa- och Svarta Bönor-tacos med Koriandersås — Ingen mängd: "avokado, skivad, efter smak" → parsed name="avokado", normalized="avokado"
+- 🟡 **#180** Krämig tomat- och basilikasoppa — Ingen mängd: "tomatpuré (110 g / ca 1,2 dl)" → parsed name="tomatpuré", normalized="tomatpuré"
+- 🟡 **#182** Krispiga auberginesandwichar med tomat- och dragonrelish — Ingen mängd: "matolja spray (efter behov)" → parsed name="matolja spray", normalized="matolja spray"
+- 🟡 **#183** Butternutpumpa- och poblano-sallad med fetaost — Ingen mängd: "butternutpumpa, skalad och tärnad i 2,5 cm kuber (ca 1,4 liter)" → parsed name="butternutpumpa", normalized="butternutpumpa"
+- 🟡 **#185** Varm farrosallad med figendressing — Ingen mängd: "färska fikon, tunt skivade – valfritt" → parsed name="färska fikon", normalized="färska fikon"
+- 🟡 **#186** Sötpotatis- och linsallad med pistachiosalsa och tahinilime — Ingen mängd: "limeskal och limejuice (2 msk juice totalt)" → parsed name="limeskal och limejuice", normalized="lime"
+- 🟡 **#188** Currystekta blomkåls- och sötpotatisbowls med kuminjoghurt — Ingen mängd: "blomkål, delad i buketter (ca 1,4 liter)" → parsed name="blomkål", normalized="blomkål"
+- 🟡 **#188** Currystekta blomkåls- och sötpotatisbowls med kuminjoghurt — Ingen mängd: "sötpotatis, skalad och tärnad (ca 7,2 dl)" → parsed name="sötpotatis", normalized="sötpotatis"
+- 🟡 **#189** Teriyaki-tofu med broccoli — Ingen mängd: "broccolibuketter (ca 400 g, från 1 medelstor broccoli)" → parsed name="broccolibuketter", normalized="broccoli"
+- 🟡 **#189** Teriyaki-tofu med broccoli — Ingen mängd: "rostade sesamfrön (valfritt, till garnering)" → parsed name="sesamfrön", normalized="sesamfrön"
+- 🟡 **#189** Teriyaki-tofu med broccoli — Ingen mängd: "salladslök (valfritt, tunt skivad, till garnering)" → parsed name="salladslök", normalized="salladslök"
+- 🟡 **#189** Teriyaki-tofu med broccoli — Ingen mängd: "kokt ris eller risnudlar (till servering)" → parsed name="ris eller risnudlar", normalized="ris eller risnudlar"
+- 🟡 **#190** Ugnsrostad blomkål med gurkmeja och vispad fetaost — Ingen mängd: "blomkål, delad i buketter (ca 1,4 liter / 1 stort huvud)" → parsed name="blomkål", normalized="blomkål"
+- 🟡 **#190** Ugnsrostad blomkål med gurkmeja och vispad fetaost — Ingen mängd: "ruccola eller späd grönkål (ca 4 dl, lätt packad)" → parsed name="ruccola eller späd grönkål", normalized="grönkål"
+- 🟡 **#191** Sobasallad med sesam- och cashewsås — Ingen mängd: "strimlad kål (ca 9,5 dl, grön, röd, savojkål eller napakål)" → parsed name="strimlad kål", normalized="strimlad kål"
+- 🟡 **#191** Sobasallad med sesam- och cashewsås — Ingen mängd: "morot i tändsticksform (ca 4,8 dl)" → parsed name="morot i tändsticksform", normalized="morot"
+- 🟡 **#192** Jordnöttsnudlar med rostade svampar — Ingen mängd: "färsk ingefära, skalad och grovhackad (2,5 cm bit)" → parsed name="färsk ingefära", normalized="ingefära"
+- 🟡 **#192** Jordnöttsnudlar med rostade svampar — Ingen mängd: "rostade sesamfrön (valfritt, till garnering)" → parsed name="sesamfrön", normalized="sesamfrön"
+- 🟡 **#193** Räkor scampi med spagettipumpa — Ingen mängd: "matolja på spray (efter behov)" → parsed name="matolja på spray", normalized="matolja på spray"
+- 🟡 **#193** Räkor scampi med spagettipumpa — Ingen mängd: "pressad saft från en halv citron" → parsed name="pressad saft från en halv citron", normalized="citron"
+- 🟡 **#194** Ruccola- och kakisallad — Ingen mängd: "rostade och skalade rödbetor, skivade i bitar (valfritt, 2)" → parsed name="och skalade rödbetor", normalized="rödbetor"
+- 🟡 **#195** Jerk-blomkålsvingar med mojosås — Ingen mängd: "blomkål, delad i buketter (1 mellanstor huvud)" → parsed name="blomkål", normalized="blomkål"
+- 🟡 **#196** Ugnsrostad grönsaks- och kikärtspanna — Ingen mängd: "rostade sesamfrön (valfritt, till garnering)" → parsed name="sesamfrön", normalized="sesamfrön"
+- 🟡 **#197** Apelsintofu med grönsaker — Ingen mängd: "majsstärkelse (0,6 dl + 1 msk, uppdelat)" → parsed name="majsstärkelse", normalized="maizena"
+- 🟡 **#197** Apelsintofu med grönsaker — Ingen mängd: "broccolibuketter (ca 4 dl, små)" → parsed name="broccolibuketter", normalized="broccoli"
+- 🟡 **#197** Apelsintofu med grönsaker — Ingen mängd: "salladslök (efter smak, tunt skivad, till garnering)" → parsed name="salladslök", normalized="salladslök"
+- 🟡 **#197** Apelsintofu med grönsaker — Ingen mängd: "rostade sesamfrön (valfritt, till garnering)" → parsed name="sesamfrön", normalized="sesamfrön"
+- 🟡 **#197** Apelsintofu med grönsaker — Ingen mängd: "vitt ris (till servering)" → parsed name="vitt ris", normalized="vitt ris"
+- 🟡 **#199** Lax med curry- och lönnsirapsgladering — Ingen mängd: "kokt quinoa, ris eller blomkålsris (till servering)" → parsed name="quinoa", normalized="quinoa"
+- 🟡 **#202** Sydvästsallad med quinoa och krämig chipotledressing — Ingen mängd: "rostade och saltade pumpafrön (pepitas, 0,6 dl)" → parsed name="och saltade pumpafrön", normalized="och saltade pumpafrön"
+- 🟡 **#205** Citronig vitbönssoppa — Ingen mängd: "escarole, grovhackad (1 litet knippe, kan ersättas med grönkål eller mangold)" → parsed name="escarole", normalized="escarole"
+- 🟡 **#207** Grönsakssoppa i tryckkokare — Ingen mängd: "riven parmesan till servering (valfritt, kan bytas mot näringsjäst för veganalternativ)" → parsed name="riven parmesan", normalized="parmesan"
+- 🟡 **#208** Vegetariska BBQ-köttbullesformar — Ingen mängd: "cremini-svamp (champinjoner), fint hackad (225 g)" → parsed name="cremini-svamp", normalized="cremini-svamp"
+- 🟡 **#208** Vegetariska BBQ-köttbullesformar — Ingen mängd: "ströbröd (klassiskt eller panko, 1,2 dl)" → parsed name="ströbröd", normalized="ströbröd"
+- 🟡 **#211** Tonfiskgratäng med nudlar — Ingen mängd: "helmjölk (4,8 dl; eller osötad cashewmjölk)" → parsed name="helmjölk", normalized="mjölk"
+- 🟡 **#212** Buffalo-blomkål mac and cheese — Ingen mängd: "blomkål, delad i små buketter (1 medelstor huvud, ca 1,4–1,7 liter)" → parsed name="blomkål", normalized="blomkål"
+- 🟡 **#213** Miso- och lönnsirapslax — Ingen mängd: "tunt skivad salladslök och rostade sesamfrön (till garnering)" → parsed name="tunt skivad salladslök och rostade sesamfrön", normalized="sesamfrön"
+- 🟡 **#213** Miso- och lönnsirapslax — Ingen mängd: "färsk limejuice (valfritt)" → parsed name="färsk limejuice", normalized="färsk limejuice"
+- 🟡 **#213** Miso- och lönnsirapslax — Ingen mängd: "jasminris och sauterade grönsaker t.ex. bok choy eller broccoli (valfritt)" → parsed name="jasminris och sauterade grönsaker t.ex. bok choy eller broccoli", normalized="broccoli"
+- 🟡 **#213** Miso- och lönnsirapslax — Långt ingrediensnamn (63 tecken): "jasminris och sauterade grönsaker t.ex. bok choy eller broccoli..."
+- 🟡 **#215** Marockansk blomkålssallad med couscous — Ingen mängd: "blomkål, delad i buketter (ca 6 generösa dl)" → parsed name="blomkål", normalized="blomkål"
+- 🟡 **#216** Ostig pesto-broccoli och quinoagratäng — Ingen mängd: "färsk basilika, grovhackad, valfritt" → parsed name="färsk basilika", normalized="basilika"
+- 🟡 **#217** Honung- och gurkmejjeräkor med svartpeppar — Ingen mängd: "kokt vitt ris (till servering)" → parsed name="vitt ris", normalized="vitt ris"
+- 🟡 **#217** Honung- och gurkmejjeräkor med svartpeppar — Ingen mängd: "salladslök, tunt skivad (till garnering)" → parsed name="salladslök", normalized="salladslök"
+- 🟡 **#218** Isbergssallad med krispiga kikärtor och avokadoranch — Ingen mängd: "fetaost, smulad (valfritt)" → parsed name="fetaost", normalized="fetaost"
+- 🟡 **#219** Tonfisk Niçoise-pastasallad — Ingen mängd: "kapris och färsk dill, finthackad, efter smak" → parsed name="kapris och färsk dill", normalized="dill"
+- 🟡 **#220** Krämig blomkålspasta — Ingen mängd: "blomkålshuvud, finhackad i små buketter, ca 1,2 liter totalt (1 litet till medel)" → parsed name="blomkålshuvud", normalized="blomkålshuvud"
+- 🟡 **#220** Krämig blomkålspasta — Ingen mängd: "parmesan, riven, valfritt (efter smak)" → parsed name="parmesan", normalized="parmesan"
+- 🟡 **#221** Tofubowls med mandelsmörsås — Ingen mängd: "broccoli (1 medelstor huvud, delad i buketter)" → parsed name="broccoli", normalized="broccoli"
+- 🟡 **#221** Tofubowls med mandelsmörsås — Ingen mängd: "kokt jasminris eller soba-nudlar till servering" → parsed name="jasminris eller soba-nudlar", normalized="jasminris eller soba-nudlar"
+- 🟡 **#222** Sesamlax i skål med miso-ingefärssås — Ingen mängd: "lax (mittbit, skinnad, 560 g)" → parsed name="lax", normalized="lax"
+- 🟡 **#222** Sesamlax i skål med miso-ingefärssås — Ingen mängd: "broccoli, delad i buketter (ca 6 dl)" → parsed name="broccoli", normalized="broccoli"
+- 🟡 **#222** Sesamlax i skål med miso-ingefärssås — Ingen mängd: "kokt långkornigt vitt ris, till servering" → parsed name="långkornigt vitt ris", normalized="långkornigt vitt ris"
+- 🟡 **#222** Sesamlax i skål med miso-ingefärssås — Ingen mängd: "kimchi och tunt skivad salladslök, till garnering (valfritt)" → parsed name="kimchi och tunt skivad salladslök", normalized="salladslök"
+- 🟡 **#223** Chipotle-räkotacos med avokado- och mangosalsa — Ingen mängd: "färsk jalapeño, kärnor och revben borttagna, fint tärnad (1 liten eller 0,5 stor)" → parsed name="färsk jalapeño", normalized="färsk jalapeño"
+- 🟡 **#224** Grön currysoppa med blomkål — Ingen mängd: "blomkål, delad i små buketter (1 medelstor huvud, ca 900 g)" → parsed name="blomkål", normalized="blomkål"
+- 🟡 **#224** Grön currysoppa med blomkål — Ingen mängd: "krispiga kikärtor, hemgjorda eller köpta (efter smak)" → parsed name="krispiga kikärtor", normalized="kikärtor"
+- 🟡 **#224** Grön currysoppa med blomkål — Ingen mängd: "färsk koriander eller basilika (efter smak)" → parsed name="färsk koriander eller basilika", normalized="basilika"
+- 🟡 **#225** Vegansk svampbolognese — Ingen mängd: "färska basilikablad (efter smak)" → parsed name="färska basilikablad", normalized="basilika"
+- 🟡 **#225** Vegansk svampbolognese — Ingen mängd: "pinjenötsparmesan, valfritt (efter smak)" → parsed name="pinjenötsparmesan", normalized="pinjenötsparmesan"
+- 🟡 **#226** Kryddig ramen — Ingen mängd: "basilika eller koriander, valfritt (efter smak)" → parsed name="basilika eller koriander", normalized="koriander"
+- 🟡 **#226** Kryddig ramen — Ingen mängd: "böngroddar, valfritt (efter smak)" → parsed name="böngroddar", normalized="böngroddar"
+- 🟡 **#226** Kryddig ramen — Ingen mängd: "mjukkokt ägg, valfritt (efter smak)" → parsed name="mjukkokt ägg", normalized="ägg"
+- 🟡 **#227** Laxbowls med jordnötssås — Ingen mängd: "vitkål, rödkål, napakål eller savojkål, fint riven (ca 5 dl)" → parsed name="vitkål", normalized="vitkål"
+- 🟡 **#229** Naanpizza med vispad ricotta och blancherad broccoli — Ingen mängd: "broccoli (1 stort huvud, delat i små buketter, ca 9–12 dl)" → parsed name="broccoli", normalized="broccoli"
+- 🟡 **#229** Naanpizza med vispad ricotta och blancherad broccoli — Ingen mängd: "basilika (fint hackad, efter smak)" → parsed name="basilika", normalized="basilika"
+- 🟡 **#229** Naanpizza med vispad ricotta och blancherad broccoli — Ingen mängd: "korv i skivor eller smulad, valfritt (kyckling-, fläsk- eller vegetarisk korv)" → parsed name="korv i skivor eller smulad", normalized="korv i skivor eller smulad"
+- 🟡 **#230** Plåtbakad chili- och citronlax med vitlöksörtsås — Ingen mängd: "rivet citronskal från 1 citron" → parsed name="rivet citronskal från 1 citron", normalized="citron"
+- 🟡 **#230** Plåtbakad chili- och citronlax med vitlöksörtsås — Siffror i ingrediensnamn: "rivet citronskal från 1 citron" → name="rivet citronskal från 1 citron"
+- 🟡 **#233** Salladslöksnudlar med broccoli och vitlökssmör — Ingen mängd: "stekta eller mjukokta ägg för servering (valfritt)" → parsed name="eller mjukokta ägg för servering", normalized="ägg"
+- 🟡 **#233** Salladslöksnudlar med broccoli och vitlökssmör — Ingen mängd: "chiliolja för garnering (valfritt)" → parsed name="chiliolja för garnering", normalized="chiliolja för garnering"
+- 🟡 **#234** Krämig räkpasta med majs och soltorkade tomater — Ingen mängd: "färsk babyspenat (4 dl / 2 nävar)" → parsed name="färsk babyspenat", normalized="spenat"
+- 🟡 **#235** Linsen- och svamptacos — Ingen mängd: "gul lök (fint hackad, 2,4 dl)" → parsed name="gul lök", normalized="lök"
+- 🟡 **#235** Linsen- och svamptacos — Ingen mängd: "rödkål (strimlad, blandad med strimlade morötter, skivad salladslök, äppelcidervinäger och salt)" → parsed name="rödkål", normalized="rödkål"
+- 🟡 **#235** Linsen- och svamptacos — Ingen mängd: "skivad avokado (valfritt)" → parsed name="skivad avokado", normalized="skivad avokado"
+- 🟡 **#237** Kokoscurry med räkor — Ingen mängd: "kokt vitt ris eller risnudlar till servering" → parsed name="vitt ris eller risnudlar", normalized="vitt ris eller risnudlar"
+- 🟡 **#237** Kokoscurry med räkor — Ingen mängd: "färska limeklyftor till servering" → parsed name="färska limeklyftor", normalized="lime"
+- 🟡 **#238** Quinoabowls med rostade grönsaker — Ingen mängd: "broccolibukett (ca 400 g)" → parsed name="broccolibukett", normalized="broccolibukett"
+- 🟡 **#238** Quinoabowls med rostade grönsaker — Ingen mängd: "salladslök och sesamfrön (valfritt, till garnering)" → parsed name="salladslök och sesamfrön", normalized="sesamfrön"
+- 🟡 **#239** Räkor i gurkmeje- och limesås — Ingen mängd: "surdegsbröd eller lantbröd (till servering)" → parsed name="surdegsbröd eller lantbröd", normalized="surdegsbröd eller lantbröd"
+- 🟡 **#240** Tahinipasta med spruckna körsbärstomater — Ingen mängd: "körsbärstomater (ca 600 g)" → parsed name="körsbärstomater", normalized="körsbärstomat"
+- 🟡 **#241** Toscansk gnocchi med soltorkade tomater — Ingen mängd: "chilipulver (en nypa, valfritt)" → parsed name="chilipulver", normalized="chilipulver"
+- 🟡 **#241** Toscansk gnocchi med soltorkade tomater — Ingen mängd: "parmesan, hyvlad eller riven (valfritt, till servering)" → parsed name="parmesan", normalized="parmesan"
+- 🟡 **#243** Kryddiga linsburgare med tahinicoleslaw — Ingen mängd: "kokta gröna linser (4,2 dl – från torkade eller 1 burk à 425 g, avrunna och sköljda)" → parsed name="gröna linser", normalized="linser"
+- 🟡 **#245** Butternutpumpa- och äppelsoppa — Ingen mängd: "pumpakärnor, hackade pekannötter, hackad färsk rosmarin, timjan eller salvia (valfritt, som topping)" → parsed name="pumpakärnor", normalized="pumpakärnor"
+- 🟡 **#246** Pasta alla vodka med pumpa — Ingen mängd: "chilipulver (en nypa)" → parsed name="chilipulver", normalized="chilipulver"
+- 🟡 **#246** Pasta alla vodka med pumpa — Ingen mängd: "kokosmjölk (full fetthalt) eller vispgrädde (36%, 1,8 dl)" → parsed name="kokosmjölk eller vispgrädde", normalized="grädde"
+- 🟡 **#246** Pasta alla vodka med pumpa — Ingen mängd: "riven parmesan, valfritt (till servering)" → parsed name="riven parmesan", normalized="parmesan"
+- 🟡 **#247** Thailändsk grönsakssoppa — Ingen mängd: "jasminris, kokt, till servering (valfritt)" → parsed name="jasminris", normalized="jasminris"
+- 🟡 **#248** Kikärts- och broccolibowls med krämig vitlökssås — Ingen mängd: "kokt quinoa, brunt ris eller farro till servering" → parsed name="quinoa", normalized="quinoa"
+- 🟡 **#249** Ugnsrostad lax med miso-ingefärssås och butternutpumpa — Ingen mängd: "tunt strimlad napakål eller savoykål (ca 4 dl)" → parsed name="tunt strimlad napakål eller savoykål", normalized="tunt strimlad napakål eller savoykål"
+- 🟡 **#249** Ugnsrostad lax med miso-ingefärssås och butternutpumpa — Ingen mängd: "salladslök, tunt skivad (efter smak, valfritt)" → parsed name="salladslök", normalized="salladslök"
+- 🟡 **#249** Ugnsrostad lax med miso-ingefärssås och butternutpumpa — Ingen mängd: "kokt quinoa, ris eller risnudlar till servering" → parsed name="quinoa", normalized="quinoa"
+- 🟡 **#251** Varm linssallad med balsamicosvamp — Ingen mängd: "balsamvinäger (0,6 dl + 1 msk)" → parsed name="balsamvinäger", normalized="balsamvinäger"
+- 🟡 **#251** Varm linssallad med balsamicosvamp — Ingen mängd: "ruccola, spenat eller blandade grönsalladsblad (ca 4,8 dl)" → parsed name="ruccola", normalized="ruccola"
+- 🟡 **#252** Shawarma-bowls med blomkål — Ingen mängd: "blomkål, delad i buketter (1 stort huvud)" → parsed name="blomkål", normalized="blomkål"
+- 🟡 **#252** Shawarma-bowls med blomkål — Ingen mängd: "gurka, tunt skivad (valfritt)" → parsed name="gurka", normalized="gurka"
+- 🟡 **#252** Shawarma-bowls med blomkål — Ingen mängd: "körsbärstomater, halverade (valfritt)" → parsed name="körsbärstomater", normalized="körsbärstomat"
+- 🟡 **#255** Ugnsrostad grönsakssallad med linser — Ingen mängd: "butternutpumpa, skalad och tärnad (ca 1 liter)" → parsed name="butternutpumpa", normalized="butternutpumpa"
+- 🟡 **#257** Stekt öring med Old Bay-remoulad — Ingen mängd: "stänk av het sås (t.ex. Tabasco)" → parsed name="stänk av het sås", normalized="stänk av het sås"
+- 🟡 **#257** Stekt öring med Old Bay-remoulad — Ingen mängd: "regnbågsöring eller laxfilé med skinn (4 x 170 g)" → parsed name="regnbågsöring eller laxfilé med skinn", normalized="lax"
+- 🟡 **#257** Stekt öring med Old Bay-remoulad — Ingen mängd: "färsk persilja och färsk dill till garnering (valfritt)" → parsed name="färsk persilja och färsk dill", normalized="dill"
+- 🟡 **#258** Enkel puttanesca med kikärtor (en gryta) — Ingen mängd: "chilipulver (en nypa)" → parsed name="chilipulver", normalized="chilipulver"
+- 🟡 **#259** Laxpanna med soltorkad tomat och gräddsås — Ingen mängd: "färsk persilja till garnering (valfritt)" → parsed name="färsk persilja", normalized="persilja"
+- 🟡 **#260** General Tsos tofu — Ingen mängd: "majsstärkelse (0,6 dl + 1 msk, uppdelat)" → parsed name="majsstärkelse", normalized="maizena"
+- 🟡 **#260** General Tsos tofu — Ingen mängd: "broccoli i buketter (ca 400 g, färsk)" → parsed name="broccoli i buketter", normalized="broccoli"
+- 🟡 **#260** General Tsos tofu — Ingen mängd: "rostade sesamfrön och salladslök (valfritt, till garnering)" → parsed name="sesamfrön och salladslök", normalized="salladslök"
+- 🟡 **#260** General Tsos tofu — Ingen mängd: "kokt vitt eller brunt ris (till servering)" → parsed name="vitt eller brunt ris", normalized="vitt eller brunt ris"
+- 🟡 **#261** Vegansk grönkålscaesar med rökt tempeh — Ingen mängd: "tallkotts-parmesan: finhackade pinjenötter blandade med nutritionsjäst, valfritt (1 msk + 1 msk)" → parsed name="finhackade pinjenötter blandade med nutritionsjäst", normalized="finhackade pinjenötter blandade med nutritionsjäst"
+- 🟡 **#263** Örtig tortellinisoppa — Ingen mängd: "Basilika eller oregano (torkad eller färsk)" → parsed name="basilika eller oregano", normalized="basilika"
+- 🟡 **#263** Örtig tortellinisoppa — Ingen mängd: "En nypa socker" → parsed name="en nypa socker", normalized="en nypa socker"
+- 🟡 **#263** Örtig tortellinisoppa — Ingen mängd: "Parmesanost eller annan god riven ost (för servering)" → parsed name="parmesanost eller annan god riven ost", normalized="ost"
+- 🟡 **#263** Örtig tortellinisoppa — Ingen mängd: "Färska örter, t.ex. oregano (för servering)" → parsed name="färska örter", normalized="färska örter"
+- 🟡 **#264** Väffeltoast med rökt kalkon, äpple och dijonkräm — Ingen mängd: "fett till våffeljärnet" → parsed name="fett", normalized="fett"
+- 🟡 **#264** Väffeltoast med rökt kalkon, äpple och dijonkräm — Ingen mängd: "plockgrönsaker (tillbehör)" → parsed name="plockgrönsaker", normalized="plockgrönsaker"
+- 🟡 **#264** Väffeltoast med rökt kalkon, äpple och dijonkräm — Ingen mängd: "mjölk (tillbehör)" → parsed name="mjölk", normalized="mjölk"
+- 🟡 **#265** Snabbrimmad torsk med ägg och persilja — Ingen mängd: "potatis för 4 pers" → parsed name="potatis för 4 pers", normalized="potatis"
+- 🟡 **#265** Snabbrimmad torsk med ägg och persilja — Siffror i ingrediensnamn: "potatis för 4 pers" → name="potatis för 4 pers"
+- 🟡 **#265** Snabbrimmad torsk med ägg och persilja — Ingen mängd: "grönsaker, t ex tomater och gröna ärtor" → parsed name="grönsaker", normalized="grönsaker"
+- 🟡 **#265** Snabbrimmad torsk med ägg och persilja — Ingen mängd: "färsk persilja, gärna krusbladig" → parsed name="färsk persilja", normalized="persilja"
+- 🟡 **#265** Snabbrimmad torsk med ägg och persilja — Ingen mängd: "ev lite rivet citronskal (till såsen)" → parsed name="lite rivet citronskal", normalized="citron"
+- 🟡 **#267** Örtiga minibiffar med potatismos — Ingen mängd: "ev en skvätt mjölk" → parsed name="en skvätt mjölk", normalized="mjölk"
+- 🟡 **#267** Örtiga minibiffar med potatismos — Ingen mängd: "ev en knivsudd muskot" → parsed name="en knivsudd muskot", normalized="en knivsudd muskot"
+- 🟡 **#267** Örtiga minibiffar med potatismos — Ingen mängd: "ev oliver, fetaost, soltorkade tomater eller trattkantareller (att hacka ner i några av biffarna)" → parsed name="oliver", normalized="oliver"
+- 🟡 **#268** Nudelwok med thai-basilika och ostronsås — Ingen mängd: "hackade nötter, t ex cashew- eller jordnötter" → parsed name="hackade nötter", normalized="nötter"
+- 🟡 **#268** Nudelwok med thai-basilika och ostronsås — Ingen mängd: "salladslök" → parsed name="salladslök", normalized="salladslök"
+- 🟡 **#268** Nudelwok med thai-basilika och ostronsås — Ingen mängd: "thaibasilika eller färsk koriander" → parsed name="thaibasilika eller färsk koriander", normalized="koriander"
+- 🟡 **#268** Nudelwok med thai-basilika och ostronsås — Ingen mängd: "något starkt att ringla över för den som vill, t ex srirachasås" → parsed name="något starkt att ringla över för den som vill", normalized="något starkt att ringla över för den som vill"
+- 🟡 **#269** Gräddig Cashew-Kyckling med Curry — Ingen mängd: "ris eller bulgur för 4 pers" → parsed name="ris eller bulgur för 4 pers", normalized="ris eller bulgur för 4 pers"
+- 🟡 **#269** Gräddig Cashew-Kyckling med Curry — Siffror i ingrediensnamn: "ris eller bulgur för 4 pers" → name="ris eller bulgur för 4 pers"
+- 🟡 **#269** Gräddig Cashew-Kyckling med Curry — Ingen mängd: "kokosflingor, gärna snabbt rostade i torr stekpanna" → parsed name="kokosflingor", normalized="kokosflingor"
+- 🟡 **#269** Gräddig Cashew-Kyckling med Curry — Ingen mängd: "grönsaker, t ex tomater och kikärtor" → parsed name="grönsaker", normalized="grönsaker"
+- 🟡 **#269** Gräddig Cashew-Kyckling med Curry — Ingen mängd: "färsk koriander" → parsed name="färsk koriander", normalized="koriander"
+- 🟡 **#270** Brysselkålbonara — Ingen mängd: "spagetti för 4 pers" → parsed name="spagetti för 4 pers", normalized="spagetti för 4 pers"
+- 🟡 **#270** Brysselkålbonara — Siffror i ingrediensnamn: "spagetti för 4 pers" → name="spagetti för 4 pers"
+- 🟡 **#271** Tikka Masala — Ingen mängd: "ris eller bulgur för 4 pers" → parsed name="ris eller bulgur för 4 pers", normalized="ris eller bulgur för 4 pers"
+- 🟡 **#271** Tikka Masala — Siffror i ingrediensnamn: "ris eller bulgur för 4 pers" → name="ris eller bulgur för 4 pers"
+- 🟡 **#271** Tikka Masala — Siffror i ingrediensnamn: "1 bit färsk ingefära motsvarande 3 msk hackad" → name="färsk ingefära motsvarande 3 msk hackad"
+- 🟡 **#271** Tikka Masala — Ingen mängd: "färsk koriander" → parsed name="färsk koriander", normalized="koriander"
+- 🟡 **#271** Tikka Masala — Ingen mängd: "mangotärningar (tinade frysta är enklast)" → parsed name="mangotärningar", normalized="mangotärningar"
+- 🟡 **#271** Tikka Masala — Ingen mängd: "hackade jordnötter" → parsed name="hackade jordnötter", normalized="jordnötter"
+- 🟢 **#2** Matvetesallad med gröna ärter och krispig halloumi — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#4** Marinerad kyckling med curry-cashewnötssås — Dubblett-ingrediens: "rapsolja" förekommer 3 gånger
+- 🟢 **#4** Marinerad kyckling med curry-cashewnötssås — Dubblett-ingrediens: "vitlöksklyftor" förekommer 2 gånger
+- 🟢 **#4** Marinerad kyckling med curry-cashewnötssås — Dubblett-ingrediens: "malen koriander" förekommer 2 gånger
+- 🟢 **#5** Buljongsoppa med shiitakesvamp och pocherat ägg — Dubblett-ingrediens: "sesamfrön" förekommer 2 gånger
+- 🟢 **#10** Ramen med salladskål och champinjoner — Dubblett-ingrediens: "socker" förekommer 2 gånger
+- 🟢 **#14** Belugabouillabaisse — Dubblett-ingrediens: "vitlöksklyftor" förekommer 2 gånger
+- 🟢 **#15** Tikka masala med kikärtor och vitlöksnaan — Dubblett-ingrediens: "vitlöksklyftor" förekommer 2 gånger
+- 🟢 **#15** Tikka masala med kikärtor och vitlöksnaan — Dubblett-ingrediens: "socker" förekommer 2 gånger
+- 🟢 **#15** Tikka masala med kikärtor och vitlöksnaan — Dubblett-ingrediens: "rapsolja" förekommer 2 gånger
+- 🟢 **#17** Soppa med vermicelli och rotfrukter — Dubblett-ingrediens: "persilja" förekommer 2 gånger
+- 🟢 **#21** Min bästa wok — Dubblett-ingrediens: "soja" förekommer 3 gånger
+- 🟢 **#25** Gazpacho — Dubblett-ingrediens: "vitlöksklyftor" förekommer 2 gånger
+- 🟢 **#25** Gazpacho — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#30** Valnötshummus med ugnsrostade grönsaker — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#35** Katsu sando med panerad tofu och kålsallad — Dubblett-ingrediens: "soja" förekommer 2 gånger
+- 🟢 **#48** Pulled chicken — Dubblett-ingrediens: "koriander" förekommer 2 gånger
+- 🟢 **#63** Chopped sallad med krämig dressing — Dubblett-ingrediens: "kikärtor" förekommer 2 gånger
+- 🟢 **#63** Chopped sallad med krämig dressing — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#66** Räkor med tomat- och fänkålscouscous — Dubblett-ingrediens: "citron" förekommer 2 gånger
+- 🟢 **#70** Kryddiga laxbowls med avokadosås — Dubblett-ingrediens: "lime" förekommer 2 gånger
+- 🟢 **#73** Kimchinos stekt ris med sesambrässerad tempeh — Dubblett-ingrediens: "salladslök" förekommer 2 gånger
+- 🟢 **#76** Svamp- och purjolökstetrazzini — Dubblett-ingrediens: "citron" förekommer 2 gånger
+- 🟢 **#77** Teriyakibowl med apelsin och tempeh — Dubblett-ingrediens: "paprika" förekommer 2 gånger
+- 🟢 **#83** Sumac-lax-tacos med koriander- och myntyoghurt — Dubblett-ingrediens: "citron" förekommer 2 gånger
+- 🟢 **#87** Krispig lax med indiska kryddor och smyckad ris — Dubblett-ingrediens: "apelsin" förekommer 2 gånger
+- 🟢 **#89** Medelhavsauberginer med quinoafyllning — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#90** Honungsdijon-lax med äppelfarro — Dubblett-ingrediens: "rödvinsvinäger" förekommer 2 gånger
+- 🟢 **#90** Honungsdijon-lax med äppelfarro — Dubblett-ingrediens: "citron" förekommer 2 gånger
+- 🟢 **#90** Honungsdijon-lax med äppelfarro — Dubblett-ingrediens: "honung" förekommer 2 gånger
+- 🟢 **#92** Balsamicglaserad fläskkarré med rostad vitlökspolenta och grönt — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#93** Rökiga laxburgare med citron- och dillspread — Dubblett-ingrediens: "dijonsenap" förekommer 2 gånger
+- 🟢 **#93** Rökiga laxburgare med citron- och dillspread — Dubblett-ingrediens: "gräslök" förekommer 2 gånger
+- 🟢 **#94** Currylaxbiffar med citronyoghurt — Dubblett-ingrediens: "koriander" förekommer 2 gånger
+- 🟢 **#95** Krämig karamelliserad broccolicrème — Dubblett-ingrediens: "citron" förekommer 2 gånger
+- 🟢 **#96** Vegetariska svampbullar i spansk oliver-tomatsås — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#96** Vegetariska svampbullar i spansk oliver-tomatsås — Dubblett-ingrediens: "lök" förekommer 2 gånger
+- 🟢 **#96** Vegetariska svampbullar i spansk oliver-tomatsås — Dubblett-ingrediens: "vitlöksklyftor" förekommer 2 gånger
+- 🟢 **#97** Grillad romansallad med buffalo-tofu och tahini ranch — Dubblett-ingrediens: "gräslök" förekommer 2 gånger
+- 🟢 **#107** Medelhavslax med bulgur — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#107** Medelhavslax med bulgur — Dubblett-ingrediens: "vitlöksklyftor" förekommer 2 gånger
+- 🟢 **#112** Räkpasta Primavera med Zucchininudlar — Dubblett-ingrediens: "basilika" förekommer 2 gånger
+- 🟢 **#123** Sötpotatisbowl med quinoa och chipotle-tahini — Dubblett-ingrediens: "rödlök" förekommer 2 gånger
+- 🟢 **#123** Sötpotatisbowl med quinoa och chipotle-tahini — Dubblett-ingrediens: "koriander" förekommer 2 gånger
+- 🟢 **#123** Sötpotatisbowl med quinoa och chipotle-tahini — Dubblett-ingrediens: "limejuice" förekommer 2 gånger
+- 🟢 **#132** Gochujangtofu med ris och inlagda grönsaker — Dubblett-ingrediens: "risvinäger" förekommer 3 gånger
+- 🟢 **#132** Gochujangtofu med ris och inlagda grönsaker — Dubblett-ingrediens: "socker" förekommer 2 gånger
+- 🟢 **#133** Squash- och valnötsfritters med krämig vitlöks- och örtsås — Dubblett-ingrediens: "citron" förekommer 2 gånger
+- 🟢 **#134** Veggie-quesadillas med chipotle-mangosås — Dubblett-ingrediens: "limejuice" förekommer 2 gånger
+- 🟢 **#141** Citronsmörsrisotto med squash — Dubblett-ingrediens: "citron" förekommer 2 gånger
+- 🟢 **#146** Quinoa- och grönsaksbowls — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#149** Laxsallad med grönkål, brysselkål och misoglaserad lax — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#153** Veggie-enchiladas med rostad paprikasås — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#154** Cobbsallad med jordgubbar, friterad fetaost och dragondressing — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#157** Portobelloburgers med romescosås — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#159** Pasta med sparris och citron — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#159** Pasta med sparris och citron — Dubblett-ingrediens: "citron" förekommer 2 gånger
+- 🟢 **#168** Buffalo-kikärtsbullar med yoghurtranch — Dubblett-ingrediens: "gräslök" förekommer 2 gånger
+- 🟢 **#168** Buffalo-kikärtsbullar med yoghurtranch — Dubblett-ingrediens: "vitlökspulver" förekommer 2 gånger
+- 🟢 **#168** Buffalo-kikärtsbullar med yoghurtranch — Dubblett-ingrediens: "lökpulver" förekommer 2 gånger
+- 🟢 **#171** Misorostad aubergine med gurkmeje-tahinisås — Dubblett-ingrediens: "risvinäger" förekommer 2 gånger
+- 🟢 **#171** Misorostad aubergine med gurkmeje-tahinisås — Dubblett-ingrediens: "sesamolja" förekommer 2 gånger
+- 🟢 **#177** BBQ-blomkålstacos med grön tahinisås — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#177** BBQ-blomkålstacos med grön tahinisås — Dubblett-ingrediens: "koriander" förekommer 2 gånger
+- 🟢 **#179** Zesty Quinoa- och Svarta Bönor-tacos med Koriandersås — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#179** Zesty Quinoa- och Svarta Bönor-tacos med Koriandersås — Dubblett-ingrediens: "koriander" förekommer 2 gånger
+- 🟢 **#180** Krämig tomat- och basilikasoppa — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#180** Krämig tomat- och basilikasoppa — Dubblett-ingrediens: "basilika" förekommer 2 gånger
+- 🟢 **#185** Varm farrosallad med figendressing — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#188** Currystekta blomkåls- och sötpotatisbowls med kuminjoghurt — Dubblett-ingrediens: "citron" förekommer 2 gånger
+- 🟢 **#190** Ugnsrostad blomkål med gurkmeja och vispad fetaost — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#190** Ugnsrostad blomkål med gurkmeja och vispad fetaost — Dubblett-ingrediens: "honung" förekommer 2 gånger
+- 🟢 **#192** Jordnöttsnudlar med rostade svampar — Dubblett-ingrediens: "sojasås med låg salthalt" förekommer 2 gånger
+- 🟢 **#194** Ruccola- och kakisallad — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#195** Jerk-blomkålsvingar med mojosås — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#196** Ugnsrostad grönsaks- och kikärtspanna — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#200** Laxsallad med couscous och fetadressing — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#202** Sydvästsallad med quinoa och krämig chipotledressing — Dubblett-ingrediens: "adobosås från burk med chipotlechili" förekommer 2 gånger
+- 🟢 **#202** Sydvästsallad med quinoa och krämig chipotledressing — Dubblett-ingrediens: "vitlökspulver" förekommer 2 gånger
+- 🟢 **#203** Harissa-rostad sötpotatis-sallad med persiljetahini — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#206** BBQ Ranch-skålar med kikärtor och quinoa — Dubblett-ingrediens: "vitlökspulver" förekommer 2 gånger
+- 🟢 **#208** Vegetariska BBQ-köttbullesformar — Dubblett-ingrediens: "rökt paprikapulver" förekommer 2 gånger
+- 🟢 **#208** Vegetariska BBQ-köttbullesformar — Dubblett-ingrediens: "worcestershiresås" förekommer 2 gånger
+- 🟢 **#214** Grekisk kikärts- och citronssoppa — Dubblett-ingrediens: "citron" förekommer 2 gånger
+- 🟢 **#215** Marockansk blomkålssallad med couscous — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#221** Tofubowls med mandelsmörsås — Dubblett-ingrediens: "vitlöksklyftor" förekommer 2 gånger
+- 🟢 **#222** Sesamlax i skål med miso-ingefärssås — Dubblett-ingrediens: "honung" förekommer 2 gånger
+- 🟢 **#222** Sesamlax i skål med miso-ingefärssås — Dubblett-ingrediens: "gochujang" förekommer 2 gånger
+- 🟢 **#222** Sesamlax i skål med miso-ingefärssås — Dubblett-ingrediens: "sesamfrön" förekommer 2 gånger
+- 🟢 **#223** Chipotle-räkotacos med avokado- och mangosalsa — Dubblett-ingrediens: "koriander" förekommer 2 gånger
+- 🟢 **#229** Naanpizza med vispad ricotta och blancherad broccoli — Dubblett-ingrediens: "citron" förekommer 2 gånger
+- 🟢 **#230** Plåtbakad chili- och citronlax med vitlöksörtsås — Dubblett-ingrediens: "citron" förekommer 2 gånger
+- 🟢 **#243** Kryddiga linsburgare med tahinicoleslaw — Dubblett-ingrediens: "morot" förekommer 2 gånger
+- 🟢 **#243** Kryddiga linsburgare med tahinicoleslaw — Dubblett-ingrediens: "persilja" förekommer 2 gånger
+- 🟢 **#248** Kikärts- och broccolibowls med krämig vitlökssås — Dubblett-ingrediens: "citron" förekommer 2 gånger
+- 🟢 **#248** Kikärts- och broccolibowls med krämig vitlökssås — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#251** Varm linssallad med balsamicosvamp — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#252** Shawarma-bowls med blomkål — Dubblett-ingrediens: "spiskummin" förekommer 2 gånger
+- 🟢 **#255** Ugnsrostad grönsakssallad med linser — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#261** Vegansk grönkålscaesar med rökt tempeh — Dubblett-ingrediens: "olivolja" förekommer 2 gånger
+- 🟢 **#269** Gräddig Cashew-Kyckling med Curry — Dubblett-ingrediens: "soja" förekommer 2 gånger
+
+## 4. Protein-korrekthet
+
+- 🟡 **#79** Spaghettipaj med kalkonfärs, grönkål och pumpa — protein="kyckling" men inga matchande ingredienser hittades
+- 🟡 **#120** Misoglaserad havsabborre i pergamentpåse — protein="fisk" men inga matchande ingredienser hittades
+- 🟡 **#264** Väffeltoast med rökt kalkon, äpple och dijonkräm — protein="kött" men inga matchande ingredienser hittades
+
+## 5. Kokbarhetsproblem
+
+Inga problem hittade.
+
+## 6. DOH-specifika problem
+
+- 🟡 **#108** Currysallad med ris — Dubbla parenteser i ingrediens: "rivet apelsinskal (1 msk) samt färskpressad apelsinjuice (2 msk)"
+- 🟡 **#111** Spaghetti Pomodoro med grönkål och vita bönor — Dubbla parenteser i ingrediens: "pancetta (110 g), tärnad (ersätt med shiitakesvamp för vegetarisk variant)"
+- 🟡 **#125** Blomkåls- och potatissoppa med cheddar — Dubbla parenteser i ingrediens: "vita bönor (navybönor), avrunna och sköljda (1 burk, ca 440 g)"
+- 🟡 **#129** Pasta med spenat och kronärtskocka — Dubbla parenteser i ingrediens: "citronskal (1 tsk) samt citronsaft (2 tsk)"
+- 🟡 **#132** Gochujangtofu med ris och inlagda grönsaker — Dubbla parenteser i ingrediens: "rädisa (daikon eller vattenmelon), strimlad (0,6 dl)"
+- 🟡 **#166** Tofu-wok med jordnötssås — Dubbla parenteser i ingrediens: "rödkål (0,5 litet huvud), hackad i 3 cm bitar (ca 7–9 dl)"
+- 🟡 **#181** Quinoafyllda squashbåtar med harissasmör — Dubbla parenteser i ingrediens: "squash, medelstor (4 st, à 225–255 g) eller stor (3 st, à 285–340 g)"
+- 🟡 **#190** Ugnsrostad blomkål med gurkmeja och vispad fetaost — Dubbla parenteser i ingrediens: "citronskal (1 tsk) + citronsaft (1 msk)"
+- 🟡 **#204** Ultimata Vegetariska Burritos — Dubbla parenteser i ingrediens: "limeskal (0,5 tsk) + limejuice (1 msk)"
+- 🟡 **#208** Vegetariska BBQ-köttbullesformar — Dubbla parenteser i ingrediens: "cremini-svamp (champinjoner), fint hackad (225 g)"
+- 🟡 **#228** Krämig getostpasta med brysselkål — Dubbla parenteser i ingrediens: "citronskal (1 tsk, rivet) och citronsaft (1 msk, färskpressad)"
+- 🟡 **#241** Toscansk gnocchi med soltorkade tomater — Dubbla parenteser i ingrediens: "vispgrädde (36%) eller matlagningsgrädde (1,2 dl)"
+- 🟡 **#246** Pasta alla vodka med pumpa — Dubbla parenteser i ingrediens: "kokosmjölk (full fetthalt) eller vispgrädde (36%, 1,8 dl)"
+- 🟡 **#247** Thailändsk grönsakssoppa — Dubbla parenteser i ingrediens: "baby pak choi (2 huvuden), stjälkar borttagna och delade i fjärdedelar (eller 2–3 dl broccolibuketter)"
+- 🟡 **#253** Krämig svamppasta (vegansk) — Dubbla parenteser i ingrediens: "citronskal (0,5 tsk) samt citronsaft (1 msk)"
+
