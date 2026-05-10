@@ -151,6 +151,27 @@ assertTrue(CANON_REJECT_PATTERNS.grädde instanceof RegExp, "CANON_REJECT_PATTER
 assertTrue(CANON_REJECT_PATTERNS.grädde.test("Spraygrädde Vispgrädde 35%"), "reject-mönster fångar spraygrädde");
 assertFalse(CANON_REJECT_PATTERNS.grädde.test("Matlagningsgrädde 15%"), "reject-mönster släpper matlagningsgrädde");
 
+// ─── BUGG-FIX: smör ska inte matcha popcorn ──
+assertTrue(CANON_REJECT_PATTERNS.smör.test("Mikropopcorn Extra Stora Smör 3-pack"), "reject-mönster fångar popcorn-smör");
+assertFalse(CANON_REJECT_PATTERNS.smör.test("Normalsaltat Svenskt Smör 500g"), "reject-mönster släpper vanligt smör");
+{
+  const recipe = { id: 99, ingredients: ["smör"], tags: ["vardag30"], protein: "vegetarisk" };
+  const offers = [{ name: "Mikropopcorn Extra Stora Smör 3-pack", brandLine: "GARANT, 270g", regularPrice: 18.83, promoPrice: 16, savingPerUnit: 5.66 }];
+  const result = matchRecipe(recipe, offers);
+  assertEq(result.matches.length, 0, "BUGG-FIX: popcorn ska INTE matcha smör-recept");
+}
+
+// ─── BUGG-FIX: rapsolja ska inte matcha sardeller/konserver i olja ──
+assertTrue(CANON_REJECT_PATTERNS.rapsolja.test("Sardeller i Olja 100g"), "reject-mönster fångar sardeller i olja");
+assertTrue(CANON_REJECT_PATTERNS.rapsolja.test("Tonfisk i Olja 185g"), "reject-mönster fångar tonfisk i olja");
+assertFalse(CANON_REJECT_PATTERNS.rapsolja.test("Rapsolja 1l"), "reject-mönster släpper vanlig rapsolja");
+{
+  const recipe = { id: 98, ingredients: ["2 msk rapsolja"], tags: ["vardag30"], protein: "kyckling" };
+  const offers = [{ name: "Sardeller i Olja", brandLine: "GARANT, 100g", regularPrice: 37.76, promoPrice: 33.9, savingPerUnit: 3.86 }];
+  const result = matchRecipe(recipe, offers);
+  assertEq(result.matches.length, 0, "BUGG-FIX: sardeller i olja ska INTE matcha rapsolja-recept");
+}
+
 // ─── Slutrapport ──────────────────────────────────────────────────
 console.log(`\n${passed} passerade, ${failed} failade.`);
 if (failed) {
