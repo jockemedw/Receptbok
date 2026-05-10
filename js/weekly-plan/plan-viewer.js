@@ -478,15 +478,18 @@ export function openWeekRecipe(recipeId, title, cardEl) {
   const PROTEIN_LABEL = { fisk: 'Fisk', kyckling: 'Kyckling', kött: 'Kött', fläsk: 'Fläsk', vegetarisk: 'Vegetarisk' };
 
   const readOnly = cardEl.dataset.readonly === '1';
+  const isPast = cardEl.dataset.past === '1';
   const isCustom = cardEl.dataset.custom === '1';
   const replaceBtns = (readOnly || window.planConfirmed) ? '' : `
     <button class="replace-recipe-btn" onclick="enterReplaceMode('${date}', '${dayName}')">Välj annat recept</button>
     <button class="replace-recipe-btn" onclick="replaceRecipe(${r.id}, '${date}', this)">Slumpa nytt recept</button>`;
-  const dayActionBtns = readOnly ? '' : `<div class="day-action-btns">
-    <button class="day-action-btn" onclick="enterSwapMode('${date}')">Byt dag</button>
-    <button class="day-action-btn" onclick="skipDay('${date}')">Hoppa över — skjut recept →</button>
-    <button class="day-action-btn day-action-block" onclick="blockDay('${date}')">Blockera dag</button>
-  </div>`;
+  const swapBtn = !readOnly
+    ? `<button class="day-action-btn" onclick="enterSwapMode('${date}')">Byt dag</button>` : '';
+  const skipBlockBtns = (!readOnly && !isPast)
+    ? `<button class="day-action-btn" onclick="skipDay('${date}')">Hoppa över — skjut recept →</button>
+       <button class="day-action-btn day-action-block" onclick="blockDay('${date}')">Blockera dag</button>` : '';
+  const dayActionBtns = (swapBtn || skipBlockBtns)
+    ? `<div class="day-action-btns">${swapBtn}${skipBlockBtns}</div>` : '';
   const customEditBtn = isCustom
     ? `<button class="replace-recipe-btn" onclick="openCustomDay('${date}', '${dayName}')">Redigera egen planering</button>`
     : '';
@@ -935,7 +938,7 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
     const borderStyle = proteinColor ? ` style="border-left: 3px solid ${proteinColor}"` : '';
 
     // Swap-knappen bara på aktiv plan, icke-bekräftad
-    const showSwap = d.planId === 'active' && !d.isPast && !d.blocked;
+    const showSwap = d.planId === 'active' && !d.blocked;
     const swapBtn = showSwap
       ? `<button class="swap-icon-btn" title="Flytta till annan dag"
            onclick="event.stopPropagation();enterSwapMode('${d.date}')"
@@ -956,12 +959,12 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
         savingBadge = `<div class="week-day-saving" title="Uppskattad besparing jämfört med normalpris">${ICON_COIN} ${d.saving} kr</div>`;
       }
     }
-    const readOnly = d.isArchive || d.isPast;
+    const readOnly = d.isArchive;
     return `<div class="${timelineDayCls}">
       ${topRow}
       <div class="${cls}"${borderStyle}
         data-recipeid="${rid}" data-date="${d.date}" data-day="${d.day}"
-        data-readonly="${readOnly ? '1' : ''}"
+        data-readonly="${readOnly ? '1' : ''}" data-past="${d.isPast ? '1' : ''}"
         onclick="openWeekRecipe(${rid || 'null'}, '${safeTitle}', this)">
         <div class="week-day-name">${d.dayShort} ${d.dayNum}${dot}${holidayDot}</div>
         <div class="week-day-recipe">${d.recipe}</div>
