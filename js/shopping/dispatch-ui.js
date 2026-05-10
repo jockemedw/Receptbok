@@ -2,6 +2,8 @@
 // Läser state: window._shopRecipeItems (för räkning i confirm-dialog)
 // Feature-toggled via GET /api/dispatch-to-willys vid tab-load.
 
+import { initPreferences } from './dispatch-preferences.js';
+
 // Startsidan istället för /cart (som 404:ar). willys.se kommer ihåg
 // användarens valda butik (Ekholmen 2160) via session-cookie.
 const CART_URL = "https://www.willys.se/";
@@ -9,6 +11,8 @@ const CART_URL = "https://www.willys.se/";
 const ICON_HOURGLASS = '<svg class="icon icon-em-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12 M6 20h12 M6 4l6 8-6 8 M18 4l-6 8 6 8"/></svg>';
 
 export async function initDispatchUI() {
+  initPreferences();
+
   const btn = document.getElementById("dispatchToWillysBtn");
   if (!btn) return;
   try {
