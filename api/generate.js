@@ -9,6 +9,28 @@ import { matchRecipe } from "./_shared/willys-matcher.js";
 const WILLYS_URL = "https://www.willys.se/search/campaigns/online?q=2160&type=PERSONAL_GENERAL&page=0&size=500";
 const SAVING_THRESHOLD = 10; // Recept med ≥10 kr besparing bucketas först i poolen.
 
+function getCurrentSeason(dateStr) {
+  const month = new Date(dateStr).getMonth() + 1;
+  if (month >= 3 && month <= 5) return "vår";
+  if (month >= 6 && month <= 8) return "sommar";
+  if (month >= 9 && month <= 11) return "höst";
+  return "vinter";
+}
+
+function applySeasonWeight(pool, currentSeason) {
+  if (!currentSeason) return pool;
+  const weighted = pool.map((r) => {
+    const seasons = r.seasons || [];
+    let weight;
+    if (seasons.length === 0) weight = 1;
+    else if (seasons.includes(currentSeason)) weight = 2;
+    else weight = 0.5;
+    return { r, sort: Math.random() * weight };
+  });
+  weighted.sort((a, b) => b.sort - a.sort);
+  return weighted.map((w) => w.r);
+}
+
 const DAY_NAMES = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag", "Lördag", "Söndag"];
 
 // ── Domänlogik (ägs av denna slice) ─────────────────────────────────────────
@@ -126,7 +148,7 @@ function bucketBySaving(pool, savingsById) {
 // ── Deterministisk receptväljare ─────────────────────────────────────────────
 const hasTure = (r) => (r.tags || []).some((t) => t.toLowerCase() === "ture");
 
-function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), usedOn = {}, savingsById = null) {
+function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), usedOn = {}, savingsById = null, currentSeason = null) {
   const MAX_PER_PROTEIN = 2;
 
   // ── 1. Historikfiltrering ─────────────────────────────────────────────────
@@ -145,8 +167,8 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
   if (pool.length === 0) pool = recipes;
 
   // ── 2. Dela upp poolen per dag-typ ────────────────────────────────────────
-  const weekdayPool = bucketBySaving(pool.filter((r) => r.tags.includes("vardag30")), savingsById);
-  const weekendPool = bucketBySaving(pool.filter((r) => r.tags.includes("helg60")), savingsById);
+  const weekdayPool = applySeasonWeight(bucketBySaving(pool.filter((r) => r.tags.includes("vardag30")), savingsById), currentSeason);
+  const weekendPool = applySeasonWeight(bucketBySaving(pool.filter((r) => r.tags.includes("helg60")), savingsById), currentSeason);
 
   // ── 3. Ture-dagar + Vegetariska dagar ──────────────────────────────────────
   const tureCount = constraints.ture_days;
@@ -267,6 +289,7 @@ export default createHandler(async (req, res, pat) => {
     skip_shopping = false,
     blocked_dates = [],
     optimize_prices = false,
+    season_weight = false,
     dry_run = false,
   } = req.body;
 
@@ -358,7 +381,8 @@ export default createHandler(async (req, res, pat) => {
     }
   }
 
-  const selectedDays = selectRecipes(filtered, activeDays, constraints, recentIds, historyData.usedOn || {}, savingsById);
+  const currentSeason = season_weight ? getCurrentSeason(start_date) : null;
+  const selectedDays = selectRecipes(filtered, activeDays, constraints, recentIds, historyData.usedOn || {}, savingsById, currentSeason);
 
   // Merge: blockerade dagar infogas med recipe: null
   const days = allDays.map((d) => {
