@@ -41,7 +41,21 @@ function bucketBySaving(pool, savingsById) {
   return [...shuffle(high), ...shuffle(low)];
 }
 
-function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), usedOn = {}, savingsById = null) {
+function applySeasonWeight(pool, currentSeason) {
+  if (!currentSeason) return pool;
+  const weighted = pool.map((r) => {
+    const seasons = r.seasons || [];
+    let weight;
+    if (seasons.length === 0) weight = 1;
+    else if (seasons.includes(currentSeason)) weight = 2;
+    else weight = 0.5;
+    return { r, sort: Math.random() * weight };
+  });
+  weighted.sort((a, b) => b.sort - a.sort);
+  return weighted.map((w) => w.r);
+}
+
+function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), usedOn = {}, savingsById = null, currentSeason = null) {
   const MAX_PER_PROTEIN = 2;
 
   const fresh = recipes.filter((r) => !recentIds.has(r.id));
@@ -58,8 +72,8 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
   }
   if (pool.length === 0) pool = recipes;
 
-  const weekdayPool = bucketBySaving(pool.filter((r) => r.tags.includes("vardag30")), savingsById);
-  const weekendPool = bucketBySaving(pool.filter((r) => r.tags.includes("helg60")), savingsById);
+  const weekdayPool = applySeasonWeight(bucketBySaving(pool.filter((r) => r.tags.includes("vardag30")), savingsById), currentSeason);
+  const weekendPool = applySeasonWeight(bucketBySaving(pool.filter((r) => r.tags.includes("helg60")), savingsById), currentSeason);
 
   const tureCount = constraints.ture_days || 0;
   const shuffledIndices = shuffle(dayList.map((_, i) => i));

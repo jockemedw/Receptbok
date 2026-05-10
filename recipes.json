@@ -34,7 +34,12 @@
         "Skär purjolöken i tunna skivor. Stek purjon i smör på låg värme tills den är mjuk utan att ha fått färg. Fördela över fisken och häll på grädden. Tillaga mitt i ugnen ca 30 min.",
         "Värm ärterna enligt anvisning på förpackningen och servera till fiskgratängen."
       ],
-      "notes": "Tips: Servera med matvete, som här, eller pressad kokt potatis. Toppa gärna med lite färsk strimlad purjolök vid servering. Källa: Mer Smak nr 1 2019."
+      "notes": "Tips: Servera med matvete, som här, eller pressad kokt potatis. Toppa gärna med lite färsk strimlad purjolök vid servering. Källa: Mer Smak nr 1 2019.",
+      "seasons": [
+        "vår",
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 2,
@@ -68,7 +73,11 @@
         "Hetta upp olja i en stekpanna och stek blomkålen tills den fått färg runt om. Salta lätt. Lyft upp ur pannan. Stek halloumin tills den blivit krispig i het panna med olja.",
         "Blanda matvetet med ärter och blomkål och vänd runt med vinägretten. Smaka av med salt och peppar. Toppa med rödlök och halloumi."
       ],
-      "notes": "Källa: Vardagsakuten / Coop (urklipp)."
+      "notes": "Källa: Vardagsakuten / Coop (urklipp).",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 3,
@@ -100,7 +109,11 @@
         "Salta fisken och vänd den i mjöl. Hetta upp en stekpanna och klicka i smör. Sänk värmen och stek filéerna till fin stekyta på båda sidor.",
         "Servera fisken direkt med potatis och stuvade morötter. Garnera med persilja."
       ],
-      "notes": "Källa: Nils Molinder / Favoritfiskar (urklipp)."
+      "notes": "Källa: Nils Molinder / Favoritfiskar (urklipp).",
+      "seasons": [
+        "vår",
+        "höst"
+      ]
     },
     {
       "id": 4,
@@ -148,7 +161,11 @@
         "Mixa cashewnötterna till ett fint mjöl. Häll i oljan och mixa vidare till ett krämigt nötsmör. Blanda ihop alla torkade kryddor. Fräs löken i olja med kryddorna tills det börjar dofta och löken mjuknat. Rör ner nötkrämen och vitlök, tillsätt vatten och kokosgrädde. Låt sjuda ca 30 min. Smaka av med salt.",
         "Koka riset enligt anvisning på förpackningen. Hetta upp en grill-/stekpanna och stek kycklingen tills den är genomstekt. Servera med såsen, färsk koriander och gärna en sallad."
       ],
-      "notes": "Källa: Mer Smak nr 2 2019."
+      "notes": "Källa: Mer Smak nr 2 2019.",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 5,
@@ -186,7 +203,11 @@
         "Koka upp saltat vatten och vinäger i en kastrull. Rör runt med en sked så det blir en virvel. Knäck i ett ägg åt gången och låt koka ca 3 min, gulan ska vara rinnig. Det går bra att koka 2 ägg i taget. Lyft upp med hålslev.",
         "Servera soppan med pocherade ägg och toppa med salladslök och sesamfrön."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 6,
@@ -220,7 +241,11 @@
         "Tärna fetaosten. Skär tomaterna i bitar eller dela små.",
         "Blanda pasta, kyckling, feta, tomater och resten av ingredienserna. Krydda med salt och peppar."
       ],
-      "notes": "Lika god varm som kall."
+      "notes": "Lika god varm som kall.",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 7,
@@ -294,7 +319,11 @@
         "Häll i risonin och låt sjuda tills pastan nästan är mjuk.",
         "Tillsätt alla grönsaker, svamp och vitlök när det är några minuter kvar på pastan och servera direkt. Smaka av med mer salt."
       ],
-      "notes": "Tips: Det går bra att bara använda 300 g kycklingfärs och i stället dryga ut med 1 burk kokta vita bönor som är sköljda och mixade till ett mos."
+      "notes": "Tips: Det går bra att bara använda 300 g kycklingfärs och i stället dryga ut med 1 burk kokta vita bönor som är sköljda och mixade till ett mos.",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 9,
@@ -325,7 +354,10 @@
         "Skär blomkålen i mindre bitar (även blast och stam). Fräs blomkål och hälften av purjolöken i olja. Häll i vin och vatten och smula ner buljongtärningarna. Låt koka tills blomkålen är mjuk, ca 15 min. Mixa soppan slät och tillsätt grädden. Värm upp och smaka av med salt och peppar.",
         "Stek baconet knaprigt i het stekpanna. Tillsätt hasselnötter och resten av purjolöken och stek tills purjolöken är mjuk. Toppa soppan med bacontopping och garnera ev med persilja."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 10,
@@ -372,7 +404,12 @@
         "Lyft citrongräset ur buljongen. Lägg i nudlarna och koka tills de är mjuka. Lägg i salladslök, salladskål och noristrimlor.",
         "Fördela soppan i skålar. Toppa med inlagd svamp, ägghalvor, koriander och sesamfrön. Servera med limeklyftor."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 11,
@@ -444,7 +481,10 @@
         "Hetta upp olja i en wok eller stekpanna och woka brysselkålen ca 5 min. Tillsätt svamp och jordärtskocka och woka under omrörning tills allt har fin färg, ca 5 min till.",
         "Vänd ner riset och smaka av med salt och peppar. Servera med ärtröran. Garnera med persilja."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 13,
@@ -481,7 +521,12 @@
         "Koka nudlarna i såsen så att de blir mjuka och ha i tofun så att den blir varm. Avsluta med att pressa i ½–1 lime och ha i limezest. Smaka av och tillsätt extra soja för mer sälta.",
         "Servera i djupa skålar. Toppa med den gröna delen på salladslöken och servera med lime och eventuellt rostad lök och sesamfrön."
       ],
-      "notes": "Variation: Servera med ris i stället för nudlar."
+      "notes": "Variation: Servera med ris i stället för nudlar.",
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 14,
@@ -524,7 +569,11 @@
         "Blanda majonnäs med pressad vitlök och stoppa in brödet i ugnen så att det blir klart samtidigt som soppan.",
         "Servera soppan med vitlöksbröd och vitlöksmajonnäs."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 15,
@@ -573,7 +622,10 @@
         "Naan: Dela degen i fyra delar och kavla ut till ca ½–1 cm tjocka bröd. Stek i het panna med lite olja tills ovansidan bubblar och undersidan fått färg. Vänd och stek andra sidan. Pensla med vitlökssmör.",
         "Servera tikka masalan med ris och eventuellt lite persilja."
       ],
-      "notes": "Obs: Receptet innehåller kikärtor."
+      "notes": "Obs: Receptet innehåller kikärtor.",
+      "seasons": [
+        "sommar"
+      ]
     },
     {
       "id": 16,
@@ -610,7 +662,12 @@
         "Red med majsstärkelse utspädd i vatten om det behövs.",
         "Låt puttra i några minuter, smaka av och toppa eventuellt med lite persilja. Servera med ris."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 17,
@@ -650,7 +707,12 @@
         "Lägg ner vermicelli i soppan och koka tills pastan är klar. Smaka av och tillsätt persilja.",
         "Plocka upp lagerbladen och servera soppan tillsammans med vitlöksbrödet."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "vår",
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 18,
@@ -683,7 +745,12 @@
         "Bred tonfiskröra på en brödskiva, toppa med riven ost och lägg en andra brödskiva ovanpå. Stek mackan i olja eller smör tills brödet är gyllene och osten har smält.",
         "Dela mackan i två delar och servera direkt!"
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 20,
@@ -718,7 +785,11 @@
         "Tillsätt grädden, salt och peppar och låt puttra tills risonin är al dente och såsen är krämig.",
         "Servera risonin direkt med den grillade kålen och toppa med riven ost och eventuellt lite persilja."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 21,
@@ -758,7 +829,11 @@
         "Lägg i kycklingen, de avruna nudlarna och såsen. Vänd ihop och woka i 5–10 minuter.",
         "Servera woken med lime, jordnötter och eventuellt chiliflakes och salladslök."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 22,
@@ -791,7 +866,12 @@
         "Blanda crème fraiche, rivet citronskal och lite citronsaft. Smaka av med salt och peppar.",
         "Servera potatisen med lax, crème fraiche-sås och salladsblad."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 23,
@@ -829,7 +909,10 @@
         "Häll av pastan i ett durkslag och vänd ner i soppan.",
         "Häll upp i djupa tallrikar och toppa med parmesan, äggulor och ev basilikablad."
       ],
-      "notes": "Viktigt att ha ett hemma 24/7."
+      "notes": "Viktigt att ha ett hemma 24/7.",
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 24,
@@ -861,7 +944,11 @@
         "Stek löken i olivoljan i en stekpanna någon minut. Tillsätt övriga ingredienser och låt koka så länge du har tid. Smaka av med salt och peppar.",
         "Häll pastan i ett durkslag och vänd ner den i tonfisksåsen."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 25,
@@ -903,7 +990,11 @@
         "Lägg räkor, linser och koriander i fyra skålar.",
         "Häll på gazpachon och toppa med brödkrutongerna."
       ],
-      "notes": "Tips: Grillad paprika på burk funkar bra."
+      "notes": "Tips: Grillad paprika på burk funkar bra.",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 27,
@@ -936,7 +1027,11 @@
         "Lägg på oliver, soltorkade tomater, blomkål och padrones.",
         "Toppa med lite olivolja och citronsaft. Servera med bröd."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 28,
@@ -970,7 +1065,11 @@
         "Hetta upp oljan i stekpannan och riv halloumin grovt direkt ner i pannan. Rör om efter 1–2 minuter.",
         "Häll upp soppan i skålar och toppa med halloumitrösselet."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 29,
@@ -1007,7 +1106,11 @@
         "Smaksätt med sojasås mot slutet.",
         "Toppa med salladslök och hackade nötter. Servera med sriracha för den som vill ha lite hetta."
       ],
-      "notes": "Gott till: srirachasås."
+      "notes": "Gott till: srirachasås.",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 30,
@@ -1042,7 +1145,11 @@
         "Gör hummusen: skölj kikärtorna och lägg dem tillsammans med valnötter, olja och vitlök i en bunke. Mixa slätt. Smaka av med chilipulver, citron och salt.",
         "Smula lite fetaost över plåten (valfritt) och servera med den rostade maten och hummusen."
       ],
-      "notes": "Vegan: hoppa över fetaosten."
+      "notes": "Vegan: hoppa över fetaosten.",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 31,
@@ -1079,7 +1186,11 @@
         "Koka pastan under tiden.",
         "Smaka av med sojasås, oregano och mycket peppar. Servera med nykokt pasta."
       ],
-      "notes": "Pasta över? Stek strimlad pasta med grönsaker och vitlök, och klicka över t ex pesto."
+      "notes": "Pasta över? Stek strimlad pasta med grönsaker och vitlök, och klicka över t ex pesto.",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 32,
@@ -1119,7 +1230,11 @@
         "Värm tortillabröden i en stekpanna utan fett.",
         "Lägg äggröra, kål, koriander och chilisås på ett bröd och rulla ihop till en hård burrito. Slå in i folie. Dela på mitten och ät!"
       ],
-      "notes": "Tips: Experimentera med olika kålsorter och grönsaker."
+      "notes": "Tips: Experimentera med olika kålsorter och grönsaker.",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 33,
@@ -1164,7 +1279,11 @@
         "Lägg lite riven ost direkt i stekpannan och lägg quesadillan ovanpå så att osten blir ett knaprigt täcke.",
         "Upprepa tills alla är klara. Servera med såsen."
       ],
-      "notes": "Om du inte gillar koriander: byt ut mot hälften persilja och hälften färsk spenat."
+      "notes": "Om du inte gillar koriander: byt ut mot hälften persilja och hälften färsk spenat.",
+      "seasons": [
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 34,
@@ -1206,7 +1325,11 @@
         "Ta ut ugnspannkakan ur ugnen, rör runt i lingonen.",
         "Strö krasse över och servera direkt med det brynta smöret och lingonen."
       ],
-      "notes": "Pannkakan sjunker ihop rejält när den kommit ut ur ugnen."
+      "notes": "Pannkakan sjunker ihop rejält när den kommit ut ur ugnen.",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 35,
@@ -1252,7 +1375,11 @@
         "Kålsallad: Skiva kål och salladslök mycket tunt och blanda i en skål.",
         "Bygg mackan: Bred majonnäs på båda brödskivor. Lägg på kål/salladslök och toppa med 3 tofuskivor. Dela varje macka på mitten."
       ],
-      "notes": "Tips: Ha en 'blöt' och en 'torr' hand vid panering."
+      "notes": "Tips: Ha en 'blöt' och en 'torr' hand vid panering.",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 36,
@@ -1290,7 +1417,12 @@
         "Blanda pastan med salladskålen och rör ner salladslök och morot.",
         "Strö över sesamfrön och den gröna delen av salladslöken och servera."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 37,
@@ -1335,7 +1467,12 @@
         "Tillsätt ärterna och stek 1 minut.",
         "Hacka koriandern grovt. Strö över och servera med basmatiris."
       ],
-      "notes": "Tips: Smaka alltid på färsk chili – den kan vara både superstark och supersvag."
+      "notes": "Tips: Smaka alltid på färsk chili – den kan vara både superstark och supersvag.",
+      "seasons": [
+        "sommar",
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 38,
@@ -1382,7 +1519,11 @@
         "Koka under lock tills potatisen är mjuk, ca 30 minuter.",
         "Finhacka vitlök och dill och riv citronskal. Blanda i en skål. Strö över och servera med bröd."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 39,
@@ -1421,7 +1562,11 @@
         "Blanda soja och vinäger till dippen.",
         "Servera med dippen och rostade sesamfrön."
       ],
-      "notes": "Tips: Rör runt ordentligt i smeten varje gång innan du steker – smeten lägger sig i botten annars."
+      "notes": "Tips: Rör runt ordentligt i smeten varje gång innan du steker – smeten lägger sig i botten annars.",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 40,
@@ -1450,7 +1595,11 @@
         "Hacka gräslöken.",
         "Lägg upp på fat och toppa med gräslök och svartpeppar."
       ],
-      "notes": "Servera som tillbehör till stekt fisk eller risotto. Håller ungefär 5 dagar i kylen."
+      "notes": "Servera som tillbehör till stekt fisk eller risotto. Håller ungefär 5 dagar i kylen.",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 41,
@@ -1483,7 +1632,11 @@
         "Lyft locket och riv över osten.",
         "Servera direkt med rostat bröd."
       ],
-      "notes": "Parmesan eller pecorino fungerar också bra."
+      "notes": "Parmesan eller pecorino fungerar också bra.",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 42,
@@ -1527,7 +1680,11 @@
         "Tillsätt champinjoner och pak choy till buljongen och låt sjuda ca 1 min. Smaka av med sesamolja och vitvinsvinäger.",
         "Lägg upp nudlar i fyra djupa skålar. Häll buljong med grönsaker över. Toppa med fläskfärs, ägg och koriander."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 43,
@@ -1567,7 +1724,11 @@
         "Värm smöret till dressingen i en kastrull med nötterna. När det börjar skumma och är lätt gyllene, dra kastrullen åt sidan och vänd i dadlarna och chiliflakes. Vispa ner olivolja och honung.",
         "Ös hot honey-dressingen över den rostade sötpotatisen och blanda med linser, fetaost, spenat, rödlök och citronsaft. Peppra lite extra och servera genast."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "vår",
+        "höst"
+      ]
     },
     {
       "id": 44,
@@ -1598,7 +1759,12 @@
         "Plocka bladen från basilikan och lägg i soppan. Mixa den slät.",
         "Smaka av med salt, peppar och citron."
       ],
-      "notes": "Servera gärna med pumpa- och solrosfrön."
+      "notes": "Servera gärna med pumpa- och solrosfrön.",
+      "seasons": [
+        "vår",
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 45,
@@ -1631,7 +1797,12 @@
         "Häll bönor och linser i en bunke och tillsätt ägg, vitlök, sambal och salt. Mixa slätt med stavmixer. Rör sedan ned vetemjöl och lökfräset.",
         "Forma smeten till 8 biffar med våta händer. Hetta upp olja/margarin i stekpanna och stek biffarna 3–4 min per sida, eller tills de är frasiga."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "sommar",
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 46,
@@ -1701,7 +1872,12 @@
         "Varva lasagneplattor med fyllningen. Tryck ner plattorna så de hamnar under vätskan. Toppa med riven ost.",
         "Grädda i ca 30 min mitt i ugnen."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 48,
@@ -1733,7 +1909,11 @@
         "Blanda ihop alla torra kryddor och gnid in kycklingen med blandningen. Lägg kycklingen i en ugnssäker gryta med lock tillsammans med krossade vitlöksklyftor och koriander. Lägg på locket och ställ grytan i nedre delen av ugnen i 30 min.",
         "Häll över buljongen. Låt stå i ugnen tills köttet lossnar jättelätt från benen, ca 1,5 timme."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 49,
@@ -1762,7 +1942,10 @@
         "Koka pärlcouscous.",
         "Blanda ingredienserna till dressingen och blanda med couscousen."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "sommar"
+      ]
     },
     {
       "id": 50,
@@ -1796,7 +1979,11 @@
         "Lägg i fisken och sjud 6–7 min, tills fisken är vit och genomkokt. Ta upp fisken och lägg på ett fat.",
         "Koka buljongen kraftigt tills ungefär hälften återstår. Rör ut maizena i lite kallt vatten och vispa ner. Rör ner örter och tomater, smaka av och häll såsen över fisken."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 51,
@@ -1831,7 +2018,12 @@
         "Tillsätt vin, kycklingfond och grädde.",
         "Finhacka bladspenat och lägg i. Koka ihop såsen någon minut, red ev. med maizena. Häll i fisken. Servera med pasta!"
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 52,
@@ -1862,7 +2054,10 @@
         "Blanda med sweet chili och crème fraiche och värm upp.",
         "Servera med pasta!"
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "sommar"
+      ]
     },
     {
       "id": 53,
@@ -1931,7 +2126,11 @@
         "Stek plättar i en varm stekpanna.",
         "Servera med t.ex. tzatziki, sweet chilisås och morötter."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 55,
@@ -2019,7 +2218,11 @@
         "Mixa nötter/frön, broccoli och parmesan med stavmixer. Tillsätt rapsolja till önskad konsistens.",
         "Hacka ner vitlöken och smaka av med salt och peppar."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 59,
@@ -2140,7 +2343,12 @@
         "När riset är lagom mjukt, rör ner parmesan. Smaka av med peppar och ev. salt.",
         "Rosta nötter/frön i en torr stekpanna. Blanda yoghurt med chèvre och servera till."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "sommar",
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 63,
@@ -2191,7 +2399,11 @@
         "Kör allt till dressingen förutom yoghurt och parmesan i en mixer till en tjock dressing. Tillsätt ev lite yoghurt om den är för tjock för att gå ihop. När allt är en tjock dressing, rör då ner parmesan och yoghurt och blanda väl. Smaka av med salt och peppar.",
         "Hacka alla grönsaker till salladen i små tärningar. Lägg på ett stort fat och lägg på kikärtor. Häll på dressingen och rör om. Strö på valnötter och lite extra koriander och basilika. Använd de tunna brödchipsen att skopa upp den goda salladen med och ät gärna med händerna. Njut!"
       ],
-      "notes": "Krispigt, krämigt och fullt av smak – Jennie Walldén bjuder här på en fräsch och matig sallad med rostade kikärtor, krispiga brödchips och en krämig ört- och avokadodressing. Servera gärna allt på ett…"
+      "notes": "Krispigt, krämigt och fullt av smak – Jennie Walldén bjuder här på en fräsch och matig sallad med rostade kikärtor, krispiga brödchips och en krämig ört- och avokadodressing. Servera gärna allt på ett…",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 64,
@@ -2229,7 +2441,11 @@
         "Strö över salt och kryddor.",
         "Woka ett par minuter på ganska stark värme tills grönsakerna fallit ihop lite men ändå fortfarande är spänstiga och fina."
       ],
-      "notes": "Snabblagad, färgstark och underbart god grönsakswok. Brukar serveras med saffranscouscous (se s. 89), tjock naturell yoghurt och thaichilisås. Kan även tillsättas med 2 dl kokta puylinser (en grön, läcker fransk variant av linser)."
+      "notes": "Snabblagad, färgstark och underbart god grönsakswok. Brukar serveras med saffranscouscous (se s. 89), tjock naturell yoghurt och thaichilisås. Kan även tillsättas med 2 dl kokta puylinser (en grön, läcker fransk variant av linser).",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 65,
@@ -2270,7 +2486,12 @@
         "Tillsätt bulguren i pannan och rosta under omrörning tills den doftar nötigt, 1–2 minuter. Häll i buljongen och låt koka upp, sänk sedan värmen och låt sjuda tills nästan all vätska absorberats, 10–12 minuter. Rör ner apelsinskalet och resterande 0,25 tsk salt. Lägg tillbaka laxfiléerna i pannan och häll den sparade gurkmejeglasyren över dem. Tillaga ytterligare 2 minuter.",
         "Ta pannan från värmen och lägg mynta-gurksalladen ovanpå. Garnera med apelsinskivor om så önskas."
       ],
-      "notes": "Källa: Turmeric-Glazed Salmon and Bulgur Skillet, dishingouthealth.com"
+      "notes": "Källa: Turmeric-Glazed Salmon and Bulgur Skillet, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 66,
@@ -2306,7 +2527,11 @@
         "Smält smöret i en stor stekpanna på hög värme. Krydda räkorna med återstående 0,25 tsk salt och 0,25 tsk svartpeppar. Tillaga räkorna i omgångar vid behov, vänd en gång, tills de fått lite färg runt kanterna, cirka 1–2 minuter per sida.",
         "Fördela couscousen i 4 skålar eller på tallrikar. Lägg räkorna och smöret från pannan jämnt ovanpå. Klicka tomat- och fänkålsblandningen över rätten."
       ],
-      "notes": "Källa: 20 Minute Shrimp and Tomato-Fennel Couscous, dishingouthealth.com"
+      "notes": "Källa: 20 Minute Shrimp and Tomato-Fennel Couscous, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 67,
@@ -2344,7 +2569,11 @@
         "Höj värmen till medelhög och tillsätt tofublandningen. Koka 6–8 minuter under omrörning tills vätskan reducerats till hälften och tofun är lätt gyllene. Tillsätt resterande 1,8 dl kokosmjölk och koka ytterligare 5 minuter.",
         "Servera tofublandningen och pak choin över nudlar eller ris. Garnera med färsk koriander."
       ],
-      "notes": "Källa: 30-Minute Lemongrass Coconut Tofu Noodle Bowls, dishingouthealth.com"
+      "notes": "Källa: 30-Minute Lemongrass Coconut Tofu Noodle Bowls, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 68,
@@ -2383,7 +2612,11 @@
         "Blanda ihop resterande 1,5 msk olja, apelsinjuice, vinäger, senap, salt, peppar och timjan i en liten skål. Rör ihop med en visp.",
         "Dela radicchiouvudet på hälften på längden. Ta bort roten och dela försiktigt upp i separata blad. Lägg radicchio, äpple och apelsin- och timjanvinägretten i bunken med quinoa och vänd försiktigt ihop. Toppa med pumpakärnor och chevré."
       ],
-      "notes": "Källa: Autumn Quinoa Bowls with Orange-Thyme Vinaigrette, dishingouthealth.com"
+      "notes": "Källa: Autumn Quinoa Bowls with Orange-Thyme Vinaigrette, dishingouthealth.com",
+      "seasons": [
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 69,
@@ -2423,7 +2656,12 @@
         "Blanda kronärtskockor, citronskal och citronsaft, vitlök, nötter, persilja samt återstående 1 msk olivolja och 1/4 tsk svartpeppar i en liten skål.",
         "Fördela farro- och grönsaksblandningen jämnt i 4 skålar eller på tallrikar. Toppa varje portion med kronärtskocksgremolata. Garnera med extra persilja om så önskas."
       ],
-      "notes": "Källa: Balsamic-Roasted Carrots with Farro and Artichoke Gremolata, dishingouthealth.com"
+      "notes": "Källa: Balsamic-Roasted Carrots with Farro and Artichoke Gremolata, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 70,
@@ -2467,7 +2705,10 @@
         "Lägg alla ingredienser till avokadosåsen i en blender. Mixa slät och späd med extra vatten, 1 msk i taget, tills önskad konsistens uppnås.",
         "Fördela grönkåls- och quinoablandningen i 3 skålar. Toppa med körsbärstomater och solrosfrön. Lägg en laxfilé i varje skål och ringla avokadosåsen över."
       ],
-      "notes": "Källa: Blackened Salmon Bowls with Avocado Sauce, dishingouthealth.com"
+      "notes": "Källa: Blackened Salmon Bowls with Avocado Sauce, dishingouthealth.com",
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 71,
@@ -2504,7 +2745,11 @@
         "Förbered salladen under tiden genom att blanda kikärtor, gurka, paprika, selleri, rödlök, rädisor och persilja i en mellanstor skål. Blanda tahini, ljummet vatten, citronsaft, vitlökspulver, salt och peppar i en separat skål och vispa ihop till en dressing. Häll dressingen över kikärtsblandningen och vänd ihop.",
         "Lägg collardbladen på en stor skärbräda. Fördela kikärtssalladen längs mitten av varje blad. Vik in kanterna och rulla ihop tätt som en rulle. Fäst med tandpetare."
       ],
-      "notes": "Källa: Chickpea Tahini Collard Wraps, dishingouthealth.com"
+      "notes": "Källa: Chickpea Tahini Collard Wraps, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 72,
@@ -2577,7 +2822,12 @@
         "Tillsätt rapsoljan i pannan och sänk till medelvärme. Lägg i pak choi, salladslök och vitlök och stek 4–5 minuter under omrörning tills pak choin mjuknat. Tillsätt riset och sockret och vänd runt, bred ut riset så det täcker bottnen. Stek utan att röra tills riset börjar bli gyllene och krispigt. Gör ett hål i mitten av pannan med en träslev. Knäck i äggen och rör om då och då tills de nästan stelnat. Tillsätt resterande 1 msk sojasås och tempehn och vänd ihop allt. Rör ner kimchin.",
         "Fördela stekt riset i 4 skålar och garnera med salladslök, koriander och kimchi om så önskas."
       ],
-      "notes": "Källa: Kimchi Fried Rice with Sesame-Braised Tempeh, dishingouthealth.com"
+      "notes": "Källa: Kimchi Fried Rice with Sesame-Braised Tempeh, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 74,
@@ -2617,7 +2867,11 @@
         "Hetta upp återstående 2 tsk olivolja i en stor stekpanna på medelvärme. Tillsätt sötpotatisen, spiskummin, resterande 0,25 tsk salt och 0,1 tsk peppar. Stek i 6–7 minuter tills potatisen är gyllenbrun och krispig.",
         "Blanda grönkål, linser och sötpotatis i en stor skål och vänd ihop. (Grönkålen börjar lätt vissna av värmen från linserna och potatisen.) Tillsätt tahini-dressingen, fetaost och solrosfrön. Blanda väl. Toppa med persilja eller basilika om du vill. Serveras varm, kall eller rumstempererad."
       ],
-      "notes": "Källa: Lentil Kale Salad with Sweet Potato and Tahini, dishingouthealth.com"
+      "notes": "Källa: Lentil Kale Salad with Sweet Potato and Tahini, dishingouthealth.com",
+      "seasons": [
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 75,
@@ -2648,7 +2902,11 @@
         "Blanda pistagenötter, matchapulver, citronskal, honung och 1 msk av olivoljan i en liten skål. Ställ åt sidan.",
         "Pensla fiskfileérna med resterande 1 msk olivolja och strö salt över dem. Lägg fisken på den förberedda plåten. Fördela matcha- och pistaschblandningen jämnt ovanpå fileérna och tryck till så att den fastnar. Tillaga i ugnen tills fisken precis är ogenomskinlig i mitten, ca 10 minuter beroende på tjocklek. Servera med tillbehör efter eget val."
       ],
-      "notes": "Källa: Matcha-Pistachio Crusted White Fish, dishingouthealth.com"
+      "notes": "Källa: Matcha-Pistachio Crusted White Fish, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "vinter"
+      ]
     },
     {
       "id": 76,
@@ -2688,7 +2946,10 @@
         "Häll svamp- och purjolöksblandningen i grytan med pastan och rör om tills allt är täckt.",
         "Sätt ugnen på grillfunktion (högt). Häll pastablandningen i en djup ugnsform på ca 3 liter som smorts med matolja. Strö över pankoströbröd och resterande 0,6 dl parmesan. Grilla tills ytan är gyllenbrun, 2–3 minuter. Garnera med persilja."
       ],
-      "notes": "Källa: Mushroom and Leek Tetrazzini, dishingouthealth.com"
+      "notes": "Källa: Mushroom and Leek Tetrazzini, dishingouthealth.com",
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 77,
@@ -2727,7 +2988,11 @@
         "Lägg tempehn och resten av marinaden i stekpannan. Stek 5–7 minuter under flitig omrörning tills såsen reducerats och bildat en glasyr runt tempehn. Ta av värmen.",
         "Fördela riset i 4 skålar. Toppa jämnt med paprika- och lökblandningen samt tempehn. Pressa över limejuice. Garnera med basilika och/eller koriander."
       ],
-      "notes": "Källa: Orange Teriyaki Tempeh Bowls, dishingouthealth.com"
+      "notes": "Källa: Orange Teriyaki Tempeh Bowls, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 78,
@@ -2798,7 +3063,10 @@
         "Häll kött- och såsblandningen över pastan. Rör ner 0,8 dl ost. Blanda väl och häll alltihop i den förberedda formen. Strö över resterande 0,8 dl ost.",
         "Grädda i 20 minuter. Skär i 6 bitar och servera."
       ],
-      "notes": "Källa: Pumpkin Kale Turkey Sausage Spaghetti Pie, dishingouthealth.com"
+      "notes": "Källa: Pumpkin Kale Turkey Sausage Spaghetti Pie, dishingouthealth.com",
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 80,
@@ -2836,7 +3104,12 @@
         "Pensla naan-bröden med resterande 1 msk olivolja. Hetta upp en grillpanna på medelhög värme. Lägg i ett naan-bröd och grilla 2 minuter tills grillmärken uppstår, vänd och grilla ytterligare 1–2 minuter. Lyft över till en skärbräda. Upprepa med övriga bröd.",
         "Bred ut getost jämnt över de varma naan-bröden (ca 28 g per bröd). Fördela de rostade rotfrukterna ovanpå. Ringla chilihonungen över varje portion och garnera med färsk basilika om så önskas."
       ],
-      "notes": "Källa: Root Vegetable and Goat Cheese Mini Pizzas with Chili Honey, dishingouthealth.com"
+      "notes": "Källa: Root Vegetable and Goat Cheese Mini Pizzas with Chili Honey, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 81,
@@ -2877,7 +3150,11 @@
         "Tillsätt linser, buljong och vatten. Koka upp, sänk värmen, lägg på locket och låt sjuda i 15 minuter tills linserna är nästan mjuka.",
         "Tillsätt kikärtor och grönkål och koka utan lock i 10 minuter tills grönkålen mjuknat. Rör ner limejuice och chilipulver om du vill ha det. Servera i djupa tallrikar med riven parmesan eller näringsjäst."
       ],
-      "notes": "Källa: Smoky Chickpea Lentil Soup, dishingouthealth.com"
+      "notes": "Källa: Smoky Chickpea Lentil Soup, dishingouthealth.com",
+      "seasons": [
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 82,
@@ -2913,7 +3190,11 @@
         "Tillsätt körsbärstomaterna, ärtor och salladslök. Blanda försiktigt.",
         "Blanda basilika, olivolja, citronsaft, salt och peppar i en liten skål och vispa ihop. Häll dressingen över salladen och vänd försiktigt. Fördela i 3 skålar och toppa jämnt med parmesan."
       ],
-      "notes": "Källa: Spring Vegetable Primavera, dishingouthealth.com"
+      "notes": "Källa: Spring Vegetable Primavera, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 83,
@@ -2957,7 +3238,11 @@
         "Bered yoghurtsåsen genom att blanda alla ingredienser i en liten skål och rör om med en visp.",
         "Värm tortillorna enligt förpackningens anvisningar. Bryt laxen i bitar och fördela jämnt på de 8 tortillorna. Toppa med gurk­blandningen och koriander- och myntyoghurten. Garnera med färska örter om så önskas."
       ],
-      "notes": "Källa: Sumac Salmon Tacos with Coriander-Mint Yogurt, dishingouthealth.com"
+      "notes": "Källa: Sumac Salmon Tacos with Coriander-Mint Yogurt, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 84,
@@ -2991,7 +3276,12 @@
         "Blanda tonfisk, majonnäs, senap, citronskal och saft, persilja, kapris, resterande 0,5 tsk salt, svartpeppar och fänkålsblad i en skål och rör om ordentligt. Fördela tonfiskblandningen jämnt över brödskivorna. Toppa med riven ost. Grilla på högsta effekt i 2–3 minuter under noggrann bevakning tills osten smält och brödet fått färg.",
         "Toppa tonfisksmältarna jämnt med den syrade fänkålen. Garnera med extra färska örter om så önskas."
       ],
-      "notes": "Källa: Tuna Melts with Quick-Pickled Fennel, dishingouthealth.com"
+      "notes": "Källa: Tuna Melts with Quick-Pickled Fennel, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 85,
@@ -3032,7 +3322,10 @@
         "Sänk värmen till medel. Tillsätt vitlök, currypasta, gurkmeja och svartpeppar och stek i 2 minuter under flitig omrörning. Tillsätt kokosmjölk och vatten och låt koka upp till en lätt sjudning. Koka under omrörning tills såsen tjocknat något, ca 5 minuter. Rör ner limejuice och koriander.",
         "Fördela riset i 4 skålar. Lägg på grönkål och toppa sedan med curryblandningen (den varma curryn mjukar upp och värmer kålen). Toppa med en klick grekisk yoghurt, hackade nötter och salladslök om så önskas."
       ],
-      "notes": "Källa: Turmeric-Tempeh Coconut Curry, dishingouthealth.com"
+      "notes": "Källa: Turmeric-Tempeh Coconut Curry, dishingouthealth.com",
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 86,
@@ -3069,7 +3362,11 @@
         "Förbered solrosfrö-romescosåsen under tiden: mixa rostade paprikor, solrosfrön, tomatpuré, citronskal och -juice, vitlök, rökt paprikapulver, chilipulver och persilja i en kraftig mixer eller matberedare. Kör på hög hastighet och häll i olivoljan i en tunn stråle tills såsen är slät. Smaka av med salt och peppar.",
         "Häll romescosåsen över pasta och broccoli och blanda väl. Tillsätt den sparade pastavattnet lite i taget (ca 1,2 dl åt gången) och rör om kontinuerligt tills såsen ser glansig ut — du behöver kanske inte allt. Garnera med parmesan, näringsjäst, örter eller citronklyftor om så önskas."
       ],
-      "notes": "Källa: Orecchiette with Sunflower Seed Romesco, dishingouthealth.com"
+      "notes": "Källa: Orecchiette with Sunflower Seed Romesco, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 87,
@@ -3110,7 +3407,12 @@
         "Hetta upp resterande 1 msk olja i en separat stor stekpanna på medelhög värme. Lägg i laxfiléerna med köttsidan nedåt och stek 4–5 minuter utan att röra dem, tills de är krispiga. Vänd och stek ytterligare 2–3 minuter beroende på filéernas tjocklek, tills önskad stekgrad uppnås.",
         "Bred ut riset jämnt på ett serveringsfat. Toppa med laxfiléerna och garnera med en klick grekisk yoghurt blandad med apelsinjuice (valfritt) och färsk mynta."
       ],
-      "notes": "Källa: Crispy Salmon with Indian Spices and Jeweled Rice, dishingouthealth.com"
+      "notes": "Källa: Crispy Salmon with Indian Spices and Jeweled Rice, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 88,
@@ -3150,7 +3452,11 @@
         "Medan broccolin och kikärtorna rostar, förbered dressingen: blanda tahini, citronsaft, vitlökspulver, kapris, dijonsenap och resten av saltet och svartpepparn i en skål. Vispa gradvis in 2–3 msk vatten tills dressingen får önskad konsistens.",
         "Bred ca 1 msk tahinicaesardressing jämnt över alla fyra naan eller pitabröd. Toppa med buffalo-broccoli och kikärtor. Lägg på eventuella tillbehör efter önskemål. Ringla resterande tahinicaesardressing över hela rätten."
       ],
-      "notes": "Källa: Buffalo Broccoli and Chickpea Pitas with Tahini Caesar, dishingouthealth.com"
+      "notes": "Källa: Buffalo Broccoli and Chickpea Pitas with Tahini Caesar, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 89,
@@ -3193,7 +3499,11 @@
         "Hetta upp resterande 2 msk olivolja i en stor stekpanna på medelvärme. Hacka auberginfruktköttet fint och lägg i pannan tillsammans med schalottenlök och vitlök. Stek i 5 minuter under omrörning tills mjukt. Rör ner quinoa, tahini, balsamvinäger och örter; låt steka ytterligare 2–3 minuter under omrörning tills blandningen är genomvarm. Smaka av med salt och peppar.",
         "Ta ut auberginbåtarna ur ugnen och fördela quinoablandningen jämnt i varje båt. Toppa med medelhavsalsan."
       ],
-      "notes": "Källa: Mediterranean Eggplant Boats, dishingouthealth.com"
+      "notes": "Källa: Mediterranean Eggplant Boats, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 90,
@@ -3235,7 +3545,10 @@
         "Vispa ihop marinaden (rödvinsvinäger, dijonsenap, citronsaft och honung) i en liten skål. Pensla laxen med hälften av marinaden. Grilla i ugnen i 6 minuter, ta ut och pensla med resterande marinad och grilla ytterligare ca 3 minuter, tills laxen är genomkokt. Skeda upp eventuell pansås över filéerna som ett sista lager.",
         "Lägg upp en tredjedel av farrosalladen på en tallrik och toppa med en laxfilé. Garnera med en kvist färsk timjan om du vill och servera direkt."
       ],
-      "notes": "Källa: 30 Minute Honey Dijon Salmon with Apple Farro, dishingouthealth.com"
+      "notes": "Källa: 30 Minute Honey Dijon Salmon with Apple Farro, dishingouthealth.com",
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 91,
@@ -3301,7 +3614,11 @@
         "Medan fläsket är klart, hetta upp 1 msk olivolja i en separat stekpanna på medelvärme. Tillsätt mangold och sautera 3–4 minuter under omrörning tills den fallit ihop.",
         "Lägg upp ca 2,4 dl polenta på en tallrik eller i en djup skål. Toppa med mangold och en fläskkotlett. Ringla över resterande balsamicglasyr från pannan. Garnera med färska örter, granatäpplekärnor och pinjekärnor. Servera!"
       ],
-      "notes": "Källa: Balsamic Glazed Pork with Roasted Garlic Herb Polenta and Greens, dishingouthealth.com"
+      "notes": "Källa: Balsamic Glazed Pork with Roasted Garlic Herb Polenta and Greens, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 93,
@@ -3345,7 +3662,12 @@
         "Förbered under tiden spreaden genom att blanda alla ingredienser i en medelstor skål.",
         "Bred spreaden på den nedre halvan av varje fralla. Lägg på en laxbiff och önskade tillbehör. Servera!"
       ],
-      "notes": "Källa: Smoky Salmon Sliders with Lemon Dill Yogurt Spread, dishingouthealth.com"
+      "notes": "Källa: Smoky Salmon Sliders with Lemon Dill Yogurt Spread, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 94,
@@ -3385,7 +3707,12 @@
         "Hetta upp oljan i en stor non-stick-stekpanna på medelhög värme. Lägg i laxbiffarna, sänk till medelvärme och stek 3–4 minuter per sida tills de fått fin färg.",
         "Montera sliders genom att lägga en biff i varje smörsalladsblad eller fralla. Toppa med citronyoghurt och valfria tillbehör."
       ],
-      "notes": "Källa: Curried Salmon Sliders with Lemon Yogurt, dishingouthealth.com"
+      "notes": "Källa: Curried Salmon Sliders with Lemon Yogurt, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 95,
@@ -3423,7 +3750,10 @@
         "Lägg de vita bönorna i en mixer. Ösa upp hälften av den varma soppan med en slev och häll ner i mixern med bönorna. Ta bort mittstycket i mixerlocket, sätt på locket och lägg en ren kökshandduk över öppningen (för att undvika stänk och släppa ut ånga). Mixa på hög hastighet tills nästan slät, ca 30 sekunder. Häll tillbaka den mixade soppan i grytan och rör om.",
         "Rör ner parmesan, citronskal, citronsaft och svartpeppar. Låt soppan sjuda utan lock i ytterligare 5 minuter. Smaka av och justera kryddningen. Servera i djupa tallrikar med en skvätt olivolja och lite extra svartpeppar om så önskas."
       ],
-      "notes": "Källa: Creamy Caramelized Broccoli Soup, dishingouthealth.com"
+      "notes": "Källa: Creamy Caramelized Broccoli Soup, dishingouthealth.com",
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 96,
@@ -3470,7 +3800,11 @@
         "Sätt ugnen på 190°C och klä en plåt med folie. Forma svampsmeten till 10–12 lagom stora bullar (ungefär golfbollsstora). Lägg bullarna på plåten och baka i 15–17 minuter tills de är gyllenbruna.",
         "Förbered tomatsåsen: Hetta upp olivoljan i samma stekpanna på medelvärme. Stek löken i 5 minuter tills mjuk. Tillsätt vitlök, tomatpuré och chilipulver och stek i 2 minuter under omrörning. Tillsätt tomater, buljong, paprikapulver, socker, salt och peppar och låt koka upp. Sänk värmen och låt sjuda utan lock i 15 minuter under omrörning — krossa tomaterna lätt med en träslev eller potatismasher tills såsen tjocknar. Lägg i svampbullarna och strö över oliver och fetaost. Servera med pasta, couscous eller gott bröd."
       ],
-      "notes": "Källa: Vegetarian Mushroom Meatballs in Spanish Olive-Tomato Sauce, dishingouthealth.com"
+      "notes": "Källa: Vegetarian Mushroom Meatballs in Spanish Olive-Tomato Sauce, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 97,
@@ -3513,7 +3847,12 @@
         "Hetta upp resterande 1 msk olja i en stor stekpanna på medelhög-hög värme. Tillsätt tofun och stek 7–8 minuter, vänd regelbundet så att alla sidor får färg. Häll över buffalosåsblandningen och rör konstant tills tofun är jämnt täckt. Stek ytterligare 2 minuter tills det mesta av såsen absorberats. Ta av värmen.",
         "Lägg två romansalladhalvor på var och en av fyra tallrikar. Fördela tofun jämnt över salladen. Ringla tahini ranch-dressingen över. Toppa med valfria tillbehör och servera."
       ],
-      "notes": "Källa: Grilled Romaine with Buffalo Tofu and Tahini Ranch, dishingouthealth.com"
+      "notes": "Källa: Grilled Romaine with Buffalo Tofu and Tahini Ranch, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 98,
@@ -3556,7 +3895,10 @@
         "Bred ut ca 0,6 dl enchiladasås i den förberedda ugnsformen. Häll resten av såsen i en grund skål. Doppa en tortilla i taget i såsen så att båda sidor täcks lätt. Lägg tortillan på en tallrik och placera en dryg deciliter fyllning i övre mitten. Rulla ihop och lägg med skarven nedåt i ugnsformen. Upprepa med alla 8 tortillor och lägg dem tätt i formen. Häll eventuell kvarvarande sås över och strö på osten.",
         "Grädda enchiladas tills osten smält och bubblar, ca 25 minuter. Grilla på hög värme i 2 minuter om du vill ha ett gyllene ytskikt. Garnera med valfria tillbehör."
       ],
-      "notes": "Källa: Zucchini and Quinoa Vegetarian Enchiladas, dishingouthealth.com"
+      "notes": "Källa: Zucchini and Quinoa Vegetarian Enchiladas, dishingouthealth.com",
+      "seasons": [
+        "sommar"
+      ]
     },
     {
       "id": 99,
@@ -3598,7 +3940,11 @@
         "Hetta upp olivoljan i en stekpanna på medelvärme. Tillsätt shiitakesvampen och stek under omrörning tills den är mjuk och gyllenbrun, ca 8 minuter. Tillsätt sojasåsen, rör om och stek ytterligare 1 minut. Ta av från värmen.",
         "Fördela det bruna riset jämnt i fyra skålar. Lägg en veggieburgare, delad i fjärdedelar, ovanpå. Servera med inlagda morötter och rödlök, shiitakesvamp och skivad avokado. Ringla över yum yum-sås."
       ],
-      "notes": "Källa: Korean Veggie Burger Bowls, dishingouthealth.com"
+      "notes": "Källa: Korean Veggie Burger Bowls, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 100,
@@ -3633,7 +3979,11 @@
         "Häll cashewnötterna och blötläggningsvattnet i en blender. Tillsätt soltorkade tomater, näringsjäst, citronsaft, vitlök, olivolja, salt och peppar. Mixa tills såsen är slät.",
         "Koka pastan enligt förpackningens anvisningar i saltat vatten. Spara 2,4 dl pastakok-vatten och häll av resten. Lägg tillbaka den kokta pastan i kastrullen med plattan avstängd. Tillsätt 1,2 dl av pastakoksvattnet och grönkålen och vänd pastan kontinuerligt i ca 1 minut tills grönkålen börjar mjukna. Tillsätt cashewsåsen och resterande pastakoksvatten omväxlande under konstant omrörning tills såsen täcker pastan och önskad krämighet uppnås. Fördela pastan på 5 tallrikar och garnera med hackade cashewnötter och färsk basilika om så önskas."
       ],
-      "notes": "Källa: Pasta with Vegan Vodka Sauce, dishingouthealth.com"
+      "notes": "Källa: Pasta with Vegan Vodka Sauce, dishingouthealth.com",
+      "seasons": [
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 101,
@@ -3670,7 +4020,10 @@
         "Medan brysselkålen rostas, smält smöret i en stor stekpanna på medellåg värme. Vispa i currypulvret och låt smöret börja få en bärnstensfärg under konstant omrörning, cirka 4 minuter. Höj värmen till medel och tillsätt vitlök, schalottenlök, fresnochili och resterande 0,75 tsk salt. Stek i 2–3 minuter under omrörning tills vitlöken doftar aromatisk. Tillsätt det kokta riset och vänd runt ordentligt så att allt täcks av currymöret. Rör i hackade dadlar och cashewnötter. Tryck ut riset jämnt i pannan och stek utan att röra tills det börjar bli gyllenbrunt och krispigt, 2–3 minuter.",
         "Fördela risblandningen i 3 skålar. Toppa med brysselkålen. Garnera med salladslök och extra cashewnötter om så önskas."
       ],
-      "notes": "Källa: Curried Brown Butter Rice Bowls with Crispy Sprouts, dishingouthealth.com"
+      "notes": "Källa: Curried Brown Butter Rice Bowls with Crispy Sprouts, dishingouthealth.com",
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 102,
@@ -3708,7 +4061,11 @@
         "Rör om, tillsätt ytterligare en slev buljong och rör igen. Låt puttra utan omrörning tills buljongen absorberats, ca 3 minuter. Upprepa tills all buljong absorberats och riset är mjukt, totalt 15–20 minuters koktid för riset. Stäng av värmen.",
         "Rör ner misopasta och sojasås. Lägg tillbaka svampen i pannan och blanda väl. Fördela risotton i skålar och garnera med salladslök samt valfria tillbehör som pocherade ägg, sesamfrön och microgreens."
       ],
-      "notes": "Källa: Miso Mushroom Risotto, dishingouthealth.com"
+      "notes": "Källa: Miso Mushroom Risotto, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 103,
@@ -3744,7 +4101,12 @@
         "Koka nudlarna enligt förpackningens anvisningar. Blanda genast med sesamolja så att de inte klibbar ihop. Fördela i 4 skålar.",
         "Hetta upp en stor stekpanna på medelhög-hög värme. Tillsätt räkorna med marinaden och stek 3–4 minuter, vänd då och då så att räkorna får fin färg på båda sidor. Fördela över nudlarna. Toppa med basilika, salladslök och jordnötter. Pressa limejuice över skålarna."
       ],
-      "notes": "Källa: Vietnamese Shrimp and Rice Noodle Bowls, dishingouthealth.com"
+      "notes": "Källa: Vietnamese Shrimp and Rice Noodle Bowls, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 104,
@@ -3813,7 +4175,12 @@
         "Tillsätt resterande 1 msk olja i pannan tillsammans med paprika och schalottenlök. Stek 3 minuter tills paprikan börjar mjukna. Tillsätt röd currypasta, citrongräspasta, ingefära samt resterande 0,25 tsk salt och peppar. Stek i 2 minuter. Tillsätt spenat och sojasås och stek 1 minut under omrörning tills spenaten vissnar. Rör ner kokosmjölken.",
         "Lägg tillbaka sötpotatisnudlarna och tofun i pannan. Sjud 4–5 minuter under omrörning tills såsen tjocknar och börjar täcka nudlarna. Rör ner limejuice och garnera med koriander."
       ],
-      "notes": "Källa: Sweet Potato Noodles with Tofu Coconut Curry, dishingouthealth.com"
+      "notes": "Källa: Sweet Potato Noodles with Tofu Coconut Curry, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 107,
@@ -3857,7 +4224,11 @@
         "Hetta upp en grillpanna på medelhög värme medan grönsakerna steks. Lägg i laxfiléerna med skinnsidan nedåt och stek i 4–5 minuter. Pensla med resterande marinad. Vänd och stek ytterligare 2–3 minuter tills laxen är lätt genomstekt.",
         "Fördela bulgurblandningen i skålar eller på tallrikar. Toppa varje portion med en laxfilé och önskade tillbehör som ruccola, färsk persilja och citronklyftor."
       ],
-      "notes": "Källa: Mediterranean Salmon Bulgur Bowls, dishingouthealth.com"
+      "notes": "Källa: Mediterranean Salmon Bulgur Bowls, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 108,
@@ -3894,7 +4265,12 @@
         "Rör ner 5 dl vatten, lägg på locket och sänk värmen till medel-låg. Koka 15–17 minuter tills riset är mjukt och har absorberat vätskan. Rör ner ärtorna, ta kastrullen från värmen, lägg på locket och låt ånga i 5 minuter. Rör ner apelsinskal och apelsinjuice.",
         "Bred ut yoghurten på ett serveringsfat och lägg risblandningen ovanpå. Garnera med hackade nötter, färsk mynta och apelsinklyftor om så önskas."
       ],
-      "notes": "Källa: Curried Rice Salad, dishingouthealth.com"
+      "notes": "Källa: Curried Rice Salad, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 109,
@@ -3934,7 +4310,10 @@
         "Häll i kokosmjölksblandningen och låt sjuda på låg-medelvärme i 8 minuter tills broccolin mjuknat och såsen tjocknat. Rör ner resterande kikärtor, mango, limejuice och basilika och koka ytterligare 1 minut.",
         "Servera över ris och garnera med extra örter om du vill."
       ],
-      "notes": "Källa: Coconut Chickpea Curry with Mango, dishingouthealth.com"
+      "notes": "Källa: Coconut Chickpea Curry with Mango, dishingouthealth.com",
+      "seasons": [
+        "sommar"
+      ]
     },
     {
       "id": 110,
@@ -3967,7 +4346,11 @@
         "Koka pastan i en stor gryta med saltat vatten tills den är al dente. Spara 1,2 dl pastavätska innan du häller av. Stäng av plattan och lägg tillbaka den avrunna pastan i grytan och ställ tillbaka den på plattan (restvärmen räcker nu). Blanda i paprikasåsen, svampen och 1,2 dl av den rivna basilikan. Tillsätt den sparade pastavatten i tre omgångar, rör om ordentligt varje gång tills såsen klänger fast vid pastan och den ser glansig ut. Smaka av med nymalen svartpeppar.",
         "Fördela pastan i 4 tallrikar eller djupa tallrikar. Garnera med resterande 0,6 dl basilika. Strö eventuellt över riven parmesan och chilipulver för lite hetta."
       ],
-      "notes": "Källa: 5 Ingredient Roasted Red Pepper Pasta with Mushrooms, dishingouthealth.com"
+      "notes": "Källa: 5 Ingredient Roasted Red Pepper Pasta with Mushrooms, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 111,
@@ -4004,7 +4387,10 @@
         "Tillsätt de krossade tomaterna och de vita bönorna i pannan och rör ihop. Lägg på locket och låt puttra på låg-medelvärme. Koka under tiden spagетtin al dente i det kokande saltvattnet. Spara 2,4 dl av pastavattnet innan du häller av resten. Lägg tillbaka spagетtin i kastrullen och häll över pomodoro-såsen. Tillsätt pastavattnet lite i taget under konstant omrörning tills såsen klänger sig fast runt nudlarna. Rör ner återstående 3 msk parmesan och smaka av med salt och peppar.",
         "Lägg upp pasta på tallrikar och garnera med färsk basilika och en klick vitlöksströbröd."
       ],
-      "notes": "Källa: Spaghetti Pomodoro with Kale and White Beans, dishingouthealth.com"
+      "notes": "Källa: Spaghetti Pomodoro with Kale and White Beans, dishingouthealth.com",
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 112,
@@ -4040,7 +4426,11 @@
         "Tillsätt smör, schalottenlök och vitlök i pannan och stek i 2 minuter under omrörning. Tillsätt räkorna, krydda med salt och peppar och stek 2 minuter per sida tills de inte längre är genomskinliga. Lägg tillbaka paprika och spenat i pannan, häll över tomatsåsen och rör ihop allt.",
         "Häll av pastan och lägg tillbaka den i kastrullen. Rör ner zucchininudlarna i den varma pastan och låt restvärmen tilllaga dem lätt. Tillsätt räk- och grönsaksblandningen och vänd ihop allt. Rör i färsk basilika och toppa med riven parmesan."
       ],
-      "notes": "Källa: 30 Minute Shrimp Pasta Primavera with Zoodles, dishingouthealth.com"
+      "notes": "Källa: 30 Minute Shrimp Pasta Primavera with Zoodles, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 113,
@@ -4077,7 +4467,11 @@
         "Häll i cashewmjölken i en tunn stråle under konstant vispning tills såsen är slät. Höj värmen och låt koka upp; sjud i 3–5 minuter tills såsen börjar tjockna. Ta av värmen och rör i salt, peppar, citronskal och citronsaft samt näringsjäst.",
         "Häll såsen över den avrunna pastan och grönsakerna och rör ihop. Om såsen är för tjock, tillsätt lite av den sparade pastavattnet i omgångar om 1,2 dl tills önskad konsistens uppnås. Rör i färsk basilika och servera direkt med valfria garneringar."
       ],
-      "notes": "Källa: Creamy Lemon Garlic Pasta (Vegan), dishingouthealth.com"
+      "notes": "Källa: Creamy Lemon Garlic Pasta (Vegan), dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "sommar"
+      ]
     },
     {
       "id": 114,
@@ -4119,7 +4513,11 @@
         "Förbered paprikasåsen genom att blanda rostade röda paprikor, olivolja, vitlök, rökt paprikapulver, chilipulver och salt i en mixer eller stavmixer. Mixa på hög hastighet tills såsen är krämig.",
         "Fördela quinoa- och kikärtsblandningen jämnt i fyra skålar. Toppa varje portion med avokado- och gurkasallad, paprikasås och fetaost. Garnera med färsk basilika och citronklyftor om du vill. Servera varm, kall eller rumstempererad."
       ],
-      "notes": "Källa: Mediterranean Power Bowls with Red Pepper Sauce, dishingouthealth.com"
+      "notes": "Källa: Mediterranean Power Bowls with Red Pepper Sauce, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 115,
@@ -4160,7 +4558,11 @@
         "Tillsätt resterande 1 msk matolja i pannan. Stek tofukuberna i 7–8 minuter och vänd dem så att alla sidor får färg. Tillsätt vitlöken och resterande hälften av såsen. Låt sjuda tills tofun börjar absorbera såsen. Tillsätt limejuicen och vänd försiktigt tofun medan du skrapar upp de brynta bitarna från botten. Tofun ska få krispiga, brynt skorpa.",
         "Lägg tofun ovanpå sötpotatinudlarna och toppa med salladslök och övriga tillbehör efter smak."
       ],
-      "notes": "Källa: Sesame Tofu with Sweet Potato Noodles, dishingouthealth.com"
+      "notes": "Källa: Sesame Tofu with Sweet Potato Noodles, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "höst"
+      ]
     },
     {
       "id": 116,
@@ -4231,7 +4633,11 @@
         "Sänk värmen till medel och tillsätt smöret. När det smält, lägg i schalottenlök och vitlök och stek mjukt i 2–3 minuter. Rör ner orzon samt resterande salt och peppar och stek 2 minuter tills orzon är lätt rostad. Häll i vinet och låt det koka in i ungefär 2 minuter tills nästan all vätska reducerats. Rör ner grönkålen och buljongen och koka upp. Sänk till svag kokning och låt sjuda utan lock i ca 5 minuter tills orzon börjar mjukna.",
         "Placera laxfiléerna tillbaka i pannan och fördela tomato bruschetta jämnt över varje filé. Ställ in pannan i ugnen och baka vid 200°C i 7–8 minuter tills laxen och orzon är genomlagade. Ta ut ur ugnen och garnera efter smak."
       ],
-      "notes": "Källa: Bruschetta Salmon Skillet, dishingouthealth.com"
+      "notes": "Källa: Bruschetta Salmon Skillet, dishingouthealth.com",
+      "seasons": [
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 118,
@@ -4270,7 +4676,10 @@
         "Knäck varje ägg i en liten skål. Gör fem gropar i tomatsåsen och låt försiktigt ett ägg glida ner i varje grop. Salta med resterande 0,25 tsk salt. Lägg på locket och koka 5 minuter tills vitorna stelnat och gulorna fått en tunn hinna.",
         "Garnera med färska örter och servera med gott bröd eller ris."
       ],
-      "notes": "Källa: Tomato-Curry Poached Eggs, dishingouthealth.com"
+      "notes": "Källa: Tomato-Curry Poached Eggs, dishingouthealth.com",
+      "seasons": [
+        "sommar"
+      ]
     },
     {
       "id": 119,
@@ -4310,7 +4719,11 @@
         "Tillsätt resterande 2 msk olivolja i grytan tillsammans med champinjoner, paprika, lök och resten av cajunkryddblandningen. Stek på medelhög värme tills grönsakerna är mjuka, ca 8 minuter. Tillsätt pasta, tomater och buljong och koka upp. Lägg på locket, sänk värmen till medel och låt sjuda i 12–14 minuter tills pastan är al dente.",
         "Ta av locket och rör ner vispgrädden. Låt sjuda utan lock i ytterligare 2 minuter tills såsen tjocknar och fastnar på pastan. Rör ner persiljan och servera tillsammans med räkorna."
       ],
-      "notes": "Källa: Creamy Cajun Shrimp Pasta, dishingouthealth.com"
+      "notes": "Källa: Creamy Cajun Shrimp Pasta, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 120,
@@ -4346,7 +4759,11 @@
         "Upprepa med resterande bakplåtspapper och filéer. Placera påsarna på en plåt och baka i ca 20 minuter, beroende på filéernas tjocklek.",
         "Lägg påsen på en tallrik och skär försiktigt upp den med en kniv. Du kan välja att ta ut innehållet eller äta direkt ur påsen."
       ],
-      "notes": "Källa: Miso Sea Bass En Papillote (In Parchment), dishingouthealth.com"
+      "notes": "Källa: Miso Sea Bass En Papillote (In Parchment), dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 121,
@@ -4382,7 +4799,12 @@
         "Medan risotton tillagas, hetta upp 1 tsk olivolja i en stor stekpanna på medelhög värme. Krydda fläskmedaljongerna med salt och peppar och lägg dem i ett lager i pannan. Stek ca 3 minuter per sida. Häll i resterande cider, koka upp, sänk sedan värmen och låt sjuda 2–3 minuter. Lägg fläsket på en tallrik. Tillsätt äppelskivorna i pannan och stek 5–6 minuter tills de mjuknat och karamelliserats. Lägg tillbaka fläsket och timjankvistarna i pannan och håll varmt till servering.",
         "Lägg upp risotto på tallrikar och toppa med 2–3 fläskmedaljongger och en generös mängd karamelliserade äppelskivor. Garnera med en extra kvist timjan (valfritt) och servera."
       ],
-      "notes": "Källa: Cider Glazed Pork Medallions with Turmeric Risotto, dishingouthealth.com"
+      "notes": "Källa: Cider Glazed Pork Medallions with Turmeric Risotto, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 122,
@@ -4420,7 +4842,11 @@
         "Häll i buljong och kokosmjölk och koka upp. Sänk värmen till låg-medel och låt puttra i 25 minuter tills linserna är mjuka. Späd med lite vatten om soppan behöver tunnas ut.",
         "Fördela soppan i fyra skålar. Klicka i kokosmjölksyoghurt och garnera med koriander och garam masala-mandeln."
       ],
-      "notes": "Källa: One Pot Curried Lentil Soup (Vegan), dishingouthealth.com"
+      "notes": "Källa: One Pot Curried Lentil Soup (Vegan), dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 123,
@@ -4469,7 +4895,11 @@
         "Blanda tahini, adobosås, limejuice och salt i en liten skål. Vispa gradvis ner vatten, 1 msk i taget, tills önskad konsistens. (Vanligtvis behövs 3–4 msk totalt.)",
         "Fördela quinoablandningen och den rostade sötpotatisen i fyra skålar. Toppa med avokado-picon och ringla chipotle-tahini-såsen över. Garnera med extra färsk koriander om du vill."
       ],
-      "notes": "Källa: Sweet Potato Burrito Bowls, dishingouthealth.com"
+      "notes": "Källa: Sweet Potato Burrito Bowls, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 124,
@@ -4509,7 +4939,11 @@
         "Tillsätt den sista matskedsen olja i pannan. Häll i de vispade äggen, rör för att bryta upp dem och stek tills de precis stelnat (ca 30 sekunder). Rör ner riset tillsammans med sojasås- och sockerblandningen. Låt riset ligga ostört och tryck ner det med en stekspade mot pannan tills det börjar bli krispigt, ca 2 minuter. Vänd riset och tryck ner igen; stek ytterligare 2 minuter tills fler knapriga bitar bildas.",
         "Lägg tillbaka svampblandningen i pannan och tillsätt hälften av curryjordnötssåsen; rör ihop. Fördela svampstekt ris i fyra skålar. Ringla över resterande curryjordnötssås och garnera med resterande salladslök och hackade jordnötter. Ringla sesamolja över varje portion om så önskas."
       ],
-      "notes": "Källa: Mushroom Fried Rice, dishingouthealth.com"
+      "notes": "Källa: Mushroom Fried Rice, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 125,
@@ -4544,7 +4978,11 @@
         "Lägg de vita bönorna i en kraftig blender. Slå försiktigt över 3 koppar (ca 7 dl) av soppan i blendern — se till att det följer med tillräckligt med buljong så att blendern går runt. Mixa på hög hastighet tills smidigt och krämigt, ca 45 sekunder. Häll tillbaka blandningen i grytan och rör ihop.",
         "Tillsätt mjölk, salt och svartpeppar och höj värmen till medel. Tillsätt den rivna osten lite i taget under kontinuerlig omrörning så att den inte klumpar ihop sig. Låt koka i ytterligare 5 minuter under omrörning tills osten smält in i soppan. Servera med hackad gräslök."
       ],
-      "notes": "Källa: Cheddar Cauliflower Potato Soup, dishingouthealth.com"
+      "notes": "Källa: Cheddar Cauliflower Potato Soup, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 126,
@@ -4587,7 +5025,11 @@
         "Ta ut formen ur ugnen och stäng av värmen. Öppna vitlöksfolien och skrapa ner vitlöken tillsammans med oljan i matberedaren. Täck svamparna med folien igen och ställ tillbaka i den avstängda ugnen för att hålla dem varma. Mixa smörbönsblandningen slät och krämig, skrapa ned sidorna vid behov.",
         "Häll purén i en kastrull och värm på medelvärme under omrörning tills den är genomvarm. Ta ut svamparna ur ugnen. Fördela purén på 3 tallrikar, toppa med de rostade portobellosvamparna, ringla över eventuell kvarvarande sås från formen och garnera med färska timjanblad."
       ],
-      "notes": "Källa: Balsamic-Roasted Portobello Steaks with Butter Bean Mash, dishingouthealth.com"
+      "notes": "Källa: Balsamic-Roasted Portobello Steaks with Butter Bean Mash, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 127,
@@ -4631,7 +5073,12 @@
         "Blanda majonnäs, Sriracha, citronsaft och återstående ¼ tsk vitlökspulver i en liten skål. Bred ett tunt lager på insidan av varje bröd.",
         "Lägg en stekt tofubit på brödbottnen och toppa med coleslawen."
       ],
-      "notes": "Källa: Chicken Fried Tofu Sandwiches, dishingouthealth.com"
+      "notes": "Källa: Chicken Fried Tofu Sandwiches, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 129,
@@ -4671,7 +5118,12 @@
         "Rör ner timjan, citronskal och citronsaft, kronärtskockshjärtan och vita bönor. Häll av pastan och vänd ner den i såsen. Tillsätt det sparade pastavattnet lite i taget under konstant omrörning tills såsen börjar klibba fast vid pastan och önskad konsistens uppnås (du kanske inte behöver allt). Rör ner parmesanen i omgångar för att undvika klumpning.",
         "Fördela pastan på 6 tallrikar och strö hackade pinjenötter över toppen."
       ],
-      "notes": "Källa: Spinach Artichoke Pasta, dishingouthealth.com"
+      "notes": "Källa: Spinach Artichoke Pasta, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 130,
@@ -4709,7 +5161,11 @@
         "Förbered en utomhusgrill eller en grillpanna inomhus på medelhög värme. Blanda chilisås, sojasås, sesamolja och koriander i en liten skål till en glaze och ställ åt sidan.",
         "Pensla grillgallret med olja och lägg på spetten. Grilla tills tofun fått fin färg, vänd då och då, ca 8 minuter. Under de sista 1–2 minuterna penslar du spetten med chiliglazen och vänder så att alla sidor täcks. Lägg upp på ett fat och riv limeskal över."
       ],
-      "notes": "Källa: Chili-Lime Tofu and Peach Skewers, dishingouthealth.com"
+      "notes": "Källa: Chili-Lime Tofu and Peach Skewers, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 131,
@@ -4751,7 +5207,11 @@
         "Tillsätt vinet och låt koka i 2–3 minuter tills det mestadels reducerats. Rör ner riset och stek i 2–3 minuter tills riset börjar bli genomskinligt. Rör ner kikärtor, tomater, buljong och ärtor. Koka upp, sänk värmen, lägg på locket och koka i 25 minuter.",
         "Blanda under tiden persilja, citronskal och -juice samt de resterande 2 msk olivolja i en liten skål. När riset är klart, ta av locket och koka i ytterligare 5 minuter. Fördela persiljeoljan över rätten och garnera med oliver om så önskas."
       ],
-      "notes": "Källa: Vegetarian Paella, dishingouthealth.com"
+      "notes": "Källa: Vegetarian Paella, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 132,
@@ -4794,7 +5254,10 @@
         "Hetta upp 1 msk neutral matolja i en stor stekpanna (gärna non-stick) på medelvärme. Lägg i den marinerade tofun och stek utan att röra i 4 minuter, tills den fått lite färg. Vänd och fortsätt steka 6–8 minuter till och vänd för att bryna alla sidor. (Målet är inte att tofun ska bli krispig utan snarare lätt brynt och fast.)",
         "Fördela riset jämnt i fyra skålar. Toppa med tofun, de inlagda grönsakerna och ev. tillbehör efter smak. Klicka över den avsatta gochujang-såsen och avsluta med valfri garnering."
       ],
-      "notes": "Källa: Gochujang Tofu and Rice Bowls, dishingouthealth.com"
+      "notes": "Källa: Gochujang Tofu and Rice Bowls, dishingouthealth.com",
+      "seasons": [
+        "sommar"
+      ]
     },
     {
       "id": 133,
@@ -4834,7 +5297,11 @@
         "Tillsätt resterande fritter-ingredienser i bunken med squash (ägg, vetemjöl, valnötter, bakpulver, mald koriander, spiskummin, svartpeppar, citronskal och ¼ tsk salt). Blanda väl.",
         "Hetta upp olja i en stor stekpanna på medelhög värme. När oljan är het, lägg i dryga matskedar av smeten med några centimeters mellanrum. Platta till fritterarna med en stekspade tills de är ca 5 mm tjocka. Stek tills gyllenbrun på ena sidan, ca 2 minuter, vänd sedan försiktigt och stek tills gyllenbrun på andra sidan. Lägg på ett galler. Fortsätt steka resterande smet och tillsätt mer olja vid behov. Strö över återstående ¼ tsk salt. Servera varma med vitlöks- och örtsåsen."
       ],
-      "notes": "Källa: Zucchini-Walnut Fritters with Creamy Garlic-Herb Sauce, dishingouthealth.com"
+      "notes": "Källa: Zucchini-Walnut Fritters with Creamy Garlic-Herb Sauce, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 134,
@@ -4878,7 +5345,11 @@
         "Stek quesadillan tills undersidan är gyllene och krispig. Vänd försiktigt med en stekspade och stek tills andra sidan också är gyllenbrun. Lägg den färdiga quesadillan på plåten i ugnen (valfritt). Upprepa med resterande ingredienser och tillsätt de sista 2 tsk olivoljan halvvägs. Skär varje quesadilla i tre delar med en kockkniv.",
         "Blanda yoghurt, mangosylt, adobosås och limejuice i en skål. Klicka såsen över de varma quesadillorna och toppa med valfria tillbehör."
       ],
-      "notes": "Källa: Veggie Quesadillas with Chipotle-Mango Sauce, dishingouthealth.com"
+      "notes": "Källa: Veggie Quesadillas with Chipotle-Mango Sauce, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 135,
@@ -4916,7 +5387,11 @@
         "Förbered citronsmörsåsen: Lägg i resterande 3 msk smör i pannan tillsammans med vitlök, chilipulver och citronskal. Stek 1–2 minuter tills doften stiger. Häll i det sparade pastavattnet, citronsaft, resterande 0,5 tsk salt och svartpeppar. Låt sjuda i 2 minuter.",
         "Blanda ihop: Lägg den kokta pastan och broccolin i pannan och vänd runt i citronsmörsåsen. Strö i parmesanen lite i taget under konstant omrörning tills såsen börjar klä nudlarna. Fördela pastan i skålar och strö basilikabrödsmulan över. Servera med extra basilika och ost om så önskas."
       ],
-      "notes": "Källa: Lemon Butter Broccoli Pasta, dishingouthealth.com"
+      "notes": "Källa: Lemon Butter Broccoli Pasta, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 136,
@@ -4956,7 +5431,11 @@
         "Smält resterande 2 msk smör i en stor stekpanna på medel-hög värme. Häll ner de marinerade räkorna med oljan i pannan och lägg ut i ett enkelt lager. Låt steka utan att röra i 3 minuter. Tillsätt tomaterna och blanda. Stek ytterligare 2 minuter tills tomaterna börjar mjukna och bli saftiga. Tillsätt vinet och koka i 1 minut.",
         "Fördela majsgröten i fyra djupa tallrikar. Lägg räkor och sås ovanpå och garnera med salladslök."
       ],
-      "notes": "Källa: Cajun Shrimp and Fresh Corn Grits, dishingouthealth.com"
+      "notes": "Källa: Cajun Shrimp and Fresh Corn Grits, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 137,
@@ -5027,7 +5506,11 @@
         "Tillsätt majskorn, paprika och rödlök i stekpannan. Stek under omrörning tills de mjuknar, ca 5 minuter. Tillsätt rödvinsvinäger, salt och peppar och stek ytterligare 1 minut. Rör ner körsbärstomater, edamame, basilika och pumpafrön. Ta pannan från värmen.",
         "Bred ut peston på ett stort fat eller fyra tallrikar med baksidan av en sked. Fördela succotashen ovanpå och toppa med bitar av stekt halloumi. Garnera med extra basilika och ett stänk olivolja om du vill."
       ],
-      "notes": "Källa: Pesto Corn Succotash with Fried Halloumi, dishingouthealth.com"
+      "notes": "Källa: Pesto Corn Succotash with Fried Halloumi, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 139,
@@ -5066,7 +5549,11 @@
         "Förvärm ugnen till 260°C. Smörj lätt en gjutjärnspanna på 30 cm (eller strö majsmjöl i botten). Sträck ut pizzadegen till en cirkel på ca 33 cm. Lägg degen i pannan och tryck lätt upp längs kanterna. Ställ pannan på spisen på medelhög värme och koka tills botten av degen är torr och börjar få färg, ca 8 minuter. Ta av värmen och pricka degen flera gånger med en gaffel.",
         "Bred ut BBQ-såsen över degen. Skiva den återstående persikan tunt och fördela persika och rödlök över pizzan. Pensla den synliga kanten med olivolja och ställ pannan i ugnen. Grädda tills kanten är gyllenbrun, ca 10–12 minuter. Ta ut ur ugnen och toppa med burrata i bitar, färsk basilika och/eller ruccola samt extra chiliflingor om så önskas."
       ],
-      "notes": "Källa: BBQ-Peach Skillet Pizza, dishingouthealth.com"
+      "notes": "Källa: BBQ-Peach Skillet Pizza, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 140,
@@ -5105,7 +5592,10 @@
         "Blanda svarta bönor, salsa, mango, koriander, limejuice, adobosås och salt med quinoan i skålen. Smaka av och justera kryddningen efter behov.",
         "Fördela fyllningen jämnt i paprikahalvorna. Täck med folie igen och ställ in i ugnen i ytterligare 15–20 minuter. Garnera med avokadoskivor och extra limejuice om du vill. Servera med valfria tillbehör som grekisk yoghurt, gräddfil, extra salsa eller ost."
       ],
-      "notes": "Källa: Easy Quinoa Stuffed Peppers (Vegan), dishingouthealth.com"
+      "notes": "Källa: Easy Quinoa Stuffed Peppers (Vegan), dishingouthealth.com",
+      "seasons": [
+        "sommar"
+      ]
     },
     {
       "id": 141,
@@ -5143,7 +5633,11 @@
         "Sleva i ca 5 dl buljong och låt sjuda under frekvent omrörning tills vätskan helt absorberats, 8–10 minuter. Tillsätt ytterligare ca 2,4 dl buljong och rör om ofta. Fortsätt tillsätta buljong i omgångar om ca 2,4 dl tills riset är al dente och krämigt, totalt ca 25–30 minuter.",
         "Ta bort timjanskvisterna och rör ner smör, citronsaft, citronskal, 0,5 tsk svartpeppar och 1,2 dl av parmesanen. Rör konstant tills smöret smält och osten är inarbetad. Ta av värmen och garnera med resterande 0,25 tsk peppar, 0,6 dl parmesan och eventuella örter."
       ],
-      "notes": "Källa: Lemon Butter Risotto with Zucchini, dishingouthealth.com"
+      "notes": "Källa: Lemon Butter Risotto with Zucchini, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 142,
@@ -5186,7 +5680,11 @@
         "Blanda under tiden resterande sojasås (0,8 dl), grönsaksbuljong, risvinäger, honung, majsstärkelse och resterande 0,25 tsk chilipulver i en skål; rör ihop väl. Ställ åt sidan. Forma smeten till 20–21 golfbollsstora bullar med hjälp av en matsked (ca 1,5 msk per bulle). Hetta upp resterande 2 msk olivolja i en stor stekpanna på medelhög värme. Stek bullarna 5–7 minuter och vänd dem så att alla sidor blir gyllenbruna och lätt knapriga. (Stek i omgångar om pannan är liten.) Sänk värmen om bullarna börjar brännas.",
         "När alla bullar är brynta, häll såsen i pannan. Koka 2 minuter tills såsen tjocknar och vänd bullarna så att de täcks. Servera bullarna med såsen över riset, garnerat med resterande salladslök och rostade sesamfrön."
       ],
-      "notes": "Källa: Chili-Soy Mushroom Meatballs with Ginger-Scallion Rice, dishingouthealth.com"
+      "notes": "Källa: Chili-Soy Mushroom Meatballs with Ginger-Scallion Rice, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 143,
@@ -5227,7 +5725,10 @@
         "Använd en slev eller ett stort mätglas och överför hälften av soppan till en kraftfull mixer. Tillsätt kokosmjölken och mixa på hög hastighet tills blandningen är slät och krämig. Häll tillbaka den mixade blandningen i grytan och blanda med den återstående soppan.",
         "Om du föredrar en tjockare soppa, låt den sjuda utan lock i ytterligare 10–15 minuter. Rör ner limejuicen, häll upp soppan i skålar och garnera varje portion med färsk hackad koriander och pumpafrön."
       ],
-      "notes": "Källa: Coconut Curry Corn Chowder, dishingouthealth.com"
+      "notes": "Källa: Coconut Curry Corn Chowder, dishingouthealth.com",
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 144,
@@ -5265,7 +5766,12 @@
         "Mixa färskost, cashewmjölk, parmesan, 1,2 dl av det sparade pastavattnet samt resterande 0,5 tsk salt och 0,5 tsk peppar i en mixer tills såsen är slät. Häll såsen i pannan med pancetta och grönsaker. Tillsätt den kokta pastan och blanda. Koka i ytterligare 2 minuter under omrörning tills såsen tjocknar och klänger sig fast vid pastan. Tillsätt mer pastavatten vid behov.",
         "Garnera med persilja eller basilika samt extra riven parmesan."
       ],
-      "notes": "Källa: 30 Minute Chicken Florentine Pasta, dishingouthealth.com"
+      "notes": "Källa: 30 Minute Chicken Florentine Pasta, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 145,
@@ -5304,7 +5810,10 @@
         "Häll soppan försiktigt över i en kraftfull mixer med hjälp av en slev. Ta bort mittbiten i locket (för att låta ångan släppa ut) och lägg en ren kökshandduk över öppningen för att undvika stänk. Mixa slät. Alternativt kan du använda en stavmixer direkt i grytan.",
         "Häll tillbaka soppan i grytan och rör ner kokosmjölken. Värm vid behov ytterligare 1–2 minuter. Rör ner limejuicen, sleva upp i skålar och garnera efter smak."
       ],
-      "notes": "Källa: Thai Pumpkin Soup (Vegan, 30 Minutes), dishingouthealth.com"
+      "notes": "Källa: Thai Pumpkin Soup (Vegan, 30 Minutes), dishingouthealth.com",
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 146,
@@ -5346,7 +5855,11 @@
         "Gör dressingen genom att blanda olivolja, vinäger, senap, honung och salt i en liten skål och vispa ihop.",
         "Fördela quinoa- och grönkålsblandningen i 4 skålar. Lägg de rostade grönsakerna ovanpå och ringla över dressingen. Toppa med skivad avokado och eventuella andra tillbehör."
       ],
-      "notes": "Källa: Quinoa Power Bowls with Maple Chipotle Brussels and Smoky Butternut Squash, dishingouthealth.com"
+      "notes": "Källa: Quinoa Power Bowls with Maple Chipotle Brussels and Smoky Butternut Squash, dishingouthealth.com",
+      "seasons": [
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 148,
@@ -5381,7 +5894,12 @@
         "Häll cashewnötterna och blötläggningsvattnet i en blender eller Nutribullet. Tillsätt citronsaft, näringsjäst, misopasta och vitlök. Mixa på hög hastighet tills såsen är krämig. Rör ner svartpeppar. (Om du vill kan du värma den veganska alfredosåsen i en liten kastrull på medelvärme tills den är varm, annars är den närmast rumstempererad.)",
         "Skeda alfredosåsen över spaghettisquashen och garnera med färsk persilja. Tillsätt gärna extra grönsaker (t.ex. brysselkål eller broccoli) eller toppa med extra hackade nötter."
       ],
-      "notes": "Källa: Spaghetti Squash Alfredo (Vegan), dishingouthealth.com"
+      "notes": "Källa: Spaghetti Squash Alfredo (Vegan), dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 149,
@@ -5426,7 +5944,11 @@
         "Placera ugnsgallret 15–20 cm från grillelementet och förvärm ugnen till maxgrillfunktion. Lägg de marinerade laxfileerna på en foliebeklädd plåt och grilla i 6–8 minuter, eller tills de är precis ogenomskinliga i mitten. (Om laxen börjar brännas, flytta plåten till ett lägre fack.)",
         "Lägg upp salladen genom att fördela grönkålsblandningen jämnt i 4 skålar. Låt den inlagda rödlöken rinna av och strö den över salladen. Toppa varje sallad med en misoglaserad laxfilé och avokadoskivor. Ringla resterande dressing över salladen."
       ],
-      "notes": "Källa: Salmon Superfood Salad, dishingouthealth.com"
+      "notes": "Källa: Salmon Superfood Salad, dishingouthealth.com",
+      "seasons": [
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 150,
@@ -5471,7 +5993,11 @@
         "Förbered kimchikrämen genom att mixa kimchi, grekisk yoghurt och majonnäs i en liten blender eller matberedare tills blandningen är nästan slät.",
         "Fördela grönsaksblandningen jämnt i de 8 tortillorna. Toppa med gurksallad och kimchikräm och servera direkt."
       ],
-      "notes": "Källa: Korean Eggplant and Mushroom Tacos with Kimchi Cream, dishingouthealth.com"
+      "notes": "Källa: Korean Eggplant and Mushroom Tacos with Kimchi Cream, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 151,
@@ -5517,7 +6043,11 @@
         "Tillsätt rostad blomkål, svarta bönor och tortillachips i stekpannan och vänd försiktigt så allt täcks av såsen. Strö osten över och gratinera under grillen i 3–5 minuter tills osten smält och chipsen fått lite färg i kanterna.",
         "Ta ut chilaquilesen ur ugnen och toppa med valfria tillbehör. Servera genast."
       ],
-      "notes": "Källa: Cauliflower Chilaquiles, dishingouthealth.com"
+      "notes": "Källa: Cauliflower Chilaquiles, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 152,
@@ -5553,7 +6083,11 @@
         "Lägg smör och vitlök i pannan. När smöret smält, vispa i vetemjölet tills det löst sig. Stek under omrörning i 1–2 minuter för att ta bort mjölsmaken. Tillsätt mjölken och misopasta och vispa kontinuerligt tills såsen är slät. Höj värmen och låt koka upp. Låt sedan sjuda i 2–3 minuter tills såsen tjocknat och misopasta löst sig. Ta av värmen och rör ner citronsaft och svartpeppar.",
         "Häll såsen över den kokta pastan och blanda väl med tång. Tillsätt det sparade kokvattnet lite i taget (ca 1,2 dl åt gången) och rör om tills såsen klänger sig fast vid pastan och du fått önskad konsistens. Rör ner grönsakerna och servera."
       ],
-      "notes": "Källa: Broccoli and Mushroom Fettuccine with Miso Cream Sauce, dishingouthealth.com"
+      "notes": "Källa: Broccoli and Mushroom Fettuccine with Miso Cream Sauce, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 153,
@@ -5599,7 +6133,11 @@
         "Häll 0,6 dl paprikasås i en smord ugnsform (ca 20x30 cm) och vinkla formen så att botten täcks jämnt. Lägg 1,2 dl fyllning längs mitten av en tortilla och rulla ihop tätt, med hopvikningssidan neråt mot kanten av formen. Upprepa med resterande tortillas och fyllning. Häll resterande paprikasås över enchiladas och strö över osten.",
         "Grädda utan lock på mitten av ugnen i 20 minuter tills ytan är gyllene och bubblig. Ta ut ur ugnen och toppa med valfri garnering."
       ],
-      "notes": "Källa: Veggie Enchiladas with Roasted Red Pepper Sauce, dishingouthealth.com"
+      "notes": "Källa: Veggie Enchiladas with Roasted Red Pepper Sauce, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 154,
@@ -5637,7 +6175,10 @@
         "Torka av fetaosten med hushållspapper och skär den i skivor ca 0,5 cm tjocka. Häll majsstärkelse i en grund skål och vänd varje fetaskiva i stärkelsen så att alla sidor täcks. Hetta upp olivoljan i en stekpanna på medelvärme. När oljan börjar fräsa, lägg i fetabitarna. Stek i 2 minuter tills undersidan är gyllene och krispig, vänd försiktigt och stek ytterligare 1–2 minuter. Lyft upp fetabitarna med en stekspade och lägg på en tallrik.",
         "Lägg upp sallaten i en stor serveringsskål eller på ett fat. Ringla hälften av dressingen över sallaten, krydda lätt med salt och peppar och blanda väl. Fördela den friterade fetaostten, avokadon, äggen, jordgubbarna och rädisorna över sallaten. Ringla resterande dressing över toppen och garnera med färsk hackad dill och extra svartpeppar."
       ],
-      "notes": "Källa: Strawberry Cobb Salad with Fried Feta and Tarragon Dressing, dishingouthealth.com"
+      "notes": "Källa: Strawberry Cobb Salad with Fried Feta and Tarragon Dressing, dishingouthealth.com",
+      "seasons": [
+        "sommar"
+      ]
     },
     {
       "id": 155,
@@ -5678,7 +6219,11 @@
         "Hetta upp olja i en stor stekpanna på medelhög värme. Tillsätt löken och stek 5–6 minuter under omrörning tills den mjuknat. Tillsätt vitlök, ingefära, resterande 2 tsk currypulver, 1,5 tsk garam masala och cayennepeppar. Stek ytterligare 2–3 minuter under flitig omrörning tills det doftar aromatiskt. Tillsätt tomater, buljong, mandelsmör, resterande kokosmjölk och 0,75 tsk salt. Vispa ihop ordentligt. Låt koka upp och lägg sedan i blomkålsbuketterna. Sänk värmen och låt sjuda utan lock i ca 15 minuter tills såsen reducerat och tjocknat.",
         "Lägg yoghurten i en medelstor skål. Tillsätt gradvis 3–4 msk av kormasåsen och rör om mellan varje tillsats för att temperera yoghurten så att den inte skär sig när den blandas i den heta såsen. Ta pannan från värmen och rör ner yoghurtblandningen och koriandern. Smaka av och justera kryddningen efter behag. Garnera med slivrade mandlar och servera korman över ris eller quinoa."
       ],
-      "notes": "Källa: Cauliflower Korma, dishingouthealth.com"
+      "notes": "Källa: Cauliflower Korma, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 156,
@@ -5717,7 +6262,11 @@
         "Förbered dragon-tahini-dressingen: Blanda tahini, citronsaft, dragon, vitlök, socker, salt och svartpeppar i en liten skål. Vispa ner 2 msk vatten för att tunna ut dressingen något.",
         "Montera salladen: Lägg blomkål och potatis på ett serveringsfat. Häll hälften av dressingen över och vänd försiktigt. Blanda i ruccolan och avsluta med resterande dressing och lite extra svartpeppar. Servera direkt."
       ],
-      "notes": "Källa: Roasted Cauliflower and Potato Salad with Tarragon Tahini, dishingouthealth.com"
+      "notes": "Källa: Roasted Cauliflower and Potato Salad with Tarragon Tahini, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 157,
@@ -5760,7 +6309,11 @@
         "Stek svampen: Återgå till samma stekpanna på medelhög värme. Lägg i portobellosvampen och stek ca 4–5 minuter per sida tills svampen är gyllenbrun i kanterna och mjuknat. Pensla med eventuell kvarvarande marinad under tillagningen. Lägg en ostskiva på varje svamphatt och lägg på ett lock. Stek ytterligare 1 minut tills osten smält.",
         "Bygg burgarna: Rosta hamburgerbrödhalvorna lätt. Bred ett generöst lager romescosås på de nedre halvorna och hummus eller majonnäs på de övre halvorna. Stapla på portobellosvampen, karamelliserad lök och ruccola eller microgreens. Lägg på det övre brödet och servera direkt."
       ],
-      "notes": "Källa: Portobello Romesco Burgers, dishingouthealth.com"
+      "notes": "Källa: Portobello Romesco Burgers, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 158,
@@ -5797,7 +6350,12 @@
         "Hetta upp oljan i en stekpanna på medelvärme. Tillsätt lök och paprika och stek i 3–5 minuter tills mjuka. Tillsätt ingefära och currypulver och stek i 1 minut tills doften stiger. Tillsätt mango, mangojuice och vinäger. Lägg på locket, sänk värmen och låt sjuda försiktigt i 15–20 minuter under omrörning, tills vätskan reducerats och mangon mjuknat. Smaka av med 0,5 tsk salt och häll över i en skål.",
         "Medan chutneyn sjuder, värm ugnen till 220°C och lägg laxfilén på en ugnsplåt klädd med aluminiumfolie. Krydda köttsidan med resterande 0,5 tsk salt. Blanda dijonsenap, honung, vitlökspulver och paprikapulver i en liten skål. Pensla blandningen över laxen och strö pekannötterna ovanpå, tryck försiktigt så de fastnar. Grädda i 15–18 minuter tills köttet känns fast och lätt faller isär med en gaffel. Servera med mangochutney och garnera med färsk basilika om så önskas."
       ],
-      "notes": "Källa: Pecan-Crusted Salmon with Mango Chutney, dishingouthealth.com"
+      "notes": "Källa: Pecan-Crusted Salmon with Mango Chutney, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 159,
@@ -5839,7 +6397,10 @@
         "Värm 2 msk olivolja i en stor stekpanna på medelhög värme. Tillsätt sparris och purjolök och stek ca 5 minuter under omrörning tills de är mjuka. Tillsätt vitlök och chilipulver och stek 1 minut tills det doftar gott. Häll i vinet och låt sjuda tills det reducerats till hälften, ca 2 minuter. Sänk värmen till medel och rör ner vispgrädde, citronsaft, salt och peppar.",
         "Tillsätt den kokta pastan i sparrisblandningen tillsammans med 1,2 dl av det sparade kokvattnet. Rör kontinuerligt tills såsen börjar tjockna och klä nudlarna. Rör ner parmesanen och tillsätt mer kokvatten vid behov för önskad konsistens. Fördela pastan i skålar och strö över citron- och basilikabrödsmulan samt extra basilika om så önskas."
       ],
-      "notes": "Källa: 30 Minute Asparagus and Lemon Pasta, dishingouthealth.com"
+      "notes": "Källa: 30 Minute Asparagus and Lemon Pasta, dishingouthealth.com",
+      "seasons": [
+        "vår"
+      ]
     },
     {
       "id": 160,
@@ -5878,7 +6439,11 @@
         "Blanda under tiden ihop citron-tahinidressingen genom att röra ihop tahini, citronsaft, pressad vitlök, spiskummin, salt och svartpeppar i en liten skål. Tillsätt 1–2 msk ljummet vatten under konstant vispning tills dressingen är slät och krämig.",
         "Lägg den rostade blomkålen, kikärtorna och schalottenlöken i en stor skål eller på ett serveringsfat. Vänd ner de färska örterna och ringla över citron-tahinidressingen."
       ],
-      "notes": "Källa: Harissa Roasted Cauliflower and Chickpea Salad, dishingouthealth.com"
+      "notes": "Källa: Harissa Roasted Cauliflower and Chickpea Salad, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 161,
@@ -5911,7 +6476,11 @@
         "Lägg ett stort bakplåtspapper på en arbetsyta och pudra lätt med mjöl. Placera degen på pappret och strö på lite mer mjöl för enklare hantering. Tryck ner gropar i degen med fingertopparna och arbeta från mitten mot kanten i en cirkelform. Sluta ca 2,5 cm från kanten (detta blir skorpan som ska resa sig högre). Sträck ut degen till en rund ca 33–35 cm. Bred ut enchilada-såsen jämnt över degen med baksidan av en sked och stoppa vid skorpkanten. Fördela den kryddade köttfärsen över och toppa med ost. Använd en pizzaspade och flytta pizzan till den förvärmda stenen eller plåten. Grädda i 10–14 minuter tills skorpan är gyllenbrun och osten är smält och bubblig.",
         "Flytta pizzan tillbaka till arbetsytan. Fördela salladen över pizzan, följt av tomat och oliver. Rör ut gräddfilen med lite vatten tills den är tillräckligt rinnig för att ringla. Ringla gräddfilen över pizzan och avsluta med chilipulver om så önskas. Skär i 8–10 bitar."
       ],
-      "notes": "Källa: Taco Pizza, dishingouthealth.com"
+      "notes": "Källa: Taco Pizza, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 162,
@@ -5950,7 +6519,11 @@
         "Hetta under tiden upp olivoljan i en stor stekpanna på medelhög värme. Tillsätt körsbärstomaterna och löken och stek i 6–8 minuter tills tomaterna spricker och löken mjuknar. Tillsätt vitlök, oregano, fänkålsfrön och chilipulver och stek i 2 minuter tills det doftar gott. Tillsätt spenaten och rör om kontinuerligt i 1–2 minuter tills den fallit ihop. Rör ner citronsaft, rosmarin, salt och peppar.",
         "Häll tomatsåsen över den kokta pastan och tillsätt det sparade kokvattnet i en tunn stråle under konstant vändning med ett par tånger. Fortsätt vända tills en lätt sås bildas och klänger sig fast vid pastan. Rör ner fetaost och oliver. Fördela pastan i 6 skålar och toppa gärna med extra örter och/eller ost efter smak."
       ],
-      "notes": "Källa: Weeknight Mediterranean Pasta, dishingouthealth.com"
+      "notes": "Källa: Weeknight Mediterranean Pasta, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 163,
@@ -5988,7 +6561,12 @@
         "När riset sugit upp all vätska, rör ner pumpakärnorna.",
         "Lägg upp en fjärdedel av riset i varje skål och toppa med apelsinkycklingen. Garnera gärna med salladslök, sesamfrön och apelsinskal. Servera!"
       ],
-      "notes": "Källa: 30 Minute Orange Basil Chicken with Coconut Rice, dishingouthealth.com"
+      "notes": "Källa: 30 Minute Orange Basil Chicken with Coconut Rice, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 164,
@@ -6030,7 +6608,11 @@
         "Blanda vitlök, sojasås, honung, ingefära, mirin och sriracha i en skål och vispa ihop till en marinad.",
         "Hetta upp en stor non-stick-stekpanna på medelhög värme. Salta och peppra fläskkotletterna och lägg dem i den heta pannan. Stek i ca 3 minuter, vänd och stek ytterligare 2–3 minuter. Sänk värmen till medel. Häll marinaden jämnt över kotletterna och låt steka ytterligare 2–3 minuter tills kotletterna är genomstekta, vänd en gång till. Marinaden tjocknar och blir till en klibbig glaze. Lägg upp kotletterna på ett fat och toppa med salladslök. Servera med slaw och sesamfrön om så önskas."
       ],
-      "notes": "Källa: Ginger-Soy Glazed Pork Chops with Asian Pear Slaw, dishingouthealth.com"
+      "notes": "Källa: Ginger-Soy Glazed Pork Chops with Asian Pear Slaw, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 165,
@@ -6105,7 +6687,12 @@
         "Tillsätt resterande 1 msk olja och rödkålen i pannan. Stek 4–5 minuter under omrörning tills mjuk. Tillsätt sockerärtor och vitlök och stek 3 minuter under frekvent omrörning tills ärtorna är mjuka. Krydda med resterande 0,5 tsk salt. Lägg tillbaka tofun och blanda väl.",
         "Ringla jordnötssåsen över woken och garnera med salladslök och valfria tillbehör. Servera över gryn, risnudlar eller som det är."
       ],
-      "notes": "Källa: Easy Tofu Stir-Fry, dishingouthealth.com"
+      "notes": "Källa: Easy Tofu Stir-Fry, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 167,
@@ -6140,7 +6727,11 @@
         "Förbered under tiden honung-senap-dressingen med mandelsmör: kombinera alla dressingingredienser i en medelstor skål och rör ihop till en slät sås.",
         "Blanda ruccola, brysselkål, pekannötter och farro i en stor skål. Krydda med en nypa salt och vänd runt. Häll över dressingen och blanda. Tillsätt getost och kyckling (eller kikärtor) och vänd försiktigt. Servera genast."
       ],
-      "notes": "Källa: Arugula Goat Cheese Salad with Farro and Honey Mustard, dishingouthealth.com"
+      "notes": "Källa: Arugula Goat Cheese Salad with Farro and Honey Mustard, dishingouthealth.com",
+      "seasons": [
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 168,
@@ -6182,7 +6773,11 @@
         "Blanda kikärtsblandningen: Lägg kikärtor, ströbröd, ägg, buffalosås, torkad persilja, rökt paprika, vitlökspulver, lökpulver, salt och peppar i en matberedare. Mixa till en jämn smet och skrapa ned kanterna vid behov. Forma 12–14 bollar i golfbollsstorlek med hjälp av en liten glasssked.",
         "Hetta upp olivoljan i en stor stekpanna på medelvärme. Stek kikärtsbollarna i 6–8 minuter och vänd dem så att alla sidor får fin färg. Lägg upp bollarna på ett fat och ringla över extra buffalosås. Servera yoghurtranchen vid sidan om, eller späd den med lite vatten för att ringla över. Garnera med blåmögelost och hackad gräslök om så önskas."
       ],
-      "notes": "Källa: Buffalo Chickpea Meatballs with Yogurt Ranch, dishingouthealth.com"
+      "notes": "Källa: Buffalo Chickpea Meatballs with Yogurt Ranch, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 169,
@@ -6217,7 +6812,11 @@
         "Skär halloumin i skivor, ungefär 1 cm tjocka, och klappa dem torra med hushållspapper. Hetta upp 1–2 msk neutral matolja i en stekpanna på medelhög värme. Stek halloumiskivorna tills de fått fin gyllenbrun färg, cirka 2 minuter per sida. Håll koll så de inte bränns eller smälter. Lyft över till en skärbräda och skär i bitar.",
         "Bred ut hummus på ett stort fat. Lägg på de marinerade tomaterna och kapris, och strö halloumbitarna över. Garnera med hackad gräslök och nymalen svartpeppar. Servera med varmt pitabröd eller naan."
       ],
-      "notes": "Källa: Za'atar Marinated Tomatoes with Fried halloumi, dishingouthealth.com"
+      "notes": "Källa: Za'atar Marinated Tomatoes with Fried halloumi, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 170,
@@ -6255,7 +6854,10 @@
         "Blanda under tiden olivolja, limejuice, honung, chilipulver, spiskummin och salt i en liten skål till en dressing. Vispa ihop och ställ åt sidan.",
         "Tillsätt svarta bönor, majs, paprika, mango, rödlök, koriander och jalapeño i skålen med quinoan och blanda försiktigt. Häll över dressingen och vänd runt. Smaka av och justera kryddningen. Servera gärna med pumpafrön, avokado och extra koriander."
       ],
-      "notes": "Källa: Fiesta Mango Quinoa Salad, dishingouthealth.com"
+      "notes": "Källa: Fiesta Mango Quinoa Salad, dishingouthealth.com",
+      "seasons": [
+        "sommar"
+      ]
     },
     {
       "id": 171,
@@ -6296,7 +6898,11 @@
         "Blanda under tiden ihop gurkmeje-tahinisåsen: vispa ihop tahini, risvinäger, socker, gurkmeja, ingefära, sesamolja och salt. Vispa gradvis i upp till 2 msk varmt vatten tills såsen får önskad konsistens.",
         "Arrangera auberginerna på ett serveringsfat och ringla såsen över. Strö över färsk mynta och salladslök samt rosta sesamfrön. Skär auberginehalvorna diagonalt i 4–5 cm bitar vid servering."
       ],
-      "notes": "Källa: Miso-Roasted Eggplant with Turmeric-Tahini Sauce, dishingouthealth.com"
+      "notes": "Källa: Miso-Roasted Eggplant with Turmeric-Tahini Sauce, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 172,
@@ -6335,7 +6941,10 @@
         "Förbered korianderdressingen medan quinoan svalnar. Blanda koriander, olivolja, yoghurt, majonnäs, vinäger, vitlök, peppar och salt i en mellanstor skål. Vispa tills dressingen är slät.",
         "Tillsätt majs, persika, avokado, Queso Fresco, rödlök och pumpafrön i skålen med quinoa. Häll dressingen över och blanda väl. Serveras varm, rumstempererad eller kall."
       ],
-      "notes": "Källa: Peach and Corn Quinoa Salad with Cilantro Ranch, dishingouthealth.com"
+      "notes": "Källa: Peach and Corn Quinoa Salad with Cilantro Ranch, dishingouthealth.com",
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 173,
@@ -6376,7 +6985,11 @@
         "Häll al pastor-såsen i stekpannan och blanda med kikärtor och grönsaker. Låt koka 2–3 minuter tills såsen tjocknar något. Dra av från värmen.",
         "Fördela kikärtsblandningen i 8 värmda majstortillas. Finhacka eventuellt den återstående halvan av rödlöken och använd som topping. Garnera med färsk koriander, queso fresco (eller avokado) och en skvätt färsk limejuice."
       ],
-      "notes": "Källa: Al Pastor Chickpea Tacos, dishingouthealth.com"
+      "notes": "Källa: Al Pastor Chickpea Tacos, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 174,
@@ -6415,7 +7028,10 @@
         "Lägg laxen med skinnsidan ned på en foliebeklädd ugnsplåt. Krydda laxköttet med salt och peppar. Bred på det mesta av harissablandningen över laxköttet och spara ca 1 msk till servering. Baka laxen mitt i ugnen i 12–15 minuter beroende på filétjocklek. Laxen är klar när mitten lätt flagar med en gaffel. Grilla under grillelement i ytterligare 2 minuter för att karamellisera glasyren.",
         "Ta ut laxen ur ugnen och skeda över resterande harissasås. Garnera med hackad persilja om du vill. Servera laxen med dillriset och pressa färsk citronsaft över allt precis innan servering."
       ],
-      "notes": "Källa: Honey-Harissa Baked Salmon with Dill Rice, dishingouthealth.com"
+      "notes": "Källa: Honey-Harissa Baked Salmon with Dill Rice, dishingouthealth.com",
+      "seasons": [
+        "sommar"
+      ]
     },
     {
       "id": 175,
@@ -6456,7 +7072,11 @@
         "Under tiden kikärtorna rostas, förbered harissa ranch-dressingen. Vispa ihop grekisk yoghurt, majonnäs, citronsaft, harissa, dill, gräslök, vitlökspulver, resterande paprikapulver samt salt och peppar i en mellanstor skål.",
         "Skär majskornen från kolven och lägg dem i en stor blandningsskål. Tillsätt romansallad, avokado, rödlök och ost, och salta lätt. Tillsätt hälften av kikärtorna och ungefär två tredjedelar av dressingen och blanda väl. Fördela resterande kikärtor ovanpå som krutonger och ringla över resten av dressingen."
       ],
-      "notes": "Källa: Grilled Corn and Avocado Salad with Harissa Ranch, dishingouthealth.com"
+      "notes": "Källa: Grilled Corn and Avocado Salad with Harissa Ranch, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 176,
@@ -6492,7 +7112,11 @@
         "Blanda dressingen: Vispa ihop olivolja, schalottenlök, rödvinsvinäger, dijonsenap, salt och peppar i en liten burk eller skål. Låt stå medan du förbereder salladen.",
         "Blanda salladen: Lägg kikärtor, gurka, tomater, paprika, kronärtskockshjärtan och färsk dill i en stor skål. Krydda med salt och peppar och blanda väl. Häll dressingen över salladen, tillsätt fetaosten och blanda om. Garnera med extra dill om du vill. Tips: Salladen smakar bäst en till två timmar efter att den gjorts – låt smakerna verkligen sätta sig!"
       ],
-      "notes": "Källa: 15 Minute Mediterranean Chickpea Salad, dishingouthealth.com"
+      "notes": "Källa: 15 Minute Mediterranean Chickpea Salad, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 177,
@@ -6533,7 +7157,11 @@
         "Medan blomkålen rostar, tillaga den gröna tahinisåsen: Mixa koriander, tahini, citronsaft, olivolja, vitlök, spiskummin, salt och svartpeppar i en liten matberedare eller blender tills konsistensen liknar pesto. Tillsätt 3 msk vatten och fortsätt mixa tills såsen är slät och krämig. Är såsen fortfarande för tjock, tillsätt mer vatten i omgångar om 1 msk.",
         "Värm tortillorna över gaslåga eller i en gjutjärnspanna. Bred ett lager grön tahinisås på varje tortilla och fördela den rostade blomkålen ovanpå. Garnera med strimlad rödkål, skivad avokado och färsk koriander. Avsluta med en extra skvätt tahinisås."
       ],
-      "notes": "Källa: BBQ Cauliflower Tacos with Green Tahini Sauce, dishingouthealth.com"
+      "notes": "Källa: BBQ Cauliflower Tacos with Green Tahini Sauce, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 178,
@@ -6571,7 +7199,11 @@
         "Koka nudlarna enligt förpackningens anvisningar i saltat vatten. Häll av vattnet och lägg nudlarna i en stor skål. Tillsätt dressingen och blanda väl.",
         "Blanda basilika, koriander, mango, jordnötter, sesamolja och risvinäger i en separat skål och vänd ihop. Fördela nudlarna i fyra skålar. Lägg räkorna ovanpå och toppa med en generös klick av mangoörtsalladen. Garnera gärna med extra jordnötter och/eller en skvätt sesamolja."
       ],
-      "notes": "Källa: Thai Shrimp Noodle Salad (20 Minutes), dishingouthealth.com"
+      "notes": "Källa: Thai Shrimp Noodle Salad (20 Minutes), dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "sommar"
+      ]
     },
     {
       "id": 179,
@@ -6613,7 +7245,11 @@
         "Förbered koriandersåsen genom att blanda yoghurt, koriander, olivolja, jalapeño, limesaft, mald koriander (eller spiskummin), vitlökspulver och en nypa salt i en mixer eller stavmixer. Mixa till en jämn sås. Smaka av och justera saltet efter smak.",
         "Värm tortillorna. Fördela quinoa- och bönfyllningen jämnt på varje tortilla och ringla koriandersås över. Garnera med skivad avokado och eventuellt lite extra koriander efter smak."
       ],
-      "notes": "Källa: Zesty Quinoa and Black Bean Tacos, dishingouthealth.com"
+      "notes": "Källa: Zesty Quinoa and Black Bean Tacos, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 180,
@@ -6655,7 +7291,11 @@
         "Blanda ihop körsbärstomater, majs och 0,6 dl hackad basilika i en skål. Rör ner rödvinsvinäger, 2 msk olivolja och en nypa salt.",
         "Fördela soppan i 5 tallrikar och toppa med salsan. Avsluta med en skvätt olivolja och nymald svartpeppar."
       ],
-      "notes": "Källa: Creamy Tomato-Basil Soup, dishingouthealth.com"
+      "notes": "Källa: Creamy Tomato-Basil Soup, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 181,
@@ -6696,7 +7336,11 @@
         "Blanda rumstempererat smör och harissapasta i en liten skål tills det är väl kombinerat. Blanda hackad persilja, rivet citronskal och den sista pressade vitlöksklyftan i en separat skål.",
         "Vänd de rostade squashbåtarna så att skinnsidan är nedåt på plåten. Fördela quinoablandningen jämnt i varje squashbåt och klicka harissasmör ovanpå. Ställ in i ugnen i 5 minuter tills smöret smält in i quinoan. Ta ut ur ugnen och strö persiljebl andningen över innan servering."
       ],
-      "notes": "Källa: Quinoa Stuffed Zucchini with Harissa Butter, dishingouthealth.com"
+      "notes": "Källa: Quinoa Stuffed Zucchini with Harissa Butter, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 182,
@@ -6742,7 +7386,11 @@
         "Blanda majonnäs, citronsaft och resterande 2 tsk dragon i en liten skål.",
         "Skär brödet på mitten på längden. Lägg mozzarellaskivorna på ena halvan och grilla under grillelementet i ca 2 minuter tills osten smält och brödet fått lite färg. Fördela aubergineskivorna ovanpå den smälta osten och toppa med tomatrelishen. Bred dragonmajonnäsen jämnt på den andra brödhalvan och toppa med ruccola. Sätt ihop sandwichen och skär i fem delar."
       ],
-      "notes": "Källa: Crispy Eggplant Sandwiches with Tomato-Tarragon Relish, dishingouthealth.com"
+      "notes": "Källa: Crispy Eggplant Sandwiches with Tomato-Tarragon Relish, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 183,
@@ -6780,7 +7428,10 @@
         "Medan grönsakerna rostas, förbered harissa-lime-dressingen genom att blanda harissa, limejuice, riven vitlök, resterande 0,25 tsk salt och 3 msk olivolja i en liten skål. Rör om med en visp.",
         "Ta ut pumpa-blandningen ur ugnen och tillsätt majs på plåten. Blanda majsen med pumpa och peppar så att värmen och kryddorna värmer och smaksätter majsen. Häll över i en serveringsskål eller ett fat. Ringla harissa-lime-dressingen över och garnera med fetaost, pumpafrön och färsk mynta (om så önskas). Tillsätt en extra pressad limejuice precis innan servering, om så önskas."
       ],
-      "notes": "Källa: Butternut Squash and Poblano Salad with Feta, dishingouthealth.com"
+      "notes": "Källa: Butternut Squash and Poblano Salad with Feta, dishingouthealth.com",
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 184,
@@ -6813,7 +7464,10 @@
         "Blanda ihop dressingen genom att röra samman citronsaft, dijonsenap, vitlök, honung, salt och peppar i en skål. Häll sedan i olivoljan i en tunn stråle under konstant vispning tills allt är väl blandat.",
         "Tillsätt päron, torkade äppelskivor, ost och pumpafrön i skålen med brysselkål. Häll över dressingen och vänd runt allt. Smaka av med extra salt och svartpeppar vid behov. Garnera med extra hyvlad ost om så önskas."
       ],
-      "notes": "Källa: Shaved Brussels and Pear Salad with Manchego, dishingouthealth.com"
+      "notes": "Källa: Shaved Brussels and Pear Salad with Manchego, dishingouthealth.com",
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 185,
@@ -6852,7 +7506,12 @@
         "Lägg den kokta farron i skålen med schalottenlöken. Tillsätt hälften av dressingen och blanda väl. Låt stå i 10 minuter. Rör ner radicchio, pistaschnötter och persilja. Smaka av och justera kryddningen. Lägg upp salladen på ett serveringsfat.",
         "Smula getost över salladen och ringla över resten av dressingen. Garnera gärna med extra pistaschnötter, persilja och/eller färska fikon."
       ],
-      "notes": "Källa: Warm Farro Salad with Fig Vinaigrette, dishingouthealth.com"
+      "notes": "Källa: Warm Farro Salad with Fig Vinaigrette, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 186,
@@ -6887,7 +7546,12 @@
         "Gör under tiden pistachiosalsan: Blanda koriander, persilja, pistaschnötter, limeskal, 1 msk limejuice, spiskummin samt 1/4 tsk vardera av salt och svartpeppar i en skål. Tillsätt 0,6 dl olivolja och rör ihop väl. Blanda i en mindre skål tahini, resterande 1 msk limejuice och 1,5 msk vatten tills det är en slät sås.",
         "Lägg sötpotatisen i kastrullen med linserna och rör ner hälften av pistachiosalsan. Bred ut på ett fat eller i en skål. Ringla över tahini-limesåsen och klicka på resterande pistachiosalsa. Avsluta med en skvätt olivolja."
       ],
-      "notes": "Källa: Sweet Potato Lentil Salad with Pistachio Salsa and Tahini-Lime, dishingouthealth.com"
+      "notes": "Källa: Sweet Potato Lentil Salad with Pistachio Salsa and Tahini-Lime, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 187,
@@ -6918,7 +7582,12 @@
         "Placera laxfilén i mitten av formen ovanpå citrusfrukterna och vitlöken. Lägg rosmarinkvistarna ovanpå och ringla över olivoljan. Tillaga i ugnen i 30–35 minuter tills laxen är medium till medium-rare.",
         "Ta bort citrusskivorna, vitlöken och rosmarinen ur oljan innan servering. Ringla lite av den smaksatta oljan över varje portion vid servering."
       ],
-      "notes": "Källa: Garlic-Rosemary Citrus Slow-Roasted Salmon, dishingouthealth.com"
+      "notes": "Källa: Garlic-Rosemary Citrus Slow-Roasted Salmon, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 188,
@@ -6962,7 +7631,11 @@
         "Förbered kuminjoghurten: Blanda ihop yoghurt, tahini, 1 msk citronsaft, spiskummin, salt och peppar i en liten skål. Vispa ner 1 msk vatten. Blanda i en separat liten skål ihop persilja, citronskal, 1 msk citronsaft och 2 msk olivolja. Ställ åt sidan.",
         "Fördela quinoan jämnt i 4 skålar. Toppa med de rostade grönsakerna och ringla över persiljeoljan. Klicka på kuminjoghurt och strö över 1 msk pepitakärnor per skål. Servera."
       ],
-      "notes": "Källa: Curried Cauliflower and Sweet Potato Bowls with Cumin Yogurt, dishingouthealth.com"
+      "notes": "Källa: Curried Cauliflower and Sweet Potato Bowls with Cumin Yogurt, dishingouthealth.com",
+      "seasons": [
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 189,
@@ -7001,7 +7674,11 @@
         "Hetta upp 2 msk olja i en stor stekpanna (gärna non-stick) på medelhög värme. Lägg i tofukuberna när oljan är varm. Stek och vänd tofun så att alla sidor får färg tills den är gyllenbrun, ca 10–12 minuter. Lyft upp tofun och lägg den i en stor skål. Tillsätt resterande 1 msk olja i pannan och lägg i broccolibuketterna. Sautera i 5 minuter under omrörning tills broccolin är mjuk men fortfarande har lite tuggmotstånd. Lägg broccolin i skålen med tofun och salta lätt.",
         "Sänk värmen till medel och häll försiktigt sojasåsblandningen i pannan. Vispa upp majsstärkelsesblandningen när såsen börjar sjuda och häll den i pannan. Rör kontinuerligt tills såsen tjocknar, ca 30 sekunder. Stäng av plattan. Lägg tillbaka tofu och broccoli i pannan och vänd runt så att allt täcks av teriyakisåsen. Garnera med rostade sesamfrön och salladslök om så önskas. Servera över ris eller risnudlar."
       ],
-      "notes": "Källa: Teriyaki Tofu and Broccoli, dishingouthealth.com"
+      "notes": "Källa: Teriyaki Tofu and Broccoli, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 190,
@@ -7045,7 +7722,10 @@
         "Blanda ruccola med resterande 1 msk olivolja, 1 msk citronsaft och en nypa salt i en stor skål. Vänd försiktigt.",
         "Montera bowlsarna: bred ut ca 3 msk vispad fetaost i botten av fyra skålar. Lägg quinoa, rostad blomkål och ruccola ovanpå. Garnera gärna med rostade pumpafrön, avokadoskivor, extra örter och/eller en sista ringla olivolja."
       ],
-      "notes": "Källa: Turmeric-Roasted Cauliflower Bowls with Whipped Feta, dishingouthealth.com"
+      "notes": "Källa: Turmeric-Roasted Cauliflower Bowls with Whipped Feta, dishingouthealth.com",
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 191,
@@ -7082,7 +7762,11 @@
         "Förbered sesam- och cashewsåsen: Vispa ihop alla såsingredienser i en medelstor skål eller ett litermått tills allt är väl blandat. Vispa i 1–2 msk vatten för att tunna ut såsen om det behövs.",
         "Lägg de kokta sobanudlarna, strimlade kålen, morötterna, paprikan, edamame (eller riven kyckling) och koriandern i en stor serveringsskål. Häll över såsen och blanda väl. Strö över sesamfröna och toppa med valfria tillbehör. Tips: Smaken blir bäst om salladen får stå i 15–20 minuter så att dressingen hinner marinera nudlarna och grönsakerna."
       ],
-      "notes": "Källa: Soba Noodle Salad with Sesame-Cashew Sauce, dishingouthealth.com"
+      "notes": "Källa: Soba Noodle Salad with Sesame-Cashew Sauce, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 192,
@@ -7124,7 +7808,11 @@
         "Häll jordnötssåsen över nudlarna i kastrullen och ställ tillbaka den på plattan med värmen avstängd. Rör om kontinuerligt tills såsen tjocknar och täcker nudlarna — restvärmen hjälper till att tjockna såsen. Rör ner den färska basilikan.",
         "Fördela nudlarna i skålar och toppa med rostade svampar, sesamfrön och extra basilika efter önskemål."
       ],
-      "notes": "Källa: Saucy Peanut Noodles with Roasted Mushrooms, dishingouthealth.com"
+      "notes": "Källa: Saucy Peanut Noodles with Roasted Mushrooms, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 193,
@@ -7162,7 +7850,10 @@
         "Tillsätt resterande 1 msk olivolja i pannan tillsammans med schalottenlök, 3 pressade vitlöksklyftor och chilipulver. Stek under omrörning i 2–3 minuter tills det doftar aromatiskt. Tillsätt vin (eller buljong- och vinägerblandningen) och citronsaft; låt koka tills vätskan reducerats till hälften, ca 2 minuter. Tillsätt smöret och fortsätt koka under omrörning tills smöret smält och såsen tjocknat något, ca 3–5 minuter.",
         "Lägg tillbaka räkorna och 1 msk persilja i pannan; blanda och låt koka 1 minut till. Stäng av värmen och häll räk-scampi-blandningen över pumpans trådar. Garnera med resterande 2 msk hackad persilja och nymalen svartpeppar efter smak."
       ],
-      "notes": "Källa: Shrimp Scampi Spaghetti Squash, dishingouthealth.com"
+      "notes": "Källa: Shrimp Scampi Spaghetti Squash, dishingouthealth.com",
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 194,
@@ -7200,7 +7891,12 @@
         "Förbered halloumikrutonger: Skär halloumin i små tärningar och vänd dem i majsstärkelse tills de är välbelagda. Hetta upp 2 msk olivolja i en stor stekpanna på medelhög värme. När oljan är het, lägg i halloumin. Stek tills den är gyllene och krispig och vänd bara var 1–2 minut för att låta varje sida få färg. Lägg på en tallrik klädd med hushållspapper.",
         "Lägg varje kaki på sidan och skär bort skaftet. Skär tunna, tvärsgående skivor och dela sedan varje skiva i fjärdedelar. Lägg ruccolan i en stor skål eller på ett serveringsfat och blanda med hälften av dressingen. Arrangera kakis, rödbetor, avokado, rostade pekannötter och halloumikrutonger ovanpå. Häll resterande dressing jämnt över salladen."
       ],
-      "notes": "Källa: Arugula and Persimmon Salad, dishingouthealth.com"
+      "notes": "Källa: Arugula and Persimmon Salad, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 195,
@@ -7252,7 +7948,11 @@
         "Förbered under tiden jerksåsen genom att mixa gul lök, salladslök, olivolja, sojasås, habanero, limejuice, honung, muskot samt resterande 0,5 tsk fem-kryddor, 0,5 tsk kryddpeppar, 0,5 tsk vitlökspulver, 0,25 tsk svartpeppar och 0,25 tsk timjan i en blender eller matberedare. Mixa på hög hastighet tills blandningen är slät. Häll såsen i en stor skål och skölj blendern. Förbered sedan mojosåsen genom att mixa alla ingredienser till den i blenderns. Mixa på hög hastighet tills den är mestadels slät. Häll upp i en liten serveringsskål.",
         "När blomkålen är klar, använd en tång för att flytta buketterna till skålen med jerksås. Vänd försiktigt \"vingarna\" i jerksåsen med en slickepott så att varje bukett täcks väl. Lägg upp på ett serveringsfat och servera genast med mojosåsen."
       ],
-      "notes": "Källa: Jerk Cauliflower Wings with Mojo Sauce, dishingouthealth.com"
+      "notes": "Källa: Jerk Cauliflower Wings with Mojo Sauce, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 196,
@@ -7297,7 +7997,10 @@
         "Förbered tahinisåsen: Blanda tahini, citronsaft, olivolja, persilja, dill, spiskummin, salt och svartpeppar i en skål. Tillsätt 2–3 msk kallt vatten, en matsked i taget under vispning, tills önskad konsistens uppnås.",
         "Häll tahinisåsen över grönsaks- och kikärtsblandningen. Garnera med rostade sesamfrön om du vill."
       ],
-      "notes": "Källa: Sheet Pan Vegetable and Chickpea Bake, dishingouthealth.com"
+      "notes": "Källa: Sheet Pan Vegetable and Chickpea Bake, dishingouthealth.com",
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 197,
@@ -7341,7 +8044,12 @@
         "Häll apelsinsåsen i pannan och låt koka upp — såsen tjocknar snabbt. Lägg i tofun och vänd runt tills allt är täckt av sås. Ta av pannan från värmen.",
         "Fördela ris i fyra skålar. Toppa med grönsaker och apelsintofu. Garnera med sesamfrön och salladslök och servera genast."
       ],
-      "notes": "Källa: Orange Tofu, dishingouthealth.com"
+      "notes": "Källa: Orange Tofu, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 198,
@@ -7375,7 +8083,11 @@
         "Ta bort folien och rör om tortellinin. Fördela mozzarellan över ytan och ställ tillbaka pannan i ugnen, utan folie, i ytterligare 5 minuter.",
         "Sätt på grillfunktionen på högsta effekt och grilla i 2–3 minuter tills toppen fått fin gyllene färg. Garnera med färsk basilika."
       ],
-      "notes": "Källa: One Pan Baked Cheese Tortellini with Vodka Sauce, dishingouthealth.com"
+      "notes": "Källa: One Pan Baked Cheese Tortellini with Vodka Sauce, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 199,
@@ -7406,7 +8118,11 @@
         "Hetta upp olivoljan i en stor stekpanna på medelhög värme. Lägg i laxen med skinnsidan nedåt och tryck försiktigt med en stekspade så att ändarna inte krullar sig. Stek i 3–5 minuter beroende på tjocklek, tills köttet har blivit ogenomskinligt upp längs sidorna. Stäng av värmen, vänd försiktigt på fisken och låt restvärmen steka köttsidan klar. Lyft upp laxen på en tallrik och torka av pannan.",
         "Sätt tillbaka pannan på medelvärme och smält smöret. Vispa ner lönnsirap-senapsröran och låt koka under omrörning i ca 2 minuter tills glaseringen börjar bubbla och tjockna. Lägg tillbaka laxen i pannan och skeda rikligt med glasering över fisken. Pressa lite färsk citronsaft över och servera på ett underlag av quinoa eller ris."
       ],
-      "notes": "Källa: Curried Maple-Mustard Salmon, dishingouthealth.com"
+      "notes": "Källa: Curried Maple-Mustard Salmon, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 200,
@@ -7445,7 +8161,11 @@
         "Tillaga fetadressingen: Blanda olivolja, citronsaft, dijonsenap, honung, vitlök, salt och peppar i en medelstor skål och vispa ihop. Rör ner fetaosten.",
         "Montera salladen: Tillsätt gurka, persilja, dill och rödlök till skålen med couscousen och blanda väl. Tillsätt den flakade laxen och dressingen och vänd försiktigt ihop allt. Smaka av och justera kryddningen efter behov. Garnera gärna med extra smulad fetaost och/eller örter."
       ],
-      "notes": "Källa: Salmon Couscous Salad with Feta Dressing, dishingouthealth.com"
+      "notes": "Källa: Salmon Couscous Salad with Feta Dressing, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 201,
@@ -7477,7 +8197,11 @@
         "Tillsätt ytterligare 2 msk olja i pannan. Lägg i hälften av aubergineskivorna utan att de överlappar. Stek ostört i 5 minuter, vänd sedan och stek ytterligare 3–4 minuter tills de är mjuka och karamelliserade på båda sidor. Krydda med salt och peppar och lägg över på en tallrik. Upprepa med resterande 2 msk olja och resten av aubergineskivorna. (Obs: använd gärna denna tid till att riva parmesanen, hacka persiljan och skiva mozzarellan.) När all aubergine är stekt, ta pannan från värmen och låt svalna några minuter.",
         "Häll hälften av tomatsåsen i stekpannan. Lägg sedan hälften av de stekta aubergineskivorna ovanpå såsen. Strö över 0,6 dl parmesan och 3 msk persilja. Fördela hälften av det rostade ströbrödet och toppa med hälften av mozzarellan. Upprepa lagren i samma ordning med resten av tomatsåsen och mozzarellan. Riv gärna extra parmesan över toppen och ringla lite olivolja. Ställ in pannan försiktigt i ugnen och baka i 20 minuter. Låt vila i pannan i 5 minuter. Garnera med resterande hackad persilja innan servering."
       ],
-      "notes": "Källa: Skillet Eggplant Parmesan, dishingouthealth.com"
+      "notes": "Källa: Skillet Eggplant Parmesan, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 202,
@@ -7522,7 +8246,10 @@
         "Förbered under tiden den krämiga chipotledressingen genom att blanda alla dressingingredienser i en medelstor skål och vispa ihop till en jämn sås.",
         "Tillsätt svarta bönor, majs, tomater, avokado, koriander och pumpafrön i skålen med quinoan och blanda väl. Häll över dressingen och rör om så att allt täcks. Servera varm, kall eller i rumstemperatur."
       ],
-      "notes": "Källa: Quinoa Southwest Salad with Creamy Chipotle Dressing, dishingouthealth.com"
+      "notes": "Källa: Quinoa Southwest Salad with Creamy Chipotle Dressing, dishingouthealth.com",
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 203,
@@ -7562,7 +8289,11 @@
         "Förbered persiljetahinidressingen genom att mixa alla dressingingredienser i en blender. Mixa tills krämig och späd med 3–4 msk vatten tills önskad konsistens uppnås.",
         "Lägg grönkålen i en stor skål och ringla över 1 msk olivolja samt resterande 1/4 tsk salt. Massera in olja och salt i grönkålen med händerna för att mjuka upp bladen. Tillsätt sötpotatis, quinoa och hälften av dressingen och blanda väl. Garnera med avokadoskivor och pumpafrön och ringla resterande dressing över toppen."
       ],
-      "notes": "Källa: Harissa-Roasted Sweet Potato Power Salad, dishingouthealth.com"
+      "notes": "Källa: Harissa-Roasted Sweet Potato Power Salad, dishingouthealth.com",
+      "seasons": [
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 204,
@@ -7608,7 +8339,11 @@
         "Rulla burritos: Arbeta med en tortilla i taget. Bred ut 2 msk avokadosås i en rand längs nedre tredjedelen av tortillan, lämna ca 2,5 cm kant på sidorna. Lägg på en riklig portion ris (ca 0,8 dl), svarta bönor (ca 0,8 dl) och fajita-grönsaker (ca 0,8 dl). Vik in höger och vänster sida mot fyllningen, vik sedan nederkanten upp och över fyllningen och rulla tätt bort från dig tills burriten är stängd. Vill du ha en krispig yta, stek burriten i en lätt oljad panna på medelhög värme i 2 minuter per sida.",
         "Servera direkt eller förvara enligt anvisning."
       ],
-      "notes": "Källa: The Ultimate Vegetarian Burritos, dishingouthealth.com"
+      "notes": "Källa: The Ultimate Vegetarian Burritos, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 205,
@@ -7645,7 +8380,11 @@
         "Rör ner den mixade bönblandningen, resterande 7,2 dl buljong, den hackade escarolen, salt och svartpeppar. Koka upp, sänk sedan värmen och låt sjuda utan lock i 20–25 minuter tills soppan tjocknar något. Rör ner citronskal och citronsaft. Tillsätt parmesanen lite i taget under konstant omrörning (tillsätt inte allt på en gång, annars kan den klumpa sig).",
         "Sleva upp soppan i skålar och garnera med extra parmesan, grovmalen svartpeppar och hackad rosmarin efter smak. Servera med gott bröd."
       ],
-      "notes": "Källa: Nourishing White Bean and Lemon Soup, dishingouthealth.com"
+      "notes": "Källa: Nourishing White Bean and Lemon Soup, dishingouthealth.com",
+      "seasons": [
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 206,
@@ -7737,7 +8476,11 @@
         "Sätt på locket och lås det. Stäng ångreglaget. Ställ in på HIGH pressure i 10 minuter. (Grytan tar ca 15 minuter att nå trycket innan tillagningen börjar.)",
         "När programmet är klart, frigör trycket försiktigt genom att vrida ångreglaget till VENT. (Trycket är fullt utjämnat när ventilkulan sjunker ner.) Ta av locket och rör ner grönkålen. Sätt tillbaka locket (lås inte) och låt stå i 3 minuter tills grönsakerna mjuknat. Servera med riven parmesan eller näringsjäst."
       ],
-      "notes": "Källa: Instant Pot Vegetable Soup, dishingouthealth.com"
+      "notes": "Källa: Instant Pot Vegetable Soup, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 208,
@@ -7785,7 +8528,11 @@
         "Fördela köttlöfsblandningen jämnt i de 10 smorda muffinsformarna och tryck försiktigt för att fylla dem. Forma gärna topparna lite kupade. Grädda i 25 minuter.",
         "Förbered under tiden BBQ-glasyr genom att blanda alla ingredienser i en skål och vispa väl. Ta ut formarna ur ugnen och skeda glasyr jämnt över varje. Sätt tillbaka plåten i ugnen och grädda ytterligare 10 minuter. Låt svalna i 10 minuter innan du lösgör formarna med en vinklad spatel eller smörkniv."
       ],
-      "notes": "Källa: Vegetarian BBQ Meatloaf Minis, dishingouthealth.com"
+      "notes": "Källa: Vegetarian BBQ Meatloaf Minis, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 209,
@@ -7822,7 +8569,10 @@
         "Rör ner spenat (eller grönkål) och stek tills bladen vissnar, ca 1–2 minuter. Tillsätt kikärtorna och rör om så att de täcks av kryddorna. Häll i mjölken, jordnötssmöret och saltet och låt blandningen sjuda upp. Låt sjuda försiktigt i 12–15 minuter tills currysåsen tjocknar. Rör ner limejuicen och smaka av – tillsätt mer salt vid behov.",
         "Servera kikärtscurryn över kokt basmati- eller jasminris, quinoa eller blomkålsris, och toppa med önskade tillbehör – t.ex. färsk koriander och något syrat som inlagda schalottenlökar, rödlök eller kimchi."
       ],
-      "notes": "Källa: 30 Minute Vegan Chickpea Curry, dishingouthealth.com"
+      "notes": "Källa: 30 Minute Vegan Chickpea Curry, dishingouthealth.com",
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 210,
@@ -7856,7 +8606,11 @@
         "Häll i buljongen och rör om så att eventuella stekskorpbitar lossnar från botten. Låt blandningen koka upp försiktigt och koka i 5 minuter. Stäng av värmen.",
         "Häll hälften av blandningen i en blender och tillsätt cashewnötterna. Mixa tills slät. Häll tillbaka i grytan och rör om. Justera kryddningen efter smak och fördela soppan i fyra skålar."
       ],
-      "notes": "Källa: Vegan Cream of Mushroom Soup, dishingouthealth.com"
+      "notes": "Källa: Vegan Cream of Mushroom Soup, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 211,
@@ -7898,7 +8652,11 @@
         "Sänk värmen och vispa gradvis ner mjölken, dijonsenapen, saltet, peppar och sellerifrön. Låt sjuda i 3 minuter tills såsen tjocknat något. Rör ner hälften av osten tills den smält. Tillsätt citronsaft och citronskal. Häll blandningen i grytan med nudlarna och tillsätt tonfisk och ärtor. Rör om väl. Häll blandningen i den förberedda ugnsformen och strö resterande ost och ströbröd över ytan.",
         "Grädda i 190°C tills gratängen bubblar och osten smält, ca 15 minuter. För ett knaprigare, gyllene täcke, använd grill-läget de sista 2 minuterna. Låt vila 5–10 minuter i rumstemperatur innan servering. Garnera med extra färsk timjan om så önskas."
       ],
-      "notes": "Källa: Healthy Tuna Noodle Casserole, dishingouthealth.com"
+      "notes": "Källa: Healthy Tuna Noodle Casserole, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 212,
@@ -7938,7 +8696,11 @@
         "Hetta upp resterande 2 msk olivolja i en stor, djup stekpanna på medelvärme. Tillsätt lök och selleri och stek i 7–8 minuter tills de mjuknat. Rör ner två tredjedelar av salladslöken (spara resten till garnering), vitlökspulver och rökt paprikapulver och stek i 1 minut. Strö vetemjölet över grönsaksblandningen och rör om. Stek i ytterligare 2 minuter för att ta bort råmjölssmaken. Häll sakta i mjölken och buffalosåsen och vispa ihop. Höj värmen och låt sjuda tills såsen tjocknat, ca 3–5 minuter. Smaka av med resterande 0,5 tsk salt. Rör ner 2,4 dl cheddar och rör tills osten smält. Tillsätt den rostade blomkålen och den kokta pastan i pannan och blanda väl.",
         "Häll försiktigt över mac and cheese i samma ugnsform som du använde för att rosta blomkålen. Strö resterande riven cheddar över toppen, samt blåmögelost om du använder det. Grädda i 220°C i 20 minuter utan lock tills det bubblar. Grilla gärna de sista 2 minuterna för ett gyllene lock. Ta ut ur ugnen och garnera med resterande salladslök."
       ],
-      "notes": "Källa: Buffalo Cauliflower Mac and Cheese, dishingouthealth.com"
+      "notes": "Källa: Buffalo Cauliflower Mac and Cheese, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 213,
@@ -7975,7 +8737,12 @@
         "Sätt på grillfunktionen (hög effekt) och flytta upp formen till det övre gallret. Grilla i 2–4 minuter tills laxen fått gyllene, lätt krispiga kanter.",
         "Ta ut laxen ur ugnen och garnera med salladslök, sesamfrön och en skvätt limejuice om du vill. Servera över ris med eventuell kvarvarande minosås."
       ],
-      "notes": "Källa: Miso-Maple Salmon, dishingouthealth.com"
+      "notes": "Källa: Miso-Maple Salmon, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 214,
@@ -8018,7 +8785,10 @@
         "Rör försiktigt i soppan med en träslev eller slev och häll sedan ägg-buljonge­blandningen i en tunn stråle tillbaka i grytan. Tillsätt grönkålen och fortsätt tillaga på låg värme i 5 minuter tills buljongen tjocknat något och grönkålen mjuknat. Ta bort citronskalen.",
         "Rör ner den färska dillen och smaka av med salt och peppar. Servera soppan i djupa tallrikar och garnera med extra dill, grovmalen svartpeppar och ett ringel olivolja efter smak."
       ],
-      "notes": "Källa: Lemony Greek Chickpea Soup, dishingouthealth.com"
+      "notes": "Källa: Lemony Greek Chickpea Soup, dishingouthealth.com",
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 215,
@@ -8062,7 +8832,11 @@
         "Blanda dressingen: kombinera persilja, citronsaft, vitlök, paprikapulver, spiskummin och salt i en liten skål. Tillsätt olivoljan i en tunn stråle under konstant vispning med en gaffel tills dressingen är slät.",
         "Lägg couscous- och kikärtsblandningen i den sparade skålen tillsammans med den rostade blomkålen, mandlarna, russin, mynta och persilja. Häll över dressingen och vänd runt. Servera varm, ljummen eller kall."
       ],
-      "notes": "Källa: Moroccan Cauliflower and Couscous Salad, dishingouthealth.com"
+      "notes": "Källa: Moroccan Cauliflower and Couscous Salad, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 216,
@@ -8103,7 +8877,11 @@
         "Ta av locket och rör ner mjölk, yoghurt, hälften av den rivna osten (spara resten till toppen), parmesan, pesto, vitlökspulver, svartpeppar och chilipulver. Rör om ordentligt. Vänd ner broccoli- och lökblandningen.",
         "Smörj en ugnsform (ca 28×18 cm) med matlagningsspray. Häll över quinoablandningen i formen och strö resterande riven ost över ytan. Strö pinjenötterna ovanpå och avsluta med en lätt skvätt olivolja. Grädda utan lock i 15–20 minuter tills osten smält och blandningen bubblar. För en mer gyllene yta, grillar du på HÖG effekt i 2–4 minuter. Garnera med hackad basilika om du vill."
       ],
-      "notes": "Källa: Cheesy Pesto Broccoli Quinoa Casserole, dishingouthealth.com"
+      "notes": "Källa: Cheesy Pesto Broccoli Quinoa Casserole, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 217,
@@ -8138,7 +8916,11 @@
         "Hetta upp oljan i en stor stekpanna eller wok på medelhög värme. När oljan är het, lägg räkorna i ett enda lager och stek ostört i 2–3 minuter tills undersidan är krispig. Vänd räkorna och tillsätt haricots verts. Krydda med resterande 0,25 tsk salt och stek 2 minuter tills bönorna är krispiga men mjuka och räkorna är genomstekta. Häll i honung­blandningen och rör konstant i 1–2 minuter tills såsen tjocknar och glaserar räkor och bönor.",
         "Servera räkorna och bönorna över ris och garnera med salladslök och extra krossad svartpeppar om så önskas."
       ],
-      "notes": "Källa: Honey Turmeric-Black Pepper Shrimp, dishingouthealth.com"
+      "notes": "Källa: Honey Turmeric-Black Pepper Shrimp, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 218,
@@ -8180,7 +8962,11 @@
         "Förbered avokadoranchdressing: Dela avokadon på hälften och ta bort kärnan. Lägg den mindre halvan i en mixer (reservera den andra halvan till garnering) och tillsätt kärnmjölk, citronsaft, vitlök, lökpulver och salt. Mixa på hög hastighet tills dressingen är slät och krämig. Häll över i en skål och rör ner svartpeppar, 1 tsk gräslök och 1 tsk dill.",
         "Montera salladen: Ta bort de yttre mjuka bladen på salladen och lägg den med stammen nedåt på en skärbräda. Skär salladen på mitten uppifrån och ned. Skär sedan varje halva på mitten igen så att du får 4 lika stora klyftor. Skär bort den nedre delen av stammen på varje klyft. Lägg klyftorna på ett fat och ringla över återstående 1 msk olivolja, salta lätt med återstående 1/4 tsk salt. (Hoppa INTE över det här steget – det är viktigt att salladen kryddas innan dressingen tillsätts.) Klicka avokadoranchdressing över klyftorna, följt av krispiga kikärtor och tomater. Skala och skiva den reserverade avokadon och lägg skivorna ovanpå varje klyft. Avsluta med att strö över återstående 2 tsk gräslök och dill. Toppa gärna med smulad fetaost."
       ],
-      "notes": "Källa: Wedge Salad with Crispy Chickpeas and Avocado Ranch, dishingouthealth.com"
+      "notes": "Källa: Wedge Salad with Crispy Chickpeas and Avocado Ranch, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 219,
@@ -8219,7 +9005,11 @@
         "Häll hälften av dressingen över pastan och bönorna och blanda väl.",
         "Tillsätt körsbärstomater, hårdkokta ägg, oliver och tonfisk. Häll resterande dressing över salladen och garnera med kapris och färsk dill. Servera genast eller ställ in i kylen, täckt, tills det är dags att servera."
       ],
-      "notes": "Källa: Tuna Niçoise Pasta Salad, dishingouthealth.com"
+      "notes": "Källa: Tuna Niçoise Pasta Salad, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 220,
@@ -8256,7 +9046,11 @@
         "Tillsätt den kokta pastan i blomkålsblandningen tillsammans med 1,2 dl av det reserverade pastavattnet. Vänd kontinuerligt i 1 minut tills såsen börjar klinga fast vid pastan. Fortsätt vända och tillsätt resterande pastavatten i omgångar om 0,6 dl tills önskad konsistens uppnås (krämiga såser tjocknar snabbt när de svalnar, så det är bäst att hålla den lite lösare).",
         "Dra från värmen och rör ner citronskal och persilja. Smaka av med salt. Fördela pastan i 6 tallrikar och garnera med riven parmesan om så önskas."
       ],
-      "notes": "Källa: Creamy Cauliflower Pasta, dishingouthealth.com"
+      "notes": "Källa: Creamy Cauliflower Pasta, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 221,
@@ -8295,7 +9089,11 @@
         "Tillsätt resterande 2 msk olja i pannan. Lägg i tofun och stek utan att röra tills undersidan är knaprig och gyllenbrun, 3–4 minuter. Rör om och fortsätt steka tills tofun är knaprig och gyllenbrun runt om, totalt ca 8–9 minuter. Häll i hälften av mandelsmörsåsen och rör kontinuerligt tills såsen täcker tofun och karamelliserade bitar bildas. Dra av från värmen.",
         "Fördela broccoli, salladslök och tofu jämnt över ris eller nudlar. Ringla den resterande mandelsmörsåsen över toppen och garnera med fint strimlad salladslök."
       ],
-      "notes": "Källa: 30 Minute Almond Butter Tofu Bowls, dishingouthealth.com"
+      "notes": "Källa: 30 Minute Almond Butter Tofu Bowls, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 222,
@@ -8337,7 +9135,11 @@
         "Hetta upp 1 msk olivolja i en stor stekpanna på medelhög värme. Lägg i broccolibuketterna och stek 7–8 minuter under omrörning tills de är krispiga men genomvärmda. Salta med resterande 0,25 tsk salt och peppar, och lägg över i en skål. Täck för att hålla varmt. Tillsätt resterande 1 msk olja i den varma pannan. Lägg ut laxbitarna i ett jämnt lager och låt steka utan att röra i 2 minuter. Rör om och stek vidare 3–5 minuter, vänd bitarna så att alla sidor får fin färg.",
         "Fördela ris i skålar och lägg lax och broccoli ovanpå. Garnera med en sked kimchi, ringla miso-ingefärssåsen över allt och toppa med tunt skivad salladslök om så önskas."
       ],
-      "notes": "Källa: Sesame Crusted Salmon Bowls, dishingouthealth.com"
+      "notes": "Källa: Sesame Crusted Salmon Bowls, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 223,
@@ -8377,7 +9179,11 @@
         "Hetta upp återstående 1 msk olivolja i en stor stekpanna på medelhög värme. När oljan är het, lägg i räkblandningen i ett jämnt lager. Stek räkorna 2–3 minuter per sida tills de inte längre är genomskinliga. Lyft upp dem på en ren tallrik och ta bort stjärtarna.",
         "Förbered lime-creman genom att blanda gräddfil, limejuice och koriander i en liten skål. Bred ett tunt lager crema på varje tortilla, lägg på chipotle-räkorna och toppa med salsa. Avsluta med extra crema och koriander om så önskas."
       ],
-      "notes": "Källa: Chipotle Shrimp Tacos with Avocado-Mango Salsa, dishingouthealth.com"
+      "notes": "Källa: Chipotle Shrimp Tacos with Avocado-Mango Salsa, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 224,
@@ -8416,7 +9222,10 @@
         "Ösa försiktigt över soppan i en blender. Tillsätt kokosmjölken och ta bort mittdelen av blenderlocket. Lägg en ren kökshandduk över öppningen för att undvika stänk. Mixa till en helt slät soppa, ca 1 minut. Alternativt: tillsätt kokosmjölken direkt i grytan och mixa med en stavmixer.",
         "Häll tillbaka soppan i grytan och rör ner limejuicen. Slå upp i skålar och toppa med krispiga kikärtor och färska örter efter smak."
       ],
-      "notes": "Källa: Green Curry Cauliflower Soup (Vegan), dishingouthealth.com"
+      "notes": "Källa: Green Curry Cauliflower Soup (Vegan), dishingouthealth.com",
+      "seasons": [
+        "sommar"
+      ]
     },
     {
       "id": 225,
@@ -8463,7 +9272,11 @@
         "Använd tång och flytta över pastan till pannan med bolognese. Tillsätt 2,4 dl pastakokvätska och vänd kontinuerligt tills såsen börjar fastna på pastan, ca 2 minuter. Ta från värmen och smaka av; justera kryddningen efter behov.",
         "Servera med färsk basilika och pinjenötsparmesan om så önskas."
       ],
-      "notes": "Källa: Vegan Mushroom Bolognese, dishingouthealth.com"
+      "notes": "Källa: Vegan Mushroom Bolognese, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 226,
@@ -8503,7 +9316,11 @@
         "Tillsätt sojasås, fisksås och buljong och koka upp. Lägg i nudlarna, sänk värmen och låt sjuda utan lock tills nudlarna är klara, ca 3–5 minuter. Rör ner den avsatta vitlök-chilioljan och edamame.",
         "Fördela ramen i fyra skålar och toppa med tunt skivad salladslök samt övriga tillbehör efter eget val."
       ],
-      "notes": "Källa: Spicy Ramen Noodles, dishingouthealth.com"
+      "notes": "Källa: Spicy Ramen Noodles, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 227,
@@ -8544,7 +9361,11 @@
         "Krydda laxfiléerna med salt och peppar. Hetta upp olivoljan i en stor stekpanna på medelhög värme. Lägg laxen med skinnsidan nedåt och tryck ner lätt med en stekspade. Stek i ca 3 minuter tills fisken ser ungefär 75 % genomstekt ut på sidorna. Vänd och stek ytterligare 1–3 minuter beroende på tjocklek, tills fisken är genomstekt. Ta av från värmen.",
         "Fördela riset i fyra skålar. Lägg en laxfilé och en klick kålslaw i varje skål. Ringla jordnötssåsen över allt och garnera med hackade jordnötter och extra salladslök om du vill."
       ],
-      "notes": "Källa: Firecracker Salmon Bowls, dishingouthealth.com"
+      "notes": "Källa: Firecracker Salmon Bowls, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 228,
@@ -8582,7 +9403,11 @@
         "Mixa getost, citronskal, citronsaft, resterande 0,5 tsk salt och 0,25 tsk svartpeppar samt det sparade kokvattnet i en blender tills såsen är slät. (Såsen blir ganska rinnig till en början.)",
         "Häll tillbaka den avrunna pastan i kastrullen och ställ på medellåg värme. Tillsätt brysselkålsblandningen och getostsåsen. Koka under ständig omrörning i 2–3 minuter tills såsen tjocknar och börjar klibba fast vid pastan. Rör ner basilikan och garnera med pinjenötter om så önskas."
       ],
-      "notes": "Källa: 30 Minute Creamy Goat Cheese Pasta with Brussels, dishingouthealth.com"
+      "notes": "Källa: 30 Minute Creamy Goat Cheese Pasta with Brussels, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 229,
@@ -8619,7 +9444,11 @@
         "Hetta upp 1 msk olivolja i en gjutjärnspanna eller grillpanna på medelhög värme. Lägg i ett naan-bröd och grilla tills det precis börjar få mörka kanter, ca 2–3 minuter. Vänd och grilla ytterligare 1 minut. Upprepa med resterande naan-bröd och tillsätt mer olja efter behov.",
         "Toppa varje naan-bröd med ett jämnt lager vispad ricotta. Fördela broccoli och soltorkade tomater ovanpå (samt ev. korv). Strö över chilipulver och ringla lite olja från tomatburken. Garnera med finhackad basilika."
       ],
-      "notes": "Källa: Naan Pizza with Whipped Ricotta and Blistered Broccoli, dishingouthealth.com"
+      "notes": "Källa: Naan Pizza with Whipped Ricotta and Blistered Broccoli, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 230,
@@ -8659,7 +9488,11 @@
         "Under den sista gräddningen, förbered vitlöksörtsåsen genom att blanda gräddfil (eller majonnäs), citronsaft, persilja, dijonsenap och vitlök i en liten skål. Rör ihop med en visp och smaka av med salt och peppar. Rör i 1–2 tsk vatten om du vill ha en lite tunnare sås.",
         "Garnera laxen med rivet citronskal och potatisarna med ytterligare hackad persilja om så önskas. Servera med vitlöksörtsåsen."
       ],
-      "notes": "Källa: Sheet Pan Chili-Lemon Salmon Dinner, dishingouthealth.com"
+      "notes": "Källa: Sheet Pan Chili-Lemon Salmon Dinner, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 231,
@@ -8704,7 +9537,11 @@
         "Lägg cashewnötterna med blötläggningsvattnet i en kraftfull mixer. Tillsätt chipotlepeppar, apelsinjuice och 0,25 tsk salt. Mixa på hög hastighet tills såsen är slät och krämig. Smaka av och tillsätt mer salt om det behövs.",
         "Fördela quinoan jämnt mellan 4 skålar. Fördela svarta bönor och paprika- och lökblandningen i skålarna och ringla över chipotlesåsen. Garnera med skivad avokado och extra koriander efter önskemål."
       ],
-      "notes": "Källa: Vegan Chipotle Bowls, dishingouthealth.com"
+      "notes": "Källa: Vegan Chipotle Bowls, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 232,
@@ -8736,7 +9573,10 @@
         "Värm resterande 2 msk olivolja i en grillpanna eller stekpanna på medelhög värme. Lägg i laxfiléerna med skinnsidan nedåt och stek i 3 minuter tills skinnet börjar bli krispigt. Vänd försiktigt på laxen och stek ytterligare 2–3 minuter tills önskad stekgrad uppnås.",
         "Lägg upp laxen på ett serveringsfat och klicka tapenaden över filéerna."
       ],
-      "notes": "Källa: Salmon with Strawberry-Scallion Tapenade, dishingouthealth.com"
+      "notes": "Källa: Salmon with Strawberry-Scallion Tapenade, dishingouthealth.com",
+      "seasons": [
+        "sommar"
+      ]
     },
     {
       "id": 233,
@@ -8774,7 +9614,11 @@
         "Lägg de kokta nudlarna i pannan tillsammans med broccolin, edamame och sesamfrön. Använd ett par tång för att blanda nudlarna väl med såsen.",
         "Fördela nudlarna i skålar och garnera med stekt eller mjukkokt ägg (eller valfritt tillbehör) samt resterande salladslök. Ringla över chiliolja för extra hetta om så önskas."
       ],
-      "notes": "Källa: 20 Minute Scallion Noodles, dishingouthealth.com"
+      "notes": "Källa: 20 Minute Scallion Noodles, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 234,
@@ -8814,7 +9658,12 @@
         "Sänk värmen till låg och rör ner vispgrädde, parmesan, resterande 0,5 tsk salt och 0,5 tsk svartpeppar. Lägg i den avrunna pastan tillsammans med 1,2 dl av det sparade kokvattnet. Rör kontinuerligt tills såsen tjocknar och täcker pastan. Tillsätt mer kokvatten vid behov för önskad konsistens.",
         "Lägg tillbaka räkorna i pannan och tillsätt den färska basilikan. Blanda ihop allt. Fördela pastan i 5 skålar och garnera med extra riven parmesan om så önskas."
       ],
-      "notes": "Källa: Creamy Shrimp Pasta with Corn and Sun-Dried Tomatoes, dishingouthealth.com"
+      "notes": "Källa: Creamy Shrimp Pasta with Corn and Sun-Dried Tomatoes, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 235,
@@ -8850,7 +9699,11 @@
         "Hetta upp oljan i en stor stekpanna på medelhög värme. Tillsätt svamp och lök och stek i 6–8 minuter under omrörning tills mjukt. Tillsätt vitlök, adobosås, chilipulver, rökt paprikapulver, spiskummin och salt och stek ytterligare 2 minuter tills det doftar gott.",
         "Tillsätt linser, grönsaksbuljong och sojasås och rör om. Låt sjuda på svag värme i 5–6 minuter under omrörning tills vätskan har kokat in helt. Ta av från värmen och smaka av. Fördela fyllningen i tortillas och toppa med valfria tillbehör."
       ],
-      "notes": "Källa: 30 Minute Lentil and Mushroom Tacos, dishingouthealth.com"
+      "notes": "Källa: 30 Minute Lentil and Mushroom Tacos, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 236,
@@ -8928,7 +9781,11 @@
         "Tillsätt kokosmjölk, buljong och fisksås i pannan och låt blandningen komma upp i sjudning. Sjud utan lock i 8–10 minuter tills såsen reduceras och tjocknar något.",
         "Rör ner basilika och de stekta räkorna och låt koka ytterligare 1–2 minuter, precis tillräckligt för att värma upp räkorna. Skeda upp blandningen över ris eller risnudlar och avsluta med en pressad limeklyfta. Garnera gärna med extra basilika."
       ],
-      "notes": "Källa: Easy Coconut Curry Shrimp, dishingouthealth.com"
+      "notes": "Källa: Easy Coconut Curry Shrimp, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 238,
@@ -8968,7 +9825,11 @@
         "Gör miso-gurkmejadressingen: vispa ihop misopasta och risvinäger i en liten skål tills det är slätt. Tillsätt resterande dressingingredienser och blanda väl.",
         "Fördela quinoa och grönsaker i 3 skålar och ringla dressingen över. Garnera med salladslök och sesamfrön efter önskemål."
       ],
-      "notes": "Källa: Roasted Veggie Quinoa Bowls (Vegan), dishingouthealth.com"
+      "notes": "Källa: Roasted Veggie Quinoa Bowls (Vegan), dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 239,
@@ -8999,7 +9860,11 @@
         "Hetta upp olivoljan i en stor stekpanna på medelhög värme. Torka räkorna torra med hushållspapper och krydda med salt och svartpeppar. Lägg räkorna i pannan och stek 2 minuter per sida tills de precis är genomstekta. Sänk värmen till medel och flytta räkorna till en tallrik.",
         "Tillsätt smör, schalottenlök och vitlök i pannan och stek 2–3 minuter tills det doftar gott. Rör ner gurkmeja och fisksås. Lägg tillbaka räkorna i pannan tillsammans med limeskal, limejuice och färsk koriander. Vänd räkorna i såsen tills de är väl täckta och servera med rostat eller grillat bröd."
       ],
-      "notes": "Källa: Shrimp in Turmeric-Lime Sauce, dishingouthealth.com"
+      "notes": "Källa: Shrimp in Turmeric-Lime Sauce, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 240,
@@ -9034,7 +9899,11 @@
         "Blanda tahini, citronsaft, 1,8 dl av parmesanen samt resterande 0,5 tsk salt och 0,25 tsk svartpeppar i en stor skål eller mätbägare. Häll i det sparade pastavattnet i en tunn stråle och vispa slätt.",
         "Tillsätt den kokta pastan och tahinisåsen i pannan med tomaterna. (Tips: om pannan inte är tillräckligt stor, använd kastrullen du kokade pastan i.) Rör om kontinuerligt på medelvärme tills såsen tjocknar och klär nudlarna. Rör ner basilika och kapris, och garnera med resterande parmesan och nymalen svartpeppar."
       ],
-      "notes": "Källa: Tahini Pasta with Burst Cherry Tomatoes, dishingouthealth.com"
+      "notes": "Källa: Tahini Pasta with Burst Cherry Tomatoes, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 241,
@@ -9071,7 +9940,12 @@
         "I samma panna på medelvärme, tillsätt resterande 2 msk olivolja tillsammans med schalottenlök (eller lök), vitlök och chilipulver. Stek 3 minuter tills det doftar gott. Tillsätt soltorkade tomater och spenat; stek tills spenaten mjuknat, 1–2 minuter.",
         "Rör ner kronärtskockor, dijonsenap, grädde, 0,6 dl buljong, salt och peppar. Låt sjuda 2–3 minuter tills såsen sätter sig. (Tips: används vispgrädde kan ytterligare 0,6 dl buljong behövas för att tunna ut såsen. Justera mängden efter önskad konsistens.) Lägg tillbaka gnocchi i pannan och vänd runt. Rör ner färsk timjan och koka 1 minut till. Fördela i 4 skålar och toppa med parmesan om så önskas."
       ],
-      "notes": "Källa: Tuscan Sun-Dried Tomato Gnocchi, dishingouthealth.com"
+      "notes": "Källa: Tuscan Sun-Dried Tomato Gnocchi, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 242,
@@ -9106,7 +9980,11 @@
         "Bered jordnötsdressingen genom att blanda jordnötssmör, risvinäger, sojasås, socker (eller honung) och ingefära i en stor bunke. Rör ihop ordentligt. Vispa ner kokosmjölken tills blandningen är slät.",
         "Tillsätt broccolislaw, kikärtor, morötter, quinoa och basilika i bunken. Krydda med några nypor salt. Vänd ihop allt med tånger tills dressingen täcker samtliga ingredienser. Smaka av och tillsätt eventuellt mer salt. Servera direkt eller förvara täckt i kylskåp i upp till 3 dagar."
       ],
-      "notes": "Källa: 10 Minute Thai Broccoli and Chickpea Salad, dishingouthealth.com"
+      "notes": "Källa: 10 Minute Thai Broccoli and Chickpea Salad, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 243,
@@ -9150,7 +10028,11 @@
         "Hetta upp oljan i en stor stekpanna på medelvärme. Stek linsbiffarna tills de är djupt bruna och krispiga på undersidan, ca 3 minuter. Vänd försiktigt och upprepa på andra sidan.",
         "Servera burgarna i rostade hamburgerbröd med tahinicoleslaw, skivad avokado och tillbehör efter smak (gärna lite hummus eller yoghurtdressing)."
       ],
-      "notes": "Källa: Spiced Lentil Burgers with Tahini Slaw (Vegan), dishingouthealth.com"
+      "notes": "Källa: Spiced Lentil Burgers with Tahini Slaw (Vegan), dishingouthealth.com",
+      "seasons": [
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 244,
@@ -9191,7 +10073,11 @@
         "Lägg tortillorna på en tallrik och täck med ett fuktigt hushållspapper. Mikrowågsugna i 30 sekunder tills tortillorna är varma och mjuka. Arrangera tortillorna på den förberedda plåten. Strö lite ost på ena halvan av varje tortilla, lägg på en sked böjfyllning och toppa med lite mer ost. Vik ihop tortillan och tryck ihop. Upprepa med resterande tortillor.",
         "Grädda i 10–12 minuter tills osten smält och tortillorna är lätt krispiga. Låt stå 2 minuter innan tacos läggs på ett fat och garneras med valfria tillbehör."
       ],
-      "notes": "Källa: Crispy Chipotle Black Bean Tacos, dishingouthealth.com"
+      "notes": "Källa: Crispy Chipotle Black Bean Tacos, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 245,
@@ -9227,7 +10113,10 @@
         "Sleva försiktigt över soppan i en blender (kör i omgångar om blendern är för liten). Tillsätt tofun och sätt på locket. Ta bort mittdelen av locket och lägg en ren kökshandduk över öppningen för att undvika stänk. Mixa slät, ca 45–60 sekunder.",
         "Fördela soppan i skålar och toppa med valfria tillbehör."
       ],
-      "notes": "Källa: Healthy Butternut Squash and Apple Soup (Vegan), dishingouthealth.com"
+      "notes": "Källa: Healthy Butternut Squash and Apple Soup (Vegan), dishingouthealth.com",
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 246,
@@ -9266,7 +10155,10 @@
         "När pastavattnet kokar, tillsätt rigatonin och koka tills den nästan är al dente. Lägg i grönkålen under sista minuten. (Använder du babyspenat, rör ner den i vodkasåsen istället — spenat behöver mycket kortare koktid.)",
         "Använd en hålslev för att överföra pastan och grönkålen till pannan med vodkasås. (Alternativt: spara 2,4 dl pastavatten och häll av pastan.) Rör ner pastavattnet, 1,2 dl i taget, tills såsen är slät och blank och täcker pastan. Rör ner timjanbladen och garnera med parmesan om så önskas."
       ],
-      "notes": "Källa: Pumpkin alla Vodka Pasta, dishingouthealth.com"
+      "notes": "Källa: Pumpkin alla Vodka Pasta, dishingouthealth.com",
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 247,
@@ -9310,7 +10202,11 @@
         "Tillsätt buljong och kokosmjölk och rör om så att eventuella stekfläckar löser sig från botten. Lägg i pak choi, tofu och resterande 0,5 tsk salt. Låt soppan sjuda på låg värme utan lock i 15–20 minuter tills den reducerats något.",
         "Ta kastrullen från värmen och rör ner basilika och limejuice. Smaka av och justera kryddningen. Häll upp i skålar och lägg eventuellt i en skopa jasminris."
       ],
-      "notes": "Källa: Thai Vegetable Soup, dishingouthealth.com"
+      "notes": "Källa: Thai Vegetable Soup, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 248,
@@ -9351,7 +10247,11 @@
         "Tillsätt ytterligare 1–2 msk olivolja i pannan, följt av kikärtor och harissa. Sautera i 2 minuter. Rör ner de krossade tomaterna och fortsätt koka i cirka 5 minuter tills blandningen reduceras och tjocknar. Rör ner persilja, 0,5 tsk salt och 0,25 tsk svartpeppar.",
         "Fördela valfritt spannmål i 4 skålar. Toppa med harissa-kikärtor och sauterad broccoli, och ringla över den krämiga vitlökssåsen. Garnera med extra hackad persilja."
       ],
-      "notes": "Källa: Chickpea and Broccoli Bowls with Creamy Garlic Sauce, dishingouthealth.com"
+      "notes": "Källa: Chickpea and Broccoli Bowls with Creamy Garlic Sauce, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 249,
@@ -9386,7 +10286,10 @@
         "Krydda laxfileerna lätt med salt. Skjut den rostade pumpa till ena sidan av plåten och ringla över ca 2 msk miso-ingefärssås och vänd runt. Lägg laxfileerna på den lediga halvan och pensla köttsidan rikligt med miso-ingefärssåsen. Sätt in plåten i ugnen i ytterligare 8–10 minuter tills laxen är genomstekt. För en mer karamelliserad yta, gratinera under grillelementet i 2 minuter (håll koll, gratineringstider varierar).",
         "Lägg den strimlade kålen i en skål och blanda med de uppdelade 2 msk miso-ingefärssåsen. Fördela quinoa (eller ris) jämnt i fyra skålar. Toppa med lax, rostad butternutpumpa och kål. Pensla eventuell kvarvarande sås över laxfileerna och garnera med salladslök."
       ],
-      "notes": "Källa: Sheet Pan Miso-Ginger Salmon and Butternut Squash, dishingouthealth.com"
+      "notes": "Källa: Sheet Pan Miso-Ginger Salmon and Butternut Squash, dishingouthealth.com",
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 250,
@@ -9424,7 +10327,11 @@
         "Häll cashewnötterna och blötläggningsvattnet i en mixer och mixa på hög hastighet tills helt slät (konsistensen ska likna cashewmjölk). Häll cashewblandningen i soppan och låt sjuda utan lock tills soppan börjar tjockna, cirka 8–10 minuter.",
         "Plocka bort timjankvistarna och justera smaken efter behov. Häll upp soppan i skålar och garnera efter önskemål med färska örter, krossade kex eller krutonger."
       ],
-      "notes": "Källa: Creamy Vegetable Soup, dishingouthealth.com"
+      "notes": "Källa: Creamy Vegetable Soup, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 251,
@@ -9463,7 +10370,11 @@
         "Förbered svamp- och linsblandningen: Hetta upp 2 msk olivolja i en stor stekpanna på medelhög värme. Tillsätt svampen och stek utan att röra i 3 minuter. Sänk värmen till medel, tillsätt schalottenlök och timjan, vänd om och fortsätt steka tills svampen är gyllenbrun och löken mjuk, ca 5–7 minuter till. Tillsätt ytterligare 2 msk olivolja tillsammans med balsamvinäger, linser, salt och svartpeppar och stek i 2 minuter till. Rör ner parmesan eller näringsjäst.",
         "Lägg upp salladen: Fördela salladsbladen i en serveringsskål och lägg lins- och svampblandningen ovanpå. Ringla över dressingen och garnera med mer parmesan (eller näringsjäst) och nymalen svartpeppar efter smak."
       ],
-      "notes": "Källa: Warm Balsamic Mushroom and Lentil Salad, dishingouthealth.com"
+      "notes": "Källa: Warm Balsamic Mushroom and Lentil Salad, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 252,
@@ -9507,7 +10418,11 @@
         "Gör under tiden den gröna tahinisåsen: mixa alla sås-ingredienser i en blender eller matberedare. Häll gradvis i ca 0,8 dl varmt vatten med motorn igång och mixa slät.",
         "Fördela riset i 4 skålar. Lägg upp rostad blomkål och kikärtor, eventuellt gurka och körsbärstomater. Ringla grön tahinisås över allt."
       ],
-      "notes": "Källa: Cauliflower Shawarma Bowls, dishingouthealth.com"
+      "notes": "Källa: Cauliflower Shawarma Bowls, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 253,
@@ -9542,7 +10457,11 @@
         "Lägg cashewnötterna i en högeffektsblender. Mixa på hög hastighet tills nötterna har konsistensen av fint sand. Tillsätt näringsjäst, misopasta och 5 dl av det sparade kokvattnet. Ta bort mittplugg ur locket, sätt på locket och lägg en ren kökshandduk över öppningen (för att undvika stänk och släppa ut ånga). Mixa på hög hastighet tills såsen är helt slät, ca 1 minut.",
         "Häll såsen i grytan med pasta och svamp och rör om väl. Rör ner svartpeppar, persilja, citronskal och citronsaft och fortsätt röra tills såsen klänger sig fast vid pastan. Tillsätt vid behov resterande 1,2 dl kokvatten för att nå önskad konsistens. Servera genast."
       ],
-      "notes": "Källa: Creamy Mushroom Pasta (Vegan), dishingouthealth.com"
+      "notes": "Källa: Creamy Mushroom Pasta (Vegan), dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 254,
@@ -9585,7 +10504,11 @@
         "Tillsätt vin och Worcestershiresås och koka 3–4 minuter tills vinet reducerar och alkoholen avdunstar. Tillsätt buljongen och koka upp. Sänk värmen och låt sjuda tills såsen tjocknar, ca 4–5 minuter. Rör ner de blandade grönsakerna och linserna.",
         "Lägg potatispurén i klickar över fyllningen. Bred ut jämnt med en stekspade. Sätt in pannan i ugnen och grädda i 25 minuter tills potatistoppen börjar få lätt gyllene färg. (Tips: om din stekpanna inte är ugnssäker, häll över allt i en ugnsform på ca 22×22 cm eller 28×18 cm.) Låt stå 10 minuter innan servering."
       ],
-      "notes": "Källa: Vegetarian Shepherd's Pie with Lentils, dishingouthealth.com"
+      "notes": "Källa: Vegetarian Shepherd's Pie with Lentils, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 255,
@@ -9629,7 +10552,10 @@
         "Gör lönnsirap-dijonvinägretten: Blanda äppelcidervinäger, lönnsirap och dijonsenap i ett litet glas eller en skål. Tillsätt olivoljan i en tunn stråle under konstant vispning tills dressingen är slät. Smaka av med salt och peppar.",
         "Blanda linser och ugnsrostade grönsaker i en stor serveringsskål. Tillsätt hälften av dressingen och blanda väl. Ringla resten av dressingen över salladen och garnera med smulad getost och rostade pumpafrön."
       ],
-      "notes": "Källa: Roasted Veggie Lentil Salad, dishingouthealth.com"
+      "notes": "Källa: Roasted Veggie Lentil Salad, dishingouthealth.com",
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 256,
@@ -9668,7 +10594,11 @@
         "Rör ner riset och låt det rosta lätt i ca 2 minuter. Tillsätt kikärtor och buljong och låt soppan koka upp. Sänk värmen, lägg på locket och låt sjuda i 20 minuter tills riset är mjukt.",
         "Ta av locket och plocka ut timjankvistarna. Rör ner ärtor, persilja och citronsaft. (Vill du ha en mer buljongrik konsistens kan du tillsätta en extra dl buljong eller vatten.) Häll upp soppan i skålar och garnera med extra persilja och grovmalen svartpeppar efter smak."
       ],
-      "notes": "Källa: Chickpea and Rice Soup, dishingouthealth.com"
+      "notes": "Källa: Chickpea and Rice Soup, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 257,
@@ -9702,7 +10632,10 @@
         "Tillsätt resterande 2 msk olivolja i pannan och sänk värmen till medel. Lägg i fiskfiléerna med skinnsidan nedåt. Stek i 3–4 minuter utan att röra dem, tills skinnet börjar bli krispigt. Vänd försiktigt och stek ytterligare 3–4 minuter tills fisken är genomstekt.",
         "Bred ut hälften av remouladen på ett serveringsfat. Lägg fiskfiléerna ovanpå och klicka resterande remoulad över dem. Garnera med färska örter och servera med de stekta citronhalvorna. Pressa gärna saft från citronhalvorna direkt över filéerna vid servering."
       ],
-      "notes": "Källa: Pan-Seared Trout with Old Bay Remoulade, dishingouthealth.com"
+      "notes": "Källa: Pan-Seared Trout with Old Bay Remoulade, dishingouthealth.com",
+      "seasons": [
+        "sommar"
+      ]
     },
     {
       "id": 258,
@@ -9738,7 +10671,11 @@
         "Tillsätt oliver, kapris, de krossade tomaterna med saft, salt och basilikakvistar. Låt sjuda försiktigt i 5 minuter.",
         "Tillsätt 6 dl vatten och koka upp. Tillsätt pastan när det kokar och sänk värmen till svag simmer. Koka utan lock under frekvent omrörning så att pastan inte fastnar, tills den är al dente, ca 12 minuter. Rör ner kikärtorna och koka ytterligare 1–2 minuter tills det mesta av vätskan reducerats och rätten har en saftig konsistens. Ta bort basilikakvistarma och avsluta med några varv svartpeppar. Servera gärna med crustigare bröd för att suga upp extra sås."
       ],
-      "notes": "Källa: Easy One Pot Puttanesca with Chickpeas, dishingouthealth.com"
+      "notes": "Källa: Easy One Pot Puttanesca with Chickpeas, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 259,
@@ -9770,7 +10707,12 @@
         "Tillsätt schalottenlöken i pannan och stek tills mjuk, cirka 2 minuter. Rör ner vitlök och soltorkade tomater och stek 1 minut till, tills det doftar gott. Häll i vinet för att koka ur pannan och låt sjuda tills merparten av alkoholen avdunstat, cirka 3 minuter. Rör ner vispgrädden och låt blandningen sjuda försiktigt. Rör ner spenat, resterande 0,5 tsk salt och 0,25 tsk svartpeppar och koka tills spenaten mjuknat, cirka 2 minuter.",
         "Lägg tillbaka laxfiléerna i pannan och skeda såsen över varje bit. Garnera med färsk persilja om så önskas."
       ],
-      "notes": "Källa: Salmon Skillet with Sun-Dried Tomato Cream Sauce, dishingouthealth.com"
+      "notes": "Källa: Salmon Skillet with Sun-Dried Tomato Cream Sauce, dishingouthealth.com",
+      "seasons": [
+        "vår",
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 260,
@@ -9810,7 +10752,11 @@
         "Sänk värmen till medel och tillsätt återstående 1 msk olja i pannan. Lägg i pressad vitlök och chilipulver och stek i 30 sekunder tills det doftar gott — håll ett öga på det så det inte bränns. Häll i General Tsos sås och låt sjuda tills den tjocknar, ca 1 minut.",
         "Lägg tillbaka tofu och broccoli i pannan och vänd allt så det täcks av såsen. Koka vidare i ytterligare 2 minuter under flitig omrörning. Servera över ris och garnera med sesamfrön och salladslök om så önskas."
       ],
-      "notes": "Källa: General Tso's Tofu, dishingouthealth.com"
+      "notes": "Källa: General Tso's Tofu, dishingouthealth.com",
+      "seasons": [
+        "sommar",
+        "höst"
+      ]
     },
     {
       "id": 261,
@@ -9849,7 +10795,10 @@
         "Förbered den rökta tempehen genom att blanda 1 msk olivolja med äppelcidervinäger, tamari, lönnsirap och rökt paprika i en liten skål. Hetta upp återstående 1 msk olivolja i en stor stekpanna på medelvärme. När oljan är varm, tillsätt smulad tempeh och stek tills den är gyllene och krispig, ca 5–6 minuter. Häll i tamari-blandningen och stek ytterligare 2 minuter under omrörning så att tempehen täcks. Ta av från värmen och låt svalna något.",
         "Lägg grönkålen i en stor skål. Ringla över 2 tsk olivolja och en nypa salt. Massera in oljan och saltet i kålbladen med händerna tills de börjar mjukna, ca 30 sekunder. Tillsätt hälften av caesardressingen och blanda väl. Lägg upp grönkålen på ett serveringsfat eller i en skål och toppa med den rökta tempehen och resterande dressing. Strö tallkotts-parmesan över toppen om så önskas."
       ],
-      "notes": "Källa: Vegan Kale Caesar with Smoky Tempeh Crumbles, dishingouthealth.com"
+      "notes": "Källa: Vegan Kale Caesar with Smoky Tempeh Crumbles, dishingouthealth.com",
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 263,
@@ -9924,7 +10873,12 @@
         "Grädda mackorna tills de fått fin färg och osten smält.",
         "Servera dem ljumma."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "sommar",
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 265,
@@ -10003,7 +10957,11 @@
         "Smörj en form i storleken 25 x 35 cm. Lägg grönkål och ost i halva och låt resten vara tom. Håll försiktigt över pannkakssmeten, börja med att hälla i den tomma delen, och balansera in den i mitten av ugnen.",
         "Grädda i ca 30 minuter eller tills pannkakan stannat och fått fin färg. Ta ut den, låt den svalna lite och servera med önskade tillbehör."
       ],
-      "notes": "Serveringsförslag: sylt och grädde, ajvar relish och hackade valnötter, eller grönsaker som morotsstavar och oliver. Tips för Grönkålschips: Om du får grönkål över kan du passa på att göra en plåt grönkålschips efter att pannkakan har gräddat klart. Sänk ugnen till 150 grader. Dra bladen från den grova stammen. Lägg på bakplåtspappersklädd plåt och ringla över olivolja. Vänd runt så att alla blad oljas in. Salta lite och ställ in i mitten av ugnen. Ta ut dem efter 15–20 minuter när de fått färg och ser krispiga ut."
+      "notes": "Serveringsförslag: sylt och grädde, ajvar relish och hackade valnötter, eller grönsaker som morotsstavar och oliver. Tips för Grönkålschips: Om du får grönkål över kan du passa på att göra en plåt grönkålschips efter att pannkakan har gräddat klart. Sänk ugnen till 150 grader. Dra bladen från den grova stammen. Lägg på bakplåtspappersklädd plåt och ringla över olivolja. Vänd runt så att alla blad oljas in. Salta lite och ställ in i mitten av ugnen. Ta ut dem efter 15–20 minuter när de fått färg och ser krispiga ut.",
+      "seasons": [
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 267,
@@ -10085,7 +11043,10 @@
         "Koka nudlarna enligt anvisning på paketet.",
         "Tillsätt nudlarna i woken och blanda ner så gott det går. Stänk över sojasås och rör om. Smaka av och tillsätt eventuellt mer ostron- eller sojasås."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "höst"
+      ]
     },
     {
       "id": 269,
@@ -10165,7 +11126,11 @@
         "Blanda ner brysselkålen och nötterna (till alla som vill ha kål och nötter – några kanske hellre äter bara parmesanpasta).",
         "Pressa över citron och smaka av med salt och peppar."
       ],
-      "notes": null
+      "notes": null,
+      "seasons": [
+        "höst",
+        "vinter"
+      ]
     },
     {
       "id": 271,
@@ -10210,7 +11175,10 @@
         "Vänd ner tofu, kikärtor, vegetariska grytbitar eller strimlad kyckling och låt koka tills allt blir genomvarmt. Om du använder kyckling är det viktigt att se att den hinner bli ordentligt tillagad, det vill säga den ska vara vit, inte rosa i köttet. Det tar 3-4 minuter beroende på hur stora bitarna är.",
         "Förbered tillbehören, till exempel hacka nötterna och tärna mango (om du valt färsk)."
       ],
-      "notes": "VILL DU GÖRA EGEN TIKKA-MASALA-KRYDDBLANDNING? Ta 2 tsk gurkmeja, 1 tsk spiskummin, 1 tsk malda korianderfrön, 1 tsk lökpulver, 1 tsk socker, 0,5 tsk paprikakrydda, 0,5 tsk ingefära, 0,5 tsk kardemumma, 0,5 tsk torkade korianderblad, 2 krm svartpeppar, 2 krm kanel och 1 krm cayennepeppar eller chilipeppar. Blanda!"
+      "notes": "VILL DU GÖRA EGEN TIKKA-MASALA-KRYDDBLANDNING? Ta 2 tsk gurkmeja, 1 tsk spiskummin, 1 tsk malda korianderfrön, 1 tsk lökpulver, 1 tsk socker, 0,5 tsk paprikakrydda, 0,5 tsk ingefära, 0,5 tsk kardemumma, 0,5 tsk torkade korianderblad, 2 krm svartpeppar, 2 krm kanel och 1 krm cayennepeppar eller chilipeppar. Blanda!",
+      "seasons": [
+        "sommar"
+      ]
     }
   ]
 }

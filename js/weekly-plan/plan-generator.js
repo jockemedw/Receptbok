@@ -200,6 +200,8 @@ export async function generatePlan() {
   status.className   = 'trigger-status';
 
   try {
+    const seasonWeightEl = document.getElementById('seasonWeight');
+    const wantsSeason = !!(seasonWeightEl && seasonWeightEl.checked);
     const body = {
       start_date:       startVal,
       end_date:         endVal,
@@ -210,6 +212,7 @@ export async function generatePlan() {
       skip_shopping: true,
       blocked_dates:    getBlockedDates(),
       optimize_prices:  wantsOptimize,
+      season_weight:    wantsSeason,
     };
     const res  = await fetch('/api/generate', {
       method: 'POST',
