@@ -354,7 +354,7 @@ export const CANON_REJECT_PATTERNS = {
   "grädde": /\b(spray|sprayvispgrädde|gräddfil|havregrädde|kokosgrädde|sojagrädde|växtgrädde)\b|\bvispgrädde\b(?!.*\bmatlagning)/i,
   "mjölk": /\b(havredryck|mandeldryck|sojadryck|kokosdryck|havremjölk|mandelmjölk|sojamjölk|gräddfil|syrad mjölk|kokosmjölk)\b/i,
   "smör": /\b(margarin|bregott|becel|flora|milda växtfett|popcorn|mikropopcorn)\b/i,
-  "rapsolja": /\b(sardell|ansjovis|tonfisk|sill|makrill|inlagd|konserv)\b/i,
+  "rapsolja": /\b(sardell\w*|ansjovis\w*|tonfisk\w*|sill\w*|makrill\w*|inlagd\w*|konserv\w*)\b/i,
   "fisk": /\b(fiskpinnar|fiskbullar|fiskbullar)\b/i,
 };
 
