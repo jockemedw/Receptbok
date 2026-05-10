@@ -1,5 +1,5 @@
 {
-  "generated": "2026-05-07",
+  "generated": "2026-05-10",
   "startDate": "2026-05-09",
   "endDate": "2026-05-23",
   "recipeItems": {
@@ -25,7 +25,7 @@
       "färsk brysselkål",
       "grönkål (100 g)",
       "kikärtor (1 burk)",
-      "koriander (½ kruka)",
+      "koriander",
       "körsbärstomat (250 g)",
       "lök",
       "majs (3 dl)",
@@ -42,7 +42,6 @@
     "Fisk & kött": [
       "fast tofu (300 g)",
       "kräftor (170 g)",
-      "kycklinglår (900 g)",
       "rödspätta (600 g)",
       "räkor (170 g)",
       "rökt kalkon alternativt rökt tofu (8 skivor)"
@@ -53,7 +52,6 @@
       "äpple (1)"
     ],
     "Skafferi": [
-      "anchochili",
       "av något att fylla basen med (400 g)",
       "bakpulver",
       "balsamvinäger (1,2 dl)",
@@ -75,21 +73,19 @@
       "hasselnötter (1 dl)",
       "havremjöl (1 dl)",
       "honung",
-      "hönsbuljong",
+      "hönsbuljong (½)",
       "ingefära (1 bit)",
       "jordnötter",
       "kardemumma",
       "lasagneplattor (250 g)",
       "limefrukt i klyftor (1)",
       "mangotärningar",
-      "muscovadosocker",
       "nudlar (250 g)",
       "något starkt att ringla över för den som vill",
       "nötter",
       "olivolja",
       "ostronsås (¾ dl)",
       "pankoströbröd (1,8 dl)",
-      "paprikapulver",
       "plockgrönsaker",
       "polenta (2,4 dl)",
       "pärlcouscous",
@@ -104,7 +100,7 @@
       "tomatpuré",
       "torkad tortellini (150 g)",
       "vetemjöl (5 dl)",
-      "vitlöksklyftor (22)",
+      "vitlöksklyftor (17)",
       "vitvinsvinäger"
     ],
     "Övrigt": []
