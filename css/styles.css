@@ -1708,15 +1708,15 @@
 
   /* ── Blockerade dagar ── */
   .week-day-card.blocked {
-    opacity: 0.5;
+    opacity: 0.6;
     border-style: dashed;
-    cursor: default;
+    cursor: pointer;
     background: var(--linen);
   }
   .week-day-card.blocked:hover {
-    border-color: var(--border);
-    box-shadow: none;
-    opacity: 0.5;
+    border-color: var(--lichen);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    opacity: 0.8;
   }
   .blocked-recipe-text {
     font-style: italic;

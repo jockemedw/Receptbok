@@ -7,8 +7,8 @@ import { readFile, readFileRaw, writeFile } from "./_shared/github.js";
 export default createHandler(async (req, res, pat) => {
   const { date, action } = req.body || {};
   if (!date) return res.status(400).json({ error: "date saknas" });
-  if (!["skip", "block"].includes(action)) {
-    return res.status(400).json({ error: "action måste vara 'skip' eller 'block'" });
+  if (!["skip", "block", "unblock"].includes(action)) {
+    return res.status(400).json({ error: "action måste vara 'skip', 'block' eller 'unblock'" });
   }
 
   const { content: plan } = await readFile("weekly-plan.json", pat);
@@ -30,6 +30,30 @@ export default createHandler(async (req, res, pat) => {
     plan.days[dayIdx].recipe = null;
     plan.days[dayIdx].recipeId = null;
     plan.days[dayIdx].blocked = true;
+  } else if (action === "unblock") {
+    if (!plan.days[dayIdx].blocked) {
+      return res.status(400).json({ error: "Dagen är inte blockerad." });
+    }
+    // Skjut alla recept bakåt: varje dag från dayIdx till näst sista
+    // får nästa dags recept. Sista dagen blir tom.
+    for (let i = dayIdx; i < plan.days.length - 1; i++) {
+      const next = plan.days[i + 1];
+      plan.days[i].recipe = next.recipe;
+      plan.days[i].recipeId = next.recipeId;
+      plan.days[i].saving = next.saving || null;
+      plan.days[i].savingMatches = next.savingMatches || null;
+      if (next.blocked) {
+        plan.days[i].blocked = true;
+      } else {
+        delete plan.days[i].blocked;
+      }
+    }
+    const last = plan.days[plan.days.length - 1];
+    last.recipe = null;
+    last.recipeId = null;
+    last.saving = null;
+    last.savingMatches = null;
+    delete last.blocked;
   } else {
     // block: ta bort receptet från just denna dag
     plan.days[dayIdx].recipe = null;
@@ -38,7 +62,8 @@ export default createHandler(async (req, res, pat) => {
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  const commitMsg = `${action === "skip" ? "Hoppa över" : "Blockera"} ${date}`;
+  const actionLabels = { skip: "Hoppa över", block: "Blockera", unblock: "Ångra fri dag" };
+  const commitMsg = `${actionLabels[action]} ${date}`;
 
   // Bygg om inköpslistan om planen är bekräftad
   if (plan.confirmedAt) {

@@ -560,7 +560,8 @@ async function modifyDay(date, action) {
     const panel = document.getElementById('weekRecipeDetail');
     const errEl = document.createElement('p');
     errEl.style.cssText = 'color:var(--rust);font-size:0.82rem;padding:0.5rem 1rem';
-    errEl.textContent = `Kunde inte ${action === 'skip' ? 'hoppa över' : 'blockera'} dagen — prova igen.`;
+    const actionMsg = { skip: 'hoppa över', block: 'blockera', unblock: 'ångra fri dag på' };
+    errEl.textContent = `Kunde inte ${actionMsg[action] || 'ändra'} dagen — prova igen.`;
     panel.innerHTML = '';
     panel.appendChild(errEl);
     panel.classList.add('open');
@@ -571,6 +572,60 @@ async function modifyDay(date, action) {
 
 export function skipDay(date) { return modifyDay(date, 'skip'); }
 export function blockDay(date) { return modifyDay(date, 'block'); }
+export function unblockDay(date) { return modifyDay(date, 'unblock'); }
+
+export function openBlockedDay(dateIso, dayName) {
+  const panel = document.getElementById('weekRecipeDetail');
+  document.querySelectorAll('.week-day-card').forEach(c => c.classList.remove('selected'));
+  const card = document.querySelector(`.week-day-card[data-date="${dateIso}"]`);
+  if (card) card.classList.add('selected');
+
+  const dateLabel = fmtShort(dateIso);
+
+  panel.innerHTML = `<div class="detail-inner custom-day-editor">
+    <div class="custom-day-header">
+      <div class="custom-day-title">${dayName}</div>
+      <div class="custom-day-sub">${dateLabel} · Fri dag</div>
+    </div>
+    <div class="custom-options">
+      <button type="button" class="custom-option" onclick="unblockDay('${dateIso}')">
+        <span class="custom-option-icon" aria-hidden="true">${ICON_CALENDAR}</span>
+        <span class="custom-option-label">Ångra fri dag — skjut ihop matsedeln</span>
+        <span class="custom-option-chev" aria-hidden="true">›</span>
+      </button>
+      <div class="custom-option custom-option-note">
+        <div class="custom-option-head">
+          <span class="custom-option-icon" aria-hidden="true">${ICON_NOTE}</span>
+          <span class="custom-option-label">Skriv egen notering</span>
+        </div>
+        <input type="text" id="blockedDayNote" class="custom-note-input" maxlength="140"
+               placeholder="T.ex. pizza, rester, äter ute…">
+        <button type="button" class="custom-note-save" onclick="convertBlockedToCustom('${dateIso}')">Spara notering</button>
+      </div>
+    </div>
+  </div>`;
+  panel.classList.add('open');
+  window.isSnapping = true;
+  window.scrollUpAccum = 0;
+  document.querySelector('header').classList.remove('header-hidden');
+  const hh = document.querySelector('header').offsetHeight;
+  const top = panel.getBoundingClientRect().top + window.scrollY - hh - 8;
+  window.smoothScrollTo(top, 380);
+}
+
+export async function convertBlockedToCustom(dateIso) {
+  const note = document.getElementById('blockedDayNote')?.value?.trim();
+  if (!note) return;
+
+  try {
+    await fetch('/api/custom-days', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'set', dates: [dateIso], note }),
+    });
+    window.loadWeeklyPlan();
+  } catch { /* tyst */ }
+}
 
 // ── Besparings-popover ───────────────────────────────────────────────────────
 
@@ -857,8 +912,13 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
     // Gap (ingen plan, inget custom) eller blockerad dag utan recept
     if (!d.recipeId) {
       const label = d.blocked ? 'Fri dag' : '—';
-      const clickable = !d.isPast && !d.blocked && !d.planId;
-      const onclick = clickable ? ` onclick="openCustomDay('${d.date}', '${d.day}')"` : '';
+      const clickable = !d.isPast;
+      let onclick = '';
+      if (clickable && d.blocked) {
+        onclick = ` onclick="openBlockedDay('${d.date}', '${d.day}')"`;
+      } else if (clickable && !d.blocked && !d.planId) {
+        onclick = ` onclick="openCustomDay('${d.date}', '${d.day}')"`;
+      }
       return `<div class="${timelineDayCls}">
         ${topRow}
         <div class="${cls}" data-date="${d.date}" data-day="${d.day}"${onclick}>
@@ -1218,9 +1278,12 @@ window.centerTodayCard     = centerTodayCard;
 window.centerOnDate        = centerOnDate;
 window.openCustomDay       = openCustomDay;
 window.openCustomBulk      = openCustomBulk;
+window.openBlockedDay      = openBlockedDay;
 window.saveCustomDay       = saveCustomDay;
 window.saveCustomDaysBulk  = saveCustomDaysBulk;
 window.clearCustomDay      = clearCustomDay;
+window.unblockDay          = unblockDay;
+window.convertBlockedToCustom = convertBlockedToCustom;
 window.enterCustomPickMode = enterCustomPickMode;
 window.exitCustomPickMode  = exitCustomPickMode;
 window.selectRecipeForCustomDay = selectRecipeForCustomDay;
