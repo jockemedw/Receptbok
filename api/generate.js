@@ -267,6 +267,7 @@ export default createHandler(async (req, res, pat) => {
     skip_shopping = false,
     blocked_dates = [],
     optimize_prices = false,
+    dry_run = false,
   } = req.body;
 
   if (!start_date || !end_date) {
@@ -381,21 +382,9 @@ export default createHandler(async (req, res, pat) => {
   const updatedHistory = updateHistory(historyData, days.map((d) => d.recipeId).filter(Boolean), today);
   const commitMsg = `Matsedel ${today} — autogenererad`;
 
-  // Arkivera den gamla planens passerade dagar innan vi skriver över weekly-plan.json.
-  // Fallar tyst — arkiveringen får aldrig blockera en generering.
-  try { await archiveOldPlan(start_date, pat); } catch (e) { console.error("archive error:", e); }
-
-  if (skip_shopping) {
-    await Promise.all([
-      writeFile("weekly-plan.json", weeklyPlan, pat, commitMsg),
-      writeFile("recipe-history.json", updatedHistory, pat, commitMsg),
-    ]);
-    return res.status(200).json({ ok: true, days: days.length, weeklyPlan, shoppingList: null });
-  }
-
   const selectedIds = days.map((d) => d.recipeId).filter(Boolean);
-  const shoppingCategories = buildShoppingList(selectedIds, allRecipes);
-  const shoppingList = {
+  const shoppingCategories = skip_shopping ? null : buildShoppingList(selectedIds, allRecipes);
+  const shoppingList = skip_shopping ? null : {
     generated: today, startDate: start_date, endDate: end_date,
     recipeItems: shoppingCategories,
     recipeItemsMovedAt: null,
@@ -403,11 +392,20 @@ export default createHandler(async (req, res, pat) => {
     checkedItems: existingShop?.checkedItems || {},
   };
 
-  await Promise.all([
+  if (dry_run) {
+    return res.status(200).json({ ok: true, dry_run: true, days: days.length, weeklyPlan, shoppingList });
+  }
+
+  // Arkivera den gamla planens passerade dagar innan vi skriver över weekly-plan.json.
+  // Fallar tyst — arkiveringen får aldrig blockera en generering.
+  try { await archiveOldPlan(start_date, pat); } catch (e) { console.error("archive error:", e); }
+
+  const writes = [
     writeFile("weekly-plan.json", weeklyPlan, pat, commitMsg),
-    writeFile("shopping-list.json", shoppingList, pat, commitMsg),
     writeFile("recipe-history.json", updatedHistory, pat, commitMsg),
-  ]);
+  ];
+  if (shoppingList) writes.push(writeFile("shopping-list.json", shoppingList, pat, commitMsg));
+  await Promise.all(writes);
 
   return res.status(200).json({ ok: true, days: days.length, weeklyPlan, shoppingList });
 });
