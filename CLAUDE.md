@@ -51,9 +51,9 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 - [ ] 1B — ICA inofficiellt API — **hoppas över** (Willys räcker för Ekholmen-fallet)
 - [x] 1C — Willys API reverse engineering — **klart**: `GET /search/campaigns/online?q=<storeId>&type=PERSONAL_GENERAL&size=500` (ingen auth, ingen CSRF, ingen session). Store 2160 = Ekholmen → 199 erbjudanden
 - [ ] 1C2 — Willys+ medlemserbjudanden — **utforskning pågår** (Fas A/B/C, se Öppna utredningar)
-- [x] 1D — Matchningslogik **klar** (audit genomförd Session 35, rapport: `docs/match-audit-2026-04-19.md`). 53/62 recept matchar (upp från 51), 149 matches totalt (upp från 125), **spraygrädde-buggklassen eliminerad** via `CANON_REJECT_PATTERNS`. Priority 2-stemming implementerad via adjektiv-strip + token-scan + n-gram-fallback i `normalizeName`. Nya self-canons (aubergine/gurka/zucchini/paprika/chili/sallad) + utökad NON_FOOD_RE. 41 regressiontester i `tests/match.test.js` bevakade av PostToolUse-hook.
+- [x] 1D — Matchningslogik **klar** (audit genomförd Session 35, rapport: `docs/match-audit-2026-04-19.md`). 53/62 recept matchar (upp från 51), 149 matches totalt (upp från 125), **spraygrädde-buggklassen eliminerad** via `CANON_REJECT_PATTERNS`. Priority 2-stemming implementerad via adjektiv-strip + token-scan + n-gram-fallback i `normalizeName`. Nya self-canons (aubergine/gurka/zucchini/paprika/chili/sallad) + utökad NON_FOOD_RE. 51 regressiontester i `tests/match.test.js` bevakade av PostToolUse-hook.
 - [x] 1E — UX-design — **beslutad** (se nedan)
-- [~] 1F — Implementation pågår: Steg 1 (CANON Priority 1), Steg 2 (`willys-offers`-endpoint + `willys-matcher`), Steg 3 (integration: `optimize_prices`-toggle, backend bucketar poolen efter besparing, UI visar "💰 Sparat ca X kr" per dag) klara. Kvarstår: live-test i Vercel + ev. Priority 2-stemming.
+- [x] 1F — Implementation **klar och live-verifierad** (Session 51, 2026-05-10). `dry_run`-parameter verifierade hela pipelinen utan att röra veckoplan. Matchningsbuggar (smör→popcorn, rapsolja→sardeller) fixade via `CANON_REJECT_PATTERNS`. 51 assertions i match.test.js (upp från 44).
 
 **Fas 2 — Familjelärande algoritm**
 - [ ] 2A — Analysera befintlig data
@@ -106,7 +106,16 @@ Inga just nu.
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 - Säsongsfilter — automatiskt vikta recept efter säsong (soppa/gryta höst-vinter, sallad sommar)
 
-### Senaste session — Session 50 (2026-05-07) — Desktop-tidslinje + taggfilter + Ture-dagar
+### Senaste session — Session 51 (2026-05-10) — Fas 1F live-verifierad + Inköpspreferenser + AI-prompt
+
+- **Fas 1F avslutad:** `dry_run`-parameter i `/api/generate` möjliggör torrkörning av hela pipelinen utan att röra veckoplan/inköpslista/historik. Prisoptimeringen (`optimize_prices`) verifierad end-to-end mot live Vercel.
+- **Matchningsbuggar fixade:** smör→"Mikropopcorn Smör" och rapsolja→"Sardeller i Olja" eliminerade via utökade `CANON_REJECT_PATTERNS`. Pluralfix (`\w*`-suffix) för svenska böjningsformer. 44→51 assertions i match.test.js.
+- **Inköpspreferenser (ny feature):** Varumärkesblocklist (t.ex. undvik Eldorado) + eko/svenskt-toggles per inköpskategori. Sparas i `dispatch-preferences.json` via `api/shopping.js` (actions `get_preferences`/`set_preferences`). Kollapserbar UI-sektion i inköpsfliken. Spec: `docs/superpowers/specs/2026-05-10-dispatch-preferences-design.md`.
+- **AI-inköpsprompt:** "Kopiera AI-inköpsprompt"-knapp i inköpsfliken bygger copy-paste-text för Claude in Chrome. Inkluderar varumärkesregler, eko/svenskt-preferenser, 2-sekunders delay-instruktion (Willys registrerar långsamt), och bara oavbockade varor.
+- **Vercel 12-funktioner-tak:** `api/dispatch-preferences.js` slog i taket → konsoliderad in i `api/shopping.js` som POST-actions.
+- **545 assertions** (51 match + 62 shopping + 432 select-recipes). Cache-bust v=60.
+
+### Session 50 (2026-05-07) — Desktop-tidslinje + taggfilter + Ture-dagar
 
 - **Desktop-anpassning:** Tidslinje bryter ut till full bredd (max 1400px) vid ≥900px via `left:50%; transform:translateX(-50%)`. Fade-gradienter (vänster/höger) med scroll-event-driven `.fade-left`/`.fade-right`.
 - **Taggfiltrering:** Dynamiskt genererade tagg-checkboxar i filter-sheet. System-/protein-/kök-taggar exkluderade via `EXCLUDED_TAGS`. Normalisering till lowercase.
