@@ -30,69 +30,90 @@
     {
       "date": "2026-05-13",
       "day": "Onsdag",
-      "recipe": null,
-      "recipeId": null,
-      "blocked": true
+      "recipe": "Senapsdressad pärlcouscous",
+      "recipeId": 49,
+      "saving": null,
+      "savingMatches": null
     },
     {
       "date": "2026-05-14",
       "day": "Torsdag",
-      "recipe": "Senapsdressad pärlcouscous",
-      "recipeId": 49
+      "recipe": "Ugnspannkaka 50/50",
+      "recipeId": 266,
+      "saving": null,
+      "savingMatches": null
     },
     {
       "date": "2026-05-15",
       "day": "Fredag",
-      "recipe": "Ugnspannkaka 50/50",
-      "recipeId": 266
+      "recipe": "Balsamicglaserad fläskkarré med rostad vitlökspolenta och grönt",
+      "recipeId": 92,
+      "saving": null,
+      "savingMatches": null
     },
     {
       "date": "2026-05-16",
       "day": "Lördag",
-      "recipe": "Balsamicglaserad fläskkarré med rostad vitlökspolenta och grönt",
-      "recipeId": 92
+      "recipe": "Skaldjurslasagne",
+      "recipeId": 47,
+      "saving": null,
+      "savingMatches": null
     },
     {
       "date": "2026-05-17",
       "day": "Söndag",
-      "recipe": "Skaldjurslasagne",
-      "recipeId": 47
+      "recipe": "Örtig tortellinisoppa",
+      "recipeId": 263,
+      "saving": null,
+      "savingMatches": null
     },
     {
       "date": "2026-05-18",
       "day": "Måndag",
-      "recipe": "Örtig tortellinisoppa",
-      "recipeId": 263
+      "recipe": "Brysselkålbonara",
+      "recipeId": 270,
+      "saving": null,
+      "savingMatches": null
     },
     {
       "date": "2026-05-19",
       "day": "Tisdag",
-      "recipe": "Brysselkålbonara",
-      "recipeId": 270
+      "recipe": "Indisk gryta med spenat, kikärter, senap & yoghurt",
+      "recipeId": 53,
+      "saving": null,
+      "savingMatches": null
     },
     {
       "date": "2026-05-20",
       "day": "Onsdag",
-      "recipe": "Indisk gryta med spenat, kikärter, senap & yoghurt",
-      "recipeId": 53
+      "recipe": "Pasta Rosso med champinjoner",
+      "recipeId": 56,
+      "saving": null,
+      "savingMatches": null
     },
     {
       "date": "2026-05-21",
       "day": "Torsdag",
-      "recipe": "Pasta Rosso med champinjoner",
-      "recipeId": 56
+      "recipe": "Nudelwok med thai-basilika och ostronsås",
+      "recipeId": 268,
+      "saving": null,
+      "savingMatches": null
     },
     {
       "date": "2026-05-22",
       "day": "Fredag",
-      "recipe": "Nudelwok med thai-basilika och ostronsås",
-      "recipeId": 268
+      "recipe": "Tikka Masala",
+      "recipeId": 271,
+      "saving": null,
+      "savingMatches": null
     },
     {
       "date": "2026-05-23",
       "day": "Lördag",
-      "recipe": "Tikka Masala",
-      "recipeId": 271
+      "recipe": null,
+      "recipeId": null,
+      "saving": null,
+      "savingMatches": null
     }
   ],
   "confirmedAt": "2026-05-07T19:52:22.405Z"
