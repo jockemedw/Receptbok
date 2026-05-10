@@ -12,7 +12,11 @@ let prefsLoaded = false;
 async function loadPrefs() {
   if (prefsLoaded) return prefs;
   try {
-    const res = await fetch("/api/dispatch-preferences");
+    const res = await fetch("/api/shopping", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "get_preferences" }),
+    });
     if (res.ok) prefs = await res.json();
   } catch { /* använd defaults */ }
   prefsLoaded = true;
@@ -21,10 +25,10 @@ async function loadPrefs() {
 
 async function savePrefs() {
   try {
-    await fetch("/api/dispatch-preferences", {
-      method: "PUT",
+    await fetch("/api/shopping", {
+      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(prefs),
+      body: JSON.stringify({ action: "set_preferences", preferences: prefs }),
     });
   } catch {
     const err = document.getElementById("prefsError");
