@@ -6,6 +6,7 @@ window.recipeFilters      = {           // multi-val checkbox-filter per grupp
   mainIngredient: new Set(),
   time:           new Set(),
   tags:           new Set(),
+  season:         new Set(),
 };
 window.replaceMode        = null;    // { date, dayName } under receptbyte
 window.editingId          = null;    // ID vid redigering, null = nytt recept

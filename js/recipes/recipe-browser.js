@@ -157,6 +157,10 @@ function statusBucket(r) {
   return 'oprovat';
 }
 
+function seasonBucket(r) {
+  return r.seasons || [];
+}
+
 function passesFilters(r) {
   const f = window.recipeFilters;
   if (!f) return true;
@@ -164,6 +168,7 @@ function passesFilters(r) {
   if (f.mainIngredient.size > 0 && !f.mainIngredient.has(mainIngredientOf(r)))   return false;
   if (f.time.size           > 0 && !f.time.has(timeBucket(r)))                   return false;
   if (f.tags.size           > 0 && !r.tags.some(t => f.tags.has(t.toLowerCase()))) return false;
+  if (f.season.size         > 0 && !seasonBucket(r).some(s => f.season.has(s)))  return false;
   return true;
 }
 
@@ -209,7 +214,7 @@ export function renderRecipeBrowser() {
 
   const filtersActive =
     window.recipeFilters &&
-    (window.recipeFilters.tested.size + window.recipeFilters.mainIngredient.size + window.recipeFilters.time.size + window.recipeFilters.tags.size > 0);
+    (window.recipeFilters.tested.size + window.recipeFilters.mainIngredient.size + window.recipeFilters.time.size + window.recipeFilters.tags.size + window.recipeFilters.season.size > 0);
 
   info.textContent = (q || filtersActive)
     ? `Visar ${matched.length} av ${total} recept`

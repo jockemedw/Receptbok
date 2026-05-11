@@ -160,7 +160,7 @@ document.getElementById('filterClearBtn').addEventListener('click', () => {
 
 function updateFilterDot() {
   const f = window.recipeFilters;
-  const any = f.tested.size + f.mainIngredient.size + f.time.size + f.tags.size > 0;
+  const any = f.tested.size + f.mainIngredient.size + f.time.size + f.tags.size + f.season.size > 0;
   document.getElementById('filterDot').hidden = !any;
 }
 
