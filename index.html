@@ -9,7 +9,7 @@
 <title>Receptboken</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=61">
+<link rel="stylesheet" href="css/styles.css?v=62">
 <style>/* tömd — CSS flyttad till css/styles.css */
 
 </style>
@@ -485,6 +485,15 @@
         <label class="bs-check"><input type="checkbox" data-fgroup="time" value="longer"><span>Längre eller okänt</span></label>
       </div>
     </div>
+    <div class="bs-group">
+      <h4 class="bs-group-title">Säsong</h4>
+      <div class="bs-checks">
+        <label class="bs-check"><input type="checkbox" data-fgroup="season" value="vår"><span>Vår</span></label>
+        <label class="bs-check"><input type="checkbox" data-fgroup="season" value="sommar"><span>Sommar</span></label>
+        <label class="bs-check"><input type="checkbox" data-fgroup="season" value="höst"><span>Höst</span></label>
+        <label class="bs-check"><input type="checkbox" data-fgroup="season" value="vinter"><span>Vinter</span></label>
+      </div>
+    </div>
     <div class="bs-group" id="tagFilterGroup" style="display:none">
       <h4 class="bs-group-title">Taggar</h4>
       <div class="bs-checks" id="tagFilterChecks"></div>
@@ -496,6 +505,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=61"></script>
+<script type="module" src="js/app.js?v=62"></script>
 </body>
 </html>
