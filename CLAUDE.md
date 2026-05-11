@@ -79,6 +79,13 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 - [ ] 5B — Autentisering & datamodell
 - [ ] 5C — Kostnads- och intäktskalkyl
 
+**Fas 6 — Säsongsoptimering** (research + implementation klar, Session 52)
+- [x] 6A — Research: säsongstabell (~120 ingredienser × 12 månader) + analys av 264 recept → `docs/research-sasong.md`
+- [x] 6B — Taggning: 242/264 recept taggade med `seasons`-fält i `recipes.json`. 22 neutrala (konserverat/fryst-baserade).
+- [x] 6C — Algoritm: `applySeasonWeight()` i `selectRecipes()` — in-season 2x, neutral 1x, off-season 0.5x. Opt-in toggle `season_weight` i `/api/generate`.
+- [x] 6D — UI: "Säsongsanpassning"-toggle i inställningspanelen + säsongsfilter (vår/sommar/höst/vinter) i receptboken.
+- [ ] 6E — Finjustering: eventuell manuell korrigering av säsongstaggar efter användarfeedback.
+
 ### Kända buggar
 Inga just nu.
 
@@ -104,9 +111,16 @@ Inga just nu.
 ### Claudes idéer
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
-- Säsongsfilter — automatiskt vikta recept efter säsong (soppa/gryta höst-vinter, sallad sommar)
 
-### Senaste session — Session 51 (2026-05-10) — Fas 1F live-verifierad + Inköpspreferenser + AI-prompt
+### Senaste session — Session 52 (2026-05-11) — Fri dag-interaktion + swap bakåt + Säsongsoptimering
+
+- **Fri dag klickbar:** Blockerade dagar i tidslinjen nu klickbara → panel med "Ångra fri dag — skjut ihop matsedeln" (ny `unblock`-action i `api/skip-day.js`) + "Skriv egen notering" (konverterar till custom-day). CSS: cursor pointer + hover på blockerade kort.
+- **Swap bakåt i tiden:** Dagsbyte (swap-ikon + "Byt dag"-knapp) tillåts nu på förflutna dagar i aktiv plan. Skip/block döljs fortfarande på förflutna dagar. `data-past`-attribut skiljer ut förflutna från readonly-arkiv.
+- **Säsongsoptimering (Fas 6 klar):** Research (`docs/research-sasong.md`) med säsongstabell (~120 ingredienser × 12 månader) + analys av alla 264 recept. 242 recept taggade med `seasons`-fält (vår/sommar/höst/vinter). `applySeasonWeight()` i `selectRecipes()`: in-season 2x, neutral 1x, off-season 0.5x. Opt-in toggle "Säsongsanpassning" i inställningspanelen. Skript: `scripts/season-analysis.mjs`.
+- **Säsongsfilter i receptboken:** Ny filtergrupp "Säsong" i filter-sheet med vår/sommar/höst/vinter-checkboxar. Kombineras med alla befintliga filter.
+- **545 assertions** (51 match + 62 shopping + 432 select-recipes). Cache-bust v=62.
+
+### Session 51 (2026-05-10) — Fas 1F live-verifierad + Inköpspreferenser + AI-prompt
 
 - **Fas 1F avslutad:** `dry_run`-parameter i `/api/generate` möjliggör torrkörning av hela pipelinen utan att röra veckoplan/inköpslista/historik. Prisoptimeringen (`optimize_prices`) verifierad end-to-end mot live Vercel.
 - **Matchningsbuggar fixade:** smör→"Mikropopcorn Smör" och rapsolja→"Sardeller i Olja" eliminerade via utökade `CANON_REJECT_PATTERNS`. Pluralfix (`\w*`-suffix) för svenska böjningsformer. 44→51 assertions i match.test.js.
