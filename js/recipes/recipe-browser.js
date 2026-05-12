@@ -2,7 +2,7 @@
 // Läser state: RECIPES, groupBy, isSnapping, scrollUpAccum
 // Skriver state: isSnapping, scrollUpAccum
 
-import { proteinLabel, timeStr, renderDetailInner } from '../utils.js';
+import { proteinLabel, timeStr, renderDetailInner, escapeHtml } from '../utils.js';
 
 // ── Grupperingsdefinitioner ───────────────────────────────────────────────────
 // Varje grupp är en lista av sektioner. Sektionerna utvärderas i ordning;
@@ -92,7 +92,7 @@ export function renderCard(r) {
   return `
 <div class="recipe-card"
      data-id="${r.id}"
-     data-title="${r.title.toLowerCase()}"
+     data-title="${escapeHtml(r.title).toLowerCase()}"
      data-protein="${r.protein}"
      data-tags="${r.tags.join(' ')}"
      data-tested="${r.tested}"
@@ -100,7 +100,7 @@ export function renderCard(r) {
   <div class="card-header" onclick="toggleCard(this.closest('.recipe-card'))">
     <div class="recipe-num">${r.id}</div>
     <div class="card-info">
-      <div class="card-title">${r.title}</div>
+      <div class="card-title">${escapeHtml(r.title)}</div>
       <div class="card-meta">
         <span class="pill pill-protein">${proteinLabel[r.protein] || r.protein}</span>
         ${t ? `<span class="pill pill-time">⏱ ${t}</span>` : ''}
@@ -109,7 +109,7 @@ export function renderCard(r) {
       </div>
     </div>
     <button class="select-btn"
-            onclick="selectRecipeForDay(event,${r.id},'${r.title.replace(/'/g, "\\'")}')">Välj</button>
+            onclick="selectRecipeForDay(event,${r.id},'${escapeHtml(r.title).replace(/'/g, "\\'")}')">Välj</button>
     <span class="card-chevron">›</span>
   </div>
   <div class="recipe-detail">

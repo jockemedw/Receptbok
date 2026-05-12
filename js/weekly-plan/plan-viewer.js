@@ -466,12 +466,12 @@ export function openWeekRecipe(recipeId, title, cardEl) {
   cardEl.classList.add('selected');
 
   const t        = r.time ? (r.timeNote ? `${r.time} min · ${r.timeNote}` : `${r.time} min`) : '';
-  const ingHtml  = r.ingredients.map(i => `<li>${i}</li>`).join('');
-  const stepsHtml = r.instructions.map(s =>
-    `<li onclick="toggleStep(this)"><span>${s}</span></li>`
+  const ingHtml  = (r.ingredients || []).map(i => `<li>${esc(i)}</li>`).join('');
+  const stepsHtml = (r.instructions || []).map(s =>
+    `<li onclick="toggleStep(this)"><span>${esc(s)}</span></li>`
   ).join('');
   const notesHtml = r.notes
-    ? `<div class="detail-section"><p class="recipe-notes">${r.notes}</p></div>` : '';
+    ? `<div class="detail-section"><p class="recipe-notes">${esc(r.notes)}</p></div>` : '';
   const date    = cardEl.dataset.date || '';
   const dayName = cardEl.dataset.day  || '';
 
@@ -503,7 +503,7 @@ export function openWeekRecipe(recipeId, title, cardEl) {
 
   panel.innerHTML = `<div class="detail-inner">
     <div class="week-recipe-header">
-      <div class="week-recipe-title">${r.title}</div>
+      <div class="week-recipe-title">${esc(r.title)}</div>
       <span class="pill pill-protein">${PROTEIN_LABEL[r.protein] || r.protein}</span>
       ${t ? `<span class="pill pill-time">⏱ ${t}</span>` : ''}
       <span class="pill ${r.tested ? 'pill-tested' : 'pill-untested'} pill-toggle"
@@ -907,7 +907,7 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
         <div class="${cls}" data-date="${d.date}" data-day="${d.day}"
           onclick="openCustomDay('${d.date}', '${d.day}')">
           <div class="week-day-name">${d.dayShort} ${d.dayNum}${dot}${holidayDot}</div>
-          <div class="week-day-recipe custom-note" title="${noteEsc}">${d.customNote ? d.customNote : '✏️ Egen'}</div>
+          <div class="week-day-recipe custom-note" title="${noteEsc}">${d.customNote ? esc(d.customNote) : '✏️ Egen'}</div>
         </div>
       </div>`;
     }
@@ -938,7 +938,7 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
     const borderStyle = proteinColor ? ` style="border-left: 3px solid ${proteinColor}"` : '';
 
     // Swap-knappen bara på aktiv plan, icke-bekräftad
-    const showSwap = d.planId === 'active' && !d.blocked;
+    const showSwap = d.planId === 'active' && !d.blocked && !window.planConfirmed;
     const swapBtn = showSwap
       ? `<button class="swap-icon-btn" title="Flytta till annan dag"
            onclick="event.stopPropagation();enterSwapMode('${d.date}')"

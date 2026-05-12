@@ -185,7 +185,7 @@ const CATEGORY_KEYWORDS = {
     "ägg", "äggula", "äggvita",
   ],
   Grönsaker: [
-    "lök", "rödlök", "purjolök", "salladslök", "schalottenlök", "silverlök", "vitlök",
+    "lök", "rödlök", "purjolök", "salladslök", "schalottenlök", "silverlök", "vitlök", "vitlöksklyftor",
     "morot", "morötter", "potatis", "sötpotatis",
     "blomkål", "broccoli", "brysselkål", "grönkål", "vitkål", "spetskål",
     "salladskål", "savojkål", "pak choy", "kålrabbi",

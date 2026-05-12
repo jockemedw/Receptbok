@@ -74,6 +74,7 @@ async function fetchRecipes() {
     protein: r.protein,
     tested: r.tested || false,
     ingredients: r.ingredients || [],
+    seasons: r.seasons || [],
   }));
 }
 

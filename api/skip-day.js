@@ -21,6 +21,8 @@ export default createHandler(async (req, res, pat) => {
     for (let i = plan.days.length - 1; i > dayIdx; i--) {
       plan.days[i].recipe = plan.days[i - 1].recipe;
       plan.days[i].recipeId = plan.days[i - 1].recipeId;
+      plan.days[i].saving = plan.days[i - 1].saving || null;
+      plan.days[i].savingMatches = plan.days[i - 1].savingMatches || null;
       if (plan.days[i - 1].blocked) {
         plan.days[i].blocked = true;
       } else {
@@ -29,6 +31,8 @@ export default createHandler(async (req, res, pat) => {
     }
     plan.days[dayIdx].recipe = null;
     plan.days[dayIdx].recipeId = null;
+    plan.days[dayIdx].saving = null;
+    plan.days[dayIdx].savingMatches = null;
     plan.days[dayIdx].blocked = true;
   } else if (action === "unblock") {
     if (!plan.days[dayIdx].blocked) {

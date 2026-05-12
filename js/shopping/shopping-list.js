@@ -2,7 +2,7 @@
 // Läser state: _freshShopContent, _checkedItems, _checkedSaveTimer, _shopRecipeItems, _shopManualItems
 // Skriver state: _freshShopContent, _checkedItems, _checkedSaveTimer, _shopRecipeItems, _shopManualItems
 
-import { CAT_ICONS } from '../utils.js';
+import { CAT_ICONS, escapeHtml } from '../utils.js';
 
 const ICON_NOTE = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h11l3 3v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><path d="M8 11h8 M8 14h8 M8 17h5"/></svg>';
 
@@ -133,8 +133,8 @@ export function renderFullShoppingList(recipeItems, manualItems) {
       return `<li class="shopping-item${checked ? ' checked' : ''}"
                   onclick="toggleShopItem(this,'${key}')">
         <span class="item-checkbox">${checked ? '✓' : ''}</span>
-        <span class="item-text">${item}</span>
-        <button class="remove-manual-btn" onclick="event.stopPropagation();removeManualItem('${item.replace(/'/g, "\\'")}')">×</button>
+        <span class="item-text">${escapeHtml(item)}</span>
+        <button class="remove-manual-btn" onclick="event.stopPropagation();removeManualItem('${escapeHtml(item).replace(/'/g, "\\'")}')">×</button>
       </li>`;
     }).join('');
     checkHtml += `<div class="shopping-category">

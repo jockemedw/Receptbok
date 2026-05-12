@@ -15,6 +15,12 @@ export const PROTEIN_COLOR = {
   kött: '#b05040', fläsk: '#b05040',
 };
 
+export function escapeHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 export function timeStr(r) {
   if (!r.time) return null;
   const base = r.time < 60 ? r.time + ' min' : (r.time / 60).toFixed(1).replace('.0', '') + ' h';
@@ -22,12 +28,12 @@ export function timeStr(r) {
 }
 
 export function renderIngredient(i) {
-  if (!i.includes(':')) return `<li>${i}</li>`;
+  if (!i.includes(':')) return `<li>${escapeHtml(i)}</li>`;
   const colon = i.indexOf(':');
   const label = i.substring(0, colon).trim();
   const val   = i.substring(colon + 1).trim();
-  if (!val) return `<li class="group-header">${label}</li>`;
-  return `<li><span class="ing-group">${label}:</span> ${val}</li>`;
+  if (!val) return `<li class="group-header">${escapeHtml(label)}</li>`;
+  return `<li><span class="ing-group">${escapeHtml(label)}:</span> ${escapeHtml(val)}</li>`;
 }
 
 export function fmtIso(date) {
@@ -60,10 +66,10 @@ export function isoWeekNumber(dateIso) {
 export function renderDetailInner(r) {
   const ingHtml   = (r.ingredients || []).map(renderIngredient).join('');
   const stepsHtml = (r.instructions || []).map(s =>
-    `<li onclick="toggleStep(this)"><span>${s}</span></li>`
+    `<li onclick="toggleStep(this)"><span>${escapeHtml(s)}</span></li>`
   ).join('');
   const notesHtml = r.notes
-    ? `<div class="detail-section"><h3>Noteringar</h3><div class="notes-box">💡 ${r.notes}</div></div>` : '';
+    ? `<div class="detail-section"><h3>Noteringar</h3><div class="notes-box">💡 ${escapeHtml(r.notes)}</div></div>` : '';
   return `
     <div class="detail-section">
       <h3>Ingredienser · ${r.servings} portioner</h3>
@@ -161,6 +167,7 @@ export function getHolidayName(dateIso) {
 }
 
 // Exponera på window för inline onclick-attribut och icke-modul-kod
+window.escapeHtml       = escapeHtml;
 window.timeStr          = timeStr;
 window.renderIngredient = renderIngredient;
 window.fmtIso           = fmtIso;

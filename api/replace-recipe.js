@@ -90,6 +90,12 @@ export default createHandler(async (req, res, pat) => {
   };
 
   const today = new Date().toISOString().slice(0, 10);
+
+  // Uppdatera historik så att det nya receptet inte väljs igen direkt
+  const history = await fetchHistory(pat);
+  history.usedOn = history.usedOn || {};
+  history.usedOn[String(picked.id)] = today;
+
   const commitMsg = `Receptbyte ${today} — autogenererad`;
 
   if (plan.confirmedAt) {
@@ -115,11 +121,15 @@ export default createHandler(async (req, res, pat) => {
     await Promise.all([
       writeFile("weekly-plan.json", plan, pat, commitMsg),
       writeFile("shopping-list.json", shoppingList, pat, commitMsg),
+      writeFile("recipe-history.json", history, pat, commitMsg),
     ]);
 
     return res.status(200).json({ recipe: picked.title, recipeId: picked.id, shoppingList });
   }
 
-  await writeFile("weekly-plan.json", plan, pat, commitMsg);
+  await Promise.all([
+    writeFile("weekly-plan.json", plan, pat, commitMsg),
+    writeFile("recipe-history.json", history, pat, commitMsg),
+  ]);
   return res.status(200).json({ recipe: picked.title, recipeId: picked.id });
 });
