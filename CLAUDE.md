@@ -112,7 +112,19 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 52 (2026-05-11) — Fri dag-interaktion + swap bakåt + Säsongsoptimering
+### Senaste session — Session 53 (2026-05-12) — Kodgranskning + P0-buggfixar
+
+- **Kodgranskning:** 8 parallella Sonnet-agenter granskade hela kodbasen (~7800 JS + 3260 CSS + 510 HTML). 210 fynd totalt: 19 P0 (kritiska), 41 P1, 18 dead code, 24 XSS, 32 inkonsistenser, 36 förbättringar, 40 testtäckning. Rapporter: `docs/review/00-summary.md` + `01`–`08`.
+- **P0-fixar (alla 6 buggar + XSS):**
+  1. `api/generate.js` — `seasons: r.seasons || []` i fetchRecipes → Fas 6C fungerar nu i produktion
+  2. `api/replace-recipe.js` — recipe-history.json uppdateras vid receptbyte (var bruten sedan implementation)
+  3. `api/skip-day.js` — saving/savingMatches kopieras vid skip (badges hamnar på rätt dag)
+  4. `api/_shared/shopping-builder.js` — `vitlöksklyftor` i Grönsaker-nyckelord (inte Skafferi)
+  5. `js/weekly-plan/plan-viewer.js` — swap blockeras på bekräftad plan + null-guard ingredients/instructions + `esc()` på customNote/title/ingredients/instructions/notes
+  6. XSS-härdning: ny `escapeHtml()` i `js/utils.js`, applicerad i `renderIngredient`, `renderDetailInner`, `recipe-browser.js` (title i kort+data-attribut), `shopping-list.js` (manuella varor)
+- **545 assertions** oförändrade (51 match + 62 shopping + 432 select-recipes).
+
+### Session 52 (2026-05-11) — Fri dag-interaktion + swap bakåt + Säsongsoptimering
 
 - **Fri dag klickbar:** Blockerade dagar i tidslinjen nu klickbara → panel med "Ångra fri dag — skjut ihop matsedeln" (ny `unblock`-action i `api/skip-day.js`) + "Skriv egen notering" (konverterar till custom-day). CSS: cursor pointer + hover på blockerade kort.
 - **Swap bakåt i tiden:** Dagsbyte (swap-ikon + "Byt dag"-knapp) tillåts nu på förflutna dagar i aktiv plan. Skip/block döljs fortfarande på förflutna dagar. `data-past`-attribut skiljer ut förflutna från readonly-arkiv.
