@@ -32,10 +32,11 @@
     {
       "date": "2026-05-13",
       "day": "Onsdag",
-      "recipe": "Ugnspannkaka 50/50",
-      "recipeId": 266,
+      "recipe": null,
+      "recipeId": null,
       "saving": null,
-      "savingMatches": null
+      "savingMatches": null,
+      "blocked": true
     },
     {
       "date": "2026-05-14",
