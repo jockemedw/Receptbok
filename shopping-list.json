@@ -1,17 +1,16 @@
 {
-  "generated": "2026-05-10",
+  "generated": "2026-05-13",
   "startDate": "2026-05-09",
   "endDate": "2026-05-23",
   "recipeItems": {
     "Mejeri": [
       "crème fraiche (7 dl)",
-      "grädde (3 dl)",
+      "grädde (1 dl)",
       "kokosmjölk (8 dl)",
       "mjölk (11,6 dl)",
       "mozzarella (225 g)",
       "ost",
       "parmesan",
-      "smör",
       "yoghurt (2 dl)",
       "ägg (6)",
       "äggula (4)"
@@ -30,24 +29,22 @@
       "lök",
       "majs (3 dl)",
       "mangold (1)",
-      "morot",
-      "persilja",
-      "potatis (800 g)",
+      "morot (7)",
+      "persilja (1,2 dl)",
       "purjolök (4 dl)",
       "salladslök",
       "spenat (100 g)",
       "timjan",
-      "tomat (2400 g)"
+      "tomat (2400 g)",
+      "vitlöksklyftor (17)"
     ],
     "Fisk & kött": [
       "fast tofu (300 g)",
       "kräftor (170 g)",
-      "rödspätta (600 g)",
       "räkor (170 g)",
       "rökt kalkon alternativt rökt tofu (8 skivor)"
     ],
     "Frukt": [
-      "apelsin (1 dl)",
       "citron (2)",
       "äpple (1)"
     ],
@@ -73,7 +70,6 @@
       "hasselnötter (1 dl)",
       "havremjöl (1 dl)",
       "honung",
-      "hönsbuljong (½)",
       "ingefära (1 bit)",
       "jordnötter",
       "kardemumma",
@@ -99,8 +95,7 @@
       "tikka-masala kryddblandning (1 påse)",
       "tomatpuré",
       "torkad tortellini (150 g)",
-      "vetemjöl (5 dl)",
-      "vitlöksklyftor (17)",
+      "vetemjöl (4 dl)",
       "vitvinsvinäger"
     ],
     "Övrigt": []
