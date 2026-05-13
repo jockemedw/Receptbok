@@ -32,8 +32,9 @@
     {
       "date": "2026-05-13",
       "day": "Onsdag",
-      "recipe": "Stekta rödspättafiléer med stuvade morötter",
-      "recipeId": 3
+      "recipe": null,
+      "recipeId": null,
+      "blocked": true
     },
     {
       "date": "2026-05-14",
