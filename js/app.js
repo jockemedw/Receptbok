@@ -3,6 +3,8 @@
 
 import './state.js';
 import './utils.js';
+import './supabase-client.js';
+import { requireAuth } from './auth-gate.js';
 import './ui/scroll.js';
 import './ui/navigation.js';
 import './shopping/shopping-list.js';
@@ -172,11 +174,16 @@ document.getElementById('emptyState').addEventListener('click', e => {
   }
 });
 
-init();
-window.loadWeeklyPlan();
+async function boot() {
+  await requireAuth();
+  await init();
+  window.loadWeeklyPlan();
 
-// Deep-link via query param: ?tab=recept|vecka|shop
-const _tabParam = new URLSearchParams(window.location.search).get('tab');
-if (_tabParam && ['recept', 'vecka', 'shop'].includes(_tabParam)) {
-  window.switchTab(_tabParam);
+  // Deep-link via query param: ?tab=recept|vecka|shop
+  const tabParam = new URLSearchParams(window.location.search).get('tab');
+  if (tabParam && ['recept', 'vecka', 'shop'].includes(tabParam)) {
+    window.switchTab(tabParam);
+  }
 }
+
+boot();

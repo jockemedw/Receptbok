@@ -97,7 +97,7 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 Inga just nu.
 
 ### Öppna utredningar
-**Supabase-migration — ⏳ FAS 7A KLAR, FAS 7B NÄSTA (Session 54, 2026-05-16).** Spec: `docs/superpowers/specs/2026-05-16-supabase-migration-design.md`. PR: #29 (docs-only). Beslut: magic-link-auth, Supabase Realtime, big-bang-cutover, recipes i egen tabell, single-household i v1.
+**Supabase-migration — ⏳ FAS 7C IGÅNG (Session 56, 2026-05-16).** Supabase-klient + magic-link-gate landade. `js/weekly-plan/plan-viewer.js`, `js/shopping/shopping-list.js`, `js/recipes/recipe-editor.js` och `js/recipes/recipe-browser.js` läser fortfarande från JSON-filer — det är nästa step. Spec: `docs/superpowers/specs/2026-05-16-supabase-migration-design.md`. PR: #29 (docs-only).
 
 **Nycklar/IDs att ha för fortsättning:**
 - Supabase-projekt ref: `zqeznveicagqwblltvsa` (URL: `https://zqeznveicagqwblltvsa.supabase.co`)
@@ -113,8 +113,8 @@ Inga just nu.
    - `--reset`: raderar all data i migrationstabellerna (households + household_members orörda). För att kunna köra om importen om något går snett.
    - Kräver `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` som env vars (hämtas från Vercel-dashboard eller Supabase Settings → API).
 3. **Fas 7C — Frontend** (största jobbet, ~12–16h):
-   a. `js/supabase-client.js` (init + exporterar `db` + `auth`)
-   b. Login-skärm med magic-link (visas om `auth.getSession()` är null)
+   a. ~~`js/supabase-client.js` (init + exporterar `db` + `auth`)~~ — **klar** (Session 56). Singleton via CDN-import (`https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm`). Hårdkodad URL + publishable key (`sb_publishable_aB6kIJA9j4fyGZ7Df_GEZQ_rDeHjZ5x`). `getHouseholdId()` cachat.
+   b. ~~Login-skärm med magic-link (visas om `auth.getSession()` är null)~~ — **klar** (Session 56). `js/auth-gate.js` exporterar `requireAuth()` som hängande Promise; `app.js` `boot()` awaitar den innan resten initialiseras. CSS i `css/styles.css` (avsnitt "Auth-gate"). PKCE-flow, `detectSessionInUrl: true`.
    c. Ersätt fetch i `js/weekly-plan/plan-viewer.js` + `js/shopping/shopping-list.js` + `js/recipes/recipe-editor.js` + `js/recipes/recipe-browser.js`
    d. Realtime-subscriptions för `meal_days` + `shopping_items` + `recipe_history` (+ cleanup vid render-loops)
 4. **Fas 7D — Backend** — konsolidera till 5 endpoints:
@@ -148,7 +148,23 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 55 (2026-05-16) — Fas 7B klar (Supabase-importskript)
+### Senaste session — Session 56 (2026-05-16) — Fas 7C-foundation (Supabase-klient + magic-link-gate)
+
+- **Två nya frontend-moduler:** `js/supabase-client.js` (singleton via `https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm`, PKCE-flow, `detectSessionInUrl: true`, `getHouseholdId()` cachat per session) och `js/auth-gate.js` (exporterar `requireAuth()` som returnerar en hängande Promise tills `SIGNED_IN`/`INITIAL_SESSION` triggar). Båda registrerar `window.supabase`/`window.db`/`window.auth`/`window.requireAuth`/`window.signOut` för debugging + framtida konsolanvändning.
+- **`app.js`-bootflöde:** Resten av init-sekvensen (recipes-load, render, datepickers, deeplink-tab) wrapas nu i `boot()` som awaitar `requireAuth()` först. Magic-link-mailet skickas med `emailRedirectTo: window.location.origin + window.location.pathname` så preview- och prod-URL:erna båda fungerar utan vidare konfig i Supabase-dashboarden.
+- **CSS i `styles.css`:** Avsnitt "Auth-gate" — fixerad overlay (z-index 9999), centrerat kort (max 360px), Playfair-Display-rubrik, lichen-fokusring, rust CTA, lichen-deep statusmeddelande, rust-deep felmeddelande. Respekterar safe-area-inset uppe/nere.
+- **Cache-bust v=63** på `css/styles.css` och `js/app.js`. **545 assertions oförändrade** (51 match + 62 shopping + 432 select-recipes).
+- **Säkerhetsval:** Publishable key `sb_publishable_aB6kIJA9j4fyGZ7Df_GEZQ_rDeHjZ5x` är medvetet hårdkodad i klienten — anon-nivån skyddas av RLS-policies (spec sektion 3). URL `https://zqeznveicagqwblltvsa.supabase.co` likaså. Inga secrets i klientkoden.
+- **Vad som INTE är gjort än (rest av Fas 7C):**
+  - `js/weekly-plan/plan-viewer.js` — `loadWeeklyPlan()` och alla `fetch('/api/...')`-anrop (swap, skip, custom-days, replace, confirm, discard).
+  - `js/shopping/shopping-list.js` — checked-state, manual items, prefs.
+  - `js/recipes/recipe-editor.js` — CRUD mot `db.from('recipes')`.
+  - `js/recipes/recipe-browser.js` — `init()` i `app.js` laddar fortfarande `recipes.json` via fetch. Behöver ersättas med `db.from('recipes').select('*')`.
+  - Realtime-subscriptions för `meal_days` + `shopping_items` + `recipe_history`.
+- **Test-impact innan cutover:** Inloggningsgaten blockerar laddning på preview-URL. Live-verifiering kvar tills användaren öppnar preview, anger sin e-post och bekräftar att magic-link landar + att gaten försvinner efter klick. (`api/dispatch-to-willys.js`-flödet rörs inte i denna session.)
+- **Nästa session:** Fas 7C steg c — ersätt fetch i en modul i taget, börja förslagsvis med `recipe-browser.js`/`recipe-editor.js` (mest isolerade, mindre risk för regressions) och avsluta med `plan-viewer.js` (mest invecklat). Lägg till realtime-cleanup-pattern i `state.js` så subscriptions inte läcker vid render-loops.
+
+### Session 55 (2026-05-16) — Fas 7B klar (Supabase-importskript)
 
 - **Skript:** `scripts/migrate-to-supabase.mjs` (478 rader) med tre lägen — `--dry-run` (default, ofarligt), `--commit` (live-import via service-role), `--reset` (raderar migrationstabeller, inte households/members). Använder `@supabase/supabase-js` (ny dep, `node_modules/` + `package-lock.json` tillagda i `.gitignore`).
 - **Dry-run-validering:** 264 recept + 1 weekly_plan + 28 meal_days (15 plan + 13 custom) + 68 recipe_history + 1 plan_archive + 1 shopping_list + 82 shopping_items + 1 dispatch_preferences.
