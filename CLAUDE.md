@@ -158,10 +158,14 @@ Inga just nu.
 
 **Nästa session — Fas 7C steg 1 (seed Supabase med `--commit`):**
 
-1. Hämta `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` från Supabase Settings → API (eller från Vercel-dashboard, env-vars som börjar på `SUPABASE_*` lagda till av integrationen). Sätt som env vars i shellen.
-2. Kör `node scripts/migrate-to-supabase.mjs --commit` lokalt.
+📖 **Full steg-för-steg-guide för användaren:** `docs/next-step-2026-05-17-supabase-seed.md`. Sparad så att den hittas direkt nästa session — användaren kör lokalt, sandboxen kan inte göra det (service-role-nyckeln stannar utanför delade miljöer).
+
+Sammanfattning:
+1. Hämta `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` från Supabase Settings → API. Exportera som env vars.
+2. Kör `node scripts/migrate-to-supabase.mjs --dry-run` först (säker, skriver inget).
 3. Verifiera radantal mot Session 55:s dry-run: 264 recept + 1 weekly_plan + 28 meal_days + 68 recipe_history + 1 plan_archive + 1 shopping_list + 82 shopping_items + 1 dispatch_preferences.
-4. Spot-check via `db.from('recipes').select('id,title').order('id').limit(5)` — verifiera 5 första titlar matchar `recipes.json`.
+4. Kör `node scripts/migrate-to-supabase.mjs --commit` när siffrorna matchar.
+5. Spot-check via `select count(*) from recipes` + `select id, title from recipes order by id limit 5` i Supabase SQL Editor.
 
 **Sedan steg 2 (dual-read, JSON vinner):** I `app.js` `init()`, läs recept från Supabase parallellt med JSON, kör båda genom mappern, jämför och `console.warn` vid diff. Appen använder fortfarande JSON. Pusha till preview, öppna devtools-konsolen, kräv 0 `[supa-mismatch]`-rader vid sidladdning.
 
