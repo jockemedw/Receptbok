@@ -86,8 +86,8 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 - [x] 6D — UI: "Säsongsanpassning"-toggle i inställningspanelen + säsongsfilter (vår/sommar/höst/vinter) i receptboken.
 - [ ] 6E — Finjustering: eventuell manuell korrigering av säsongstaggar efter användarfeedback.
 
-**Fas 7 — Supabase-migration** (plan klar, ej påbörjad — spec: `docs/superpowers/specs/2026-05-16-supabase-migration-design.md`, PR #29)
-- [ ] 7A — Förberedelse: skapa Supabase-projekt + Vercel-integration + schema + magic-link-auth + seed household
+**Fas 7 — Supabase-migration** (pågående — spec: `docs/superpowers/specs/2026-05-16-supabase-migration-design.md`, PR #29)
+- [x] 7A — Förberedelse **klar** (Session 54). Supabase-projekt `receptbok` (ref `zqeznveicagqwblltvsa`, eu-central-1). Vercel-Supabase-integration: 15 nya env vars, 7 gamla orörda. Schema: 10 tabeller + indexer + RLS-policyer. Household "Familjen" (id `71e41d47-0c8e-47c6-83ec-696d256496bf`), owner `joakim.weimar@gmail.com` (user_id `c815432d-f622-4e4d-9e89-362db8941d1e`), magic-link verifierat.
 - [ ] 7B — Importskript `scripts/migrate-to-supabase.mjs` (dry-run + commit-läge) + tre backup-lager
 - [ ] 7C — Frontend-omskrivning: `js/supabase-client.js` + ersätt fetch-anrop + login-skärm + realtime
 - [ ] 7D — Backend-omskrivning: konsolidera 12 → 5 endpoints, ta bort 7 som flyttas till frontend
@@ -97,20 +97,16 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 Inga just nu.
 
 ### Öppna utredningar
-**Supabase-migration — ⏸ PLAN KLAR, EJ PÅBÖRJAD (Session 54, 2026-05-16).** Spec: `docs/superpowers/specs/2026-05-16-supabase-migration-design.md`. PR: #29 (docs-only, säker att mergea). Beslut: magic-link-auth, Supabase Realtime, big-bang-cutover, recipes i egen tabell, single-household i v1.
+**Supabase-migration — ⏳ FAS 7A KLAR, FAS 7B NÄSTA (Session 54, 2026-05-16).** Spec: `docs/superpowers/specs/2026-05-16-supabase-migration-design.md`. PR: #29 (docs-only). Beslut: magic-link-auth, Supabase Realtime, big-bang-cutover, recipes i egen tabell, single-household i v1.
+
+**Nycklar/IDs att ha för fortsättning:**
+- Supabase-projekt ref: `zqeznveicagqwblltvsa` (URL: `https://zqeznveicagqwblltvsa.supabase.co`)
+- Household-id: `71e41d47-0c8e-47c6-83ec-696d256496bf` (`Familjen`)
+- Owner user-id: `c815432d-f622-4e4d-9e89-362db8941d1e` (`joakim.weimar@gmail.com`)
+- Env-vars-snapshot före integration: `docs/superpowers/specs/env-vars-pre-supabase.md`
 
 **TODO i exakt ordning (läs spec först!):**
-1. **Fas 7A — Förberedelse** — kör innan något annat:
-   a. `git tag pre-supabase-migration <main-HEAD-sha> && git push origin pre-supabase-migration`
-   b. `git branch backup-data-pre-supabase main && git push -u origin backup-data-pre-supabase`
-   c. Kopiera alla 7 JSON-datafiler till `docs/legacy/<filnamn>-backup-2026-05-16.json` + commit
-   d. Skriv ner alla Vercel-env-vars (namn + 4-tecken-signatur) i `docs/superpowers/specs/env-vars-pre-supabase.md` INNAN Supabase-integration
-   e. Skapa Supabase-projekt via MCP `create_project` (EU/Frankfurt-region)
-   f. Användaren kopplar Vercel-Supabase-integration manuellt i Vercel-dashboard
-   g. Verifiera env-vars-listan oförändrad efter integration
-   h. Applicera schema via MCP `apply_migration` (alla 10 tabeller + RLS-policyer, se spec sektion 2+3)
-   i. Konfigurera magic-link-auth i Supabase-dashboard (default SMTP räcker)
-   j. Seed household "Familjen" + lägg till ägarens user-id som medlem
+1. ~~**Fas 7A — Förberedelse**~~ — **klar** (Session 54). Alla 10 substeg gröna.
 2. **Fas 7B — Importskript** — `scripts/migrate-to-supabase.mjs`:
    a. `--dry-run`-läge: läser JSON, validerar mot schema, loggar planerade INSERTs, skriver INGENTING
    b. `--commit`-läge: live-import i ordning recipes → weekly_plans → meal_days → recipe_history → plan_archives → shopping_lists → shopping_items → dispatch_preferences
@@ -151,7 +147,21 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 53 (2026-05-12) — Kodgranskning + P0-buggfixar
+### Senaste session — Session 54 (2026-05-16) — Fas 7A klar (Supabase-förberedelse)
+
+- **Backup-lager:** branch `backup-data-pre-supabase` (SHA `3d4d190`) + 7 JSON-datafiler kopierade till `docs/legacy/`. Tag `pre-supabase-migration` försökt men sandboxen blockerar tag-push med 403 — branchen täcker samma roll.
+- **Env-vars-snapshot:** `docs/superpowers/specs/env-vars-pre-supabase.md`. 7 variabler dokumenterade (4-tecken-signaturer). Tre med värde (`GITHUB_PAT`, `GOOGLE_API_KEY`, `WILLYS_REFRESH_SECRET`), fyra tomma (`GITHUB_GIST_PAT`, `WILLYS_COOKIE`, `WILLYS_CSRF`, `WILLYS_STORE_ID`).
+- **Namnupptäckter:** (1) Spec sa `GEMINI_API_KEY`, verklig variabel heter `GOOGLE_API_KEY` (verifierat i `api/import-recipe.js`). (2) `WILLYS_REFRESH_SECRET` är en extra variabel utöver spec-listan (Fas 4F).
+- **Säkerhetsvarningar:** `GITHUB_PAT` och `GOOGLE_API_KEY`-värden visades i klartext i skärmdumpar — bör roteras efter Fas 7E.
+- **Supabase-projekt:** `receptbok` skapat via MCP, ref `zqeznveicagqwblltvsa`, region `eu-central-1` (Frankfurt). Free-tier, Vercel-Marketplace-org (billing via Vercel).
+- **Vercel-Supabase-integration:** Användaren kopplade i Vercel-dashboard. 15 nya env vars tillagda, alla 7 befintliga orörda (R5-skydd höll).
+- **Schema (M1):** 10 tabeller skapade — `households`, `household_members`, `recipes`, `weekly_plans`, `meal_days`, `recipe_history`, `plan_archives`, `shopping_lists`, `shopping_items`, `dispatch_preferences` + indexer.
+- **RLS (M2):** Enable RLS på alla 10 tabeller + policies per spec-mönster ("household members read/write"). `plan_archives` är write-once (insert + select men inga update/delete-policies). `households` och `household_members` har bara SELECT-policy (skrivning kräver service-role för att förhindra privilege escalation). Säkerhetsadvisor rensad.
+- **Seed (1j-a):** `INSERT INTO households (name) VALUES ('Familjen')` → id `71e41d47-0c8e-47c6-83ec-696d256496bf`.
+- **Magic-link verifierat (1j-b):** Användaren skickade `Send invitation` från Auth-dashboarden mot `joakim.weimar@gmail.com`, klickade länken, blev `email_confirmed`. user_id `c815432d-f622-4e4d-9e89-362db8941d1e`. Seedad som `owner` i `household_members`.
+- **Nästa session:** Fas 7B — bygg `scripts/migrate-to-supabase.mjs` med `--dry-run` och `--commit`-lägen. Läs 7 JSON-filer, mappa camelCase→snake_case (`blockedBrands`→`blocked_brands`, `usedOn`→`used_on`, etc.), importera i FK-ordning. `custom-days.entries{}` mappas till `meal_days` med `plan_id = null` + `custom_note`. Validera radantal efter import.
+
+### Session 53 (2026-05-12) — Kodgranskning + P0-buggfixar
 
 - **Kodgranskning:** 8 parallella Sonnet-agenter granskade hela kodbasen (~7800 JS + 3260 CSS + 510 HTML). 210 fynd totalt: 19 P0 (kritiska), 41 P1, 18 dead code, 24 XSS, 32 inkonsistenser, 36 förbättringar, 40 testtäckning. Rapporter: `docs/review/00-summary.md` + `01`–`08`.
 - **P0-fixar (alla 6 buggar + XSS):**
