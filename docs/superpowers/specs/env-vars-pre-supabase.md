@@ -21,11 +21,11 @@ installeras. Används för att verifiera att R5 inte utlöses
 | Variabel | Finns | Sig (4 tkn) | Anteckning |
 |---|---|---|---|
 | `GITHUB_PAT` | ✅ | `gith` | contents:write på Receptbok-repo. Added Mar 12, All Environments |
-| `GITHUB_GIST_PAT` | ✅ | `???` | classic PAT (fine-grained stöder inte gists). Added Apr 26, Sensitive — behöver Reveal |
+| `GITHUB_GIST_PAT` | ✅ | `(tom)` | classic PAT (fine-grained stöder inte gists). Added Apr 26, Sensitive. **Värdet är tomt** — Fas 4F-engångs-setupen ej genomförd |
 | `GOOGLE_API_KEY` | ✅ | `AIza` | Gemini API för receptimport via foto/URL. Added Apr 1, All Environments. **Obs: spec sa "GEMINI_API_KEY" — verkligt namn är GOOGLE_API_KEY** |
-| `WILLYS_COOKIE` | ? | `???` | sessioncookie till willys.se, ~7 d livslängd. Inte visad än |
-| `WILLYS_CSRF` | ✅ | `???` | x-csrf-token, ~3 mån livslängd. Added Apr 25, Sensitive — behöver Reveal |
-| `WILLYS_STORE_ID` | ✅ | `???` | sannolikt 2160 (Ekholmen). Added Apr 25, behöver bekräftelse |
+| `WILLYS_COOKIE` | ✅ | `(tom)` | sessioncookie till willys.se, ~7 d livslängd. **Värdet är tomt** — dispatch beror på gist-vägen eller cookies har utgått |
+| `WILLYS_CSRF` | ✅ | `(tom)` | x-csrf-token, ~3 mån livslängd. Added Apr 25, Sensitive. **Värdet är tomt** |
+| `WILLYS_STORE_ID` | ✅ | `(tom)` | förväntat 2160 (Ekholmen). Added Apr 25. **Värdet är tomt** — koden behöver fallback eller failar |
 
 ## Extra variabler (inte i originalspecen)
 
