@@ -20,22 +20,18 @@ installeras. Används för att verifiera att R5 inte utlöses
 
 | Variabel | Finns | Sig (4 tkn) | Anteckning |
 |---|---|---|---|
-| `GITHUB_PAT` | | | contents:write på Receptbok-repo |
-| `GITHUB_GIST_PAT` | | | classic PAT (fine-grained stöder inte gists) |
-| `GEMINI_API_KEY` | | | för receptimport via foto/URL |
-| `WILLYS_COOKIE` | | | sessioncookie till willys.se, ~7 d livslängd |
-| `WILLYS_CSRF` | | | x-csrf-token, ~3 mån livslängd |
-| `WILLYS_STORE_ID` | | | t.ex. 2160 = Ekholmen |
+| `GITHUB_PAT` | ✅ | `gith` | contents:write på Receptbok-repo. Added Mar 12, All Environments |
+| `GITHUB_GIST_PAT` | ✅ | `???` | classic PAT (fine-grained stöder inte gists). Added Apr 26, Sensitive — behöver Reveal |
+| `GOOGLE_API_KEY` | ✅ | `AIza` | Gemini API för receptimport via foto/URL. Added Apr 1, All Environments. **Obs: spec sa "GEMINI_API_KEY" — verkligt namn är GOOGLE_API_KEY** |
+| `WILLYS_COOKIE` | ? | `???` | sessioncookie till willys.se, ~7 d livslängd. Inte visad än |
+| `WILLYS_CSRF` | ✅ | `???` | x-csrf-token, ~3 mån livslängd. Added Apr 25, Sensitive — behöver Reveal |
+| `WILLYS_STORE_ID` | ✅ | `???` | sannolikt 2160 (Ekholmen). Added Apr 25, behöver bekräftelse |
 
-## Eventuella extra variabler
-
-Om Vercel-dashboarden visar fler env vars än ovan: lägg till dem här med
-samma format. Vanliga kandidater Claude inte känner till:
+## Extra variabler (inte i originalspecen)
 
 | Variabel | Finns | Sig (4 tkn) | Anteckning |
 |---|---|---|---|
-|  |  |  |  |
-|  |  |  |  |
+| `WILLYS_REFRESH_SECRET` | ✅ | `sk_l` | signerar `/api/cookies/willys`-anropet från Chrome-extension (Fas 4F). Added Apr 26, Sensitive |
 
 ## Efter installation av Vercel-Supabase-integrationen
 
