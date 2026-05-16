@@ -88,7 +88,7 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 
 **Fas 7 — Supabase-migration** (pågående — spec: `docs/superpowers/specs/2026-05-16-supabase-migration-design.md`, PR #29)
 - [x] 7A — Förberedelse **klar** (Session 54). Supabase-projekt `receptbok` (ref `zqeznveicagqwblltvsa`, eu-central-1). Vercel-Supabase-integration: 15 nya env vars, 7 gamla orörda. Schema: 10 tabeller + indexer + RLS-policyer. Household "Familjen" (id `71e41d47-0c8e-47c6-83ec-696d256496bf`), owner `joakim.weimar@gmail.com` (user_id `c815432d-f622-4e4d-9e89-362db8941d1e`), magic-link verifierat.
-- [ ] 7B — Importskript `scripts/migrate-to-supabase.mjs` (dry-run + commit-läge) + tre backup-lager
+- [x] 7B — Importskript **klar** (Session 55). `scripts/migrate-to-supabase.mjs` med `--dry-run`/`--commit`/`--reset`-lägen. Dry-run validerad: 264 recept + 1 weekly_plan + 28 meal_days (15 plan + 13 custom) + 68 recipe_history + 1 plan_archive + 1 shopping_list + 82 shopping_items + 1 dispatch_preferences. Driftar: stale recipe_id 26 i history skippas, 2 tomma custom-day-entries (2026-05-07/08) skippas. **Live-import väntar till Fas 7E cutover.**
 - [ ] 7C — Frontend-omskrivning: `js/supabase-client.js` + ersätt fetch-anrop + login-skärm + realtime
 - [ ] 7D — Backend-omskrivning: konsolidera 12 → 5 endpoints, ta bort 7 som flyttas till frontend
 - [ ] 7E — Cutover (11-stegs-sekvens) + acceptanskriterier + 15-min-bevakning
@@ -107,10 +107,11 @@ Inga just nu.
 
 **TODO i exakt ordning (läs spec först!):**
 1. ~~**Fas 7A — Förberedelse**~~ — **klar** (Session 54). Alla 10 substeg gröna.
-2. **Fas 7B — Importskript** — `scripts/migrate-to-supabase.mjs`:
-   a. `--dry-run`-läge: läser JSON, validerar mot schema, loggar planerade INSERTs, skriver INGENTING
-   b. `--commit`-läge: live-import i ordning recipes → weekly_plans → meal_days → recipe_history → plan_archives → shopping_lists → shopping_items → dispatch_preferences
-   c. Post-import-validering: radantal mot JSON + spot-check 5 första/5 sista/10 slump på recipes
+2. ~~**Fas 7B — Importskript**~~ — **klar** (Session 55). `scripts/migrate-to-supabase.mjs` med tre lägen:
+   - `--dry-run` (default): läser JSON, validerar mot schema, loggar planerade INSERTs, skriver INGENTING
+   - `--commit`: live-import i ordning recipes → weekly_plans → meal_days → recipe_history → plan_archives → shopping_lists → shopping_items → dispatch_preferences. Validerar radantal + spot-check (5 första/5 sista/10 slump) på recipes.
+   - `--reset`: raderar all data i migrationstabellerna (households + household_members orörda). För att kunna köra om importen om något går snett.
+   - Kräver `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` som env vars (hämtas från Vercel-dashboard eller Supabase Settings → API).
 3. **Fas 7C — Frontend** (största jobbet, ~12–16h):
    a. `js/supabase-client.js` (init + exporterar `db` + `auth`)
    b. Login-skärm med magic-link (visas om `auth.getSession()` är null)
@@ -147,7 +148,17 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 54 (2026-05-16) — Fas 7A klar (Supabase-förberedelse)
+### Senaste session — Session 55 (2026-05-16) — Fas 7B klar (Supabase-importskript)
+
+- **Skript:** `scripts/migrate-to-supabase.mjs` (478 rader) med tre lägen — `--dry-run` (default, ofarligt), `--commit` (live-import via service-role), `--reset` (raderar migrationstabeller, inte households/members). Använder `@supabase/supabase-js` (ny dep, `node_modules/` + `package-lock.json` tillagda i `.gitignore`).
+- **Dry-run-validering:** 264 recept + 1 weekly_plan + 28 meal_days (15 plan + 13 custom) + 68 recipe_history + 1 plan_archive + 1 shopping_list + 82 shopping_items + 1 dispatch_preferences.
+- **Datadrift-fynd:** (1) `recipe-history.json` har stale id 26 (raderat recept) — skippas med varning, 68/69 importeras (spec sa 67). (2) 2 av 15 custom-day-entries är tomma `{}` (`2026-05-07`, `2026-05-08`) — skippas. (3) Inga blocked/locked-dagar i nuvarande veckoplan.
+- **Mappningar:** camelCase→snake_case (`blockedBrands`→`blocked_brands`, `recipeItemsMovedAt`→`recipe_items_moved_at`, `savingMatches`→`saving_matches`, `timeNote`→`time_note`, etc.). `weekly-plan.confirmedAt` → `confirmed_at` (timestamptz). `custom-days.entries{date: {note, recipeId, recipeTitle}}` → `meal_days` med `plan_id = null` + `custom_note`/`recipe_title_snapshot`. Shopping `recipeItems{Category: [...]}` flattas → `shopping_items` med `position` per kategori; `manualItems[]` med `source='manual'` i kategorin Övrigt. `checkedItems` mappas via `recipe::CATEGORY::IDX`/`manual::IDX`-nycklar (oanvänt i nuvarande data).
+- **Säkerhetsnät:** `checkPrereqs()` kollar att household finns och att `recipes`-tabellen är tom innan commit. `validate()` jämför radantal post-import + spot-checkar 5 första, 5 sista, 10 slumpvis valda recept fält-för-fält (title/protein/ingredients/instructions). FK-ordning: recipes → weekly_plans (returnerar id) → meal_days → recipe_history → plan_archives → shopping_lists (returnerar id) → shopping_items → dispatch_preferences.
+- **Live-import väntar.** Spec section 10 steg 4 — `--commit` körs först vid cutover (Fas 7E), inte nu. Användaren behöver `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` i shellen då (hämtas från Vercel-dashboard eller Supabase Settings → API).
+- **Nästa session:** Fas 7C — `js/supabase-client.js` (init + magic-link login-skärm) + ersätt fetch-anrop i `js/weekly-plan/plan-viewer.js`, `js/shopping/shopping-list.js`, `js/recipes/recipe-editor.js`, `js/recipes/recipe-browser.js` + realtime-subscriptions för meal_days/shopping_items/recipe_history.
+
+### Session 54 (2026-05-16) — Fas 7A klar (Supabase-förberedelse)
 
 - **Backup-lager:** branch `backup-data-pre-supabase` (SHA `3d4d190`) + 7 JSON-datafiler kopierade till `docs/legacy/`. Tag `pre-supabase-migration` försökt men sandboxen blockerar tag-push med 403 — branchen täcker samma roll.
 - **Env-vars-snapshot:** `docs/superpowers/specs/env-vars-pre-supabase.md`. 7 variabler dokumenterade (4-tecken-signaturer). Tre med värde (`GITHUB_PAT`, `GOOGLE_API_KEY`, `WILLYS_REFRESH_SECRET`), fyra tomma (`GITHUB_GIST_PAT`, `WILLYS_COOKIE`, `WILLYS_CSRF`, `WILLYS_STORE_ID`).
