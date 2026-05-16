@@ -97,7 +97,7 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 Inga just nu.
 
 ### Öppna utredningar
-**Supabase-migration — ⏳ FAS 7C IGÅNG (Session 56, 2026-05-16).** Supabase-klient + magic-link-gate landade. `js/weekly-plan/plan-viewer.js`, `js/shopping/shopping-list.js`, `js/recipes/recipe-editor.js` och `js/recipes/recipe-browser.js` läser fortfarande från JSON-filer — det är nästa step. Spec: `docs/superpowers/specs/2026-05-16-supabase-migration-design.md`. PR: #29 (docs-only).
+**Supabase-migration — ⏳ FAS 7C IGÅNG (Session 57, 2026-05-16).** Supabase-klient + magic-link-gate landade i Session 56. Session 57 lade till `js/data-mapper.js` (rena `recipeFromRow`/`recipeToRow` + 27 tester) — foundation klar utan att röra app-beteende. `js/weekly-plan/plan-viewer.js`, `js/shopping/shopping-list.js`, `js/recipes/recipe-editor.js` och `js/recipes/recipe-browser.js` läser fortfarande från JSON-filer. Nästa step: seed Supabase via `--commit`, sedan dual-read i `app.js`. Spec: `docs/superpowers/specs/2026-05-16-supabase-migration-design.md`. PR: #29 (docs-only).
 
 **Nycklar/IDs att ha för fortsättning:**
 - Supabase-projekt ref: `zqeznveicagqwblltvsa` (URL: `https://zqeznveicagqwblltvsa.supabase.co`)
@@ -148,7 +148,26 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 56 (2026-05-16) — Fas 7C-foundation (Supabase-klient + magic-link-gate)
+### Senaste session — Session 57 (2026-05-16) — Fas 7C steg 0: data-mapper isolerad + testad
+
+- **Ny modul `js/data-mapper.js`** — rena funktioner `recipeFromRow(row)` + `recipeToRow(recipe, householdId)`. Inga imports, inga sidoeffekter, körbar i både Node och browser. Kanonisk källa för fältnamn: `scripts/migrate-to-supabase.mjs` (`buildRecipesRows`). Anropas av ingen ännu — rent foundation-step, noll risk för app-beteende.
+- **`tests/data-mapper.test.js`** — 27 assertions med tre fixture-recept (minimum, fullt med `timeNote`+`seasons`, tested=true med extra-fält `created_at`/`updated_at`). Bevakar: snake↔camel-konvertering, round-trip-säkerhet (json→row→json + row→json→row), null/undefined-säkerhet, defensiva defaults (null/undefined-arrays → `[]`), strikt boolean-jämförelse för `tested` (`"true"` string → false).
+- **PostToolUse-hook** tillagd i `.claude/settings.json`: redigering av `data-mapper.js` triggar `node tests/data-mapper.test.js` (blockerar commit vid fel). Samma pattern som `match.test.js`-hooken.
+- **Test-status:** 572 assertions totalt passerar (51 match + 62 shopping + 432 select-recipes + 27 data-mapper).
+- **Riskprofil:** noll. Mappern är inte uppkopplad mot någon app-fil. Säker att merga till `main` när som helst — den hjälper bara framtida arbete.
+
+**Nästa session — Fas 7C steg 1 (seed Supabase med `--commit`):**
+
+1. Hämta `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` från Supabase Settings → API (eller från Vercel-dashboard, env-vars som börjar på `SUPABASE_*` lagda till av integrationen). Sätt som env vars i shellen.
+2. Kör `node scripts/migrate-to-supabase.mjs --commit` lokalt.
+3. Verifiera radantal mot Session 55:s dry-run: 264 recept + 1 weekly_plan + 28 meal_days + 68 recipe_history + 1 plan_archive + 1 shopping_list + 82 shopping_items + 1 dispatch_preferences.
+4. Spot-check via `db.from('recipes').select('id,title').order('id').limit(5)` — verifiera 5 första titlar matchar `recipes.json`.
+
+**Sedan steg 2 (dual-read, JSON vinner):** I `app.js` `init()`, läs recept från Supabase parallellt med JSON, kör båda genom mappern, jämför och `console.warn` vid diff. Appen använder fortfarande JSON. Pusha till preview, öppna devtools-konsolen, kräv 0 `[supa-mismatch]`-rader vid sidladdning.
+
+**Hård regel kvar:** Branchen är `claude/supabase-migration-ihIzv`, ingen merge till `main` förrän Fas 7E:s acceptanskriterier är gröna.
+
+### Session 56 (2026-05-16) — Fas 7C-foundation (Supabase-klient + magic-link-gate)
 
 - **Två nya frontend-moduler:** `js/supabase-client.js` (singleton via `https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm`, PKCE-flow, `detectSessionInUrl: true`, `getHouseholdId()` cachat per session) och `js/auth-gate.js` (exporterar `requireAuth()` som returnerar en hängande Promise tills `SIGNED_IN`/`INITIAL_SESSION` triggar). Båda registrerar `window.supabase`/`window.db`/`window.auth`/`window.requireAuth`/`window.signOut` för debugging + framtida konsolanvändning.
 - **`app.js`-bootflöde:** Resten av init-sekvensen (recipes-load, render, datepickers, deeplink-tab) wrapas nu i `boot()` som awaitar `requireAuth()` först. Magic-link-mailet skickas med `emailRedirectTo: window.location.origin + window.location.pathname` så preview- och prod-URL:erna båda fungerar utan vidare konfig i Supabase-dashboarden.

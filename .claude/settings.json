@@ -58,6 +58,10 @@
           {
             "type": "command",
             "command": "INPUT=$(cat); FILE=$(echo \"$INPUT\" | grep -o '\"file_path\"[[:space:]]*:[[:space:]]*\"[^\"]*\"' | head -1 | sed 's/.*\"\\([^\"]*\\)\"/\\1/'); case \"$FILE\" in *dispatch-to-willys.js|*secrets-store.js) node tests/cookies-endpoint.test.js >&2 || { echo 'BLOCKERAD: cookies-endpoint-regressiontester failade — kör node tests/cookies-endpoint.test.js för detaljer.' >&2; exit 2; };; esac; exit 0"
+          },
+          {
+            "type": "command",
+            "command": "INPUT=$(cat); FILE=$(echo \"$INPUT\" | grep -o '\"file_path\"[[:space:]]*:[[:space:]]*\"[^\"]*\"' | head -1 | sed 's/.*\"\\([^\"]*\\)\"/\\1/'); case \"$FILE\" in *data-mapper.js) node tests/data-mapper.test.js >&2 || { echo 'BLOCKERAD: data-mapper-regressiontester failade — kör node tests/data-mapper.test.js för detaljer.' >&2; exit 2; };; esac; exit 0"
           }
         ]
       }
