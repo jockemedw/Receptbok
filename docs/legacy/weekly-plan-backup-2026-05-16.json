@@ -1,0 +1,122 @@
+{
+  "generated": "2026-05-07",
+  "startDate": "2026-05-09",
+  "endDate": "2026-05-23",
+  "days": [
+    {
+      "date": "2026-05-09",
+      "day": "Lördag",
+      "recipe": "Väffeltoast med rökt kalkon, äpple och dijonkräm",
+      "recipeId": 264
+    },
+    {
+      "date": "2026-05-10",
+      "day": "Söndag",
+      "recipe": "Parmigiana med aubergine i stekpanna",
+      "recipeId": 201
+    },
+    {
+      "date": "2026-05-11",
+      "day": "Måndag",
+      "recipe": "Majsplättar med kokosmjölk",
+      "recipeId": 54
+    },
+    {
+      "date": "2026-05-12",
+      "day": "Tisdag",
+      "recipe": "Senapsdressad pärlcouscous",
+      "recipeId": 49,
+      "saving": null,
+      "savingMatches": null
+    },
+    {
+      "date": "2026-05-13",
+      "day": "Onsdag",
+      "recipe": "Örtig tortellinisoppa",
+      "recipeId": 263,
+      "saving": null,
+      "savingMatches": null
+    },
+    {
+      "date": "2026-05-14",
+      "day": "Torsdag",
+      "recipe": "Skaldjurslasagne",
+      "recipeId": 47,
+      "saving": null,
+      "savingMatches": null
+    },
+    {
+      "date": "2026-05-15",
+      "day": "Fredag",
+      "recipe": "Balsamicglaserad fläskkarré med rostad vitlökspolenta och grönt",
+      "recipeId": 92,
+      "saving": null,
+      "savingMatches": null
+    },
+    {
+      "date": "2026-05-16",
+      "day": "Lördag",
+      "recipe": "Brysselkålbonara",
+      "recipeId": 270,
+      "saving": null,
+      "savingMatches": null
+    },
+    {
+      "date": "2026-05-17",
+      "day": "Söndag",
+      "recipe": "Indisk gryta med spenat, kikärter, senap & yoghurt",
+      "recipeId": 53,
+      "saving": null,
+      "savingMatches": null
+    },
+    {
+      "date": "2026-05-18",
+      "day": "Måndag",
+      "recipe": "Pasta Rosso med champinjoner",
+      "recipeId": 56,
+      "saving": null,
+      "savingMatches": null
+    },
+    {
+      "date": "2026-05-19",
+      "day": "Tisdag",
+      "recipe": "Nudelwok med thai-basilika och ostronsås",
+      "recipeId": 268,
+      "saving": null,
+      "savingMatches": null
+    },
+    {
+      "date": "2026-05-20",
+      "day": "Onsdag",
+      "recipe": "Tikka Masala",
+      "recipeId": 271,
+      "saving": null,
+      "savingMatches": null
+    },
+    {
+      "date": "2026-05-21",
+      "day": "Torsdag",
+      "recipe": null,
+      "recipeId": null,
+      "saving": null,
+      "savingMatches": null
+    },
+    {
+      "date": "2026-05-22",
+      "day": "Fredag",
+      "recipe": null,
+      "recipeId": null,
+      "saving": null,
+      "savingMatches": null
+    },
+    {
+      "date": "2026-05-23",
+      "day": "Lördag",
+      "recipe": null,
+      "recipeId": null,
+      "saving": null,
+      "savingMatches": null
+    }
+  ],
+  "confirmedAt": "2026-05-07T19:52:22.405Z"
+}

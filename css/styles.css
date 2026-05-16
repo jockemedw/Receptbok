@@ -3257,3 +3257,125 @@
 }
 
 .bottom-nav-tab:active { transform: scale(0.96); }
+
+/* ── Auth-gate (magic-link login) ───────────────────────────────────────── */
+
+html.auth-required body {
+  overflow: hidden;
+}
+
+.auth-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: var(--linen);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  padding-top: max(24px, env(safe-area-inset-top));
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 360px;
+  background: var(--linen-card);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 32px 24px;
+  box-shadow: 0 4px 16px rgba(45, 63, 51, 0.06);
+}
+
+.auth-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.2rem;
+  font-weight: 400;
+  text-align: center;
+  color: var(--forest);
+  margin: 0 0 6px 0;
+}
+
+.auth-title em {
+  font-style: italic;
+  color: var(--ochre);
+}
+
+.auth-tagline {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin: 0 0 24px 0;
+  line-height: 1.4;
+}
+
+.auth-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--forest);
+  margin-bottom: 6px;
+}
+
+.auth-input {
+  display: block;
+  width: 100%;
+  font-family: inherit;
+  font-size: 1rem;
+  padding: 12px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--forest-deep);
+  box-sizing: border-box;
+  margin-bottom: 16px;
+}
+
+.auth-input:focus {
+  outline: none;
+  border-color: var(--lichen);
+  box-shadow: 0 0 0 3px var(--moss-soft);
+}
+
+.auth-submit {
+  display: block;
+  width: 100%;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 500;
+  padding: 12px 16px;
+  border: 1.5px solid var(--rust);
+  border-radius: 8px;
+  background: var(--rust);
+  color: var(--paper);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.05s;
+}
+
+.auth-submit:hover:not(:disabled) {
+  background: var(--rust-deep);
+  border-color: var(--rust-deep);
+}
+
+.auth-submit:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.auth-submit:disabled {
+  background: var(--birch);
+  border-color: var(--birch);
+  cursor: default;
+}
+
+.auth-status {
+  margin: 16px 0 0 0;
+  font-size: 0.9rem;
+  color: var(--lichen-deep);
+  line-height: 1.4;
+  text-align: center;
+  min-height: 1.2em;
+}
+
+.auth-status-error {
+  color: var(--color-danger);
+}

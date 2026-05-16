@@ -86,10 +86,46 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 - [x] 6D — UI: "Säsongsanpassning"-toggle i inställningspanelen + säsongsfilter (vår/sommar/höst/vinter) i receptboken.
 - [ ] 6E — Finjustering: eventuell manuell korrigering av säsongstaggar efter användarfeedback.
 
+**Fas 7 — Supabase-migration** (pågående — spec: `docs/superpowers/specs/2026-05-16-supabase-migration-design.md`, PR #29)
+- [x] 7A — Förberedelse **klar** (Session 54). Supabase-projekt `receptbok` (ref `zqeznveicagqwblltvsa`, eu-central-1). Vercel-Supabase-integration: 15 nya env vars, 7 gamla orörda. Schema: 10 tabeller + indexer + RLS-policyer. Household "Familjen" (id `71e41d47-0c8e-47c6-83ec-696d256496bf`), owner `joakim.weimar@gmail.com` (user_id `c815432d-f622-4e4d-9e89-362db8941d1e`), magic-link verifierat.
+- [x] 7B — Importskript **klar** (Session 55). `scripts/migrate-to-supabase.mjs` med `--dry-run`/`--commit`/`--reset`-lägen. Dry-run validerad: 264 recept + 1 weekly_plan + 28 meal_days (15 plan + 13 custom) + 68 recipe_history + 1 plan_archive + 1 shopping_list + 82 shopping_items + 1 dispatch_preferences. Driftar: stale recipe_id 26 i history skippas, 2 tomma custom-day-entries (2026-05-07/08) skippas. **Live-import väntar till Fas 7E cutover.**
+- [ ] 7C — Frontend-omskrivning: `js/supabase-client.js` + ersätt fetch-anrop + login-skärm + realtime
+- [ ] 7D — Backend-omskrivning: konsolidera 12 → 5 endpoints, ta bort 7 som flyttas till frontend
+- [ ] 7E — Cutover (11-stegs-sekvens) + acceptanskriterier + 15-min-bevakning
+
 ### Kända buggar
 Inga just nu.
 
 ### Öppna utredningar
+**Supabase-migration — ⏳ FAS 7C IGÅNG (Session 57, 2026-05-16).** Supabase-klient + magic-link-gate landade i Session 56. Session 57 lade till `js/data-mapper.js` (rena `recipeFromRow`/`recipeToRow` + 27 tester) — foundation klar utan att röra app-beteende. `js/weekly-plan/plan-viewer.js`, `js/shopping/shopping-list.js`, `js/recipes/recipe-editor.js` och `js/recipes/recipe-browser.js` läser fortfarande från JSON-filer. Nästa step: seed Supabase via `--commit`, sedan dual-read i `app.js`. Spec: `docs/superpowers/specs/2026-05-16-supabase-migration-design.md`. PR: #29 (docs-only).
+
+**Nycklar/IDs att ha för fortsättning:**
+- Supabase-projekt ref: `zqeznveicagqwblltvsa` (URL: `https://zqeznveicagqwblltvsa.supabase.co`)
+- Household-id: `71e41d47-0c8e-47c6-83ec-696d256496bf` (`Familjen`)
+- Owner user-id: `c815432d-f622-4e4d-9e89-362db8941d1e` (`joakim.weimar@gmail.com`)
+- Env-vars-snapshot före integration: `docs/superpowers/specs/env-vars-pre-supabase.md`
+
+**TODO i exakt ordning (läs spec först!):**
+1. ~~**Fas 7A — Förberedelse**~~ — **klar** (Session 54). Alla 10 substeg gröna.
+2. ~~**Fas 7B — Importskript**~~ — **klar** (Session 55). `scripts/migrate-to-supabase.mjs` med tre lägen:
+   - `--dry-run` (default): läser JSON, validerar mot schema, loggar planerade INSERTs, skriver INGENTING
+   - `--commit`: live-import i ordning recipes → weekly_plans → meal_days → recipe_history → plan_archives → shopping_lists → shopping_items → dispatch_preferences. Validerar radantal + spot-check (5 första/5 sista/10 slump) på recipes.
+   - `--reset`: raderar all data i migrationstabellerna (households + household_members orörda). För att kunna köra om importen om något går snett.
+   - Kräver `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` som env vars (hämtas från Vercel-dashboard eller Supabase Settings → API).
+3. **Fas 7C — Frontend** (största jobbet, ~12–16h):
+   a. ~~`js/supabase-client.js` (init + exporterar `db` + `auth`)~~ — **klar** (Session 56). Singleton via CDN-import (`https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm`). Hårdkodad URL + publishable key (`sb_publishable_aB6kIJA9j4fyGZ7Df_GEZQ_rDeHjZ5x`). `getHouseholdId()` cachat.
+   b. ~~Login-skärm med magic-link (visas om `auth.getSession()` är null)~~ — **klar** (Session 56). `js/auth-gate.js` exporterar `requireAuth()` som hängande Promise; `app.js` `boot()` awaitar den innan resten initialiseras. CSS i `css/styles.css` (avsnitt "Auth-gate"). PKCE-flow, `detectSessionInUrl: true`.
+   c. Ersätt fetch i `js/weekly-plan/plan-viewer.js` + `js/shopping/shopping-list.js` + `js/recipes/recipe-editor.js` + `js/recipes/recipe-browser.js`
+   d. Realtime-subscriptions för `meal_days` + `shopping_items` + `recipe_history` (+ cleanup vid render-loops)
+4. **Fas 7D — Backend** — konsolidera till 5 endpoints:
+   a. Behåll: `api/generate.js`, `api/replace-recipe.js`, `api/discard-plan.js`, `api/import-recipe.js`, `api/dispatch-to-willys.js`, `api/willys-offers.js` (sista oförändrad)
+   b. Ta bort: `api/swap-days.js`, `api/skip-day.js`, `api/confirm.js`, `api/custom-days.js`, `api/shopping.js`, `api/recipes.js`
+   c. Nytt: `api/_shared/supabase.js` (service-role-klient)
+5. **Fas 7E — Cutover** — följ spec sektion 10 exakt (11 steg). STOP-POINT efter steg 8 för GO/NO-GO-beslut innan merge till `main`.
+6. **Efter cutover:** uppdatera CLAUDE.md-arkitekturdiagrammet, lägg till Senaste session-entry, vänta 30 dagar innan radering av `docs/legacy/`-duplicater.
+
+**Hård regel:** ALDRIG merge till `main` förrän acceptanskriterier i spec sektion 9 är gröna. ALDRIG `git reset --hard` eller `--force` push utan användarens explicita ja.
+
 **Dishingouthealth-import — ⏸ 197 recept i staging, väntar manuell granskning (Session 45, 2026-05-04).** Plan: `docs/superpowers/plans/2026-05-03-dishingouthealth-scrape.md`. Verktyg i `scripts/dish-scrape/`. 197/551 importerade när Anthropic-krediter tog slut. Kvalitetsrapport: `recipes-import-quality-report.md`. Promotion: `cd scripts/dish-scrape && node promote.mjs`. Återstående 191 obearbetade kan tas via `--resume` efter credit-laddning.
 
 **Cookie-refresh-automatisering (Fas 4F) — ✅ IMPLEMENTATION KLAR** (Session 42, 2026-04-26). Implementation av Session 40-specen via subagent-driven-development (7 tasks). Chrome-extension MV3 + `/api/cookies/willys` + secret gist + dispatch-fallback. Manuell rotation eliminerad i kodvägen — väntar bara på engångs-setup (gist + env vars + extension-install) för att gå live.
@@ -112,7 +148,85 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 53 (2026-05-12) — Kodgranskning + P0-buggfixar
+### Senaste session — Session 57 (2026-05-16) — Fas 7C steg 0: data-mapper isolerad + testad
+
+- **Ny modul `js/data-mapper.js`** — rena funktioner `recipeFromRow(row)` + `recipeToRow(recipe, householdId)`. Inga imports, inga sidoeffekter, körbar i både Node och browser. Kanonisk källa för fältnamn: `scripts/migrate-to-supabase.mjs` (`buildRecipesRows`). Anropas av ingen ännu — rent foundation-step, noll risk för app-beteende.
+- **`tests/data-mapper.test.js`** — 27 assertions med tre fixture-recept (minimum, fullt med `timeNote`+`seasons`, tested=true med extra-fält `created_at`/`updated_at`). Bevakar: snake↔camel-konvertering, round-trip-säkerhet (json→row→json + row→json→row), null/undefined-säkerhet, defensiva defaults (null/undefined-arrays → `[]`), strikt boolean-jämförelse för `tested` (`"true"` string → false).
+- **PostToolUse-hook** tillagd i `.claude/settings.json`: redigering av `data-mapper.js` triggar `node tests/data-mapper.test.js` (blockerar commit vid fel). Samma pattern som `match.test.js`-hooken.
+- **Test-status:** 572 assertions totalt passerar (51 match + 62 shopping + 432 select-recipes + 27 data-mapper).
+- **Riskprofil:** noll. Mappern är inte uppkopplad mot någon app-fil. Säker att merga till `main` när som helst — den hjälper bara framtida arbete.
+
+**Nästa session — Fas 7C steg 1 (seed Supabase med `--commit`):**
+
+📖 **Full steg-för-steg-guide för användaren:** `docs/next-step-2026-05-17-supabase-seed.md`. Sparad så att den hittas direkt nästa session — användaren kör lokalt, sandboxen kan inte göra det (service-role-nyckeln stannar utanför delade miljöer).
+
+Sammanfattning:
+1. Hämta `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` från Supabase Settings → API. Exportera som env vars.
+2. Kör `node scripts/migrate-to-supabase.mjs --dry-run` först (säker, skriver inget).
+3. Verifiera radantal mot Session 55:s dry-run: 264 recept + 1 weekly_plan + 28 meal_days + 68 recipe_history + 1 plan_archive + 1 shopping_list + 82 shopping_items + 1 dispatch_preferences.
+4. Kör `node scripts/migrate-to-supabase.mjs --commit` när siffrorna matchar.
+5. Spot-check via `select count(*) from recipes` + `select id, title from recipes order by id limit 5` i Supabase SQL Editor.
+
+**Sedan steg 2 (dual-read, JSON vinner):** I `app.js` `init()`, läs recept från Supabase parallellt med JSON, kör båda genom mappern, jämför och `console.warn` vid diff. Appen använder fortfarande JSON. Pusha till preview, öppna devtools-konsolen, kräv 0 `[supa-mismatch]`-rader vid sidladdning.
+
+**Hård regel kvar:** Branchen är `claude/supabase-migration-ihIzv`, ingen merge till `main` förrän Fas 7E:s acceptanskriterier är gröna.
+
+### Session 56 (2026-05-16) — Fas 7C-foundation (Supabase-klient + magic-link-gate)
+
+- **Två nya frontend-moduler:** `js/supabase-client.js` (singleton via `https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm`, PKCE-flow, `detectSessionInUrl: true`, `getHouseholdId()` cachat per session) och `js/auth-gate.js` (exporterar `requireAuth()` som returnerar en hängande Promise tills `SIGNED_IN`/`INITIAL_SESSION` triggar). Båda registrerar `window.supabase`/`window.db`/`window.auth`/`window.requireAuth`/`window.signOut` för debugging + framtida konsolanvändning.
+- **`app.js`-bootflöde:** Resten av init-sekvensen (recipes-load, render, datepickers, deeplink-tab) wrapas nu i `boot()` som awaitar `requireAuth()` först. Magic-link-mailet skickas med `emailRedirectTo: window.location.origin + window.location.pathname` så preview- och prod-URL:erna båda fungerar utan vidare konfig i Supabase-dashboarden.
+- **Supabase Auth URL-config (live-verifierad):** Site URL = `https://receptbok-six.vercel.app`. Redirect URLs allowlistar: `https://receptbok-six.vercel.app/**` + `https://receptbok-six-git-claude-supabase-migration-ihizv-*.vercel.app/**` + `http://localhost:*/**`. Utan dessa hamnade magic-link på `http://localhost:3000` (Supabase fallback till Site URL). Manuell konfig i Supabase-dashboarden krävs eftersom MCP inte exponerar auth-settings.
+- **Magic-link-flöde live-verifierat på preview (2026-05-16):** preview-URL → login-gate visas → e-post → mail kommer → klick på länk → tillbaka till preview → session sparas i localStorage → reload visar inte gaten igen.
+- **CSS i `styles.css`:** Avsnitt "Auth-gate" — fixerad overlay (z-index 9999), centrerat kort (max 360px), Playfair-Display-rubrik, lichen-fokusring, rust CTA, lichen-deep statusmeddelande, rust-deep felmeddelande. Respekterar safe-area-inset uppe/nere.
+- **Cache-bust v=63** på `css/styles.css` och `js/app.js`. **545 assertions oförändrade** (51 match + 62 shopping + 432 select-recipes).
+- **Säkerhetsval:** Publishable key `sb_publishable_aB6kIJA9j4fyGZ7Df_GEZQ_rDeHjZ5x` är medvetet hårdkodad i klienten — anon-nivån skyddas av RLS-policies (spec sektion 3). URL `https://zqeznveicagqwblltvsa.supabase.co` likaså. Inga secrets i klientkoden.
+- **Vad som INTE är gjort än (rest av Fas 7C):**
+  - `js/weekly-plan/plan-viewer.js` — `loadWeeklyPlan()` och alla `fetch('/api/...')`-anrop (swap, skip, custom-days, replace, confirm, discard).
+  - `js/shopping/shopping-list.js` — checked-state, manual items, prefs.
+  - `js/recipes/recipe-editor.js` — CRUD mot `db.from('recipes')`.
+  - `js/recipes/recipe-browser.js` — `init()` i `app.js` laddar fortfarande `recipes.json` via fetch. Behöver ersättas med `db.from('recipes').select('*')`.
+  - Realtime-subscriptions för `meal_days` + `shopping_items` + `recipe_history`.
+- **Test-impact innan cutover:** Inloggningsgaten blockerar laddning på preview-URL. Live-verifiering klar (se ovan). `api/dispatch-to-willys.js`-flödet rörs inte i denna session.
+
+**Nästa session — Fas 7C steg c (ersätt fetch, ordning lägst→högst risk):**
+
+1. **`recipe-browser.js` + `app.js` `init()`** — laddar bara `recipes.json` idag. Ersätt med `db.from('recipes').select('*').order('id')`. Mappa snake_case → camelCase (`time_note`, `created_at` etc.) i client-mappern så resten av modulerna ser samma format som tidigare. Verifiera att `window.RECIPES` har samma struktur så att `recipe-browser`, `plan-viewer` openWeekRecipe-detaljvy och `selectRecipes`-algoritmen fortsätter fungera. **Risk: låg** — read-only, inga skrivflöden påverkas.
+2. **`recipe-editor.js`** — fyra operationer: skapa, uppdatera, ta bort, toggle tested. Ersätt med `db.from('recipes').insert/update/delete()`. `nextId`-strategin från recipes.json behövs inte längre — Postgres genererar via `bigserial` (eller om vi behåller numeriska id:n manuellt så hämta `MAX(id)+1`). **Risk: medel** — felaktig delete kan radera fel rad, men RLS skyddar mot cross-household.
+3. **`shopping-list.js`** — flest skriv-anrop. Operationer: toggla checked, lägga till manual items, rensa lista, byta preferences (blocked_brands, prefer_organic, prefer_swedish). Ersätt fetch i `loadShoppingTab`, `setShopMode`, `addManualItem`, `clearShoppingList`, alla `prefs`-handlers. Behåll `shopping-list.json`-läsning som fallback **bara** under utveckling — ta bort innan cutover.
+4. **`plan-viewer.js`** — sist eftersom mest invecklat: `loadWeeklyPlan` (läser plan + shop + archive + custom-days), `swapDays`, `skipDay`/`blockDay`/`unblockDay`, `selectRecipeForDay`, `selectRecipeForCustomDay`, `saveCustomDay`, `clearCustomDay`, `confirmPlan`, `discardPlan`, `convertBlockedToCustom`, `replaceRecipe`. **Hård regel:** befintlig veckoplan får aldrig förstöras — extra försiktig med atomic updates och rollback vid fel.
+5. **Realtime-subscriptions** — efter att alla fetch är borta. `db.channel()` på `meal_days`, `shopping_items`, `recipe_history`. Lägg cleanup-pattern i `state.js` (`window._activeChannels = []`) så de unsubscribar vid `renderWeeklyPlanData` re-runs.
+
+**Att tänka på under steg 1-4:**
+- Importera `db` + `getHouseholdId` från `./supabase-client.js` i varje modul.
+- Filtrera alltid på `household_id` i SELECT — RLS sköter säkerhet men explicit filter ger snabbare frågor + tydligare kod.
+- Snake_case → camelCase-konvertering centraliseras i en mapper-funktion (`fromRow(row)` / `toRow(obj)`) i `supabase-client.js` eller egen `js/data-mapper.js`. Beslut tas i nästa session.
+- Backend (api/generate.js, api/replace-recipe.js etc.) skriver fortfarande till JSON — det är Fas 7D. Under steg 1-4 läser frontend från Supabase, men ingen plan/shop-genereringsflöde fungerar end-to-end förrän 7D är klar. **Det är OK** — testas mot pre-importerad data från Fas 7B (`--commit`-läget körs först vid cutover, så Supabase är fortfarande tom). **Workaround under utveckling:** kör `node scripts/migrate-to-supabase.mjs --commit` mot Supabase nu för att fylla med data, sedan `--reset` innan cutover. Eller manuellt seeda några rader via SQL.
+
+### Session 55 (2026-05-16) — Fas 7B klar (Supabase-importskript)
+
+- **Skript:** `scripts/migrate-to-supabase.mjs` (478 rader) med tre lägen — `--dry-run` (default, ofarligt), `--commit` (live-import via service-role), `--reset` (raderar migrationstabeller, inte households/members). Använder `@supabase/supabase-js` (ny dep, `node_modules/` + `package-lock.json` tillagda i `.gitignore`).
+- **Dry-run-validering:** 264 recept + 1 weekly_plan + 28 meal_days (15 plan + 13 custom) + 68 recipe_history + 1 plan_archive + 1 shopping_list + 82 shopping_items + 1 dispatch_preferences.
+- **Datadrift-fynd:** (1) `recipe-history.json` har stale id 26 (raderat recept) — skippas med varning, 68/69 importeras (spec sa 67). (2) 2 av 15 custom-day-entries är tomma `{}` (`2026-05-07`, `2026-05-08`) — skippas. (3) Inga blocked/locked-dagar i nuvarande veckoplan.
+- **Mappningar:** camelCase→snake_case (`blockedBrands`→`blocked_brands`, `recipeItemsMovedAt`→`recipe_items_moved_at`, `savingMatches`→`saving_matches`, `timeNote`→`time_note`, etc.). `weekly-plan.confirmedAt` → `confirmed_at` (timestamptz). `custom-days.entries{date: {note, recipeId, recipeTitle}}` → `meal_days` med `plan_id = null` + `custom_note`/`recipe_title_snapshot`. Shopping `recipeItems{Category: [...]}` flattas → `shopping_items` med `position` per kategori; `manualItems[]` med `source='manual'` i kategorin Övrigt. `checkedItems` mappas via `recipe::CATEGORY::IDX`/`manual::IDX`-nycklar (oanvänt i nuvarande data).
+- **Säkerhetsnät:** `checkPrereqs()` kollar att household finns och att `recipes`-tabellen är tom innan commit. `validate()` jämför radantal post-import + spot-checkar 5 första, 5 sista, 10 slumpvis valda recept fält-för-fält (title/protein/ingredients/instructions). FK-ordning: recipes → weekly_plans (returnerar id) → meal_days → recipe_history → plan_archives → shopping_lists (returnerar id) → shopping_items → dispatch_preferences.
+- **Live-import väntar.** Spec section 10 steg 4 — `--commit` körs först vid cutover (Fas 7E), inte nu. Användaren behöver `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` i shellen då (hämtas från Vercel-dashboard eller Supabase Settings → API).
+- **Nästa session:** Fas 7C — `js/supabase-client.js` (init + magic-link login-skärm) + ersätt fetch-anrop i `js/weekly-plan/plan-viewer.js`, `js/shopping/shopping-list.js`, `js/recipes/recipe-editor.js`, `js/recipes/recipe-browser.js` + realtime-subscriptions för meal_days/shopping_items/recipe_history.
+
+### Session 54 (2026-05-16) — Fas 7A klar (Supabase-förberedelse)
+
+- **Backup-lager:** branch `backup-data-pre-supabase` (SHA `3d4d190`) + 7 JSON-datafiler kopierade till `docs/legacy/`. Tag `pre-supabase-migration` försökt men sandboxen blockerar tag-push med 403 — branchen täcker samma roll.
+- **Env-vars-snapshot:** `docs/superpowers/specs/env-vars-pre-supabase.md`. 7 variabler dokumenterade (4-tecken-signaturer). Tre med värde (`GITHUB_PAT`, `GOOGLE_API_KEY`, `WILLYS_REFRESH_SECRET`), fyra tomma (`GITHUB_GIST_PAT`, `WILLYS_COOKIE`, `WILLYS_CSRF`, `WILLYS_STORE_ID`).
+- **Namnupptäckter:** (1) Spec sa `GEMINI_API_KEY`, verklig variabel heter `GOOGLE_API_KEY` (verifierat i `api/import-recipe.js`). (2) `WILLYS_REFRESH_SECRET` är en extra variabel utöver spec-listan (Fas 4F).
+- **Säkerhetsvarningar:** `GITHUB_PAT` och `GOOGLE_API_KEY`-värden visades i klartext i skärmdumpar — bör roteras efter Fas 7E.
+- **Supabase-projekt:** `receptbok` skapat via MCP, ref `zqeznveicagqwblltvsa`, region `eu-central-1` (Frankfurt). Free-tier, Vercel-Marketplace-org (billing via Vercel).
+- **Vercel-Supabase-integration:** Användaren kopplade i Vercel-dashboard. 15 nya env vars tillagda, alla 7 befintliga orörda (R5-skydd höll).
+- **Schema (M1):** 10 tabeller skapade — `households`, `household_members`, `recipes`, `weekly_plans`, `meal_days`, `recipe_history`, `plan_archives`, `shopping_lists`, `shopping_items`, `dispatch_preferences` + indexer.
+- **RLS (M2):** Enable RLS på alla 10 tabeller + policies per spec-mönster ("household members read/write"). `plan_archives` är write-once (insert + select men inga update/delete-policies). `households` och `household_members` har bara SELECT-policy (skrivning kräver service-role för att förhindra privilege escalation). Säkerhetsadvisor rensad.
+- **Seed (1j-a):** `INSERT INTO households (name) VALUES ('Familjen')` → id `71e41d47-0c8e-47c6-83ec-696d256496bf`.
+- **Magic-link verifierat (1j-b):** Användaren skickade `Send invitation` från Auth-dashboarden mot `joakim.weimar@gmail.com`, klickade länken, blev `email_confirmed`. user_id `c815432d-f622-4e4d-9e89-362db8941d1e`. Seedad som `owner` i `household_members`.
+- **Nästa session:** Fas 7B — bygg `scripts/migrate-to-supabase.mjs` med `--dry-run` och `--commit`-lägen. Läs 7 JSON-filer, mappa camelCase→snake_case (`blockedBrands`→`blocked_brands`, `usedOn`→`used_on`, etc.), importera i FK-ordning. `custom-days.entries{}` mappas till `meal_days` med `plan_id = null` + `custom_note`. Validera radantal efter import.
+
+### Session 53 (2026-05-12) — Kodgranskning + P0-buggfixar
 
 - **Kodgranskning:** 8 parallella Sonnet-agenter granskade hela kodbasen (~7800 JS + 3260 CSS + 510 HTML). 210 fynd totalt: 19 P0 (kritiska), 41 P1, 18 dead code, 24 XSS, 32 inkonsistenser, 36 förbättringar, 40 testtäckning. Rapporter: `docs/review/00-summary.md` + `01`–`08`.
 - **P0-fixar (alla 6 buggar + XSS):**
