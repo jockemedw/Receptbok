@@ -86,10 +86,49 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 - [x] 6D — UI: "Säsongsanpassning"-toggle i inställningspanelen + säsongsfilter (vår/sommar/höst/vinter) i receptboken.
 - [ ] 6E — Finjustering: eventuell manuell korrigering av säsongstaggar efter användarfeedback.
 
+**Fas 7 — Supabase-migration** (plan klar, ej påbörjad — spec: `docs/superpowers/specs/2026-05-16-supabase-migration-design.md`, PR #29)
+- [ ] 7A — Förberedelse: skapa Supabase-projekt + Vercel-integration + schema + magic-link-auth + seed household
+- [ ] 7B — Importskript `scripts/migrate-to-supabase.mjs` (dry-run + commit-läge) + tre backup-lager
+- [ ] 7C — Frontend-omskrivning: `js/supabase-client.js` + ersätt fetch-anrop + login-skärm + realtime
+- [ ] 7D — Backend-omskrivning: konsolidera 12 → 5 endpoints, ta bort 7 som flyttas till frontend
+- [ ] 7E — Cutover (11-stegs-sekvens) + acceptanskriterier + 15-min-bevakning
+
 ### Kända buggar
 Inga just nu.
 
 ### Öppna utredningar
+**Supabase-migration — ⏸ PLAN KLAR, EJ PÅBÖRJAD (Session 54, 2026-05-16).** Spec: `docs/superpowers/specs/2026-05-16-supabase-migration-design.md`. PR: #29 (docs-only, säker att mergea). Beslut: magic-link-auth, Supabase Realtime, big-bang-cutover, recipes i egen tabell, single-household i v1.
+
+**TODO i exakt ordning (läs spec först!):**
+1. **Fas 7A — Förberedelse** — kör innan något annat:
+   a. `git tag pre-supabase-migration <main-HEAD-sha> && git push origin pre-supabase-migration`
+   b. `git branch backup-data-pre-supabase main && git push -u origin backup-data-pre-supabase`
+   c. Kopiera alla 7 JSON-datafiler till `docs/legacy/<filnamn>-backup-2026-05-16.json` + commit
+   d. Skriv ner alla Vercel-env-vars (namn + 4-tecken-signatur) i `docs/superpowers/specs/env-vars-pre-supabase.md` INNAN Supabase-integration
+   e. Skapa Supabase-projekt via MCP `create_project` (EU/Frankfurt-region)
+   f. Användaren kopplar Vercel-Supabase-integration manuellt i Vercel-dashboard
+   g. Verifiera env-vars-listan oförändrad efter integration
+   h. Applicera schema via MCP `apply_migration` (alla 10 tabeller + RLS-policyer, se spec sektion 2+3)
+   i. Konfigurera magic-link-auth i Supabase-dashboard (default SMTP räcker)
+   j. Seed household "Familjen" + lägg till ägarens user-id som medlem
+2. **Fas 7B — Importskript** — `scripts/migrate-to-supabase.mjs`:
+   a. `--dry-run`-läge: läser JSON, validerar mot schema, loggar planerade INSERTs, skriver INGENTING
+   b. `--commit`-läge: live-import i ordning recipes → weekly_plans → meal_days → recipe_history → plan_archives → shopping_lists → shopping_items → dispatch_preferences
+   c. Post-import-validering: radantal mot JSON + spot-check 5 första/5 sista/10 slump på recipes
+3. **Fas 7C — Frontend** (största jobbet, ~12–16h):
+   a. `js/supabase-client.js` (init + exporterar `db` + `auth`)
+   b. Login-skärm med magic-link (visas om `auth.getSession()` är null)
+   c. Ersätt fetch i `js/weekly-plan/plan-viewer.js` + `js/shopping/shopping-list.js` + `js/recipes/recipe-editor.js` + `js/recipes/recipe-browser.js`
+   d. Realtime-subscriptions för `meal_days` + `shopping_items` + `recipe_history` (+ cleanup vid render-loops)
+4. **Fas 7D — Backend** — konsolidera till 5 endpoints:
+   a. Behåll: `api/generate.js`, `api/replace-recipe.js`, `api/discard-plan.js`, `api/import-recipe.js`, `api/dispatch-to-willys.js`, `api/willys-offers.js` (sista oförändrad)
+   b. Ta bort: `api/swap-days.js`, `api/skip-day.js`, `api/confirm.js`, `api/custom-days.js`, `api/shopping.js`, `api/recipes.js`
+   c. Nytt: `api/_shared/supabase.js` (service-role-klient)
+5. **Fas 7E — Cutover** — följ spec sektion 10 exakt (11 steg). STOP-POINT efter steg 8 för GO/NO-GO-beslut innan merge till `main`.
+6. **Efter cutover:** uppdatera CLAUDE.md-arkitekturdiagrammet, lägg till Senaste session-entry, vänta 30 dagar innan radering av `docs/legacy/`-duplicater.
+
+**Hård regel:** ALDRIG merge till `main` förrän acceptanskriterier i spec sektion 9 är gröna. ALDRIG `git reset --hard` eller `--force` push utan användarens explicita ja.
+
 **Dishingouthealth-import — ⏸ 197 recept i staging, väntar manuell granskning (Session 45, 2026-05-04).** Plan: `docs/superpowers/plans/2026-05-03-dishingouthealth-scrape.md`. Verktyg i `scripts/dish-scrape/`. 197/551 importerade när Anthropic-krediter tog slut. Kvalitetsrapport: `recipes-import-quality-report.md`. Promotion: `cd scripts/dish-scrape && node promote.mjs`. Återstående 191 obearbetade kan tas via `--resume` efter credit-laddning.
 
 **Cookie-refresh-automatisering (Fas 4F) — ✅ IMPLEMENTATION KLAR** (Session 42, 2026-04-26). Implementation av Session 40-specen via subagent-driven-development (7 tasks). Chrome-extension MV3 + `/api/cookies/willys` + secret gist + dispatch-fallback. Manuell rotation eliminerad i kodvägen — väntar bara på engångs-setup (gist + env vars + extension-install) för att gå live.
