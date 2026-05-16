@@ -152,6 +152,8 @@ Inga just nu.
 
 - **Två nya frontend-moduler:** `js/supabase-client.js` (singleton via `https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm`, PKCE-flow, `detectSessionInUrl: true`, `getHouseholdId()` cachat per session) och `js/auth-gate.js` (exporterar `requireAuth()` som returnerar en hängande Promise tills `SIGNED_IN`/`INITIAL_SESSION` triggar). Båda registrerar `window.supabase`/`window.db`/`window.auth`/`window.requireAuth`/`window.signOut` för debugging + framtida konsolanvändning.
 - **`app.js`-bootflöde:** Resten av init-sekvensen (recipes-load, render, datepickers, deeplink-tab) wrapas nu i `boot()` som awaitar `requireAuth()` först. Magic-link-mailet skickas med `emailRedirectTo: window.location.origin + window.location.pathname` så preview- och prod-URL:erna båda fungerar utan vidare konfig i Supabase-dashboarden.
+- **Supabase Auth URL-config (live-verifierad):** Site URL = `https://receptbok-six.vercel.app`. Redirect URLs allowlistar: `https://receptbok-six.vercel.app/**` + `https://receptbok-six-git-claude-supabase-migration-ihizv-*.vercel.app/**` + `http://localhost:*/**`. Utan dessa hamnade magic-link på `http://localhost:3000` (Supabase fallback till Site URL). Manuell konfig i Supabase-dashboarden krävs eftersom MCP inte exponerar auth-settings.
+- **Magic-link-flöde live-verifierat på preview (2026-05-16):** preview-URL → login-gate visas → e-post → mail kommer → klick på länk → tillbaka till preview → session sparas i localStorage → reload visar inte gaten igen.
 - **CSS i `styles.css`:** Avsnitt "Auth-gate" — fixerad overlay (z-index 9999), centrerat kort (max 360px), Playfair-Display-rubrik, lichen-fokusring, rust CTA, lichen-deep statusmeddelande, rust-deep felmeddelande. Respekterar safe-area-inset uppe/nere.
 - **Cache-bust v=63** på `css/styles.css` och `js/app.js`. **545 assertions oförändrade** (51 match + 62 shopping + 432 select-recipes).
 - **Säkerhetsval:** Publishable key `sb_publishable_aB6kIJA9j4fyGZ7Df_GEZQ_rDeHjZ5x` är medvetet hårdkodad i klienten — anon-nivån skyddas av RLS-policies (spec sektion 3). URL `https://zqeznveicagqwblltvsa.supabase.co` likaså. Inga secrets i klientkoden.
@@ -161,8 +163,21 @@ Inga just nu.
   - `js/recipes/recipe-editor.js` — CRUD mot `db.from('recipes')`.
   - `js/recipes/recipe-browser.js` — `init()` i `app.js` laddar fortfarande `recipes.json` via fetch. Behöver ersättas med `db.from('recipes').select('*')`.
   - Realtime-subscriptions för `meal_days` + `shopping_items` + `recipe_history`.
-- **Test-impact innan cutover:** Inloggningsgaten blockerar laddning på preview-URL. Live-verifiering kvar tills användaren öppnar preview, anger sin e-post och bekräftar att magic-link landar + att gaten försvinner efter klick. (`api/dispatch-to-willys.js`-flödet rörs inte i denna session.)
-- **Nästa session:** Fas 7C steg c — ersätt fetch i en modul i taget, börja förslagsvis med `recipe-browser.js`/`recipe-editor.js` (mest isolerade, mindre risk för regressions) och avsluta med `plan-viewer.js` (mest invecklat). Lägg till realtime-cleanup-pattern i `state.js` så subscriptions inte läcker vid render-loops.
+- **Test-impact innan cutover:** Inloggningsgaten blockerar laddning på preview-URL. Live-verifiering klar (se ovan). `api/dispatch-to-willys.js`-flödet rörs inte i denna session.
+
+**Nästa session — Fas 7C steg c (ersätt fetch, ordning lägst→högst risk):**
+
+1. **`recipe-browser.js` + `app.js` `init()`** — laddar bara `recipes.json` idag. Ersätt med `db.from('recipes').select('*').order('id')`. Mappa snake_case → camelCase (`time_note`, `created_at` etc.) i client-mappern så resten av modulerna ser samma format som tidigare. Verifiera att `window.RECIPES` har samma struktur så att `recipe-browser`, `plan-viewer` openWeekRecipe-detaljvy och `selectRecipes`-algoritmen fortsätter fungera. **Risk: låg** — read-only, inga skrivflöden påverkas.
+2. **`recipe-editor.js`** — fyra operationer: skapa, uppdatera, ta bort, toggle tested. Ersätt med `db.from('recipes').insert/update/delete()`. `nextId`-strategin från recipes.json behövs inte längre — Postgres genererar via `bigserial` (eller om vi behåller numeriska id:n manuellt så hämta `MAX(id)+1`). **Risk: medel** — felaktig delete kan radera fel rad, men RLS skyddar mot cross-household.
+3. **`shopping-list.js`** — flest skriv-anrop. Operationer: toggla checked, lägga till manual items, rensa lista, byta preferences (blocked_brands, prefer_organic, prefer_swedish). Ersätt fetch i `loadShoppingTab`, `setShopMode`, `addManualItem`, `clearShoppingList`, alla `prefs`-handlers. Behåll `shopping-list.json`-läsning som fallback **bara** under utveckling — ta bort innan cutover.
+4. **`plan-viewer.js`** — sist eftersom mest invecklat: `loadWeeklyPlan` (läser plan + shop + archive + custom-days), `swapDays`, `skipDay`/`blockDay`/`unblockDay`, `selectRecipeForDay`, `selectRecipeForCustomDay`, `saveCustomDay`, `clearCustomDay`, `confirmPlan`, `discardPlan`, `convertBlockedToCustom`, `replaceRecipe`. **Hård regel:** befintlig veckoplan får aldrig förstöras — extra försiktig med atomic updates och rollback vid fel.
+5. **Realtime-subscriptions** — efter att alla fetch är borta. `db.channel()` på `meal_days`, `shopping_items`, `recipe_history`. Lägg cleanup-pattern i `state.js` (`window._activeChannels = []`) så de unsubscribar vid `renderWeeklyPlanData` re-runs.
+
+**Att tänka på under steg 1-4:**
+- Importera `db` + `getHouseholdId` från `./supabase-client.js` i varje modul.
+- Filtrera alltid på `household_id` i SELECT — RLS sköter säkerhet men explicit filter ger snabbare frågor + tydligare kod.
+- Snake_case → camelCase-konvertering centraliseras i en mapper-funktion (`fromRow(row)` / `toRow(obj)`) i `supabase-client.js` eller egen `js/data-mapper.js`. Beslut tas i nästa session.
+- Backend (api/generate.js, api/replace-recipe.js etc.) skriver fortfarande till JSON — det är Fas 7D. Under steg 1-4 läser frontend från Supabase, men ingen plan/shop-genereringsflöde fungerar end-to-end förrän 7D är klar. **Det är OK** — testas mot pre-importerad data från Fas 7B (`--commit`-läget körs först vid cutover, så Supabase är fortfarande tom). **Workaround under utveckling:** kör `node scripts/migrate-to-supabase.mjs --commit` mot Supabase nu för att fylla med data, sedan `--reset` innan cutover. Eller manuellt seeda några rader via SQL.
 
 ### Session 55 (2026-05-16) — Fas 7B klar (Supabase-importskript)
 
