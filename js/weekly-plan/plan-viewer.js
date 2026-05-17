@@ -869,7 +869,10 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
     const isPendingActive = d.planId === 'active' && pendingPlan;
     const timelineDayClsParts = ['timeline-day'];
     if (weekChanged) timelineDayClsParts.push('week-start');
-    if (d.isCustom || (!d.planId && !d.recipeId)) timelineDayClsParts.push('slim');
+    // Slim om dagen saknar innehåll: fri-dag utan anteckning, gap-dag, eller
+    // tom custom-day. Med recept eller anteckning → normal bredd.
+    const hasContent = !!d.recipeId || (d.isCustom && (d.customNote || d.customRecipeId));
+    if (!hasContent) timelineDayClsParts.push('slim');
     const timelineDayCls = timelineDayClsParts.join(' ');
 
     const clsParts = ['week-day-card'];
