@@ -1695,6 +1695,13 @@
     cursor: pointer;
   }
 
+  /* Gap- och fri-dag-kort är annars dimmade; lyfts upp som swap-mål */
+  .week-day-card.swap-target.gap,
+  .week-day-card.swap-target.blocked {
+    opacity: 1;
+    border-style: solid;
+  }
+
   .week-day-card.swap-target::after {
     content: 'Byt hit';
     display: block;
