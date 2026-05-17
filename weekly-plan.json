@@ -48,10 +48,11 @@
     {
       "date": "2026-05-15",
       "day": "Fredag",
-      "recipe": "Brysselkålbonara",
-      "recipeId": 270,
+      "recipe": null,
+      "recipeId": null,
       "saving": null,
-      "savingMatches": null
+      "savingMatches": null,
+      "blocked": true
     },
     {
       "date": "2026-05-16",
@@ -105,8 +106,8 @@
     {
       "date": "2026-05-22",
       "day": "Fredag",
-      "recipe": null,
-      "recipeId": null,
+      "recipe": "Brysselkålbonara",
+      "recipeId": 270,
       "saving": null,
       "savingMatches": null
     },
