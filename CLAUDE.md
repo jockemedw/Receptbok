@@ -112,7 +112,15 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 53 (2026-05-12) — Kodgranskning + P0-buggfixar
+### Senaste session — Session 54 (2026-05-17) — Fri dag-sammanslagning + fri swap
+
+- **Bugg eliminerad:** Gamla `unblock`-action lämnade ett tomt "—"-kort i slutet av planen som varken kunde redigeras eller flyttas. Hela `skip-day.js` skrevs om till två actions: `free` (skjuter framåt + förlänger planen med 1 dag så sista receptet inte tappas) och `unfree` (drar bakåt + krymper planen). Spöket är borta.
+- **Knapp-sammanslagning:** "Hoppa över — skjut recept →" och "Blockera dag" slogs ihop till en enda "Gör fri dag — skjut planen →"-knapp. Fri dag-panelens "Skriv egen notering" behåller flödet (konverterar till custom-day). Dead CSS-regel `.day-action-block` borttagen.
+- **Fri swap:** `api/swap-days.js` omskriven. Tillåter nu byte mot fria plan-dagar och framtida gap-dagar utanför planen — om måldagen ligger utanför förlängs planen med fria dagar fram till den (cap 365 d för säkerhet). Arkiverade dagar och dagar med egen planering avvisas med begripligt felmeddelande. `recipe-history.json` uppdateras så receptet räknas som senast använt på sin nya dag.
+- **Swap-UX:** Capture-phase click-lyssnare fångar swap-target-klick före kortets `onclick` — fungerar nu även på fri-dag-kort och gap-dag-kort som annars öppnar editor-paneler. `enterSwapMode` highlight:ar bredare urval (allt utom arkiv, custom-days och förflutna gap).
+- **644 assertions** oförändrade (51 match + 62 shopping + 432 select-recipes + 70 dispatch + 29 cookies). Cache-bust v=64.
+
+### Session 53 (2026-05-12) — Kodgranskning + P0-buggfixar
 
 - **Kodgranskning:** 8 parallella Sonnet-agenter granskade hela kodbasen (~7800 JS + 3260 CSS + 510 HTML). 210 fynd totalt: 19 P0 (kritiska), 41 P1, 18 dead code, 24 XSS, 32 inkonsistenser, 36 förbättringar, 40 testtäckning. Rapporter: `docs/review/00-summary.md` + `01`–`08`.
 - **P0-fixar (alla 6 buggar + XSS):**

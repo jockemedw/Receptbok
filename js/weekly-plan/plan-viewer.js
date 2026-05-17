@@ -314,6 +314,24 @@ export function startPlanFromDate(dateIso) {
 
 // ── Dagbyte ───────────────────────────────────────────────────────────────────
 
+// Capture-phase-lyssnare: när en swap-target klickas i swap-mode, hoppa över
+// kortets vanliga onclick (öppna recept / öppna fri dag / öppna custom-day)
+// och kör swapDays istället. Installeras en gång vid första enterSwapMode.
+let _swapClickHandlerInstalled = false;
+function installSwapClickHandler() {
+  if (_swapClickHandlerInstalled) return;
+  document.addEventListener('click', (e) => {
+    const card = e.target.closest('.week-day-card.swap-target');
+    if (!card) return;
+    const src = document.querySelector('.week-day-card.swap-source');
+    if (!src) return;
+    e.stopImmediatePropagation();
+    e.preventDefault();
+    swapDays(src.dataset.date, card.dataset.date);
+  }, true);
+  _swapClickHandlerInstalled = true;
+}
+
 export function enterSwapMode(fromDate) {
   cancelSwapMode();
   const fromCard = document.querySelector(`.week-day-card[data-date="${fromDate}"]`);
@@ -323,15 +341,23 @@ export function enterSwapMode(fromDate) {
   panel.classList.remove('open');
   panel.innerHTML = '';
 
+  installSwapClickHandler();
+
   fromCard.classList.remove('selected');
   fromCard.classList.add('swap-source');
+
+  const todayIso = new Date().toISOString().slice(0, 10);
   document.querySelectorAll('.week-day-card').forEach(c => {
-    if (c !== fromCard
-      && c.dataset.recipeid
-      && c.dataset.readonly !== '1'
-      && !c.classList.contains('blocked')) {
-      c.classList.add('swap-target');
+    if (c === fromCard) return;
+    if (c.classList.contains('archive')) return;       // gamla planer = oföränderliga
+    if (c.classList.contains('custom')) return;        // egen planering hanteras separat
+    if (c.dataset.readonly === '1') return;
+    // Gap-dagar (utanför plan): bara framtida — historisk gap-dag är inget vettigt swap-mål
+    if (c.classList.contains('gap')) {
+      const d = c.dataset.date;
+      if (!d || d < todayIso) return;
     }
+    c.classList.add('swap-target');
   });
 }
 
@@ -347,31 +373,6 @@ export async function swapDays(date1, date2) {
   panel.classList.remove('open');
   panel.innerHTML = '';
 
-  const card1 = document.querySelector(`.week-day-card[data-date="${date1}"]`);
-  const card2 = document.querySelector(`.week-day-card[data-date="${date2}"]`);
-  const orig1 = card1 ? { title: card1.querySelector('.week-day-recipe').textContent, rid: card1.dataset.recipeid } : null;
-  const orig2 = card2 ? { title: card2.querySelector('.week-day-recipe').textContent, rid: card2.dataset.recipeid } : null;
-
-  function applySwap(c1, o1, c2, o2) {
-    if (!c1 || !c2) return;
-    const t1 = c1.querySelector('.week-day-recipe');
-    const t2 = c2.querySelector('.week-day-recipe');
-    t1.style.opacity = '0';
-    t2.style.opacity = '0';
-    setTimeout(() => {
-      t1.textContent = o2.title;
-      t2.textContent = o1.title;
-      c1.dataset.recipeid = o2.rid;
-      c2.dataset.recipeid = o1.rid;
-      c1.setAttribute('onclick', `openWeekRecipe(${o2.rid || 'null'}, '${o2.title.replace(/'/g, "\\'")}', this)`);
-      c2.setAttribute('onclick', `openWeekRecipe(${o1.rid || 'null'}, '${o1.title.replace(/'/g, "\\'")}', this)`);
-      t1.style.opacity = '';
-      t2.style.opacity = '';
-    }, 150);
-  }
-
-  applySwap(card1, orig1, card2, orig2); // optimistisk uppdatering
-
   try {
     const res = await fetch('/api/swap-days', {
       method: 'POST',
@@ -380,11 +381,16 @@ export async function swapDays(date1, date2) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Okänt fel');
+
+    const shop = data.shoppingList || null;
+    renderWeeklyPlanData(data.weeklyPlan, shop);
+    if (shop && window.renderShoppingData) {
+      window.renderShoppingData(shop);
+    }
   } catch (e) {
-    applySwap(card1, orig2, card2, orig1); // återställ vid fel
     const errEl = document.createElement('p');
     errEl.style.cssText = 'color:var(--rust);font-size:0.82rem;padding:0.5rem 1rem';
-    errEl.textContent   = 'Kunde inte byta dag — prova igen.';
+    errEl.textContent = e.message || 'Kunde inte byta dag — prova igen.';
     panel.innerHTML = '';
     panel.appendChild(errEl);
     panel.classList.add('open');
@@ -485,11 +491,10 @@ export function openWeekRecipe(recipeId, title, cardEl) {
     <button class="replace-recipe-btn" onclick="replaceRecipe(${r.id}, '${date}', this)">Slumpa nytt recept</button>`;
   const swapBtn = !readOnly
     ? `<button class="day-action-btn" onclick="enterSwapMode('${date}')">Byt dag</button>` : '';
-  const skipBlockBtns = (!readOnly && !isPast)
-    ? `<button class="day-action-btn" onclick="skipDay('${date}')">Hoppa över — skjut recept →</button>
-       <button class="day-action-btn day-action-block" onclick="blockDay('${date}')">Blockera dag</button>` : '';
-  const dayActionBtns = (swapBtn || skipBlockBtns)
-    ? `<div class="day-action-btns">${swapBtn}${skipBlockBtns}</div>` : '';
+  const freeBtn = (!readOnly && !isPast)
+    ? `<button class="day-action-btn" onclick="freeDay('${date}')">Gör fri dag — skjut planen →</button>` : '';
+  const dayActionBtns = (swapBtn || freeBtn)
+    ? `<div class="day-action-btns">${swapBtn}${freeBtn}</div>` : '';
   const customEditBtn = isCustom
     ? `<button class="replace-recipe-btn" onclick="openCustomDay('${date}', '${dayName}')">Redigera egen planering</button>`
     : '';
@@ -530,7 +535,7 @@ export function openWeekRecipe(recipeId, title, cardEl) {
   window.smoothScrollTo(top, 380);
 }
 
-// ── Blockera / Hoppa över ────────────────────────────────────────────────────
+// ── Fri dag (gör fri / ångra fri) ────────────────────────────────────────────
 
 async function modifyDay(date, action) {
   const cards = document.querySelectorAll('.week-day-card');
@@ -563,7 +568,7 @@ async function modifyDay(date, action) {
     const panel = document.getElementById('weekRecipeDetail');
     const errEl = document.createElement('p');
     errEl.style.cssText = 'color:var(--rust);font-size:0.82rem;padding:0.5rem 1rem';
-    const actionMsg = { skip: 'hoppa över', block: 'blockera', unblock: 'ångra fri dag på' };
+    const actionMsg = { free: 'göra fri', unfree: 'ångra fri dag på' };
     errEl.textContent = `Kunde inte ${actionMsg[action] || 'ändra'} dagen — prova igen.`;
     panel.innerHTML = '';
     panel.appendChild(errEl);
@@ -573,9 +578,8 @@ async function modifyDay(date, action) {
   }
 }
 
-export function skipDay(date) { return modifyDay(date, 'skip'); }
-export function blockDay(date) { return modifyDay(date, 'block'); }
-export function unblockDay(date) { return modifyDay(date, 'unblock'); }
+export function freeDay(date) { return modifyDay(date, 'free'); }
+export function unfreeDay(date) { return modifyDay(date, 'unfree'); }
 
 export function openBlockedDay(dateIso, dayName) {
   const panel = document.getElementById('weekRecipeDetail');
@@ -591,7 +595,7 @@ export function openBlockedDay(dateIso, dayName) {
       <div class="custom-day-sub">${dateLabel} · Fri dag</div>
     </div>
     <div class="custom-options">
-      <button type="button" class="custom-option" onclick="unblockDay('${dateIso}')">
+      <button type="button" class="custom-option" onclick="unfreeDay('${dateIso}')">
         <span class="custom-option-icon" aria-hidden="true">${ICON_CALENDAR}</span>
         <span class="custom-option-label">Ångra fri dag — skjut ihop matsedeln</span>
         <span class="custom-option-chev" aria-hidden="true">›</span>
@@ -1250,8 +1254,7 @@ window.cancelSwapMode      = cancelSwapMode;
 window.swapDays            = swapDays;
 window.replaceRecipe       = replaceRecipe;
 window.openWeekRecipe      = openWeekRecipe;
-window.skipDay             = skipDay;
-window.blockDay            = blockDay;
+window.freeDay             = freeDay;
 window.openSavingPopover   = openSavingPopover;
 function updateTimelineFades() {
   const outer = document.getElementById('timelineOuter');
@@ -1285,7 +1288,7 @@ window.openBlockedDay      = openBlockedDay;
 window.saveCustomDay       = saveCustomDay;
 window.saveCustomDaysBulk  = saveCustomDaysBulk;
 window.clearCustomDay      = clearCustomDay;
-window.unblockDay          = unblockDay;
+window.unfreeDay           = unfreeDay;
 window.convertBlockedToCustom = convertBlockedToCustom;
 window.enterCustomPickMode = enterCustomPickMode;
 window.exitCustomPickMode  = exitCustomPickMode;

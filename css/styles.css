@@ -1695,6 +1695,13 @@
     cursor: pointer;
   }
 
+  /* Gap- och fri-dag-kort är annars dimmade; lyfts upp som swap-mål */
+  .week-day-card.swap-target.gap,
+  .week-day-card.swap-target.blocked {
+    opacity: 1;
+    border-style: solid;
+  }
+
   .week-day-card.swap-target::after {
     content: 'Byt hit';
     display: block;
@@ -1723,7 +1730,7 @@
     color: var(--text-muted);
   }
 
-  /* ── Block / skip-knappar i detaljpanel ── */
+  /* ── Fri dag / byt dag-knappar i detaljpanel ── */
   .day-action-btns {
     display: flex;
     gap: 0.5rem;
@@ -1748,10 +1755,6 @@
   .day-action-btn:hover {
     border-color: var(--forest);
     background: var(--moss-soft);
-  }
-  .day-action-btn.day-action-block:hover {
-    border-color: var(--rust);
-    color: var(--rust);
   }
 
   /* ── Dagväljare (pre-generering) ── */
