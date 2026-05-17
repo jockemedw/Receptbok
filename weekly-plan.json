@@ -24,10 +24,11 @@
     {
       "date": "2026-05-12",
       "day": "Tisdag",
-      "recipe": "Senapsdressad pärlcouscous",
-      "recipeId": 49,
+      "recipe": null,
+      "recipeId": null,
       "saving": null,
-      "savingMatches": null
+      "savingMatches": null,
+      "blocked": true
     },
     {
       "date": "2026-05-13",
@@ -114,8 +115,8 @@
     {
       "date": "2026-05-23",
       "day": "Lördag",
-      "recipe": null,
-      "recipeId": null,
+      "recipe": "Senapsdressad pärlcouscous",
+      "recipeId": 49,
       "saving": null,
       "savingMatches": null
     }
