@@ -2,23 +2,60 @@ import { buildShoppingList } from "./_shared/shopping-builder.js";
 import { createHandler } from "./_shared/handler.js";
 import { readFile, readFileRaw, writeFile } from "./_shared/github.js";
 
+const DAY_NAMES = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag", "Lördag", "Söndag"];
+
+function dayNameForIso(iso) {
+  const d = new Date(iso + "T12:00:00");
+  const dow = d.getDay();
+  const weekday = dow === 0 ? 6 : dow - 1;
+  return DAY_NAMES[weekday];
+}
+
+function nextIso(iso) {
+  const d = new Date(iso + "T12:00:00");
+  d.setDate(d.getDate() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
 // ── Handler ─────────────────────────────────────────────────────────────────
+// Två actions:
+//   "free"   — gör en receptdag fri. Skjuter alla efterföljande recept framåt
+//              och förlänger planen med 1 dag så sista receptet inte tappas.
+//   "unfree" — ångra fri dag. Drar tillbaka recepten och krymper planen med
+//              1 dag. Lämnar inga tomma spökdagar i slutet.
 
 export default createHandler(async (req, res, pat) => {
   const { date, action } = req.body || {};
   if (!date) return res.status(400).json({ error: "date saknas" });
-  if (!["skip", "block", "unblock"].includes(action)) {
-    return res.status(400).json({ error: "action måste vara 'skip', 'block' eller 'unblock'" });
+  if (!["free", "unfree"].includes(action)) {
+    return res.status(400).json({ error: "action måste vara 'free' eller 'unfree'" });
   }
 
   const { content: plan } = await readFile("weekly-plan.json", pat);
   const dayIdx = plan.days.findIndex((d) => d.date === date);
   if (dayIdx === -1) return res.status(404).json({ error: "Dagen finns inte i planen." });
 
-  if (action === "skip") {
-    // Skjut alla recept framåt: varje dag från slutet ner till dayIdx+1
-    // får föregående dags recept. Sista receptet faller bort.
-    for (let i = plan.days.length - 1; i > dayIdx; i--) {
+  if (action === "free") {
+    if (plan.days[dayIdx].blocked) {
+      return res.status(400).json({ error: "Dagen är redan fri." });
+    }
+    // Lägg till en ny dag i slutet med sista dagens recept (så inget tappas).
+    const last = plan.days[plan.days.length - 1];
+    const newDate = nextIso(last.date);
+    const newDay = {
+      date: newDate,
+      day: dayNameForIso(newDate),
+      recipe: last.recipe,
+      recipeId: last.recipeId,
+      saving: last.saving || null,
+      savingMatches: last.savingMatches || null,
+    };
+    if (last.blocked) newDay.blocked = true;
+    plan.days.push(newDay);
+
+    // Skjut alla recept framåt: i = lastOldIdx (= N-1 efter push, men vi vill
+    // bara röra original-indexen). Loopa från N-1 (sista original) ner till dayIdx+1.
+    for (let i = plan.days.length - 2; i > dayIdx; i--) {
       plan.days[i].recipe = plan.days[i - 1].recipe;
       plan.days[i].recipeId = plan.days[i - 1].recipeId;
       plan.days[i].saving = plan.days[i - 1].saving || null;
@@ -34,12 +71,15 @@ export default createHandler(async (req, res, pat) => {
     plan.days[dayIdx].saving = null;
     plan.days[dayIdx].savingMatches = null;
     plan.days[dayIdx].blocked = true;
-  } else if (action === "unblock") {
+    plan.endDate = newDate;
+  } else {
     if (!plan.days[dayIdx].blocked) {
-      return res.status(400).json({ error: "Dagen är inte blockerad." });
+      return res.status(400).json({ error: "Dagen är inte fri." });
     }
-    // Skjut alla recept bakåt: varje dag från dayIdx till näst sista
-    // får nästa dags recept. Sista dagen blir tom.
+    if (plan.days.length <= 1) {
+      return res.status(400).json({ error: "Planen har bara en dag — kassera förslag istället." });
+    }
+    // Skjut bakåt: dag dayIdx..N-2 får nästa dags data. Ta sen bort sista dagen.
     for (let i = dayIdx; i < plan.days.length - 1; i++) {
       const next = plan.days[i + 1];
       plan.days[i].recipe = next.recipe;
@@ -52,22 +92,14 @@ export default createHandler(async (req, res, pat) => {
         delete plan.days[i].blocked;
       }
     }
-    const last = plan.days[plan.days.length - 1];
-    last.recipe = null;
-    last.recipeId = null;
-    last.saving = null;
-    last.savingMatches = null;
-    delete last.blocked;
-  } else {
-    // block: ta bort receptet från just denna dag
-    plan.days[dayIdx].recipe = null;
-    plan.days[dayIdx].recipeId = null;
-    plan.days[dayIdx].blocked = true;
+    plan.days.pop();
+    plan.endDate = plan.days[plan.days.length - 1].date;
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  const actionLabels = { skip: "Hoppa över", block: "Blockera", unblock: "Ångra fri dag" };
-  const commitMsg = `${actionLabels[action]} ${date}`;
+  const commitMsg = action === "free"
+    ? `Fri dag ${date} — autogenererad`
+    : `Ångra fri dag ${date} — autogenererad`;
 
   // Bygg om inköpslistan om planen är bekräftad
   if (plan.confirmedAt) {

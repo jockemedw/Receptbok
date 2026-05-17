@@ -485,11 +485,10 @@ export function openWeekRecipe(recipeId, title, cardEl) {
     <button class="replace-recipe-btn" onclick="replaceRecipe(${r.id}, '${date}', this)">Slumpa nytt recept</button>`;
   const swapBtn = !readOnly
     ? `<button class="day-action-btn" onclick="enterSwapMode('${date}')">Byt dag</button>` : '';
-  const skipBlockBtns = (!readOnly && !isPast)
-    ? `<button class="day-action-btn" onclick="skipDay('${date}')">Hoppa över — skjut recept →</button>
-       <button class="day-action-btn day-action-block" onclick="blockDay('${date}')">Blockera dag</button>` : '';
-  const dayActionBtns = (swapBtn || skipBlockBtns)
-    ? `<div class="day-action-btns">${swapBtn}${skipBlockBtns}</div>` : '';
+  const freeBtn = (!readOnly && !isPast)
+    ? `<button class="day-action-btn" onclick="freeDay('${date}')">Gör fri dag — skjut planen →</button>` : '';
+  const dayActionBtns = (swapBtn || freeBtn)
+    ? `<div class="day-action-btns">${swapBtn}${freeBtn}</div>` : '';
   const customEditBtn = isCustom
     ? `<button class="replace-recipe-btn" onclick="openCustomDay('${date}', '${dayName}')">Redigera egen planering</button>`
     : '';
@@ -530,7 +529,7 @@ export function openWeekRecipe(recipeId, title, cardEl) {
   window.smoothScrollTo(top, 380);
 }
 
-// ── Blockera / Hoppa över ────────────────────────────────────────────────────
+// ── Fri dag (gör fri / ångra fri) ────────────────────────────────────────────
 
 async function modifyDay(date, action) {
   const cards = document.querySelectorAll('.week-day-card');
@@ -563,7 +562,7 @@ async function modifyDay(date, action) {
     const panel = document.getElementById('weekRecipeDetail');
     const errEl = document.createElement('p');
     errEl.style.cssText = 'color:var(--rust);font-size:0.82rem;padding:0.5rem 1rem';
-    const actionMsg = { skip: 'hoppa över', block: 'blockera', unblock: 'ångra fri dag på' };
+    const actionMsg = { free: 'göra fri', unfree: 'ångra fri dag på' };
     errEl.textContent = `Kunde inte ${actionMsg[action] || 'ändra'} dagen — prova igen.`;
     panel.innerHTML = '';
     panel.appendChild(errEl);
@@ -573,9 +572,8 @@ async function modifyDay(date, action) {
   }
 }
 
-export function skipDay(date) { return modifyDay(date, 'skip'); }
-export function blockDay(date) { return modifyDay(date, 'block'); }
-export function unblockDay(date) { return modifyDay(date, 'unblock'); }
+export function freeDay(date) { return modifyDay(date, 'free'); }
+export function unfreeDay(date) { return modifyDay(date, 'unfree'); }
 
 export function openBlockedDay(dateIso, dayName) {
   const panel = document.getElementById('weekRecipeDetail');
@@ -591,7 +589,7 @@ export function openBlockedDay(dateIso, dayName) {
       <div class="custom-day-sub">${dateLabel} · Fri dag</div>
     </div>
     <div class="custom-options">
-      <button type="button" class="custom-option" onclick="unblockDay('${dateIso}')">
+      <button type="button" class="custom-option" onclick="unfreeDay('${dateIso}')">
         <span class="custom-option-icon" aria-hidden="true">${ICON_CALENDAR}</span>
         <span class="custom-option-label">Ångra fri dag — skjut ihop matsedeln</span>
         <span class="custom-option-chev" aria-hidden="true">›</span>
@@ -1250,8 +1248,7 @@ window.cancelSwapMode      = cancelSwapMode;
 window.swapDays            = swapDays;
 window.replaceRecipe       = replaceRecipe;
 window.openWeekRecipe      = openWeekRecipe;
-window.skipDay             = skipDay;
-window.blockDay            = blockDay;
+window.freeDay             = freeDay;
 window.openSavingPopover   = openSavingPopover;
 function updateTimelineFades() {
   const outer = document.getElementById('timelineOuter');
@@ -1285,7 +1282,7 @@ window.openBlockedDay      = openBlockedDay;
 window.saveCustomDay       = saveCustomDay;
 window.saveCustomDaysBulk  = saveCustomDaysBulk;
 window.clearCustomDay      = clearCustomDay;
-window.unblockDay          = unblockDay;
+window.unfreeDay           = unfreeDay;
 window.convertBlockedToCustom = convertBlockedToCustom;
 window.enterCustomPickMode = enterCustomPickMode;
 window.exitCustomPickMode  = exitCustomPickMode;
