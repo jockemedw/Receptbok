@@ -588,25 +588,34 @@ export function openBlockedDay(dateIso, dayName) {
   if (card) card.classList.add('selected');
 
   const dateLabel = fmtShort(dateIso);
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const isPast = dateIso < todayIso;
+
+  // På passerade fri-dagar är "Ångra fri dag" meningslöst (kan inte skjuta
+  // planen från en redan förbrukad dag). Bara notering-fältet visas.
+  const unfreeBtn = isPast ? '' : `
+      <button type="button" class="custom-option" onclick="unfreeDay('${dateIso}')">
+        <span class="custom-option-icon" aria-hidden="true">${ICON_CALENDAR}</span>
+        <span class="custom-option-label">Ångra fri dag — skjut ihop matsedeln</span>
+        <span class="custom-option-chev" aria-hidden="true">›</span>
+      </button>`;
+  const notePlaceholder = isPast
+    ? 'T.ex. rester, åt ute, beställde hem…'
+    : 'T.ex. pizza, rester, äter ute…';
 
   panel.innerHTML = `<div class="detail-inner custom-day-editor">
     <div class="custom-day-header">
       <div class="custom-day-title">${dayName}</div>
       <div class="custom-day-sub">${dateLabel} · Fri dag</div>
     </div>
-    <div class="custom-options">
-      <button type="button" class="custom-option" onclick="unfreeDay('${dateIso}')">
-        <span class="custom-option-icon" aria-hidden="true">${ICON_CALENDAR}</span>
-        <span class="custom-option-label">Ångra fri dag — skjut ihop matsedeln</span>
-        <span class="custom-option-chev" aria-hidden="true">›</span>
-      </button>
+    <div class="custom-options">${unfreeBtn}
       <div class="custom-option custom-option-note">
         <div class="custom-option-head">
           <span class="custom-option-icon" aria-hidden="true">${ICON_NOTE}</span>
           <span class="custom-option-label">Skriv egen notering</span>
         </div>
         <input type="text" id="blockedDayNote" class="custom-note-input" maxlength="140"
-               placeholder="T.ex. pizza, rester, äter ute…">
+               placeholder="${notePlaceholder}">
         <button type="button" class="custom-note-save" onclick="convertBlockedToCustom('${dateIso}')">Spara notering</button>
       </div>
     </div>
@@ -919,11 +928,12 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
     // Gap (ingen plan, inget custom) eller blockerad dag utan recept
     if (!d.recipeId) {
       const label = d.blocked ? 'Fri dag' : '—';
-      const clickable = !d.isPast;
+      // Fri dag är alltid klickbar — även passerad, så man kan skriva en
+      // post-hoc notering ("Vi åt rester"). Gap-dagar bara framåt.
       let onclick = '';
-      if (clickable && d.blocked) {
+      if (d.blocked) {
         onclick = ` onclick="openBlockedDay('${d.date}', '${d.day}')"`;
-      } else if (clickable && !d.blocked && !d.planId) {
+      } else if (!d.isPast && !d.planId) {
         onclick = ` onclick="openCustomDay('${d.date}', '${d.day}')"`;
       }
       return `<div class="${timelineDayCls}">
