@@ -48,16 +48,16 @@
     {
       "date": "2026-05-15",
       "day": "Fredag",
-      "recipe": "Indisk gryta med spenat, kikärter, senap & yoghurt",
-      "recipeId": 53,
+      "recipe": "Brysselkålbonara",
+      "recipeId": 270,
       "saving": null,
       "savingMatches": null
     },
     {
       "date": "2026-05-16",
       "day": "Lördag",
-      "recipe": "Brysselkålbonara",
-      "recipeId": 270,
+      "recipe": "Indisk gryta med spenat, kikärter, senap & yoghurt",
+      "recipeId": 53,
       "saving": null,
       "savingMatches": null
     },
