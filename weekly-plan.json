@@ -56,16 +56,16 @@
     {
       "date": "2026-05-16",
       "day": "Lördag",
-      "recipe": "Tikka Masala",
-      "recipeId": 271,
+      "recipe": "Balsamicglaserad fläskkarré med rostad vitlökspolenta och grönt",
+      "recipeId": 92,
       "saving": null,
       "savingMatches": null
     },
     {
       "date": "2026-05-17",
       "day": "Söndag",
-      "recipe": "Balsamicglaserad fläskkarré med rostad vitlökspolenta och grönt",
-      "recipeId": 92,
+      "recipe": "Tikka Masala",
+      "recipeId": 271,
       "saving": null,
       "savingMatches": null
     },
