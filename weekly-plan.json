@@ -56,8 +56,8 @@
     {
       "date": "2026-05-16",
       "day": "Lördag",
-      "recipe": "Indisk gryta med spenat, kikärter, senap & yoghurt",
-      "recipeId": 53,
+      "recipe": "Tikka Masala",
+      "recipeId": 271,
       "saving": null,
       "savingMatches": null
     },
@@ -88,8 +88,8 @@
     {
       "date": "2026-05-20",
       "day": "Onsdag",
-      "recipe": "Tikka Masala",
-      "recipeId": 271,
+      "recipe": "Indisk gryta med spenat, kikärter, senap & yoghurt",
+      "recipeId": 53,
       "saving": null,
       "savingMatches": null
     },
