@@ -54,19 +54,27 @@ export async function runDispatch() {
     <p>Skickar till Willys…</p>
     <div class="dispatch-loader">${ICON_HOURGLASS}</div>
   `);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 20000);
   try {
     const res = await fetch("/api/dispatch-to-willys", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ date: new Date().toISOString().slice(0, 10) }),
+      signal: controller.signal,
     });
     const data = await res.json();
     renderResult(data);
-  } catch {
+  } catch (err) {
+    const msg = err.name === "AbortError"
+      ? "Tog för lång tid — Willys svarade inte. Prova igen om en stund."
+      : "Kunde inte nå Willys. Prova igen om en stund.";
     showResult(`
-      <p>Kunde inte nå Willys. Prova igen om en stund.</p>
+      <p>${msg}</p>
       <div class="dispatch-actions"><button onclick="closeDispatchModal()">Stäng</button></div>
     `);
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 

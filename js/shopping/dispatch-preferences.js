@@ -8,6 +8,7 @@ const DEFAULTS = { blockedBrands: [], preferOrganic: {}, preferSwedish: {} };
 
 let prefs = { ...DEFAULTS };
 let prefsLoaded = false;
+let _savePrefTimer = null;
 
 async function loadPrefs() {
   if (prefsLoaded) return prefs;
@@ -17,23 +18,25 @@ async function loadPrefs() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "get_preferences" }),
     });
-    if (res.ok) prefs = await res.json();
+    if (res.ok) { prefs = await res.json(); prefsLoaded = true; }
   } catch { /* använd defaults */ }
-  prefsLoaded = true;
   return prefs;
 }
 
-async function savePrefs() {
-  try {
-    await fetch("/api/shopping", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "set_preferences", preferences: prefs }),
-    });
-  } catch {
-    const err = document.getElementById("prefsError");
-    if (err) { err.textContent = "Kunde inte spara — försök igen."; err.style.display = ""; }
-  }
+function savePrefs() {
+  clearTimeout(_savePrefTimer);
+  _savePrefTimer = setTimeout(async () => {
+    try {
+      await fetch("/api/shopping", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "set_preferences", preferences: prefs }),
+      });
+    } catch {
+      const err = document.getElementById("prefsError");
+      if (err) { err.textContent = "Kunde inte spara — försök igen."; err.style.display = ""; }
+    }
+  }, 500);
 }
 
 function getShoppingCategories() {
@@ -55,7 +58,7 @@ function getUncheckedItems() {
 function getUncheckedManualItems() {
   const manual = window._shopManualItems || [];
   const checked = window._checkedItems || {};
-  return manual.filter((_, idx) => !checked[`manual::${idx}`]);
+  return manual.filter((item) => !checked[`manual::${item}`]);
 }
 
 function renderBrandPills() {

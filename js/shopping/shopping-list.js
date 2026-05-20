@@ -61,7 +61,7 @@ export function rebuildShopText() {
       }).join('');
   }
 
-  const uncheckedManual = window._shopManualItems.filter((_, idx) => !window._checkedItems[`manual::${idx}`]);
+  const uncheckedManual = window._shopManualItems.filter((item) => !window._checkedItems[`manual::${item}`]);
   if (uncheckedManual.length) {
     textParts.push(`Egna tillägg:\n${uncheckedManual.map(i => '• ' + i).join('\n')}`);
     textBlocksHtml += `<div class="shop-text-category">
@@ -127,14 +127,14 @@ export function renderFullShoppingList(recipeItems, manualItems) {
   }
 
   if (manualItems.length > 0) {
-    const manualHtml = manualItems.map((item, idx) => {
-      const key     = `manual::${idx}`;
+    const manualHtml = manualItems.map((item) => {
+      const key     = `manual::${item}`;
       const checked = window._checkedItems[key] || false;
       return `<li class="shopping-item${checked ? ' checked' : ''}"
-                  onclick="toggleShopItem(this,'${key}')">
+                  onclick="toggleShopItem(this,${JSON.stringify(key)})">`
         <span class="item-checkbox">${checked ? '✓' : ''}</span>
         <span class="item-text">${escapeHtml(item)}</span>
-        <button class="remove-manual-btn" onclick="event.stopPropagation();removeManualItem('${escapeHtml(item).replace(/'/g, "\\'")}')">×</button>
+        <button class="remove-manual-btn" data-item="${escapeHtml(item)}" onclick="event.stopPropagation();removeManualItem(this.dataset.item)">×</button>
       </li>`;
     }).join('');
     checkHtml += `<div class="shopping-category">
@@ -145,7 +145,7 @@ export function renderFullShoppingList(recipeItems, manualItems) {
       <ul class="shopping-items">${manualHtml}</ul>
     </div>`;
 
-    const uncheckedManual = manualItems.filter((_, idx) => !window._checkedItems[`manual::${idx}`]);
+    const uncheckedManual = manualItems.filter((item) => !window._checkedItems[`manual::${item}`]);
     if (uncheckedManual.length) {
       textParts.push(`Egna tillägg:\n${uncheckedManual.map(i => '• ' + i).join('\n')}`);
       textBlocksHtml += `<div class="shop-text-category">

@@ -53,6 +53,7 @@ export function createSecretsStore({ fetchImpl = fetch, pat, gistId, ttlMs = 5 *
   }
 
   async function writeUser(userId, { cookie, csrf, storeId }) {
+    cache = null;
     const data = await fetchGist();
     if (!data.users) data.users = {};
     data.users[userId] = {

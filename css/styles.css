@@ -2944,11 +2944,11 @@
     border: 2px solid var(--border);
     border-top-color: var(--lichen);
     border-radius: 50%;
-    animation: spin 0.65s linear infinite;
+    animation: spinFast 0.65s linear infinite;
     vertical-align: middle;
     margin-right: 0.35rem;
   }
-  @keyframes spin {
+  @keyframes spinFast {
     to { transform: rotate(360deg); }
   }
   .recipe-grid-loading {

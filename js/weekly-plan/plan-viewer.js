@@ -1279,13 +1279,12 @@ function updateTimelineFades() {
     wrap.scrollLeft + wrap.clientWidth < wrap.scrollWidth - threshold);
 }
 
-let _fadeListenerAttached = false;
+let _fadeWrap = null;
 function initTimelineFadeListener() {
-  if (_fadeListenerAttached) return;
   const wrap = document.querySelector('#timelineOuter .timeline-wrap');
-  if (!wrap) return;
+  if (!wrap || wrap === _fadeWrap) return;
   wrap.addEventListener('scroll', updateTimelineFades, { passive: true });
-  _fadeListenerAttached = true;
+  _fadeWrap = wrap;
 }
 
 window.closeSavingPopover  = closeSavingPopover;

@@ -50,6 +50,7 @@ export default createHandler(async (req, res, pat) => {
       timeNote: recipe.timeNote || null,
       tags: recipe.tags || [],
       protein: recipe.protein,
+      seasons: recipe.seasons || [],
       ingredients: recipe.ingredients || [],
       instructions: recipe.instructions || [],
       notes: recipe.notes || null,

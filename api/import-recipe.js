@@ -16,7 +16,8 @@ const GEMINI_SCHEMA_PROMPT = `Du är en expert på matlagning och dataextraktion
   "tags": ["array med tillämpliga: vardag30, helg60, fisk, kyckling, kött, fläsk, vegetarisk, soppa, pasta, wok, ugn, sallad, gryta"],
   "ingredients": ["array av strings, en ingrediens per element, t.ex. '200 g smör'"],
   "instructions": ["array av strings, ett steg per element"],
-  "notes": "string med tips/varianter eller null"
+  "notes": "string med tips/varianter eller null",
+  "seasons": ["array (optionell) med tillämpliga säsonger: vår, sommar, höst, vinter — lämna tom om receptet passar hela året"]
 }`;
 
 // ── Handler ─────────────────────────────────────────────────────────────────

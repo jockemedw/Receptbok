@@ -74,6 +74,9 @@ export function updateSettingsPreview() {
     const diff = daysBetween(startVal, endVal);
     if (vegDays > diff) document.getElementById('vegetarianDays').value = diff;
     if (tureDays > diff) document.getElementById('tureDays').value = diff;
+    if (vegDays + tureDays > diff) {
+      document.getElementById('vegetarianDays').value = Math.max(0, diff - tureDays);
+    }
     document.getElementById('vegetarianDays').max  = diff;
     document.getElementById('tureDays').max        = diff;
     document.getElementById('untestedCount').max   = diff;

@@ -56,7 +56,11 @@ export default async function handler(req, res) {
 
   try {
     console.log(`dispatch source=${secrets.source}`);
-    const shoppingList = await (await fetch(SHOPPING_LIST_URL + "?t=" + Date.now())).json();
+    const shoppingListRes = await fetch(SHOPPING_LIST_URL + "?t=" + Date.now());
+    if (!shoppingListRes.ok) {
+      return res.status(200).json({ ok: false, error: "shopping_list_unavailable", message: "Kunde inte läsa inköpslistan — prova att ladda om sidan." });
+    }
+    const shoppingList = await shoppingListRes.json();
     const offers = await fetchOffersFromWillys(secrets.storeId);
     const searchClient = createSearchClient({});
     const cartClient = createCartClient({ cookies: secrets.cookies, csrf: secrets.csrf });
