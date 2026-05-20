@@ -131,7 +131,8 @@ export function renderFullShoppingList(recipeItems, manualItems) {
       const key     = `manual::${item}`;
       const checked = window._checkedItems[key] || false;
       return `<li class="shopping-item${checked ? ' checked' : ''}"
-                  onclick="toggleShopItem(this,${JSON.stringify(key)})">`
+                  data-key="${escapeHtml(key)}"
+                  onclick="toggleShopItem(this,this.dataset.key)">
         <span class="item-checkbox">${checked ? '✓' : ''}</span>
         <span class="item-text">${escapeHtml(item)}</span>
         <button class="remove-manual-btn" data-item="${escapeHtml(item)}" onclick="event.stopPropagation();removeManualItem(this.dataset.item)">×</button>
