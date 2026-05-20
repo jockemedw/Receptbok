@@ -112,7 +112,13 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 55 (2026-05-20) — P1-buggfixar från kodgranskning
+### Senaste session — Session 56 (2026-05-20) — Nattjobb: schemalagd P1-fixning
+
+- **Schemalagt nattjobb:** P1-buggrättningar från Session 53-granskningen kördes som ett remotejobb (CCR) kl 03:27 Stockholm-tid via `claude.ai/code/routines`.
+- **Validering:** Bekräftad via RemoteTrigger API (`ended_reason: run_once_fired`) + git log — commit `9ebe94e` pushad till main av agenten.
+- **Resultat:** 12 P1-buggar fixade i 10 filer, 644 assertions oförändrade (se Session 55 för detaljer).
+
+### Session 55 (2026-05-20) — P1-buggfixar från kodgranskning
 
 - **api/recipes.js:** `seasons`-fält lades till i `newRecipe` — manuellt skapade recept fick säsongstaggning (Fas 6C)
 - **api/import-recipe.js:** `seasons` tillagt i Gemini-schema — importerade recept får nu korrekt säsongstaggning
