@@ -112,7 +112,15 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 56 (2026-05-20) — Nattjobb: schemalagd P1-fixning
+### Senaste session — Session 57 (2026-05-20) — Hotfix: appen laddade inte
+
+- **Symptom:** Sidan fastnade på "Laddar receptbok…", inga knappar fungerade.
+- **Rotorsak:** Session 55:s manuella-varor-fix (commit `9ebe94e`) stängde `<li>`-template-literalen i `js/shopping/shopping-list.js` för tidigt — backtick direkt efter `onclick`-attributet → syntaxfel → hela ES-modulgrafen laddade aldrig (alla moduler registrerar `window.*` vid import, så ingenting startade).
+- **Fix:** Slog ihop till sammanhängande template-literal. Bytte även `onclick`-nyckeln från `JSON.stringify(key)` (dubbla citattecken i dubbelciterat HTML-attribut → bröt avbockning) till citatsäkert `data-key`-attribut, i linje med `remove-manual-btn`.
+- **Lärdom:** PostToolUse-hookarna kör testfiler men fångar inte syntaxfel i frontend-moduler utan testtäckning. `node --check` på alla `js/`-filer borde ingå i Definition of Done för frontend-ändringar.
+- Cache-bust `?v=67` → `?v=68`. **644 assertions** oförändrade. PR #34 mergad till main.
+
+### Session 56 (2026-05-20) — Nattjobb: schemalagd P1-fixning
 
 - **Schemalagt nattjobb:** P1-buggrättningar från Session 53-granskningen kördes som ett remotejobb (CCR) kl 03:27 Stockholm-tid via `claude.ai/code/routines`.
 - **Validering:** Bekräftad via RemoteTrigger API (`ended_reason: run_once_fired`) + git log — commit `9ebe94e` pushad till main av agenten.
