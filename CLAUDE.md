@@ -112,7 +112,24 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 54 (2026-05-17) — Fri dag-sammanslagning + fri swap
+### Senaste session — Session 55 (2026-05-20) — P1-buggfixar från kodgranskning
+
+- **api/recipes.js:** `seasons`-fält lades till i `newRecipe` — manuellt skapade recept fick säsongstaggning (Fas 6C)
+- **api/import-recipe.js:** `seasons` tillagt i Gemini-schema — importerade recept får nu korrekt säsongstaggning
+- **api/dispatch-to-willys.js:** `res.ok`-kontroll på shopping-list-fetch (kryptiskt crash när GitHub är nere → nu begripligt felmeddelande)
+- **api/_shared/secrets-store.js:** `writeUser` nollställer cache innan skrivning — eliminerar race där dispatch läser stale cookies direkt efter cookie-refresh
+- **js/shopping/shopping-list.js:** `removeManualItem` använder `data-item`-attribut i stället för inline-strängescaping (citattecken i varunamn kraschade borttagningen)
+- **js/shopping/shopping-list.js:** Manuella varors bock-nycklar baseras nu på textvärde (`manual::${item}`) i stället för index — bockar hoppar inte längre när en vara tas bort
+- **js/shopping/dispatch-preferences.js:** `prefsLoaded` sätts bara vid lyckad fetch — appen provar om vid nästa sidbesök i stället för att fastna med defaults
+- **js/shopping/dispatch-preferences.js:** `savePrefs` debounced (500 ms) — snabba toggle-klick kan inte längre skriva i fel ordning
+- **js/shopping/dispatch-ui.js:** `AbortController` med 20 s timeout på dispatch-anrop — spinnern kan inte längre hänga för evigt
+- **js/weekly-plan/plan-viewer.js:** Fade-lyssnaren för tidslinjens scroll-gradienter trackar DOM-element-referens i stället för boolean — lyssnar korrekt efter re-render
+- **js/weekly-plan/plan-generator.js:** `tureDays + vegDays` valideras mot `total_days` — omöjlig kombination cappas automatiskt
+- **css/styles.css:** Duplicerad `@keyframes spin` döpt om till `spinFast` för `.import-spinner` — ingen namnkonflikt längre
+- SKIPPED: swap-target past days (intentionellt beteende från Session 52); swap optimistic update (åtgärdat i Session 54-omskrivning)
+- **644 assertions** oförändrade.
+
+### Session 54 (2026-05-17) — Fri dag-sammanslagning + fri swap
 
 - **Bugg eliminerad:** Gamla `unblock`-action lämnade ett tomt "—"-kort i slutet av planen som varken kunde redigeras eller flyttas. Hela `skip-day.js` skrevs om till två actions: `free` (skjuter framåt + förlänger planen med 1 dag så sista receptet inte tappas) och `unfree` (drar bakåt + krymper planen). Spöket är borta.
 - **Knapp-sammanslagning:** "Hoppa över — skjut recept →" och "Blockera dag" slogs ihop till en enda "Gör fri dag — skjut planen →"-knapp. Fri dag-panelens "Skriv egen notering" behåller flödet (konverterar till custom-day). Dead CSS-regel `.day-action-block` borttagen.
