@@ -3382,3 +3382,25 @@ html.auth-required body {
 .auth-status-error {
   color: var(--color-danger);
 }
+
+.auth-code-input {
+  font-size: 1.6rem;
+  letter-spacing: 0.25em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.auth-back {
+  display: block;
+  margin: 12px auto 0;
+  background: none;
+  border: none;
+  color: var(--lichen);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.auth-back:hover {
+  color: var(--forest);
+}
