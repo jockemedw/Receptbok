@@ -1,7 +1,7 @@
 {
   "generated": "2026-05-07",
   "startDate": "2026-05-09",
-  "endDate": "2026-05-25",
+  "endDate": "2026-05-27",
   "days": [
     {
       "date": "2026-05-09",
@@ -117,10 +117,11 @@
     {
       "date": "2026-05-23",
       "day": "Lördag",
-      "recipe": "Senapsdressad pärlcouscous",
-      "recipeId": 49,
+      "recipe": null,
+      "recipeId": null,
       "saving": null,
-      "savingMatches": null
+      "savingMatches": null,
+      "blocked": true
     },
     {
       "date": "2026-05-24",
@@ -135,6 +136,23 @@
       "day": "Måndag",
       "recipe": "Pasta Rosso med champinjoner",
       "recipeId": 56,
+      "saving": null,
+      "savingMatches": null
+    },
+    {
+      "date": "2026-05-26",
+      "day": "Tisdag",
+      "recipe": null,
+      "recipeId": null,
+      "saving": null,
+      "savingMatches": null,
+      "blocked": true
+    },
+    {
+      "date": "2026-05-27",
+      "day": "Onsdag",
+      "recipe": "Senapsdressad pärlcouscous",
+      "recipeId": 49,
       "saving": null,
       "savingMatches": null
     }
