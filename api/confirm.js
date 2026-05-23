@@ -68,7 +68,7 @@ export default createSupabaseHandler(async (req, res) => {
       start_date: plan.start_date,
       end_date: plan.end_date,
       generated_at: today,
-      recipe_items_moved_at: null,
+      recipe_items_moved_at: today,
       is_active: true,
     })
     .select()
@@ -105,7 +105,7 @@ export default createSupabaseHandler(async (req, res) => {
     startDate: plan.start_date,
     endDate: plan.end_date,
     recipeItems: shoppingCategories,
-    recipeItemsMovedAt: null,
+    recipeItemsMovedAt: today,
     manualItems,
     checkedItems,
   };
