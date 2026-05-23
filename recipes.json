@@ -876,7 +876,7 @@
     {
       "id": 23,
       "title": "Minestrone",
-      "tested": true,
+      "tested": false,
       "servings": 4,
       "time": 20,
       "timeNote": "snabb",
