@@ -21,9 +21,9 @@ import { createCartClient } from "./_shared/willys-cart-client.js";
 import { matchCanons } from "./_shared/dispatch-matcher.js";
 import { parseIngredient, normalizeName } from "./_shared/shopping-builder.js";
 import { createSecretsStore } from "./_shared/secrets-store.js";
+import { db } from "./_shared/supabase.js";
 
 const CART_URL = "https://www.willys.se/";
-const SHOPPING_LIST_URL = "https://raw.githubusercontent.com/jockemedw/Receptbok/main/shopping-list.json";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -56,7 +56,7 @@ export default async function handler(req, res) {
 
   try {
     console.log(`dispatch source=${secrets.source}`);
-    const shoppingList = await (await fetch(SHOPPING_LIST_URL + "?t=" + Date.now())).json();
+    const shoppingList = await fetchShoppingListFromSupabase();
     const offers = await fetchOffersFromWillys(secrets.storeId);
     const searchClient = createSearchClient({});
     const cartClient = createCartClient({ cookies: secrets.cookies, csrf: secrets.csrf });
@@ -215,6 +215,35 @@ export async function runDispatch({ shoppingList, offers, searchClient, cartClie
     search: matched.filter(m => m.source === "search").length,
   };
   return { ok: true, addedCount: matched.length, missing, sources };
+}
+
+// Läser aktiv inköpslista från Supabase och returnerar { recipeItems, manualItems }
+// i samma format som shopping-list-endpointen brukade returnera.
+async function fetchShoppingListFromSupabase() {
+  const { data: lists } = await db
+    .from("shopping_lists")
+    .select("id")
+    .eq("is_active", true)
+    .limit(1);
+  if (!lists?.length) return { recipeItems: {}, manualItems: [] };
+
+  const { data: items } = await db
+    .from("shopping_items")
+    .select("category, name, source, position")
+    .eq("list_id", lists[0].id)
+    .order("position");
+
+  const recipeItems = {};
+  const manualItems = [];
+  for (const item of (items || [])) {
+    if (item.source === "recipe") {
+      if (!recipeItems[item.category]) recipeItems[item.category] = [];
+      recipeItems[item.category].push(item.name);
+    } else {
+      manualItems.push(item.name);
+    }
+  }
+  return { recipeItems, manualItems };
 }
 
 function extractCanonsFromShoppingList(shoppingList) {
