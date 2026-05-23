@@ -1,0 +1,21 @@
+import { createClient } from "@supabase/supabase-js";
+
+// Service-role-klient för backend-operationer — kringgår RLS.
+// SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY injiceras av Vercel-Supabase-integrationen.
+export const db = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY,
+  { auth: { persistSession: false } }
+);
+
+// Hämtar household_id för v1-familjeappen (en household i systemet).
+// Kan utökas till att ta emot ett user-token när appen växer till multi-family.
+export async function getHouseholdId() {
+  const { data, error } = await db
+    .from("households")
+    .select("id")
+    .limit(1)
+    .single();
+  if (error || !data) throw new Error("Hittade ingen household — kör migrationen först.");
+  return data.id;
+}
