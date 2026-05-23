@@ -3,6 +3,7 @@
 // Skriver state: RECIPES, editingId
 
 import { proteinLabel, timeStr, renderIngredient, renderDetailInner } from '../utils.js';
+import { recipeToRow } from '../data-mapper.js';
 
 export function openEditModal(event, id) {
   event.stopPropagation();
@@ -71,16 +72,19 @@ export async function saveRecipe() {
   };
 
   if (isNew) {
-    // Steg 1: Spara receptet via API
+    // Steg 1: Spara receptet via Supabase
     let saved;
     try {
-      const res = await fetch('/api/recipes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'add', recipe: formData }),
-      });
-      if (!res.ok) throw new Error();
-      saved = (await res.json()).recipe;
+      const householdId = await window.getHouseholdId();
+      const nextId = Math.max(...window.RECIPES.map(r => r.id), 0) + 1;
+      const newRecipe = { ...formData, id: nextId, tested: false, seasons: [] };
+      const { data, error } = await window.db
+        .from('recipes')
+        .insert(recipeToRow(newRecipe, householdId))
+        .select()
+        .single();
+      if (error) throw error;
+      saved = newRecipe;
     } catch {
       feedback.textContent = 'Kunde inte spara — prova igen.';
       feedback.style.color = 'var(--rust)';
@@ -88,46 +92,11 @@ export async function saveRecipe() {
       return;
     }
 
-    // Steg 2: Receptet är sparat — stäng modal och visa laddning
+    // Steg 2: Receptet är sparat — uppdatera lokalt state och rendera
     closeEditModal();
     window.switchTab('recept');
-    const grid = document.getElementById('recipeGrid');
-    grid.style.opacity = '0.4';
-    const spinner = document.createElement('div');
-    spinner.className = 'recipe-grid-loading';
-    spinner.innerHTML = '<span class="import-spinner"></span> Laddar receptlistan…';
-    grid.parentNode.insertBefore(spinner, grid);
-
-    try {
-      // Vänta kort så GitHub hinner uppdatera, sedan hämta med cache-bust
-      await new Promise(r => setTimeout(r, 2000));
-      let loaded = false;
-      for (let attempt = 0; attempt < 3; attempt++) {
-        const freshRes = await fetch(`recipes.json?t=${Date.now()}`);
-        if (freshRes.ok) {
-          const freshData = await freshRes.json();
-          if (freshData.recipes.some(r => r.id === saved.id)) {
-            window.RECIPES     = freshData.recipes;
-            window._allRecipes = window.RECIPES;
-            grid.innerHTML     = window.RECIPES.map(window.renderCard).join('');
-            loaded = true;
-            break;
-          }
-        }
-        await new Promise(r => setTimeout(r, 2000));
-      }
-      if (!loaded) {
-        window.RECIPES.push(saved);
-        grid.innerHTML = window.RECIPES.map(window.renderCard).join('');
-      }
-    } catch {
-      // Fallback vid nätverksfel: lägg till lokalt
-      window.RECIPES.push(saved);
-      grid.innerHTML = window.RECIPES.map(window.renderCard).join('');
-    }
-
-    grid.style.opacity = '';
-    spinner.remove();
+    window.RECIPES.push(saved);
+    window._allRecipes = window.RECIPES;
 
     // Nollställ sökning så det nya kortet syns
     document.getElementById('search').value = '';
@@ -152,12 +121,13 @@ export async function saveRecipe() {
 
   const updated = { ...r, ...formData };
   try {
-    const res = await fetch('/api/recipes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'update', recipe: updated }),
-    });
-    if (!res.ok) throw new Error();
+    const householdId = await window.getHouseholdId();
+    const { error } = await window.db
+      .from('recipes')
+      .update(recipeToRow(updated, householdId))
+      .eq('id', updated.id)
+      .eq('household_id', householdId);
+    if (error) throw error;
     const idx = window.RECIPES.findIndex(r => r.id === window.editingId);
     window.RECIPES[idx] = updated;
 
@@ -195,12 +165,13 @@ export async function deleteRecipe() {
   feedback.style.color  = 'var(--text-muted)';
 
   try {
-    const res = await fetch('/api/recipes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'delete', id: window.editingId }),
-    });
-    if (!res.ok) throw new Error();
+    const householdId = await window.getHouseholdId();
+    const { error } = await window.db
+      .from('recipes')
+      .delete()
+      .eq('id', window.editingId)
+      .eq('household_id', householdId);
+    if (error) throw error;
     window.RECIPES = window.RECIPES.filter(r => r.id !== window.editingId);
     const card = document.querySelector(`.recipe-card[data-id="${window.editingId}"]`);
     if (card) card.remove();

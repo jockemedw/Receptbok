@@ -19,14 +19,19 @@ import './weekly-plan/plan-viewer.js';
 
 async function init() {
   try {
-    const res = await fetch('recipes.json');
-    if (!res.ok) throw new Error('Kunde inte ladda recipes.json');
-    const data = await res.json();
-    window.RECIPES      = data.recipes;
-    window._allRecipes  = window.RECIPES;
-    document.getElementById('loadingState').style.display  = 'none';
-    document.getElementById('footerEl').textContent        =
-      `Receptboken · ${data.meta?.lastUpdated || ''} · ${window.RECIPES.length} recept`;
+    const householdId = await window.getHouseholdId();
+    if (!householdId) throw new Error('Kunde inte hitta hushållsinformation.');
+    const { data: rows, error } = await window.db
+      .from('recipes')
+      .select('*')
+      .eq('household_id', householdId)
+      .order('id');
+    if (error) throw new Error('Kunde inte ladda recepten.');
+    window.RECIPES     = rows.map(recipeFromRow);
+    window._allRecipes = window.RECIPES;
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('footerEl').textContent =
+      `Receptboken · ${window.RECIPES.length} recept`;
     buildTagFilterUI();
     window.renderRecipeBrowser();
     window.initDatePickers();
