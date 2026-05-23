@@ -86,15 +86,15 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 - [x] 6D — UI: "Säsongsanpassning"-toggle i inställningspanelen + säsongsfilter (vår/sommar/höst/vinter) i receptboken.
 - [ ] 6E — Finjustering: eventuell manuell korrigering av säsongstaggar efter användarfeedback.
 
-**Fas 7 — Supabase-migration** (pågår, branch `claude/supabase-migration-ihIzv` — **MERGE ALDRIG TILL MAIN FÖRRÄN 7E ÄR GRÖN**)
+**Fas 7 — Supabase-migration** ✅ **KLAR (Session 60, mergad till main 2026-05-23)**
 - [x] 7A — Tabellschema + RLS + households-tabell i Supabase
 - [x] 7B — Seedning: 264 recept + weekly-plan + shopping-list + arkiv + custom-days + dispatch-prefs via `scripts/migrate-to-supabase.mjs --commit`
 - [x] 7C steg 1 — `dualReadCheck()` i app.js (fire-and-forget, loggar diff i konsolen)
 - [x] 7C steg 2 — Preview-deploy verifierad, Supabase redirect-URL inlagd, magic-link auth testad
 - [x] 7C steg 3 — Frontend-omskrivning (Session 58, commit `7f92add`): `app.js` recept från Supabase, `recipe-editor.js` CRUD via Supabase, `shopping-list.js` mot `shopping_lists`/`shopping_items`, `plan-viewer.js` plan/arkiv/custom-days från Supabase
 - [ ] 7C steg 4 — Realtime-subscriptions för `meal_days` + `shopping_items` (valfritt)
-- [x] 7D — Backend-omskrivning **klar (Session 59, branch `claude/crazy-mcclintock-d47bcb`)**: `api/generate.js`, `api/confirm.js`, `api/skip-day.js`, `api/swap-days.js`, `api/replace-recipe.js`, `api/discard-plan.js` skriver till Supabase. Ny `api/_shared/supabase.js` (service-role-klient). `createSupabaseHandler` i handler.js. `plan-generator.js` hämtar arkiv/custom-days från Supabase.
-- [ ] 7E — Acceptanstester + cutover → merge till main
+- [x] 7D — Backend-omskrivning klar (Session 59): alla API-endpoints skriver till Supabase
+- [x] 7E — Acceptanstester gröna + cutover mergad till main (Session 60)
 
 ### Kända buggar
 Inga just nu.
@@ -122,9 +122,17 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 59 (2026-05-23) — Fas 7D komplett: all backend mot Supabase
+### Senaste session — Session 60 (2026-05-23) — Fas 7E: cutover till main
 
-- **Branch:** `claude/crazy-mcclintock-d47bcb` (bygger på `claude/supabase-migration-ihIzv`). ALDRIG merge till main förrän Fas 7E är grön.
+- **Fas 7 KLAR** — `claude/crazy-mcclintock-d47bcb` mergad till `main` (commit `45a6433`).
+- **Buggfix acceptanstest:** `api/confirm.js` satte `recipe_items_moved_at: null` → inköpslistan visades aldrig trots 58 items i Supabase. Fix: sätts nu till `today`.
+- **Buggfix auth:** `joakimweimar@gmail.com` saknades i `household_members` — lades till direkt i Supabase. Nu är båda e-postadresserna (`joakim.weimar@gmail.com` och `joakimweimar@gmail.com`) owners.
+- **Verifierat på preview:** receptlistan laddas, generering sparar till Supabase, bekräftelse bygger inköpslista, inköpslistan visas och är interaktiv.
+- **671 assertions** (51 match + 62 shopping + 432 select-recipes + 70 dispatch + 29 cookies + 27 data-mapper).
+- **Notering:** 2-dagars receptöverlapp vid ny generering är förväntat (migreringsartefakt — Supabase-historiken visste inte om JSON-baserade val sedan seedningen). Löser sig naturligt nu när allt kör mot Supabase.
+
+### Session 59 (2026-05-23) — Fas 7D komplett: all backend mot Supabase
+
 - **`api/_shared/supabase.js`** (ny): service-role Supabase-klient med lazy-initialisering via Proxy — `createClient` anropas inte vid import-tid, förhindrar krasch i testmiljöer utan `SUPABASE_URL`. `getHouseholdId()` hämtar första household.
 - **`api/_shared/handler.js`**: ny export `createSupabaseHandler` — hanterar CORS utan att kräva GITHUB_PAT.
 - **`api/generate.js`**: `fetchRecipes` läser från `recipes`-tabellen, `fetchHistory` från `recipe_history`, arkivering skriver till `plan_archives`, plan sparas som `weekly_plans` + `meal_days`, historia upsertad i `recipe_history`, inköpslista i `shopping_lists`/`shopping_items`.
@@ -136,7 +144,6 @@ Inga just nu.
 - **`api/dispatch-to-willys.js`**: ny `fetchShoppingListFromSupabase()` ersätter `fetch(SHOPPING_LIST_URL)` — läser `shopping_lists` + `shopping_items` direkt från Supabase.
 - **`js/weekly-plan/plan-generator.js`**: hämtar arkiv/custom-days från Supabase efter generering.
 - **671 assertions** (51 match + 62 shopping + 432 select-recipes + 70 dispatch + 29 cookies + 27 data-mapper).
-- **Nästa:** Fas 7E — acceptanstester + cutover → merge till main.
 
 ### Session 58 (2026-05-23) — Fas 7C steg 3: frontend mot Supabase
 
