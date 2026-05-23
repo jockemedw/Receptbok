@@ -39,19 +39,24 @@ export async function moveToShoppingList() {
   btn.disabled    = true;
   btn.textContent = 'Flyttar…';
   try {
-    const res = await fetch('/api/shopping', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'move' }),
-    });
-    if (!res.ok) throw new Error();
-    const data = await res.json();
-    const shop = data.content;
-    btn.dataset.movedAt = shop?.recipeItemsMovedAt || '';
+    const today = new Date().toISOString().slice(0, 10);
+    const { data: lists } = await window.db
+      .from('shopping_lists')
+      .select('id')
+      .eq('is_active', true)
+      .limit(1);
+    if (lists?.length) {
+      const { error } = await window.db
+        .from('shopping_lists')
+        .update({ recipe_items_moved_at: today })
+        .eq('id', lists[0].id);
+      if (error) throw error;
+    }
+    btn.dataset.movedAt = today;
     btn.textContent     = 'Flytta till inköpslista →';
     btn.disabled        = false;
-    window._freshShopContent = shop;
     window.switchTab('shop');
+    if (window.loadShoppingTab) window.loadShoppingTab();
   } catch {
     alert('Kunde inte flytta varorna — prova igen.');
     btn.textContent = 'Flytta till inköpslista →';

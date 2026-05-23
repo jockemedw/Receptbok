@@ -264,18 +264,20 @@ export async function toggleTested(event, id) {
   const pill = event.currentTarget;
   pill.style.opacity = '0.5';
   try {
-    const res = await fetch('/api/recipes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'toggle_tested', id }),
-    });
-    if (!res.ok) throw new Error();
-    const { tested } = await res.json();
     const r = window.RECIPES.find(r => r.id === id);
-    if (r) r.tested = tested;
-    pill.className   = `pill ${tested ? 'pill-tested' : 'pill-untested'} pill-toggle`;
-    pill.textContent = tested ? '✓ Provat' : 'Ej provat';
-    pill.closest('.recipe-card').dataset.tested = tested;
+    if (!r) throw new Error();
+    const newTested = !r.tested;
+    const householdId = await window.getHouseholdId();
+    const { error } = await window.db
+      .from('recipes')
+      .update({ tested: newTested })
+      .eq('id', id)
+      .eq('household_id', householdId);
+    if (error) throw error;
+    r.tested = newTested;
+    pill.className   = `pill ${newTested ? 'pill-tested' : 'pill-untested'} pill-toggle`;
+    pill.textContent = newTested ? '✓ Provat' : 'Ej provat';
+    pill.closest('.recipe-card').dataset.tested = newTested;
   } catch {
     pill.style.outline = '2px solid var(--rust)';
     setTimeout(() => { pill.style.outline = ''; }, 1500);

@@ -180,68 +180,10 @@ document.getElementById('emptyState').addEventListener('click', e => {
   }
 });
 
-async function dualReadCheck() {
-  try {
-    const householdId = await window.getHouseholdId();
-    if (!householdId) { console.warn('[dual-read] ingen household — hoppar över'); return; }
-
-    const { data: rows, error } = await window.db
-      .from('recipes')
-      .select('*')
-      .eq('household_id', householdId)
-      .order('id');
-
-    if (error) { console.error('[dual-read] Supabase-fel:', error.message); return; }
-
-    const sbRecipes = rows.map(recipeFromRow);
-    const jsonRecipes = window.RECIPES;
-
-    const sbById = Object.fromEntries(sbRecipes.map(r => [r.id, r]));
-    const jsonById = Object.fromEntries(jsonRecipes.map(r => [r.id, r]));
-    const allIds = [...new Set([...Object.keys(sbById), ...Object.keys(jsonById)].map(Number))];
-
-    let diffs = 0;
-
-    if (sbRecipes.length !== jsonRecipes.length) {
-      console.warn(`[dual-read] antal skiljer: JSON=${jsonRecipes.length}, Supabase=${sbRecipes.length}`);
-      diffs++;
-    }
-
-    for (const id of allIds) {
-      const sb = sbById[id];
-      const json = jsonById[id];
-      if (!sb)   { console.warn(`[dual-read] id ${id} finns i JSON men saknas i Supabase`); diffs++; continue; }
-      if (!json) { console.warn(`[dual-read] id ${id} finns i Supabase men saknas i JSON`); diffs++; continue; }
-
-      for (const f of ['title', 'tested', 'servings', 'time', 'timeNote', 'protein', 'notes']) {
-        if (sb[f] !== json[f]) {
-          console.warn(`[dual-read] id ${id} "${json.title}" — fält "${f}": JSON=${JSON.stringify(json[f])}, SB=${JSON.stringify(sb[f])}`);
-          diffs++;
-        }
-      }
-      for (const f of ['tags', 'ingredients', 'instructions', 'seasons']) {
-        if (JSON.stringify(sb[f]) !== JSON.stringify(json[f])) {
-          console.warn(`[dual-read] id ${id} "${json.title}" — fält "${f}" skiljer`);
-          diffs++;
-        }
-      }
-    }
-
-    if (diffs === 0) {
-      console.log(`[dual-read] ✅ ${sbRecipes.length} recept — JSON och Supabase är identiska`);
-    } else {
-      console.warn(`[dual-read] ⚠️ ${diffs} diff(ar) — se varningar ovan`);
-    }
-  } catch (err) {
-    console.error('[dual-read] oväntat fel:', err);
-  }
-}
-
 async function boot() {
   await requireAuth();
   await init();
   window.loadWeeklyPlan();
-  dualReadCheck(); // fire-and-forget — loggar diff mot Supabase i konsolen, rör inget i appen
 
   // Deep-link via query param: ?tab=recept|vecka|shop
   const tabParam = new URLSearchParams(window.location.search).get('tab');
