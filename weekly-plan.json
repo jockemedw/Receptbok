@@ -1,7 +1,7 @@
 {
   "generated": "2026-05-07",
   "startDate": "2026-05-09",
-  "endDate": "2026-05-27",
+  "endDate": "2026-05-29",
   "days": [
     {
       "date": "2026-05-09",
@@ -109,10 +109,11 @@
     {
       "date": "2026-05-22",
       "day": "Fredag",
-      "recipe": "Brysselkålbonara",
-      "recipeId": 270,
+      "recipe": null,
+      "recipeId": null,
       "saving": null,
-      "savingMatches": null
+      "savingMatches": null,
+      "blocked": true
     },
     {
       "date": "2026-05-23",
@@ -153,6 +154,23 @@
       "day": "Onsdag",
       "recipe": "Senapsdressad pärlcouscous",
       "recipeId": 49,
+      "saving": null,
+      "savingMatches": null
+    },
+    {
+      "date": "2026-05-28",
+      "day": "Torsdag",
+      "recipe": null,
+      "recipeId": null,
+      "saving": null,
+      "savingMatches": null,
+      "blocked": true
+    },
+    {
+      "date": "2026-05-29",
+      "day": "Fredag",
+      "recipe": "Brysselkålbonara",
+      "recipeId": 270,
       "saving": null,
       "savingMatches": null
     }
