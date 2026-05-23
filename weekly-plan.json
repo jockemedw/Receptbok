@@ -1,7 +1,7 @@
 {
   "generated": "2026-05-07",
   "startDate": "2026-05-09",
-  "endDate": "2026-05-23",
+  "endDate": "2026-05-24",
   "days": [
     {
       "date": "2026-05-09",
@@ -99,10 +99,11 @@
     {
       "date": "2026-05-21",
       "day": "Torsdag",
-      "recipe": "Tikka Masala",
-      "recipeId": 271,
+      "recipe": null,
+      "recipeId": null,
       "saving": null,
-      "savingMatches": null
+      "savingMatches": null,
+      "blocked": true
     },
     {
       "date": "2026-05-22",
@@ -117,6 +118,14 @@
       "day": "Lördag",
       "recipe": "Senapsdressad pärlcouscous",
       "recipeId": 49,
+      "saving": null,
+      "savingMatches": null
+    },
+    {
+      "date": "2026-05-24",
+      "day": "Söndag",
+      "recipe": "Tikka Masala",
+      "recipeId": 271,
       "saving": null,
       "savingMatches": null
     }
