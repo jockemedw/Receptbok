@@ -1917,17 +1917,18 @@
     },
     {
       "id": 49,
-      "title": "Senapsdressad pärlcouscous",
+      "title": "Senapsdressad pärlcouscous med lax",
       "tested": true,
       "servings": 4,
-      "time": 15,
+      "time": 20,
       "timeNote": "snabb",
       "tags": [
         "vardag30",
         "sallad"
       ],
-      "protein": "vegetarisk",
+      "protein": "fisk",
       "ingredients": [
+        "laxfilé 4st (400g)",
         "pärlcouscous (för 4 portioner)",
         "1 msk senap",
         "1 msk vitvinsvinäger",
@@ -1940,7 +1941,8 @@
       ],
       "instructions": [
         "Koka pärlcouscous.",
-        "Blanda ingredienserna till dressingen och blanda med couscousen."
+        "Blanda ingredienserna till dressingen och blanda med couscousen.",
+        "Tillaga laxen på valfritt sätt"
       ],
       "notes": null,
       "seasons": [
