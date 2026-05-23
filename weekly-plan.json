@@ -1,7 +1,7 @@
 {
   "generated": "2026-05-07",
   "startDate": "2026-05-09",
-  "endDate": "2026-05-24",
+  "endDate": "2026-05-25",
   "days": [
     {
       "date": "2026-05-09",
@@ -75,10 +75,11 @@
     {
       "date": "2026-05-18",
       "day": "Måndag",
-      "recipe": "Pasta Rosso med champinjoner",
-      "recipeId": 56,
+      "recipe": null,
+      "recipeId": null,
       "saving": null,
-      "savingMatches": null
+      "savingMatches": null,
+      "blocked": true
     },
     {
       "date": "2026-05-19",
@@ -126,6 +127,14 @@
       "day": "Söndag",
       "recipe": "Tikka Masala",
       "recipeId": 271,
+      "saving": null,
+      "savingMatches": null
+    },
+    {
+      "date": "2026-05-25",
+      "day": "Måndag",
+      "recipe": "Pasta Rosso med champinjoner",
+      "recipeId": 56,
       "saving": null,
       "savingMatches": null
     }
