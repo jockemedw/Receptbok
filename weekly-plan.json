@@ -1,7 +1,7 @@
 {
   "generated": "2026-05-07",
   "startDate": "2026-05-09",
-  "endDate": "2026-05-29",
+  "endDate": "2026-05-31",
   "days": [
     {
       "date": "2026-05-09",
@@ -169,6 +169,24 @@
     {
       "date": "2026-05-29",
       "day": "Fredag",
+      "recipe": null,
+      "recipeId": null,
+      "saving": null,
+      "savingMatches": null,
+      "blocked": true
+    },
+    {
+      "date": "2026-05-30",
+      "day": "Lördag",
+      "recipe": null,
+      "recipeId": null,
+      "saving": null,
+      "savingMatches": null,
+      "blocked": true
+    },
+    {
+      "date": "2026-05-31",
+      "day": "Söndag",
       "recipe": "Brysselkålbonara",
       "recipeId": 270,
       "saving": null,
