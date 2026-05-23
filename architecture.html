@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Receptboken — Systemarkitektur</title>
+  <style>
+    :root {
+      --linen: #f5f1e8;
+      --lichen: #7a9482;
+      --forest: #3d5544;
+      --rust: #b56a4c;
+      --text: #2c3829;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--linen);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem 1rem 3rem;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .wordmark {
+      font-size: 0.82rem;
+      color: var(--lichen);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-size: 1.9rem;
+      color: var(--forest);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    .subtitle {
+      color: var(--lichen);
+      margin-top: 0.35rem;
+      font-size: 0.92rem;
+    }
+    .diagram-wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 20px;
+      padding: 1.75rem;
+      box-shadow: 0 4px 32px rgba(44,56,41,0.10);
+      overflow-x: auto;
+    }
+    svg {
+      display: block;
+      margin: 0 auto;
+      overflow: visible;
+    }
+    .legend {
+      max-width: 960px;
+      margin: 1.25rem auto 0;
+      display: flex;
+      gap: 2rem;
+      flex-wrap: wrap;
+      padding: 0 0.5rem;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 0.82rem;
+      color: var(--forest);
+    }
+    .flows {
+      max-width: 960px;
+      margin: 1.5rem auto 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(275px, 1fr));
+      gap: 1rem;
+    }
+    .flow-card {
+      background: white;
+      border-radius: 14px;
+      padding: 1.1rem 1.3rem;
+      box-shadow: 0 2px 12px rgba(44,56,41,0.07);
+    }
+    .flow-card h3 {
+      font-size: 0.88rem;
+      color: var(--rust);
+      margin-bottom: 0.4rem;
+      font-weight: 600;
+    }
+    .flow-card p {
+      font-size: 0.84rem;
+      color: #666;
+      line-height: 1.62;
+    }
+    footer {
+      text-align: center;
+      margin: 2.5rem 0 0;
+      color: #bbb;
+      font-size: 0.78rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wordmark">Receptboken</div>
+    <h1>Systemarkitektur</h1>
+    <p class="subtitle">Hur appen hänger ihop &mdash; maj 2026</p>
+  </header>
+
+  <div class="diagram-wrap">
+    <svg viewBox="0 0 920 575" width="100%" style="max-width:920px" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="a-dark" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0,8 3,0 6" fill="#3d5544"/>
+        </marker>
+        <marker id="a-rust" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0,8 3,0 6" fill="#b56a4c"/>
+        </marker>
+        <marker id="a-lichen" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0,8 3,0 6" fill="#7a9482"/>
+        </marker>
+        <marker id="a-red" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0,8 3,0 6" fill="#e3000b"/>
+        </marker>
+        <marker id="a-blue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+          <polygon points="0 0,8 3,0 6" fill="#4285f4"/>
+        </marker>
+        <filter id="sh">
+          <feDropShadow dx="0" dy="2" stdDeviation="5" flood-color="#2c3829" flood-opacity="0.09"/>
+        </filter>
+      </defs>
+
+      <!-- ===== GITHUB ===== -->
+      <g filter="url(#sh)">
+        <rect x="302" y="18" width="190" height="76" rx="12" fill="#24292e"/>
+        <text x="397" y="47" text-anchor="middle" fill="white" font-weight="700" font-size="13.5" font-family="-apple-system,sans-serif">GitHub</text>
+        <text x="397" y="64" text-anchor="middle" fill="#8b949e" font-size="10.5" font-family="-apple-system,sans-serif">källkod &middot; push till main</text>
+        <text x="397" y="80" text-anchor="middle" fill="#555" font-size="10" font-family="-apple-system,sans-serif">github.com/jockemedw/receptbok</text>
+      </g>
+
+      <!-- ===== VERCEL (central hub) ===== -->
+      <g filter="url(#sh)">
+        <rect x="280" y="162" width="316" height="218" rx="15" fill="#0a0a0a"/>
+        <text x="438" y="191" text-anchor="middle" fill="white" font-weight="700" font-size="15" font-family="-apple-system,sans-serif">&#9650; Vercel</text>
+        <text x="438" y="209" text-anchor="middle" fill="#888" font-size="10.5" font-family="-apple-system,sans-serif">Hosting + Serverless functions</text>
+        <line x1="300" y1="218" x2="576" y2="218" stroke="#222" stroke-width="1.5"/>
+        <text x="300" y="237" fill="#60d394" font-size="9.5" font-family="'SF Mono','Fira Mono',monospace">frontend/</text>
+        <text x="307" y="253" fill="#aaa" font-size="9.5" font-family="'SF Mono','Fira Mono',monospace">index.html &middot; js/ &middot; css/</text>
+        <text x="300" y="273" fill="#60d394" font-size="9.5" font-family="'SF Mono','Fira Mono',monospace">api/</text>
+        <text x="307" y="289" fill="#aaa" font-size="9.5" font-family="'SF Mono','Fira Mono',monospace">generate &middot; confirm &middot; skip-day</text>
+        <text x="307" y="305" fill="#aaa" font-size="9.5" font-family="'SF Mono','Fira Mono',monospace">swap-days &middot; replace-recipe</text>
+        <text x="307" y="321" fill="#aaa" font-size="9.5" font-family="'SF Mono','Fira Mono',monospace">dispatch-to-willys &middot; import-recipe</text>
+        <text x="307" y="337" fill="#aaa" font-size="9.5" font-family="'SF Mono','Fira Mono',monospace">discard-plan &middot; shopping &middot; cookies</text>
+        <line x1="300" y1="348" x2="576" y2="348" stroke="#222" stroke-width="1"/>
+        <text x="300" y="364" fill="#555" font-size="9" font-family="-apple-system,sans-serif">Hobby-plan &middot; 10 / 12 serverless-funktioner</text>
+        <text x="300" y="378" fill="#555" font-size="9" font-family="-apple-system,sans-serif">Receptval: deterministisk JS &middot; ingen AI</text>
+      </g>
+
+      <!-- ===== ANVÄNDAREN ===== -->
+      <g filter="url(#sh)">
+        <rect x="16" y="198" width="162" height="140" rx="13" fill="#f5f1e8" stroke="#b56a4c" stroke-width="1.75"/>
+        <!-- phone icon (SVG shapes, no emoji) -->
+        <rect x="76" y="222" width="42" height="56" rx="6" fill="#b56a4c" opacity="0.18"/>
+        <rect x="80" y="226" width="34" height="48" rx="4" fill="#b56a4c" opacity="0.35"/>
+        <rect x="85" y="229" width="24" height="36" rx="2" fill="#b56a4c" opacity="0.25"/>
+        <circle cx="97" cy="270" r="2.5" fill="#b56a4c" opacity="0.7"/>
+        <text x="97" y="298" text-anchor="middle" fill="#3d5544" font-size="12.5" font-weight="700" font-family="-apple-system,sans-serif">Användaren</text>
+        <text x="97" y="314" text-anchor="middle" fill="#7a9482" font-size="10" font-family="-apple-system,sans-serif">mobil + desktop</text>
+        <text x="97" y="330" text-anchor="middle" fill="#c89a3e" font-size="10" font-family="-apple-system,sans-serif">login via magic link</text>
+      </g>
+
+      <!-- ===== SUPABASE ===== -->
+      <g filter="url(#sh)">
+        <rect x="664" y="100" width="242" height="157" rx="13" fill="#1b1b1b"/>
+        <text x="785" y="129" text-anchor="middle" fill="#3ecf8e" font-weight="700" font-size="13.5" font-family="-apple-system,sans-serif">Supabase</text>
+        <text x="785" y="147" text-anchor="middle" fill="#666" font-size="10" font-family="-apple-system,sans-serif">PostgreSQL + Auth + JS SDK</text>
+        <line x1="682" y1="156" x2="888" y2="156" stroke="#2a2a2a" stroke-width="1.5"/>
+        <text x="682" y="174" fill="#3ecf8e" font-size="9.5" font-family="'SF Mono','Fira Mono',monospace">tabeller:</text>
+        <text x="689" y="190" fill="#aaa" font-size="9.5" font-family="'SF Mono','Fira Mono',monospace">recipes &middot; weekly_plans</text>
+        <text x="689" y="206" fill="#aaa" font-size="9.5" font-family="'SF Mono','Fira Mono',monospace">meal_days &middot; shopping_lists</text>
+        <text x="689" y="222" fill="#aaa" font-size="9.5" font-family="'SF Mono','Fira Mono',monospace">shopping_items &middot; recipe_history</text>
+        <text x="689" y="242" fill="#555" font-size="9" font-family="-apple-system,sans-serif">RLS per hushåll &middot; plan_archives</text>
+      </g>
+
+      <!-- ===== WILLYS ===== -->
+      <g filter="url(#sh)">
+        <rect x="664" y="318" width="242" height="90" rx="13" fill="#e3000b"/>
+        <text x="785" y="346" text-anchor="middle" fill="white" font-weight="700" font-size="13.5" font-family="-apple-system,sans-serif">Willys.se</text>
+        <text x="785" y="363" text-anchor="middle" fill="rgba(255,255,255,0.82)" font-size="10" font-family="-apple-system,sans-serif">öppet API &middot; ingen auth för priser</text>
+        <text x="785" y="379" text-anchor="middle" fill="rgba(255,255,255,0.70)" font-size="9.5" font-family="-apple-system,sans-serif">veckans erbjudanden + kundkorg</text>
+        <text x="785" y="395" text-anchor="middle" fill="rgba(255,255,255,0.52)" font-size="9.5" font-family="-apple-system,sans-serif">butik: Ekholmen (store 2160)</text>
+      </g>
+
+      <!-- ===== GOOGLE GEMINI ===== -->
+      <g filter="url(#sh)">
+        <rect x="664" y="464" width="242" height="88" rx="13" fill="#4285f4"/>
+        <text x="785" y="491" text-anchor="middle" fill="white" font-weight="700" font-size="13.5" font-family="-apple-system,sans-serif">Google Gemini</text>
+        <text x="785" y="508" text-anchor="middle" fill="rgba(255,255,255,0.87)" font-size="10" font-family="-apple-system,sans-serif">AI &middot; gratisnivå</text>
+        <text x="785" y="524" text-anchor="middle" fill="rgba(255,255,255,0.72)" font-size="9.5" font-family="-apple-system,sans-serif">tolkar receptfoton och URL:er</text>
+        <text x="785" y="540" text-anchor="middle" fill="rgba(255,255,255,0.52)" font-size="9.5" font-family="-apple-system,sans-serif">bara vid import &middot; inte vid receptval</text>
+      </g>
+
+      <!-- ===== PILAR ===== -->
+
+      <!-- GitHub → Vercel (auto-deploy vid push) -->
+      <line x1="397" y1="94" x2="432" y2="162" stroke="#3d5544" stroke-width="2" marker-end="url(#a-dark)"/>
+      <rect x="404" y="114" width="90" height="14" rx="3" fill="rgba(255,255,255,0.92)"/>
+      <text x="449" y="125" text-anchor="middle" fill="#3d5544" font-size="9.5" font-family="-apple-system,sans-serif">auto-deploy vid push</text>
+
+      <!-- Användaren → Vercel (öppnar app + API-anrop) -->
+      <line x1="178" y1="255" x2="280" y2="255" stroke="#b56a4c" stroke-width="2" marker-end="url(#a-rust)"/>
+      <rect x="183" y="234" width="92" height="14" rx="3" fill="rgba(255,255,255,0.92)"/>
+      <text x="229" y="245" text-anchor="middle" fill="#b56a4c" font-size="9.5" font-family="-apple-system,sans-serif">app + API-anrop</text>
+
+      <!-- Användaren → Supabase (direkt läsning via JS SDK, streckad båge under) -->
+      <path d="M 97 338 C 97 500 664 500 664 257"
+            stroke="#7a9482" stroke-width="1.5" stroke-dasharray="7 4" fill="none" marker-end="url(#a-lichen)"/>
+      <rect x="300" y="487" width="148" height="14" rx="3" fill="rgba(255,255,255,0.92)"/>
+      <text x="374" y="498" text-anchor="middle" fill="#7a9482" font-size="9.5" font-family="-apple-system,sans-serif">läser direkt (JS SDK)</text>
+
+      <!-- Vercel → Supabase (API skriver och läser) -->
+      <line x1="596" y1="212" x2="664" y2="188" stroke="#3d5544" stroke-width="2" marker-end="url(#a-dark)"/>
+      <rect x="596" y="188" width="65" height="14" rx="3" fill="rgba(255,255,255,0.92)"/>
+      <text x="628" y="199" text-anchor="middle" fill="#3d5544" font-size="9.5" font-family="-apple-system,sans-serif">läser &amp; sparar</text>
+
+      <!-- Vercel → Willys (priser + kundkorg) -->
+      <line x1="596" y1="328" x2="664" y2="360" stroke="#e3000b" stroke-width="1.5" marker-end="url(#a-red)"/>
+      <rect x="596" y="329" width="62" height="14" rx="3" fill="rgba(255,255,255,0.92)"/>
+      <text x="627" y="340" text-anchor="middle" fill="#e3000b" font-size="9.5" font-family="-apple-system,sans-serif">priser + korg</text>
+
+      <!-- Vercel → Gemini (AI-tolkar recept) -->
+      <line x1="562" y1="380" x2="664" y2="494" stroke="#4285f4" stroke-width="1.5" marker-end="url(#a-blue)"/>
+      <rect x="546" y="420" width="90" height="14" rx="3" fill="rgba(255,255,255,0.92)"/>
+      <text x="591" y="431" text-anchor="middle" fill="#4285f4" font-size="9.5" font-family="-apple-system,sans-serif">AI-tolkar recept</text>
+
+    </svg>
+  </div>
+
+  <!-- Förklaring av pilar -->
+  <div class="legend">
+    <div class="legend-item">
+      <svg width="44" height="12" style="overflow:visible">
+        <line x1="0" y1="6" x2="38" y2="6" stroke="#3d5544" stroke-width="2"/>
+        <polygon points="30 3,38 6,30 9" fill="#3d5544"/>
+      </svg>
+      HTTP-anrop / databas-operation
+    </div>
+    <div class="legend-item">
+      <svg width="44" height="12" style="overflow:visible">
+        <line x1="0" y1="6" x2="38" y2="6" stroke="#7a9482" stroke-width="1.5" stroke-dasharray="6 3"/>
+        <polygon points="30 3,38 6,30 9" fill="#7a9482"/>
+      </svg>
+      Direkt från browser (JS SDK, ingen server-roundtrip)
+    </div>
+  </div>
+
+  <!-- Flödesförklaringar -->
+  <div class="flows">
+    <div class="flow-card">
+      <h3>1 &mdash; Öppna appen</h3>
+      <p>Användaren besöker receptbok-six.vercel.app. Vercel serverar HTML och JS-moduler. Appen hämtar sedan recept och veckoplan <em>direkt</em> från Supabase via JS SDK &mdash; ingen server-roundtrip behövs för läsning.</p>
+    </div>
+    <div class="flow-card">
+      <h3>2 &mdash; Generera matsedel</h3>
+      <p>"Generera"-knappen skickar en POST till /api/generate. Servern läser recepthistorik och recept från Supabase, väljer dagarna deterministiskt (ingen AI), sparar sedan veckoplan och inköpslista tillbaka i Supabase.</p>
+    </div>
+    <div class="flow-card">
+      <h3>3 &mdash; Prisoptimering</h3>
+      <p>Om prisoptimering är påslagen hämtar /api/generate Willys veckans erbjudanden via ett öppet API (ingen inloggning krävs). Recept med extrapris-ingredienser prioriteras och visas med en grön sparbadge.</p>
+    </div>
+    <div class="flow-card">
+      <h3>4 &mdash; Dispatch till Willys</h3>
+      <p>Inköpslistan kan skickas direkt till willys.se/cart via /api/dispatch-to-willys. Kräver sessionscookies + CSRF-token, som fångas automatiskt av en Chrome-extension vid vanliga Willys-besök.</p>
+    </div>
+    <div class="flow-card">
+      <h3>5 &mdash; Importera recept</h3>
+      <p>Foto eller URL skickas till /api/import-recipe. Google Gemini (gratisnivå) tolkar innehållet och returnerar ett strukturerat recept som sparas i Supabase. Enda AI:n i systemet &mdash; receptval är alltid deterministiskt.</p>
+    </div>
+    <div class="flow-card">
+      <h3>6 &mdash; Deploy</h3>
+      <p>Git push till main triggar automatisk Vercel-deploy på ~30 sekunder. Supabase-databasen är helt fristående från koden &mdash; data påverkas aldrig av deployments. Inga manuella steg.</p>
+    </div>
+  </div>
+
+  <footer>
+    Receptboken &middot; Familjeapp &middot; maj 2026
+  </footer>
+</body>
+</html>
