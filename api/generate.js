@@ -1,13 +1,12 @@
 import { buildShoppingList } from "./_shared/shopping-builder.js";
-import { createHandler } from "./_shared/handler.js";
-import { readFile, readFileRaw, writeFile } from "./_shared/github.js";
-import { REPO_OWNER, REPO_NAME, BRANCH } from "./_shared/constants.js";
-import { fetchHistory, recentlyUsedIds, shuffle } from "./_shared/history.js";
+import { createSupabaseHandler } from "./_shared/handler.js";
+import { db, getHouseholdId } from "./_shared/supabase.js";
+import { shuffle } from "./_shared/history.js";
 import { normalizeOffers } from "./willys-offers.js";
 import { matchRecipe } from "./_shared/willys-matcher.js";
 
 const WILLYS_URL = "https://www.willys.se/search/campaigns/online?q=2160&type=PERSONAL_GENERAL&page=0&size=500";
-const SAVING_THRESHOLD = 10; // Recept med ≥10 kr besparing bucketas först i poolen.
+const SAVING_THRESHOLD = 10;
 
 function getCurrentSeason(dateStr) {
   const month = new Date(dateStr).getMonth() + 1;
@@ -33,15 +32,13 @@ function applySeasonWeight(pool, currentSeason) {
 
 const DAY_NAMES = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag", "Lördag", "Söndag"];
 
-// ── Domänlogik (ägs av denna slice) ─────────────────────────────────────────
-
 function buildDayList(startDate, endDate) {
   const days = [];
   const current = new Date(startDate);
   const end = new Date(endDate);
   while (current <= end) {
-    const dow = current.getDay(); // 0=sun,1=mon...6=sat
-    const weekday = dow === 0 ? 6 : dow - 1; // convert to mon=0..sun=6
+    const dow = current.getDay();
+    const weekday = dow === 0 ? 6 : dow - 1;
     days.push({
       date: current.toISOString().slice(0, 10),
       day: DAY_NAMES[weekday],
@@ -55,7 +52,6 @@ function buildDayList(startDate, endDate) {
 function filterRecipes(recipes, constraints) {
   const allowed = new Set(constraints.allowed_proteins);
   const { untested_count } = constraints;
-
   return recipes.filter((r) => {
     if (!allowed.has(r.protein)) return false;
     if (!untested_count && !r.tested) return false;
@@ -64,9 +60,13 @@ function filterRecipes(recipes, constraints) {
   });
 }
 
-async function fetchRecipes() {
-  const data = await readFileRaw("recipes.json");
-  return data.recipes.map((r) => ({
+async function fetchRecipes(householdId) {
+  const { data, error } = await db
+    .from("recipes")
+    .select("id, title, time, tags, protein, tested, ingredients, seasons")
+    .eq("household_id", householdId);
+  if (error) throw error;
+  return (data || []).map((r) => ({
     id: r.id,
     title: r.title,
     time: r.time,
@@ -78,63 +78,106 @@ async function fetchRecipes() {
   }));
 }
 
-async function fetchShoppingList() {
-  try {
-    const data = await readFileRaw("shopping-list.json");
-    return data;
-  } catch {
-    return null;
+async function fetchHistory(householdId) {
+  const { data } = await db
+    .from("recipe_history")
+    .select("recipe_id, used_on")
+    .eq("household_id", householdId);
+  const usedOn = {};
+  for (const row of (data || [])) {
+    usedOn[String(row.recipe_id)] = row.used_on;
   }
-}
-
-function updateHistory(history, newIds, date) {
-  const usedOn = { ...(history.usedOn || {}) };
-  for (const id of newIds) usedOn[String(id)] = date;
   return { usedOn };
 }
 
-// Arkivera tidigare plan-dagar innan weekly-plan.json skrivs över.
-// Plockar dagar som slutar före nya planens start, bundlar dem som en plan-batch
-// och lägger i plan-archive.json. Trimmar batches där alla dagar är äldre än 30 dagar.
-async function archiveOldPlan(newStartDate, pat) {
-  let oldPlan = null;
-  try {
-    ({ content: oldPlan } = await readFile("weekly-plan.json", pat));
-  } catch { return; }
-  if (!oldPlan?.days?.length) return;
-
-  const daysToArchive = oldPlan.days.filter((d) => d.date < newStartDate && d.recipeId);
-  if (daysToArchive.length === 0) return;
-
-  let archive = { plans: [] };
-  try {
-    ({ content: archive } = await readFile("plan-archive.json", pat));
-    if (!archive?.plans) archive = { plans: [] };
-  } catch { /* filen finns inte ännu */ }
-
-  archive.plans.push({
-    startDate: daysToArchive[0].date,
-    endDate: daysToArchive[daysToArchive.length - 1].date,
-    archivedAt: new Date().toISOString(),
-    days: daysToArchive.map((d) => ({
-      date: d.date,
-      day: d.day,
-      recipe: d.recipe,
-      recipeId: d.recipeId,
-      ...(d.saving ? { saving: d.saving } : {}),
-    })),
-  });
-
-  // Trimma: behåll bara plans där någon dag är inom de senaste 30 dagarna.
-  const cutoff = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
-  archive.plans = archive.plans.filter((p) => p.endDate >= cutoff);
-
-  await writeFile("plan-archive.json", archive, pat, `Arkivera plan ${daysToArchive[0].date}–${daysToArchive[daysToArchive.length - 1].date}`);
+function recentlyUsedIds(history, days = 14) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - days);
+  const cutoffStr = cutoff.toISOString().slice(0, 10);
+  const ids = new Set();
+  for (const [id, date] of Object.entries(history.usedOn || {})) {
+    if (date >= cutoffStr) ids.add(parseInt(id, 10));
+  }
+  return ids;
 }
 
-// Bucketar en pool i två grupper (hög besparing först, övriga efter),
-// slumpar inom varje grupp. Ger optimeringen en chans att välja besparande
-// recept utan att bryta proteinbalans/veg-slot-logiken.
+async function fetchExistingShoppingList(householdId) {
+  const { data: lists } = await db
+    .from("shopping_lists")
+    .select("id, recipe_items_moved_at")
+    .eq("household_id", householdId)
+    .eq("is_active", true)
+    .limit(1);
+  if (!lists?.length) return null;
+
+  const list = lists[0];
+  const { data: items } = await db
+    .from("shopping_items")
+    .select("name, checked")
+    .eq("list_id", list.id)
+    .eq("source", "manual");
+
+  const manualItems = (items || []).map((i) => i.name);
+  const checkedItems = {};
+  (items || []).filter((i) => i.checked).forEach((i) => {
+    checkedItems[`manual::${i.name}`] = true;
+  });
+
+  return { id: list.id, manualItems, checkedItems };
+}
+
+// Arkiverar plan-dagar som ligger före newStartDate i plan_archives,
+// sedan deaktiveras den gamla planen.
+async function archiveOldPlan(newStartDate, householdId) {
+  const { data: plans } = await db
+    .from("weekly_plans")
+    .select("id, start_date, end_date")
+    .eq("household_id", householdId)
+    .eq("is_active", true)
+    .limit(1);
+  if (!plans?.length) return;
+
+  const oldPlan = plans[0];
+  const { data: daysToArchive } = await db
+    .from("meal_days")
+    .select("date, recipe_id, recipe_title_snapshot, saving")
+    .eq("plan_id", oldPlan.id)
+    .lt("date", newStartDate)
+    .not("recipe_id", "is", null)
+    .order("date");
+
+  if (daysToArchive?.length) {
+    const archiveDays = daysToArchive.map((d) => ({
+      date: d.date,
+      recipe: d.recipe_title_snapshot,
+      recipeId: d.recipe_id,
+      ...(d.saving ? { saving: d.saving } : {}),
+    }));
+    await db.from("plan_archives").insert({
+      household_id: householdId,
+      start_date: daysToArchive[0].date,
+      end_date: daysToArchive[daysToArchive.length - 1].date,
+      archived_at: new Date().toISOString(),
+      days: archiveDays,
+    });
+
+    // Trimma plan_archives — behåll bara plans med endDate inom 30 dagar bakåt
+    const cutoff = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
+    const { data: old } = await db
+      .from("plan_archives")
+      .select("id, end_date")
+      .eq("household_id", householdId)
+      .lt("end_date", cutoff);
+    if (old?.length) {
+      await db.from("plan_archives").delete().in("id", old.map((r) => r.id));
+    }
+  }
+
+  // Deaktivera gammal plan + ta bort dess meal_days (de är arkiverade eller överskrivna)
+  await db.from("meal_days").delete().eq("plan_id", oldPlan.id);
+  await db.from("weekly_plans").update({ is_active: false }).eq("id", oldPlan.id);
+}
+
 function bucketBySaving(pool, savingsById) {
   if (!savingsById) return shuffle(pool);
   const high = [], low = [];
@@ -146,13 +189,11 @@ function bucketBySaving(pool, savingsById) {
   return [...shuffle(high), ...shuffle(low)];
 }
 
-// ── Deterministisk receptväljare ─────────────────────────────────────────────
 const hasTure = (r) => (r.tags || []).some((t) => t.toLowerCase() === "ture");
 
 function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), usedOn = {}, savingsById = null, currentSeason = null) {
   const MAX_PER_PROTEIN = 2;
 
-  // ── 1. Historikfiltrering ─────────────────────────────────────────────────
   const fresh = recipes.filter((r) => !recentIds.has(r.id));
   let pool;
   if (fresh.length >= dayList.length) {
@@ -167,13 +208,10 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
   }
   if (pool.length === 0) pool = recipes;
 
-  // ── 2. Dela upp poolen per dag-typ ────────────────────────────────────────
   const weekdayPool = applySeasonWeight(bucketBySaving(pool.filter((r) => r.tags.includes("vardag30")), savingsById), currentSeason);
   const weekendPool = applySeasonWeight(bucketBySaving(pool.filter((r) => r.tags.includes("helg60")), savingsById), currentSeason);
 
-  // ── 3. Ture-dagar + Vegetariska dagar ──────────────────────────────────────
   const tureCount = constraints.ture_days;
-  const turePool = pool.filter(hasTure);
   const shuffledIndices = shuffle(dayList.map((_, i) => i));
   const tureDaySet = new Set(shuffledIndices.slice(0, tureCount));
 
@@ -183,7 +221,6 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
 
   const maxVeg = Math.max(2, vegCount);
 
-  // ── 4. Fyll varje dag ────────────────────────────────────────────────────
   const usedIds = new Set();
   const proteinUsage = {};
   const result = [];
@@ -198,11 +235,8 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
       if (!mustBeTure) return r.protein !== "vegetarisk";
       return true;
     };
-    // Spara ture-taggade recept åt ture-dagar: på icke-ture-dagar, undvik
-    // ture-recept i de första looparna (släpps i loop 2+).
     const saveTure = tureCount > 0 && !mustBeTure;
     const preferNonTure = (r) => !saveTure || !hasTure(r);
-    // Loop 1: full constraints (protein limits + untested limit + save ture)
     for (const r of dayPool) {
       if (usedIds.has(r.id)) continue;
       if (!tureOk(r)) continue;
@@ -212,7 +246,6 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
       if (!underUntestedLimit(r)) continue;
       return r;
     }
-    // Loop 2: relax protein limits, keep ture-preference + untested limit
     for (const r of dayPool) {
       if (usedIds.has(r.id)) continue;
       if (!tureOk(r)) continue;
@@ -221,7 +254,6 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
       if (!underUntestedLimit(r)) continue;
       return r;
     }
-    // Loop 3: altPool, keep ture-preference + untested limit
     for (const r of altPool) {
       if (usedIds.has(r.id)) continue;
       if (!tureOk(r)) continue;
@@ -230,7 +262,6 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
       if (!underUntestedLimit(r)) continue;
       return r;
     }
-    // Loop 4: all recipes, keep untested limit
     for (const r of recipes) {
       if (usedIds.has(r.id)) continue;
       if (!tureOk(r)) continue;
@@ -238,7 +269,6 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
       if (!underUntestedLimit(r)) continue;
       return r;
     }
-    // Loop 5: last resort — ignore untested limit (tested pool exhausted)
     for (const r of recipes) {
       if (usedIds.has(r.id)) continue;
       if (!tureOk(r)) continue;
@@ -248,7 +278,6 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
     return null;
   }
 
-  // Bearbeta ture-dagar före vanliga dagar så de får förstval på ture-recepten.
   const processingOrder = dayList.map((_, i) => i);
   processingOrder.sort((a, b) => (tureDaySet.has(a) ? 0 : 1) - (tureDaySet.has(b) ? 0 : 1));
 
@@ -273,13 +302,102 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
   }
 
   result.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
-
   return result;
+}
+
+async function savePlanToSupabase(weeklyPlan, householdId) {
+  // Deaktivera alla eventuellt kvarvarande aktiva planer (skyddar mot misslyckat archiveOldPlan)
+  await db.from("weekly_plans").update({ is_active: false })
+    .eq("household_id", householdId).eq("is_active", true);
+
+  const today = new Date().toISOString();
+  const { data: newPlan, error: planErr } = await db
+    .from("weekly_plans")
+    .insert({
+      household_id: householdId,
+      start_date: weeklyPlan.startDate,
+      end_date: weeklyPlan.endDate,
+      generated_at: today,
+      is_active: true,
+    })
+    .select()
+    .single();
+  if (planErr) throw planErr;
+
+  const mealDayRows = weeklyPlan.days.map((d) => ({
+    household_id: householdId,
+    plan_id: newPlan.id,
+    date: d.date,
+    recipe_id: d.recipeId || null,
+    recipe_title_snapshot: d.recipe || null,
+    saving: d.saving || null,
+    saving_matches: d.savingMatches || null,
+    blocked: d.blocked === true,
+    locked: false,
+  }));
+
+  const { error: daysErr } = await db.from("meal_days").insert(mealDayRows);
+  if (daysErr) throw daysErr;
+
+  return newPlan.id;
+}
+
+async function saveHistoryToSupabase(days, householdId) {
+  const today = new Date().toISOString().slice(0, 10);
+  const rows = days
+    .filter((d) => d.recipeId)
+    .map((d) => ({ household_id: householdId, recipe_id: d.recipeId, used_on: today }));
+  if (!rows.length) return;
+  await db.from("recipe_history").upsert(rows, { onConflict: "household_id,recipe_id" });
+}
+
+async function saveShoppingListToSupabase(shoppingCategories, existingShop, startDate, endDate, householdId) {
+  await db.from("shopping_lists").update({ is_active: false })
+    .eq("household_id", householdId).eq("is_active", true);
+
+  const today = new Date().toISOString().slice(0, 10);
+  const { data: newList, error: listErr } = await db
+    .from("shopping_lists")
+    .insert({
+      household_id: householdId,
+      start_date: startDate,
+      end_date: endDate,
+      generated_at: today,
+      recipe_items_moved_at: null,
+      is_active: true,
+    })
+    .select()
+    .single();
+  if (listErr) throw listErr;
+
+  const itemRows = [];
+  for (const [category, items] of Object.entries(shoppingCategories || {})) {
+    (items || []).forEach((name, pos) => {
+      itemRows.push({ list_id: newList.id, category, name, source: "recipe", checked: false, position: pos });
+    });
+  }
+  (existingShop?.manualItems || []).forEach((name, idx) => {
+    itemRows.push({
+      list_id: newList.id,
+      category: "Övrigt",
+      name,
+      source: "manual",
+      checked: !!(existingShop?.checkedItems?.[`manual::${name}`]),
+      position: idx,
+    });
+  });
+
+  if (itemRows.length > 0) {
+    const { error: itemsErr } = await db.from("shopping_items").insert(itemRows);
+    if (itemsErr) throw itemsErr;
+  }
+
+  return newList.id;
 }
 
 // ── Handler ─────────────────────────────────────────────────────────────────
 
-export default createHandler(async (req, res, pat) => {
+export default createSupabaseHandler(async (req, res) => {
   const {
     start_date,
     end_date,
@@ -308,9 +426,12 @@ export default createHandler(async (req, res, pat) => {
     ture_days: parseInt(ture_days) || 0,
   };
 
-  const fetches = [fetchRecipes(), fetchHistory(pat)];
-  if (!skip_shopping) fetches.push(fetchShoppingList());
-  const [allRecipes, historyData, existingShop] = await Promise.all(fetches);
+  const householdId = await getHouseholdId();
+  const [allRecipes, historyData, existingShop] = await Promise.all([
+    fetchRecipes(householdId),
+    fetchHistory(householdId),
+    skip_shopping ? Promise.resolve(null) : fetchExistingShoppingList(householdId),
+  ]);
 
   const filtered = filterRecipes(allRecipes, constraints);
 
@@ -333,16 +454,11 @@ export default createHandler(async (req, res, pat) => {
   const blockedSet = new Set(blocked_dates);
   const activeDays = allDays.filter((d) => !blockedSet.has(d.date));
 
-  // Prisoptimering: hämta Willys-erbjudanden och räkna ut besparing per recept.
-  // Fallar graciöst — om hämtningen misslyckas körs vanligt urval utan optimering.
   let savingsById = null;
   if (optimize_prices) {
     try {
       const upstream = await fetch(WILLYS_URL, {
-        headers: {
-          "Accept": "application/json",
-          "User-Agent": "Receptbok/1.0 (familjematplanering)",
-        },
+        headers: { "Accept": "application/json", "User-Agent": "Receptbok/1.0 (familjematplanering)" },
         signal: AbortSignal.timeout(5000),
       });
       if (upstream.ok) {
@@ -352,28 +468,18 @@ export default createHandler(async (req, res, pat) => {
         for (const r of filtered) {
           const m = matchRecipe(r, offers);
           if (m.totalSaving > 0) {
-            // Plocka en match per canon (högst savingPerUnit vinner) — samma
-            // logik som totalSaving i willys-matcher. Frontend visar produktnamn,
-            // priser och giltighet i popovern.
             const byCanon = new Map();
             for (const { canon, offer } of m.matches) {
               const cur = byCanon.get(canon);
               if (!cur || (offer.savingPerUnit || 0) > (cur.savingPerUnit || 0)) {
                 byCanon.set(canon, {
-                  canon,
-                  name: offer.name,
-                  brandLine: offer.brandLine || null,
-                  regularPrice: offer.regularPrice,
-                  promoPrice: offer.promoPrice,
-                  savingPerUnit: offer.savingPerUnit,
-                  validUntil: offer.validUntil,
+                  canon, name: offer.name, brandLine: offer.brandLine || null,
+                  regularPrice: offer.regularPrice, promoPrice: offer.promoPrice,
+                  savingPerUnit: offer.savingPerUnit, validUntil: offer.validUntil,
                 });
               }
             }
-            savingsById[r.id] = {
-              total: m.totalSaving,
-              matches: [...byCanon.values()],
-            };
+            savingsById[r.id] = { total: m.totalSaving, matches: [...byCanon.values()] };
           }
         }
       }
@@ -385,7 +491,6 @@ export default createHandler(async (req, res, pat) => {
   const currentSeason = season_weight ? getCurrentSeason(start_date) : null;
   const selectedDays = selectRecipes(filtered, activeDays, constraints, recentIds, historyData.usedOn || {}, savingsById, currentSeason);
 
-  // Merge: blockerade dagar infogas med recipe: null
   const days = allDays.map((d) => {
     if (blockedSet.has(d.date)) {
       return { date: d.date, day: d.day, recipe: null, recipeId: null, blocked: true };
@@ -393,44 +498,37 @@ export default createHandler(async (req, res, pat) => {
     const picked = selectedDays.find((s) => s.date === d.date);
     if (picked && savingsById && savingsById[picked.recipeId]) {
       const entry = savingsById[picked.recipeId];
-      return {
-        ...picked,
-        saving: Math.round(entry.total),
-        savingMatches: entry.matches,
-      };
+      return { ...picked, saving: Math.round(entry.total), savingMatches: entry.matches };
     }
     return picked;
   });
 
   const today = new Date().toISOString().slice(0, 10);
   const weeklyPlan = { generated: today, startDate: start_date, endDate: end_date, days };
-  const updatedHistory = updateHistory(historyData, days.map((d) => d.recipeId).filter(Boolean), today);
-  const commitMsg = `Matsedel ${today} — autogenererad`;
+
+  if (dry_run) {
+    return res.status(200).json({ ok: true, dry_run: true, days: days.length, weeklyPlan });
+  }
+
+  try { await archiveOldPlan(start_date, householdId); } catch (e) { console.error("archive error:", e); }
 
   const selectedIds = days.map((d) => d.recipeId).filter(Boolean);
   const shoppingCategories = skip_shopping ? null : buildShoppingList(selectedIds, allRecipes);
-  const shoppingList = skip_shopping ? null : {
-    generated: today, startDate: start_date, endDate: end_date,
-    recipeItems: shoppingCategories,
-    recipeItemsMovedAt: null,
-    manualItems: existingShop?.manualItems || [],
-    checkedItems: existingShop?.checkedItems || {},
-  };
 
-  if (dry_run) {
-    return res.status(200).json({ ok: true, dry_run: true, days: days.length, weeklyPlan, shoppingList });
+  await savePlanToSupabase(weeklyPlan, householdId);
+  await saveHistoryToSupabase(days, householdId);
+
+  let shoppingList = null;
+  if (!skip_shopping && shoppingCategories) {
+    await saveShoppingListToSupabase(shoppingCategories, existingShop, start_date, end_date, householdId);
+    shoppingList = {
+      generated: today, startDate: start_date, endDate: end_date,
+      recipeItems: shoppingCategories,
+      recipeItemsMovedAt: null,
+      manualItems: existingShop?.manualItems || [],
+      checkedItems: existingShop?.checkedItems || {},
+    };
   }
-
-  // Arkivera den gamla planens passerade dagar innan vi skriver över weekly-plan.json.
-  // Fallar tyst — arkiveringen får aldrig blockera en generering.
-  try { await archiveOldPlan(start_date, pat); } catch (e) { console.error("archive error:", e); }
-
-  const writes = [
-    writeFile("weekly-plan.json", weeklyPlan, pat, commitMsg),
-    writeFile("recipe-history.json", updatedHistory, pat, commitMsg),
-  ];
-  if (shoppingList) writes.push(writeFile("shopping-list.json", shoppingList, pat, commitMsg));
-  await Promise.all(writes);
 
   return res.status(200).json({ ok: true, days: days.length, weeklyPlan, shoppingList });
 });

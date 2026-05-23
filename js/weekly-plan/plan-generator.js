@@ -229,18 +229,31 @@ export async function generatePlan() {
     status.className   = 'trigger-status success';
     btn.disabled       = false;
     if (data.weeklyPlan) {
-      // Arkivet + custom-dagar kan ha uppdaterats — hämta om dem innan rendering.
+      // Hämta arkiv + custom-dagar från Supabase efter generering
       let archive = { plans: [] };
       let customDays = window._customDays || { entries: {} };
       try {
+        const householdId = await window.getHouseholdId();
         const [ar, cd] = await Promise.all([
-          fetch('plan-archive.json?t=' + Date.now()),
-          fetch('custom-days.json?t=' + Date.now()),
+          window.db.from('plan_archives').select('*').eq('household_id', householdId).order('archived_at', { ascending: false }),
+          window.db.from('meal_days').select('*').eq('household_id', householdId).is('plan_id', null),
         ]);
-        if (ar.ok) archive = await ar.json();
-        if (cd.ok) {
-          const cdData = await cd.json();
-          customDays = { entries: cdData.entries || {} };
+        if (ar.data) {
+          archive = {
+            plans: ar.data.map(row => ({
+              startDate:  row.start_date,
+              endDate:    row.end_date,
+              archivedAt: row.archived_at,
+              days:       row.days || [],
+            }))
+          };
+        }
+        if (cd.data) {
+          const entries = {};
+          for (const row of cd.data) {
+            entries[row.date] = { note: row.custom_note || '', recipeId: row.recipe_id ?? null, recipeTitle: row.recipe_title_snapshot || '' };
+          }
+          customDays = { entries };
         }
       } catch { /* OK, kör utan uppdatering */ }
       window.renderWeeklyPlanData(data.weeklyPlan, null, true, archive, customDays);

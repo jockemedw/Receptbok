@@ -1,50 +1,45 @@
-import { createHandler } from "./_shared/handler.js";
-import { readFile, writeFile } from "./_shared/github.js";
+import { createSupabaseHandler } from "./_shared/handler.js";
+import { db, getHouseholdId } from "./_shared/supabase.js";
 
 // Kasserar en opåbörjad (icke-bekräftad) matsedel:
-// - Tömmer weekly-plan.json
-// - Tar bort planens recipeIds ur recipe-history.json så de kan väljas igen
-// - Rör inte shopping-list.json (speglar senast bekräftade plan) eller plan-archive.json
-export default createHandler(async (req, res, pat) => {
-  let plan = null;
-  try {
-    const result = await readFile("weekly-plan.json", pat);
-    plan = result.content;
-  } catch (e) {
-    return res.status(404).json({ error: `Ingen matsedel att kassera (${e.message}).` });
+// - Deaktiverar weekly_plan och tar bort dess meal_days
+// - Raderar recipe_history-poster för planens recept så de kan väljas igen
+// - Rör inte shopping_lists (speglar senast bekräftade plan)
+export default createSupabaseHandler(async (req, res) => {
+  const householdId = await getHouseholdId();
+
+  const { data: plans } = await db
+    .from("weekly_plans")
+    .select("id, start_date, end_date, confirmed_at")
+    .eq("household_id", householdId)
+    .eq("is_active", true)
+    .limit(1);
+
+  const plan = plans?.[0];
+  if (!plan) return res.status(404).json({ error: "Ingen matsedel att kassera." });
+  if (plan.confirmed_at) return res.status(400).json({ error: "Bekräftad matsedel kan inte kasseras." });
+
+  // Hämta planens recept-id:n innan vi raderar
+  const { data: mealDays } = await db
+    .from("meal_days")
+    .select("recipe_id")
+    .eq("plan_id", plan.id)
+    .not("recipe_id", "is", null);
+
+  const planRecipeIds = (mealDays || []).map((d) => d.recipe_id);
+
+  // Radera meal_days och deaktivera planen
+  await db.from("meal_days").delete().eq("plan_id", plan.id);
+  await db.from("weekly_plans").update({ is_active: false }).eq("id", plan.id);
+
+  // Rensa recipe_history för planens recept så de kan väljas direkt igen
+  if (planRecipeIds.length > 0) {
+    await db.from("recipe_history")
+      .delete()
+      .eq("household_id", householdId)
+      .in("recipe_id", planRecipeIds);
   }
-  if (!plan || !Array.isArray(plan.days) || plan.days.length === 0) {
-    return res.status(400).json({ error: "Matsedeln är redan tom." });
-  }
-  if (plan.confirmedAt) {
-    return res.status(400).json({ error: "Bekräftad matsedel kan inte kasseras." });
-  }
 
-  const planRecipeIds = plan.days.map((d) => d.recipeId).filter(Boolean);
-  const startLabel = plan.startDate || "";
-  const endLabel = plan.endDate || "";
-  const commitMsg = `Kassera förslag ${startLabel}${startLabel && endLabel ? "–" : ""}${endLabel}`.trim() || "Kassera förslag";
-
-  // Rensa history för planens recept så de blir valbara direkt igen.
-  let history = { usedOn: {} };
-  try {
-    const hRes = await readFile("recipe-history.json", pat);
-    history = hRes.content && hRes.content.usedOn ? hRes.content : { usedOn: {} };
-  } catch { /* ingen history, OK */ }
-  for (const rid of planRecipeIds) {
-    delete history.usedOn[String(rid)];
-  }
-
-  const emptyPlan = {
-    generated: null,
-    startDate: null,
-    endDate: null,
-    days: [],
-  };
-
-  // Sekventiellt för att undvika parallella SHA-konflikter på samma commit-tillfälle.
-  await writeFile("weekly-plan.json", emptyPlan, pat, commitMsg);
-  await writeFile("recipe-history.json", history, pat, commitMsg);
-
+  const emptyPlan = { generated: null, startDate: null, endDate: null, days: [] };
   return res.status(200).json({ ok: true, weeklyPlan: emptyPlan });
 });

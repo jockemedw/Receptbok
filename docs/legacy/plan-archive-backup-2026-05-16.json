@@ -1,0 +1,83 @@
+{
+  "plans": [
+    {
+      "startDate": "2026-04-07",
+      "endDate": "2026-04-19",
+      "archivedAt": "2026-04-18T08:26:09.091Z",
+      "days": [
+        {
+          "date": "2026-04-07",
+          "day": "Tisdag",
+          "recipe": "Stekta rödspättafiléer med stuvade morötter",
+          "recipeId": 3
+        },
+        {
+          "date": "2026-04-09",
+          "day": "Torsdag",
+          "recipe": "Ugnspannkaka med vitkål och brynt smör med rå lingon",
+          "recipeId": 34
+        },
+        {
+          "date": "2026-04-10",
+          "day": "Fredag",
+          "recipe": "Gnocchi med snabbpesto",
+          "recipeId": 26
+        },
+        {
+          "date": "2026-04-11",
+          "day": "Lördag",
+          "recipe": "Kålcurry med gröna ärter och koriander",
+          "recipeId": 37
+        },
+        {
+          "date": "2026-04-12",
+          "day": "Söndag",
+          "recipe": "Sötpotatissallad med fetaost och hot honey-dressing",
+          "recipeId": 43
+        },
+        {
+          "date": "2026-04-13",
+          "day": "Måndag",
+          "recipe": "Quinoabollar",
+          "recipeId": 11
+        },
+        {
+          "date": "2026-04-14",
+          "day": "Tisdag",
+          "recipe": "Röd linsgryta med potatis",
+          "recipeId": 46
+        },
+        {
+          "date": "2026-04-15",
+          "day": "Onsdag",
+          "recipe": "Fisk med örtsås",
+          "recipeId": 50
+        },
+        {
+          "date": "2026-04-16",
+          "day": "Torsdag",
+          "recipe": "Breakfast burrito med kål och äggröra",
+          "recipeId": 32
+        },
+        {
+          "date": "2026-04-17",
+          "day": "Fredag",
+          "recipe": "Pasta med lax och sås på vitt vin, grädde och spenat",
+          "recipeId": 51
+        },
+        {
+          "date": "2026-04-18",
+          "day": "Lördag",
+          "recipe": "Indisk gryta med spenat, kikärter, senap & yoghurt",
+          "recipeId": 53
+        },
+        {
+          "date": "2026-04-19",
+          "day": "Söndag",
+          "recipe": "Krispiga ostquesadillas med grönkål och potatis med syrlig koriandersås",
+          "recipeId": 33
+        }
+      ]
+    }
+  ]
+}

@@ -1,3 +1,7 @@
+# Root-level node_modules — beroenden installeras lokalt, inte i git
+node_modules/
+package-lock.json
+
 # Willys-recon artefakter (Session 27) — lokala, inte i git
 chunk-*.js
 page-chunk.js

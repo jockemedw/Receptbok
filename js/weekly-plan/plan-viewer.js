@@ -133,23 +133,104 @@ export function centerTodayCard(opts = {}) {
   return centerOnDate(null, opts);
 }
 
-// Laddar plan-archive.json — CDN-cachad, kan vara ~60s gammal men arkivet
-// ändras så sällan att det är OK.
 async function loadArchive() {
   try {
-    const res = await fetch('plan-archive.json?t=' + Date.now());
-    if (!res.ok) return { plans: [] };
-    return await res.json();
+    const householdId = await window.getHouseholdId();
+    const { data, error } = await window.db
+      .from('plan_archives')
+      .select('*')
+      .eq('household_id', householdId)
+      .order('archived_at', { ascending: false });
+    if (error) throw error;
+    return {
+      plans: (data || []).map(row => ({
+        startDate:  row.start_date,
+        endDate:    row.end_date,
+        archivedAt: row.archived_at,
+        days:       row.days || [],
+      }))
+    };
   } catch { return { plans: [] }; }
 }
 
 async function loadCustomDays() {
   try {
-    const res = await fetch('custom-days.json?t=' + Date.now());
-    if (!res.ok) return { entries: {} };
-    const data = await res.json();
-    return { entries: data.entries || {} };
+    const householdId = await window.getHouseholdId();
+    const { data, error } = await window.db
+      .from('meal_days')
+      .select('*')
+      .eq('household_id', householdId)
+      .is('plan_id', null);
+    if (error) throw error;
+    const entries = {};
+    for (const row of (data || [])) {
+      entries[row.date] = {
+        note:        row.custom_note || '',
+        recipeId:    row.recipe_id ?? null,
+        recipeTitle: row.recipe_title_snapshot || '',
+      };
+    }
+    return { entries };
   } catch { return { entries: {} }; }
+}
+
+async function loadActivePlanFromSupabase(householdId) {
+  const { data: plans } = await window.db
+    .from('weekly_plans')
+    .select('*')
+    .eq('household_id', householdId)
+    .eq('is_active', true)
+    .limit(1);
+  const wp = plans?.[0];
+  if (!wp) return null;
+  const { data: mealDays } = await window.db
+    .from('meal_days')
+    .select('*')
+    .eq('plan_id', wp.id)
+    .order('date');
+  return {
+    generated:   wp.generated_at,
+    startDate:   wp.start_date,
+    endDate:     wp.end_date,
+    confirmedAt: wp.confirmed_at || null,
+    days: (mealDays || []).map(row => ({
+      date:          row.date,
+      recipe:        row.recipe_title_snapshot || null,
+      recipeId:      row.recipe_id ?? null,
+      saving:        row.saving ?? null,
+      savingMatches: row.saving_matches ?? null,
+      locked:        row.locked === true,
+      blocked:       row.blocked === true,
+    })),
+  };
+}
+
+async function loadShopSummaryFromSupabase(householdId) {
+  const { data: lists } = await window.db
+    .from('shopping_lists')
+    .select('*')
+    .eq('household_id', householdId)
+    .eq('is_active', true)
+    .limit(1);
+  const list = lists?.[0];
+  if (!list) return null;
+  const { data: items } = await window.db
+    .from('shopping_items')
+    .select('category, name, position')
+    .eq('list_id', list.id)
+    .eq('source', 'recipe')
+    .order('position');
+  const recipeItems = {};
+  for (const row of (items || [])) {
+    if (!recipeItems[row.category]) recipeItems[row.category] = [];
+    while (recipeItems[row.category].length <= row.position) recipeItems[row.category].push(null);
+    recipeItems[row.category][row.position] = row.name;
+  }
+  for (const cat of Object.keys(recipeItems)) recipeItems[cat] = recipeItems[cat].filter(Boolean);
+  return {
+    recipeItems:        Object.keys(recipeItems).length ? recipeItems : null,
+    recipeItemsMovedAt: list.recipe_items_moved_at || null,
+  };
 }
 
 // ── Replace-läge ─────────────────────────────────────────────────────────────
@@ -243,21 +324,22 @@ export async function selectRecipeForCustomDay(event, recipeId, title) {
   btn.textContent = 'Sparar…';
 
   try {
+    const householdId = await window.getHouseholdId();
     const existing = (window._customDays?.entries || {})[date] || {};
-    const res = await fetch('/api/custom-days', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'set',
-        dates: [date],
-        note: existing.note || '',
-        recipeId,
-        recipeTitle: title,
-      }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Okänt fel');
-    window._customDays = data.customDays || { entries: {} };
+    const { data: row } = await window.db
+      .from('meal_days').select('id, plan_id').eq('household_id', householdId).eq('date', date).maybeSingle();
+    let dbErr;
+    if (row && row.plan_id == null) {
+      ({ error: dbErr } = await window.db.from('meal_days')
+        .update({ recipe_id: recipeId, recipe_title_snapshot: title, custom_note: existing.note || null })
+        .eq('id', row.id));
+    } else if (!row) {
+      ({ error: dbErr } = await window.db.from('meal_days')
+        .insert({ household_id: householdId, date, plan_id: null, recipe_id: recipeId, recipe_title_snapshot: title, custom_note: existing.note || null }));
+    }
+    if (dbErr) throw dbErr;
+    const updatedEntries = { ...(window._customDays?.entries || {}), [date]: { note: existing.note || '', recipeId, recipeTitle: title } };
+    window._customDays = { entries: updatedEntries };
     exitCustomPickMode();
     renderWeeklyPlanData(
       window._lastPlan || null,
@@ -632,13 +714,8 @@ export function openBlockedDay(dateIso, dayName) {
 export async function convertBlockedToCustom(dateIso) {
   const note = document.getElementById('blockedDayNote')?.value?.trim();
   if (!note) return;
-
   try {
-    await fetch('/api/custom-days', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'set', dates: [dateIso], note }),
-    });
+    await postCustomDays('set', [dateIso], note);
     window.loadWeeklyPlan();
   } catch { /* tyst */ }
 }
@@ -733,21 +810,16 @@ export async function discardPlan() {
     // fortfarande leverera den gamla planen. Hämta arkiv/custom-days/inköpslista
     // med cache-bust för att reflektera senaste tillstånd.
     const emptyPlan = data.weeklyPlan || { days: [], startDate: null, endDate: null };
-    let archive = { plans: [] };
+    let archive    = { plans: [] };
     let customDays = window._customDays || { entries: {} };
-    let shop = window._lastShop || null;
+    let shop       = window._lastShop || null;
     try {
-      const [ar, cd, sh] = await Promise.all([
-        fetch('plan-archive.json?t=' + Date.now()),
-        fetch('custom-days.json?t=' + Date.now()),
-        fetch('shopping-list.json?t=' + Date.now()),
+      const householdId = await window.getHouseholdId();
+      [archive, customDays, shop] = await Promise.all([
+        loadArchive(),
+        loadCustomDays(),
+        loadShopSummaryFromSupabase(householdId),
       ]);
-      if (ar.ok) archive = await ar.json();
-      if (cd.ok) {
-        const cdData = await cd.json();
-        customDays = { entries: cdData.entries || {} };
-      }
-      if (sh.ok) shop = await sh.json();
     } catch { /* kör med fallbacks */ }
     renderWeeklyPlanData(emptyPlan, shop, false, archive, customDays);
   } catch (e) {
@@ -1034,15 +1106,14 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
 
 export async function loadWeeklyPlan() {
   try {
-    const [planRes, shopRes, archive, customDays] = await Promise.all([
-      fetch('weekly-plan.json?t=' + Date.now()),
-      fetch('shopping-list.json?t=' + Date.now()),
+    const householdId = await window.getHouseholdId();
+    const [plan, shop, archive, customDays] = await Promise.all([
+      loadActivePlanFromSupabase(householdId),
+      loadShopSummaryFromSupabase(householdId),
       loadArchive(),
       loadCustomDays(),
     ]);
     document.getElementById('weekLoading').style.display = 'none';
-    const plan = planRes.ok ? await planRes.json() : null;
-    const shop = shopRes.ok ? await shopRes.json() : null;
     const hasAnything = (plan?.days?.length) || (archive?.plans?.length) || Object.keys(customDays.entries || {}).length;
     if (!hasAnything) { document.getElementById('weekNoData').style.display = ''; return; }
     renderWeeklyPlanData(plan, shop, false, archive, customDays);
@@ -1183,15 +1254,33 @@ export function openCustomBulk(dates) {
 }
 
 async function postCustomDays(action, dates, note) {
-  const res = await fetch('/api/custom-days', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action, dates, note }),
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Okänt fel');
-  window._customDays = data.customDays || { entries: {} };
-  return data;
+  const householdId = await window.getHouseholdId();
+  const entries = { ...(window._customDays?.entries || {}) };
+  if (action === 'set') {
+    await Promise.all(dates.map(async (date) => {
+      const { data: row } = await window.db
+        .from('meal_days').select('id, plan_id').eq('household_id', householdId).eq('date', date).maybeSingle();
+      if (row && row.plan_id != null) return; // aldrig skriv över plan-dagar
+      let dbErr;
+      if (row) {
+        ({ error: dbErr } = await window.db.from('meal_days')
+          .update({ custom_note: note || null }).eq('id', row.id));
+      } else {
+        ({ error: dbErr } = await window.db.from('meal_days')
+          .insert({ household_id: householdId, date, plan_id: null, custom_note: note || null }));
+      }
+      if (dbErr) throw dbErr;
+      entries[date] = { ...(entries[date] || {}), note: note || '' };
+    }));
+  } else if (action === 'clear') {
+    await Promise.all(dates.map(async (date) => {
+      const { error } = await window.db
+        .from('meal_days').delete().eq('household_id', householdId).eq('date', date).is('plan_id', null);
+      if (error) throw error;
+      delete entries[date];
+    }));
+  }
+  window._customDays = { entries };
 }
 
 export async function saveCustomDay(dateIso) {

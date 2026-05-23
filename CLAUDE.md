@@ -93,7 +93,7 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 - [x] 7C steg 2 — Preview-deploy verifierad, Supabase redirect-URL inlagd, magic-link auth testad
 - [x] 7C steg 3 — Frontend-omskrivning (Session 58, commit `7f92add`): `app.js` recept från Supabase, `recipe-editor.js` CRUD via Supabase, `shopping-list.js` mot `shopping_lists`/`shopping_items`, `plan-viewer.js` plan/arkiv/custom-days från Supabase
 - [ ] 7C steg 4 — Realtime-subscriptions för `meal_days` + `shopping_items` (valfritt)
-- [ ] 7D — Backend-omskrivning: `api/generate.js`, `api/confirm.js`, `api/skip-day.js`, `api/swap-days.js`, `api/replace-recipe.js` skriver till Supabase i stället för GitHub JSON
+- [x] 7D — Backend-omskrivning **klar (Session 59, branch `claude/crazy-mcclintock-d47bcb`)**: `api/generate.js`, `api/confirm.js`, `api/skip-day.js`, `api/swap-days.js`, `api/replace-recipe.js`, `api/discard-plan.js` skriver till Supabase. Ny `api/_shared/supabase.js` (service-role-klient). `createSupabaseHandler` i handler.js. `plan-generator.js` hämtar arkiv/custom-days från Supabase.
 - [ ] 7E — Acceptanstester + cutover → merge till main
 
 ### Kända buggar
@@ -122,7 +122,23 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 58 (2026-05-23) — Fas 7C steg 3: frontend mot Supabase
+### Senaste session — Session 59 (2026-05-23) — Fas 7D komplett: all backend mot Supabase
+
+- **Branch:** `claude/crazy-mcclintock-d47bcb` (bygger på `claude/supabase-migration-ihIzv`). ALDRIG merge till main förrän Fas 7E är grön.
+- **`api/_shared/supabase.js`** (ny): service-role Supabase-klient med lazy-initialisering via Proxy — `createClient` anropas inte vid import-tid, förhindrar krasch i testmiljöer utan `SUPABASE_URL`. `getHouseholdId()` hämtar första household.
+- **`api/_shared/handler.js`**: ny export `createSupabaseHandler` — hanterar CORS utan att kräva GITHUB_PAT.
+- **`api/generate.js`**: `fetchRecipes` läser från `recipes`-tabellen, `fetchHistory` från `recipe_history`, arkivering skriver till `plan_archives`, plan sparas som `weekly_plans` + `meal_days`, historia upsertad i `recipe_history`, inköpslista i `shopping_lists`/`shopping_items`.
+- **`api/confirm.js`**: sätter `confirmed_at` på `weekly_plans`, skapar ny shopping-lista med items, bevarar manuella varor.
+- **`api/skip-day.js`**: hämtar alla `meal_days`, shift-logik i minne, batch-uppdaterar alla rader. Bygger om shopping om bekräftad.
+- **`api/swap-days.js`**: byter `recipe_id`/`recipe_title_snapshot`/`saving`/`saving_matches` på två `meal_days`-rader.
+- **`api/replace-recipe.js`**: uppdaterar `meal_day` + `recipe_history` parallellt; bygger om shopping om bekräftad.
+- **`api/discard-plan.js`**: deaktiverar plan, raderar `meal_days`, rensar `recipe_history`.
+- **`api/dispatch-to-willys.js`**: ny `fetchShoppingListFromSupabase()` ersätter `fetch(SHOPPING_LIST_URL)` — läser `shopping_lists` + `shopping_items` direkt från Supabase.
+- **`js/weekly-plan/plan-generator.js`**: hämtar arkiv/custom-days från Supabase efter generering.
+- **671 assertions** (51 match + 62 shopping + 432 select-recipes + 70 dispatch + 29 cookies + 27 data-mapper).
+- **Nästa:** Fas 7E — acceptanstester + cutover → merge till main.
+
+### Session 58 (2026-05-23) — Fas 7C steg 3: frontend mot Supabase
 
 - **Branch:** `claude/supabase-migration-ihIzv`, commit `7f92add`. ALDRIG merge till main förrän Fas 7E är grön.
 - **`js/app.js`:** `init()` läser recept från `recipes`-tabellen i Supabase via `window.db.from('recipes').select('*').eq('household_id', ...)`. Ingen `fetch('recipes.json')` längre.

@@ -1,8 +1,34 @@
 // Inköpslista: rendering, bockning, manuella varor, copy-läge.
-// Läser state: _freshShopContent, _checkedItems, _checkedSaveTimer, _shopRecipeItems, _shopManualItems
-// Skriver state: _freshShopContent, _checkedItems, _checkedSaveTimer, _shopRecipeItems, _shopManualItems
+// Läser state: _shopListId, _shopItemIds, _checkedItems, _checkedSaveTimer, _shopRecipeItems, _shopManualItems
+// Skriver state: _shopListId, _shopItemIds, _checkedItems, _checkedSaveTimer, _shopRecipeItems, _shopManualItems
 
 import { CAT_ICONS, escapeHtml } from '../utils.js';
+
+// Rekonstruerar frontend-state från Supabase-rader
+function buildShopState(list, items) {
+  const recipeItems = {};
+  const manualItemsArr = [];
+  const checkedItems = {};
+  const itemIds = {};
+  for (const row of items) {
+    if (row.source === 'recipe') {
+      if (!recipeItems[row.category]) recipeItems[row.category] = [];
+      while (recipeItems[row.category].length <= row.position) recipeItems[row.category].push(null);
+      recipeItems[row.category][row.position] = row.name;
+      const key = `recipe::${row.category}::${row.position}`;
+      checkedItems[key] = row.checked === true;
+      itemIds[key] = row.id;
+    } else if (row.source === 'manual') {
+      while (manualItemsArr.length <= row.position) manualItemsArr.push(null);
+      manualItemsArr[row.position] = row.name;
+      const key = `manual::${row.position}`;
+      checkedItems[key] = row.checked === true;
+      itemIds[key] = row.id;
+    }
+  }
+  for (const cat of Object.keys(recipeItems)) recipeItems[cat] = recipeItems[cat].filter(Boolean);
+  return { recipeItems, manualItems: manualItemsArr.filter(Boolean), checkedItems, itemIds };
+}
 
 const ICON_NOTE = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h11l3 3v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><path d="M8 11h8 M8 14h8 M8 17h5"/></svg>';
 
@@ -17,12 +43,18 @@ export function setShopMode(mode) {
 export function scheduleCheckedSave() {
   clearTimeout(window._checkedSaveTimer);
   window._checkedSaveTimer = setTimeout(async () => {
+    if (!window._shopItemIds) return;
+    const checkedIds   = [];
+    const uncheckedIds = [];
+    for (const [key, id] of Object.entries(window._shopItemIds)) {
+      if (window._checkedItems[key]) checkedIds.push(id);
+      else uncheckedIds.push(id);
+    }
     try {
-      await fetch('/api/shopping', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'set_checked', checkedItems: window._checkedItems }),
-      });
+      const ps = [];
+      if (checkedIds.length)   ps.push(window.db.from('shopping_items').update({ checked: true  }).in('id', checkedIds));
+      if (uncheckedIds.length) ps.push(window.db.from('shopping_items').update({ checked: false }).in('id', uncheckedIds));
+      await Promise.all(ps);
     } catch { /* tyst fel — nästa bockning försöker igen */ }
   }, 600);
 }
@@ -168,32 +200,47 @@ export async function loadShoppingTab() {
   document.getElementById('shopContent').style.display  = 'none';
   document.getElementById('shopNoData').style.display   = 'none';
   try {
-    let shop;
-    let preserveChecked = false;
-    if (window._freshShopContent) {
-      shop = window._freshShopContent;
-      window._freshShopContent = null;
-      // Manuella add/remove ändrar inte bock-state — behåll in-memory _checkedItems
-      preserveChecked = true;
-    } else {
-      const res = await fetch('shopping-list.json?' + Date.now());
-      if (!res.ok) throw new Error();
-      shop = await res.json();
+    const householdId = await window.getHouseholdId();
+    const { data: lists, error: listErr } = await window.db
+      .from('shopping_lists')
+      .select('*')
+      .eq('household_id', householdId)
+      .eq('is_active', true)
+      .limit(1);
+    if (listErr) throw listErr;
+
+    const list = lists?.[0] ?? null;
+    let items = [];
+    if (list) {
+      const { data: rows, error: itemsErr } = await window.db
+        .from('shopping_items')
+        .select('*')
+        .eq('list_id', list.id)
+        .order('position');
+      if (itemsErr) throw itemsErr;
+      items = rows ?? [];
     }
-    const recipeItemsData = shop.recipeItems || shop.categories || null;
-    const hasRecipe = shop.recipeItemsMovedAt &&
-      recipeItemsData && Object.values(recipeItemsData).some(v => v.length > 0);
-    const hasManual = shop.manualItems?.length > 0;
+
+    const hasRecipeItems = !!(list?.recipe_items_moved_at && items.some(i => i.source === 'recipe'));
+    const hasManual      = items.some(i => i.source === 'manual');
 
     document.getElementById('shopLoading').style.display = 'none';
-    if (!hasRecipe && !hasManual) {
+    if (!hasRecipeItems && !hasManual) {
       document.getElementById('shopNoData').style.display = '';
       return;
     }
     document.getElementById('shopContent').style.display = '';
     if (typeof window.initDispatchUI === 'function') window.initDispatchUI();
-    if (!preserveChecked) window._checkedItems = shop.checkedItems || {};
-    renderFullShoppingList(hasRecipe ? recipeItemsData : null, shop.manualItems || []);
+
+    const preserveChecked = window._preserveChecked === true;
+    window._preserveChecked = false;
+    window._shopListId = list.id;
+
+    const state = buildShopState(list, items);
+    window._shopItemIds = state.itemIds;
+    if (!preserveChecked) window._checkedItems = state.checkedItems;
+
+    renderFullShoppingList(hasRecipeItems ? state.recipeItems : null, state.manualItems);
   } catch {
     document.getElementById('shopLoading').style.display = 'none';
     document.getElementById('shopNoData').style.display  = '';
@@ -207,15 +254,15 @@ export async function addManualItem(inputId = 'manualItemInput', btnId = 'manual
   const btn = document.getElementById(btnId);
   btn.disabled = true;
   try {
-    const res = await fetch('/api/shopping', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'add', item }),
-    });
-    if (!res.ok) throw new Error();
-    const data = await res.json();
-    window._freshShopContent = data.content;
+    const listId = window._shopListId;
+    if (!listId) throw new Error('Ingen aktiv inköpslista');
+    const position = (window._shopManualItems || []).length;
+    const { error } = await window.db
+      .from('shopping_items')
+      .insert({ list_id: listId, category: 'Övrigt', name: item, source: 'manual', checked: false, position });
+    if (error) throw error;
     input.value = '';
+    window._preserveChecked = true;
     loadShoppingTab();
   } catch {
     alert('Kunde inte lägga till varan — prova igen.');
@@ -226,14 +273,13 @@ export async function addManualItem(inputId = 'manualItemInput', btnId = 'manual
 
 export async function removeManualItem(item) {
   try {
-    const res = await fetch('/api/shopping', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'remove', item }),
-    });
-    if (!res.ok) throw new Error();
-    const data = await res.json();
-    window._freshShopContent = data.content;
+    const idx = (window._shopManualItems || []).indexOf(item);
+    if (idx === -1) throw new Error('Varan hittades inte');
+    const id = window._shopItemIds?.[`manual::${idx}`];
+    if (!id) throw new Error('Inget id för varan');
+    const { error } = await window.db.from('shopping_items').delete().eq('id', id);
+    if (error) throw error;
+    window._preserveChecked = true;
     loadShoppingTab();
   } catch {
     alert('Kunde inte ta bort varan — prova igen.');
@@ -245,14 +291,18 @@ export async function clearShoppingList() {
   btn.disabled = true;
   btn.textContent = 'Rensar…';
   try {
-    const res = await fetch('/api/shopping', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'clear' }),
-    });
-    if (!res.ok) throw new Error();
-    window._checkedItems    = {};
-    window._freshShopContent = (await res.json()).content;
+    const listId = window._shopListId;
+    if (listId) {
+      const { error: delErr } = await window.db
+        .from('shopping_items')
+        .delete()
+        .eq('list_id', listId);
+      if (delErr) throw delErr;
+      await window.db.from('shopping_lists').update({ is_active: false }).eq('id', listId);
+    }
+    window._checkedItems = {};
+    window._shopItemIds  = {};
+    window._shopListId   = null;
     loadShoppingTab();
   } catch {
     alert('Kunde inte rensa listan — prova igen.');

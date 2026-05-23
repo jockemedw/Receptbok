@@ -2,6 +2,8 @@
   "name": "receptbok",
   "version": "1.0.0",
   "private": true,
-  "dependencies": {},
+  "dependencies": {
+    "@supabase/supabase-js": "^2.105.4"
+  },
   "type": "module"
 }
