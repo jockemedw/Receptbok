@@ -1,8 +1,8 @@
 {
   "meta": {
     "version": "1.0",
-    "lastUpdated": "2026-05-09",
-    "totalRecipes": 264,
+    "lastUpdated": "2026-05-23",
+    "totalRecipes": 263,
     "nextId": 271
   },
   "recipes": [
@@ -3577,48 +3577,6 @@
         "Hetta upp en ugnsfast stekpanna på hög värme. Tillsätt lite smör eller kokosolja om du använder gjutjärn. Stek kotletterna i 5–6 minuter tills ytan fått fin färg. Vänd och stek ytterligare 1–2 minuter. Ställ in pannan i ugnen och tillaga i ca 5 minuter. Ta ut ur ugnen och kontrollera att köttet inte längre är rosa i mitten. Lägg upp på tallrik och häll över skyn från pannan. Garnera med extra timjan om så önskas."
       ],
       "notes": "Källa: Easy 6-Ingredient Maple Dijon Pork Chops, dishingouthealth.com"
-    },
-    {
-      "id": 92,
-      "title": "Balsamicglaserad fläskkarré med rostad vitlökspolenta och grönt",
-      "tested": false,
-      "servings": 4,
-      "time": 45,
-      "timeNote": "",
-      "tags": [
-        "helg60",
-        "ugn",
-        "doh"
-      ],
-      "protein": "fläsk",
-      "ingredients": [
-        "fläskkarré utan ben (450 g)",
-        "balsamvinäger (1,2 dl)",
-        "vatten (1,2 dl)",
-        "fruktmarmelad (2 msk)",
-        "mangold, stor knippe, stjälkar borttagna och grovhackad (1)",
-        "olivolja, extra virgin (2 msk, uppdelat)",
-        "salt och svartpeppar efter smak",
-        "vitlök, hel huvud (1)",
-        "olivolja, extra virgin (1 tsk)",
-        "mjölk (3,6 dl)",
-        "vatten (3,6 dl)",
-        "polenta (2,4 dl)",
-        "färska örter, fint hackade (3 msk)",
-        "granatäpplekärnor, pinjekärnor och extra örter (valfritt, till garnering)"
-      ],
-      "instructions": [
-        "Värm ugnen till 260°C. Skär av toppen på vitlökshuvudet så att klyftorna blottas. Ta bort eventuella lösa skinn från löken. Lägg vitlökshuvudet på ett stycke aluminiumfolie och ringla 1 tsk olivolja över. Vik ihop folien. Rosta i ugnen i 45 minuter, eller tills vitlöken är gyllenbrun och mjuk. Ta ut ur ugnen och låt svalna i fem minuter. Kläm ut vitlöken ur skalet i en skål och mosa väl med en gaffel.",
-        "Häll vatten och mjölk i en medelstor kastrull och koka upp. Sänk värmen till medel och häll i polenta under omrörning. Koka under frekvent omrörning tills polentан är mjuk och tjock, ca 15–20 minuter. Under sista minuten rör du ner rostad vitlök, färska örter samt salt och peppar efter smak.",
-        "Medan polenta kokar, förbered fläsket. Blanda balsamvinäger, vatten och marmelad i en kanna. Hetta upp en stor stekpanna på medelhög värme och tillsätt 1 msk olivolja. Krydda fläskkotletterna med salt och peppar och lägg dem i pannan. Stek 3–4 minuter tills de får en fin färg, vänd och stek ytterligare 2–3 minuter. Sänk till medelvärme och häll i allt utom 0,6 dl av balsamicblandningen. Låt såsen puttra tills den glasyrar köttet, ca 3–4 minuter, rör om ofta.",
-        "Medan fläsket är klart, hetta upp 1 msk olivolja i en separat stekpanna på medelvärme. Tillsätt mangold och sautera 3–4 minuter under omrörning tills den fallit ihop.",
-        "Lägg upp ca 2,4 dl polenta på en tallrik eller i en djup skål. Toppa med mangold och en fläskkotlett. Ringla över resterande balsamicglasyr från pannan. Garnera med färska örter, granatäpplekärnor och pinjekärnor. Servera!"
-      ],
-      "notes": "Källa: Balsamic Glazed Pork with Roasted Garlic Herb Polenta and Greens, dishingouthealth.com",
-      "seasons": [
-        "sommar",
-        "höst"
-      ]
     },
     {
       "id": 93,
