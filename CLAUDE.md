@@ -122,20 +122,21 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 59 (2026-05-23) — Fas 7D: backend-omskrivning mot Supabase
+### Senaste session — Session 59 (2026-05-23) — Fas 7D komplett: all backend mot Supabase
 
 - **Branch:** `claude/crazy-mcclintock-d47bcb` (bygger på `claude/supabase-migration-ihIzv`). ALDRIG merge till main förrän Fas 7E är grön.
-- **`api/_shared/supabase.js`** (ny): service-role Supabase-klient + `getHouseholdId()` (hämtar första household för v1).
+- **`api/_shared/supabase.js`** (ny): service-role Supabase-klient med lazy-initialisering via Proxy — `createClient` anropas inte vid import-tid, förhindrar krasch i testmiljöer utan `SUPABASE_URL`. `getHouseholdId()` hämtar första household.
 - **`api/_shared/handler.js`**: ny export `createSupabaseHandler` — hanterar CORS utan att kräva GITHUB_PAT.
-- **`api/generate.js`**: `fetchRecipes` läser från `recipes`-tabellen, `fetchHistory` från `recipe_history`, arkivering skriver till `plan_archives`, plan sparas som `weekly_plans` + `meal_days`, historia upsertad i `recipe_history`, inköpslista i `shopping_lists`/`shopping_items`. `savePlanToSupabase` deaktiverar alltid gamla planer som skyddsnät mot misslyckat archiveOldPlan.
-- **`api/confirm.js`**: sätter `confirmed_at` på `weekly_plans`, skapar ny `shopping_list` med items, bevarar manuella varor från befintlig lista.
-- **`api/skip-day.js`**: hämtar alla `meal_days` för aktiv plan, shift-logik i minne, batch-uppdaterar alla rader. Bygger om shopping om plan bekräftad.
+- **`api/generate.js`**: `fetchRecipes` läser från `recipes`-tabellen, `fetchHistory` från `recipe_history`, arkivering skriver till `plan_archives`, plan sparas som `weekly_plans` + `meal_days`, historia upsertad i `recipe_history`, inköpslista i `shopping_lists`/`shopping_items`.
+- **`api/confirm.js`**: sätter `confirmed_at` på `weekly_plans`, skapar ny shopping-lista med items, bevarar manuella varor.
+- **`api/skip-day.js`**: hämtar alla `meal_days`, shift-logik i minne, batch-uppdaterar alla rader. Bygger om shopping om bekräftad.
 - **`api/swap-days.js`**: byter `recipe_id`/`recipe_title_snapshot`/`saving`/`saving_matches` på två `meal_days`-rader.
-- **`api/replace-recipe.js`**: uppdaterar `meal_day` + `recipe_history` parallellt; bygger om shopping om bekräftad. Hämtar `allMealDays` efter update → redan korrekt recipe_id.
-- **`api/discard-plan.js`**: deaktiverar plan, raderar `meal_days`, rensar `recipe_history` för planens recept.
-- **`js/weekly-plan/plan-generator.js`**: efter generering, hämta arkiv/custom-days från Supabase (ersätter CDN-fetch av `plan-archive.json`/`custom-days.json`).
-- **545 assertions** oförändrade.
-- **Kvar:** Fas 7E — acceptanstester + cutover → merge till main.
+- **`api/replace-recipe.js`**: uppdaterar `meal_day` + `recipe_history` parallellt; bygger om shopping om bekräftad.
+- **`api/discard-plan.js`**: deaktiverar plan, raderar `meal_days`, rensar `recipe_history`.
+- **`api/dispatch-to-willys.js`**: ny `fetchShoppingListFromSupabase()` ersätter `fetch(SHOPPING_LIST_URL)` — läser `shopping_lists` + `shopping_items` direkt från Supabase.
+- **`js/weekly-plan/plan-generator.js`**: hämtar arkiv/custom-days från Supabase efter generering.
+- **671 assertions** (51 match + 62 shopping + 432 select-recipes + 70 dispatch + 29 cookies + 27 data-mapper).
+- **Nästa:** Fas 7E — acceptanstester + cutover → merge till main.
 
 ### Session 58 (2026-05-23) — Fas 7C steg 3: frontend mot Supabase
 
