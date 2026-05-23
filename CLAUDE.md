@@ -122,7 +122,16 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 60 (2026-05-23) — Fas 7E: cutover till main
+### Senaste session — Session 61 (2026-05-23) — Städa efter Supabase-cutover
+
+- **Borttaget:** `dualReadCheck()` (56 rader migreringsverktyg i `js/app.js`), `api/recipes.js`, `api/custom-days.js`. Inga frontend-referenser kvar.
+- **`api/shopping.js` trimmad** från 53 → 25 rader: behåller bara `get_preferences`/`set_preferences` (övriga actions ersatta av Supabase).
+- **`toggleTested` migrerad till Supabase** i `js/recipes/recipe-browser.js` — uppdaterar `recipes.tested` direkt via `window.db`.
+- **"Flytta till inköpslista"-knappen fixad** i `js/weekly-plan/ingredient-preview.js` — satte `recipe_items_moved_at` mot döda `shopping-list.json`, nu mot Supabase direkt.
+- **Vercel-funktioner:** 12 → 10 (god marginal till Hobby-takets 12).
+- **Planerat nästa session** (sparat i memory): "Mina sidor" (användarprofil + framtida favoriter) + admin-only arkitektur-sida. Två öppna frågor: favoriter personliga eller hushållsdelade, arkitektur-sida statisk eller dynamisk.
+
+### Session 60 (2026-05-23) — Fas 7E: cutover till main
 
 - **Fas 7 KLAR** — `claude/crazy-mcclintock-d47bcb` mergad till `main` (commit `45a6433`).
 - **Buggfix acceptanstest:** `api/confirm.js` satte `recipe_items_moved_at: null` → inköpslistan visades aldrig trots 58 items i Supabase. Fix: sätts nu till `today`.
