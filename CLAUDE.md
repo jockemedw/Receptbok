@@ -86,6 +86,16 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 - [x] 6D — UI: "Säsongsanpassning"-toggle i inställningspanelen + säsongsfilter (vår/sommar/höst/vinter) i receptboken.
 - [ ] 6E — Finjustering: eventuell manuell korrigering av säsongstaggar efter användarfeedback.
 
+**Fas 7 — Supabase-migration** (pågår, branch `claude/supabase-migration-ihIzv` — **MERGE ALDRIG TILL MAIN FÖRRÄN 7E ÄR GRÖN**)
+- [x] 7A — Tabellschema + RLS + households-tabell i Supabase
+- [x] 7B — Seedning: 264 recept + weekly-plan + shopping-list + arkiv + custom-days + dispatch-prefs via `scripts/migrate-to-supabase.mjs --commit`
+- [x] 7C steg 1 — `dualReadCheck()` i app.js (fire-and-forget, loggar diff i konsolen)
+- [x] 7C steg 2 — Preview-deploy verifierad, Supabase redirect-URL inlagd, magic-link auth testad
+- [x] 7C steg 3 — Frontend-omskrivning (Session 58, commit `7f92add`): `app.js` recept från Supabase, `recipe-editor.js` CRUD via Supabase, `shopping-list.js` mot `shopping_lists`/`shopping_items`, `plan-viewer.js` plan/arkiv/custom-days från Supabase
+- [ ] 7C steg 4 — Realtime-subscriptions för `meal_days` + `shopping_items` (valfritt)
+- [ ] 7D — Backend-omskrivning: `api/generate.js`, `api/confirm.js`, `api/skip-day.js`, `api/swap-days.js`, `api/replace-recipe.js` skriver till Supabase i stället för GitHub JSON
+- [ ] 7E — Acceptanstester + cutover → merge till main
+
 ### Kända buggar
 Inga just nu.
 
@@ -112,7 +122,17 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 57 (2026-05-20) — Hotfix: appen laddade inte
+### Senaste session — Session 58 (2026-05-23) — Fas 7C steg 3: frontend mot Supabase
+
+- **Branch:** `claude/supabase-migration-ihIzv`, commit `7f92add`. ALDRIG merge till main förrän Fas 7E är grön.
+- **`js/app.js`:** `init()` läser recept från `recipes`-tabellen i Supabase via `window.db.from('recipes').select('*').eq('household_id', ...)`. Ingen `fetch('recipes.json')` längre.
+- **`js/recipes/recipe-editor.js`:** add/update/delete via Supabase. Ny import: `recipeToRow` från `data-mapper.js`. GitHub-polling-loopen (2 s × 3 försök) borttagen — Supabase svarar direkt.
+- **`js/shopping/shopping-list.js`:** Ny helper `buildShopState(list, items)` rekonstruerar `recipeItems`/`manualItems`/`checkedItems`/`itemIds` från Supabase-rader. `loadShoppingTab` frågar `shopping_lists` + `shopping_items`. `scheduleCheckedSave` batch-uppdaterar med max 2 requests (checked/unchecked). `addManualItem` → INSERT, `removeManualItem` → DELETE via `_shopItemIds`, `clearShoppingList` → DELETE + `is_active: false`.
+- **`js/weekly-plan/plan-viewer.js`:** `loadArchive`, `loadCustomDays`, `loadActivePlanFromSupabase`, `loadShopSummaryFromSupabase` — fyra nya Supabase-hjälpfunktioner. `loadWeeklyPlan` använder dessa parallellt. `postCustomDays` och `selectRecipeForCustomDay`/`convertBlockedToCustom` skriver direkt till `meal_days`. `discardPlan`-omladdning använder Supabase i stället för JSON-fetch.
+- **Kvar:** Fas 7D (backend-omskrivning) — tills dess är Supabase-data stale efter `api/generate`/`api/confirm`/`api/skip-day`.
+- **545 assertions** oförändrade.
+
+### Session 57 (2026-05-20) — Hotfix: appen laddade inte
 
 - **Symptom:** Sidan fastnade på "Laddar receptbok…", inga knappar fungerade.
 - **Rotorsak:** Session 55:s manuella-varor-fix (commit `9ebe94e`) stängde `<li>`-template-literalen i `js/shopping/shopping-list.js` för tidigt — backtick direkt efter `onclick`-attributet → syntaxfel → hela ES-modulgrafen laddade aldrig (alla moduler registrerar `window.*` vid import, så ingenting startade).
