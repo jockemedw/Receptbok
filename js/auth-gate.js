@@ -91,10 +91,7 @@ async function handleEmailSubmit(event) {
   setStatus('');
 
   try {
-    const { error } = await auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: false },
-    });
+    const { error } = await auth.signInWithOtp({ email });
     if (error) throw error;
     pendingEmail = email;
     submit.disabled = false;
@@ -122,7 +119,7 @@ async function handleCodeSubmit(event) {
     const { error } = await auth.verifyOtp({
       email: pendingEmail,
       token: code,
-      type: 'email',
+      type: 'magiclink',
     });
     if (error) throw error;
     // onAuthStateChange i requireAuth() fångar SIGNED_IN och stänger gaten
