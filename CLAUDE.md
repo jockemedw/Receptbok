@@ -62,8 +62,8 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 
 **Fas 3 — Internationell receptimport**
 - [x] 3A — Kartlägg format och sajter — **klart** (`docs/research-internationell-import.md`, Session 28). 7/18 sajter bot-blockerade (Cloudflare: allrecipes, seriouseats, bbcgoodfood, bonappetit, chefkoch, marmiton, foodnetwork). Budgetbytes verifierad med komplett JSON-LD. 5 sajter helt utan JSON-LD (jamieoliver, kochbar.de, essen-und-trinken, giallozafferano ×2) → Gemini-fallback behövs, och den finns redan.
-- [ ] 3B — Konverteringsmodul (cups→dl, oz→g, översättning) — research innehåller färdig cheat-sheet + 3 konkreta kodändringar: (1) strip price-annoteringar `$0.17*` från budgetbytes, (2) lägg enhetskonvertering i `GEMINI_SCHEMA_PROMPT`, (3) `postProcessForeignRecipe()` efter `mapJsonLdToRecipe()` för icke-svenska recept
-- [ ] 3C — Testa mot 10+ receptsidor
+- [x] 3B — Konverteringsmodul **klar (Session 64)**. `GEMINI_SCHEMA_PROMPT` utökat med enhetskonverteringsregler (cups→dl, oz→g, °F→°C, heavy cream→vispgrädde, baking soda→bikarbonat m.fl.) — täcker Gemini-fallback + fotoimport direkt. Ny `postProcessForeignRecipe()` anropar Gemini för konvertering + översättning på JSON-LD-extraherade recept från icke-`.se`-domäner. `callGemini()` splittad i `callGeminiRaw()` för återanvändning. Prisannoteringar (`$0.17*`) strippas i `mapJsonLdToRecipe()`.
+- [ ] 3C — Testa mot 10+ receptsidor — **väntar live-verifiering** (se nedan)
 
 **Fas 4 — Automatisk varukorgsfyllning** (design klar, se `docs/superpowers/specs/2026-04-20-willys-dispatch-design.md`)
 - [x] 4A — Teknisk research (PoC verifierade endpoint, auth, CSRF-livslängd)
@@ -122,7 +122,15 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 63 (2026-05-24) — Realtime-subscriptions + 6E säsongsfix
+### Senaste session — Session 64 (2026-05-24) — Fas 3B: konverteringsmodul för internationell receptimport
+
+- **`GEMINI_SCHEMA_PROMPT` utökat** med enhetskonverteringsinstruktioner: cups→dl, tbsp→msk, tsp→tsk, oz→g, lb→g, 1 stick butter=113g smör, °F→°C-tabell. Ingrediensöversättningar: heavy cream→vispgrädde, all-purpose flour→vetemjöl, baking soda→bikarbonat, baking powder→bakpulver, cilantro→koriander, arugula→rucola m.fl. Gäller nu för Gemini-fallback och fotoimport direkt.
+- **`postProcessForeignRecipe(recipe, apiKey)`** — ny funktion i `api/import-recipe.js`. Kallas efter `extractJsonLd()` om URL-domänen inte slutar på `.se` och `GOOGLE_API_KEY` är konfigurerad. Kör Gemini med en dedikerad `CONVERSION_PROMPT` och slår tillbaka konverterade `title`/`ingredients`/`instructions` mot originalet. Misslyckas Gemini → returneras originalet utan konvertering (graceful degradation).
+- **`callGemini()` splittad** i `callGeminiRaw()` (HTTP-anrop + JSON-parse) + `callGemini()` (lägger till recipe-defaults). `postProcessForeignRecipe` kan återanvända `callGeminiRaw` utan att skriva över korrekt satta fältvärden.
+- **`mapJsonLdToRecipe()`** strippar prisannoteringar (`$0.17*`) via regex + tar bort tomma parenteser. Returnerar nu `seasons: []` konsekvent.
+- **Fas 3C — testprotokoll:** Öppna importdialogen på https://receptbok-six.vercel.app/ och testa dessa URLer: `budgetbytes.com/budget-friendly-chicken-pasta` (JSON-LD + imperial), `kochbar.de` valfritt recept (Gemini-fallback, tyska), `jamieoliver.com` valfritt recept (Gemini-fallback, engelsk metric). Verifiera att ingredienser kommer ut på svenska med metriska enheter.
+
+### Session 63 (2026-05-24) — Realtime-subscriptions + 6E säsongsfix
 
 - **`shopping_items`-prenumeration** i `js/shopping/shopping-list.js`: `subscribeShoppingItems(listId)` prenumererar på `postgres_changes` för aktuell lista. Vid UPDATE av receptvara → riktad DOM-uppdatering (bockar/avbockar rätt `<li>` utan full reload). Vid INSERT/DELETE eller manuell vara → full reload. `unsubscribeShoppingItems()` kallas vid `clearShoppingList()` och tom lista. Cache-bust v=64→65.
 - **`meal_days`-prenumeration** i `js/weekly-plan/plan-viewer.js`: `subscribeMealDays(householdId)` prenumererar på `meal_days`-ändringar. Vid förändring: om inga aktiva interaktioner (replace/swap/custom-pick) → anropar `loadWeeklyPlan()`. Prenumererar en gång per session (guard mot dubbelkoppling).
