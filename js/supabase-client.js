@@ -28,13 +28,9 @@ export async function getHouseholdId() {
 
   _householdIdPromise = (async () => {
     const { data: { user } } = await auth.getUser();
-    if (!user) return null;
-    const { data, error } = await supabase
-      .from('household_members')
-      .select('household_id')
-      .eq('user_id', user.id)
-      .limit(1)
-      .maybeSingle();
+    let q = supabase.from('household_members').select('household_id').limit(1).maybeSingle();
+    if (user) q = q.eq('user_id', user.id);
+    const { data, error } = await q;
     if (error || !data) return null;
     _householdIdCache = data.household_id;
     return _householdIdCache;
