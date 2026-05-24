@@ -4,7 +4,7 @@
 import './state.js';
 import './utils.js';
 import './supabase-client.js';
-import { requireAuth } from './auth-gate.js';
+// import { requireAuth } from './auth-gate.js'; // auth tillfälligt avstängt
 import { recipeFromRow } from './data-mapper.js';
 import './ui/scroll.js';
 import './ui/navigation.js';
@@ -181,7 +181,7 @@ document.getElementById('emptyState').addEventListener('click', e => {
 });
 
 async function boot() {
-  await requireAuth();
+  // await requireAuth(); // auth tillfälligt avstängt
   await init();
   window.loadWeeklyPlan();
 
