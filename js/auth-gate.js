@@ -25,9 +25,9 @@ const GATE_HTML = `
       <div id="authStepCode" hidden>
         <p class="auth-tagline" id="authCodeTagline"></p>
         <form id="authCodeForm" autocomplete="off">
-          <label class="auth-label" for="authCode">Engångskod (6 siffror)</label>
+          <label class="auth-label" for="authCode">Engångskod</label>
           <input type="text" id="authCode" class="auth-input auth-code-input" required
-                 placeholder="123456" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
+                 placeholder="12345678" inputmode="numeric" maxlength="8" autocomplete="one-time-code">
           <button type="submit" class="auth-submit">Logga in</button>
         </form>
         <button type="button" id="authBack" class="auth-back">&larr; Ändra e-post</button>
@@ -56,7 +56,7 @@ function showCodeStep(email) {
   document.getElementById('authStepEmail').hidden = true;
   document.getElementById('authStepCode').hidden = false;
   document.getElementById('authCodeTagline').textContent =
-    `Vi har skickat en 6-siffrig kod till ${email}. Ange den här.`;
+    `Vi har skickat en kod till ${email}. Ange den här.`;
   const codeInput = document.getElementById('authCode');
   codeInput.value = '';
   codeInput.focus();
