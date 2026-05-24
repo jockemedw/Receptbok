@@ -63,7 +63,7 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 **Fas 3 — Internationell receptimport**
 - [x] 3A — Kartlägg format och sajter — **klart** (`docs/research-internationell-import.md`, Session 28). 7/18 sajter bot-blockerade (Cloudflare: allrecipes, seriouseats, bbcgoodfood, bonappetit, chefkoch, marmiton, foodnetwork). Budgetbytes verifierad med komplett JSON-LD. 5 sajter helt utan JSON-LD (jamieoliver, kochbar.de, essen-und-trinken, giallozafferano ×2) → Gemini-fallback behövs, och den finns redan.
 - [x] 3B — Konverteringsmodul **klar (Session 64)**. `GEMINI_SCHEMA_PROMPT` utökat med enhetskonverteringsregler (cups→dl, oz→g, °F→°C, heavy cream→vispgrädde, baking soda→bikarbonat m.fl.) — täcker Gemini-fallback + fotoimport direkt. Ny `postProcessForeignRecipe()` anropar Gemini för konvertering + översättning på JSON-LD-extraherade recept från icke-`.se`-domäner. `callGemini()` splittad i `callGeminiRaw()` för återanvändning. Prisannoteringar (`$0.17*`) strippas i `mapJsonLdToRecipe()`.
-- [ ] 3C — Testa mot 10+ receptsidor — **väntar live-verifiering** (se nedan)
+- [x] 3C — Testa mot 10+ receptsidor — **live-verifierat (Session 64)**. budgetbytes.com (JSON-LD + imperial), kochbar.de (Gemini-fallback, tyska), jamieoliver.com (Gemini-fallback, engelska) — alla kom ut med svenska ingredienser och metriska enheter.
 
 **Fas 4 — Automatisk varukorgsfyllning** (design klar, se `docs/superpowers/specs/2026-04-20-willys-dispatch-design.md`)
 - [x] 4A — Teknisk research (PoC verifierade endpoint, auth, CSRF-livslängd)
@@ -128,7 +128,7 @@ Inga just nu.
 - **`postProcessForeignRecipe(recipe, apiKey)`** — ny funktion i `api/import-recipe.js`. Kallas efter `extractJsonLd()` om URL-domänen inte slutar på `.se` och `GOOGLE_API_KEY` är konfigurerad. Kör Gemini med en dedikerad `CONVERSION_PROMPT` och slår tillbaka konverterade `title`/`ingredients`/`instructions` mot originalet. Misslyckas Gemini → returneras originalet utan konvertering (graceful degradation).
 - **`callGemini()` splittad** i `callGeminiRaw()` (HTTP-anrop + JSON-parse) + `callGemini()` (lägger till recipe-defaults). `postProcessForeignRecipe` kan återanvända `callGeminiRaw` utan att skriva över korrekt satta fältvärden.
 - **`mapJsonLdToRecipe()`** strippar prisannoteringar (`$0.17*`) via regex + tar bort tomma parenteser. Returnerar nu `seasons: []` konsekvent.
-- **Fas 3C — testprotokoll:** Öppna importdialogen på https://receptbok-six.vercel.app/ och testa dessa URLer: `budgetbytes.com/budget-friendly-chicken-pasta` (JSON-LD + imperial), `kochbar.de` valfritt recept (Gemini-fallback, tyska), `jamieoliver.com` valfritt recept (Gemini-fallback, engelsk metric). Verifiera att ingredienser kommer ut på svenska med metriska enheter.
+- **Fas 3C live-verifierad:** budgetbytes.com, kochbar.de, jamieoliver.com — alla godkända. **Fas 3 helt klar.**
 
 ### Session 63 (2026-05-24) — Realtime-subscriptions + 6E säsongsfix
 
