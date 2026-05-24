@@ -9,7 +9,7 @@ const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
 const GEMINI_SCHEMA_PROMPT = `Du är en expert på matlagning och dataextraktion. Extrahera receptet och returnera BARA ett JSON-objekt (ingen annan text, ingen markdown) med exakt dessa fält:
 {
-  "title": "string",
+  "title": "string — på svenska om möjligt",
   "protein": "en av: fisk, kyckling, kött, fläsk, vegetarisk",
   "time": "integer (total tid i minuter) eller null",
   "servings": "integer (portioner, default 4)",
@@ -18,7 +18,43 @@ const GEMINI_SCHEMA_PROMPT = `Du är en expert på matlagning och dataextraktion
   "instructions": ["array av strings, ett steg per element"],
   "notes": "string med tips/varianter eller null",
   "seasons": ["array (optionell) med tillämpliga säsonger: vår, sommar, höst, vinter — lämna tom om receptet passar hela året"]
-}`;
+}
+
+VIKTIGT — konvertera alltid till svenska metriska enheter:
+- cups → dl (1 cup = 2,4 dl), tbsp/Tbsp → msk, tsp → tsk
+- oz → g (multiplicera med 28, avrunda till närmaste 5), lb → g (multiplicera med 454, avrunda till närmaste 10)
+- 1 stick of butter = 113 g smör
+- Temperaturer i °F → °C (350°F=175°C, 400°F=205°C, 425°F=220°C — konvertera i instruktionstext)
+- heavy cream/heavy whipping cream → vispgrädde, all-purpose flour → vetemjöl, bread flour → vetemjöl special
+- baking soda/bicarbonate of soda → bikarbonat (INTE bakpulver), baking powder → bakpulver (INTE bikarbonat)
+- cilantro → koriander, arugula → rucola, scallion/green onion → salladslök, sour cream → gräddfil
+- Strippa prisannoteringar som ($0.17*) ur ingredienssträngar`;
+
+const CONVERSION_PROMPT = `Konvertera nedanstående recepts ingredienser och instruktioner till svenska med metriska enheter.
+
+Konverteringsregler:
+- cups → dl (1 cup=2,4 dl, ½ cup=1,2 dl, ¼ cup=0,6 dl)
+- tbsp/tablespoon → msk, tsp/teaspoon → tsk
+- oz → g (×28, avrunda till närmaste 5), lb → g (×454, avrunda till närmaste 10)
+- 1 stick of butter = 113 g smör
+- Temperaturer i °F → °C (350°F=175°C, 400°F=205°C, 425°F=220°C — konvertera i hela instruktionstexten)
+- Strippa prisannoteringar som ($0.17*) ur ingredienssträngar
+
+Viktiga ingrediensöversättningar:
+- heavy cream / heavy whipping cream → vispgrädde
+- all-purpose flour → vetemjöl (INTE vetemjöl special)
+- bread flour → vetemjöl special
+- baking soda / bicarbonate of soda → bikarbonat (INTE bakpulver)
+- baking powder → bakpulver (INTE bikarbonat)
+- cilantro → koriander, arugula → rucola, scallion/green onion → salladslök
+- sour cream → gräddfil, half-and-half → lättmjölk (10%)
+- buttermilk → fil, whole milk → standardmjölk (3%)
+- cornstarch / cornflour → majsstärkelse, cornmeal → grovt majsmjöl
+
+Returnera BARA ett JSON-objekt med exakt dessa fält:
+{"title": "...", "ingredients": ["..."], "instructions": ["..."]}
+
+Recept att konvertera:`;
 
 // ── Handler ─────────────────────────────────────────────────────────────────
 
@@ -53,6 +89,10 @@ function isPrivateIp(ip) {
   return false;
 }
 
+function isForeignUrl(parsedUrl) {
+  return !parsedUrl.hostname.endsWith(".se");
+}
+
 async function handleUrl(url, res) {
   if (!url || !/^https?:\/\//i.test(url)) {
     return res.status(400).json({ error: "Ange en giltig webbadress." });
@@ -74,6 +114,8 @@ async function handleUrl(url, res) {
     return res.status(400).json({ error: "Kunde inte nå sidan — kontrollera adressen." });
   }
 
+  const apiKey = process.env.GOOGLE_API_KEY;
+
   let html;
   try {
     const response = await fetch(url, {
@@ -90,12 +132,17 @@ async function handleUrl(url, res) {
     return res.status(400).json({ error: "Kunde inte nå sidan — kontrollera adressen." });
   }
 
-  // Försök 1: JSON-LD
+  // Försök 1: JSON-LD + eventuell enhetskonvertering för icke-svenska sajter
   const recipe = extractJsonLd(html);
-  if (recipe) return res.status(200).json({ recipe });
+  if (recipe) {
+    if (isForeignUrl(parsed) && apiKey) {
+      const converted = await postProcessForeignRecipe(recipe, apiKey);
+      return res.status(200).json({ recipe: converted });
+    }
+    return res.status(200).json({ recipe });
+  }
 
   // Försök 2: Gemini-fallback om nyckel finns
-  const apiKey = process.env.GOOGLE_API_KEY;
   if (!apiKey) {
     return res.status(422).json({
       error: "Den här sajten stöds inte — prova en annan receptsajt eller lägg in receptet manuellt.",
@@ -144,7 +191,15 @@ function mapJsonLdToRecipe(data) {
   const title = data.name || "Importerat recept";
   const time  = parseDuration(data.totalTime || data.cookTime || data.prepTime);
 
-  const ingredients = (data.recipeIngredient || []).map((s) => String(s).trim()).filter(Boolean);
+  const ingredients = (data.recipeIngredient || [])
+    .map((s) =>
+      String(s)
+        .trim()
+        .replace(/,?\s*\$[\d.]+\*?/g, "")  // strip price annotations like $0.17*
+        .replace(/\(\s*\)/g, "")            // remove empty parens left behind
+        .trim()
+    )
+    .filter(Boolean);
 
   let instructions = [];
   if (Array.isArray(data.recipeInstructions)) {
@@ -172,7 +227,7 @@ function mapJsonLdToRecipe(data) {
   const tags    = buildTags(time, protein);
   const notes   = data.description ? truncate(String(data.description), 200) : null;
 
-  return { title, tested: false, servings, time, timeNote: null, tags, protein, ingredients, instructions: instructions.filter(Boolean), notes };
+  return { title, tested: false, servings, time, timeNote: null, tags, protein, ingredients, instructions: instructions.filter(Boolean), notes, seasons: [] };
 }
 
 function parseDuration(iso) {
@@ -181,6 +236,39 @@ function parseDuration(iso) {
   if (!m) return null;
   const mins = (parseInt(m[1] || 0) * 60) + parseInt(m[2] || 0);
   return mins > 0 ? mins : null;
+}
+
+// ── Post-processing för utländska recept ────────────────────────────────────
+
+async function postProcessForeignRecipe(recipe, apiKey) {
+  const payload = JSON.stringify({
+    title: recipe.title,
+    ingredients: recipe.ingredients,
+    instructions: recipe.instructions,
+  });
+
+  let result;
+  try {
+    result = await callGeminiRaw(
+      [{ text: `${CONVERSION_PROMPT}\n${payload}` }],
+      apiKey
+    );
+  } catch {
+    return recipe; // returnera originalet om konverteringen misslyckas
+  }
+
+  if (!result) return recipe;
+
+  return {
+    ...recipe,
+    title: typeof result.title === "string" && result.title ? result.title : recipe.title,
+    ingredients: Array.isArray(result.ingredients) && result.ingredients.length
+      ? result.ingredients
+      : recipe.ingredients,
+    instructions: Array.isArray(result.instructions) && result.instructions.length
+      ? result.instructions
+      : recipe.instructions,
+  };
 }
 
 // ── Foto-import ─────────────────────────────────────────────────────────────
@@ -209,7 +297,7 @@ async function handlePhoto(imageBase64, mimeType, res) {
 
 // ── Gemini-anrop ────────────────────────────────────────────────────────────
 
-async function callGemini(parts, apiKey) {
+async function callGeminiRaw(parts, apiKey) {
   let geminiRes;
   let lastError = "";
 
@@ -250,17 +338,24 @@ async function callGemini(parts, apiKey) {
   try {
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) return null;
-    const recipe = JSON.parse(jsonMatch[0]);
-    recipe.tested   = false;
-    recipe.timeNote = recipe.timeNote || null;
-    recipe.notes    = recipe.notes    || null;
-    recipe.servings = recipe.servings || 4;
-    recipe.tags     = recipe.tags     || buildTags(recipe.time, recipe.protein);
-    recipe.protein  = recipe.protein  || guessProtein(recipe.title || "", recipe.ingredients || []);
-    return recipe;
+    return JSON.parse(jsonMatch[0]);
   } catch {
     return null;
   }
+}
+
+async function callGemini(parts, apiKey) {
+  const recipe = await callGeminiRaw(parts, apiKey);
+  if (!recipe) return null;
+
+  recipe.tested   = false;
+  recipe.timeNote = recipe.timeNote || null;
+  recipe.notes    = recipe.notes    || null;
+  recipe.seasons  = recipe.seasons  || [];
+  recipe.servings = recipe.servings || 4;
+  recipe.tags     = recipe.tags     || buildTags(recipe.time, recipe.protein);
+  recipe.protein  = recipe.protein  || guessProtein(recipe.title || "", recipe.ingredients || []);
+  return recipe;
 }
 
 // ── Hjälpfunktioner ─────────────────────────────────────────────────────────
