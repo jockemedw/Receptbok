@@ -483,7 +483,8 @@
       ],
       "notes": null,
       "seasons": [
-        "höst"
+        "höst",
+        "vinter"
       ]
     },
     {
@@ -3857,7 +3858,8 @@
       ],
       "notes": "Källa: Zucchini and Quinoa Vegetarian Enchiladas, dishingouthealth.com",
       "seasons": [
-        "sommar"
+        "sommar",
+        "höst"
       ]
     },
     {
@@ -6903,6 +6905,7 @@
       ],
       "notes": "Källa: Peach and Corn Quinoa Salad with Cilantro Ranch, dishingouthealth.com",
       "seasons": [
+        "sommar",
         "höst"
       ]
     },

@@ -84,7 +84,7 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 - [x] 6B — Taggning: 242/264 recept taggade med `seasons`-fält i `recipes.json`. 22 neutrala (konserverat/fryst-baserade).
 - [x] 6C — Algoritm: `applySeasonWeight()` i `selectRecipes()` — in-season 2x, neutral 1x, off-season 0.5x. Opt-in toggle `season_weight` i `/api/generate`.
 - [x] 6D — UI: "Säsongsanpassning"-toggle i inställningspanelen + säsongsfilter (vår/sommar/höst/vinter) i receptboken.
-- [ ] 6E — Finjustering: eventuell manuell korrigering av säsongstaggar efter användarfeedback.
+- [x] 6E — Finjustering klar (Session 63): 3 uppenbara fel rättade i `recipes.json` + Supabase — ID 12 (`höst`→`höst,vinter`), ID 98 (`sommar`→`sommar,höst`), ID 172 (`höst`→`sommar,höst`).
 
 **Fas 7 — Supabase-migration** ✅ **KLAR (Session 60, mergad till main 2026-05-23)**
 - [x] 7A — Tabellschema + RLS + households-tabell i Supabase
@@ -122,11 +122,12 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 63 (2026-05-24) — Fas 7C steg 4: Realtime-subscriptions
+### Senaste session — Session 63 (2026-05-24) — Realtime-subscriptions + 6E säsongsfix
 
 - **`shopping_items`-prenumeration** i `js/shopping/shopping-list.js`: `subscribeShoppingItems(listId)` prenumererar på `postgres_changes` för aktuell lista. Vid UPDATE av receptvara → riktad DOM-uppdatering (bockar/avbockar rätt `<li>` utan full reload). Vid INSERT/DELETE eller manuell vara → full reload. `unsubscribeShoppingItems()` kallas vid `clearShoppingList()` och tom lista. Cache-bust v=64→65.
 - **`meal_days`-prenumeration** i `js/weekly-plan/plan-viewer.js`: `subscribeMealDays(householdId)` prenumererar på `meal_days`-ändringar. Vid förändring: om inga aktiva interaktioner (replace/swap/custom-pick) → anropar `loadWeeklyPlan()`. Prenumererar en gång per session (guard mot dubbelkoppling).
-- **Feedback-loop-skydd:** Egna sparningar (via `scheduleCheckedSave`) sätter `_checkedItems[key]` optimistiskt. När Supabase skickar tillbaka bekräftelsen matchar server-state mot lokal state → early return, ingen re-render. Egna plan-ändringar (skip, swap, replace) går via API som redan uppdaterar UI → `loadWeeklyPlan()`-anropet från prenumerationen är redundant men ofarligt.
+- **Feedback-loop-skydd:** Egna sparningar (via `scheduleCheckedSave`) sätter `_checkedItems[key]` optimistiskt. När Supabase skickar tillbaka bekräftelsen matchar server-state mot lokal state → early return, ingen re-render.
+- **Fas 6E klar — 3 säsongstaggar rättade** i `recipes.json` + Supabase: ID 12 Vinterwok (`höst`→`höst,vinter`), ID 98 Enchiladas squash (`sommar`→`sommar,höst`), ID 172 Persikasallad (`höst`→`sommar,höst`).
 
 ### Session 62 (2026-05-24) — Auth-fix + arkitektur-sida
 
