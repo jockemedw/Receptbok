@@ -57,7 +57,7 @@ async function handleSubmit(event) {
   if (error) {
     submit.disabled = false;
     submit.textContent = 'Logga in';
-    status.textContent = 'Fel e-post eller lösenord — prova igen.';
+    status.textContent = error.message || 'Fel e-post eller lösenord — prova igen.';
     status.classList.add('auth-status-error');
   }
   // vid lyckat login: onAuthStateChange i requireAuth() fångar SIGNED_IN → hideGate()
