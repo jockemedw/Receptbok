@@ -92,7 +92,7 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 - [x] 7C steg 1 — `dualReadCheck()` i app.js (fire-and-forget, loggar diff i konsolen)
 - [x] 7C steg 2 — Preview-deploy verifierad, Supabase redirect-URL inlagd, magic-link auth testad
 - [x] 7C steg 3 — Frontend-omskrivning (Session 58, commit `7f92add`): `app.js` recept från Supabase, `recipe-editor.js` CRUD via Supabase, `shopping-list.js` mot `shopping_lists`/`shopping_items`, `plan-viewer.js` plan/arkiv/custom-days från Supabase
-- [ ] 7C steg 4 — Realtime-subscriptions för `meal_days` + `shopping_items` (valfritt)
+- [x] 7C steg 4 — Realtime-subscriptions för `meal_days` + `shopping_items` — **klar (Session 63)**
 - [x] 7D — Backend-omskrivning klar (Session 59): alla API-endpoints skriver till Supabase
 - [x] 7E — Acceptanstester gröna + cutover mergad till main (Session 60)
 
@@ -122,7 +122,13 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 62 (2026-05-24) — Auth-fix + arkitektur-sida
+### Senaste session — Session 63 (2026-05-24) — Fas 7C steg 4: Realtime-subscriptions
+
+- **`shopping_items`-prenumeration** i `js/shopping/shopping-list.js`: `subscribeShoppingItems(listId)` prenumererar på `postgres_changes` för aktuell lista. Vid UPDATE av receptvara → riktad DOM-uppdatering (bockar/avbockar rätt `<li>` utan full reload). Vid INSERT/DELETE eller manuell vara → full reload. `unsubscribeShoppingItems()` kallas vid `clearShoppingList()` och tom lista. Cache-bust v=64→65.
+- **`meal_days`-prenumeration** i `js/weekly-plan/plan-viewer.js`: `subscribeMealDays(householdId)` prenumererar på `meal_days`-ändringar. Vid förändring: om inga aktiva interaktioner (replace/swap/custom-pick) → anropar `loadWeeklyPlan()`. Prenumererar en gång per session (guard mot dubbelkoppling).
+- **Feedback-loop-skydd:** Egna sparningar (via `scheduleCheckedSave`) sätter `_checkedItems[key]` optimistiskt. När Supabase skickar tillbaka bekräftelsen matchar server-state mot lokal state → early return, ingen re-render. Egna plan-ändringar (skip, swap, replace) går via API som redan uppdaterar UI → `loadWeeklyPlan()`-anropet från prenumerationen är redundant men ofarligt.
+
+### Session 62 (2026-05-24) — Auth-fix + arkitektur-sida
 
 - **Arkitektur-sida skapad** (`architecture.html`): fristående HTML med inbäddad SVG-diagram som visar hur GitHub, Vercel, Supabase, Willys och Gemini hänger ihop. Pedagogisk, för att visa vänner/intresserade. Tillgänglig på `/architecture.html` på Vercel.
 - **Auth-omskrivning:** Magic link fungerade inte i iOS PWA (hemskärmssparning och Safari har separata localStorage-utrymmen → session leks ej över). Testade OTP-flöde (`signInWithOtp` + `verifyOtp`) men Supabase rate-limitade (~1 mail/min), och template-typen (`magiclink` vs `email`) skapade förvirring. Slutlig lösning: **lösenordsbaserad inlogg** via `signInWithPassword`.

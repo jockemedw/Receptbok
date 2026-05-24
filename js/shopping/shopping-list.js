@@ -4,6 +4,45 @@
 
 import { CAT_ICONS, escapeHtml } from '../utils.js';
 
+// ── Realtime-prenumeration för inköpsvaror ────────────────────────────────────
+let _shopChannel = null;
+
+function unsubscribeShoppingItems() {
+  if (_shopChannel) {
+    window.db.removeChannel(_shopChannel);
+    _shopChannel = null;
+  }
+}
+
+function subscribeShoppingItems(listId) {
+  unsubscribeShoppingItems();
+  if (!listId) return;
+  _shopChannel = window.db
+    .channel(`shopping_items:${listId}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'shopping_items', filter: `list_id=eq.${listId}` }, (payload) => {
+      const { eventType, new: newRow } = payload;
+      if (eventType === 'UPDATE' && newRow?.source === 'recipe') {
+        // Riktad DOM-uppdatering för receptvaror (undviker full reload)
+        const key = Object.keys(window._shopItemIds || {}).find(k => window._shopItemIds[k] === newRow.id);
+        if (!key) return;
+        const serverChecked = newRow.checked === true;
+        if (window._checkedItems[key] === serverChecked) return; // redan rätt
+        window._checkedItems[key] = serverChecked;
+        const el = document.querySelector(`.shopping-item[onclick*="${key}"]`);
+        if (el) {
+          el.classList.toggle('checked', serverChecked);
+          el.querySelector('.item-checkbox').textContent = serverChecked ? '✓' : '';
+        }
+        rebuildShopText();
+      } else {
+        // Ny vara, borttagen vara eller manuell vara ändrad → ladda om
+        window._preserveChecked = false;
+        loadShoppingTab();
+      }
+    })
+    .subscribe();
+}
+
 // Rekonstruerar frontend-state från Supabase-rader
 function buildShopState(list, items) {
   const recipeItems = {};
@@ -227,6 +266,7 @@ export async function loadShoppingTab() {
     document.getElementById('shopLoading').style.display = 'none';
     if (!hasRecipeItems && !hasManual) {
       document.getElementById('shopNoData').style.display = '';
+      unsubscribeShoppingItems();
       return;
     }
     document.getElementById('shopContent').style.display = '';
@@ -235,6 +275,7 @@ export async function loadShoppingTab() {
     const preserveChecked = window._preserveChecked === true;
     window._preserveChecked = false;
     window._shopListId = list.id;
+    subscribeShoppingItems(list.id);
 
     const state = buildShopState(list, items);
     window._shopItemIds = state.itemIds;
@@ -244,6 +285,7 @@ export async function loadShoppingTab() {
   } catch {
     document.getElementById('shopLoading').style.display = 'none';
     document.getElementById('shopNoData').style.display  = '';
+    unsubscribeShoppingItems();
   }
 }
 
@@ -300,6 +342,7 @@ export async function clearShoppingList() {
       if (delErr) throw delErr;
       await window.db.from('shopping_lists').update({ is_active: false }).eq('id', listId);
     }
+    unsubscribeShoppingItems();
     window._checkedItems = {};
     window._shopItemIds  = {};
     window._shopListId   = null;

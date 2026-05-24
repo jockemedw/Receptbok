@@ -9,6 +9,29 @@ const ICON_POT = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="curr
 const ICON_NOTE = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h11l3 3v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><path d="M8 11h8 M8 14h8 M8 17h5"/></svg>';
 const ICON_CALENDAR = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>';
 
+// ── Realtime-prenumeration för matsedeln ──────────────────────────────────────
+let _planChannel = null;
+
+function unsubscribeMealDays() {
+  if (_planChannel) {
+    window.db.removeChannel(_planChannel);
+    _planChannel = null;
+  }
+}
+
+function subscribeMealDays(householdId) {
+  if (_planChannel) return; // redan prenumererar
+  _planChannel = window.db
+    .channel(`meal_days:${householdId}`)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'meal_days', filter: `household_id=eq.${householdId}` }, () => {
+      // Ladda inte om om användaren är mitt i en interaktion
+      if (window.replaceMode || window.customPickMode) return;
+      if (document.querySelector('.week-day-card.swap-source')) return;
+      window.loadWeeklyPlan();
+    })
+    .subscribe();
+}
+
 const TIMELINE_DAYS_BACK_MIN = 14;
 const TIMELINE_DAYS_FORWARD_MIN = 14;
 const TIMELINE_DAYS_CAP = 45;
@@ -1117,6 +1140,7 @@ export async function loadWeeklyPlan() {
     const hasAnything = (plan?.days?.length) || (archive?.plans?.length) || Object.keys(customDays.entries || {}).length;
     if (!hasAnything) { document.getElementById('weekNoData').style.display = ''; return; }
     renderWeeklyPlanData(plan, shop, false, archive, customDays);
+    subscribeMealDays(householdId);
   } catch {
     document.getElementById('weekLoading').style.display = 'none';
     document.getElementById('weekNoData').style.display  = '';
