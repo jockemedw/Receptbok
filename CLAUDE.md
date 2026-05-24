@@ -122,14 +122,21 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 61 (2026-05-23) — Städa efter Supabase-cutover
+### Senaste session — Session 62 (2026-05-24) — Auth-fix + arkitektur-sida
+
+- **Arkitektur-sida skapad** (`architecture.html`): fristående HTML med inbäddad SVG-diagram som visar hur GitHub, Vercel, Supabase, Willys och Gemini hänger ihop. Pedagogisk, för att visa vänner/intresserade. Tillgänglig på `/architecture.html` på Vercel.
+- **Auth-omskrivning:** Magic link fungerade inte i iOS PWA (hemskärmssparning och Safari har separata localStorage-utrymmen → session leks ej över). Testade OTP-flöde (`signInWithOtp` + `verifyOtp`) men Supabase rate-limitade (~1 mail/min), och template-typen (`magiclink` vs `email`) skapade förvirring. Slutlig lösning: **lösenordsbaserad inlogg** via `signInWithPassword`.
+- **Lösenord satt via SQL:** Supabase-dashboardens användarpanel saknar direkt lösenordsfält (bara e-postbaserad återställning). Lösenord satt direkt via `UPDATE auth.users SET encrypted_password = crypt(...)` — alla användare fick `hejhej22`.
+- **Appen funkar nu på iOS PWA** — inlogg via lösenord fungerar från hemskärmsappen.
+- **Todo noterat:** Realtidsuppdateringar (Fas 7C steg 4) — inköpslistan och planen synkar live när båda är inne samtidigt. Lägst-hängande frukt: `shopping_items`-prenumeration i `shopping-list.js`.
+
+### Session 61 (2026-05-23) — Städa efter Supabase-cutover
 
 - **Borttaget:** `dualReadCheck()` (56 rader migreringsverktyg i `js/app.js`), `api/recipes.js`, `api/custom-days.js`. Inga frontend-referenser kvar.
 - **`api/shopping.js` trimmad** från 53 → 25 rader: behåller bara `get_preferences`/`set_preferences` (övriga actions ersatta av Supabase).
 - **`toggleTested` migrerad till Supabase** i `js/recipes/recipe-browser.js` — uppdaterar `recipes.tested` direkt via `window.db`.
 - **"Flytta till inköpslista"-knappen fixad** i `js/weekly-plan/ingredient-preview.js` — satte `recipe_items_moved_at` mot döda `shopping-list.json`, nu mot Supabase direkt.
 - **Vercel-funktioner:** 12 → 10 (god marginal till Hobby-takets 12).
-- **Planerat nästa session** (sparat i memory): "Mina sidor" (användarprofil + framtida favoriter) + admin-only arkitektur-sida. Två öppna frågor: favoriter personliga eller hushållsdelade, arkitektur-sida statisk eller dynamisk.
 
 ### Session 60 (2026-05-23) — Fas 7E: cutover till main
 
