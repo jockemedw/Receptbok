@@ -100,15 +100,11 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 Inga just nu.
 
 ### Öppna utredningar
-**Dishingouthealth-import — ⏸ 197 recept i staging, väntar manuell granskning (Session 45, 2026-05-04).** Plan: `docs/superpowers/plans/2026-05-03-dishingouthealth-scrape.md`. Verktyg i `scripts/dish-scrape/`. 197/551 importerade när Anthropic-krediter tog slut. Kvalitetsrapport: `recipes-import-quality-report.md`. Promotion: `cd scripts/dish-scrape && node promote.mjs`. Återstående 191 obearbetade kan tas via `--resume` efter credit-laddning.
+**Cookie-refresh-automatisering (Fas 4F) — ✅ IMPLEMENTATION KLAR, ⏳ ENGÅNGS-SETUP KVAR** (Session 42, 2026-04-26). Chrome-extension MV3 + `/api/cookies/willys` + secret gist + dispatch-fallback. Väntar på: (1) skapa secret gist, (2) sätt `GITHUB_GIST_PAT` + gist-ID i Vercel env vars, (3) installera extensionen i Chrome. Instruktioner: `extension/README.md`.
 
-**Cookie-refresh-automatisering (Fas 4F) — ✅ IMPLEMENTATION KLAR** (Session 42, 2026-04-26). Implementation av Session 40-specen via subagent-driven-development (7 tasks). Chrome-extension MV3 + `/api/cookies/willys` + secret gist + dispatch-fallback. Manuell rotation eliminerad i kodvägen — väntar bara på engångs-setup (gist + env vars + extension-install) för att gå live.
-
-**Lexikon- och matchningsaudit — ✅ KLAR** (Session 35, 2026-04-19). Rapport: `docs/match-audit-2026-04-19.md`. Spraygrädde-buggklassen eliminerad via `CANON_REJECT_PATTERNS` + Priority 2-stemming implementerad. 125 → 149 matches, 51 → 53 recept, 0 wrong-function/wrong-product-buggar kvar. 41 regressiontester bevakade av PostToolUse-hook.
-
-**Willys+ medlemserbjudanden — 3-fas utforskning (nu primär öppen utredning):**
+**Willys+ medlemserbjudanden — 3-fas utforskning:**
 - **Fas A — Rekon:** Vilka inloggningsmetoder erbjuder willys.se? BankID? E-post+lösenord? "Kom ihåg mig"-cookies? Mobilapp-OAuth? Claude läser login-sidan.
-- **Fas B — Validering:** Hur ser `PERSONAL_SEGMENTED`-svaret faktiskt ut när man är inloggad? Är det 10 extra produkter eller 100 helt andra priser? Kräver att användaren loggar in manuellt på willys.se och hämtar `https://www.willys.se/search/campaigns/online?q=2160&type=PERSONAL_SEGMENTED&page=0&size=500` i devtools och klistrar in svaret. Avgör om Fas C är värd tid.
+- **Fas B — Validering:** Hur ser `PERSONAL_SEGMENTED`-svaret faktiskt ut när man är inloggad? Kräver att användaren loggar in manuellt på willys.se och hämtar `https://www.willys.se/search/campaigns/online?q=2160&type=PERSONAL_SEGMENTED&page=0&size=500` i devtools och klistrar in svaret. Avgör om Fas C är värd tid.
 - **Fas C — Automatiseringsväg** (välj baserat på A+B):
   - Väg 1: Manuell cookie-export → Vercel env var (lätt, skört, cookies går ut efter veckor)
   - Väg 2: Scripted email/password-login (medelsvårt, bara om Willys tillåter lösenord)
