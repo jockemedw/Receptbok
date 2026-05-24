@@ -3390,9 +3390,13 @@ html.auth-required body {
   font-variant-numeric: tabular-nums;
 }
 
+.auth-back-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
 .auth-back {
-  display: block;
-  margin: 12px auto 0;
   background: none;
   border: none;
   color: var(--lichen);
@@ -3401,6 +3405,11 @@ html.auth-required body {
   padding: 4px 0;
 }
 
-.auth-back:hover {
+.auth-back:hover:not(:disabled) {
   color: var(--forest);
+}
+
+.auth-back:disabled {
+  color: var(--birch);
+  cursor: default;
 }
