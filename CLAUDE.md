@@ -11,7 +11,7 @@ Browser → Vercel /api/generate → Deterministisk receptväljare (JS) → GitH
 - **Backend:** Vercel serverless `/api/generate` — tar emot inställningar, filtrerar recept, väljer deterministiskt, sparar JSON till GitHub
 - **Data:** `recipes.json` (källa), `weekly-plan.json`, `shopping-list.json`, `recipe-history.json`, `plan-archive.json`, `custom-days.json` — alla i repot
 - **Secrets:** `GITHUB_PAT` (contents:write) i Vercel env vars
-- **Autentisering:** Ingen — familjeapp med okänd URL
+- **Autentisering:** Lösenordsbaserad via Supabase Auth. Ny registrering avstängd — nya familjemedlemmar läggs till manuellt i `household_members` + Supabase-dashboarden
 - **AI-kostnad vid import** — receptimport via foto och URL-fallback använder Google Gemini API (gratistier). Receptval är fortfarande kostnadsfritt och deterministiskt.
 
 ## Designprinciper (följ alltid)
@@ -118,7 +118,15 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 64 (2026-05-24) — Fas 3 klar + städning av öppna utredningar
+### Senaste session — Session 65 (2026-05-25) — Auth-fix: Amanda tillagd + registrering stängd
+
+- **Supabase CLI installerad** (v2.101.0 via npm).
+- **Rotorsak identifierad:** `amanda.weimar@gmail.com` saknades i `household_members`-tabellen. Hade konto med lösenord satt, men `getHouseholdId()` returnerade null → "Kunde inte hitta hushållsinformation."
+- **Fix:** Amanda tillagd i `household_members` som `owner` på hushåll `71e41d47` via Supabase MCP. Inga kodändringar behövdes — RLS och auth-gate var intakta.
+- **Ny registrering avstängd** i Supabase-dashboarden (Authentication → Email → "Enable email signups" = off). Förhindrar att externa skapar konton via anon-nyckeln som syns i källkoden.
+- **Kvar (frivilligt):** "Glömt lösenord"-länk i `auth-gate.js` + unika lösenord per person.
+
+### Session 64 (2026-05-24) — Fas 3 klar + städning av öppna utredningar
 
 - **`GEMINI_SCHEMA_PROMPT` utökat** med enhetskonverteringsinstruktioner: cups→dl, tbsp→msk, tsp→tsk, oz→g, lb→g, 1 stick butter=113g smör, °F→°C-tabell. Ingrediensöversättningar: heavy cream→vispgrädde, all-purpose flour→vetemjöl, baking soda→bikarbonat, baking powder→bakpulver, cilantro→koriander, arugula→rucola m.fl. Gäller nu för Gemini-fallback och fotoimport direkt.
 - **`postProcessForeignRecipe(recipe, apiKey)`** — ny funktion i `api/import-recipe.js`. Kallas efter `extractJsonLd()` om URL-domänen inte slutar på `.se` och `GOOGLE_API_KEY` är konfigurerad. Kör Gemini med en dedikerad `CONVERSION_PROMPT` och slår tillbaka konverterade `title`/`ingredients`/`instructions` mot originalet. Misslyckas Gemini → returneras originalet utan konvertering (graceful degradation).
