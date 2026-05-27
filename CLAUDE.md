@@ -118,7 +118,16 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 67 (2026-05-27) — Buggfix: dubbel Matsedeln-rubrik
+### Senaste session — Session 68 (2026-05-27) — Tidslinje-UX: matsedel-gruppering, kalender-datum, arkivkollaps
+
+- **Matsedel-gruppruta (sticky etikett):** Ersatte absolut-positionerad `.plan-group-backdrop` med en vanlig flex-behållare `.plan-group` som omsluter matsedelns `.timeline-day`-element. Etiketten ("Matsedel 9 maj – 31 maj") har `position: sticky; left: 16px` och följer horisontell scroll utan JS-lyssnare — samma mekanism som receptlistans sektionsrubriker vertikalt. Bakgrundsfärg `--moss-soft` (#e3eadd), etikettfärg `--lichen-deep`.
+- **Kalender-stil datum:** Veckodag + datum lyftes ur korten till en `.timeline-day-date`-etikett ovanför varje kort. Korten visar nu bara recepttitel och badges. `is-today` / `is-past` / `is-weekend` / `archive-day` läggs på `.timeline-day`-wrappern → CSS styr färg. Idag = rostfärg + fetstil, helg = rostfärg, passerade = dämpad.
+- **Tillagningstid på kort:** `recipe.time` visas diskret under recepttiteln som `.week-day-time` (0.62rem, text-muted).
+- **Arkivkollaps:** Arkivdagar döljs som standard (`archive-collapsed`-klass på `#weekGrid`). "Historik (N)"-chip i nav expanderar/kollapserar. `TIMELINE_DAYS_CAP`-beräkning utökad så arkivplaner > 45 dagar bakåt inkluderas i DOM (max 365d). **OBS:** Chipsen syns bara när arkivdagar inte överlappas av aktiv plan — i nuläget täcker aktiv plan (9–31 maj) samma datum som arkivet (9–20 maj), så chipsen döljs. Dyker upp naturligt vid nästa plangeneration.
+- **"Ändra dag"-disclosure:** Knappar i dag-panelen (byt recept, hoppa över, byt dag) samlas under en `<details class="day-actions-details">`-sektion. Receptinnehållet är nu primärt fokus, ändra-funktionerna sekundära.
+- **Cache-bust:** `css/styles.css?v=83`, `js/app.js?v=74`.
+
+### Session 67 (2026-05-27) — Buggfix: dubbel Matsedeln-rubrik
 
 - **Dubblerad rubrik borttagen:** `content-heading` lades till i Session 66 men den gamla `<h2 class="section-title">Matsedeln</h2>` inne i `#weekContent` togs aldrig bort → dubbla rubriker på mobil. Fix: tog bort den gamla raden i `index.html`. Cache-bust v=70→71.
 
