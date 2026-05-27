@@ -1164,7 +1164,6 @@
     letter-spacing: 0.05em;
     text-transform: uppercase;
     z-index: 0;
-    transition: left 0.12s ease-out;
   }
 
   .timeline-day {
