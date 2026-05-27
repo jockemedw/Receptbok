@@ -118,7 +118,7 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 65 (2026-05-25) — Auth-fix: Amanda tillagd + registrering stängd
+### Senaste session — Session 66 (2026-05-27) — Desktop-navigering: ikon-tabs + sökdropdown + sidrubriker
 
 - **Supabase CLI installerad** (v2.101.0 via npm).
 - **Rotorsak identifierad:** `amanda.weimar@gmail.com` saknades i `household_members`-tabellen. Hade konto med lösenord satt, men `getHouseholdId()` returnerade null → "Kunde inte hitta hushållsinformation."
