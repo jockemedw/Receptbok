@@ -1146,15 +1146,27 @@
     position: relative;
   }
 
-  .plan-group-backdrop {
-    position: absolute;
-    border-radius: 16px;
+  .plan-group {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
     background: #e8e0c8;
-    pointer-events: none;
-    padding: 4px 12px 0;
+    border-radius: 16px;
+    padding: 6px 10px 10px;
+  }
+
+  .plan-group-days {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 0.6rem;
   }
 
   .plan-backdrop-label {
+    position: sticky;
+    left: 16px;
+    align-self: flex-start;
+    margin-bottom: 4px;
     font-size: 0.62rem;
     font-weight: 700;
     color: #8a7060;
