@@ -1150,7 +1150,7 @@
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
-    background: #e8e0c8;
+    background: var(--moss-soft);
     border-radius: 16px;
     padding: 6px 10px 10px;
   }
@@ -1167,9 +1167,9 @@
     left: 16px;
     align-self: flex-start;
     margin-bottom: 4px;
-    font-size: 0.62rem;
+    font-size: 0.72rem;
     font-weight: 700;
-    color: #8a7060;
+    color: var(--lichen-deep);
     white-space: nowrap;
     pointer-events: none;
     letter-spacing: 0.05em;
