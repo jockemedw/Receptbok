@@ -1143,6 +1143,15 @@
     width: max-content;
     padding: 0.25rem 0;
     align-items: flex-end;
+    position: relative;
+  }
+
+  .plan-group-backdrop {
+    position: absolute;
+    border-radius: 16px;
+    background: #e8e0c8;
+    pointer-events: none;
+    z-index: 0;
   }
 
   .timeline-day {

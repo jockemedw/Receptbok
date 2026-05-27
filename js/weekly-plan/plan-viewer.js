@@ -1098,6 +1098,7 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
       centerOnDate(null, { smooth: false });
     }
     updateTimelineFades();
+    renderPlanBackdrop(hasActivePlan);
   });
 
   initTimelineFadeListener();
@@ -1145,6 +1146,34 @@ export async function loadWeeklyPlan() {
     document.getElementById('weekLoading').style.display = 'none';
     document.getElementById('weekNoData').style.display  = '';
   }
+}
+
+// ── Matsedel-bakgrundsplatta ───────────────────────────────────────────────────
+
+function renderPlanBackdrop(hasActivePlan) {
+  const grid = document.getElementById('weekGrid');
+  if (!grid) return;
+  grid.querySelector('.plan-group-backdrop')?.remove();
+  if (!hasActivePlan) return;
+
+  const cards = grid.querySelectorAll('.week-day-card.plan-active, .week-day-card.plan-pending');
+  if (!cards.length) return;
+
+  const days = Array.from(cards).map(c => c.closest('.timeline-day')).filter(Boolean);
+  const first = days[0];
+  const last = days[days.length - 1];
+  if (!first || !last) return;
+
+  const PAD_H = 10, PAD_TOP = 8, PAD_BOTTOM = 10;
+  const left   = first.offsetLeft  - PAD_H;
+  const top    = first.offsetTop   - PAD_TOP;
+  const width  = (last.offsetLeft + last.offsetWidth)  - first.offsetLeft + PAD_H * 2;
+  const height = (last.offsetTop  + last.offsetHeight) - first.offsetTop  + PAD_TOP + PAD_BOTTOM;
+
+  const backdrop = document.createElement('div');
+  backdrop.className = 'plan-group-backdrop';
+  backdrop.style.cssText = `left:${left}px;top:${top}px;width:${width}px;height:${height}px`;
+  grid.prepend(backdrop);
 }
 
 // ── Egen planering (custom days) ──────────────────────────────────────────────
