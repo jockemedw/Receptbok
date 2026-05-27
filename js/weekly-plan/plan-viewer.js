@@ -1098,7 +1098,7 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
       centerOnDate(null, { smooth: false });
     }
     updateTimelineFades();
-    renderPlanBackdrop(hasActivePlan);
+    renderPlanBackdrop(hasActivePlan ? plan : null);
   });
 
   initTimelineFadeListener();
@@ -1150,11 +1150,14 @@ export async function loadWeeklyPlan() {
 
 // ── Matsedel-bakgrundsplatta ───────────────────────────────────────────────────
 
-function renderPlanBackdrop(hasActivePlan) {
+function renderPlanBackdrop(plan) {
   const grid = document.getElementById('weekGrid');
   if (!grid) return;
   grid.querySelector('.plan-group-backdrop')?.remove();
-  if (!hasActivePlan) return;
+  grid.querySelector('.plan-backdrop-label')?.remove();
+  const wrap = document.querySelector('.timeline-wrap');
+  wrap?._planLabelCleanup?.();
+  if (!plan) return;
 
   const cards = grid.querySelectorAll('.week-day-card.plan-active, .week-day-card.plan-pending');
   if (!cards.length) return;
@@ -1165,15 +1168,37 @@ function renderPlanBackdrop(hasActivePlan) {
   if (!first || !last) return;
 
   const PAD_H = 10, PAD_TOP = 8, PAD_BOTTOM = 10;
-  const left   = first.offsetLeft  - PAD_H;
-  const top    = first.offsetTop   - PAD_TOP;
-  const width  = (last.offsetLeft + last.offsetWidth)  - first.offsetLeft + PAD_H * 2;
-  const height = (last.offsetTop  + last.offsetHeight) - first.offsetTop  + PAD_TOP + PAD_BOTTOM;
+  const bdLeft   = first.offsetLeft  - PAD_H;
+  const bdTop    = first.offsetTop   - PAD_TOP;
+  const bdWidth  = (last.offsetLeft + last.offsetWidth)  - first.offsetLeft + PAD_H * 2;
+  const bdHeight = (last.offsetTop  + last.offsetHeight) - first.offsetTop  + PAD_TOP + PAD_BOTTOM;
 
   const backdrop = document.createElement('div');
   backdrop.className = 'plan-group-backdrop';
-  backdrop.style.cssText = `left:${left}px;top:${top}px;width:${width}px;height:${height}px`;
+  backdrop.style.cssText = `left:${bdLeft}px;top:${bdTop}px;width:${bdWidth}px;height:${bdHeight}px`;
   grid.prepend(backdrop);
+
+  if (!plan.startDate || !plan.endDate || !wrap) return;
+
+  const label = document.createElement('div');
+  label.className = 'plan-backdrop-label';
+  label.textContent = `Matsedel  ${fmtShort(plan.startDate)} – ${fmtShort(plan.endDate)}`;
+  label.style.top = (bdTop + 5) + 'px';
+  grid.prepend(label);
+
+  const LABEL_PAD = 12;
+  const updateLabelPos = () => {
+    const labelW = label.offsetWidth;
+    const target = wrap.scrollLeft + LABEL_PAD;
+    const clamped = Math.max(
+      bdLeft + LABEL_PAD,
+      Math.min(bdLeft + bdWidth - labelW - LABEL_PAD, target)
+    );
+    label.style.left = clamped + 'px';
+  };
+  updateLabelPos();
+  wrap.addEventListener('scroll', updateLabelPos);
+  wrap._planLabelCleanup = () => wrap.removeEventListener('scroll', updateLabelPos);
 }
 
 // ── Egen planering (custom days) ──────────────────────────────────────────────

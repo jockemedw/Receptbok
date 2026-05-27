@@ -1154,6 +1154,18 @@
     z-index: 0;
   }
 
+  .plan-backdrop-label {
+    position: absolute;
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: #8a7060;
+    white-space: nowrap;
+    pointer-events: none;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    z-index: 0;
+  }
+
   .timeline-day {
     display: flex;
     flex-direction: column;
