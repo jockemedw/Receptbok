@@ -609,7 +609,13 @@ export function openWeekRecipe(recipeId, title, cardEl) {
   const customNote = isCustom
     ? `<p class="readonly-note">✏️ Egen planering — inget recept från matsedeln.</p>`
     : '';
-  const actionBtns = replaceBtns + dayActionBtns + customEditBtn + readOnlyNote + customNote;
+  const hasActions = !!(replaceBtns || dayActionBtns || customEditBtn);
+  const actionsDetails = hasActions ? `
+    <details class="day-actions-details">
+      <summary>Ändra dag</summary>
+      <div class="day-actions-inner">${replaceBtns}${dayActionBtns}${customEditBtn}</div>
+    </details>` : '';
+  const actionBtns = actionsDetails + readOnlyNote + customNote;
 
   panel.innerHTML = `<div class="detail-inner">
     <div class="week-recipe-header">
@@ -922,10 +928,19 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
   window.planConfirmed = confirmed;
   const pendingPlan = hasActivePlan && !confirmed;
 
-  // ── Nav-chips (Idag + Matsedel →) ──────────────────────────────────────────
   const navWrap = document.getElementById('timelineNav');
+  const timeline = buildTimeline(plan, archiveData, customData);
+
+  // ── Nav-chips (Historik · Idag · Matsedel →) ───────────────────────────────
   if (navWrap) {
-    const chips = ['<button class="timeline-chip" onclick="centerOnDate(null, { smooth: true })">Idag</button>'];
+    if (window._archiveExpanded === undefined) window._archiveExpanded = false;
+    const archiveDayCount = timeline.filter(d => d.isArchive).length;
+    const chips = [];
+    if (archiveDayCount > 0) {
+      const archiveLbl = window._archiveExpanded ? 'Dölj historik' : `Historik (${archiveDayCount})`;
+      chips.push(`<button class="timeline-chip timeline-chip-archive" onclick="toggleArchive()">${archiveLbl}</button>`);
+    }
+    chips.push('<button class="timeline-chip" onclick="centerOnDate(null, { smooth: true })">Idag</button>');
     if (hasActivePlan && plan.startDate) {
       const planLabel = pendingPlan ? 'Ny matsedel →' : 'Matsedel →';
       chips.push(`<button class="timeline-chip timeline-chip-plan${pendingPlan ? ' pending' : ''}" onclick="centerOnDate('${plan.startDate}', { smooth: true })">${planLabel}</button>`);
@@ -933,8 +948,6 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
     navWrap.innerHTML = chips.join('');
     navWrap.style.display = '';
   }
-
-  const timeline = buildTimeline(plan, archiveData, customData);
   window._timelineByDate = Object.fromEntries(timeline.map((d) => [d.date, d]));
   let prevPlanId = null;
   let prevMonth = null;
@@ -969,6 +982,7 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
     if (d.isToday) timelineDayClsParts.push('is-today');
     if (d.isPast) timelineDayClsParts.push('is-past');
     if (d.isWeekend) timelineDayClsParts.push('is-weekend');
+    if (d.isArchive) timelineDayClsParts.push('archive-day');
     const timelineDayCls = timelineDayClsParts.join(' ');
 
     const clsParts = ['week-day-card'];
@@ -1081,6 +1095,7 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
         data-readonly="${readOnly ? '1' : ''}" data-past="${d.isPast ? '1' : ''}"
         onclick="openWeekRecipe(${rid || 'null'}, '${safeTitle}', this)">
         <div class="week-day-recipe">${d.recipe}</div>
+        ${recipe?.time ? `<div class="week-day-time">${recipe.time} min</div>` : ''}
         ${savingBadge}
         ${pendingBadge}
         ${swapBtn}
@@ -1099,6 +1114,7 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
       centerOnDate(null, { smooth: false });
     }
     updateTimelineFades();
+    document.getElementById('weekGrid')?.classList.toggle('archive-collapsed', !window._archiveExpanded);
     wrapPlanGroup(hasActivePlan ? plan : null);
   });
 
@@ -1424,6 +1440,17 @@ window.swapDays            = swapDays;
 window.replaceRecipe       = replaceRecipe;
 window.openWeekRecipe      = openWeekRecipe;
 window.freeDay             = freeDay;
+window.toggleArchive       = toggleArchive;
+
+function toggleArchive() {
+  window._archiveExpanded = !window._archiveExpanded;
+  document.getElementById('weekGrid')?.classList.toggle('archive-collapsed', !window._archiveExpanded);
+  const chip = document.querySelector('.timeline-chip-archive');
+  if (chip) {
+    const count = document.querySelectorAll('.timeline-day.archive-day').length;
+    chip.textContent = window._archiveExpanded ? 'Dölj historik' : `Historik (${count})`;
+  }
+}
 window.openSavingPopover   = openSavingPopover;
 function updateTimelineFades() {
   const outer = document.getElementById('timelineOuter');

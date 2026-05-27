@@ -1043,6 +1043,12 @@
     background: var(--rust);
     opacity: 0.9;
   }
+  .timeline-chip-archive {
+    color: var(--text-muted);
+    border-color: var(--birch-soft);
+  }
+  .timeline-chip-archive:hover { color: var(--forest); border-color: var(--forest); }
+  .timeline.archive-collapsed .archive-day { display: none; }
   @keyframes chipPulse {
     0%, 100% { box-shadow: 0 0 0 0 rgba(194,82,43,0.4); }
     50%      { box-shadow: 0 0 0 6px rgba(194,82,43,0); }
@@ -1898,6 +1904,41 @@
     background: var(--moss-soft);
   }
 
+  /* ── "Ändra dag"-disclosure i detaljpanelen ── */
+  .day-actions-details {
+    margin-top: 1.2rem;
+    border-top: 1px solid var(--border);
+    padding-top: 0.75rem;
+  }
+  .day-actions-details summary {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    user-select: none;
+  }
+  .day-actions-details summary::-webkit-details-marker { display: none; }
+  .day-actions-details summary::after {
+    content: '›';
+    font-size: 1.1rem;
+    line-height: 1;
+    transition: transform 0.15s;
+    display: inline-block;
+  }
+  .day-actions-details[open] summary::after { transform: rotate(90deg); }
+  .day-actions-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-top: 0.6rem;
+  }
+  .day-actions-inner .replace-recipe-btn { margin-top: 0; }
+  .day-actions-inner .day-action-btns { border-top: none; margin-top: 0; padding-top: 0; }
+
   /* ── Dagväljare (pre-generering) ── */
   .day-toggles {
     display: flex;
@@ -1986,6 +2027,13 @@
     overflow: hidden;
     text-overflow: ellipsis;
     flex: 1;
+  }
+
+  .week-day-time {
+    font-size: 0.62rem;
+    color: var(--text-muted);
+    margin-top: 3px;
+    letter-spacing: 0.02em;
   }
 
   .week-meta {
