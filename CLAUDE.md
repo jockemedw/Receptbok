@@ -118,7 +118,11 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 66 (2026-05-27) — Desktop-navigering: ikon-tabs + sökdropdown + sidrubriker
+### Senaste session — Session 67 (2026-05-27) — Buggfix: dubbel Matsedeln-rubrik
+
+- **Dubblerad rubrik borttagen:** `content-heading` lades till i Session 66 men den gamla `<h2 class="section-title">Matsedeln</h2>` inne i `#weekContent` togs aldrig bort → dubbla rubriker på mobil. Fix: tog bort den gamla raden i `index.html`. Cache-bust v=70→71.
+
+### Session 66 (2026-05-27) — Desktop-navigering: ikon-tabs + sökdropdown + sidrubriker
 
 - **Supabase CLI installerad** (v2.101.0 via npm).
 - **Rotorsak identifierad:** `amanda.weimar@gmail.com` saknades i `household_members`-tabellen. Hade konto med lösenord satt, men `getHouseholdId()` returnerade null → "Kunde inte hitta hushållsinformation."
