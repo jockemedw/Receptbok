@@ -9,7 +9,7 @@
 <title>Receptboken</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=67">
+<link rel="stylesheet" href="css/styles.css?v=68">
 <style>/* tömd — CSS flyttad till css/styles.css */
 
 </style>
@@ -19,6 +19,9 @@
 <header>
   <div class="header-bar">
     <h1>Recept<em>boken</em></h1>
+    <button class="header-search-btn" id="headerSearchBtn" onclick="toggleHeaderSearch()" aria-label="Sök recept">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+    </button>
   </div>
   <nav class="header-nav">
     <button class="header-tab active" id="tabRecept" data-tab="recept" onclick="switchTab('recept')">
@@ -34,7 +37,7 @@
       <span class="header-tab-label">Inköpslista</span>
     </button>
   </nav>
-  <div class="header-search-area" id="headerSearchArea">
+  <div class="header-search-area hidden" id="headerSearchArea">
     <div class="search-wrap">
       <span class="search-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
       <input id="search" type="search" placeholder="Sök på namn, ingrediens, tagg…" autocomplete="off">
@@ -50,6 +53,9 @@
   <div class="custom-pick-banner" id="customPickBanner">
     Välj recept till <strong id="customPickBannerDay"></strong> — tryck på ett recept nedan
     <button class="replace-banner-cancel" onclick="exitCustomPickMode()">Avbryt</button>
+  </div>
+  <div class="content-heading">
+    <h2 class="content-heading-title">Recept</h2>
   </div>
   <p class="results-info" id="resultsInfo"></p>
 
