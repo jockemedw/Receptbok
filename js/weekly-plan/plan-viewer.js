@@ -966,6 +966,9 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
     // tom custom-day. Med recept eller anteckning → normal bredd.
     const hasContent = !!d.recipeId || (d.isCustom && (d.customNote || d.customRecipeId));
     if (!hasContent) timelineDayClsParts.push('slim');
+    if (d.isToday) timelineDayClsParts.push('is-today');
+    if (d.isPast) timelineDayClsParts.push('is-past');
+    if (d.isWeekend) timelineDayClsParts.push('is-weekend');
     const timelineDayCls = timelineDayClsParts.join(' ');
 
     const clsParts = ['week-day-card'];
@@ -985,10 +988,10 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
     if (isPendingActive) clsParts.push('plan-pending');
     const cls = clsParts.join(' ');
 
-    const dot = d.isToday ? '<span class="today-dot"></span>' : '';
     const holidayDot = d.holiday
       ? `<span class="holiday-dot" title="${d.holiday}" aria-label="${d.holiday}"></span>`
       : '';
+    const dateRow = `<div class="timeline-day-date">${d.dayShort} ${d.dayNum}${holidayDot}</div>`;
     const pendingBadge = isPendingActive
       ? '<span class="pending-badge" title="Ingår i matsedeln du ska godkänna">NY</span>'
       : '';
@@ -1001,10 +1004,10 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
         const safeTitle = title.replace(/'/g, "\\'");
         return `<div class="${timelineDayCls}">
           ${topRow}
+          ${dateRow}
           <div class="${cls} custom-has-recipe" data-date="${d.date}" data-day="${d.day}"
             data-recipeid="${d.customRecipeId}" data-readonly="1" data-custom="1"
             onclick="openWeekRecipe(${d.customRecipeId}, '${safeTitle}', this)">
-            <div class="week-day-name">${d.dayShort} ${d.dayNum}${dot}${holidayDot}</div>
             <div class="week-day-recipe">${ICON_POT} ${title}</div>
           </div>
         </div>`;
@@ -1013,9 +1016,9 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
       const noteEsc = (d.customNote || '').replace(/"/g, '&quot;');
       return `<div class="${timelineDayCls}">
         ${topRow}
+        ${dateRow}
         <div class="${cls}" data-date="${d.date}" data-day="${d.day}"
           onclick="openCustomDay('${d.date}', '${d.day}')">
-          <div class="week-day-name">${d.dayShort} ${d.dayNum}${dot}${holidayDot}</div>
           <div class="week-day-recipe custom-note" title="${noteEsc}">${d.customNote ? esc(d.customNote) : '✏️ Egen'}</div>
         </div>
       </div>`;
@@ -1034,8 +1037,8 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
       }
       return `<div class="${timelineDayCls}">
         ${topRow}
+        ${dateRow}
         <div class="${cls}" data-date="${d.date}" data-day="${d.day}"${onclick}>
-          <div class="week-day-name">${d.dayShort} ${d.dayNum}${dot}${holidayDot}</div>
           <div class="week-day-recipe blocked-recipe-text">${label}</div>
         </div>
       </div>`;
@@ -1072,11 +1075,11 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
     const readOnly = d.isArchive;
     return `<div class="${timelineDayCls}">
       ${topRow}
+      ${dateRow}
       <div class="${cls}"${borderStyle}
         data-recipeid="${rid}" data-date="${d.date}" data-day="${d.day}"
         data-readonly="${readOnly ? '1' : ''}" data-past="${d.isPast ? '1' : ''}"
         onclick="openWeekRecipe(${rid || 'null'}, '${safeTitle}', this)">
-        <div class="week-day-name">${d.dayShort} ${d.dayNum}${dot}${holidayDot}</div>
         <div class="week-day-recipe">${d.recipe}</div>
         ${savingBadge}
         ${pendingBadge}

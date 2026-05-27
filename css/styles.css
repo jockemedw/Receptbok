@@ -1218,6 +1218,33 @@
     line-height: 1.15;
   }
 
+  /* Datumetikett ovanför kortet */
+  .timeline-day-date {
+    font-size: 0.68rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--forest);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    width: 150px;
+    padding-left: 2px;
+    margin-bottom: 3px;
+  }
+  .timeline-day.slim .timeline-day-date { width: 72px; }
+  .timeline-day.is-today .timeline-day-date {
+    color: var(--rust);
+    font-weight: 700;
+  }
+  .timeline-day.is-past .timeline-day-date {
+    color: var(--text-muted);
+  }
+  .timeline-day.is-weekend .timeline-day-date {
+    color: var(--rust);
+    font-weight: 600;
+  }
+
   .timeline-month-tag {
     font-size: 0.7rem;
     font-weight: 600;
@@ -1470,11 +1497,6 @@
     background: #f3e8d4;
     border-color: #e5d3ae;
   }
-  .week-day-card.weekend .week-day-name {
-    color: var(--rust);
-    font-weight: 700;
-    opacity: 1;
-  }
 
   .holiday-dot {
     display: inline-block;
@@ -1537,7 +1559,6 @@
     background: var(--clay);
   }
 
-  .week-day-card.today .week-day-name { color: var(--rust); }
 
   .week-day-card:hover {
     opacity: 1;
