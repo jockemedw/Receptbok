@@ -913,12 +913,10 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
   document.getElementById('weekNoData').style.display  = 'none';
   document.getElementById('weekContent').style.display = '';
 
-  let metaText = '';
-  if (hasActivePlan && plan.startDate && plan.endDate)
-    metaText = `Aktiv matsedel: ${fmtShort(plan.startDate)} – ${fmtShort(plan.endDate)}`;
-  else if (!hasActivePlan)
-    metaText = 'Ingen aktiv matsedel — generera en ny';
-  document.getElementById('weekMeta').textContent = metaText;
+  const metaEl = document.getElementById('weekMeta');
+  if (metaEl) {
+    metaEl.textContent = hasActivePlan ? '' : 'Ingen aktiv matsedel — generera en ny';
+  }
 
   const confirmed = !!plan?.confirmedAt;
   window.planConfirmed = confirmed;

@@ -1014,7 +1014,7 @@
   .timeline-nav {
     display: flex;
     gap: 0.5rem;
-    padding: 0 1rem 0.1rem;
+    padding: 0.5rem 1rem 0.6rem;
     flex-wrap: wrap;
   }
   .timeline-chip {
@@ -1164,6 +1164,7 @@
     letter-spacing: 0.05em;
     text-transform: uppercase;
     z-index: 0;
+    transition: left 0.12s ease-out;
   }
 
   .timeline-day {
