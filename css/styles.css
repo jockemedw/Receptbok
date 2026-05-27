@@ -1151,14 +1151,10 @@
     border-radius: 16px;
     background: #e8e0c8;
     pointer-events: none;
-    z-index: 0;
+    padding: 4px 12px 0;
   }
 
   .plan-backdrop-label {
-    position: sticky;
-    left: 16px;
-    display: inline-block;
-    margin-top: 4px;
     font-size: 0.62rem;
     font-weight: 700;
     color: #8a7060;
