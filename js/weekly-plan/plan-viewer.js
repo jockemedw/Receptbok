@@ -93,7 +93,12 @@ function buildTimeline(plan, archive, customDays) {
     else back = Math.max(back, -d);
   }
 
-  back = Math.min(Math.max(back, 0), TIMELINE_DAYS_CAP);
+  // Arkivdagar kan gå längre tillbaka än normalt cap (de döljs av default)
+  const archiveBack = sortedArchive.length
+    ? Math.max(0, diffDaysIso(sortedArchive[0].startDate, todayIso))
+    : 0;
+  const backCap = Math.min(Math.max(archiveBack, TIMELINE_DAYS_CAP), 365);
+  back = Math.min(Math.max(back, 0), backCap);
   forward = Math.min(Math.max(forward, 0), TIMELINE_DAYS_CAP);
 
   const days = [];
