@@ -1185,17 +1185,18 @@ function renderPlanBackdrop(plan) {
   backdrop.after(label);
 
   const LABEL_PAD = 12;
+  label.style.left = '0px';
+  const labelW = label.offsetWidth;
   const updateLabelPos = () => {
-    const labelW = label.offsetWidth;
     const target = wrap.scrollLeft + LABEL_PAD;
     const clamped = Math.max(
       bdLeft + LABEL_PAD,
       Math.min(bdLeft + bdWidth - labelW - LABEL_PAD, target)
     );
-    label.style.left = clamped + 'px';
+    label.style.transform = `translateX(${clamped}px)`;
   };
   updateLabelPos();
-  wrap.addEventListener('scroll', updateLabelPos);
+  wrap.addEventListener('scroll', updateLabelPos, { passive: true });
   wrap._planLabelCleanup = () => wrap.removeEventListener('scroll', updateLabelPos);
 }
 
