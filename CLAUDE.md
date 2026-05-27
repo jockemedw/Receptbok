@@ -47,13 +47,13 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 
 ### Roadmap
 **Fas 1 — Extrapriser → receptförslag** (research klar → `docs/research-extrapriser.md`)
-- [x] 1A — Tjek/eTilbudsavis API — **utredd, otillräcklig** (endast 14% täckning)
-- [ ] 1B — ICA inofficiellt API — **hoppas över** (Willys räcker för Ekholmen-fallet)
-- [x] 1C — Willys API reverse engineering — **klart**: `GET /search/campaigns/online?q=<storeId>&type=PERSONAL_GENERAL&size=500` (ingen auth, ingen CSRF, ingen session). Store 2160 = Ekholmen → 199 erbjudanden
-- [ ] 1C2 — Willys+ medlemserbjudanden — **utforskning pågår** (Fas A/B/C, se Öppna utredningar)
-- [x] 1D — Matchningslogik **klar** (audit genomförd Session 35, rapport: `docs/match-audit-2026-04-19.md`). 53/62 recept matchar (upp från 51), 149 matches totalt (upp från 125), **spraygrädde-buggklassen eliminerad** via `CANON_REJECT_PATTERNS`. Priority 2-stemming implementerad via adjektiv-strip + token-scan + n-gram-fallback i `normalizeName`. Nya self-canons (aubergine/gurka/zucchini/paprika/chili/sallad) + utökad NON_FOOD_RE. 51 regressiontester i `tests/match.test.js` bevakade av PostToolUse-hook.
-- [x] 1E — UX-design — **beslutad** (se nedan)
-- [x] 1F — Implementation **klar och live-verifierad** (Session 51, 2026-05-10). `dry_run`-parameter verifierade hela pipelinen utan att röra veckoplan. Matchningsbuggar (smör→popcorn, rapsolja→sardeller) fixade via `CANON_REJECT_PATTERNS`. 51 assertions i match.test.js (upp från 44).
+- [x] 1A — Tjek/eTilbudsavis API — otillräcklig (14% täckning)
+- [ ] 1B — ICA inofficiellt API — hoppas över (Willys räcker)
+- [x] 1C — Willys API: `GET /search/campaigns/online?q=<storeId>&type=PERSONAL_GENERAL&size=500` (ingen auth). Store 2160 = Ekholmen → 199 erbjudanden
+- [ ] 1C2 — Willys+ medlemserbjudanden — utforskning pågår (se Öppna utredningar)
+- [x] 1D — Matchningslogik klar (Session 35, `docs/match-audit-2026-04-19.md`). 53/62 recept, 149 matches. `CANON_REJECT_PATTERNS` + n-gram-stemming. 51 assertions i `tests/match.test.js`.
+- [x] 1E — UX-design beslutad
+- [x] 1F — Implementation klar + live-verifierad (Session 51). `dry_run`-parameter, 51 assertions i match.test.js.
 
 **Fas 2 — Familjelärande algoritm**
 - [ ] 2A — Analysera befintlig data
@@ -61,40 +61,35 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 - [ ] 2C — Implementation + "Favoriter"-vy
 
 **Fas 3 — Internationell receptimport**
-- [x] 3A — Kartlägg format och sajter — **klart** (`docs/research-internationell-import.md`, Session 28). 7/18 sajter bot-blockerade (Cloudflare: allrecipes, seriouseats, bbcgoodfood, bonappetit, chefkoch, marmiton, foodnetwork). Budgetbytes verifierad med komplett JSON-LD. 5 sajter helt utan JSON-LD (jamieoliver, kochbar.de, essen-und-trinken, giallozafferano ×2) → Gemini-fallback behövs, och den finns redan.
-- [x] 3B — Konverteringsmodul **klar (Session 64)**. `GEMINI_SCHEMA_PROMPT` utökat med enhetskonverteringsregler (cups→dl, oz→g, °F→°C, heavy cream→vispgrädde, baking soda→bikarbonat m.fl.) — täcker Gemini-fallback + fotoimport direkt. Ny `postProcessForeignRecipe()` anropar Gemini för konvertering + översättning på JSON-LD-extraherade recept från icke-`.se`-domäner. `callGemini()` splittad i `callGeminiRaw()` för återanvändning. Prisannoteringar (`$0.17*`) strippas i `mapJsonLdToRecipe()`.
-- [x] 3C — Testa mot 10+ receptsidor — **live-verifierat (Session 64)**. budgetbytes.com (JSON-LD + imperial), kochbar.de (Gemini-fallback, tyska), jamieoliver.com (Gemini-fallback, engelska) — alla kom ut med svenska ingredienser och metriska enheter.
+- [x] 3A — Format + sajter kartlagda (Session 28, `docs/research-internationell-import.md`). 7/18 bot-blockerade. JSON-LD + Gemini-fallback.
+- [x] 3B — Konverteringsmodul klar (Session 64). `postProcessForeignRecipe()` + `callGeminiRaw()` + enhetskonvertering (cups→dl, °F→°C m.fl.) + ingrediensöversättning.
+- [x] 3C — Live-verifierat (Session 64): budgetbytes.com, kochbar.de, jamieoliver.com → svenska ingredienser + metriska enheter. **Fas 3 helt klar.**
 
-**Fas 4 — Automatisk varukorgsfyllning** (design klar, se `docs/superpowers/specs/2026-04-20-willys-dispatch-design.md`)
-- [x] 4A — Teknisk research (PoC verifierade endpoint, auth, CSRF-livslängd)
-- [x] 4B — Proof of concept (`scripts/willys-cart-poc.mjs`, session 36)
-- [x] 4C — UX-design + felhantering (klar i spec)
-- [x] 4D — Implementation **live-verifierad** (Session 39, 2026-04-25). Endpoint `/api/dispatch-to-willys` (GET=featureAvailable, POST=runDispatch). Tre nya shared-moduler: `willys-search.js`, `willys-cart-client.js`, `dispatch-matcher.js`. Full plan: `docs/superpowers/plans/2026-04-23-willys-dispatch.md`. 56 assertions i `tests/dispatch-to-willys.test.js` bevakade av PostToolUse-hook.
-- [x] 4E — Söknings-fallback **live-verifierad** (Session 39). Endpoint: `GET https://www.willys.se/search?q=<canon>`, publik. Canon-guard via befintlig `extractOfferCanon` + `CANON_REJECT_PATTERNS` löser vitlök→"Lök Vit"- och grädde→spraygrädde-buggar. Första live-dispatch (Kefir → Arla Cultura Kefir Naturell) lyckades.
-- [x] 4F — **Cookie-refresh-automatisering — implementation klar (Session 42, 2026-04-26).** Plan: `docs/superpowers/plans/2026-04-26-cookie-refresh-automation.md`. Chrome-extension fångar passivt cookies + CSRF vid willys.se-besök → POSTar till `/api/cookies/willys` → secret gist på GitHub. `dispatch-to-willys.js` läser via `secrets-store` med 5-min cache, fallback till env vars under övergång. Setup-instruktioner: `extension/README.md`. **Live-verifiering kvar** (kräver gist-skapande + Vercel env vars + extension-install).
+**Fas 4 — Automatisk varukorgsfyllning** (spec: `docs/superpowers/specs/2026-04-20-willys-dispatch-design.md`)
+- [x] 4A–4C — Research, PoC, UX-design klar
+- [x] 4D — Implementation live-verifierad (Session 39). `/api/dispatch-to-willys`, moduler: `willys-search.js`, `willys-cart-client.js`, `dispatch-matcher.js`. 56 assertions.
+- [x] 4E — Söknings-fallback live (Session 39). Publik `GET willys.se/search?q=<canon>`. Canon-guard via `CANON_REJECT_PATTERNS`.
+- [x] 4F — Cookie-refresh-automatisering klar (Session 42). Chrome-extension MV3 → secret gist → `secrets-store` (5-min cache). **Engångs-setup kvar** (se Öppna utredningar).
 
-**Fas 5 — App Store & monetisering** (marknadsanalys klar → `docs/marknadsanalys-2026-04.md`)
+**Fas 5 — App Store & monetisering** (`docs/marknadsanalys-2026-04.md`)
 - [x] Marknadsanalys
-- [x] 5A — Teknisk väg (PWA / Capacitor / React Native) — **klart** (`docs/research-teknisk-vag-app.md`, Session 28). **Rekommendation: Capacitor** (3–5 veckor). PWA blockas av Apple Guideline 4.2 ("repackaged website") och Safari-eviktion 7d förstör offline på iOS. RN kräver full omskrivning av alla ~11 frontend-moduler (8–16 veckor) — överdrivet för MVP. Capacitor: vanilla ES modules fungerar direkt, enkel build-step + Service Worker + Capacitor Preferences. Slutlig payment-väg (Stripe vs IAP) beror på Fas 5C.
+- [x] 5A — Rekommendation: Capacitor (3–5 v). PWA blockas iOS (Guideline 4.2), RN = full omskrivning. (`docs/research-teknisk-vag-app.md`)
 - [ ] 5B — Autentisering & datamodell
 - [ ] 5C — Kostnads- och intäktskalkyl
 
-**Fas 6 — Säsongsoptimering** (research + implementation klar, Session 52)
-- [x] 6A — Research: säsongstabell (~120 ingredienser × 12 månader) + analys av 264 recept → `docs/research-sasong.md`
-- [x] 6B — Taggning: 242/264 recept taggade med `seasons`-fält i `recipes.json`. 22 neutrala (konserverat/fryst-baserade).
-- [x] 6C — Algoritm: `applySeasonWeight()` i `selectRecipes()` — in-season 2x, neutral 1x, off-season 0.5x. Opt-in toggle `season_weight` i `/api/generate`.
-- [x] 6D — UI: "Säsongsanpassning"-toggle i inställningspanelen + säsongsfilter (vår/sommar/höst/vinter) i receptboken.
-- [x] 6E — Finjustering klar (Session 63): 3 uppenbara fel rättade i `recipes.json` + Supabase — ID 12 (`höst`→`höst,vinter`), ID 98 (`sommar`→`sommar,höst`), ID 172 (`höst`→`sommar,höst`).
+**Fas 6 — Säsongsoptimering** (klar, Session 52)
+- [x] 6A — Research: säsongstabell ~120 ingredienser × 12 månader → `docs/research-sasong.md`
+- [x] 6B — 242/264 recept taggade med `seasons`-fält. 22 neutrala.
+- [x] 6C — `applySeasonWeight()` i `selectRecipes()`: in-season 2x, neutral 1x, off-season 0.5x. Toggle `season_weight`.
+- [x] 6D — "Säsongsanpassning"-toggle i inställningar + säsongsfilter (vår/sommar/höst/vinter) i receptboken.
+- [x] 6E — 3 säsongstaggar rättade (Session 63): ID 12, 98, 172.
 
 **Fas 7 — Supabase-migration** ✅ **KLAR (Session 60, mergad till main 2026-05-23)**
-- [x] 7A — Tabellschema + RLS + households-tabell i Supabase
-- [x] 7B — Seedning: 264 recept + weekly-plan + shopping-list + arkiv + custom-days + dispatch-prefs via `scripts/migrate-to-supabase.mjs --commit`
-- [x] 7C steg 1 — `dualReadCheck()` i app.js (fire-and-forget, loggar diff i konsolen)
-- [x] 7C steg 2 — Preview-deploy verifierad, Supabase redirect-URL inlagd, magic-link auth testad
-- [x] 7C steg 3 — Frontend-omskrivning (Session 58, commit `7f92add`): `app.js` recept från Supabase, `recipe-editor.js` CRUD via Supabase, `shopping-list.js` mot `shopping_lists`/`shopping_items`, `plan-viewer.js` plan/arkiv/custom-days från Supabase
-- [x] 7C steg 4 — Realtime-subscriptions för `meal_days` + `shopping_items` — **klar (Session 63)**
-- [x] 7D — Backend-omskrivning klar (Session 59): alla API-endpoints skriver till Supabase
-- [x] 7E — Acceptanstester gröna + cutover mergad till main (Session 60)
+- [x] 7A — Tabellschema + RLS + households
+- [x] 7B — Seedning: 264 recept + alla JSON-filer via `scripts/migrate-to-supabase.mjs --commit`
+- [x] 7C steg 1–4 — Frontend-omskrivning + realtime-subscriptions för `meal_days` + `shopping_items` (Sessions 58, 63)
+- [x] 7D — Backend: alla API-endpoints mot Supabase (Session 59)
+- [x] 7E — Cutover mergad till main (Session 60, commit `45a6433`). 671 assertions.
 
 ### Kända buggar
 Inga just nu.
@@ -103,13 +98,9 @@ Inga just nu.
 **Cookie-refresh-automatisering (Fas 4F) — ✅ IMPLEMENTATION KLAR, ⏳ ENGÅNGS-SETUP KVAR** (Session 42, 2026-04-26). Chrome-extension MV3 + `/api/cookies/willys` + secret gist + dispatch-fallback. Väntar på: (1) skapa secret gist, (2) sätt `GITHUB_GIST_PAT` + gist-ID i Vercel env vars, (3) installera extensionen i Chrome. Instruktioner: `extension/README.md`.
 
 **Willys+ medlemserbjudanden — 3-fas utforskning:**
-- **Fas A — Rekon:** Vilka inloggningsmetoder erbjuder willys.se? BankID? E-post+lösenord? "Kom ihåg mig"-cookies? Mobilapp-OAuth? Claude läser login-sidan.
-- **Fas B — Validering:** Hur ser `PERSONAL_SEGMENTED`-svaret faktiskt ut när man är inloggad? Kräver att användaren loggar in manuellt på willys.se och hämtar `https://www.willys.se/search/campaigns/online?q=2160&type=PERSONAL_SEGMENTED&page=0&size=500` i devtools och klistrar in svaret. Avgör om Fas C är värd tid.
-- **Fas C — Automatiseringsväg** (välj baserat på A+B):
-  - Väg 1: Manuell cookie-export → Vercel env var (lätt, skört, cookies går ut efter veckor)
-  - Väg 2: Scripted email/password-login (medelsvårt, bara om Willys tillåter lösenord)
-  - Väg 3: BankID — **dödsvägen**, ingen lovlig automatisering
-  - Väg 4: Acceptera anonyma priser, märk UI:t tydligt ("dina faktiska priser kan vara lägre")
+- **Fas A — Rekon:** Vilka inloggningsmetoder erbjuder willys.se? BankID? E-post+lösenord? "Kom ihåg mig"-cookies? Mobilapp-OAuth?
+- **Fas B — Validering:** Logga in manuellt, hämta `https://www.willys.se/search/campaigns/online?q=2160&type=PERSONAL_SEGMENTED&page=0&size=500` i devtools och klistra in svaret. Avgör om Fas C är värd tid.
+- **Fas C — Automatiseringsväg:** Väg 1: manuell cookie-export (lätt, skört). Väg 2: scripted login (medelsvårt). Väg 3: BankID — dödsvägen. Väg 4: acceptera anonyma priser, märk UI:t.
 
 ### Idéer (användarens)
 *(Inga öppna idéer just nu — Mobil bottom-tab-nav implementerad i Session 41.)*
@@ -120,269 +111,146 @@ Inga just nu.
 
 ### Senaste session — Session 68 (2026-05-27) — Tidslinje-UX: matsedel-gruppering, kalender-datum, arkivkollaps
 
-- **Matsedel-gruppruta (sticky etikett):** Ersatte absolut-positionerad `.plan-group-backdrop` med en vanlig flex-behållare `.plan-group` som omsluter matsedelns `.timeline-day`-element. Etiketten ("Matsedel 9 maj – 31 maj") har `position: sticky; left: 16px` och följer horisontell scroll utan JS-lyssnare — samma mekanism som receptlistans sektionsrubriker vertikalt. Bakgrundsfärg `--moss-soft` (#e3eadd), etikettfärg `--lichen-deep`.
-- **Kalender-stil datum:** Veckodag + datum lyftes ur korten till en `.timeline-day-date`-etikett ovanför varje kort. Korten visar nu bara recepttitel och badges. `is-today` / `is-past` / `is-weekend` / `archive-day` läggs på `.timeline-day`-wrappern → CSS styr färg. Idag = rostfärg + fetstil, helg = rostfärg, passerade = dämpad.
-- **Tillagningstid på kort:** `recipe.time` visas diskret under recepttiteln som `.week-day-time` (0.62rem, text-muted).
-- **Arkivkollaps:** Arkivdagar döljs som standard (`archive-collapsed`-klass på `#weekGrid`). "Historik (N)"-chip i nav expanderar/kollapserar. `TIMELINE_DAYS_CAP`-beräkning utökad så arkivplaner > 45 dagar bakåt inkluderas i DOM (max 365d). **OBS:** Chipsen syns bara när arkivdagar inte överlappas av aktiv plan — i nuläget täcker aktiv plan (9–31 maj) samma datum som arkivet (9–20 maj), så chipsen döljs. Dyker upp naturligt vid nästa plangeneration.
-- **"Ändra dag"-disclosure:** Knappar i dag-panelen (byt recept, hoppa över, byt dag) samlas under en `<details class="day-actions-details">`-sektion. Receptinnehållet är nu primärt fokus, ändra-funktionerna sekundära.
+- **Matsedel-gruppruta (sticky etikett):** Ersatte absolut-positionerad `.plan-group-backdrop` med en vanlig flex-behållare `.plan-group` som omsluter matsedelns `.timeline-day`-element. Etiketten ("Matsedel 9 maj – 31 maj") har `position: sticky; left: 16px` och följer horisontell scroll utan JS-lyssnare. Bakgrundsfärg `--moss-soft`, etikettfärg `--lichen-deep`.
+- **Kalender-stil datum:** Veckodag + datum lyftes ur korten till `.timeline-day-date`-etikett ovanför varje kort. `is-today` / `is-past` / `is-weekend` / `archive-day` på `.timeline-day`-wrappern → CSS styr färg.
+- **Tillagningstid på kort:** `recipe.time` visas som `.week-day-time` (0.62rem, text-muted).
+- **Arkivkollaps:** Arkivdagar döljs som standard (`archive-collapsed`). "Historik (N)"-chip i nav expanderar/kollapserar. `TIMELINE_DAYS_CAP` utökad till max 365d bakåt. OBS: chipsen syns bara när arkivdagar inte överlappas av aktiv plan.
+- **"Ändra dag"-disclosure:** Knappar (byt recept, hoppa över, byt dag) samlas under `<details class="day-actions-details">`.
 - **Cache-bust:** `css/styles.css?v=83`, `js/app.js?v=74`.
 
 ### Session 67 (2026-05-27) — Buggfix: dubbel Matsedeln-rubrik
 
-- **Dubblerad rubrik borttagen:** `content-heading` lades till i Session 66 men den gamla `<h2 class="section-title">Matsedeln</h2>` inne i `#weekContent` togs aldrig bort → dubbla rubriker på mobil. Fix: tog bort den gamla raden i `index.html`. Cache-bust v=70→71.
+- **Dubblerad rubrik borttagen:** `content-heading` lades till i Session 66 men den gamla `<h2 class="section-title">Matsedeln</h2>` inne i `#weekContent` togs aldrig bort → dubbla rubriker på mobil. Cache-bust v=70→71.
 
-### Session 66 (2026-05-27) — Desktop-navigering: ikon-tabs + sökdropdown + sidrubriker
+### Session 66 (2026-05-27) — Desktop-navigering + Amanda-fix
 
 - **Supabase CLI installerad** (v2.101.0 via npm).
-- **Rotorsak identifierad:** `amanda.weimar@gmail.com` saknades i `household_members`-tabellen. Hade konto med lösenord satt, men `getHouseholdId()` returnerade null → "Kunde inte hitta hushållsinformation."
-- **Fix:** Amanda tillagd i `household_members` som `owner` på hushåll `71e41d47` via Supabase MCP. Inga kodändringar behövdes — RLS och auth-gate var intakta.
-- **Ny registrering avstängd** i Supabase-dashboarden (Authentication → Email → "Enable email signups" = off). Förhindrar att externa skapar konton via anon-nyckeln som syns i källkoden.
-- **Kvar (frivilligt):** "Glömt lösenord"-länk i `auth-gate.js` + unika lösenord per person.
+- **Amanda-fix:** `amanda.weimar@gmail.com` saknades i `household_members` → `getHouseholdId()` returnerade null. Lades till som `owner` via Supabase MCP. Inga kodändringar.
+- **Ny registrering avstängd** (Authentication → Email → "Enable email signups" = off).
 
-### Session 64 (2026-05-24) — Fas 3 klar + städning av öppna utredningar
+### Session 64 (2026-05-24) — Fas 3 klar + städning
 
-- **`GEMINI_SCHEMA_PROMPT` utökat** med enhetskonverteringsinstruktioner: cups→dl, tbsp→msk, tsp→tsk, oz→g, lb→g, 1 stick butter=113g smör, °F→°C-tabell. Ingrediensöversättningar: heavy cream→vispgrädde, all-purpose flour→vetemjöl, baking soda→bikarbonat, baking powder→bakpulver, cilantro→koriander, arugula→rucola m.fl. Gäller nu för Gemini-fallback och fotoimport direkt.
-- **`postProcessForeignRecipe(recipe, apiKey)`** — ny funktion i `api/import-recipe.js`. Kallas efter `extractJsonLd()` om URL-domänen inte slutar på `.se` och `GOOGLE_API_KEY` är konfigurerad. Kör Gemini med en dedikerad `CONVERSION_PROMPT` och slår tillbaka konverterade `title`/`ingredients`/`instructions` mot originalet. Misslyckas Gemini → returneras originalet utan konvertering (graceful degradation).
-- **`callGemini()` splittad** i `callGeminiRaw()` (HTTP-anrop + JSON-parse) + `callGemini()` (lägger till recipe-defaults). `postProcessForeignRecipe` kan återanvända `callGeminiRaw` utan att skriva över korrekt satta fältvärden.
-- **`mapJsonLdToRecipe()`** strippar prisannoteringar (`$0.17*`) via regex + tar bort tomma parenteser. Returnerar nu `seasons: []` konsekvent.
-- **Fas 3C live-verifierad:** budgetbytes.com (JSON-LD + imperial), kochbar.de (Gemini-fallback, tyska), jamieoliver.com (Gemini-fallback, engelska) — alla kom ut med svenska ingredienser och metriska enheter. **Fas 3 helt klar.**
-- **Städning av öppna utredningar:** Dishingouthealth-import stängd (nöjd med 197 recept), Matchningsaudit borttagen (redan klar). Kvar: 4F cookie-setup + Willys+ medlemserbjudanden.
+- **`GEMINI_SCHEMA_PROMPT` utökat** med enhetskonvertering (cups→dl, tbsp→msk, oz→g, °F→°C m.fl.) + ingrediensöversättningar (heavy cream→vispgrädde, baking soda→bikarbonat m.fl.).
+- **`postProcessForeignRecipe(recipe, apiKey)`** — anropas efter `extractJsonLd()` om domän ej `.se`. Kör Gemini för konvertering + översättning. Graceful degradation om Gemini misslyckas.
+- **`callGemini()` splittad** i `callGeminiRaw()` + `callGemini()` för återanvändning.
+- **`mapJsonLdToRecipe()`** strippar prisannoteringar (`$0.17*`) + tomma parenteser. Returnerar `seasons: []`.
+- **Fas 3C live-verifierad:** budgetbytes.com, kochbar.de, jamieoliver.com → svenska ingredienser + metriska enheter.
 
 ### Session 63 (2026-05-24) — Realtime-subscriptions + 6E säsongsfix
 
-- **`shopping_items`-prenumeration** i `js/shopping/shopping-list.js`: `subscribeShoppingItems(listId)` prenumererar på `postgres_changes` för aktuell lista. Vid UPDATE av receptvara → riktad DOM-uppdatering (bockar/avbockar rätt `<li>` utan full reload). Vid INSERT/DELETE eller manuell vara → full reload. `unsubscribeShoppingItems()` kallas vid `clearShoppingList()` och tom lista. Cache-bust v=64→65.
-- **`meal_days`-prenumeration** i `js/weekly-plan/plan-viewer.js`: `subscribeMealDays(householdId)` prenumererar på `meal_days`-ändringar. Vid förändring: om inga aktiva interaktioner (replace/swap/custom-pick) → anropar `loadWeeklyPlan()`. Prenumererar en gång per session (guard mot dubbelkoppling).
-- **Feedback-loop-skydd:** Egna sparningar (via `scheduleCheckedSave`) sätter `_checkedItems[key]` optimistiskt. När Supabase skickar tillbaka bekräftelsen matchar server-state mot lokal state → early return, ingen re-render.
-- **Fas 6E klar — 3 säsongstaggar rättade** i `recipes.json` + Supabase: ID 12 Vinterwok (`höst`→`höst,vinter`), ID 98 Enchiladas squash (`sommar`→`sommar,höst`), ID 172 Persikasallad (`höst`→`sommar,höst`).
+- **`shopping_items`-prenumeration** i `shopping-list.js`: `subscribeShoppingItems(listId)` — riktad DOM-uppdatering vid UPDATE, full reload vid INSERT/DELETE. `unsubscribeShoppingItems()` vid clear.
+- **`meal_days`-prenumeration** i `plan-viewer.js`: `subscribeMealDays(householdId)` — reload om inga aktiva interaktioner. Guard mot dubbelkoppling.
+- **Feedback-loop-skydd:** `_checkedItems[key]` sätts optimistiskt → server-bekräftelse matchas mot lokal state → early return.
+- **6E:** 3 säsongstaggar rättade i `recipes.json` + Supabase: ID 12, 98, 172.
 
 ### Session 62 (2026-05-24) — Auth-fix + arkitektur-sida
 
-- **Arkitektur-sida skapad** (`architecture.html`): fristående HTML med inbäddad SVG-diagram som visar hur GitHub, Vercel, Supabase, Willys och Gemini hänger ihop. Pedagogisk, för att visa vänner/intresserade. Tillgänglig på `/architecture.html` på Vercel.
-- **Auth-omskrivning:** Magic link fungerade inte i iOS PWA (hemskärmssparning och Safari har separata localStorage-utrymmen → session leks ej över). Testade OTP-flöde (`signInWithOtp` + `verifyOtp`) men Supabase rate-limitade (~1 mail/min), och template-typen (`magiclink` vs `email`) skapade förvirring. Slutlig lösning: **lösenordsbaserad inlogg** via `signInWithPassword`.
-- **Lösenord satt via SQL:** Supabase-dashboardens användarpanel saknar direkt lösenordsfält (bara e-postbaserad återställning). Lösenord satt direkt via `UPDATE auth.users SET encrypted_password = crypt(...)` — alla användare fick `hejhej22`.
-- **Appen funkar nu på iOS PWA** — inlogg via lösenord fungerar från hemskärmsappen.
-- **Todo noterat:** Realtidsuppdateringar (Fas 7C steg 4) — inköpslistan och planen synkar live när båda är inne samtidigt. Lägst-hängande frukt: `shopping_items`-prenumeration i `shopping-list.js`.
+- **Arkitektur-sida** (`architecture.html`): SVG-diagram över GitHub/Vercel/Supabase/Willys/Gemini. Tillgänglig på `/architecture.html`.
+- **Auth-omskrivning:** Magic link fungerade inte i iOS PWA (separata localStorage-utrymmen). OTP testades men Supabase rate-limitade. Slutlig lösning: **lösenordsbaserad inlogg** via `signInWithPassword`.
+- **Lösenord satt via SQL:** `UPDATE auth.users SET encrypted_password = crypt(...)` — alla fick `hejhej22`.
 
 ### Session 61 (2026-05-23) — Städa efter Supabase-cutover
 
-- **Borttaget:** `dualReadCheck()` (56 rader migreringsverktyg i `js/app.js`), `api/recipes.js`, `api/custom-days.js`. Inga frontend-referenser kvar.
-- **`api/shopping.js` trimmad** från 53 → 25 rader: behåller bara `get_preferences`/`set_preferences` (övriga actions ersatta av Supabase).
-- **`toggleTested` migrerad till Supabase** i `js/recipes/recipe-browser.js` — uppdaterar `recipes.tested` direkt via `window.db`.
-- **"Flytta till inköpslista"-knappen fixad** i `js/weekly-plan/ingredient-preview.js` — satte `recipe_items_moved_at` mot döda `shopping-list.json`, nu mot Supabase direkt.
-- **Vercel-funktioner:** 12 → 10 (god marginal till Hobby-takets 12).
+- **Borttaget:** `dualReadCheck()`, `api/recipes.js`, `api/custom-days.js`.
+- **`api/shopping.js` trimmad** 53→25 rader: behåller bara `get_preferences`/`set_preferences`.
+- **`toggleTested` migrerad** till Supabase i `recipe-browser.js`.
+- **"Flytta till inköpslista"-knappen** fixad — `recipe_items_moved_at` mot Supabase direkt.
+- **Vercel-funktioner:** 12→10.
 
 ### Session 60 (2026-05-23) — Fas 7E: cutover till main
 
 - **Fas 7 KLAR** — `claude/crazy-mcclintock-d47bcb` mergad till `main` (commit `45a6433`).
-- **Buggfix acceptanstest:** `api/confirm.js` satte `recipe_items_moved_at: null` → inköpslistan visades aldrig trots 58 items i Supabase. Fix: sätts nu till `today`.
-- **Buggfix auth:** `joakimweimar@gmail.com` saknades i `household_members` — lades till direkt i Supabase. Nu är båda e-postadresserna (`joakim.weimar@gmail.com` och `joakimweimar@gmail.com`) owners.
-- **Verifierat på preview:** receptlistan laddas, generering sparar till Supabase, bekräftelse bygger inköpslista, inköpslistan visas och är interaktiv.
+- **Buggfix:** `api/confirm.js` satte `recipe_items_moved_at: null` → inköpslistan visades aldrig. Fix: sätts till `today`.
+- **Buggfix auth:** `joakimweimar@gmail.com` lades till i `household_members`. Båda adresserna är nu owners.
 - **671 assertions** (51 match + 62 shopping + 432 select-recipes + 70 dispatch + 29 cookies + 27 data-mapper).
-- **Notering:** 2-dagars receptöverlapp vid ny generering är förväntat (migreringsartefakt — Supabase-historiken visste inte om JSON-baserade val sedan seedningen). Löser sig naturligt nu när allt kör mot Supabase.
 
-### Session 59 (2026-05-23) — Fas 7D komplett: all backend mot Supabase
+### Session 59 (2026-05-23) — Fas 7D: all backend mot Supabase
 
-- **`api/_shared/supabase.js`** (ny): service-role Supabase-klient med lazy-initialisering via Proxy — `createClient` anropas inte vid import-tid, förhindrar krasch i testmiljöer utan `SUPABASE_URL`. `getHouseholdId()` hämtar första household.
-- **`api/_shared/handler.js`**: ny export `createSupabaseHandler` — hanterar CORS utan att kräva GITHUB_PAT.
-- **`api/generate.js`**: `fetchRecipes` läser från `recipes`-tabellen, `fetchHistory` från `recipe_history`, arkivering skriver till `plan_archives`, plan sparas som `weekly_plans` + `meal_days`, historia upsertad i `recipe_history`, inköpslista i `shopping_lists`/`shopping_items`.
-- **`api/confirm.js`**: sätter `confirmed_at` på `weekly_plans`, skapar ny shopping-lista med items, bevarar manuella varor.
-- **`api/skip-day.js`**: hämtar alla `meal_days`, shift-logik i minne, batch-uppdaterar alla rader. Bygger om shopping om bekräftad.
-- **`api/swap-days.js`**: byter `recipe_id`/`recipe_title_snapshot`/`saving`/`saving_matches` på två `meal_days`-rader.
-- **`api/replace-recipe.js`**: uppdaterar `meal_day` + `recipe_history` parallellt; bygger om shopping om bekräftad.
-- **`api/discard-plan.js`**: deaktiverar plan, raderar `meal_days`, rensar `recipe_history`.
-- **`api/dispatch-to-willys.js`**: ny `fetchShoppingListFromSupabase()` ersätter `fetch(SHOPPING_LIST_URL)` — läser `shopping_lists` + `shopping_items` direkt från Supabase.
-- **`js/weekly-plan/plan-generator.js`**: hämtar arkiv/custom-days från Supabase efter generering.
-- **671 assertions** (51 match + 62 shopping + 432 select-recipes + 70 dispatch + 29 cookies + 27 data-mapper).
+- **`api/_shared/supabase.js`** (ny): service-role-klient med lazy Proxy-initialisering. `getHouseholdId()` hämtar första household.
+- **`api/_shared/handler.js`**: `createSupabaseHandler` — CORS utan GITHUB_PAT.
+- **`api/generate.js`**: recept från `recipes`-tabell, historik från `recipe_history`, arkiv till `plan_archives`, plan som `weekly_plans` + `meal_days`, shopping i `shopping_lists`/`shopping_items`.
+- **`api/confirm.js`**: `confirmed_at` på `weekly_plans`, ny shopping-lista med items, bevarar manuella varor.
+- **`api/skip-day.js`**: hämtar `meal_days`, shift i minne, batch-uppdaterar. **`api/swap-days.js`**, **`api/replace-recipe.js`**, **`api/discard-plan.js`**, **`api/dispatch-to-willys.js`**: alla mot Supabase.
+- **671 assertions** oförändrade.
 
 ### Session 58 (2026-05-23) — Fas 7C steg 3: frontend mot Supabase
 
-- **Branch:** `claude/supabase-migration-ihIzv`, commit `7f92add`. ALDRIG merge till main förrän Fas 7E är grön.
-- **`js/app.js`:** `init()` läser recept från `recipes`-tabellen i Supabase via `window.db.from('recipes').select('*').eq('household_id', ...)`. Ingen `fetch('recipes.json')` längre.
-- **`js/recipes/recipe-editor.js`:** add/update/delete via Supabase. Ny import: `recipeToRow` från `data-mapper.js`. GitHub-polling-loopen (2 s × 3 försök) borttagen — Supabase svarar direkt.
-- **`js/shopping/shopping-list.js`:** Ny helper `buildShopState(list, items)` rekonstruerar `recipeItems`/`manualItems`/`checkedItems`/`itemIds` från Supabase-rader. `loadShoppingTab` frågar `shopping_lists` + `shopping_items`. `scheduleCheckedSave` batch-uppdaterar med max 2 requests (checked/unchecked). `addManualItem` → INSERT, `removeManualItem` → DELETE via `_shopItemIds`, `clearShoppingList` → DELETE + `is_active: false`.
-- **`js/weekly-plan/plan-viewer.js`:** `loadArchive`, `loadCustomDays`, `loadActivePlanFromSupabase`, `loadShopSummaryFromSupabase` — fyra nya Supabase-hjälpfunktioner. `loadWeeklyPlan` använder dessa parallellt. `postCustomDays` och `selectRecipeForCustomDay`/`convertBlockedToCustom` skriver direkt till `meal_days`. `discardPlan`-omladdning använder Supabase i stället för JSON-fetch.
-- **Kvar:** Fas 7D (backend-omskrivning) — tills dess är Supabase-data stale efter `api/generate`/`api/confirm`/`api/skip-day`.
+- **`js/app.js`**: recept från `recipes`-tabellen. **`js/recipes/recipe-editor.js`**: CRUD via Supabase, GitHub-polling borttagen.
+- **`js/shopping/shopping-list.js`**: `buildShopState(list, items)` från Supabase-rader. `scheduleCheckedSave` batch-uppdaterar (max 2 requests). `addManualItem`→INSERT, `removeManualItem`→DELETE.
+- **`js/weekly-plan/plan-viewer.js`**: fyra nya Supabase-hjälpfunktioner (`loadArchive`, `loadCustomDays`, `loadActivePlanFromSupabase`, `loadShopSummaryFromSupabase`). Custom-days skriver till `meal_days`.
 - **545 assertions** oförändrade.
 
 ### Session 57 (2026-05-20) — Hotfix: appen laddade inte
 
-- **Symptom:** Sidan fastnade på "Laddar receptbok…", inga knappar fungerade.
-- **Rotorsak:** Session 55:s manuella-varor-fix (commit `9ebe94e`) stängde `<li>`-template-literalen i `js/shopping/shopping-list.js` för tidigt — backtick direkt efter `onclick`-attributet → syntaxfel → hela ES-modulgrafen laddade aldrig (alla moduler registrerar `window.*` vid import, så ingenting startade).
-- **Fix:** Slog ihop till sammanhängande template-literal. Bytte även `onclick`-nyckeln från `JSON.stringify(key)` (dubbla citattecken i dubbelciterat HTML-attribut → bröt avbockning) till citatsäkert `data-key`-attribut, i linje med `remove-manual-btn`.
-- **Lärdom:** PostToolUse-hookarna kör testfiler men fångar inte syntaxfel i frontend-moduler utan testtäckning. `node --check` på alla `js/`-filer borde ingå i Definition of Done för frontend-ändringar.
-- Cache-bust `?v=67` → `?v=68`. **644 assertions** oförändrade. PR #34 mergad till main.
+- **Rotorsak:** Session 55:s manuella-varor-fix stängde `<li>`-template-literalen för tidigt → syntaxfel → hela ES-modulgrafen laddade aldrig.
+- **Fix:** Sammanhängande template-literal. `onclick`-nyckel → citatsäkert `data-key`-attribut.
+- **Lärdom:** `node --check` på alla `js/`-filer bör ingå i Definition of Done. Cache-bust v=67→68. PR #34 mergad.
 
 ### Session 56 (2026-05-20) — Nattjobb: schemalagd P1-fixning
 
-- **Schemalagt nattjobb:** P1-buggrättningar från Session 53-granskningen kördes som ett remotejobb (CCR) kl 03:27 Stockholm-tid via `claude.ai/code/routines`.
-- **Validering:** Bekräftad via RemoteTrigger API (`ended_reason: run_once_fired`) + git log — commit `9ebe94e` pushad till main av agenten.
-- **Resultat:** 12 P1-buggar fixade i 10 filer, 644 assertions oförändrade (se Session 55 för detaljer).
+- 12 P1-buggar fixade av remotejobb (CCR) kl 03:27 via `claude.ai/code/routines`. Commit `9ebe94e`. 644 assertions oförändrade.
 
 ### Session 55 (2026-05-20) — P1-buggfixar från kodgranskning
 
-- **api/recipes.js:** `seasons`-fält lades till i `newRecipe` — manuellt skapade recept fick säsongstaggning (Fas 6C)
-- **api/import-recipe.js:** `seasons` tillagt i Gemini-schema — importerade recept får nu korrekt säsongstaggning
-- **api/dispatch-to-willys.js:** `res.ok`-kontroll på shopping-list-fetch (kryptiskt crash när GitHub är nere → nu begripligt felmeddelande)
-- **api/_shared/secrets-store.js:** `writeUser` nollställer cache innan skrivning — eliminerar race där dispatch läser stale cookies direkt efter cookie-refresh
-- **js/shopping/shopping-list.js:** `removeManualItem` använder `data-item`-attribut i stället för inline-strängescaping (citattecken i varunamn kraschade borttagningen)
-- **js/shopping/shopping-list.js:** Manuella varors bock-nycklar baseras nu på textvärde (`manual::${item}`) i stället för index — bockar hoppar inte längre när en vara tas bort
-- **js/shopping/dispatch-preferences.js:** `prefsLoaded` sätts bara vid lyckad fetch — appen provar om vid nästa sidbesök i stället för att fastna med defaults
-- **js/shopping/dispatch-preferences.js:** `savePrefs` debounced (500 ms) — snabba toggle-klick kan inte längre skriva i fel ordning
-- **js/shopping/dispatch-ui.js:** `AbortController` med 20 s timeout på dispatch-anrop — spinnern kan inte längre hänga för evigt
-- **js/weekly-plan/plan-viewer.js:** Fade-lyssnaren för tidslinjens scroll-gradienter trackar DOM-element-referens i stället för boolean — lyssnar korrekt efter re-render
-- **js/weekly-plan/plan-generator.js:** `tureDays + vegDays` valideras mot `total_days` — omöjlig kombination cappas automatiskt
-- **css/styles.css:** Duplicerad `@keyframes spin` döpt om till `spinFast` för `.import-spinner` — ingen namnkonflikt längre
-- SKIPPED: swap-target past days (intentionellt beteende från Session 52); swap optimistic update (åtgärdat i Session 54-omskrivning)
+- `api/recipes.js` + `api/import-recipe.js`: `seasons`-fält tillagt i nya/importerade recept
+- `api/dispatch-to-willys.js`: `res.ok`-kontroll på shopping-list-fetch
+- `api/_shared/secrets-store.js`: cache nollställs innan skrivning (eliminerar stale-read-race)
+- `js/shopping/shopping-list.js`: `removeManualItem` → `data-item`-attribut; bock-nycklar baseras på text (`manual::${item}`)
+- `js/shopping/dispatch-preferences.js`: `prefsLoaded` sätts bara vid lyckad fetch; `savePrefs` debounced 500ms
+- `js/shopping/dispatch-ui.js`: `AbortController` 20s timeout
+- `js/weekly-plan/plan-viewer.js`: fade-lyssnare trackar DOM-referens efter re-render
+- `js/weekly-plan/plan-generator.js`: `tureDays + vegDays` valideras + cappas mot `total_days`
+- `css/styles.css`: `@keyframes spin` → `spinFast` för `.import-spinner`
 - **644 assertions** oförändrade.
 
 ### Session 54 (2026-05-17) — Fri dag-sammanslagning + fri swap
 
-- **Bugg eliminerad:** Gamla `unblock`-action lämnade ett tomt "—"-kort i slutet av planen som varken kunde redigeras eller flyttas. Hela `skip-day.js` skrevs om till två actions: `free` (skjuter framåt + förlänger planen med 1 dag så sista receptet inte tappas) och `unfree` (drar bakåt + krymper planen). Spöket är borta.
-- **Knapp-sammanslagning:** "Hoppa över — skjut recept →" och "Blockera dag" slogs ihop till en enda "Gör fri dag — skjut planen →"-knapp. Fri dag-panelens "Skriv egen notering" behåller flödet (konverterar till custom-day). Dead CSS-regel `.day-action-block` borttagen.
-- **Fri swap:** `api/swap-days.js` omskriven. Tillåter nu byte mot fria plan-dagar och framtida gap-dagar utanför planen — om måldagen ligger utanför förlängs planen med fria dagar fram till den (cap 365 d för säkerhet). Arkiverade dagar och dagar med egen planering avvisas med begripligt felmeddelande. `recipe-history.json` uppdateras så receptet räknas som senast använt på sin nya dag.
-- **Swap-UX:** Capture-phase click-lyssnare fångar swap-target-klick före kortets `onclick` — fungerar nu även på fri-dag-kort och gap-dag-kort som annars öppnar editor-paneler. `enterSwapMode` highlight:ar bredare urval (allt utom arkiv, custom-days och förflutna gap).
-- **644 assertions** oförändrade (51 match + 62 shopping + 432 select-recipes + 70 dispatch + 29 cookies). Cache-bust v=64.
+- **`skip-day.js` omskriven** till två actions: `free` (skjuter framåt + förlänger) och `unfree` (drar bakåt + krymper). "Hoppa över"+"Blockera" → en knapp "Gör fri dag".
+- **Fri swap:** `swap-days.js` omskriven. Byte mot fria plan-dagar + gap-dagar utanför planen (förlänger med fria dagar). Arkiv och custom-days avvisas.
+- **Swap-UX:** Capture-phase click-lyssnare fångar swap-target-klick. `enterSwapMode` highlightar bredare urval.
+- **644 assertions** oförändrade. Cache-bust v=64.
 
 ### Session 53 (2026-05-12) — Kodgranskning + P0-buggfixar
 
-- **Kodgranskning:** 8 parallella Sonnet-agenter granskade hela kodbasen (~7800 JS + 3260 CSS + 510 HTML). 210 fynd totalt: 19 P0 (kritiska), 41 P1, 18 dead code, 24 XSS, 32 inkonsistenser, 36 förbättringar, 40 testtäckning. Rapporter: `docs/review/00-summary.md` + `01`–`08`.
-- **P0-fixar (alla 6 buggar + XSS):**
-  1. `api/generate.js` — `seasons: r.seasons || []` i fetchRecipes → Fas 6C fungerar nu i produktion
-  2. `api/replace-recipe.js` — recipe-history.json uppdateras vid receptbyte (var bruten sedan implementation)
-  3. `api/skip-day.js` — saving/savingMatches kopieras vid skip (badges hamnar på rätt dag)
-  4. `api/_shared/shopping-builder.js` — `vitlöksklyftor` i Grönsaker-nyckelord (inte Skafferi)
-  5. `js/weekly-plan/plan-viewer.js` — swap blockeras på bekräftad plan + null-guard ingredients/instructions + `esc()` på customNote/title/ingredients/instructions/notes
-  6. XSS-härdning: ny `escapeHtml()` i `js/utils.js`, applicerad i `renderIngredient`, `renderDetailInner`, `recipe-browser.js` (title i kort+data-attribut), `shopping-list.js` (manuella varor)
-- **545 assertions** oförändrade (51 match + 62 shopping + 432 select-recipes).
+- **Kodgranskning:** 8 parallella agenter, 210 fynd (19 P0, 41 P1, 24 XSS m.fl.). Rapporter: `docs/review/00-summary.md` + `01`–`08`.
+- **P0-fixar:** (1) `seasons: r.seasons || []` i fetchRecipes, (2) recipe-history uppdateras vid receptbyte, (3) saving/savingMatches kopieras vid skip, (4) `vitlöksklyftor` i Grönsaker, (5) swap blockeras på bekräftad plan + null-guards, (6) XSS-härdning: `escapeHtml()` i `utils.js`, applicerad i `renderIngredient`, `renderDetailInner`, `recipe-browser.js`, `shopping-list.js`.
+- **545 assertions** oförändrade.
 
 ### Session 52 (2026-05-11) — Fri dag-interaktion + swap bakåt + Säsongsoptimering
 
-- **Fri dag klickbar:** Blockerade dagar i tidslinjen nu klickbara → panel med "Ångra fri dag — skjut ihop matsedeln" (ny `unblock`-action i `api/skip-day.js`) + "Skriv egen notering" (konverterar till custom-day). CSS: cursor pointer + hover på blockerade kort.
-- **Swap bakåt i tiden:** Dagsbyte (swap-ikon + "Byt dag"-knapp) tillåts nu på förflutna dagar i aktiv plan. Skip/block döljs fortfarande på förflutna dagar. `data-past`-attribut skiljer ut förflutna från readonly-arkiv.
-- **Säsongsoptimering (Fas 6 klar):** Research (`docs/research-sasong.md`) med säsongstabell (~120 ingredienser × 12 månader) + analys av alla 264 recept. 242 recept taggade med `seasons`-fält (vår/sommar/höst/vinter). `applySeasonWeight()` i `selectRecipes()`: in-season 2x, neutral 1x, off-season 0.5x. Opt-in toggle "Säsongsanpassning" i inställningspanelen. Skript: `scripts/season-analysis.mjs`.
-- **Säsongsfilter i receptboken:** Ny filtergrupp "Säsong" i filter-sheet med vår/sommar/höst/vinter-checkboxar. Kombineras med alla befintliga filter.
-- **545 assertions** (51 match + 62 shopping + 432 select-recipes). Cache-bust v=62.
+- **Fri dag klickbar:** Panel med "Ångra fri dag" (`unblock`-action) + "Skriv notering" (→ custom-day).
+- **Swap bakåt i tiden:** Tillåts på förflutna dagar i aktiv plan. `data-past` skiljer förflutna från readonly-arkiv.
+- **Säsongsoptimering (Fas 6 klar):** 242 recept taggade `seasons`. `applySeasonWeight()`: 2x/1x/0.5x. Toggle i inställningar + filter i receptboken.
+- **545 assertions**. Cache-bust v=62.
 
 ### Session 51 (2026-05-10) — Fas 1F live-verifierad + Inköpspreferenser + AI-prompt
 
-- **Fas 1F avslutad:** `dry_run`-parameter i `/api/generate` möjliggör torrkörning av hela pipelinen utan att röra veckoplan/inköpslista/historik. Prisoptimeringen (`optimize_prices`) verifierad end-to-end mot live Vercel.
-- **Matchningsbuggar fixade:** smör→"Mikropopcorn Smör" och rapsolja→"Sardeller i Olja" eliminerade via utökade `CANON_REJECT_PATTERNS`. Pluralfix (`\w*`-suffix) för svenska böjningsformer. 44→51 assertions i match.test.js.
-- **Inköpspreferenser (ny feature):** Varumärkesblocklist (t.ex. undvik Eldorado) + eko/svenskt-toggles per inköpskategori. Sparas i `dispatch-preferences.json` via `api/shopping.js` (actions `get_preferences`/`set_preferences`). Kollapserbar UI-sektion i inköpsfliken. Spec: `docs/superpowers/specs/2026-05-10-dispatch-preferences-design.md`.
-- **AI-inköpsprompt:** "Kopiera AI-inköpsprompt"-knapp i inköpsfliken bygger copy-paste-text för Claude in Chrome. Inkluderar varumärkesregler, eko/svenskt-preferenser, 2-sekunders delay-instruktion (Willys registrerar långsamt), och bara oavbockade varor.
-- **Vercel 12-funktioner-tak:** `api/dispatch-preferences.js` slog i taket → konsoliderad in i `api/shopping.js` som POST-actions.
-- **545 assertions** (51 match + 62 shopping + 432 select-recipes). Cache-bust v=60.
+- **Fas 1F:** `dry_run`-parameter verifierade prisoptimeringen end-to-end.
+- **Inköpspreferenser:** Varumärkesblocklist + eko/svenskt-toggles. Sparas via `api/shopping.js` (`get_preferences`/`set_preferences`). Spec: `docs/superpowers/specs/2026-05-10-dispatch-preferences-design.md`.
+- **AI-inköpsprompt:** Copy-paste-text för Claude i Chrome med varumärkesregler + oavbockade varor + 2s delay.
+- **545 assertions**. Cache-bust v=60.
 
 ### Session 50 (2026-05-07) — Desktop-tidslinje + taggfilter + Ture-dagar
 
-- **Desktop-anpassning:** Tidslinje bryter ut till full bredd (max 1400px) vid ≥900px via `left:50%; transform:translateX(-50%)`. Fade-gradienter (vänster/höger) med scroll-event-driven `.fade-left`/`.fade-right`.
-- **Taggfiltrering:** Dynamiskt genererade tagg-checkboxar i filter-sheet. System-/protein-/kök-taggar exkluderade via `EXCLUDED_TAGS`. Normalisering till lowercase.
-- **Fliknamnsbyte:** "Veckans mat" → "Matsedeln" i header-tab, bottom-nav, aria-label.
-- **Ture-dagar (barnvänliga recept):** Ny parameter `ture_days` i inställningspanelen. Styr antal dagar med recept taggade "ture". Allokeras före veg-dagar, inga dubbletter. `preferNonTure`-logik i `pick()` sparar ture-recept åt ture-dagar (loops 1–3 undviker ture på vanliga dagar, loops 4–5 släpper igenom som fallback). Bugg hittad och fixad: utan preferNonTure kunde vanliga dagar förbruka alla ture-recept.
-- **Ture-helg-bugg:** Alla ture-recept var vardag30 — ture-dag på lördag kraschade. Fix: `processingOrder` sorterar ture-dagar först, `result.sort()` återställer datumordning. Test 16 (30 iter ture-på-helg).
-- **Case-bugg:** Taggen "Ture" (versalt) i databasen matchade inte `"ture"` i koden. Fix: `hasTure()` helper med case-insensitiv `.toLowerCase()`-jämförelse.
-- **Saknade tidstagger:** 3 ture-recept (id 263, 269, 270) saknade `vardag30`/`helg60` → filtrerades bort. Lade till `vardag30` (alla ≤30 min).
-- **Tidig validering:** Om ture_days>0 men inga ture-recept finns i poolen → begripligt felmeddelande istället för kryptiskt "ture helg".
-- **Testfixar:** `DEFAULT_CONSTRAINTS` saknades `ture_days: 0` → alla dagar blev ture-dagar. Test 5+7 hade för få icke-veg recept (6 för 7 slots). Test 14 (ture_days=2, 20 iter) + Test 15 (ture_days=0) + Test 16 (ture-på-helg, 30 iter). **432 assertions** (538 totalt: 44 match + 62 shopping + 432 select-recipes).
+- **Desktop:** Tidslinje full bredd (max 1400px) vid ≥900px. Fade-gradienter via `.fade-left`/`.fade-right`.
+- **Taggfiltrering:** Dynamiska checkboxar, `EXCLUDED_TAGS` exkluderar system-/protein-/kök-taggar.
+- **Ture-dagar:** `ture_days`-parameter. `preferNonTure`-logik sparar ture-recept åt ture-dagar (loops 1–3). Buggar fixade: processingOrder sorterar ture-dagar först; `hasTure()` lowercase; 3 ture-recept fick `vardag30`; tidig validering om poolen är tom.
+- **432 assertions** (538 totalt: 44 match + 62 shopping + 432 select-recipes).
 
-### Session 49 (2026-05-06) — Buggfix inköpslista runda 3: kategorisering + truncering
+### Session 49 (2026-05-06) — Buggfix inköpslista: kategorisering + truncering
 
-- **Kategori-bugg (substring-matching):** `categorize()` använde `low.includes(kw)` → `pankoströbröd` → Mejeri (träff på "ost"), `mangold` → Frukt (träff på "mango"), `asiatisk chili-vitlökssås` → Grönsaker. Fix: ersatt med ordmängd-matchning (`lowWords.has(kw)` för enkelspalts-nyckelord). Flerspalts-nyckelord behåller `includes`.
-- **Specifika kategorifixar:** `mangold` tillagd i Grönsaker-nyckelord. `sweet chili` i SKAFFERI_OVERRIDE (matchar "chili" som ord). NORMALIZATION_TABLE: `lacinatokål`→`grönkål`, `fiskbuljongtärningar`→`fiskbuljong`.
-- **Trunceringsbugg:** `grönsaks- eller kycklingbuljong` → namn=`grönsaks` pga `endsWith("-")`-grenen strippade bara bindestreck. Fix: hämta basnomen från afterEller-delen → `kycklingbuljong` → normaliseras till `hönsbuljong`. Regex `/\s+\S+-$/` matchar hela prefix+bindestreck.
-- **Filtrering:** `salt och svartpeppar efter smak` → `cleanIngredient()` strippade inte "efter smak". Tillagd rad: `s.replace(/\s+efter\s+smak$/i, "")` → landar i PANTRY_ALWAYS_SKIP.
-- **62 assertions** oförändrade (106 totalt: 44 match + 62 shopping).
+- **Kategori-bugg:** `low.includes(kw)` → ordmängd-matchning `lowWords.has(kw)`. Fixar pankoströbröd→Mejeri, mangold→Frukt m.fl.
+- **Trunceringsbugg:** `grönsaks- eller kycklingbuljong` → basnomen från afterEller-delen.
+- **Filtrering:** "efter smak" strippas i `cleanIngredient()`.
+- **62 assertions** oförändrade.
 
 ### Session 48 (2026-05-06) — Buggfix inköpslista (doh-mängder) + oprövade-fix
-- **Inköpslista doh-mängder:** 5 rotorsaker i `parseIngredient()`/`cleanIngredient()`: (1) slash-bråk `1/2`→`½` etc, (2) ord-gräns ≤2 på qtyPart stoppar `1 litet huvud`/`2 msk + 2 tsk`, (3) decimal-komma i eller-hantering `,.*$`→`,\s+.*$`, (4) float-avrundning `Math.round(x*100)/100`, (5) `nävar`/`huvuden` i SWEDISH_UNITS + `nävar`/`näve` i SMALL_UNITS. 62 assertions.
-- **Oprövade recept-gräns:** `untested_count`-limiten respekterades inte i fallback-looparna 2–4 i `pick()` i `api/generate.js` → med 197 oprövade doh-recept i poolen fick nästan alla dagar oprövade recept trots maxinställning. Fix: `underUntestedLimit()`-kontroll i alla loopar; loop 5 som sista utväg. Inline-kopia i `tests/select-recipes.test.js` synkad + nytt test 13. 151 assertions.
-- CLAUDE.md komprimerades 434→251 rader (sessionloggar 31–45).
-
-### Session 47 (2026-05-05) — Mobil-verifiering av FAB-stack + safe-area sticky-header-fix
-- **Motivering:** Användaren testade FAB-stack-ordning + scroll-lock i bottom-sheets på iPhone Safari. Båda OK. Hittade grafikbugg: receptkort lyste igenom OVANFÖR sticky-sektionsrubriken — exakt 44 px (statusbar/safe-area-zonen).
-- **Rotorsak:** `.recipe-section-header` har `top: env(safe-area-inset-top, 0)` → rubriken fastnar vid ~44 px. Gröna toppheadern göms vid scroll (`transform: translateY(-100%)`) och blottar de 44 px — sticky-rubrikens linen-bakgrund täcker inte glipan.
-- **Fix-iteration 1 (a0d5d19):** `::before`-pseudo-element med `bottom: 100%; height: env(safe-area-inset-top, 0); background: var(--linen)`. Täckte glipan i sticky-läge — men pseudo-en är `position: absolute` → fanns ALLTID i naturligt flöde → klippte 44 px av föregående sektions sista kort.
-- **Fix-iteration 2 (39deaad):** Gate:a `::before` bakom `.stuck`-klass via IntersectionObserver. Observern läser `env(safe-area-inset-top)` via temporär probe-div (CSS env() ej tillgänglig från `getComputedStyle`), sätter `rootMargin: -${safeTopPx+1}px 0px 0px 0px`, togglar `.stuck`. Pseudo-en fade:as med 0.15s opacity. Observern återskapas vid varje `renderRecipeBrowser()`.
-- **Filer:** `css/styles.css`, `js/recipes/recipe-browser.js` (`refreshStickyObserver()`), `index.html` (cache-bust v=56→58).
-- **Live-verifiering kvar** vid push (användaren sov). Kandidater Session 48: Fas 4F live-verifiering, Capacitor-kickoff (Fas 5A), receptbrowser-finputsning.
-
-### Session 46 (2026-05-04) — Promotion av 197 doh-recept + komplett receptbrowser-refaktor
-- **Promotion:** `node scripts/dish-scrape/promote.mjs` med `doh`-tag på alla 197 recept. recipes.json: 62→259, `nextId` 63→262.
-- **Group-by** (`js/recipes/recipe-browser.js` — full omskrivning): `GROUP_DEFS` med 5 dimensioner (Kök/Provat-status/Protein/Tid/Typ). Sökning mot `window.RECIPES`-array (inte DOM-attribut — ~MB onödig DOM på 259 kort borttaget). `window.activeFilters` bevarad oanvänd för bakåtkompat med `recipe-editor.js`.
-- **Init-bugg:** `countDisplay`-elementet saknades i HTML → `app.js` rad 25 satte `.textContent` → TypeError → varningsruta i stället för listan. Tog bort död referens.
-- **Pill-tabs** (ersätter select-dropdown) + notch-säker sticky: `top: env(safe-area-inset-top)` (inte `padding-top: max(...)` — den tog plats även utan fastnad).
-- **Bottom-sheets** (Sortera + Filter): scroll-lock via position-fixed-trick (spara scrollY, lås body, återställ) — `overflow:hidden` räcker inte på iOS.
-- **FAB-stack** höger nedre: scrolltop + Sortera + Filter. Ordning [scrolltop, openSortBtn, openFilterBtn] — pilen dyker upp ovanför vid scroll>400, Sortera+Filter alltid synliga.
-- **65/259 recept kök-taggade** via `scripts/classify-cuisine.mjs`. Specialfall: `/röd\s+curry|grön\s+curry/i` → thai (inte indiskt) — curry-pattern är annars indisk-stämplat.
-- **Huvudingrediens-filter** (`mainIngredientOf()` keyword-matchning) ersätter Protein i UI. `protein`-fältet i recipes.json **orört** (matsedeln-algoritmen i `api/generate.js` använder det).
-- **Dishing out health-sektion** under Kök: doh-recept utan kök-tag samlas här; doh + cuisine → hamnar i cuisine-sektionen (first-match-wins).
-- **Ej gjort:** compact/expand-toggle, sticky-sök, recept-tumnaglar. **Cache-bust:** `?v=56`.
-
-### Session 45 (2026-05-04) — Dishingouthealth-scrape: 197 recept i staging (promoterades i Session 46)
-- Verktyg i `scripts/dish-scrape/` (`scrape.mjs`, `promote.mjs`, `finalize.mjs`). 710 sitemap-URLer → 551 kandidater → 197 importerade (Anthropic-krediter slut vid #339).
-- Skärpt system-prompt: protein-i-tags förbjudet, 25 prep-method-översättningar, rubriker filtreras. Rating-skip < 4.5 sparar tokens. Recept utan rating släpps igenom.
-- **Säkerhetsnät:** `progress.json` (gitignorerad) + `--resume`-flagga. Errors-entries i progress.json måste rensas manuellt för retry.
-- **Återstående 191:** Ladda Anthropic-credits ($5), kör `cd scripts/dish-scrape && node scrape.mjs --resume`.
-
-### Session 44 (2026-05-03) — Knapp-harmonisering (fem tiers) + Generera-knapp
-- **Geometri:** 8px radie, 1.5px border, font-weight 500, ~38–42px höjd (alla 5 tiers).
-- **PRIMARY** (rust filled): `.confirm-plan-btn`, `.btn-save`, `.flytta-btn`, `.shop-dispatch-btn` — alla "commit"-handlingar. **Undantag: `.generate-btn`** → forest (#3d5544), border-radius 14px, solid sparkle-SVG (rust skar sig mot lichen-headern).
-- **SECONDARY** (lichen filled): `.btn-import-action`, `.manual-add-btn`
-- **OUTLINE** (birch border + forest text): `.replace-recipe-btn`, `.discard-plan-btn`, `.day-action-btn`, `.shop-copy-btn`, `.trigger-toggle-btn`, `.custom-bulk-btn`
-- **GHOST/DANGER** (rust-deep text, transparent): `.shop-clear-btn`, `.btn-delete`
-- **Visuella skiften att bevaka:** `.trigger-toggle-btn` var capsule → rektangulär. `.replace-recipe-btn` rust-border → birch (kan rullas tillbaka om knappen känns för "tyst" i tidslinjen).
-- **Cache-bust-pattern:** `?v=<sessionnummer>` på `css/styles.css` + `js/app.js` i `index.html` — bumpas varje session med CSS/markup-ändringar.
-
-### Session 43 (2026-05-03) — Design-system-migration (Scandi/nature-pivot)
-- `:root` skrivet om: 9 gamla tokens (--cream/--terracotta/--sage/--gold m.fl.) → 14 nya (--linen/--lichen/--lichen-deep/--moss-soft/--forest/--rust/--rust-deep/--clay/--birch/--ochre m.fl.). Semantic aliases (--border/--text-muted/--color-success/--color-danger) pekar till nya tokens. Pill-radie 20px → 4px.
-- 19 JS inline-style-references med gamla token-namn fixade. Emoji → inline-SVG (`currentColor`, `.icon`-klass 1em). `toggleSettings`-chevron: textContent-swap → `classList.toggle('open')` + CSS-rotation.
-- Spec: `docs/superpowers/specs/2026-05-03-design-system-migration-design.md`. **341 assertions passerar oförändrat.**
-
-### Session 42 (2026-04-26) — Fas 4F implementation: cookie-refresh-automation (live-verifierad)
-- `api/_shared/secrets-store.js`: gist-backed, 5-min TTL, last-write-wins (Gists API saknar concurrency control).
-- Cookie-refresh inmergad i `api/dispatch-to-willys.js?op=refresh-cookies` — **Vercel Hobby = max 12 serverless-funktioner** (var den 13:e, gick inte som separat fil).
-- `resolveWillysSecrets`: gist-first, faller tillbaka till env vars. **Fine-grained `GITHUB_PAT` stödjer inte gists → separat `GITHUB_GIST_PAT` (classic PAT).**
-- Chrome-extension MV3 (`extension/`): `background.js` fångar CSRF via webRequest, triggar refresh om ≥ 7d sedan. Engångs-setup: `extension/README.md`.
-- **341 assertions** (44 match + 62 shopping + 136 select-recipes + 70 dispatch + 29 cookies). Status: live-verifierat, gist-flödet aktivt.
-
-### Session 41 (2026-04-25) — Mobil bottom-tab-navigering
-Bottom-nav i footer med 3 Lucide-SVG-ikoner. `data-tab`-attribut, `switchTab` refaktorad till `querySelectorAll('[data-tab]')`. `--bottom-nav-h` CSS-variabel lyfter FAB/scrolltop. `viewport-fit=cover`, `env(safe-area-inset-bottom)`. Lärdom: kort "Ja"-svar tolkades för aggressivt (gömde hela header, inte bara flikarna) → ställ tydligare fråga vid korta svar.
-
-### Session 40 (2026-04-25) — Brainstorming Fas 4F (cookie-refresh-automatisering)
-Vald väg: Chrome-extension (passiv cookie-capture vid willys.se-besök). Backend payload klient-agnostiskt `{userId, cookie, csrf, storeId}` för framtida Capacitor-app. Spec: `docs/superpowers/specs/2026-04-25-cookie-refresh-automation-design.md`.
-
-### Session 39 (2026-04-25) — Willys-dispatch live + tre buggfixar
-- **Bugg 1 — Manuella tillägg på tom lista:** `loadShoppingTab` returnerade tidigt om `!hasRecipe && !hasManual` och gömde manual-add-inputen. Fix: speglad i `shopNoData` med egna IDs (`*Empty`), `addManualItem(inputId, btnId)` parametriserad.
-- **Bugg 2 — Dispatch ignorerade manuella tillägg:** `extractCanonsFromShoppingList` (backend) + `openDispatchConfirm` (frontend) tittade bara på `recipeItems`. Fix: båda läser nu också `manualItems`. (53 → 56 assertions i dispatch-test.)
-- **Bugg 3 — kefir saknades som self-canon:** `extractOfferCanon("Kefir Naturell Cultura Laktosfri 2,5%")` → null → no_matches. Fix: `kefir` + varianter som self-canon i NORMALIZATION_TABLE + Mejeri-kategorin. (41 → 44 assertions i match-test.)
-- **Första lyckade live-dispatch:** Kefir → Arla Cultura Kefir Naturell i willys.se/cart. **298 assertions** (44+62+136+56).
-- **Cookie-utgång:** `axfoodRememberMe` löper ut ca 2026-07-15.
-
-### Session 38 (2026-04-23) — Willys-dispatch implementation (Fas 4D+4E)
-Endpoint `api/dispatch-to-willys.js` (named export `runDispatch`), shared-moduler `willys-search.js` / `willys-cart-client.js` / `dispatch-matcher.js`. 4E: publik `GET willys.se/search?q=<canon>`, ingen auth, `code`-fältet matchar `addProducts`-formatet. `matchCanons`: rea-first, sök-fallback. UI feature-flaggad via GET (döljs utan env vars). 53 assertions i `tests/dispatch-to-willys.test.js`. Plan: `docs/superpowers/plans/2026-04-23-willys-dispatch.md`.
-
-### Session 37 (2026-04-20) — Willys cart-API PoC + design-spec
-PoC verifierade `POST /axfood/rest/cart/addProducts` (bulk-array). Auth = sessioncookies + långlivad `x-csrf-token` (~3 mån, kan **ej** hämtas programmatiskt utan browser) → manuell cookie+CSRF-export till env vars. Befintlig matcher returnerar **bara reavaror** (`potentialPromotions`-filter) — full täckning kräver 4E-sökning. Spec: `docs/superpowers/specs/2026-04-20-willys-dispatch-design.md`.
-
-### Session 36 (2026-04-20) — Testtäckning shopping-builder + selectRecipes
-`tests/shopping.test.js` (62 assertions), `tests/select-recipes.test.js` (136 assertions — **inline-kopia av `selectRecipes`/`bucketBySaving`, synkas manuellt** vid ändringar i `generate.js`). PostToolUse-hooks: `shopping-builder.js` → shopping.test.js, `generate.js` → select-recipes.test.js, blockerar commit vid fel.
-
-### Session 35 (2026-04-19) — Lexikon- och matchningsaudit
-125→149 matches, 51→53 recept (85.5%), 8→0 wrong-function-buggar. **CANON_REJECT_PATTERNS**: offer-textregex per canon, eliminerade spraygrädde-buggklassen (grädde/mjölk/smör/fisk). `normalizeName`: adjektiv-strip → token-scan → n-gram-fallback. Nya self-canons: aubergine/gurka/zucchini/paprika/chili/sallad. 41 assertions i `tests/match.test.js`. Rapport: `docs/match-audit-2026-04-19.md`.
-
-### Session 34 (2026-04-18)
-Kassera-förslag renderar `data.weeklyPlan` direkt från API-svar (undviker Vercel CDN-race — `?t=Date.now()` räcker inte). Klickbar 💰-badge med `savingMatches[]`-popover. Rea-varning vid end_date > 7 dagar.
-
-### Session 33 (2026-04-18)
-Tre-vägs-editor tom dag: välj recept / notering / skapa matsedel. `api/custom-days.js` tar emot `recipeId` + `recipeTitle`. `data-readonly="1"` döljer replace/swap/skip på custom-dag med recept.
-
-### Session 32 (2026-04-18)
-Dynamisk tidslinje-horisont (cap 45d). Custom-days: `api/custom-days.js` + `custom-days.json`, notering max 140 tecken, slim-kort 72px. Auto-scroll till planstart vid ny generering. `.plan-pending` + NY-badge. `api/discard-plan.js` tömmer weekly-plan.json + plockar bort recipeIds ur historik.
-
-### Session 31 (2026-04-18)
-Tidslinje-polish: `centerTodayCard()` räknar scrollLeft explicit (`scrollIntoView` missar vid `display:none`). `isoWeekNumber()` i `utils.js`. Helg-framhävning.
+- **Inköpslista:** 5 rotorsaker: slash-bråk, ord-gräns på qtyPart, decimal-komma, float-avrundning, `nävar`/`huvuden` i SWEDISH_UNITS. 62 assertions.
+- **Oprövade recept-gräns:** `underUntestedLimit()`-kontroll i alla pick()-loopar. Loop 5 som sista utväg. Test 13 tillagd.
 
 ### Äldre sessioner
-Sessioner 8–30 är arkiverade i `docs/session-log-archive.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–47 arkiverade i `docs/session-log-archive.md`. Full git-historik: `git log --oneline`.
+Höjdpunkter 31–47: Tidslinje-polish + custom-days (31–33); kassera-förslag + CDN-bugg (34); matchningsaudit 125→149 matches, CANON_REJECT_PATTERNS (35); testtäckning shopping + selectRecipes, PostToolUse-hooks (36); Willys cart-API PoC (37); Willys-dispatch full implementation + sökfallback (38–39); brainstorming cookie-refresh (40); mobil bottom-tab-nav (41); cookie-refresh-automation Chrome-extension MV3 + secret gist (42); design-system Scandi/nature (43); knapp-harmonisering fem tiers (44); 197 doh-recept scrapade (45); receptbrowser full refaktor + promotion (46); safe-area sticky-header-fix (47).
 
 ## Definition of Done (följ alltid)
 Innan "klart" deklareras ska Claude alltid:
