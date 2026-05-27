@@ -1184,7 +1184,7 @@ function renderPlanBackdrop(plan) {
   label.className = 'plan-backdrop-label';
   label.textContent = `Matsedel  ${fmtShort(plan.startDate)} – ${fmtShort(plan.endDate)}`;
   label.style.top = (bdTop + 5) + 'px';
-  grid.prepend(label);
+  backdrop.after(label);
 
   const LABEL_PAD = 12;
   const updateLabelPos = () => {
