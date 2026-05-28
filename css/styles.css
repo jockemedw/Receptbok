@@ -1560,10 +1560,16 @@
   .week-day-card.past { opacity: 0.45; }
 
   .week-day-card.today {
-    border-color: var(--rust);
-    box-shadow: 0 2px 14px rgba(194,82,43,0.18);
-    background: var(--clay);
+    background: var(--lichen);
+    border: 2px solid var(--lichen-deep);
+    box-shadow: 0 4px 16px rgba(94,122,104,0.28);
   }
+  .week-day-card.today .week-day-recipe { color: var(--linen-card); }
+  .week-day-card.today .week-day-time,
+  .week-day-card.today .agenda-meta,
+  .week-day-card.today .agenda-eyebrow { color: rgba(245,241,232,0.92); }
+  .week-day-card.today .agenda-dow { color: rgba(245,241,232,0.85); }
+  .week-day-card.today .agenda-chev { color: rgba(245,241,232,0.7); }
 
 
   .week-day-card:hover {
@@ -1580,26 +1586,33 @@
 
   .week-day-saving {
     margin-top: 0.25rem;
-    font-size: 0.74rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.7rem;
     font-weight: 600;
-    color: var(--color-success-dark, var(--lichen-deep));
+    color: var(--lichen-deep);
     letter-spacing: 0.01em;
     flex-shrink: 0;
-    background: none;
+    align-self: flex-start;
+    background: var(--moss-soft);
     border: none;
-    padding: 0;
+    border-radius: 999px;
+    padding: 2px 8px;
     font-family: inherit;
     text-align: left;
   }
+  .week-day-saving .icon { width: 0.9em; height: 0.9em; }
   .week-day-saving.has-details {
     cursor: pointer;
-    border-radius: 4px;
-    padding: 1px 3px;
-    margin-left: -3px;
     transition: background-color 0.15s ease;
   }
   .week-day-saving.has-details:hover {
-    background: rgba(74,125,78,0.12);
+    background: #d6e0cd;
+  }
+  .week-day-card.today .week-day-saving {
+    background: rgba(255,255,255,0.22);
+    color: var(--linen-card);
   }
 
   /* Besparings-popover */
@@ -2043,6 +2056,255 @@
     margin: 0 0 0.4rem;
     padding: 0 1rem;
   }
+
+  /* ══ MATSEDELN v2: verktygsrad, banner, översikt, agenda ══ */
+
+  /* ── Verktygsrad (vy-växling + Ny plan) ── */
+  .week-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding: 0.25rem 1rem 0.6rem;
+    flex-wrap: wrap;
+  }
+  .week-view-toggle {
+    display: inline-flex;
+    background: var(--stone);
+    border-radius: 999px;
+    padding: 3px;
+    gap: 2px;
+  }
+  .wv-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+  }
+  .wv-btn.active {
+    background: var(--linen-card);
+    color: var(--forest);
+    box-shadow: 0 1px 3px rgba(45,52,40,0.1);
+  }
+  .week-newplan-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: var(--rust);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 0.45rem 1rem;
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.08s;
+  }
+  .week-newplan-btn:hover { opacity: 0.9; }
+  .week-newplan-btn:active { transform: scale(0.97); }
+
+  /* ── Förslags-banner (obekräftad plan) ── */
+  .plan-pending-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    margin: 0.1rem 1rem 0.7rem;
+    padding: 0.7rem 0.9rem;
+    background: var(--clay);
+    border: 1px solid rgba(181,106,76,0.35);
+    border-left: 4px solid var(--rust);
+    border-radius: 12px;
+  }
+  .plan-pending-banner .ppb-icon { color: var(--rust); flex-shrink: 0; display: flex; }
+  .plan-pending-banner .ppb-icon .icon { width: 1.3rem; height: 1.3rem; }
+  .ppb-text { display: flex; flex-direction: column; gap: 1px; }
+  .ppb-text strong { font-size: 0.9rem; color: var(--rust-deep); font-weight: 700; }
+  .ppb-text span { font-size: 0.78rem; color: var(--text-muted); }
+
+  /* ── Plan-översikt ── */
+  .plan-summary { margin: 0 1rem 0.7rem; }
+  .summary-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.7rem;
+    font-size: 0.8rem;
+    color: var(--forest);
+  }
+  .summary-count { font-weight: 700; }
+  .summary-prots { display: inline-flex; flex-wrap: wrap; gap: 0.5rem; }
+  .summary-prot { display: inline-flex; align-items: center; gap: 0.3rem; color: var(--text-muted); font-weight: 500; }
+  .summary-tag { color: var(--rust-deep); font-weight: 500; }
+  .summary-saving {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: var(--moss-soft);
+    color: var(--lichen-deep);
+    border-radius: 999px;
+    padding: 2px 9px;
+    font-weight: 700;
+  }
+  .summary-saving .icon { width: 0.9em; height: 0.9em; }
+  .summary-shop-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.6rem;
+    background: transparent;
+    border: 1.5px solid var(--lichen);
+    color: var(--lichen-deep);
+    border-radius: 8px;
+    padding: 0.5rem 0.9rem;
+    font-family: inherit;
+    font-size: 0.84rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .summary-shop-link:hover { background: var(--moss-soft); border-color: var(--lichen-deep); }
+
+  /* ── Agenda (vertikal vy) ── */
+  .agenda {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.25rem 1rem 0.5rem;
+  }
+  .agenda-week-sep {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--rust);
+    padding: 0.6rem 0.2rem 0.1rem;
+  }
+  .agenda-week-sep:first-child { padding-top: 0; }
+  .agenda-group-label {
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-muted);
+    padding: 0.7rem 0.2rem 0.15rem;
+  }
+
+  .week-day-card.agenda-row {
+    width: 100%;
+    height: auto;
+    min-height: 62px;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.7rem 0.85rem;
+  }
+  .agenda-date {
+    flex-shrink: 0;
+    width: 44px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    line-height: 1.05;
+  }
+  .agenda-dow {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .agenda-num {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--forest);
+    font-family: 'Playfair Display', serif;
+  }
+  .agenda-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+  .agenda-row .week-day-recipe {
+    flex: initial;
+    font-size: 0.98rem;
+    -webkit-line-clamp: 2;
+  }
+  .agenda-eyebrow {
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--rust);
+  }
+  .agenda-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+  }
+  .agenda-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: inline-block;
+  }
+  .agenda-trailing {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+  .agenda-chev {
+    color: var(--birch);
+    font-size: 1.5rem;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .agenda-row .week-day-saving { margin-top: 0; }
+
+  /* Idag-hero i agendan */
+  .agenda-row.today {
+    min-height: 84px;
+    padding: 0.95rem 1rem;
+  }
+  .agenda-row.today .agenda-num { color: var(--linen-card); }
+  .agenda-row.today .week-day-recipe { font-size: 1.18rem; }
+
+  /* Tomma / öppna dagar — lugn ton */
+  .agenda-row.gap, .agenda-row.blocked { min-height: 52px; }
+  .agenda-empty-hint {
+    margin: 0.5rem 0.2rem;
+    padding: 1rem;
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    background: var(--linen-card);
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    line-height: 1.5;
+  }
+  .agenda-empty-hint strong { color: var(--rust); }
+
+  .agenda-history { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.3rem; }
+
+  /* Lugnare "pending" i agendan — bannern högst upp gör det tunga jobbet */
+  .week-day-card.agenda-row.plan-pending:not(.today):not(.selected) {
+    border: 1.5px solid var(--border);
+    border-left: 3px solid var(--rust);
+    box-shadow: 0 1px 3px rgba(45,52,40,0.05);
+    animation: none;
+  }
+
+  /* Tactile press på dagskort (mobil-feedback) */
+  .week-day-card:active { transform: scale(0.985); }
 
   /* ── SHOPPING LIST ── */
   .shopping-category {

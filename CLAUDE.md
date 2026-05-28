@@ -109,7 +109,17 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 68 (2026-05-27) — Tidslinje-UX: matsedel-gruppering, kalender-datum, arkivkollaps
+### Senaste session — Session 69 (2026-05-28) — Matsedeln total makeover (branch + Vercel-preview)
+
+- **Status:** Ligger på branch `claude/weekly-menu-redesign-Hr23u` för granskning via Vercel-preview. EJ mergad till main — väntar på användarens omdöme ("Gör om den helt om det känns rätt").
+- **Idé itererad med 3 designagenter** (UX/IA, visuell, funktionell). Konsensus: bygg om som *renderer-tillägg*, inte logik-omskrivning — `buildTimeline()`, alla API/Supabase-anrop, `window.*`-bindningar och dataintegritets-vakter (readonly/archive, `planConfirmed`, discard cache-bust, realtime-guard, `data-recipeid`) orörda.
+- **Ny standardvy "Lista" (vertikal agenda):** hela veckan läses uppifrån-ned; idag = grön "Ikväll"-hero högst upp. `renderAgenda()` + `agendaRow()` i `plan-viewer.js`. Agenda-rader återanvänder `.week-day-card` + samma `data-*` → swap/byte/realtime fungerar oförändrat.
+- **"Tidslinje"-toggle** behåller det gamla horisontella bandet som nollförlust-fallback (`renderTimelineGrid()`, extraherad ur gamla inline-mappen). Växling via `setWeekView()`.
+- **Funktionstillägg:** plan-översikt (proteinbalans · oprövade · sparat totalt), topp-placerad förslags-banner + flyttad bekräfta/kassera, "+ Ny plan"-knapp överst (`openNewPlan()`), "Till inköpslistan →"-brygga när bekräftad, `timeNote` i agendan.
+- **Visuell omarbetning:** idag = fylld lichen-grön hero (rust frigjord till enbart "kräver åtgärd"), besparingar som pill, lugnare pending i agendan, tactile press. Delad uppgradering träffar båda vyerna.
+- **Cache-bust:** `css/styles.css?v=84`, `js/app.js?v=75`. Logik-tester gröna (match/select-recipes/shopping/data-mapper); cookies/dispatch faller bara pga saknad `@supabase/supabase-js` i sandboxen (miljö, ej kod).
+
+### Session 68 (2026-05-27) — Tidslinje-UX: matsedel-gruppering, kalender-datum, arkivkollaps
 
 - **Matsedel-gruppruta (sticky etikett):** Ersatte absolut-positionerad `.plan-group-backdrop` med en vanlig flex-behållare `.plan-group` som omsluter matsedelns `.timeline-day`-element. Etiketten ("Matsedel 9 maj – 31 maj") har `position: sticky; left: 16px` och följer horisontell scroll utan JS-lyssnare. Bakgrundsfärg `--moss-soft`, etikettfärg `--lichen-deep`.
 - **Kalender-stil datum:** Veckodag + datum lyftes ur korten till `.timeline-day-date`-etikett ovanför varje kort. `is-today` / `is-past` / `is-weekend` / `archive-day` på `.timeline-day`-wrappern → CSS styr färg.
