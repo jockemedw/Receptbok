@@ -24,14 +24,16 @@ function closeHeaderSearch() {
 }
 
 export function toggleHeaderSearch() {
-  const area = document.getElementById('headerSearchArea');
-  const btn  = document.getElementById('headerSearchBtn');
-  const fab  = document.getElementById('openSearchBtn');
+  const area  = document.getElementById('headerSearchArea');
+  const btn   = document.getElementById('headerSearchBtn');
+  const fab   = document.getElementById('openSearchBtn');
+  const input = document.getElementById('search');
   const willOpen = area.classList.contains('hidden');
   area.classList.toggle('hidden', !willOpen);
   btn.classList.toggle('active', willOpen);
   fab?.classList.toggle('is-active', willOpen);
-  if (willOpen) setTimeout(() => document.getElementById('search').focus(), 80);
+  // Fokusera synkront i tryck-gesten — annars öppnar iOS inte tangentbordet.
+  if (willOpen && input) input.focus({ preventScroll: false });
 }
 
 // Stäng sökning med Escape
