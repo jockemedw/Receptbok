@@ -9,7 +9,7 @@
 <title>Receptboken</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=84">
+<link rel="stylesheet" href="css/styles.css?v=85">
 <style>/* tömd — CSS flyttad till css/styles.css */
 
 </style>
@@ -41,7 +41,10 @@
   <div class="header-search-area hidden" id="headerSearchArea">
     <div class="search-wrap">
       <span class="search-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
-      <input id="search" type="search" placeholder="Sök på namn, ingrediens, tagg…" autocomplete="off">
+      <input id="search" type="text" placeholder="Sök på namn, ingrediens, tagg…" autocomplete="off">
+      <button type="button" class="search-clear hidden" id="searchClear" aria-label="Rensa sökning">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
     </div>
   </div>
 </header>
@@ -529,6 +532,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=77"></script>
+<script type="module" src="js/app.js?v=78"></script>
 </body>
 </html>

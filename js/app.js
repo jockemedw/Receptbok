@@ -43,7 +43,22 @@ async function init() {
 }
 
 // Event listeners
-document.getElementById('search').addEventListener('input', () => window.renderRecipeBrowser());
+const searchInput = document.getElementById('search');
+const searchClear = document.getElementById('searchClear');
+function updateSearchClear() {
+  searchClear.classList.toggle('hidden', searchInput.value.length === 0);
+}
+window.updateSearchClear = updateSearchClear;
+searchInput.addEventListener('input', () => {
+  updateSearchClear();
+  window.renderRecipeBrowser();
+});
+searchClear.addEventListener('click', () => {
+  searchInput.value = '';
+  updateSearchClear();
+  window.renderRecipeBrowser();
+  searchInput.focus();
+});
 
 // ── Bottom-sheet (Sortera + Filter) ─────────────────────────────────────────
 // iOS-säker scroll-lock: spara scrollY, fixa body, återställ vid stängning.
@@ -175,7 +190,8 @@ function updateFilterDot() {
 // "Rensa sökning"-knapp i empty state
 document.getElementById('emptyState').addEventListener('click', e => {
   if (e.target.closest('.empty-reset-btn')) {
-    document.getElementById('search').value = '';
+    searchInput.value = '';
+    updateSearchClear();
     window.renderRecipeBrowser();
   }
 });
