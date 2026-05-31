@@ -1573,8 +1573,8 @@
   }
 
   .week-day-card {
-    width: 180px;
-    height: 130px;
+    width: 150px;
+    height: 165px;
     flex-shrink: 0;
     background: white;
     border: 1.5px solid var(--border);
