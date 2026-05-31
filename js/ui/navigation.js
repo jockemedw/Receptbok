@@ -32,6 +32,7 @@ export function toggleHeaderSearch() {
   area.classList.toggle('hidden', !willOpen);
   btn.classList.toggle('active', willOpen);
   fab?.classList.toggle('is-active', willOpen);
+  window.updateSearchClear?.();
   // Fokusera synkront i tryck-gesten — annars öppnar iOS inte tangentbordet.
   if (willOpen && input) input.focus({ preventScroll: false });
 }

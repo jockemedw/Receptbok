@@ -234,7 +234,7 @@
 
   #search {
     width: 100%;
-    padding: 0.65rem 1rem 0.65rem 2.4rem;
+    padding: 0.65rem 2.6rem 0.65rem 2.4rem;
     border-radius: 8px;
     border: 1px solid rgba(255,255,255,0.12);
     background: rgba(0,0,0,0.18);
@@ -260,6 +260,32 @@
     font-size: 0.9rem;
     pointer-events: none;
   }
+
+  .search-clear {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1.7rem;
+    height: 1.7rem;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.12);
+    color: var(--linen);
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.15s, background 0.15s;
+  }
+  .search-clear svg { width: 0.85rem; height: 0.85rem; }
+  .search-clear:active { transform: translateY(-50%) scale(0.9); }
+  @media (hover: hover) {
+    .search-clear:hover { opacity: 1; background: rgba(255,255,255,0.2); }
+  }
+  .search-clear.hidden { display: none; }
 
   /* ── BOTTOM-RIGHT FAB STACK (Sortera, Filter, Till toppen) ── */
   .bottom-right-stack {
