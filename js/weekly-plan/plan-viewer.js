@@ -355,12 +355,12 @@ export async function selectRecipeForCustomDay(event, recipeId, title) {
     const householdId = await window.getHouseholdId();
     const existing = (window._customDays?.entries || {})[date] || {};
     const { data: row } = await window.db
-      .from('meal_days').select('id, plan_id').eq('household_id', householdId).eq('date', date).maybeSingle();
+      .from('meal_days').select('plan_id').eq('household_id', householdId).eq('date', date).maybeSingle();
     let dbErr;
     if (row && row.plan_id == null) {
       ({ error: dbErr } = await window.db.from('meal_days')
         .update({ recipe_id: recipeId, recipe_title_snapshot: title, custom_note: existing.note || null })
-        .eq('id', row.id));
+        .eq('household_id', householdId).eq('date', date));
     } else if (!row) {
       ({ error: dbErr } = await window.db.from('meal_days')
         .insert({ household_id: householdId, date, plan_id: null, recipe_id: recipeId, recipe_title_snapshot: title, custom_note: existing.note || null }));
@@ -1347,12 +1347,12 @@ async function postCustomDays(action, dates, note) {
   if (action === 'set') {
     await Promise.all(dates.map(async (date) => {
       const { data: row } = await window.db
-        .from('meal_days').select('id, plan_id').eq('household_id', householdId).eq('date', date).maybeSingle();
+        .from('meal_days').select('plan_id').eq('household_id', householdId).eq('date', date).maybeSingle();
       if (row && row.plan_id != null) return; // aldrig skriv över plan-dagar
       let dbErr;
       if (row) {
         ({ error: dbErr } = await window.db.from('meal_days')
-          .update({ custom_note: note || null }).eq('id', row.id));
+          .update({ custom_note: note || null }).eq('household_id', householdId).eq('date', date));
       } else {
         ({ error: dbErr } = await window.db.from('meal_days')
           .insert({ household_id: householdId, date, plan_id: null, custom_note: note || null }));
