@@ -299,6 +299,10 @@
 
   .recipe-fab:active { transform: scale(0.93); }
 
+  .recipe-fab.is-active {
+    background: var(--rust);
+  }
+
   @media (hover: hover) {
     .recipe-fab:hover { background: var(--lichen-deep); }
   }
