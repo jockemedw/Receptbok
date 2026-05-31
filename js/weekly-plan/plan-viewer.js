@@ -1146,7 +1146,8 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
   }
 
   const recipeItems = shop?.recipeItems || shop?.categories || null;
-  window.renderIngredientPreview(recipeItems, shop?.recipeItemsMovedAt || null, freshlyGenerated || confirmed);
+  // Fäll bara ut direkt efter nygenerering — annars kollapsad som default.
+  window.renderIngredientPreview(recipeItems, shop?.recipeItemsMovedAt || null, freshlyGenerated);
   document.getElementById('triggerSection').classList.add('collapsed');
 }
 
