@@ -548,8 +548,19 @@
   }
 
   /* ── CONTENT HEADING ── */
+  /* Rubriken ska sitta på exakt samma höjd och sidled i alla flikar så
+     bytet blir sömlöst. Top/bottom bor här; vecka/shop nollar sin egen
+     behållar-top (se #weekView/#shopView). I receptvyn ger main 1rem
+     sidled + 0.25rem här = 1.25rem från kanten — vecka/shop matchar via
+     egen override nedan. */
   .content-heading {
     padding: 2rem 0.25rem 0.5rem;
+  }
+  /* Synka sidled mot receptvyns 1.25rem (vecka/shop-behållare har 0 sidled) */
+  #weekView .content-heading,
+  #shopView .content-heading {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
   }
   .content-heading-title {
     font-family: 'Playfair Display', serif;
@@ -1017,7 +1028,7 @@
   /* ── WEEK VIEW ── */
   #weekView {
     display: none;
-    padding: 0.5rem 0 4rem;
+    padding: 0 0 4rem; /* top 0 så rubriken hamnar i nivå med övriga flikar */
     max-width: 680px;
     margin: 0 auto;
   }
@@ -2728,7 +2739,7 @@
   /* ── SHOP VIEW ── */
   #shopView {
     display: none;
-    padding: 1.5rem 0 4rem;
+    padding: 0 0 4rem; /* top 0 så rubriken hamnar i nivå med övriga flikar */
     max-width: 680px;
     margin: 0 auto;
   }
