@@ -109,7 +109,16 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 74 (2026-06-02) — Buggfix: namnändring i inköpslistan sparades inte
+### Senaste session — Session 75 (2026-06-02) — Säsongsanpassning syntes inte i räknaren
+
+- **Symptom:** "Säsongsanpassning"-toggeln kändes som att den inte gjorde något — antalet recept "inom filtret" ändrades inte när den slogs på.
+- **Rotorsak (två delar):** (1) `seasonWeight`-kryssrutan saknade `onchange` → triggade aldrig omräkning. (2) Räknaren "X recept matchar dina filter" (`updateSettingsPreview`) tittade bara på protein/oprövat/måltidstaggar, aldrig på säsong. Dessutom är säsong **medvetet en mjuk viktning** (2×/1×/0,5×, Fas 6C), inte ett hårt filter — den tar aldrig bort recept, så antalet kan inte sjunka.
+- **Beslut (användaren):** behåll mjuk viktning (ingen risk att genereringen slår i taket vissa årstider), men **gör effekten synlig**.
+- **Fix:** `onchange="updateSettingsPreview()"` på toggeln + ny `seasonForDate()` (samma indelning som backendens `getCurrentSeason`). När toggeln är på visar räknaren `… · Y i säsong (sommaren)`.
+- **Verifierat:** `node --check` på `plan-generator.js`; frontend-säsongslogiken jämförd rad-för-rad mot `api/generate.js`; Supabase-data kontrollerad (240 taggade recept, värden `vår/sommar/höst/vinter`).
+- **Cache-bust:** `js/app.js?v=87` (CSS oförändrad).
+
+### Session 74 (2026-06-02) — Buggfix: namnändring i inköpslistan sparades inte
 
 - **Rotorsak:** `renameShopItem` gjorde `parseInt(inputEl.dataset.id, 10)` — men `shopping_items.id` är en **UUID-sträng**, inte ett heltal. `parseInt` stympade UUID:n till ett meningslöst tal → `.update().eq('id', …)` matchade ingen rad (0 uppdaterade, inget fel) → namnet sparades aldrig och `updateNameInMemory` hittade inget → texten snäppte tillbaka. (Borttagning fungerade eftersom den använde id-strängen direkt utan `parseInt`.)
 - **Fix:** använd `inputEl.dataset.id` som sträng rakt av. Dessutom uppdateras minnet nu **optimistiskt före** DB-anropet, så att en re-render (t.ex. "✓ Klar") visar nya namnet direkt istället för att tävla med den asynkrona sparningen; återställning sker bara vid faktiskt DB-fel.
