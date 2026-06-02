@@ -2958,6 +2958,24 @@
   /* I redigera-läget ska klick på raden inte bocka av — bara × tar bort */
   #shoppingList.editing .shopping-item { cursor: default; }
 
+  /* Redigerbart textfält för en vara (redigera-läge) */
+  .item-edit-input {
+    flex: 1;
+    min-width: 0;
+    font-family: inherit;
+    font-size: 0.9rem;
+    color: var(--forest);
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    padding: 0.3rem 0.5rem;
+    line-height: 1.3;
+  }
+  .item-edit-input:focus {
+    outline: none;
+    border-color: var(--rust);
+  }
+
   /* ── Redigera-läge: knapprad ── */
   .shop-edit-bar {
     display: flex;

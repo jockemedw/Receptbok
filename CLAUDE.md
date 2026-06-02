@@ -109,7 +109,16 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 72 (2026-06-02) — Inköpslista: borttagning på plats + stabil kategoriordning
+### Senaste session — Session 73 (2026-06-02) — Inköpslista: redigerbar varutext i redigera-läge
+
+- **Önskemål:** I redigera-läget ska man kunna ändra en varas text till vad man vill.
+- **`itemTextCell(name, rowId)`** (ny): renderar ett `<input class="item-edit-input">` i redigera-läge (annars `<span class="item-text">`). Gäller både recept- och manuella varor.
+- **`renameShopItem(inputEl)`** (ny): `onchange`/Enter → uppdaterar `shopping_items.name` (via `data-id`) + minne, utan omladdning. Recept: bara `rebuildShopText()` (positionsnycklar opåverkade). Manuella: full re-render (textbaserade nycklar måste räknas om). `updateNameInMemory()` migrerar manuella bock-nycklar.
+- **`toggleEditMode`** re-renderar nu så text↔fält växlar.
+- **XSS-härdning:** eftersom varunamn nu är användarredigerbara escapas receptvarornas text överallt (tidigare oescapad `${item}`), samt i kopiera-listan-HTML (`shop-text-items`). Klippbordstexten (`_fullText`) förblir rå.
+- **Cache-bust:** `css/styles.css?v=91`, `js/app.js?v=85`. shopping-testet 62/62.
+
+### Session 72 (2026-06-02) — Inköpslista: borttagning på plats + stabil kategoriordning
 
 - **Önskemål:** Borttagen ingrediens ska försvinna utan att sidan laddas om, och kategoriordningen (t.ex. Mejeri) ska inte ändras.
 - **Rotorsak:** `removeShopItem`/`removeManualItem` körde `loadShoppingTab()` (full DB-omladdning). `buildShopState` byggde kategoriordning från `.order('position')` — men `position` är per-kategori, så lika värden tie-breakas icke-deterministiskt av Postgres → kategorierna hoppade om vid varje omladdning. Dessutom triggade realtime-DELETE en *till* `loadShoppingTab()`.
