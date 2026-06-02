@@ -237,26 +237,30 @@ function itemTextCell(name, rowId) {
 
 // Byt namn på en vara (i redigera-läge). Uppdaterar DB + minne utan omladdning.
 export async function renameShopItem(inputEl) {
-  const id = parseInt(inputEl.dataset.id, 10);
+  const id = inputEl.dataset.id;            // shopping_items.id är en UUID-sträng
   const orig = inputEl.dataset.orig || '';
   const newName = inputEl.value.trim();
-  if (!id || !newName) { inputEl.value = orig; return; }
-  if (newName === orig) { inputEl.value = newName; return; }
+  if (!id || !newName || newName === orig) { inputEl.value = newName || orig; return; }
+
+  // Uppdatera minnet direkt (optimistiskt) så en efterföljande re-render — t.ex.
+  // när man trycker "✓ Klar" — visar det nya namnet och inte snäpper tillbaka.
+  inputEl.dataset.orig = newName;
+  const wasManual = updateNameInMemory(id, newName);
+  if (wasManual) renderFullShoppingList(window._shopRecipeItems, window._shopManualItems);
+  else rebuildShopText();
+
   try {
     const { error } = await window.db.from('shopping_items').update({ name: newName }).eq('id', id);
     if (error) throw error;
   } catch {
-    inputEl.value = orig;
+    // Återställ vid fel
+    updateNameInMemory(id, orig);
+    inputEl.dataset.orig = orig;
+    if (document.body.contains(inputEl)) inputEl.value = orig;
+    if (wasManual) renderFullShoppingList(window._shopRecipeItems, window._shopManualItems);
+    else rebuildShopText();
     alert('Kunde inte ändra varan — prova igen.');
-    return;
   }
-  inputEl.dataset.orig = newName;
-  const wasManual = updateNameInMemory(id, newName);
-  // Receptvaror har positionsnycklar → namnbyte påverkar inga nycklar, det
-  // räcker att uppdatera text-vyn. Manuella varors nycklar är textbaserade →
-  // re-rendera så nycklarna stämmer.
-  if (wasManual) renderFullShoppingList(window._shopRecipeItems, window._shopManualItems);
-  else rebuildShopText();
 }
 
 // Uppdaterar varans namn i in-memory-state. Returnerar true om den var manuell.
