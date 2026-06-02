@@ -15,6 +15,16 @@ export function initDatePickers() {
   updateSettingsPreview();
 }
 
+// Samma säsongsindelning som backend (api/generate.js → getCurrentSeason).
+function seasonForDate(dateStr) {
+  if (!dateStr) return null;
+  const month = parseInt(dateStr.slice(5, 7), 10);
+  if (month >= 3 && month <= 5)  return 'vår';
+  if (month >= 6 && month <= 8)  return 'sommar';
+  if (month >= 9 && month <= 11) return 'höst';
+  return 'vinter';
+}
+
 export function getSelectedProteins() {
   return Array.from(document.querySelectorAll('.prot-btn.active')).map(b => b.dataset.prot);
 }
@@ -82,7 +92,15 @@ export function updateSettingsPreview() {
     document.getElementById('untestedCount').max   = diff;
   }
 
-  preview.textContent  = `${matching.length} recept matchar dina filter`;
+  const seasonOn = !!document.getElementById('seasonWeight')?.checked;
+  const season   = seasonOn ? seasonForDate(startVal) : null;
+  if (season) {
+    const inSeason = matching.filter(r => (r.seasons || []).includes(season)).length;
+    const seasonLabel = { 'vår': 'våren', sommar: 'sommaren', 'höst': 'hösten', vinter: 'vintern' }[season] || season;
+    preview.textContent = `${matching.length} recept matchar dina filter · ${inSeason} i säsong (${seasonLabel})`;
+  } else {
+    preview.textContent = `${matching.length} recept matchar dina filter`;
+  }
   preview.style.color  = matching.length < 3 ? 'var(--rust)' : 'var(--lichen)';
 }
 
