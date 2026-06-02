@@ -748,20 +748,23 @@ async function modifyDay(date, action) {
     panel.innerHTML = '';
     document.querySelectorAll('.week-day-card').forEach(c => c.classList.remove('selected'));
 
-    // Re-rendera planen
-    const shop = data.shoppingList || null;
+    // Re-rendera planen. Fri dag/ångra ändrar inte receptmängden → ingen ny
+    // inköpslista skickas; återanvänd senaste shop-summering så ingrediens-
+    // förhandsvisningen på veckovyn inte blankas.
+    const shop = data.shoppingList || window._lastShop || null;
     renderWeeklyPlanData(data.weeklyPlan, shop);
 
-    // Uppdatera inköpslistan om den finns
-    if (shop && window.renderShoppingData) {
-      window.renderShoppingData(shop);
+    // Uppdatera inköpslistan bara om servern skickade en ny
+    if (data.shoppingList && window.renderShoppingData) {
+      window.renderShoppingData(data.shoppingList);
     }
   } catch (e) {
     const panel = document.getElementById('weekRecipeDetail');
     const errEl = document.createElement('p');
     errEl.style.cssText = 'color:var(--rust);font-size:0.82rem;padding:0.5rem 1rem';
     const actionMsg = { free: 'göra fri', unfree: 'ångra fri dag på' };
-    errEl.textContent = `Kunde inte ${actionMsg[action] || 'ändra'} dagen — prova igen.`;
+    const fallback = `Kunde inte ${actionMsg[action] || 'ändra'} dagen — prova igen.`;
+    errEl.textContent = (e.message && e.message !== 'Okänt fel') ? e.message : fallback;
     panel.innerHTML = '';
     panel.appendChild(errEl);
     panel.classList.add('open');
