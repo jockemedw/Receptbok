@@ -124,6 +124,10 @@ export function toggleEditMode() {
     btn.classList.toggle('active', window._editMode);
     btn.textContent = window._editMode ? '✓ Klar' : '✎ Redigera';
   }
+  // Re-rendera så varornas text växlar mellan etikett och redigerbart fält
+  if (window._shopRecipeItems || (window._shopManualItems && window._shopManualItems.length)) {
+    renderFullShoppingList(window._shopRecipeItems || null, window._shopManualItems || []);
+  }
 }
 
 // Tar bort en vara ur in-memory-state och re-renderar från minnet — ingen
@@ -218,6 +222,70 @@ export function toggleShopItem(el, key) {
   scheduleCheckedSave();
 }
 
+// Textcell för en vara: redigerbart fält i redigera-läge, annars vanlig text.
+// Namnet escapas alltid (varorna är användarredigerbara → XSS-skydd).
+function itemTextCell(name, rowId) {
+  if (window._editMode) {
+    const v = escapeHtml(name);
+    return `<input class="item-edit-input" type="text" value="${v}" data-id="${rowId ?? ''}" data-orig="${v}"
+              onclick="event.stopPropagation()"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
+              onchange="renameShopItem(this)">`;
+  }
+  return `<span class="item-text">${escapeHtml(name)}</span>`;
+}
+
+// Byt namn på en vara (i redigera-läge). Uppdaterar DB + minne utan omladdning.
+export async function renameShopItem(inputEl) {
+  const id = parseInt(inputEl.dataset.id, 10);
+  const orig = inputEl.dataset.orig || '';
+  const newName = inputEl.value.trim();
+  if (!id || !newName) { inputEl.value = orig; return; }
+  if (newName === orig) { inputEl.value = newName; return; }
+  try {
+    const { error } = await window.db.from('shopping_items').update({ name: newName }).eq('id', id);
+    if (error) throw error;
+  } catch {
+    inputEl.value = orig;
+    alert('Kunde inte ändra varan — prova igen.');
+    return;
+  }
+  inputEl.dataset.orig = newName;
+  const wasManual = updateNameInMemory(id, newName);
+  // Receptvaror har positionsnycklar → namnbyte påverkar inga nycklar, det
+  // räcker att uppdatera text-vyn. Manuella varors nycklar är textbaserade →
+  // re-rendera så nycklarna stämmer.
+  if (wasManual) renderFullShoppingList(window._shopRecipeItems, window._shopManualItems);
+  else rebuildShopText();
+}
+
+// Uppdaterar varans namn i in-memory-state. Returnerar true om den var manuell.
+function updateNameInMemory(id, newName) {
+  const key = Object.keys(window._shopItemIds || {}).find(k => window._shopItemIds[k] === id);
+  if (!key) return false;
+  const rm = key.match(/^recipe::(.+)::(\d+)$/);
+  if (rm) {
+    const cat = rm[1], idx = parseInt(rm[2], 10);
+    if (window._shopRecipeItems?.[cat]) window._shopRecipeItems[cat][idx] = newName;
+    return false;
+  }
+  const mm = key.match(/^manual::(\d+)$/);
+  if (mm) {
+    const idx = parseInt(mm[1], 10);
+    const oldName = window._shopManualItems?.[idx];
+    if (window._shopManualItems) window._shopManualItems[idx] = newName;
+    if (oldName != null && oldName !== newName) {
+      const oldK = `manual::${oldName}`, newK = `manual::${newName}`;
+      if (window._checkedItems?.[oldK] !== undefined) {
+        window._checkedItems[newK] = window._checkedItems[oldK];
+        delete window._checkedItems[oldK];
+      }
+    }
+    return true;
+  }
+  return false;
+}
+
 export function rebuildShopText() {
   let textParts = [];
   let textBlocksHtml = '';
@@ -238,7 +306,7 @@ export function rebuildShopText() {
         if (!unchecked.length) return '';
         return `<div class="shop-text-category">
           <div class="shop-text-cat-name">${CAT_ICONS[cat] || '•'} ${cat}</div>
-          <div class="shop-text-items">${unchecked.map(i => '• ' + i).join('\n')}</div>
+          <div class="shop-text-items">${unchecked.map(i => '• ' + escapeHtml(i)).join('\n')}</div>
         </div>`;
       }).join('');
   }
@@ -248,7 +316,7 @@ export function rebuildShopText() {
     textParts.push(`Egna tillägg:\n${uncheckedManual.map(i => '• ' + i).join('\n')}`);
     textBlocksHtml += `<div class="shop-text-category">
       <div class="shop-text-cat-name">${ICON_NOTE} Egna tillägg</div>
-      <div class="shop-text-items">${uncheckedManual.map(i => '• ' + i).join('\n')}</div>
+      <div class="shop-text-items">${uncheckedManual.map(i => '• ' + escapeHtml(i)).join('\n')}</div>
     </div>`;
   }
 
@@ -273,10 +341,11 @@ export function renderFullShoppingList(recipeItems, manualItems) {
         const itemsHtml = items.map((item, idx) => {
           const key     = `recipe::${cat}::${idx}`;
           const checked = window._checkedItems[key] || false;
+          const rowId   = window._shopItemIds?.[key];
           return `<li class="shopping-item${checked ? ' checked' : ''}"
                       onclick="toggleShopItem(this,'${key}')">
             <span class="item-checkbox">${checked ? '✓' : ''}</span>
-            <span class="item-text">${item}</span>
+            ${itemTextCell(item, rowId)}
             <button class="remove-item-btn" data-key="${key}" title="Ta bort varan"
                     onclick="event.stopPropagation();removeShopItem(this.dataset.key)">×</button>
           </li>`;
@@ -305,20 +374,21 @@ export function renderFullShoppingList(recipeItems, manualItems) {
         if (!unchecked.length) return '';
         return `<div class="shop-text-category">
           <div class="shop-text-cat-name">${CAT_ICONS[cat] || '•'} ${cat}</div>
-          <div class="shop-text-items">${unchecked.map(i => '• ' + i).join('\n')}</div>
+          <div class="shop-text-items">${unchecked.map(i => '• ' + escapeHtml(i)).join('\n')}</div>
         </div>`;
       }).join('');
   }
 
   if (manualItems.length > 0) {
-    const manualHtml = manualItems.map((item) => {
+    const manualHtml = manualItems.map((item, idx) => {
       const key     = `manual::${item}`;
       const checked = window._checkedItems[key] || false;
+      const rowId   = window._shopItemIds?.[`manual::${idx}`];
       return `<li class="shopping-item${checked ? ' checked' : ''}"
                   data-key="${escapeHtml(key)}"
                   onclick="toggleShopItem(this,this.dataset.key)">
         <span class="item-checkbox">${checked ? '✓' : ''}</span>
-        <span class="item-text">${escapeHtml(item)}</span>
+        ${itemTextCell(item, rowId)}
         <button class="remove-item-btn" data-item="${escapeHtml(item)}" title="Ta bort varan" onclick="event.stopPropagation();removeManualItem(this.dataset.item)">×</button>
       </li>`;
     }).join('');
@@ -335,7 +405,7 @@ export function renderFullShoppingList(recipeItems, manualItems) {
       textParts.push(`Egna tillägg:\n${uncheckedManual.map(i => '• ' + i).join('\n')}`);
       textBlocksHtml += `<div class="shop-text-category">
         <div class="shop-text-cat-name">${ICON_NOTE} Egna tillägg</div>
-        <div class="shop-text-items">${uncheckedManual.map(i => '• ' + i).join('\n')}</div>
+        <div class="shop-text-items">${uncheckedManual.map(i => '• ' + escapeHtml(i)).join('\n')}</div>
       </div>`;
     }
   }
@@ -493,6 +563,7 @@ export function renderShoppingData(shop) {
 window.setShopMode        = setShopMode;
 window.toggleShopItem     = toggleShopItem;
 window.toggleEditMode     = toggleEditMode;
+window.renameShopItem     = renameShopItem;
 window.removeShopItem     = removeShopItem;
 window.removeManualItem   = removeManualItem;
 window.clearShoppingList  = clearShoppingList;
