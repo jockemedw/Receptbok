@@ -2939,18 +2939,49 @@
     border-top: none;
     text-align: left;
   }
-  .remove-manual-btn {
+  /* Ta-bort-knapp (× på varje vara) — visas bara i redigera-läget */
+  .remove-item-btn {
     margin-left: auto;
     background: none;
     border: none;
     color: var(--text-muted);
-    font-size: 1.1rem;
+    font-size: 1.35rem;
     cursor: pointer;
-    padding: 0 0.3rem;
+    padding: 0 0.35rem;
     line-height: 1;
     flex-shrink: 0;
+    display: none;
   }
-  .remove-manual-btn:hover { color: var(--rust); }
+  #shoppingList.editing .remove-item-btn { display: block; }
+  .remove-item-btn:hover { color: var(--rust); }
+
+  /* I redigera-läget ska klick på raden inte bocka av — bara × tar bort */
+  #shoppingList.editing .shopping-item { cursor: default; }
+
+  /* ── Redigera-läge: knapprad ── */
+  .shop-edit-bar {
+    display: flex;
+    justify-content: flex-end;
+    margin: -0.6rem 0 0.7rem;
+  }
+  .shop-edit-btn {
+    background: transparent;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 0.35rem 0.85rem;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+  .shop-edit-btn:hover { border-color: var(--rust); color: var(--rust); }
+  .shop-edit-btn.active {
+    background: var(--rust);
+    border-color: var(--rust);
+    color: white;
+  }
 
   /* ── REDIGERINGSKNAPP ── */
   .edit-recipe-btn {

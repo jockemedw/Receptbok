@@ -43,30 +43,42 @@ function subscribeShoppingItems(listId) {
     .subscribe();
 }
 
-// Rekonstruerar frontend-state från Supabase-rader
+// Rekonstruerar frontend-state från Supabase-rader.
+// Nycklar baseras på kompakt index (0..n) per kategori — matchar renderingens
+// index och håller bocknings-state rätt även efter att en vara tagits bort
+// (då blir det luckor i `position`-kolumnen i DB).
 function buildShopState(list, items) {
+  const recipeRows = {};   // kategori → rader
+  const manualRows = [];
+  for (const row of items) {
+    if (row.source === 'recipe') (recipeRows[row.category] ||= []).push(row);
+    else if (row.source === 'manual') manualRows.push(row);
+  }
+
   const recipeItems = {};
-  const manualItemsArr = [];
   const checkedItems = {};
   const itemIds = {};
-  for (const row of items) {
-    if (row.source === 'recipe') {
-      if (!recipeItems[row.category]) recipeItems[row.category] = [];
-      while (recipeItems[row.category].length <= row.position) recipeItems[row.category].push(null);
-      recipeItems[row.category][row.position] = row.name;
-      const key = `recipe::${row.category}::${row.position}`;
+
+  for (const cat of Object.keys(recipeRows)) {
+    const sorted = recipeRows[cat].slice().sort((a, b) => a.position - b.position);
+    recipeItems[cat] = [];
+    sorted.forEach((row, idx) => {
+      recipeItems[cat].push(row.name);
+      const key = `recipe::${cat}::${idx}`;
       checkedItems[key] = row.checked === true;
       itemIds[key] = row.id;
-    } else if (row.source === 'manual') {
-      while (manualItemsArr.length <= row.position) manualItemsArr.push(null);
-      manualItemsArr[row.position] = row.name;
-      const key = `manual::${row.position}`;
-      checkedItems[key] = row.checked === true;
-      itemIds[key] = row.id;
-    }
+    });
   }
-  for (const cat of Object.keys(recipeItems)) recipeItems[cat] = recipeItems[cat].filter(Boolean);
-  return { recipeItems, manualItems: manualItemsArr.filter(Boolean), checkedItems, itemIds };
+
+  const manualSorted = manualRows.slice().sort((a, b) => a.position - b.position);
+  const manualItems = manualSorted.map((row) => row.name);
+  manualSorted.forEach((row, idx) => {
+    const key = `manual::${idx}`;
+    checkedItems[key] = row.checked === true;
+    itemIds[key] = row.id;
+  });
+
+  return { recipeItems, manualItems, checkedItems, itemIds };
 }
 
 const ICON_NOTE = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h11l3 3v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><path d="M8 11h8 M8 14h8 M8 17h5"/></svg>';
@@ -77,6 +89,37 @@ export function setShopMode(mode) {
   document.getElementById('modeBtnText').classList.toggle('active', !isHandla);
   document.getElementById('shoppingList').style.display = isHandla ? '' : 'none';
   document.getElementById('shoppingText').classList.toggle('visible', !isHandla);
+  // Redigera-läget hör bara hemma i handla-vyn
+  const editBar = document.getElementById('shopEditBar');
+  if (editBar) editBar.style.display = isHandla ? '' : 'none';
+  if (!isHandla && window._editMode) toggleEditMode();
+}
+
+// Redigera-läge: visar en ×-knapp på varje vara så att man kan ta bort den helt
+// (inte bara bocka av den som köpt).
+export function toggleEditMode() {
+  window._editMode = !window._editMode;
+  const list = document.getElementById('shoppingList');
+  const btn  = document.getElementById('editModeBtn');
+  if (list) list.classList.toggle('editing', window._editMode);
+  if (btn) {
+    btn.classList.toggle('active', window._editMode);
+    btn.textContent = window._editMode ? '✓ Klar' : '✎ Redigera';
+  }
+}
+
+export async function removeShopItem(key) {
+  const id = window._shopItemIds?.[key];
+  if (!id) { alert('Kunde inte ta bort varan — prova igen.'); return; }
+  try {
+    const { error } = await window.db.from('shopping_items').delete().eq('id', id);
+    if (error) throw error;
+    // Index-nycklarna skiftar när en vara försvinner → bygg om bock-state från DB
+    window._preserveChecked = false;
+    loadShoppingTab();
+  } catch {
+    alert('Kunde inte ta bort varan — prova igen.');
+  }
 }
 
 export function scheduleCheckedSave() {
@@ -99,6 +142,7 @@ export function scheduleCheckedSave() {
 }
 
 export function toggleShopItem(el, key) {
+  if (window._editMode) return;   // i redigera-läget gör radklick inget — bara × tar bort
   const nowChecked = !window._checkedItems[key];
   window._checkedItems[key] = nowChecked;
   el.classList.toggle('checked', nowChecked);
@@ -166,6 +210,8 @@ export function renderFullShoppingList(recipeItems, manualItems) {
                       onclick="toggleShopItem(this,'${key}')">
             <span class="item-checkbox">${checked ? '✓' : ''}</span>
             <span class="item-text">${item}</span>
+            <button class="remove-item-btn" data-key="${key}" title="Ta bort varan"
+                    onclick="event.stopPropagation();removeShopItem(this.dataset.key)">×</button>
           </li>`;
         }).join('');
         return `<div class="shopping-category">
@@ -206,7 +252,7 @@ export function renderFullShoppingList(recipeItems, manualItems) {
                   onclick="toggleShopItem(this,this.dataset.key)">
         <span class="item-checkbox">${checked ? '✓' : ''}</span>
         <span class="item-text">${escapeHtml(item)}</span>
-        <button class="remove-manual-btn" data-item="${escapeHtml(item)}" onclick="event.stopPropagation();removeManualItem(this.dataset.item)">×</button>
+        <button class="remove-item-btn" data-item="${escapeHtml(item)}" title="Ta bort varan" onclick="event.stopPropagation();removeManualItem(this.dataset.item)">×</button>
       </li>`;
     }).join('');
     checkHtml += `<div class="shopping-category">
@@ -381,6 +427,8 @@ export function renderShoppingData(shop) {
 // Exponera på window för inline onclick-attribut
 window.setShopMode        = setShopMode;
 window.toggleShopItem     = toggleShopItem;
+window.toggleEditMode     = toggleEditMode;
+window.removeShopItem     = removeShopItem;
 window.removeManualItem   = removeManualItem;
 window.clearShoppingList  = clearShoppingList;
 window.copyShoppingList   = copyShoppingList;

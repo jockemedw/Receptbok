@@ -9,7 +9,7 @@
 <title>Receptboken</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=89">
+<link rel="stylesheet" href="css/styles.css?v=90">
 <style>/* tömd — CSS flyttad till css/styles.css */
 
 </style>
@@ -298,6 +298,9 @@
         <button class="shop-mode-btn active" id="modeBtnHandla" onclick="setShopMode('handla')">✓ Handla</button>
         <button class="shop-mode-btn" id="modeBtnText" onclick="setShopMode('text')">Kopiera lista</button>
       </div>
+      <div class="shop-edit-bar" id="shopEditBar">
+        <button class="shop-edit-btn" id="editModeBtn" onclick="toggleEditMode()">✎ Redigera</button>
+      </div>
       <div id="shoppingList"></div>
       <div id="shoppingText" class="shop-text-view"></div>
       <div class="manual-add-section">
@@ -532,6 +535,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=81"></script>
+<script type="module" src="js/app.js?v=82"></script>
 </body>
 </html>
