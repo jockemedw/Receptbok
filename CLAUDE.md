@@ -109,7 +109,14 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 73 (2026-06-02) — Inköpslista: redigerbar varutext i redigera-läge
+### Senaste session — Session 74 (2026-06-02) — Buggfix: namnändring i inköpslistan sparades inte
+
+- **Rotorsak:** `renameShopItem` gjorde `parseInt(inputEl.dataset.id, 10)` — men `shopping_items.id` är en **UUID-sträng**, inte ett heltal. `parseInt` stympade UUID:n till ett meningslöst tal → `.update().eq('id', …)` matchade ingen rad (0 uppdaterade, inget fel) → namnet sparades aldrig och `updateNameInMemory` hittade inget → texten snäppte tillbaka. (Borttagning fungerade eftersom den använde id-strängen direkt utan `parseInt`.)
+- **Fix:** använd `inputEl.dataset.id` som sträng rakt av. Dessutom uppdateras minnet nu **optimistiskt före** DB-anropet, så att en re-render (t.ex. "✓ Klar") visar nya namnet direkt istället för att tävla med den asynkrona sparningen; återställning sker bara vid faktiskt DB-fel.
+- **Verifierat:** RLS tillåter UPDATE (members-policy på `shopping_items` via `list_id`→household). shopping-testet oförändrat.
+- **Cache-bust:** `js/app.js?v=86` (CSS oförändrad, v=91).
+
+### Session 73 (2026-06-02) — Inköpslista: redigerbar varutext i redigera-läge
 
 - **Önskemål:** I redigera-läget ska man kunna ändra en varas text till vad man vill.
 - **`itemTextCell(name, rowId)`** (ny): renderar ett `<input class="item-edit-input">` i redigera-läge (annars `<span class="item-text">`). Gäller både recept- och manuella varor.
