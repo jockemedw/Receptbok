@@ -1847,28 +1847,96 @@
     100% { transform: scale(1); }
   }
 
-  .swap-icon-btn {
+  /* Snabbåtgärds-kluster (slumpa + byt dag) nere till höger på markerat dagkort */
+  .day-card-actions {
     position: absolute;
-    bottom: 0.4rem;
+    bottom: 0.35rem;
     right: 0.4rem;
-    background: none;
-    border: none;
-    padding: 0.2rem 0.25rem;
-    border-radius: 5px;
-    cursor: pointer;
+    display: flex;
+    gap: 0.15rem;
     opacity: 0;
     pointer-events: none;
-    color: var(--text-muted);
-    transition: opacity 0.15s, color 0.15s;
+    transition: opacity 0.15s;
+  }
+
+  .week-day-card.selected .day-card-actions {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .card-icon-btn {
+    background: var(--clay, #f0e6dd);
+    border: 1px solid var(--birch);
+    padding: 0.22rem 0.3rem;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--rust);
+    transition: color 0.15s, border-color 0.15s, background 0.15s, opacity 0.15s;
     line-height: 1;
     display: flex;
     align-items: center;
   }
+  .card-icon-btn:hover { border-color: var(--rust); background: white; }
+  .card-icon-btn .icon { width: 14px; height: 14px; }
+  .card-icon-btn svg { display: block; }
+  .card-icon-btn:disabled { cursor: default; }
+  .card-icon-btn.is-loading {
+    opacity: 0.6;
+    animation: pulse 0.9s ease-in-out infinite;
+  }
 
-  .week-day-card.selected .swap-icon-btn {
-    opacity: 1;
-    pointer-events: auto;
-    color: var(--rust);
+  @keyframes pulse {
+    0%, 100% { opacity: 0.45; }
+    50%      { opacity: 0.9; }
+  }
+
+  /* Primära "byt recept"-knappar i detaljpanelen — framlyfta, ej i disclosure */
+  .day-replace-actions {
+    margin-top: 1.1rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid var(--border);
+  }
+  .day-replace-hint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin: 0 0 0.55rem;
+  }
+  .day-replace-btns {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .day-replace-btn {
+    flex: 1 1 0;
+    min-width: 9.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    background: transparent;
+    border: 1.5px solid var(--birch);
+    color: var(--forest);
+    border-radius: 8px;
+    padding: 0.6rem 0.85rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    line-height: 1;
+    font-family: inherit;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s, opacity 0.15s;
+  }
+  .day-replace-btn .icon { width: 16px; height: 16px; flex-shrink: 0; }
+  .day-replace-btn:hover { border-color: var(--forest); background: var(--moss-soft); }
+  .day-replace-btn:disabled { opacity: 0.55; cursor: default; }
+  .day-replace-btn-primary {
+    background: var(--rust);
+    border-color: var(--rust);
+    color: white;
+  }
+  .day-replace-btn-primary:hover {
+    background: var(--rust);
+    border-color: var(--rust);
+    opacity: 0.88;
   }
 
   .week-day-card.swap-source {

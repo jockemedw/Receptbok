@@ -8,6 +8,8 @@ const ICON_COIN = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="cur
 const ICON_POT = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13c0-3.5 3.5-6 8-6s8 2.5 8 6"/><path d="M3 13h18"/><path d="M5.5 13v2c0 1.5 1 2.5 2.5 2.5h8c1.5 0 2.5-1 2.5-2.5v-2"/><path d="M11 4.5c0-.8.5-1.5 1-1.5s1 .7 1 1.5"/></svg>';
 const ICON_NOTE = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h11l3 3v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><path d="M8 11h8 M8 14h8 M8 17h5"/></svg>';
 const ICON_CALENDAR = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>';
+const ICON_SHUFFLE = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h3.5c1.2 0 2.3.6 3 1.6l5 7c.7 1 1.8 1.6 3 1.6H21"/><path d="M18 4l3 3-3 3"/><path d="M3 17h3.5c1.2 0 2.3-.6 3-1.6l.7-1M14.8 9.6l.7-1c.7-1 1.8-1.6 3-1.6H21"/><path d="M18 14l3 3-3 3"/></svg>';
+const ICON_PENCIL = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4l10-10a2 2 0 0 0-2.8-2.8L5 17v3z"/><path d="M13.5 6.5l4 4"/></svg>';
 
 // ── Realtime-prenumeration för matsedeln ──────────────────────────────────────
 let _planChannel = null;
@@ -301,6 +303,7 @@ export async function selectRecipeForDay(event, recipeId, title) {
       card.dataset.recipeid = recipeId;
       card.querySelector('.week-day-recipe').textContent = title;
     }
+    updateLastPlanDay(date, recipeId, title);
     if (data.shoppingList) {
       window.renderIngredientPreview(
         data.shoppingList.recipeItems || null,
@@ -509,6 +512,67 @@ export async function swapDays(date1, date2) {
 
 // ── Receptbyte (slumpa/välj) ──────────────────────────────────────────────────
 
+// Håll in-memory-planen (window._lastPlan) i synk när en enskild dags recept
+// byts. Annars kan en senare full re-render återställa dagen till gammalt recept.
+function updateLastPlanDay(date, recipeId, recipe) {
+  const day = window._lastPlan?.days?.find(d => d.date === date);
+  if (day) {
+    day.recipe = recipe;
+    day.recipeId = recipeId;
+    day.saving = 0;
+    day.savingMatches = [];
+  }
+}
+
+// Snabb-slumpa direkt från ett dagkort i tidslinjen (ej-bekräftad plan).
+// Läser nuvarande recept-id live från kortet (undviker inbakat förlegat id),
+// och gör en full re-render efteråt — precis som dagbyte — så att inget blir stale.
+export async function shuffleDay(date, btnEl) {
+  const card = document.querySelector(`.week-day-card[data-date="${date}"]`);
+  const currentId = card ? parseInt(card.dataset.recipeid, 10) : NaN;
+
+  btnEl.disabled = true;
+  btnEl.classList.add('is-loading');
+
+  const weekRecipeIds = Array.from(document.querySelectorAll('.week-day-card[data-recipeid]'))
+    .map(c => parseInt(c.dataset.recipeid, 10))
+    .filter(id => !isNaN(id));
+
+  try {
+    const res = await fetch('/api/replace-recipe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        date,
+        currentRecipeId: isNaN(currentId) ? undefined : currentId,
+        weekRecipeIds,
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Okänt fel');
+
+    // Uppdatera plan-data i minnet → full re-render (konsekvent med dagbyte)
+    updateLastPlanDay(date, data.recipeId, data.recipe);
+    renderWeeklyPlanData(window._lastPlan, window._lastShop, false, window._planArchive, window._customDays);
+
+    // Re-öppna detaljpanelen för dagen med det nya receptet
+    const newCard = document.querySelector(`.week-day-card[data-date="${date}"]`);
+    if (newCard) openWeekRecipe(data.recipeId, data.recipe, newCard);
+  } catch (e) {
+    btnEl.disabled = false;
+    btnEl.classList.remove('is-loading');
+    const panel = document.getElementById('weekRecipeDetail');
+    if (panel) {
+      const errEl = document.createElement('p');
+      errEl.style.cssText = 'color:var(--rust);font-size:0.82rem;padding:0.5rem 1rem';
+      errEl.textContent = 'Kunde inte byta recept — prova igen.';
+      panel.innerHTML = '';
+      panel.appendChild(errEl);
+      panel.classList.add('open');
+    }
+  }
+}
+
 export async function replaceRecipe(currentId, date, btnEl) {
   btnEl.disabled    = true;
   btnEl.textContent = 'Letar recept…';
@@ -530,6 +594,7 @@ export async function replaceRecipe(currentId, date, btnEl) {
     if (selectedCard) {
       selectedCard.dataset.recipeid = data.recipeId;
       selectedCard.querySelector('.week-day-recipe').textContent = data.recipe;
+      updateLastPlanDay(selectedCard.dataset.date || date, data.recipeId, data.recipe);
       selectedCard.classList.remove('selected');
       openWeekRecipe(data.recipeId, data.recipe, selectedCard);
     }
@@ -543,7 +608,7 @@ export async function replaceRecipe(currentId, date, btnEl) {
     }
   } catch (e) {
     btnEl.disabled    = false;
-    btnEl.textContent = 'Föreslå nytt recept';
+    btnEl.textContent = 'Slumpa nytt recept';
     const panel  = document.getElementById('weekRecipeDetail');
     const errEl  = panel.querySelector('.replace-error');
     if (!errEl) {
@@ -596,9 +661,20 @@ export function openWeekRecipe(recipeId, title, cardEl) {
   const readOnly = cardEl.dataset.readonly === '1';
   const isPast = cardEl.dataset.past === '1';
   const isCustom = cardEl.dataset.custom === '1';
-  const replaceBtns = (readOnly || window.planConfirmed) ? '' : `
-    <button class="replace-recipe-btn" onclick="enterReplaceMode('${date}', '${dayName}')">Välj annat recept</button>
-    <button class="replace-recipe-btn" onclick="replaceRecipe(${r.id}, '${date}', this)">Slumpa nytt recept</button>`;
+
+  // Primära byt-recept-knappar — lyfts fram direkt (ej gömda under disclosure)
+  // så att man enkelt kan slumpa om eller välja manuellt i en ej-bekräftad matsedel.
+  const canReplace = !readOnly && !window.planConfirmed && !isCustom;
+  const replaceActions = canReplace ? `
+    <div class="day-replace-actions">
+      <p class="day-replace-hint">Vill du ha något annat den här dagen?</p>
+      <div class="day-replace-btns">
+        <button class="day-replace-btn day-replace-btn-primary" onclick="replaceRecipe(${r.id}, '${date}', this)">${ICON_SHUFFLE} Slumpa nytt recept</button>
+        <button class="day-replace-btn" onclick="enterReplaceMode('${date}', '${dayName}')">${ICON_PENCIL} Välj manuellt</button>
+      </div>
+    </div>` : '';
+
+  // Sekundära åtgärder (byt dag, fri dag, redigera egen planering) — under disclosure
   const swapBtn = !readOnly
     ? `<button class="day-action-btn" onclick="enterSwapMode('${date}')">Byt dag</button>` : '';
   const freeBtn = (!readOnly && !isPast)
@@ -614,13 +690,13 @@ export function openWeekRecipe(recipeId, title, cardEl) {
   const customNote = isCustom
     ? `<p class="readonly-note">✏️ Egen planering — inget recept från matsedeln.</p>`
     : '';
-  const hasActions = !!(replaceBtns || dayActionBtns || customEditBtn);
-  const actionsDetails = hasActions ? `
+  const secondaryActions = `${dayActionBtns}${customEditBtn}`;
+  const actionsDetails = secondaryActions.trim() ? `
     <details class="day-actions-details">
-      <summary>Ändra dag</summary>
-      <div class="day-actions-inner">${replaceBtns}${dayActionBtns}${customEditBtn}</div>
+      <summary>Fler val</summary>
+      <div class="day-actions-inner">${secondaryActions}</div>
     </details>` : '';
-  const actionBtns = actionsDetails + readOnlyNote + customNote;
+  const actionBtns = replaceActions + actionsDetails + readOnlyNote + customNote;
 
   panel.innerHTML = `<div class="detail-inner">
     <div class="week-recipe-header">
@@ -880,7 +956,8 @@ export async function confirmPlan() {
 
     window.planConfirmed = true;
     document.getElementById('confirmPlanWrap').style.display = 'none';
-    document.querySelectorAll('.swap-icon-btn').forEach(b => b.classList.add('confirmed'));
+    // Bekräftad plan → ta bort snabbåtgärderna (slumpa/byt dag) från korten
+    document.querySelectorAll('.day-card-actions').forEach(b => b.remove());
 
     const panel = document.getElementById('weekRecipeDetail');
     panel.classList.remove('open');
@@ -1069,17 +1146,23 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
     const proteinColor = recipe ? (PROTEIN_COLOR[recipe.protein] || '') : '';
     const borderStyle = proteinColor ? ` style="border-left: 3px solid ${proteinColor}"` : '';
 
-    // Swap-knappen bara på aktiv plan, icke-bekräftad
-    const showSwap = d.planId === 'active' && !d.blocked && !window.planConfirmed;
-    const swapBtn = showSwap
-      ? `<button class="swap-icon-btn" title="Flytta till annan dag"
-           onclick="event.stopPropagation();enterSwapMode('${d.date}')"
-         ><svg xmlns="http://www.w3.org/2000/svg" width="13" height="10" viewBox="0 0 13 10"
-           fill="none" stroke="currentColor" stroke-width="1.6"
-           stroke-linecap="round" stroke-linejoin="round">
-           <path d="M1 2.5h11M9 0.5l2.5 2L9 4.5"/>
-           <path d="M12 7.5H1M4 5.5L1.5 7.5 4 9.5"/>
-         </svg></button>`
+    // Snabbåtgärder på aktiv, icke-bekräftad plandag: slumpa nytt recept + byt dag.
+    // Visas när kortet är markerat (se CSS .week-day-card.selected .day-card-actions).
+    const showDayActions = d.planId === 'active' && !d.blocked && !window.planConfirmed && !!rid;
+    const swapBtn = showDayActions
+      ? `<div class="day-card-actions">
+           <button class="card-icon-btn" title="Slumpa nytt recept"
+             onclick="event.stopPropagation();shuffleDay('${d.date}', this)"
+           >${ICON_SHUFFLE}</button>
+           <button class="card-icon-btn" title="Flytta till annan dag"
+             onclick="event.stopPropagation();enterSwapMode('${d.date}')"
+           ><svg xmlns="http://www.w3.org/2000/svg" width="13" height="10" viewBox="0 0 13 10"
+             fill="none" stroke="currentColor" stroke-width="1.6"
+             stroke-linecap="round" stroke-linejoin="round">
+             <path d="M1 2.5h11M9 0.5l2.5 2L9 4.5"/>
+             <path d="M12 7.5H1M4 5.5L1.5 7.5 4 9.5"/>
+           </svg></button>
+         </div>`
       : '';
     let savingBadge = '';
     if (d.saving && d.saving >= 10) {
@@ -1450,6 +1533,7 @@ window.enterSwapMode       = enterSwapMode;
 window.cancelSwapMode      = cancelSwapMode;
 window.swapDays            = swapDays;
 window.replaceRecipe       = replaceRecipe;
+window.shuffleDay          = shuffleDay;
 window.openWeekRecipe      = openWeekRecipe;
 window.freeDay             = freeDay;
 window.toggleArchive       = toggleArchive;
