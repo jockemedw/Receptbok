@@ -21,10 +21,11 @@ export default createSupabaseHandler(async (req, res) => {
 
   const { data: mealDayRow } = await db
     .from("meal_days")
-    .select("id, blocked")
+    .select("blocked")
+    .eq("household_id", householdId)
     .eq("plan_id", plan.id)
     .eq("date", date)
-    .single();
+    .maybeSingle();
 
   if (!mealDayRow) return res.status(404).json({ error: "Dagen hittades inte i veckoplanen." });
   if (mealDayRow.blocked) {
@@ -103,7 +104,7 @@ export default createSupabaseHandler(async (req, res) => {
       recipe_title_snapshot: picked.title,
       saving: null,
       saving_matches: null,
-    }).eq("id", mealDayRow.id),
+    }).eq("household_id", householdId).eq("date", date),
     db.from("recipe_history").upsert(
       { household_id: householdId, recipe_id: picked.id, used_on: today },
       { onConflict: "household_id,recipe_id" }

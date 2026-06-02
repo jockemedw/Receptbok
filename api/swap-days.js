@@ -19,7 +19,7 @@ export default createSupabaseHandler(async (req, res) => {
 
   const { data: rows } = await db
     .from("meal_days")
-    .select("id, date, recipe_id, recipe_title_snapshot, saving, saving_matches, blocked, locked")
+    .select("date, recipe_id, recipe_title_snapshot, saving, saving_matches, blocked, locked")
     .eq("plan_id", plan.id)
     .in("date", [date1, date2]);
 
@@ -36,13 +36,13 @@ export default createSupabaseHandler(async (req, res) => {
       recipe_title_snapshot: d2.recipe_title_snapshot,
       saving:                d2.saving,
       saving_matches:        d2.saving_matches,
-    }).eq("id", d1.id),
+    }).eq("household_id", householdId).eq("date", d1.date),
     db.from("meal_days").update({
       recipe_id:             d1.recipe_id,
       recipe_title_snapshot: d1.recipe_title_snapshot,
       saving:                d1.saving,
       saving_matches:        d1.saving_matches,
-    }).eq("id", d2.id),
+    }).eq("household_id", householdId).eq("date", d2.date),
   ]);
 
   // Bygg svarsplan från uppdaterade rader
