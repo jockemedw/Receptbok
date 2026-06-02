@@ -4,6 +4,19 @@
 
 import { CAT_ICONS, escapeHtml } from '../utils.js';
 
+// Kanonisk kategoriordning (samma som inköpslistan byggs i) — håller ordningen
+// stabil oavsett i vilken ordning DB-raderna råkar komma tillbaka.
+const CATEGORY_ORDER = ['Mejeri', 'Grönsaker', 'Fisk & kött', 'Frukt', 'Skafferi', 'Övrigt'];
+function sortCategories(cats) {
+  return cats.slice().sort((a, b) => {
+    const ia = CATEGORY_ORDER.indexOf(a), ib = CATEGORY_ORDER.indexOf(b);
+    if (ia !== -1 && ib !== -1) return ia - ib;
+    if (ia !== -1) return -1;
+    if (ib !== -1) return 1;
+    return a.localeCompare(b, 'sv');
+  });
+}
+
 // ── Realtime-prenumeration för inköpsvaror ────────────────────────────────────
 let _shopChannel = null;
 
@@ -20,7 +33,7 @@ function subscribeShoppingItems(listId) {
   _shopChannel = window.db
     .channel(`shopping_items:${listId}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'shopping_items', filter: `list_id=eq.${listId}` }, (payload) => {
-      const { eventType, new: newRow } = payload;
+      const { eventType, new: newRow, old: oldRow } = payload;
       if (eventType === 'UPDATE' && newRow?.source === 'recipe') {
         // Riktad DOM-uppdatering för receptvaror (undviker full reload)
         const key = Object.keys(window._shopItemIds || {}).find(k => window._shopItemIds[k] === newRow.id);
@@ -34,8 +47,13 @@ function subscribeShoppingItems(listId) {
           el.querySelector('.item-checkbox').textContent = serverChecked ? '✓' : '';
         }
         rebuildShopText();
+      } else if (eventType === 'DELETE') {
+        // Borttagen vara → ta bort på plats (bevarar ordning, ingen omladdning).
+        // Lokala borttagningar är redan hanterade → då blir detta en no-op.
+        if (oldRow?.id != null) applyRemovalById(oldRow.id);
+        else { window._preserveChecked = false; loadShoppingTab(); }
       } else {
-        // Ny vara, borttagen vara eller manuell vara ändrad → ladda om
+        // Ny vara eller manuell vara ändrad → ladda om
         window._preserveChecked = false;
         loadShoppingTab();
       }
@@ -59,7 +77,7 @@ function buildShopState(list, items) {
   const checkedItems = {};
   const itemIds = {};
 
-  for (const cat of Object.keys(recipeRows)) {
+  for (const cat of sortCategories(Object.keys(recipeRows))) {
     const sorted = recipeRows[cat].slice().sort((a, b) => a.position - b.position);
     recipeItems[cat] = [];
     sorted.forEach((row, idx) => {
@@ -108,15 +126,64 @@ export function toggleEditMode() {
   }
 }
 
+// Tar bort en vara ur in-memory-state och re-renderar från minnet — ingen
+// DB-omladdning. Bevarar kategoriordningen och kräver ingen sid-omladdning.
+// Re-keyar receptvarornas index kontigerligt så bock-state förblir korrekt.
+// Returnerar true om varan fanns (annars no-op, t.ex. redan borttagen).
+function applyRemovalById(id) {
+  if (id == null) return false;
+  const recipeItems = {};
+  const checkedItems = {};
+  const itemIds = {};
+  let found = false;
+
+  for (const cat of Object.keys(window._shopRecipeItems || {})) {
+    const names = window._shopRecipeItems[cat] || [];
+    const kept = [];
+    names.forEach((name, i) => {
+      const oldKey = `recipe::${cat}::${i}`;
+      const rowId = window._shopItemIds?.[oldKey];
+      if (rowId === id) { found = true; return; }
+      kept.push({ name, checked: window._checkedItems?.[oldKey] || false, rowId });
+    });
+    if (kept.length) {
+      recipeItems[cat] = kept.map((x) => x.name);
+      kept.forEach((x, newIdx) => {
+        const k = `recipe::${cat}::${newIdx}`;
+        checkedItems[k] = x.checked;
+        itemIds[k] = x.rowId;
+      });
+    }
+  }
+
+  const manualItems = [];
+  (window._shopManualItems || []).forEach((name, i) => {
+    const rowId = window._shopItemIds?.[`manual::${i}`];
+    if (rowId === id) { found = true; return; }
+    itemIds[`manual::${manualItems.length}`] = rowId;
+    manualItems.push(name);
+  });
+  // Manuella bock-nycklar är textbaserade i renderingen — bevara dem
+  for (const name of manualItems) {
+    const tk = `manual::${name}`;
+    if (window._checkedItems?.[tk] !== undefined) checkedItems[tk] = window._checkedItems[tk];
+  }
+
+  if (!found) return false;
+
+  window._checkedItems = checkedItems;
+  window._shopItemIds  = itemIds;
+  renderFullShoppingList(Object.keys(recipeItems).length ? recipeItems : null, manualItems);
+  return true;
+}
+
 export async function removeShopItem(key) {
   const id = window._shopItemIds?.[key];
   if (!id) { alert('Kunde inte ta bort varan — prova igen.'); return; }
   try {
     const { error } = await window.db.from('shopping_items').delete().eq('id', id);
     if (error) throw error;
-    // Index-nycklarna skiftar när en vara försvinner → bygg om bock-state från DB
-    window._preserveChecked = false;
-    loadShoppingTab();
+    applyRemovalById(id);   // uppdatera på plats — ingen omladdning, ordning bevaras
   } catch {
     alert('Kunde inte ta bort varan — prova igen.');
   }
@@ -360,15 +427,13 @@ export async function addManualItem(inputId = 'manualItemInput', btnId = 'manual
 }
 
 export async function removeManualItem(item) {
+  const idx = (window._shopManualItems || []).indexOf(item);
+  const id = idx === -1 ? null : window._shopItemIds?.[`manual::${idx}`];
+  if (!id) { alert('Kunde inte ta bort varan — prova igen.'); return; }
   try {
-    const idx = (window._shopManualItems || []).indexOf(item);
-    if (idx === -1) throw new Error('Varan hittades inte');
-    const id = window._shopItemIds?.[`manual::${idx}`];
-    if (!id) throw new Error('Inget id för varan');
     const { error } = await window.db.from('shopping_items').delete().eq('id', id);
     if (error) throw error;
-    window._preserveChecked = true;
-    loadShoppingTab();
+    applyRemovalById(id);   // uppdatera på plats — ingen omladdning, ordning bevaras
   } catch {
     alert('Kunde inte ta bort varan — prova igen.');
   }

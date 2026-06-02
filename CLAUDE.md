@@ -109,7 +109,15 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 71 (2026-06-02) — "Gör fri dag" / "Ångra fri dag" (free/unfree)
+### Senaste session — Session 72 (2026-06-02) — Inköpslista: borttagning på plats + stabil kategoriordning
+
+- **Önskemål:** Borttagen ingrediens ska försvinna utan att sidan laddas om, och kategoriordningen (t.ex. Mejeri) ska inte ändras.
+- **Rotorsak:** `removeShopItem`/`removeManualItem` körde `loadShoppingTab()` (full DB-omladdning). `buildShopState` byggde kategoriordning från `.order('position')` — men `position` är per-kategori, så lika värden tie-breakas icke-deterministiskt av Postgres → kategorierna hoppade om vid varje omladdning. Dessutom triggade realtime-DELETE en *till* `loadShoppingTab()`.
+- **Fix:** `applyRemovalById(id)` (ny) tar bort varan ur in-memory-state, re-keyar receptvarornas index kontigerligt och re-renderar från minnet (`renderFullShoppingList`) — ingen DB-fetch, ingen omladdning. `removeShopItem`/`removeManualItem` använder den. Realtime-`DELETE` gör samma sak på plats (lokala borttagningar blir no-op).
+- **Stabil ordning:** `CATEGORY_ORDER` + `sortCategories()` i `buildShopState` → kanonisk ordning (Mejeri, Grönsaker, Fisk & kött, Frukt, Skafferi, Övrigt) även vid full laddning.
+- **Cache-bust:** `js/app.js?v=84` (CSS oförändrad). shopping-testet 62/62.
+
+### Session 71 (2026-06-02) — "Gör fri dag" / "Ångra fri dag" (free/unfree)
 
 - **Rotorsak:** Frontend skickade `action: 'free'`/`'unfree'` men `api/skip-day.js` validerade bara `skip`/`block`/`unblock` (Session 54:s omskrivning hade aldrig committats — bara `b1b62e9`-versionen fanns). "Gör fri dag" gav 400.
 - **`api/skip-day.js` omskriven** till `free`/`unfree` med rätt semantik:
