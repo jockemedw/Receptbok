@@ -24,7 +24,7 @@ export default createSupabaseHandler(async (req, res) => {
   // Hämta alla meal_days för planen sorterade på datum
   const { data: rows } = await db
     .from("meal_days")
-    .select("id, date, recipe_id, recipe_title_snapshot, saving, saving_matches, blocked, locked")
+    .select("date, recipe_id, recipe_title_snapshot, saving, saving_matches, blocked, locked")
     .eq("plan_id", plan.id)
     .order("date");
 
@@ -82,7 +82,7 @@ export default createSupabaseHandler(async (req, res) => {
         saving:                d.saving,
         saving_matches:        d.saving_matches,
         blocked:               d.blocked,
-      }).eq("id", d.id)
+      }).eq("household_id", householdId).eq("date", d.date)
     )
   );
 
