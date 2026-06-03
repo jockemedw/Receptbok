@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import Anthropic from '@anthropic-ai/sdk';
+import { loadRecipes } from '../_lib/recipes-source.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
@@ -438,10 +439,17 @@ async function main() {
   const progress = loadProgress();
   const client = new Anthropic();
 
-  // Load existing recipes for dedupe
-  const recipesJson = readJsonOr(path.join(REPO_ROOT, 'recipes.json'), { meta: { nextId: 1 }, recipes: [] });
-  const existingTitles = new Set(recipesJson.recipes.map(r => normalizeTitle(r.title)));
-  let nextId = recipesJson.meta.nextId || (recipesJson.recipes.reduce((m, r) => Math.max(m, r.id), 0) + 1);
+  // Load existing recipes (Supabase) for dedupe + provisional id. Slutlig id-
+  // tilldelning sker i promote.mjs mot live-datan (recipes.json är retirerad).
+  let existingTitles = new Set();
+  let nextId = 1;
+  try {
+    const { meta, recipes } = await loadRecipes();
+    existingTitles = new Set(recipes.map(r => normalizeTitle(r.title)));
+    nextId = meta.nextId;
+  } catch (e) {
+    log('WARN', `Kunde inte läsa Supabase för dedupe (${e.message}). Fortsätter utan.`);
+  }
 
   const imported = [];
   const errors = [];

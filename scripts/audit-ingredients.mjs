@@ -32,7 +32,9 @@ async function loadRecipes() {
     return { source: `Supabase (${url})`, recipes: await res.json() };
   }
   const argIdx = process.argv.indexOf("--source");
-  const path = argIdx !== -1 ? process.argv[argIdx + 1] : "/tmp/recipes-supabase.json";
+  const path = argIdx !== -1
+    ? process.argv[argIdx + 1]
+    : join(__dirname, ".cache", "recipes.json");
   const data = JSON.parse(readFileSync(path, "utf-8"));
   return { source: `fil: ${path}`, recipes: data.recipes };
 }

@@ -53,3 +53,8 @@ scripts/dish-scrape/sitemap-*.xml
 scripts/dish-scrape/scrape.log
 scripts/dish-scrape/staging-pilot.json
 scripts/dish-scrape/staging-pilot-report.md
+
+# Supabase-export-cache för dev-skript (Fas 8.4)
+scripts/.cache/
+__pycache__/
+*.pyc

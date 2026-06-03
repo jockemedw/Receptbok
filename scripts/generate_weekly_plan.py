@@ -174,6 +174,12 @@ def filter_recipes(recipes, constraints):
 # ── RECIPES ────────────────────────────────────────────────────────────────────
 
 def load_recipes():
+    # OBSOLET (Fas 8.4): ersatt av Vercel /api/generate. GitHub Actions används ej
+    # längre och recipes.json är retirerad. Behållen som historik — kör ej.
+    raise SystemExit(
+        "generate_weekly_plan.py är obsolet — receptval sker i api/generate.js "
+        "(Vercel). recipes.json är retirerad (Fas 8.4)."
+    )
     with open("recipes.json", encoding="utf-8") as f:
         data = json.load(f)
 

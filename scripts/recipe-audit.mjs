@@ -1,14 +1,16 @@
 #!/usr/bin/env node
-// Receptkvalitetsrevision — analyserar recipes.json och rapporterar problem.
-// Kör: node scripts/recipe-audit.mjs
+// Receptkvalitetsrevision — analyserar recepten (Supabase-cache) och rapporterar problem.
+// Kör först: node scripts/export-recipes.mjs   (skapar scripts/.cache/recipes.json)
+// Kör sedan: node scripts/recipe-audit.mjs
 
-import { readFileSync, writeFileSync, mkdirSync } from "fs";
+import { writeFileSync, mkdirSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+import { loadRecipesFromCache } from "./_lib/recipes-source.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
-const data = JSON.parse(readFileSync(join(ROOT, "recipes.json"), "utf-8"));
+const data = loadRecipesFromCache();
 const recipes = data.recipes;
 
 // ─── Import shopping-builder functions ────────────────────────────────────
