@@ -437,6 +437,13 @@ function pickRandom(arr, n) {
 }
 
 async function main() {
+  // OBSOLET (Fas 8.4): engångsmigrationen är klar (Fas 7) och recipes.json är
+  // retirerad. Behållen som historik + kanonisk källa för fältnamn (data-mapper).
+  throw new Error(
+    "migrate-to-supabase.mjs är obsolet — migrationen är klar (Fas 7) och " +
+    "recipes.json är retirerad (Fas 8.4). Kör ej."
+  );
+  // eslint-disable-next-line no-unreachable
   const mode = parseArgs(process.argv);
   console.log(`\nReceptboken → Supabase-migration (Fas 7B)  •  mode: ${mode}`);
 

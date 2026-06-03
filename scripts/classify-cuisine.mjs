@@ -8,6 +8,14 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..');
+
+// OBSOLET (Fas 8.4): recipes.json är retirerad. Kök-klassningen skrev tillbaka
+// till filen — den modellen gäller inte längre. Behållen som historik — kör ej.
+throw new Error(
+  'classify-cuisine.mjs är obsolet sedan Fas 8.4 (recipes.json retirerad). ' +
+  'Nya tagg-ändringar görs i Supabase (recept-editorn eller en migration).'
+);
+// eslint-disable-next-line no-unreachable
 const RECIPES_PATH = path.join(REPO_ROOT, 'recipes.json');
 
 // Befintliga + nya kök

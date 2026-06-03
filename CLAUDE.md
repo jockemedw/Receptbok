@@ -33,7 +33,7 @@ Browser → Vercel /api/generate → Deterministisk receptväljare (JS) → GitH
 
 ## Operativa regler (följ utan att fråga)
 - Frontend-JS ligger i `js/`-moduler — redigera rätt modulfil, inte `index.html` (som bara är HTML-markup, ~290 rader)
-- Rör aldrig `recipes.json`-strukturen utan explicit instruktion
+- Rör aldrig recept-strukturen (Supabase `recipes`, fält i `js/data-mapper.js`) utan explicit instruktion. `recipes.json` är retirerad (Fas 8.4)
 - Appen ska fungera på alla enheter. Mobilanvändning prioriteras vid designbeslut (touch-first, inga hover-states som primär interaktion)
 - **Mergea till main** — efter varje push, mergea feature-branchen till `main` och pusha. Skippa bara om användaren explicit ber om det.
 - **Stanna och bekräfta** — om ett meddelande är feedback eller återkoppling (inte en tydlig instruktion), tolka det INTE som en order att agera. Ställ en kort fråga och invänta svar innan du gör ändringar.
@@ -91,6 +91,13 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 - [x] 7D — Backend: alla API-endpoints mot Supabase (Session 59)
 - [x] 7E — Cutover mergad till main (Session 60, commit `45a6433`). 671 assertions.
 
+**Fas 8 — Ingrediens-kvalitetskontroll** (plan: `docs/ingredient-qc-plan-2026-06-03.md`)
+- [x] 8.0 — Audit-verktyg (`scripts/audit-ingredients.mjs`) mot Supabase. Baseline (Session 77): P0=1, P1=309, P2=1372, 567 icke-canon-namn. Rapport: `docs/ingredient-audit-2026-06-03.md`.
+- [x] 8.1 — Parser-buggfix: ⅓⅔⅛-fraktioner (`FRACS` + regexar + display). P0 1→0. +5 assertions (shopping 67/67).
+- [x] 8.2 — Canon-utökning (~80 mappningar + kategori-nyckelord). Canon-täckning 17%→30%, P2 1372→728, icke-canon 567→404.
+- [x] 8.3 — Löst i kod (ingen datamutation): doh-parsern skannar nu alla parenteser/klausuler + "ca/från/+/storleksadjektiv", och audit-heuristiken hoppar vaga/valfria + adjektiv-"och". **P1 309→68** (−78 %). +14 assertions (shopping 81/81). 68 kvar = genuin författar-vaghet (stek-olja, "för 4 pers", valfria garneringar).
+- [x] 8.4 — `recipes.json` retirerad. Delad Supabase-källa (`scripts/_lib/recipes-source.mjs`) + `export-recipes.mjs` → gitignorerad cache. Läsare repekade (recipe-audit, season-analysis, audit-ingredients). Import-pipeline (scrape/promote) skriver nu direkt till Supabase. Obsoleta engångsskript spärrade (recipe-fix, classify-cuisine, migrate, generate_weekly_plan.py). Kanoniskt format dokumenterat.
+
 ### Kända buggar
 Inga just nu.
 
@@ -109,7 +116,18 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 76 (2026-06-03) — Flytta-knappen göms i ihopfälld ingredienssektion
+### Senaste session — Session 77 (2026-06-03) — Ingrediens-kvalitetskontroll: plan + audit-verktyg (Fas 8.0)
+
+- **Bakgrund:** Mål att minska problem vid generering av ingrediens-/inköpslistor. En optimal ingrediens har definierbar mängd (antal/vikt/volym).
+- **Nyckelfynd:** `recipes.json` (263 recept) har glidit isär från Supabase (262 recept, id upp till 271). Inget i runtime läser filen — Supabase är sanningskällan. Beslut (användaren): städa i Supabase, **retirera `recipes.json` helt**.
+- **Audit (`scripts/audit-ingredients.mjs`):** läser live från Supabase REST (eller `--source`-export), klassar 3 791 rader i 5 problemklasser med severity. Beroendefritt (plain `fetch`). Baseline: **P0=1** (`⅔ dl olivolja` — fraktionsbugg), **P1=309** (saknad mängd + flerradiga), **P2=1372** (567 icke-canon-namn + brus). "Namn (mängd)"-format räknas ej som defekt (parsern hanterar det).
+- **Levererat:** plan `docs/ingredient-qc-plan-2026-06-03.md`, verktyg + rapport `docs/ingredient-audit-2026-06-03.md` + `ingredient-audit-latest.json`. PR #47.
+- **Fas 8.1 + 8.2 (samma session):** Fraktionsfix (⅓⅔⅛) — P0 1→0, +5 assertions. Canon-utökning ~80 mappningar — täckning 17%→30%, P2 1372→728, C1 1294→517. Tester gröna (match 51, shopping 67, select-recipes 432).
+- **Fas 8.3 (samma session):** Dry-run-analysen visade att merparten av P1 var (a) mängd i senare parentes/klausul som parsern missade och (b) falska positiva (adjektiv-"och", valfria garneringar) — **inte** äkta dataluckor. Löste därför i kod: doh-parsern skannar alla parenteser + "ca/från/+/storleksadjektiv"; audit hoppar vaga/valfria + adjektiv-"och". **P1 309→68 utan att röra live-datan** (säkrast). +14 assertions (shopping 81/81). De 68 kvarvarande är genuin författar-vaghet och renderas acceptabelt i listan.
+- **Fas 8.4 (samma session):** `recipes.json` retirerad (hade glidit isär från Supabase). Ny delad källa `scripts/_lib/recipes-source.mjs` (REST, beroendefri) + `export-recipes.mjs` → gitignorerad cache som synkrona läsare/Python använder. Import-pipelinen (`scrape`/`promote`) skriver nu direkt till Supabase (dry-run-stöd kvar). 5 obsoleta engångsskript spärrade med tydligt meddelande. Kanoniskt ingrediensformat dokumenterat i CLAUDE.md. **Fas 8 helt klar.**
+- **Resultat hela Fas 8:** P0 1→0, P1 309→68, P2 1372→772, canon-täckning 17%→30%, tester 545→564. Ingen live-data muterad.
+
+### Session 76 (2026-06-03) — Flytta-knappen göms i ihopfälld ingredienssektion
 
 - **Önskemål:** "Flytta till inköpslista"-knappen syntes alltid under ingredienssektionen, även när ingredienslistan var ihopfälld. Skulle döljas inom respektive ingredienslista.
 - **Rotorsak:** `#flyttaBtn` låg utanför den hopfällbara `.ingredient-section-body` → `max-height`-kollapsen påverkade aldrig knappen.
@@ -352,23 +370,33 @@ Varje feature-slice är en fristående fil — en agent som jobbar med en featur
 - **Prisoptimering (opt-in toggle):** `optimize_prices`-flag → hämtar Willys-erbjudanden → `bucketBySaving()` sorterar recept med ≥10 kr besparing först i poolen. Filter (historik/veg/protein/låsta/blockerade) respekteras fullt.
 - **Vercel timeout:** 15s (ingen AI-väntan).
 
-## recipes.json — struktur (rör ej)
+## Recept — struktur (Supabase `recipes`, sanningskälla)
+`recipes.json` är **retirerad** (Fas 8.4). Recepten bor i Supabase-tabellen
+`recipes`. Dev-skript läser en gitignorerad cache (`scripts/.cache/recipes.json`)
+via `node scripts/export-recipes.mjs`; producenter (import) skriver direkt till
+Supabase. Fält ↔ rad-mappning: `js/data-mapper.js` (`recipeFromRow`/`recipeToRow`).
+
+Recept-objekt (appens format, snake_case-kolumner i DB):
 ```json
 {
-  "meta": { "version": "1.0", "lastUpdated": "2026-03-08", "totalRecipes": 62, "nextId": 63 },
-  "recipes": [{
-    "id": 1, "title": "Receptnamn", "tested": false, "servings": 4,
-    "time": 40, "timeNote": "ugn 150°",
-    "tags": ["helg60", "fisk", "ugn"],
-    "protein": "fisk",
-    "ingredients": ["600 g torsk", "..."],
-    "instructions": ["Steg 1...", "Steg 2..."],
-    "notes": "Tips: ..."
-  }]
+  "id": 1, "title": "Receptnamn", "tested": false, "servings": 4,
+  "time": 40, "timeNote": "ugn 150°",
+  "tags": ["helg60", "fisk", "ugn"], "protein": "fisk",
+  "ingredients": ["600 g torsk", "..."],
+  "instructions": ["Steg 1...", "Steg 2..."],
+  "notes": "Tips: ...", "seasons": ["höst", "vinter"]
 }
 ```
 **Protein:** `fisk` | `kyckling` | `kött` | `fläsk` | `vegetarisk`
 **Taggar:** `vardag30` (≤30 min vardag), `helg60` (≤60 min helg), `soppa/pasta/wok/ugn/sallad/gryta/ramen` (typ), `veg` (vegetariskt)
+
+### Kanoniskt ingrediensformat (Fas 8)
+En optimal ingrediensrad har en **definierbar mängd** (antal/vikt/volym):
+- **Föredra** `"<mängd> <enhet> <namn>"` (`"2 dl grädde"`, `"600 g torsk"`) eller
+  doh-format `"<namn> (<mängd> <enhet>)"` (`"zucchini (400 g)"`) — parsern hanterar båda.
+- **En ingrediens per rad** (dela `"X och Y"`/`"X eller Y"` om båda ska handlas).
+- **Skafferivaror** (salt, peppar, olja till stekning) får sakna mängd — de skippas medvetet.
+- Verktyg: `node scripts/audit-ingredients.mjs` graderar avvikelser (P0/P1/P2).
 
 ## Dataformat — genererade filer
 ```json

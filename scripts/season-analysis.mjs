@@ -5,6 +5,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { loadRecipesFromCache } from './_lib/recipes-source.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -446,7 +447,7 @@ function isPantryIngredient(raw) {
 // HUVUDPROGRAM
 // =============================================================================
 
-const recipes = JSON.parse(fs.readFileSync(path.join(ROOT, 'recipes.json'), 'utf8')).recipes;
+const recipes = loadRecipesFromCache().recipes;
 
 console.log(`Analyserar ${recipes.length} recept...`);
 

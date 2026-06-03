@@ -8,6 +8,14 @@ import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
+
+// OBSOLET (Fas 8.4): recipes.json är retirerad. Dessa engångsfixar är redan
+// applicerade i Supabase. Behållen som historik — kör ej.
+throw new Error(
+  "recipe-fix.mjs är obsolet sedan Fas 8.4 (recipes.json retirerad). " +
+  "Fixarna ligger redan i Supabase. Använd recept-editorn eller en migration för nya ändringar."
+);
+// eslint-disable-next-line no-unreachable
 const data = JSON.parse(readFileSync(join(ROOT, "recipes.json"), "utf-8"));
 
 let fixes = 0;

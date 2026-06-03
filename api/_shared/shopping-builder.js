@@ -171,6 +171,65 @@ export const NORMALIZATION_TABLE = {
   "lacinatokål": "grönkål",
   // Buljong plural
   "fiskbuljongtärningar": "fiskbuljong",
+
+  // ─── Fas 8.2 — canon-utökning (Session 77) ───────────────────────────────
+  // Höjer pris-matchbarheten. Bakåt-tokenskanningen fångar varianter, så ofta
+  // räcker basnamnet (t.ex. "sojasås" → soja täcker "sojasås med låg salthalt").
+  // Kryddor & pulver (Skafferi)
+  "chilipulver": "chilipulver", "vitlökspulver": "vitlökspulver", "lökpulver": "lökpulver",
+  "paprikapulver": "paprikapulver", "rökt paprikapulver": "paprikapulver",
+  "gurkmeja": "gurkmeja", "malen gurkmeja": "gurkmeja", "mald gurkmeja": "gurkmeja",
+  "cayennepeppar": "cayennepeppar", "garam masala": "garam masala",
+  "tacokrydda": "tacokrydda", "bakpulver": "bakpulver",
+  // Vinäger (Skafferi)
+  "risvinäger": "risvinäger", "kryddad risvinäger": "risvinäger",
+  "äppelcidervinäger": "äppelcidervinäger", "balsamvinäger": "balsamvinäger",
+  "balsamicovinäger": "balsamvinäger", "rödvinsvinäger": "rödvinsvinäger",
+  "vitvinsvinäger": "vitvinsvinäger", "vinäger": "vinäger",
+  // Asiatiska/heta såser
+  "sojasås": "soja", "tamari": "soja",
+  "sesamolja": "sesamolja", "fisksås": "fisksås",
+  "sambal oelek": "sambal oelek", "sriracha": "sriracha", "srirachasås": "sriracha",
+  "gochujang": "gochujang", "hoisinsås": "hoisinsås", "worcestershiresås": "worcestershiresås",
+  "harissa": "harissa", "mild harissa": "harissa", "harissapasta": "harissa", "mild harissapasta": "harissa",
+  "röd currypasta": "röd currypasta", "röd thaicurrypasta": "röd currypasta",
+  "citrongräspasta": "citrongräspasta",
+  // Olja
+  "neutral matolja": "rapsolja", "matolja": "rapsolja", "avokadoolja": "avokadoolja",
+  // Sötning
+  "lönnsirap": "lönnsirap", "kokossocker": "socker", "kokosocker": "socker",
+  // Ris, korn & nudlar (Skafferi)
+  "quinoa": "quinoa", "röd quinoa": "quinoa",
+  "ris": "ris", "vitt ris": "ris", "brunt ris": "ris", "basmatiris": "ris",
+  "jasminris": "ris", "långkornigt vitt ris": "ris",
+  "arborioris": "risotto-ris", "farro": "farro", "bulgur": "bulgur", "nudlar": "nudlar",
+  // Nötter, frön & bröd
+  "pinjenötter": "pinjenötter", "valnötter": "valnötter",
+  "mandelspån": "mandel", "skivade mandlar": "mandel",
+  "jordnötssmör": "jordnötssmör", "cashewsmör": "cashewsmör",
+  "ströbröd": "ströbröd", "pumpafrön": "pumpafrön", "rostade pumpafrön": "pumpafrön",
+  "näringsjäst": "näringsjäst", "nutritionsjäst": "näringsjäst",
+  // Mejeri
+  "kokosmjölk": "kokosmjölk", "gräddfil": "gräddfil",
+  // Grönsaker & baljväxter
+  "avokado": "avokado", "mogen avokado": "avokado",
+  "blomkål": "blomkål", "brysselkål": "brysselkål", "rödkål": "rödkål",
+  "svarta bönor": "svarta bönor", "kapris": "kapris", "jalapeño": "jalapeño",
+  "tofu": "tofu", "rökt tofu": "tofu", "tempeh": "tempeh",
+  "extra fast tofu": "tofu", "extra-fast tofu": "tofu", "fast tofu": "tofu",
+  "butternutpumpa": "butternutpumpa", "squash": "squash",
+  "ruccola": "ruccola", "rädisa": "rädisa", "rädisor": "rädisa",
+  "romansallad": "sallad", "haricots verts": "haricots verts",
+  "cremini-svamp": "champinjoner", "creminisvamp": "champinjoner", "blandade svampar": "svamp",
+  // Örtblad (färsk-prefix strippas → basform behövs)
+  "timjanblad": "timjan", "korianderblad": "koriander",
+  "myntablad": "mynta", "persiljeblad": "persilja",
+  // Vin
+  "vitt vin": "vitt vin", "torrt vitt vin": "vitt vin", "rödvin": "rödvin",
+  // Frukt
+  "äpple": "äpple", "äpplen": "äpple", "mango": "mango",
+  "persika": "persika", "persikor": "persika",
+  "limejuice": "lime", "färsk limejuice": "lime",
 };
 
 // Steg 5: Kategorinyckelord (utökade)
@@ -181,7 +240,7 @@ const CATEGORY_KEYWORDS = {
     "smör", "margarin",
     "ost", "parmesan", "pecorino", "mozzarella", "fetaost", "halloumi",
     "cheddar", "chèvre", "gruyère", "ricotta", "mascarpone", "kvarg", "keso",
-    "crème fraiche", "yoghurt", "turkisk yoghurt", "filmjölk", "kefir",
+    "crème fraiche", "gräddfil", "yoghurt", "turkisk yoghurt", "filmjölk", "kefir",
     "ägg", "äggula", "äggvita",
   ],
   Grönsaker: [
@@ -197,7 +256,8 @@ const CATEGORY_KEYWORDS = {
     "selleri", "palsternacka", "jordärtskocka", "fänkål", "rödbetor",
     "sparris", "majs", "ärtor", "ärter", "sockerärtor", "haricots verts",
     "bönor", "kikärtor", "linser", "belugalinser",
-    "sallad", "salladsblad",
+    "sallad", "salladsblad", "ruccola", "romansallad", "rädisa",
+    "avokado", "butternutpumpa", "squash", "rödkål",
     "persilja", "koriander", "dill", "basilika", "timjan", "gräslök",
     "rosmarin", "oregano", "mynta", "dragon", "lagerblad",
   ],
@@ -208,11 +268,11 @@ const CATEGORY_KEYWORDS = {
     "köttfärs", "fläskfärs", "vegofärs",
     "fläskfilé", "fläsk", "stekfläsk",
     "bacon", "pancetta", "chorizo", "salsiccia", "korv",
-    "biff", "oxfilé", "lamm", "tofu",
+    "biff", "oxfilé", "lamm", "tofu", "tempeh",
   ],
   Frukt: [
     "citron", "lime", "apelsin", "grapefrukt",
-    "äpple", "päron", "banan", "mango", "ananas",
+    "äpple", "päron", "banan", "mango", "ananas", "persika",
     "hallon", "jordgubbar", "lingon", "blåbär",
     "dadlar", "russin",
   ],
@@ -240,7 +300,7 @@ const SWEDISH_UNITS = [
   "dl", "cl", "ml", "kg", "msk", "tsk", "krm",
   "burk", "burkar", "frp", "förp", "pkt", "paket", "påsar", "påse",
   "krukor", "kruka", "knippe", "skivor", "klyftor", "bitar", "kvistar",
-  "skiva", "klyfta", "kvist", "bit",
+  "skiva", "klyfta", "kvist", "bit", "stjälk", "stjälkar",
   "huvud", "huvuden", "näve", "nävar", "nypa", "tumme", "tummar", "st",
   "g", "liter", "l", "cm",
 ];
@@ -251,7 +311,13 @@ const UNIT_REGEX = new RegExp(
 );
 
 function parseFraction(str) {
-  const FRACS = { "½": 0.5, "¼": 0.25, "¾": 0.75 };
+  const FRACS = {
+    "½": 0.5, "¼": 0.25, "¾": 0.75,
+    "⅓": 0.33, "⅔": 0.67,
+    "⅛": 0.125, "⅜": 0.375, "⅝": 0.625, "⅞": 0.875,
+    "⅕": 0.2, "⅖": 0.4, "⅗": 0.6, "⅘": 0.8,
+    "⅙": 0.17, "⅚": 0.83,
+  };
   const s = str.trim();
   if (FRACS[s]) return FRACS[s];
   for (const [f, v] of Object.entries(FRACS)) {
@@ -304,27 +370,43 @@ export function parseIngredient(raw) {
   raw = raw.replace(/\b3\/4\b/g, '¾').replace(/\b1\/2\b/g, '½').replace(/\b1\/4\b/g, '¼')
            .replace(/\b2\/3\b/g, '0,67').replace(/\b1\/3\b/g, '0,33');
 
-  // Handle doh-format: "ingredient name (qty[, prep notes])" → rearrange to "qty ingredient name"
-  // Only when string doesn't start with a digit/fraction (old format always starts with qty)
-  if (!/^[\d½¼¾]/.test(raw.trim())) {
-    const parenM = raw.match(/^(.+?)\s*\(([^)]+)\)/);
-    if (parenM) {
-      // Split on ", " (not bare "," to preserve decimal commas like "0,5 tsk")
-      // then strip any "à X g" size-notation suffix
-      const qtyPart = parenM[2].split(/, /)[0].replace(/\s+à\s+.*/i, '').trim();
-      // Only rearrange for simple "qty unit" patterns (≤2 words).
-      // Multi-word content like "2 msk + 2 tsk", "1 litet huvud", "3 generösa nävar"
-      // would produce garbage names after rearrangement — skip those.
-      const wordCount = qtyPart.split(/\s+/).filter(Boolean).length;
-      if (/^[\d½¼¾]/.test(qtyPart) && wordCount <= 2) {
-        raw = qtyPart + ' ' + parenM[1].trim();
+  // Handle doh-format: "ingredient name (… qty …)" → rearrange to "qty ingredient name".
+  // Only when string doesn't start with a digit/fraction (old format always starts med qty).
+  // Skannar ALLA parenteser och deras ", "-klausuler efter första mängdbärande
+  // ledet — så "lax (mittbit, skinnad, 560 g)" och "gul lök (fint hackad, 2,4 dl)"
+  // återvinns. Noteringar ("t ex …", "valfritt", "från 1 lime") saknar ledande
+  // mängd → raden rörs inte.
+  if (!/^[\d½¼¾⅓⅔⅛⅜⅝⅞⅕⅖⅗⅘⅙⅚]/.test(raw.trim())) {
+    const QTY_RE = /^([\d]+[,.]?\d*(?:\s*[–-]\s*[\d]+[,.]?\d*)?(?:\s*[½¼¾⅓⅔⅛⅜⅝⅞⅕⅖⅗⅘⅙⅚])?|[½¼¾⅓⅔⅛⅜⅝⅞⅕⅖⅗⅘⅙⅚])\s*(.*)$/;
+    let chosen = null;
+    for (const pm of raw.matchAll(/\(([^)]*)\)/g)) {
+      for (let clause of pm[1].split(/, /)) {
+        clause = clause
+          .split(/\s*\+\s*/)[0]
+          .replace(/\s+à\s+.*/i, "")
+          .replace(/^(ca|cirka|ungefär|omkring|från)\s+/i, "")
+          .trim();
+        const qm = clause.match(QTY_RE);
+        if (qm) { chosen = qm; break; }
       }
+      if (chosen) break;
+    }
+    if (chosen) {
+      const num = chosen[1].trim();
+      // Strippa storleksadjektiv ("1 litet huvud" → "huvud", "5 tjocka stjälkar" → "stjälkar")
+      const rest = chosen[2]
+        .replace(/^(liten|litet|små|stor|stora|stort|tjock\w*|grov\w*|medelstor\w*|hel\w*|generös\w*|rejäl\w*)\s+/i, "")
+        .trim();
+      const firstWord = (rest.split(/\s+/)[0] || "").toLowerCase();
+      const unit = SWEDISH_UNITS.includes(firstWord) ? firstWord : "";
+      const namePart = raw.slice(0, raw.indexOf("(")).trim();
+      raw = (unit ? `${num} ${unit}` : num) + " " + namePart;
     }
   }
   const cleaned = cleanIngredient(raw);
   let remaining = cleaned;
   const amountMatch = remaining.match(
-    /^([\d]+[,.]?\d*(?:\s*[–-]\s*[\d]+[,.]?\d*)?(?:\s*[½¼¾])?|[½¼¾])\s*/
+    /^([\d]+[,.]?\d*(?:\s*[–-]\s*[\d]+[,.]?\d*)?(?:\s*[½¼¾⅓⅔⅛⅜⅝⅞⅕⅖⅗⅘⅙⅚])?|[½¼¾⅓⅔⅛⅜⅝⅞⅕⅖⅗⅘⅙⅚])\s*/
   );
   let amount = null;
   if (amountMatch) {
@@ -425,7 +507,10 @@ function categorize(name) {
 function formatIngredient(amount, unit, name) {
   if (amount === null) return name;
   amount = Math.round(amount * 100) / 100;
-  const FRAC_DISPLAY = { 0.5: "½", 0.25: "¼", 0.75: "¾", 1.5: "1½", 2.5: "2½" };
+  const FRAC_DISPLAY = {
+    0.5: "½", 0.25: "¼", 0.75: "¾", 1.5: "1½", 2.5: "2½",
+    0.33: "⅓", 0.67: "⅔", 0.125: "⅛", 0.2: "⅕",
+  };
   const amtStr = FRAC_DISPLAY[amount] ?? (Number.isInteger(amount) ? String(amount) : String(amount).replace(".", ","));
   const qty = unit ? `${amtStr} ${unit}` : amtStr;
   return `${name} (${qty})`;

@@ -100,6 +100,55 @@ function makeRecipes(idIngMap) {
   assertEq(p.amount, 0.25, "parse: ¼ tsk salt → amount 0.25");
 }
 {
+  // Fas 8.1 — ⅓⅔⅛-fraktioner (tidigare P0-bugg: hela mängden tappades)
+  const p = parseIngredient("⅔ dl olivolja");
+  assertEq(p.amount, 0.67, "parse: ⅔ dl olivolja → amount 0.67");
+  assertEq(p.unit, "dl", "parse: ⅔ dl olivolja → unit dl");
+  assertEq(p.name, "olivolja", "parse: ⅔ dl olivolja → name olivolja");
+}
+{
+  const p = parseIngredient("⅓ tsk muskot");
+  assertEq(p.amount, 0.33, "parse: ⅓ tsk muskot → amount 0.33");
+}
+{
+  const p = parseIngredient("1⅔ dl mjöl");
+  assertEq(p.amount, 1.67, "parse: 1⅔ dl mjöl → amount 1.67");
+}
+// Fas 8.3 — doh-format: återvinn mängd ur parentes/senare klausul
+{
+  const p = parseIngredient("zucchini (ca 400 g)");
+  assertEq(p.amount, 400, "doh: zucchini (ca 400 g) → 400 g");
+  assertEq(p.unit, "g", "doh: ca-strip → unit g");
+  assertEq(p.name, "zucchini", "doh: namn zucchini");
+}
+{
+  const p = parseIngredient("lax (mittbit, skinnad, 560 g)");
+  assertEq(p.amount, 560, "doh: mängd i senare klausul → 560");
+  assertEq(p.name, "lax", "doh: namn lax");
+}
+{
+  const p = parseIngredient("olivolja (2 msk + 4 tsk)");
+  assertEq(p.amount, 2, "doh: A+B-summa → tar första ledet 2");
+  assertEq(p.unit, "msk", "doh: unit msk");
+}
+{
+  const p = parseIngredient("radicchio (1 litet huvud)");
+  assertEq(p.amount, 1, "doh: storleksadjektiv strippas → 1");
+  assertEq(p.unit, "huvud", "doh: unit huvud");
+}
+{
+  const p = parseIngredient("limeskal (från 1 lime)");
+  assertEq(p.amount, 1, "doh: från-strip → 1");
+  assertEq(p.name, "limeskal", "doh: namn limeskal (normaliseras till lime senare)");
+  assertEq(normalizeName(p.name), "lime", "doh: limeskal → lime via normalizeName");
+}
+{
+  // Notering utan ledande mängd ska INTE röras
+  const p = parseIngredient("örtsalt (t ex Vegeta allkrydda)");
+  assertEq(p.amount, null, "doh: notering utan mängd → amount null");
+  assertEq(p.name, "örtsalt", "doh: notering → namn örtsalt");
+}
+{
   const p = parseIngredient("2-3 dl grädde");
   assertEq(p.amount, 3, "parse: intervall 2-3 dl → tar max-värdet 3");
   assertEq(p.unit, "dl", "parse: intervall 2-3 dl → unit dl");
