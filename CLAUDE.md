@@ -91,6 +91,13 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 - [x] 7D — Backend: alla API-endpoints mot Supabase (Session 59)
 - [x] 7E — Cutover mergad till main (Session 60, commit `45a6433`). 671 assertions.
 
+**Fas 8 — Ingrediens-kvalitetskontroll** (plan: `docs/ingredient-qc-plan-2026-06-03.md`)
+- [x] 8.0 — Audit-verktyg (`scripts/audit-ingredients.mjs`) mot Supabase. Baseline (Session 77): P0=1, P1=309, P2=1372, 567 icke-canon-namn. Rapport: `docs/ingredient-audit-2026-06-03.md`.
+- [ ] 8.1 — Parser-buggfixar (⅓⅔-fraktioner — P0-raden `⅔ dl olivolja`)
+- [ ] 8.2 — Utöka canon-täckning (`NORMALIZATION_TABLE`/`CATEGORY_KEYWORDS`) — höj pris-matchbarheten från 17 %
+- [ ] 8.3 — Städa ingredienssträngarna i Supabase (dry-run + batch + om-audit)
+- [ ] 8.4 — Retire `recipes.json` + peka om dev-skript + dokumentera kanoniskt format
+
 ### Kända buggar
 Inga just nu.
 
@@ -109,7 +116,15 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 76 (2026-06-03) — Flytta-knappen göms i ihopfälld ingredienssektion
+### Senaste session — Session 77 (2026-06-03) — Ingrediens-kvalitetskontroll: plan + audit-verktyg (Fas 8.0)
+
+- **Bakgrund:** Mål att minska problem vid generering av ingrediens-/inköpslistor. En optimal ingrediens har definierbar mängd (antal/vikt/volym).
+- **Nyckelfynd:** `recipes.json` (263 recept) har glidit isär från Supabase (262 recept, id upp till 271). Inget i runtime läser filen — Supabase är sanningskällan. Beslut (användaren): städa i Supabase, **retirera `recipes.json` helt**.
+- **Audit (`scripts/audit-ingredients.mjs`):** läser live från Supabase REST (eller `--source`-export), klassar 3 791 rader i 5 problemklasser med severity. Beroendefritt (plain `fetch`). Baseline: **P0=1** (`⅔ dl olivolja` — fraktionsbugg), **P1=309** (saknad mängd + flerradiga), **P2=1372** (567 icke-canon-namn + brus). "Namn (mängd)"-format räknas ej som defekt (parsern hanterar det).
+- **Levererat:** plan `docs/ingredient-qc-plan-2026-06-03.md`, verktyg + rapport `docs/ingredient-audit-2026-06-03.md` + `ingredient-audit-latest.json`. PR #47.
+- **Nästa:** Fas 8.1 (parser-fix ⅓⅔), 8.2 (canon), 8.3 (städa Supabase), 8.4 (retire fil).
+
+### Session 76 (2026-06-03) — Flytta-knappen göms i ihopfälld ingredienssektion
 
 - **Önskemål:** "Flytta till inköpslista"-knappen syntes alltid under ingredienssektionen, även när ingredienslistan var ihopfälld. Skulle döljas inom respektive ingredienslista.
 - **Rotorsak:** `#flyttaBtn` låg utanför den hopfällbara `.ingredient-section-body` → `max-height`-kollapsen påverkade aldrig knappen.
