@@ -100,6 +100,21 @@ function makeRecipes(idIngMap) {
   assertEq(p.amount, 0.25, "parse: ¼ tsk salt → amount 0.25");
 }
 {
+  // Fas 8.1 — ⅓⅔⅛-fraktioner (tidigare P0-bugg: hela mängden tappades)
+  const p = parseIngredient("⅔ dl olivolja");
+  assertEq(p.amount, 0.67, "parse: ⅔ dl olivolja → amount 0.67");
+  assertEq(p.unit, "dl", "parse: ⅔ dl olivolja → unit dl");
+  assertEq(p.name, "olivolja", "parse: ⅔ dl olivolja → name olivolja");
+}
+{
+  const p = parseIngredient("⅓ tsk muskot");
+  assertEq(p.amount, 0.33, "parse: ⅓ tsk muskot → amount 0.33");
+}
+{
+  const p = parseIngredient("1⅔ dl mjöl");
+  assertEq(p.amount, 1.67, "parse: 1⅔ dl mjöl → amount 1.67");
+}
+{
   const p = parseIngredient("2-3 dl grädde");
   assertEq(p.amount, 3, "parse: intervall 2-3 dl → tar max-värdet 3");
   assertEq(p.unit, "dl", "parse: intervall 2-3 dl → unit dl");

@@ -6,72 +6,71 @@
 
 - **Recept:** 262
 - **Ingrediensrader:** 3791
-- **Rader med problem (P0–P2):** 1682
+- **Rader med problem (P0–P2):** 1037
 
 | Severity | Antal | Innebörd |
 |---|---|---|
-| **P0** | 1 | Mängd uppenbart närvarande men tappad i parsning — bryter listan |
+| **P0** | 0 | Mängd uppenbart närvarande men tappad i parsning — bryter listan |
 | **P1** | 309 | Riktig ingrediens utan definierbar mängd, eller flera ingredienser på en rad |
-| **P2** | 1372 | Ej pris-matchbart namn, brus eller kosmetiskt format |
+| **P2** | 728 | Ej pris-matchbart namn, brus eller kosmetiskt format |
 
 ## Per problemklass
 
 | Klass | Antal rader |
 |---|---|
-| C1 okänt namn (ej canon) | 1294 |
-| C4 beskrivande brus | 326 |
+| C1 okänt namn (ej canon) | 517 |
+| C4 beskrivande brus | 320 |
 | C2 saknad mängd | 269 |
 | C3 flera ingredienser/rad | 76 |
-| C5 parse-fel (mängd tappad) | 1 |
 
 ## Pris-matchbarhet (canon-täckning)
 
-- **Icke-canon-namn (unika):** 567 — matchar inga Willys-erbjudanden, slås ihop svagt.
+- **Icke-canon-namn (unika):** 404 — matchar inga Willys-erbjudanden, slås ihop svagt.
 
 ### 40 vanligaste icke-canon-namnen (Fas 2-kandidater)
 
 | Antal | Namn |
 |---|---|
-| 50× | chilipulver |
 | 47× | salt och svartpeppar |
-| 38× | vitlökspulver |
 | 33× | vatten |
-| 31× | risvinäger |
 | 29× | dijonsenap |
-| 24× | rökt paprikapulver |
-| 22× | sesamolja |
-| 21× | quinoa |
-| 18× | sojasås med låg salthalt |
-| 17× | avokado |
-| 16× | paprikapulver |
-| 16× | äppelcidervinäger |
-| 14× | blomkål |
-| 13× | lönnsirap |
-| 13× | sojasås |
-| 12× | färsk limejuice |
-| 11× | balsamvinäger |
-| 11× | limejuice |
-| 10× | mogen avokado |
-| 9× | gurkmeja |
 | 9× | chiliflakes |
-| 9× | kapris |
-| 9× | cremini-svamp |
-| 8× | fisksås |
-| 8× | svarta bönor |
-| 8× | brysselkål |
-| 8× | kokosmjölk |
-| 8× | rödvinsvinäger |
-| 8× | färska timjanblad |
-| 8× | lökpulver |
-| 7× | cayennepeppar |
-| 7× | garam masala |
 | 7× | salt och peppar |
-| 7× | malen gurkmeja |
-| 7× | extra fast tofu |
-| 7× | neutral matolja |
-| 7× | ströbröd |
-| 7× | kokosmjölk på burk |
-| 6× | torrt vitt vin |
+| 6× | grönsaksbuljongen |
+| 4× | salt & peppar |
+| 4× | poblano-peppar |
+| 4× | osötad cashewmjölk |
+| 3× | grönsaksbuljongtärningar |
+| 3× | varmt vatten |
+| 3× | bröd |
+| 3× | färska örter |
+| 3× | marinerade kronärtskockshjärtan |
+| 3× | frysta gröna ärtor |
+| 3× | adobosås från chipotleburk |
+| 3× | grovmalen svartpeppar |
+| 3× | fett |
+| 3× | grönsaker |
+| 2× | matvete |
+| 2× | frysta ärter |
+| 2× | senapsfrön |
+| 2× | kardemumma |
+| 2× | risoni |
+| 2× | salladskål |
+| 2× | belugalinser |
+| 2× | fänkål |
+| 2× | örtsalt |
+| 2× | palsternacka |
+| 2× | lagerblad |
+| 2× | kyckling |
+| 2× | ostronsås |
+| 2× | pancetta |
+| 2× | blekselleristjälkar |
+| 2× | gröna ärtor |
+| 2× | gochugaru |
+| 2× | apelsinskal |
+| 2× | couscous |
+| 2× | radicchio |
+| 2× | solrosfrön |
 
 ## P0 + P1-rader per recept (åtgärdslista för Fas 3)
 
@@ -79,10 +78,6 @@
 ### #2 — Matvetesallad med gröna ärter och krispig halloumi
 
 - `Olivolja`  — **P1** (C2 saknad mängd)
-
-### #6 — Pastasallad med kyckling, feta och basilika
-
-- `⅔ dl olivolja`  — **P0** (C5 parse-fel (mängd tappad))
 
 ### #10 — Ramen med salladskål och champinjoner
 
@@ -127,12 +122,12 @@
 - `6–8 dl kokt ris/bulgur/matvete`  — **P1** (C3 flera ingredienser/rad; C1 okänt namn (ej canon))
 - `strimlad salladslök`  — **P1** (C2 saknad mängd)
 - `hackade nötter`  — **P1** (C2 saknad mängd)
-- `Gott till: srirachasås`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `Gott till: srirachasås`  — **P1** (C2 saknad mängd)
 
 ### #30 — Valnötshummus med ugnsrostade grönsaker
 
 - `Ugnsrostade grönsaker: en plåt grönsaker/rotfrukter (t ex 400 g potatis, kålklyftor, morot, blomkål eller broccoli, 1 röd paprika, några jordärtskockor)`  — **P1** (C2 saknad mängd; C3 flera ingredienser/rad; C1 okänt namn (ej canon))
-- `Valnötshummus: chilipulver, citronjuice och salt efter smak`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `Valnötshummus: chilipulver, citronjuice och salt efter smak`  — **P1** (C2 saknad mängd)
 - `Gott till: fetaost, oliver eller kapris, rökt tofu`  — **P1** (C2 saknad mängd)
 
 ### #31 — Pepprig pastasås med aubergine
@@ -208,7 +203,7 @@
 
 ### #67 — Citrongrässoppa med kokosmjölk, tofu och nudlar
 
-- `bruna risnudlar eller ris (till servering)`  — **P1** (C3 flera ingredienser/rad; C1 okänt namn (ej canon))
+- `bruna risnudlar eller ris (till servering)`  — **P1** (C3 flera ingredienser/rad)
 
 ### #68 — Höstquinoabowl med apelsin- och timjanvinägrett
 
@@ -216,7 +211,7 @@
 
 ### #70 — Kryddiga laxbowls med avokadosås
 
-- `skivad avokado (valfritt)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `skivad avokado (valfritt)`  — **P1** (C2 saknad mängd)
 - `basilika och koriander, blandat (0,6 dl)`  — **P1** (C3 flera ingredienser/rad)
 
 ### #72 — Honung- och sojaglaserad tofu med morot-ingefärssås
@@ -270,13 +265,13 @@
 ### #88 — Buffalo-broccoli och kikärtspitas med tahinicaesar
 
 - `röd lök, tunt skivad (valfritt)`  — **P1** (C2 saknad mängd)
-- `avokado (valfritt)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
-- `romansallad, fint hackad (valfritt)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `avokado (valfritt)`  — **P1** (C2 saknad mängd)
+- `romansallad, fint hackad (valfritt)`  — **P1** (C2 saknad mängd)
 - `koriander (valfritt)`  — **P1** (C2 saknad mängd)
 
 ### #91 — Enkla lönnsirap- och dijonkotletter
 
-- `lönnsirap (1 msk + 2 tsk)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `lönnsirap (1 msk + 2 tsk)`  — **P1** (C2 saknad mängd)
 
 ### #93 — Rökiga laxburgare med citron- och dillspread
 
@@ -286,9 +281,9 @@
 ### #94 — Currylaxbiffar med citronyoghurt
 
 - `kimchi, valfritt`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
-- `avokado, skivad, valfritt`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `avokado, skivad, valfritt`  — **P1** (C2 saknad mängd)
 - `morötter, valfritt`  — **P1** (C2 saknad mängd)
-- `mango, skivad, valfritt`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `mango, skivad, valfritt`  — **P1** (C2 saknad mängd)
 - `färsk koriander, valfritt`  — **P1** (C2 saknad mängd)
 
 ### #97 — Grillad romansallad med buffalo-tofu och tahini ranch
@@ -301,9 +296,9 @@
 
 - `limeklyftor, valfritt (efter smak)`  — **P1** (C2 saknad mängd)
 - `koriander, valfritt (efter smak)`  — **P1** (C2 saknad mängd)
-- `avokado, skivad, valfritt (efter smak)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
-- `rädisa, tunt skivad, valfritt (efter smak)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
-- `jalapeño, skivad, valfritt (efter smak)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `avokado, skivad, valfritt (efter smak)`  — **P1** (C2 saknad mängd)
+- `rädisa, tunt skivad, valfritt (efter smak)`  — **P1** (C2 saknad mängd)
+- `jalapeño, skivad, valfritt (efter smak)`  — **P1** (C2 saknad mängd)
 
 ### #99 — Koreanska veggieburgerbowlar
 
@@ -326,7 +321,7 @@
 ### #107 — Medelhavslax med bulgur
 
 - `grekisk yoghurt (valfritt, som tillbehör)`  — **P1** (C2 saknad mängd)
-- `ruccola (valfritt, som tillbehör)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `ruccola (valfritt, som tillbehör)`  — **P1** (C2 saknad mängd)
 - `citronklyftor (valfritt, som tillbehör)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
 
 ### #108 — Currysallad med ris
@@ -340,7 +335,7 @@
 ### #110 — Pasta med rostad paprikasås och svamp
 
 - `parmesan, riven (valfritt)`  — **P1** (C2 saknad mängd)
-- `chilipulver (valfritt)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `chilipulver (valfritt)`  — **P1** (C2 saknad mängd)
 
 ### #112 — Räkpasta Primavera med Zucchininudlar
 
@@ -358,8 +353,8 @@
 
 ### #118 — Tomat- och currykokta ägg
 
-- `cayennepeppar eller chilipulver för hetta (valfritt)`  — **P1** (C2 saknad mängd; C3 flera ingredienser/rad; C1 okänt namn (ej canon); C4 beskrivande brus)
-- `gott bröd eller kokt vitt ris till servering`  — **P1** (C3 flera ingredienser/rad; C1 okänt namn (ej canon); C4 beskrivande brus)
+- `cayennepeppar eller chilipulver för hetta (valfritt)`  — **P1** (C2 saknad mängd; C3 flera ingredienser/rad)
+- `gott bröd eller kokt vitt ris till servering`  — **P1** (C3 flera ingredienser/rad)
 
 ### #122 — Currysoppa med röda linser
 
@@ -380,14 +375,14 @@
 
 ### #127 — Stekt Tofu-Smörgås med Coleslaw
 
-- `sojasås med låg salthalt (2 msk + 2 tsk), uppdelat`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon); C4 beskrivande brus)
+- `sojasås med låg salthalt (2 msk + 2 tsk), uppdelat`  — **P1** (C2 saknad mängd; C4 beskrivande brus)
 - `vegetabilisk olja för stekning`  — **P1** (C2 saknad mängd)
 
 ### #130 — Chili-lime-spett med tofu och persika
 
 - `olivolja eller avokadoolja (för grillning)`  — **P1** (C2 saknad mängd; C3 flera ingredienser/rad)
 - `limeskal (från 1 lime)`  — **P1** (C2 saknad mängd)
-- `sojasås (1 msk + 1 tsk)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `sojasås (1 msk + 1 tsk)`  — **P1** (C2 saknad mängd)
 
 ### #131 — Vegetarisk paella
 
@@ -395,7 +390,7 @@
 
 ### #132 — Gochujangtofu med ris och inlagda grönsaker
 
-- `rädisa (daikon eller vattenmelon), strimlad (0,6 dl)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `rädisa (daikon eller vattenmelon), strimlad (0,6 dl)`  — **P1** (C2 saknad mängd)
 
 ### #133 — Squash- och valnötsfritters med krämig vitlöks- och örtsås
 
@@ -425,7 +420,7 @@
 
 ### #142 — Chili-soja-svampbullar med ingefärs- och salladslöksris
 
-- `lägre-natriumsojasås eller tamari (0,8 dl + 2 tsk, uppdelat)`  — **P1** (C2 saknad mängd; C3 flera ingredienser/rad; C1 okänt namn (ej canon); C4 beskrivande brus)
+- `lägre-natriumsojasås eller tamari (0,8 dl + 2 tsk, uppdelat)`  — **P1** (C2 saknad mängd; C3 flera ingredienser/rad; C4 beskrivande brus)
 
 ### #143 — Kokosnöts- och currysoppa med majs
 
@@ -437,17 +432,17 @@
 
 ### #145 — Thaiinspirerad pumpassoppa
 
-- `rostade pumpafrön, koriander, salladslök och granatäppelkärnor (valfritt, som garnering)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `rostade pumpafrön, koriander, salladslök och granatäppelkärnor (valfritt, som garnering)`  — **P1** (C2 saknad mängd)
 
 ### #146 — Quinoa- och grönsaksbowls
 
-- `butternutpumpa, skalad och tärnad (ca 7 dl, från 1 liten pumpa)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `butternutpumpa, skalad och tärnad (ca 7 dl, från 1 liten pumpa)`  — **P1** (C2 saknad mängd)
 - `lättsaltat grönsaks- eller kycklingbuljong (ca 5 dl)`  — **P1** (C2 saknad mängd; C3 flera ingredienser/rad)
-- `avokado, skivad, valfritt`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `avokado, skivad, valfritt`  — **P1** (C2 saknad mängd)
 
 ### #148 — Spaghetti squash alfredo (vegansk)
 
-- `matolja spray`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `matolja spray`  — **P1** (C2 saknad mängd)
 - `valfritt tillbehör: stekt broccoli eller strimlad brysselkål, soltorkade tomater, vissnad spenat`  — **P1** (C3 flera ingredienser/rad)
 
 ### #149 — Laxsallad med grönkål, brysselkål och misoglaserad lax
@@ -460,8 +455,8 @@
 
 ### #151 — Blomkålschilaquiles med salsa roja
 
-- `blomkål, delad i små buketter (1 litet huvud)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
-- `avokado, tunt skivad (valfritt)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `blomkål, delad i små buketter (1 litet huvud)`  — **P1** (C2 saknad mängd)
+- `avokado, tunt skivad (valfritt)`  — **P1** (C2 saknad mängd)
 - `lime-crème fraîche: gräddfil blandad med pressad lime, en nypa salt och lite vatten för drizzling (valfritt)`  — **P1** (C2 saknad mängd)
 - `färsk koriander, finhackad (valfritt)`  — **P1** (C2 saknad mängd)
 
@@ -473,7 +468,7 @@
 
 - `färsk babyspenat (3 generösa nävar)`  — **P1** (C2 saknad mängd)
 - `färsk koriander, grovhackad, valfritt`  — **P1** (C2 saknad mängd)
-- `avokado, skivad, valfritt`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `avokado, skivad, valfritt`  — **P1** (C2 saknad mängd)
 
 ### #154 — Cobbsallad med jordgubbar, friterad fetaost och dragondressing
 
@@ -481,16 +476,16 @@
 
 ### #155 — Blomkålskorma
 
-- `blomkål, delad i buketter (ca 8 dl, ungefär 1 hel blomkål)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
-- `basmatiris eller quinoa (till servering)`  — **P1** (C3 flera ingredienser/rad; C1 okänt namn (ej canon))
+- `blomkål, delad i buketter (ca 8 dl, ungefär 1 hel blomkål)`  — **P1** (C2 saknad mängd)
+- `basmatiris eller quinoa (till servering)`  — **P1** (C3 flera ingredienser/rad)
 
 ### #156 — Rostad blomkål- och potatissallad med dragon-tahini
 
-- `blomkål, delad i buketter (ca 1,4 liter)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `blomkål, delad i buketter (ca 1,4 liter)`  — **P1** (C2 saknad mängd)
 
 ### #157 — Portobelloburgers med romescosås
 
-- `microgreens eller ruccola (efter smak, valfritt)`  — **P1** (C2 saknad mängd; C3 flera ingredienser/rad; C1 okänt namn (ej canon))
+- `microgreens eller ruccola (efter smak, valfritt)`  — **P1** (C2 saknad mängd; C3 flera ingredienser/rad)
 - `hummus eller majonnäs (valfritt, till topping)`  — **P1** (C2 saknad mängd; C3 flera ingredienser/rad)
 
 ### #163 — Apelsin- och basilikakyckling med kokosnötris
@@ -508,14 +503,14 @@
 
 ### #166 — Tofu-wok med jordnötssås
 
-- `rödkål (0,5 litet huvud), hackad i 3 cm bitar (ca 7–9 dl)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `rödkål (0,5 litet huvud), hackad i 3 cm bitar (ca 7–9 dl)`  — **P1** (C2 saknad mängd)
 - `rostade sesamfrön (valfritt)`  — **P1** (C2 saknad mängd)
 - `basilika (valfritt)`  — **P1** (C2 saknad mängd)
 
 ### #167 — Ruccola- och getostsallad med farro och honingsenap
 
-- `ruccola, packad (4 koppar / ca 4 dl)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
-- `brysselkål, riven eller tunt hyvlad (170 g / ca 7 dl)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `ruccola, packad (4 koppar / ca 4 dl)`  — **P1** (C2 saknad mängd)
+- `brysselkål, riven eller tunt hyvlad (170 g / ca 7 dl)`  — **P1** (C2 saknad mängd)
 
 ### #168 — Buffalo-kikärtsbullar med yoghurtranch
 
@@ -533,24 +528,24 @@
 ### #172 — Quinoasallad med persika, majs och korianderdressing
 
 - `grillad majskärna (3,6 dl – från 2 kolvar, eller fryst/tinad ugnsrostad majs eller konservmajs)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
-- `rostade och saltade pumpafrön (0,8 dl)`  — **P1** (C3 flera ingredienser/rad; C1 okänt namn (ej canon); C4 beskrivande brus)
+- `rostade och saltade pumpafrön (0,8 dl)`  — **P1** (C3 flera ingredienser/rad)
 
 ### #173 — Al Pastor-tacos med kikärtor
 
 - `ananasbitar på burk i 100% ananasjuice (570 g / 1 burk)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon); C4 beskrivande brus)
 - `färsk koriander (efter smak, garnering)`  — **P1** (C2 saknad mängd)
-- `queso fresco eller avokado (valfritt, garnering)`  — **P1** (C2 saknad mängd; C3 flera ingredienser/rad; C1 okänt namn (ej canon))
-- `limejuice (efter smak, garnering)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `queso fresco eller avokado (valfritt, garnering)`  — **P1** (C2 saknad mängd; C3 flera ingredienser/rad)
+- `limejuice (efter smak, garnering)`  — **P1** (C2 saknad mängd)
 
 ### #175 — Grillad majs- och avokadosallad med harissa ranch
 
-- `romansallad, grovhackad (ca 1 liter)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `romansallad, grovhackad (ca 1 liter)`  — **P1** (C2 saknad mängd)
 
 ### #177 — BBQ-blomkålstacos med grön tahinisås
 
 - `blomkålsbuketter (ca 700 g, från 1 mellanstor blomkålshuvud)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
-- `rödkål, tunt strimlad (efter smak, valfritt)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
-- `avokado, skivad (valfritt)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `rödkål, tunt strimlad (efter smak, valfritt)`  — **P1** (C2 saknad mängd)
+- `avokado, skivad (valfritt)`  — **P1** (C2 saknad mängd)
 - `koriander, färsk (valfritt)`  — **P1** (C2 saknad mängd)
 
 ### #178 — Thailändsk räknudelsallad
@@ -559,7 +554,7 @@
 
 ### #179 — Zesty Quinoa- och Svarta Bönor-tacos med Koriandersås
 
-- `avokado, skivad, efter smak`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `avokado, skivad, efter smak`  — **P1** (C2 saknad mängd)
 
 ### #180 — Krämig tomat- och basilikasoppa
 
@@ -568,11 +563,11 @@
 
 ### #182 — Krispiga auberginesandwichar med tomat- och dragonrelish
 
-- `matolja spray (efter behov)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `matolja spray (efter behov)`  — **P1** (C2 saknad mängd)
 
 ### #183 — Butternutpumpa- och poblano-sallad med fetaost
 
-- `butternutpumpa, skalad och tärnad i 2,5 cm kuber (ca 1,4 liter)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `butternutpumpa, skalad och tärnad i 2,5 cm kuber (ca 1,4 liter)`  — **P1** (C2 saknad mängd)
 
 ### #185 — Varm farrosallad med figendressing
 
@@ -585,17 +580,17 @@
 
 ### #188 — Currystekta blomkåls- och sötpotatisbowls med kuminjoghurt
 
-- `blomkål, delad i buketter (ca 1,4 liter)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `blomkål, delad i buketter (ca 1,4 liter)`  — **P1** (C2 saknad mängd)
 - `sötpotatis, skalad och tärnad (ca 7,2 dl)`  — **P1** (C2 saknad mängd)
 
 ### #189 — Teriyaki-tofu med broccoli
 
 - `broccolibuketter (ca 400 g, från 1 medelstor broccoli)`  — **P1** (C2 saknad mängd)
-- `kokt ris eller risnudlar (till servering)`  — **P1** (C3 flera ingredienser/rad; C1 okänt namn (ej canon))
+- `kokt ris eller risnudlar (till servering)`  — **P1** (C3 flera ingredienser/rad)
 
 ### #190 — Ugnsrostad blomkål med gurkmeja och vispad fetaost
 
-- `blomkål, delad i buketter (ca 1,4 liter / 1 stort huvud)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `blomkål, delad i buketter (ca 1,4 liter / 1 stort huvud)`  — **P1** (C2 saknad mängd)
 - `ruccola eller späd grönkål (ca 4 dl, lätt packad)`  — **P1** (C2 saknad mängd; C3 flera ingredienser/rad)
 
 ### #191 — Sobasallad med sesam- och cashewsås
@@ -609,7 +604,7 @@
 
 ### #193 — Räkor scampi med spagettipumpa
 
-- `matolja på spray (efter behov)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `matolja på spray (efter behov)`  — **P1** (C2 saknad mängd)
 - `pressad saft från en halv citron`  — **P1** (C2 saknad mängd)
 
 ### #194 — Ruccola- och kakisallad
@@ -618,7 +613,7 @@
 
 ### #195 — Jerk-blomkålsvingar med mojosås
 
-- `blomkål, delad i buketter (1 mellanstor huvud)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `blomkål, delad i buketter (1 mellanstor huvud)`  — **P1** (C2 saknad mängd)
 
 ### #197 — Apelsintofu med grönsaker
 
@@ -631,7 +626,7 @@
 
 ### #202 — Sydvästsallad med quinoa och krämig chipotledressing
 
-- `rostade och saltade pumpafrön (pepitas, 0,6 dl)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `rostade och saltade pumpafrön (pepitas, 0,6 dl)`  — **P1** (C2 saknad mängd)
 
 ### #204 — Ultimata Vegetariska Burritos
 
@@ -647,8 +642,8 @@
 
 ### #208 — Vegetariska BBQ-köttbullesformar
 
-- `cremini-svamp (champinjoner), fint hackad (225 g)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
-- `ströbröd (klassiskt eller panko, 1,2 dl)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `cremini-svamp (champinjoner), fint hackad (225 g)`  — **P1** (C2 saknad mängd)
+- `ströbröd (klassiskt eller panko, 1,2 dl)`  — **P1** (C2 saknad mängd)
 
 ### #211 — Tonfiskgratäng med nudlar
 
@@ -657,17 +652,17 @@
 
 ### #212 — Buffalo-blomkål mac and cheese
 
-- `blomkål, delad i små buketter (1 medelstor huvud, ca 1,4–1,7 liter)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `blomkål, delad i små buketter (1 medelstor huvud, ca 1,4–1,7 liter)`  — **P1** (C2 saknad mängd)
 
 ### #213 — Miso- och lönnsirapslax
 
 - `tunt skivad salladslök och rostade sesamfrön (till garnering)`  — **P1** (C3 flera ingredienser/rad)
-- `färsk limejuice (valfritt)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `färsk limejuice (valfritt)`  — **P1** (C2 saknad mängd)
 - `jasminris och sauterade grönsaker t.ex. bok choy eller broccoli (valfritt)`  — **P1** (C2 saknad mängd; C3 flera ingredienser/rad)
 
 ### #215 — Marockansk blomkålssallad med couscous
 
-- `blomkål, delad i buketter (ca 6 generösa dl)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `blomkål, delad i buketter (ca 6 generösa dl)`  — **P1** (C2 saknad mängd)
 
 ### #216 — Ostig pesto-broccoli och quinoagratäng
 
@@ -689,7 +684,7 @@
 ### #221 — Tofubowls med mandelsmörsås
 
 - `broccoli (1 medelstor huvud, delad i buketter)`  — **P1** (C2 saknad mängd)
-- `kokt jasminris eller soba-nudlar till servering`  — **P1** (C3 flera ingredienser/rad; C1 okänt namn (ej canon))
+- `kokt jasminris eller soba-nudlar till servering`  — **P1** (C3 flera ingredienser/rad)
 
 ### #222 — Sesamlax i skål med miso-ingefärssås
 
@@ -699,11 +694,11 @@
 
 ### #223 — Chipotle-räkotacos med avokado- och mangosalsa
 
-- `färsk jalapeño, kärnor och revben borttagna, fint tärnad (1 liten eller 0,5 stor)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `färsk jalapeño, kärnor och revben borttagna, fint tärnad (1 liten eller 0,5 stor)`  — **P1** (C2 saknad mängd)
 
 ### #224 — Grön currysoppa med blomkål
 
-- `blomkål, delad i små buketter (1 medelstor huvud, ca 900 g)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `blomkål, delad i små buketter (1 medelstor huvud, ca 900 g)`  — **P1** (C2 saknad mängd)
 - `krispiga kikärtor, hemgjorda eller köpta (efter smak)`  — **P1** (C2 saknad mängd)
 - `färsk koriander eller basilika (efter smak)`  — **P1** (C2 saknad mängd; C3 flera ingredienser/rad)
 
@@ -745,12 +740,12 @@
 ### #235 — Linsen- och svamptacos
 
 - `gul lök (fint hackad, 2,4 dl)`  — **P1** (C2 saknad mängd)
-- `rödkål (strimlad, blandad med strimlade morötter, skivad salladslök, äppelcidervinäger och salt)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
-- `skivad avokado (valfritt)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `rödkål (strimlad, blandad med strimlade morötter, skivad salladslök, äppelcidervinäger och salt)`  — **P1** (C2 saknad mängd)
+- `skivad avokado (valfritt)`  — **P1** (C2 saknad mängd)
 
 ### #237 — Kokoscurry med räkor
 
-- `kokt vitt ris eller risnudlar till servering`  — **P1** (C3 flera ingredienser/rad; C1 okänt namn (ej canon))
+- `kokt vitt ris eller risnudlar till servering`  — **P1** (C3 flera ingredienser/rad)
 
 ### #238 — Quinoabowls med rostade grönsaker
 
@@ -767,7 +762,7 @@
 
 ### #241 — Toscansk gnocchi med soltorkade tomater
 
-- `chilipulver (en nypa, valfritt)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `chilipulver (en nypa, valfritt)`  — **P1** (C2 saknad mängd)
 
 ### #243 — Kryddiga linsburgare med tahinicoleslaw
 
@@ -783,7 +778,7 @@
 
 ### #246 — Pasta alla vodka med pumpa
 
-- `chilipulver (en nypa)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `chilipulver (en nypa)`  — **P1** (C2 saknad mängd)
 - `kokosmjölk (full fetthalt) eller vispgrädde (36%, 1,8 dl)`  — **P1** (C2 saknad mängd; C3 flera ingredienser/rad)
 
 ### #249 — Ugnsrostad lax med miso-ingefärssås och butternutpumpa
@@ -793,18 +788,18 @@
 
 ### #251 — Varm linssallad med balsamicosvamp
 
-- `balsamvinäger (0,6 dl + 1 msk)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
-- `ruccola, spenat eller blandade grönsalladsblad (ca 4,8 dl)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `balsamvinäger (0,6 dl + 1 msk)`  — **P1** (C2 saknad mängd)
+- `ruccola, spenat eller blandade grönsalladsblad (ca 4,8 dl)`  — **P1** (C2 saknad mängd)
 
 ### #252 — Shawarma-bowls med blomkål
 
-- `blomkål, delad i buketter (1 stort huvud)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `blomkål, delad i buketter (1 stort huvud)`  — **P1** (C2 saknad mängd)
 - `gurka, tunt skivad (valfritt)`  — **P1** (C2 saknad mängd)
 - `körsbärstomater, halverade (valfritt)`  — **P1** (C2 saknad mängd)
 
 ### #255 — Ugnsrostad grönsakssallad med linser
 
-- `butternutpumpa, skalad och tärnad (ca 1 liter)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `butternutpumpa, skalad och tärnad (ca 1 liter)`  — **P1** (C2 saknad mängd)
 
 ### #257 — Stekt öring med Old Bay-remoulad
 
@@ -814,18 +809,18 @@
 
 ### #258 — Enkel puttanesca med kikärtor (en gryta)
 
-- `chilipulver (en nypa)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
+- `chilipulver (en nypa)`  — **P1** (C2 saknad mängd)
 
 ### #260 — General Tsos tofu
 
 - `majsstärkelse (0,6 dl + 1 msk, uppdelat)`  — **P1** (C2 saknad mängd; C4 beskrivande brus)
 - `broccoli i buketter (ca 400 g, färsk)`  — **P1** (C2 saknad mängd)
 - `rostade sesamfrön och salladslök (valfritt, till garnering)`  — **P1** (C3 flera ingredienser/rad)
-- `kokt vitt eller brunt ris (till servering)`  — **P1** (C3 flera ingredienser/rad; C1 okänt namn (ej canon))
+- `kokt vitt eller brunt ris (till servering)`  — **P1** (C3 flera ingredienser/rad)
 
 ### #261 — Vegansk grönkålscaesar med rökt tempeh
 
-- `tallkotts-parmesan: finhackade pinjenötter blandade med nutritionsjäst, valfritt (1 msk + 1 msk)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon); C4 beskrivande brus)
+- `tallkotts-parmesan: finhackade pinjenötter blandade med nutritionsjäst, valfritt (1 msk + 1 msk)`  — **P1** (C2 saknad mängd)
 
 ### #263 — Örtig tortellinisoppa
 
@@ -865,7 +860,7 @@
 
 ### #269 — Gräddig Cashew-Kyckling med Curry
 
-- `ris eller bulgur för 4 pers`  — **P1** (C2 saknad mängd; C3 flera ingredienser/rad; C1 okänt namn (ej canon); C4 beskrivande brus)
+- `ris eller bulgur för 4 pers`  — **P1** (C2 saknad mängd; C3 flera ingredienser/rad; C4 beskrivande brus)
 - `rapsolja att steka i`  — **P1** (C2 saknad mängd)
 - `kokosflingor, gärna snabbt rostade i torr stekpanna`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
 - `grönsaker, t ex tomater och kikärtor`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))
@@ -878,7 +873,7 @@
 
 ### #271 — Tikka Masala
 
-- `ris eller bulgur för 4 pers`  — **P1** (C2 saknad mängd; C3 flera ingredienser/rad; C1 okänt namn (ej canon); C4 beskrivande brus)
+- `ris eller bulgur för 4 pers`  — **P1** (C2 saknad mängd; C3 flera ingredienser/rad; C4 beskrivande brus)
 - `rapsolja att steka i`  — **P1** (C2 saknad mängd)
 - `färsk koriander`  — **P1** (C2 saknad mängd)
 - `mangotärningar (tinade frysta är enklast)`  — **P1** (C2 saknad mängd; C1 okänt namn (ej canon))

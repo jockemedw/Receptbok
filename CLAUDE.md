@@ -93,8 +93,8 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 
 **Fas 8 — Ingrediens-kvalitetskontroll** (plan: `docs/ingredient-qc-plan-2026-06-03.md`)
 - [x] 8.0 — Audit-verktyg (`scripts/audit-ingredients.mjs`) mot Supabase. Baseline (Session 77): P0=1, P1=309, P2=1372, 567 icke-canon-namn. Rapport: `docs/ingredient-audit-2026-06-03.md`.
-- [ ] 8.1 — Parser-buggfixar (⅓⅔-fraktioner — P0-raden `⅔ dl olivolja`)
-- [ ] 8.2 — Utöka canon-täckning (`NORMALIZATION_TABLE`/`CATEGORY_KEYWORDS`) — höj pris-matchbarheten från 17 %
+- [x] 8.1 — Parser-buggfix: ⅓⅔⅛-fraktioner (`FRACS` + regexar + display). P0 1→0. +5 assertions (shopping 67/67).
+- [x] 8.2 — Canon-utökning (~80 mappningar + kategori-nyckelord). Canon-täckning 17%→30%, P2 1372→728, icke-canon 567→404.
 - [ ] 8.3 — Städa ingredienssträngarna i Supabase (dry-run + batch + om-audit)
 - [ ] 8.4 — Retire `recipes.json` + peka om dev-skript + dokumentera kanoniskt format
 
@@ -122,7 +122,8 @@ Inga just nu.
 - **Nyckelfynd:** `recipes.json` (263 recept) har glidit isär från Supabase (262 recept, id upp till 271). Inget i runtime läser filen — Supabase är sanningskällan. Beslut (användaren): städa i Supabase, **retirera `recipes.json` helt**.
 - **Audit (`scripts/audit-ingredients.mjs`):** läser live från Supabase REST (eller `--source`-export), klassar 3 791 rader i 5 problemklasser med severity. Beroendefritt (plain `fetch`). Baseline: **P0=1** (`⅔ dl olivolja` — fraktionsbugg), **P1=309** (saknad mängd + flerradiga), **P2=1372** (567 icke-canon-namn + brus). "Namn (mängd)"-format räknas ej som defekt (parsern hanterar det).
 - **Levererat:** plan `docs/ingredient-qc-plan-2026-06-03.md`, verktyg + rapport `docs/ingredient-audit-2026-06-03.md` + `ingredient-audit-latest.json`. PR #47.
-- **Nästa:** Fas 8.1 (parser-fix ⅓⅔), 8.2 (canon), 8.3 (städa Supabase), 8.4 (retire fil).
+- **Fas 8.1 + 8.2 (samma session):** Fraktionsfix (⅓⅔⅛) — P0 1→0, +5 assertions. Canon-utökning ~80 mappningar — täckning 17%→30%, P2 1372→728, C1 1294→517. Tester gröna (match 51, shopping 67, select-recipes 432).
+- **Nästa:** 8.3 (städa Supabase-data — adresserar P1=309 saknad mängd + flerradiga), 8.4 (retire fil).
 
 ### Session 76 (2026-06-03) — Flytta-knappen göms i ihopfälld ingredienssektion
 

@@ -4,16 +4,15 @@
   "recipes": 262,
   "totalLines": 3791,
   "sevCount": {
-    "P0": 1,
+    "P0": 0,
     "P1": 309,
-    "P2": 1372
+    "P2": 728
   },
   "classCount": {
-    "C1 okänt namn (ej canon)": 1294,
+    "C1 okänt namn (ej canon)": 517,
     "C2 saknad mängd": 269,
-    "C5 parse-fel (mängd tappad)": 1,
     "C3 flera ingredienser/rad": 76,
-    "C4 beskrivande brus": 326
+    "C4 beskrivande brus": 320
   },
-  "nonCanonUnique": 567
+  "nonCanonUnique": 404
 }
