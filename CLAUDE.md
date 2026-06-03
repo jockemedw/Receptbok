@@ -109,7 +109,14 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 75 (2026-06-02) — Säsongsanpassning syntes inte i räknaren
+### Senaste session — Session 76 (2026-06-03) — Flytta-knappen göms i ihopfälld ingredienssektion
+
+- **Önskemål:** "Flytta till inköpslista"-knappen syntes alltid under ingredienssektionen, även när ingredienslistan var ihopfälld. Skulle döljas inom respektive ingredienslista.
+- **Rotorsak:** `#flyttaBtn` låg utanför den hopfällbara `.ingredient-section-body` → `max-height`-kollapsen påverkade aldrig knappen.
+- **Fix:** flyttade in knappen i `.ingredient-section-body` (index.html) + `padding-bottom: 1.2rem` på öppen sektion (css). Normal vy = ihopfälld → knappen dold; vid ny plan auto-expanderas sektionen (`expand=true`) → knappen syns. Ingen JS-ändring (`renderIngredientPreview` oförändrad).
+- **Cache-bust:** `css/styles.css?v=92`.
+
+### Session 75 (2026-06-02) — Säsongsanpassning syntes inte i räknaren
 
 - **Symptom:** "Säsongsanpassning"-toggeln kändes som att den inte gjorde något — antalet recept "inom filtret" ändrades inte när den slogs på.
 - **Rotorsak (två delar):** (1) `seasonWeight`-kryssrutan saknade `onchange` → triggade aldrig omräkning. (2) Räknaren "X recept matchar dina filter" (`updateSettingsPreview`) tittade bara på protein/oprövat/måltidstaggar, aldrig på säsong. Dessutom är säsong **medvetet en mjuk viktning** (2×/1×/0,5×, Fas 6C), inte ett hårt filter — den tar aldrig bort recept, så antalet kan inte sjunka.
