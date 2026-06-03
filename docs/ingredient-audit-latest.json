@@ -5,14 +5,14 @@
   "totalLines": 3791,
   "sevCount": {
     "P0": 0,
-    "P1": 309,
-    "P2": 728
+    "P1": 68,
+    "P2": 772
   },
   "classCount": {
-    "C1 okänt namn (ej canon)": 517,
-    "C2 saknad mängd": 269,
-    "C3 flera ingredienser/rad": 76,
-    "C4 beskrivande brus": 320
+    "C1 okänt namn (ej canon)": 519,
+    "C2 saknad mängd": 53,
+    "C4 beskrivande brus": 319,
+    "C3 flera ingredienser/rad": 22
   },
-  "nonCanonUnique": 404
+  "nonCanonUnique": 401
 }

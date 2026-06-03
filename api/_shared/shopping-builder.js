@@ -300,7 +300,7 @@ const SWEDISH_UNITS = [
   "dl", "cl", "ml", "kg", "msk", "tsk", "krm",
   "burk", "burkar", "frp", "förp", "pkt", "paket", "påsar", "påse",
   "krukor", "kruka", "knippe", "skivor", "klyftor", "bitar", "kvistar",
-  "skiva", "klyfta", "kvist", "bit",
+  "skiva", "klyfta", "kvist", "bit", "stjälk", "stjälkar",
   "huvud", "huvuden", "näve", "nävar", "nypa", "tumme", "tummar", "st",
   "g", "liter", "l", "cm",
 ];
@@ -370,21 +370,37 @@ export function parseIngredient(raw) {
   raw = raw.replace(/\b3\/4\b/g, '¾').replace(/\b1\/2\b/g, '½').replace(/\b1\/4\b/g, '¼')
            .replace(/\b2\/3\b/g, '0,67').replace(/\b1\/3\b/g, '0,33');
 
-  // Handle doh-format: "ingredient name (qty[, prep notes])" → rearrange to "qty ingredient name"
-  // Only when string doesn't start with a digit/fraction (old format always starts with qty)
+  // Handle doh-format: "ingredient name (… qty …)" → rearrange to "qty ingredient name".
+  // Only when string doesn't start with a digit/fraction (old format always starts med qty).
+  // Skannar ALLA parenteser och deras ", "-klausuler efter första mängdbärande
+  // ledet — så "lax (mittbit, skinnad, 560 g)" och "gul lök (fint hackad, 2,4 dl)"
+  // återvinns. Noteringar ("t ex …", "valfritt", "från 1 lime") saknar ledande
+  // mängd → raden rörs inte.
   if (!/^[\d½¼¾⅓⅔⅛⅜⅝⅞⅕⅖⅗⅘⅙⅚]/.test(raw.trim())) {
-    const parenM = raw.match(/^(.+?)\s*\(([^)]+)\)/);
-    if (parenM) {
-      // Split on ", " (not bare "," to preserve decimal commas like "0,5 tsk")
-      // then strip any "à X g" size-notation suffix
-      const qtyPart = parenM[2].split(/, /)[0].replace(/\s+à\s+.*/i, '').trim();
-      // Only rearrange for simple "qty unit" patterns (≤2 words).
-      // Multi-word content like "2 msk + 2 tsk", "1 litet huvud", "3 generösa nävar"
-      // would produce garbage names after rearrangement — skip those.
-      const wordCount = qtyPart.split(/\s+/).filter(Boolean).length;
-      if (/^[\d½¼¾⅓⅔⅛⅜⅝⅞⅕⅖⅗⅘⅙⅚]/.test(qtyPart) && wordCount <= 2) {
-        raw = qtyPart + ' ' + parenM[1].trim();
+    const QTY_RE = /^([\d]+[,.]?\d*(?:\s*[–-]\s*[\d]+[,.]?\d*)?(?:\s*[½¼¾⅓⅔⅛⅜⅝⅞⅕⅖⅗⅘⅙⅚])?|[½¼¾⅓⅔⅛⅜⅝⅞⅕⅖⅗⅘⅙⅚])\s*(.*)$/;
+    let chosen = null;
+    for (const pm of raw.matchAll(/\(([^)]*)\)/g)) {
+      for (let clause of pm[1].split(/, /)) {
+        clause = clause
+          .split(/\s*\+\s*/)[0]
+          .replace(/\s+à\s+.*/i, "")
+          .replace(/^(ca|cirka|ungefär|omkring|från)\s+/i, "")
+          .trim();
+        const qm = clause.match(QTY_RE);
+        if (qm) { chosen = qm; break; }
       }
+      if (chosen) break;
+    }
+    if (chosen) {
+      const num = chosen[1].trim();
+      // Strippa storleksadjektiv ("1 litet huvud" → "huvud", "5 tjocka stjälkar" → "stjälkar")
+      const rest = chosen[2]
+        .replace(/^(liten|litet|små|stor|stora|stort|tjock\w*|grov\w*|medelstor\w*|hel\w*|generös\w*|rejäl\w*)\s+/i, "")
+        .trim();
+      const firstWord = (rest.split(/\s+/)[0] || "").toLowerCase();
+      const unit = SWEDISH_UNITS.includes(firstWord) ? firstWord : "";
+      const namePart = raw.slice(0, raw.indexOf("(")).trim();
+      raw = (unit ? `${num} ${unit}` : num) + " " + namePart;
     }
   }
   const cleaned = cleanIngredient(raw);

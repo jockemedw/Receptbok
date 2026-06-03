@@ -45,7 +45,9 @@ const PANTRY_OK = new Set([
   "salt och svartpeppar", "salt och peppar", "salt och nymalen svartpeppar",
   "nymalen svartpeppar", "salt & peppar", "lite vatten",
 ]);
-const VAGUE_RAW = /\b(till (stekning|servering|garnering))\b|^(\s*)(ev\.?|eventuellt|valfri|valfritt)\s/i;
+// Mängdlösa rader som är medvetet vaga: garnering/servering/stekning, samt
+// efterställda "(valfritt)", "efter smak", "som tillbehör" → inte en defekt.
+const VAGUE_RAW = /\b(till (stekning|servering|garnering))\b|^(\s*)(ev\.?|eventuellt|valfri|valfritt|valfria)\b|\b(valfritt|valfria|efter smak|som tillbehör|som garnering|för (stekning|grillning|hetta|servering))\b|\b(att (steka|woka|fritera|smörja))\b|\btill (våffeljärnet|formen|pannan)\b|^\s*(tillbehör|topping|gott till|till servering|garnering|servering)\s*:|\bspray\b/i;
 
 // Förpacknings-/varumärkesbrus som tyder på ostädat namn
 const NOISE_PATTERNS = /\b(på burk|i lag|i vatten|i olja|konserv|avrunna?|avrunnna|utan ben|utan skinn|av god kvalitet|reducerat|låg salthalt|natrium|uppdelat?|för \d+ (pers|personer)|san marzano)\b/i;
@@ -69,9 +71,13 @@ function classify(raw, recipeId) {
     tags.push({ cls: "C2 saknad mängd", sev: "P1" });
   }
 
-  // C3 — FLERA INGREDIENSER på en rad (P1)
-  const multiOch = / och /.test(name) && !PANTRY_OK.has(name);
-  if (multiOch || / eller /.test(name) || /\//.test(name)) {
+  // C3 — FLERA INGREDIENSER på en rad (P1). Hoppas över för vaga/valfria rader
+  // (serveringsförslag) och för adjektiv-"och" ("rostade och saltade", "skal och saft")
+  // som inte är två separata ingredienser.
+  const adjOch = /\b(rostad\w*|saltad\w*|skalad\w*|tärnad\w*|hackad\w*|finhackad\w*|grovhackad\w*|strimlad\w*|skivad\w*|kokt\w*|riven|rivna|blandad\w*|torkad\w*|färsk\w*|mald\w*|malen)\s+och\s+\w+/i.test(raw)
+    || /\bskal och saft\b/i.test(raw);
+  const multiOch = / och /.test(name) && !PANTRY_OK.has(name) && !adjOch;
+  if (!acceptableNoAmount && (multiOch || / eller /.test(name) || /\//.test(name))) {
     tags.push({ cls: "C3 flera ingredienser/rad", sev: "P1" });
   }
 
