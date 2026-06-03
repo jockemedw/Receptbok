@@ -2836,6 +2836,7 @@
     overflow: hidden;
     transition: max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1);
   }
+  .ingredient-section-open .ingredient-section-body { padding-bottom: 1.2rem; }
   .ingredient-section-open .ingredient-section-body { max-height: 4000px; }
   .ingredient-preview { padding: 0 1rem; }
   .ingredient-preview-category {
