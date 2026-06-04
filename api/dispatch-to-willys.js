@@ -102,6 +102,14 @@ export default async function handler(req, res) {
         ok: false,
         error: result.error || "unknown",
         message: "Kunde inte skicka till Willys — prova igen om en stund.",
+        // Tillfällig diagnostik — läsbar i DevTools → Network.
+        debug: {
+          error: result.error,
+          postStatus: result.postStatus,
+          matchedCount: result.matchedCount,
+          canonCount: result.canonCount,
+          postResponse: result.postResponse,
+        },
       });
     }
     return res.status(200).json({
@@ -233,13 +241,15 @@ export async function runDispatch({ shoppingList, offers, searchClient, cartClie
   console.log(`MATCH:${matched.length}/${canons.length}`);
   const post = await cartClient.addProducts(codes);
   if (!post.ok) {
-    // Kort diagnostik runt Vercel-trunkering: addProducts-status + ev. felkod.
-    const errCode = post.response?.errors?.[0]?.message
-      || post.response?.error
-      || post.response?.message
-      || "";
-    console.log(`POST:${post.status} e=${String(errCode).slice(0, 18)}`);
-    return { ok: false, error: post.status === 401 ? "auth_expired" : "post_failed", postStatus: post.status };
+    console.log(`POST:${post.status}`);
+    return {
+      ok: false,
+      error: post.status === 401 ? "auth_expired" : "post_failed",
+      postStatus: post.status,
+      matchedCount: matched.length,
+      canonCount: canons.length,
+      postResponse: (() => { try { return JSON.stringify(post.response).slice(0, 300); } catch { return null; } })(),
+    };
   }
 
   const missing = unmatched.slice();
