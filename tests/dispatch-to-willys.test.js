@@ -129,6 +129,52 @@ function makeFakeFetch(responsesByUrl) {
   assertEq(hit?.code, "regular_ST", "spraygrädde rejectsMatch → regular grädde väljs");
 }
 
+// F. Relevans-fallback: "färs" → "Nötfärs" (stemmar till köttfärs ≠ färs)
+{
+  const client = createSearchClient({
+    fetchImpl: makeFakeFetch({
+      "q=f%C3%A4rs": {
+        results: [
+          { code: "fars_ST", name: "Nötfärs 12% Sverige", productLine2: "Garant", online: true, outOfStock: false, priceValue: 49.9 },
+        ],
+      },
+    }),
+  });
+  const hit = await client.findProductByCanon("färs");
+  assertEq(hit?.code, "fars_ST", "färs → Nötfärs via relevans-fallback");
+}
+
+// G. Relevans-fallback: "bananer" → "Banan" (ingen canon på produkten)
+{
+  const client = createSearchClient({
+    fetchImpl: makeFakeFetch({
+      "q=bananer": {
+        results: [
+          { code: "banan_ST", name: "Banan Klass 1", productLine2: "", online: true, outOfStock: false, priceValue: 24.9 },
+        ],
+      },
+    }),
+  });
+  const hit = await client.findProductByCanon("bananer");
+  assertEq(hit?.code, "banan_ST", "bananer → Banan via relevans-fallback");
+}
+
+// H. Exakt canon-träff föredras framför relevans-fallback
+{
+  const client = createSearchClient({
+    fetchImpl: makeFakeFetch({
+      "q=potatis": {
+        results: [
+          { code: "mos_ST", name: "Potatismos Pulver", productLine2: "", online: true, outOfStock: false, priceValue: 15 },
+          { code: "rawpot_ST", name: "Potatis Fast Klass 1", productLine2: "", online: true, outOfStock: false, priceValue: 20 },
+        ],
+      },
+    }),
+  });
+  const hit = await client.findProductByCanon("potatis");
+  assertEq(hit?.code, "rawpot_ST", "exakt canon (Potatis Fast) före relevans (Potatismos)");
+}
+
 // ─── Task 4: dispatch-matcher — matchCanons ───────────────────────
 
 // Fake searchClient

@@ -3,18 +3,22 @@
 //
 // Returnerad hit-shape: { code, name, brandLine, priceValue, canon, source: 'search' }
 //
-// Filter: första träff vars extractOfferCanon === canon OCH ej rejectsMatch.
-// Detta eliminerar klassiska buggar från 4E-rekonen:
-//   - vitlöksklyftor → "Lök Vit Stor" (sökmotorn stemmar "lök")
-//   - grädde → "Spraygrädde Vispgrädde 35%" (spraygrädde ≠ matlagningsgrädde)
+// Tvåstegs-matchning (alltid med rejectsMatch som skydd):
+//   Steg 1 (föredraget): första träff vars extractOfferCanon === canon. Exakt
+//     canon-likhet skyddar mot klassiska 4E-buggar — sökning "vitlöksklyftor"
+//     hittar "Vitlök Klass 1" före "Lök Vit Stor", "grädde" undviker spraygrädde.
+//   Steg 2 (relevans-fallback): om inget exakt-canon-träff finns, ta första
+//     träff vars namn delar ordstam med sök-termen (relevantToCanon). Det
+//     fångar vanliga varor vars Willys-namn stemmar till en annan/ingen canon:
+//     "färs" → "Nötfärs", "banan" → "Banan", "toalettpapper" → "Toalettpapper".
 
-import { extractOfferCanon, rejectsMatch } from "./willys-matcher.js";
+import { extractOfferCanon, rejectsMatch, relevantToCanon } from "./willys-matcher.js";
 
 const SEARCH_URL = "https://www.willys.se/search";
 
 export function createSearchClient({ fetchImpl = fetch } = {}) {
   async function findProductByCanon(canon) {
-    const url = `${SEARCH_URL}?q=${encodeURIComponent(canon)}&size=10`;
+    const url = `${SEARCH_URL}?q=${encodeURIComponent(canon)}&size=20`;
     const res = await fetchImpl(url, {
       headers: {
         "Accept": "application/json",
@@ -24,22 +28,36 @@ export function createSearchClient({ fetchImpl = fetch } = {}) {
     if (!res.ok) return null;
     const data = await res.json();
     const results = data.results || [];
+
+    // Köpbara, ej avvisade träffar (delad pool för båda stegen).
+    const candidates = [];
     for (const r of results) {
       if (r.outOfStock) continue;
       if (r.online === false) continue;
       const offerShape = { name: r.name || "", brandLine: r.productLine2 || "" };
-      const offerCanon = extractOfferCanon(offerShape);
-      if (offerCanon !== canon) continue;
       if (rejectsMatch(canon, offerShape)) continue;
-      return {
-        code: r.code,
-        name: r.name,
-        brandLine: r.productLine2 || null,
-        priceValue: typeof r.priceValue === "number" ? r.priceValue : null,
-        canon,
-        source: "search",
-      };
+      candidates.push({ r, offerShape });
     }
+
+    const toHit = ({ r }) => ({
+      code: r.code,
+      name: r.name,
+      brandLine: r.productLine2 || null,
+      priceValue: typeof r.priceValue === "number" ? r.priceValue : null,
+      canon,
+      source: "search",
+    });
+
+    // Steg 1: exakt canon-likhet.
+    const exact = candidates.find(({ offerShape }) => extractOfferCanon(offerShape) === canon);
+    if (exact) return toHit(exact);
+
+    // Steg 2: relevans-fallback.
+    const relevant = candidates.find(
+      ({ offerShape }) => relevantToCanon(canon, `${offerShape.name} ${offerShape.brandLine}`)
+    );
+    if (relevant) return toHit(relevant);
+
     return null;
   }
   return { findProductByCanon };
