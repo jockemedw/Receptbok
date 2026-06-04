@@ -55,7 +55,21 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log(`dispatch source=${secrets.source}`);
+    // Diagnostik: bara cookie-NAMN loggas, aldrig värden (säkerhetsregel).
+    // Hjälper avgöra om gist-cookies saknar inloggad session (JSESSIONID /
+    // axfoodRememberMe) när preflight returnerar 401.
+    const cookieNames = (secrets.cookies || "")
+      .split(/;\s*/)
+      .map(c => c.split("=")[0].trim())
+      .filter(Boolean);
+    const hasSession = cookieNames.includes("JSESSIONID");
+    const hasRemember = cookieNames.some(n => /remember/i.test(n));
+    console.log(
+      `dispatch source=${secrets.source} cookieCount=${cookieNames.length} ` +
+      `hasJSESSIONID=${hasSession} hasRememberMe=${hasRemember} csrfLen=${(secrets.csrf || "").length}`
+    );
+    console.log(`dispatch cookieNames=[${cookieNames.join(",")}]`);
+
     const shoppingList = await fetchShoppingListFromSupabase();
     const offers = await fetchOffersFromWillys(secrets.storeId);
     const searchClient = createSearchClient({});
@@ -195,7 +209,12 @@ export async function runDispatch({ shoppingList, offers, searchClient, cartClie
 
   const preflight = await cartClient.preflight();
   if (!preflight.ok) {
-    return { ok: false, error: preflight.status === 401 ? "auth_expired" : "preflight_failed" };
+    console.log(`dispatch preflight failed status=${preflight.status}`);
+    return {
+      ok: false,
+      error: preflight.status === 401 ? "auth_expired" : "preflight_failed",
+      preflightStatus: preflight.status,
+    };
   }
 
   const { matched, unmatched } = await matchCanons(canons, offers, searchClient);
