@@ -11,7 +11,7 @@
 // eller willys-matcher.js och blockerar commit om en test failar.
 
 import { parseIngredient, normalizeName, CANON_SET, CANON_REJECT_PATTERNS } from "../api/_shared/shopping-builder.js";
-import { matchRecipe, extractOfferCanon, relevantToCanon } from "../api/_shared/willys-matcher.js";
+import { matchRecipe, extractOfferCanon, relevantToCanon, brandBlocked } from "../api/_shared/willys-matcher.js";
 
 let passed = 0;
 let failed = 0;
@@ -184,6 +184,30 @@ assertTrue(relevantToCanon("potatis", "Potatis Fast Klass 1"), "potatis → Pota
 assertFalse(relevantToCanon("vitlöksklyftor", "Lök Vit Stor Klass 1"), "vitlöksklyftor ⊄ Lök Vit Stor (skydd)");
 assertFalse(relevantToCanon("grytbit", "Potatis Klass 1"), "grytbit ⊄ Potatis");
 assertFalse(relevantToCanon("ris", "Färsk Pasta Tagliatelle"), "för kort canon (≤3) → ingen fallback");
+
+// ─── Session 80: reject-mönster för smaksatta/processade varianter ──
+assertTrue(CANON_REJECT_PATTERNS.yoghurt.test("Yoghurt Körsbär 2%"), "yoghurt-reject fångar körsbärsyoghurt");
+assertTrue(CANON_REJECT_PATTERNS.yoghurt.test("Jordgubbsyoghurt"), "yoghurt-reject fångar jordgubbsyoghurt");
+assertFalse(CANON_REJECT_PATTERNS.yoghurt.test("Yoghurt Naturell 3%"), "yoghurt-reject släpper naturell");
+assertTrue(CANON_REJECT_PATTERNS.citron.test("Citron Kolsyrat Vatten"), "citron-reject fångar kolsyrat vatten");
+assertFalse(CANON_REJECT_PATTERNS.citron.test("Citron Klass 1"), "citron-reject släpper färsk citron");
+assertTrue(CANON_REJECT_PATTERNS.mjölk.test("Kondenserad Mjölk Sötad"), "mjölk-reject fångar kondenserad mjölk");
+assertFalse(CANON_REJECT_PATTERNS.mjölk.test("Mellanmjölk 1,5%"), "mjölk-reject släpper mellanmjölk");
+
+// ─── Session 80: lexikon-täckning för vanliga inköpsvaror ───────────
+assertEq(normalizeName("frysta gröna ärter"), "ärtor", "frysta gröna ärter → ärtor");
+assertEq(normalizeName("lätt färskost"), "färskost", "lätt färskost → färskost");
+assertEq(normalizeName("kycklingbröst utan ben och skinn"), "kycklingfilé", "kycklingbröst … → kycklingfilé");
+assertEq(normalizeName("bananer"), "banan", "bananer → banan (self-canon)");
+assertEq(normalizeName("toalettpapper"), "toalettpapper", "toalettpapper är canon");
+assertTrue(CANON_SET.has("ärtor"), "CANON_SET innehåller ärtor");
+assertTrue(CANON_SET.has("färskost"), "CANON_SET innehåller färskost");
+
+// ─── Session 80: brandBlocked-hjälpare ──────────────────────────────
+assertTrue(brandBlocked({ name: "Krossade Tomater", brandLine: "Eldorado" }, ["eldorado"]), "eldorado blockas via brandLine");
+assertTrue(brandBlocked({ name: "Eldorado Pasta", brandLine: "" }, ["eldorado"]), "eldorado blockas via namn");
+assertFalse(brandBlocked({ name: "Krossade Tomater", brandLine: "Mutti" }, ["eldorado"]), "Mutti passerar när bara eldorado blockas");
+assertFalse(brandBlocked({ name: "Pasta", brandLine: "Garant" }, []), "tom blocklist blockerar inget");
 
 // ─── Slutrapport ──────────────────────────────────────────────────
 console.log(`\n${passed} passerade, ${failed} failade.`);

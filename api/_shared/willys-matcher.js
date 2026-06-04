@@ -50,6 +50,15 @@ export function relevantToCanon(canon, text) {
   );
 }
 
+// Avgör om ett erbjudande tillhör ett blockerat varumärke. Användaren anger
+// fabrikat att undvika (t.ex. "eldorado") i Inköpspreferenser; här matchar vi
+// mot både produktnamn och varumärkesrad (brandLine) på ordstams-nivå.
+export function brandBlocked(offer, blockedBrands) {
+  if (!blockedBrands || blockedBrands.length === 0) return false;
+  const text = `${offer.name || ""} ${offer.brandLine || ""}`.toLowerCase();
+  return blockedBrands.some((b) => b && text.includes(String(b).toLowerCase()));
+}
+
 // Extrahera EN kanonisk huvudterm ur ett erbjudandenamn.
 // Prioritet: längre fras före kortare, tidigare position före senare.
 // Detta undviker "Fylld Gnocchi Tomat Mozzarella" → tomat/mozzarella

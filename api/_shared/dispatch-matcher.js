@@ -9,13 +9,13 @@
 // Output:
 //   { matched: [{canon, code, name, brandLine, source, savingPerUnit?}], unmatched: [canon] }
 
-import { extractOfferCanon, rejectsMatch } from "./willys-matcher.js";
+import { extractOfferCanon, rejectsMatch, brandBlocked } from "./willys-matcher.js";
 
 // concurrency — antal samtidiga sök-anrop mot Willys. Sökningarna kördes
 // tidigare en-i-taget; med 30 varor blev det 30 sekventiella HTTP-anrop och
 // dispatchen timeade ut. Begränsad parallellism håller oss snabba utan att
 // hamra Willys publika sök-endpoint.
-export async function matchCanons(canons, offers, searchClient, { concurrency = 6 } = {}) {
+export async function matchCanons(canons, offers, searchClient, { concurrency = 6, blockedBrands = [] } = {}) {
   const unique = [...new Set(canons.filter(Boolean))];
   const matched = [];
   const unmatched = [];
@@ -23,7 +23,7 @@ export async function matchCanons(canons, offers, searchClient, { concurrency = 
   // Steg 1: rea-matchning är synkron (mot redan hämtad erbjudande-cache).
   const toSearch = [];
   for (const canon of unique) {
-    const reaHit = findReaMatch(canon, offers);
+    const reaHit = findReaMatch(canon, offers, blockedBrands);
     if (reaHit) {
       matched.push({
         canon,
@@ -64,11 +64,12 @@ export async function matchCanons(canons, offers, searchClient, { concurrency = 
   return { matched, unmatched };
 }
 
-function findReaMatch(canon, offers) {
+function findReaMatch(canon, offers, blockedBrands = []) {
   for (const offer of offers) {
     const offerCanon = extractOfferCanon(offer);
     if (offerCanon !== canon) continue;
     if (rejectsMatch(canon, offer)) continue;
+    if (brandBlocked(offer, blockedBrands)) continue;
     return offer;
   }
   return null;

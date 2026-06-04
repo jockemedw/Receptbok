@@ -175,6 +175,23 @@ function makeFakeFetch(responsesByUrl) {
   assertEq(hit?.code, "rawpot_ST", "exakt canon (Potatis Fast) före relevans (Potatismos)");
 }
 
+// I. Blockerat varumärke hoppas över i sök (Eldorado) → nästa träff väljs
+{
+  const client = createSearchClient({
+    blockedBrands: ["eldorado"],
+    fetchImpl: makeFakeFetch({
+      "q=tomat": {
+        results: [
+          { code: "eldo_ST", name: "Krossade Tomater", productLine2: "Eldorado", online: true, outOfStock: false, priceValue: 7.9 },
+          { code: "mutti_ST", name: "Krossade Tomater", productLine2: "Mutti", online: true, outOfStock: false, priceValue: 14.9 },
+        ],
+      },
+    }),
+  });
+  const hit = await client.findProductByCanon("tomat");
+  assertEq(hit?.code, "mutti_ST", "blockerat Eldorado hoppas, Mutti väljs");
+}
+
 // ─── Task 4: dispatch-matcher — matchCanons ───────────────────────
 
 // Fake searchClient
@@ -240,6 +257,20 @@ function fakeSearch(map) {
   const result = await matchCanons(["grädde"], offers, search);
   assertEq(result.matched.length, 1, "en match efter rejectsMatch");
   assertEq(result.matched[0].code, "visp_matl_ST", "spray rejects, vispgrädde matlagning väljs");
+}
+
+// F. Blockerat varumärke i rea-steget → varan söks istället (inte blockerad rea)
+{
+  const offers = [
+    { code: "rea_eldo_ST", name: "Krossade Tomater", brandLine: "Eldorado", savingPerUnit: 4 },
+  ];
+  const search = fakeSearch({
+    tomat: { code: "search_mutti_ST", name: "Krossade Tomater", brandLine: "Mutti", source: "search" },
+  });
+  const result = await matchCanons(["tomat"], offers, search, { blockedBrands: ["eldorado"] });
+  assertEq(result.matched.length, 1, "blockerad rea → faller till sök");
+  assertEq(result.matched[0].code, "search_mutti_ST", "söker fram Mutti istället för rea-Eldorado");
+  assertEq(result.matched[0].source, "search", "source=search efter blockerad rea");
 }
 
 // ─── Task 5: willys-cart-client ───────────────────────────────────
