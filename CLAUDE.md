@@ -116,7 +116,16 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 78 (2026-06-04) — Fas 4F slutförd: "Skicka till Willys" live (27 varor i korgen)
+### Senaste session — Session 79 (2026-06-04) — Bättre matchnings-täckning vid Willys-export (sök-fallback)
+
+- **Bakgrund:** Session 78:s skarpa körning hade 24 omatchade varor. Vanliga varor (färs, banan, toalettpapper m.fl.) hamnade aldrig i korgen.
+- **Rotorsak:** Sök-fallbacken i `willys-search.js` krävde att produktens **återextraherade canon var exakt lika** med sök-canonen (`extractOfferCanon(result) === canon`). För strikt: när vi aktivt söker Willys på en term är topp-träffen nästan alltid rätt produkt, även om dess namn stemmar till en **annan** canon ("färs" → "Nötfärs" → `köttfärs`) eller till **ingen** canon ("banan", "toalettpapper") → `extractOfferCanon` ger `null` → avvisas.
+- **Fix — tvåstegs-sök** (`willys-search.js`): Steg 1 behåller exakt canon-likhet (skyddar `vitlöksklyftor` → "Lök Vit Stor" och `grädde` → spraygrädde). Steg 2 är en **relevans-fallback**: om inget exakt-canon-träff finns, ta första köpbara, ej avvisade träff vars namn delar ordstam med sök-termen. `rejectsMatch` gäller i båda stegen. Sök-storlek 10→20 (fler kandidater för exakt-steget).
+- **`relevantToCanon(canon, text)`** (ny, `willys-matcher.js`): canon-token (≥4 tecken) ska dela ordstam med produkt-token (identisk / prefix / suffix). Fångar sammansättningar (nötFÄRS) + plural (BANANer ⊃ banan), men avvisar korta/felplacerade deltoken ("vit"/"lök" ⊄ "vitlöksklyftor").
+- **Tester:** match 51→60, dispatch 74→77. shopping 81 / select-recipes 432 / data-mapper 27 oförändrade gröna.
+- **Kvar:** ren live-körning för att mäta ny täckning. Lexikon-utökning för vanlig färskvara (självcanons) kan höja exakt-steget ytterligare — ej akut.
+
+### Session 78 (2026-06-04) — Fas 4F slutförd: "Skicka till Willys" live (27 varor i korgen)
 
 - **Bakgrund:** Användaren ville slutföra Fas 4F (cookie-refresh + dispatch). Visade sig att server-setupen (gist + env vars) redan fanns sedan Session 42 — bara extension-installation + felsökning återstod.
 - **Felsökning i ordning (varje fix egen squash-PR mot main):**

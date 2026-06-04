@@ -22,6 +22,34 @@ export function rejectsMatch(canon, offer) {
   return pattern.test(text);
 }
 
+// Lättare relevans-check för SÖK-fallback (ej rea-cachen).
+// När vi aktivt sökt Willys med en canon-term är topp-träffen nästan alltid
+// rätt produkt — även om dess namn stemmar till en ANNAN canon ("färs" →
+// "Nötfärs" → köttfärs) eller till INGEN canon alls ("banan", "toalettpapper").
+// Vi kan därför inte kräva canon-likhet i fallbacken. Men vi måste ändå avvisa
+// irrelevanta träffar (sökning "vitlöksklyftor" → "Lök Vit Stor").
+//
+// Regel: någon canon-token (≥4 tecken) ska dela ordstam med en produkt-token —
+// antingen identisk, eller där den ena är prefix/suffix av den andra. Det fångar
+// sammansättningar (nötFÄRS, fläskFÄRS) och plural (BANANer ⊃ banan) men inte
+// "lök"/"vit" ⊄ "vitlöksklyftor" (för korta / fel position).
+export function relevantToCanon(canon, text) {
+  const productTokens = String(text).toLowerCase()
+    .split(/[\s,\-()\/]+/).filter((t) => t.length >= 3);
+  const canonTokens = String(canon).toLowerCase()
+    .split(/\s+/).filter((t) => t.length >= 4);
+  if (canonTokens.length === 0) return false;
+  return canonTokens.some((c) =>
+    productTokens.some((p) =>
+      // Produkten innehåller hela canon-termen vid en ordgräns ("nötfärs" ⊃ "färs")
+      p === c || p.endsWith(c) || p.startsWith(c) ||
+      // Eller canon är en längre böjning av produkt-token ("bananer" ⊃ "banan").
+      // Kräver p ≥4 så korta deltoken ("vit", "lök") inte slinker igenom.
+      (p.length >= 4 && (c.startsWith(p) || c.endsWith(p)))
+    )
+  );
+}
+
 // Extrahera EN kanonisk huvudterm ur ett erbjudandenamn.
 // Prioritet: längre fras före kortare, tidigare position före senare.
 // Detta undviker "Fylld Gnocchi Tomat Mozzarella" → tomat/mozzarella

@@ -11,7 +11,7 @@
 // eller willys-matcher.js och blockerar commit om en test failar.
 
 import { parseIngredient, normalizeName, CANON_SET, CANON_REJECT_PATTERNS } from "../api/_shared/shopping-builder.js";
-import { matchRecipe, extractOfferCanon } from "../api/_shared/willys-matcher.js";
+import { matchRecipe, extractOfferCanon, relevantToCanon } from "../api/_shared/willys-matcher.js";
 
 let passed = 0;
 let failed = 0;
@@ -171,6 +171,19 @@ assertFalse(CANON_REJECT_PATTERNS.rapsolja.test("Rapsolja 1l"), "reject-mönster
   const result = matchRecipe(recipe, offers);
   assertEq(result.matches.length, 0, "BUGG-FIX: sardeller i olja ska INTE matcha rapsolja-recept");
 }
+
+// ─── relevantToCanon: sök-fallback för vanliga varor ──────────────
+// Positiva: produktnamn som stemmar till annan/ingen canon men ändå är rätt.
+assertTrue(relevantToCanon("färs", "Nötfärs 12% Sverige"), "färs → Nötfärs (suffix-stam)");
+assertTrue(relevantToCanon("färs", "Blandfärs Nöt/Fläsk"), "färs → Blandfärs (suffix-stam)");
+assertTrue(relevantToCanon("bananer", "Banan Klass 1"), "bananer → Banan (canon är plural)");
+assertTrue(relevantToCanon("banan", "Bananer Ekologiska"), "banan → Bananer (produkt är plural)");
+assertTrue(relevantToCanon("toalettpapper", "Toalettpapper Lambi Mjukt"), "toalettpapper → Toalettpapper");
+assertTrue(relevantToCanon("potatis", "Potatis Fast Klass 1"), "potatis → Potatis Fast");
+// Negativa: irrelevanta träffar ska INTE accepteras i fallbacken.
+assertFalse(relevantToCanon("vitlöksklyftor", "Lök Vit Stor Klass 1"), "vitlöksklyftor ⊄ Lök Vit Stor (skydd)");
+assertFalse(relevantToCanon("grytbit", "Potatis Klass 1"), "grytbit ⊄ Potatis");
+assertFalse(relevantToCanon("ris", "Färsk Pasta Tagliatelle"), "för kort canon (≤3) → ingen fallback");
 
 // ─── Slutrapport ──────────────────────────────────────────────────
 console.log(`\n${passed} passerade, ${failed} failade.`);
