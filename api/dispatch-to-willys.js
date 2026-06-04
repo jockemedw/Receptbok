@@ -81,6 +81,15 @@ export default async function handler(req, res) {
         ok: false,
         error: "auth_expired",
         message: "Dina Willys-cookies har gått ut. Be Joakim uppdatera dem i Vercel.",
+        // Tillfällig diagnostik — endast cookie-NAMN, aldrig värden.
+        debug: {
+          cookieNames,
+          hasJSESSIONID: hasSession,
+          hasRememberMe: hasRemember,
+          csrfLen: (secrets.csrf || "").length,
+          preflightStatus: result.preflightStatus,
+          source: secrets.source,
+        },
       });
     }
     if (!result.ok && result.error === "no_matches") {
