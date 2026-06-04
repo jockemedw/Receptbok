@@ -273,7 +273,7 @@ export async function runDispatch({ shoppingList, offers, searchClient, cartClie
 
 // Lägger produkter en och en (bounded concurrency). Returnerar listor på
 // lyckade/misslyckade koder + authExpired-flagga om någon add ger 401.
-async function addProductsOneByOne(cartClient, codes, { concurrency = 4 } = {}) {
+async function addProductsOneByOne(cartClient, codes, { concurrency = 6 } = {}) {
   const added = [];
   const failed = [];
   let authExpired = false;

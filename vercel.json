@@ -4,7 +4,7 @@
       "maxDuration": 15
     },
     "api/dispatch-to-willys.js": {
-      "maxDuration": 15
+      "maxDuration": 60
     }
   }
 }
