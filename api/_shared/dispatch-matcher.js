@@ -11,11 +11,17 @@
 
 import { extractOfferCanon, rejectsMatch } from "./willys-matcher.js";
 
-export async function matchCanons(canons, offers, searchClient) {
+// concurrency — antal samtidiga sök-anrop mot Willys. Sökningarna kördes
+// tidigare en-i-taget; med 30 varor blev det 30 sekventiella HTTP-anrop och
+// dispatchen timeade ut. Begränsad parallellism håller oss snabba utan att
+// hamra Willys publika sök-endpoint.
+export async function matchCanons(canons, offers, searchClient, { concurrency = 6 } = {}) {
   const unique = [...new Set(canons.filter(Boolean))];
   const matched = [];
   const unmatched = [];
 
+  // Steg 1: rea-matchning är synkron (mot redan hämtad erbjudande-cache).
+  const toSearch = [];
   for (const canon of unique) {
     const reaHit = findReaMatch(canon, offers);
     if (reaHit) {
@@ -27,22 +33,33 @@ export async function matchCanons(canons, offers, searchClient) {
         source: "rea",
         savingPerUnit: reaHit.savingPerUnit || 0,
       });
-      continue;
+    } else {
+      toSearch.push(canon);
     }
-    const searchHit = await searchClient.findProductByCanon(canon);
-    if (searchHit) {
-      matched.push({
-        canon,
-        code: searchHit.code,
-        name: searchHit.name,
-        brandLine: searchHit.brandLine || null,
-        source: "search",
-        savingPerUnit: 0,
-      });
-      continue;
-    }
-    unmatched.push(canon);
   }
+
+  // Steg 2: sök-missarna parallellt med begränsad samtidighet.
+  let cursor = 0;
+  async function worker() {
+    while (cursor < toSearch.length) {
+      const canon = toSearch[cursor++];
+      const searchHit = await searchClient.findProductByCanon(canon);
+      if (searchHit) {
+        matched.push({
+          canon,
+          code: searchHit.code,
+          name: searchHit.name,
+          brandLine: searchHit.brandLine || null,
+          source: "search",
+          savingPerUnit: 0,
+        });
+      } else {
+        unmatched.push(canon);
+      }
+    }
+  }
+  const workerCount = Math.min(concurrency, toSearch.length);
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
 
   return { matched, unmatched };
 }

@@ -2,6 +2,9 @@
   "functions": {
     "api/generate.js": {
       "maxDuration": 15
+    },
+    "api/dispatch-to-willys.js": {
+      "maxDuration": 15
     }
   }
 }
