@@ -230,9 +230,16 @@ export async function runDispatch({ shoppingList, offers, searchClient, cartClie
   }
 
   const codes = matched.map(m => m.code);
+  console.log(`MATCH:${matched.length}/${canons.length}`);
   const post = await cartClient.addProducts(codes);
   if (!post.ok) {
-    return { ok: false, error: post.status === 401 ? "auth_expired" : "post_failed" };
+    // Kort diagnostik runt Vercel-trunkering: addProducts-status + ev. felkod.
+    const errCode = post.response?.errors?.[0]?.message
+      || post.response?.error
+      || post.response?.message
+      || "";
+    console.log(`POST:${post.status} e=${String(errCode).slice(0, 18)}`);
+    return { ok: false, error: post.status === 401 ? "auth_expired" : "post_failed", postStatus: post.status };
   }
 
   const missing = unmatched.slice();
