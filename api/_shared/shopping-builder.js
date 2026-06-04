@@ -243,6 +243,49 @@ export const NORMALIZATION_TABLE = {
   "banan": "banan", "bananer": "banan",
   // Hushållsvaror (manuella varor som ändå ska kunna matchas mot Willys)
   "toalettpapper": "toalettpapper", "hushållspapper": "hushållspapper",
+
+  // ─── Session 81 (nattjobb) — konservativ täckningsutökning ────────────────
+  // Self-canons + säkra varianter för vanliga ingredienser som föll tillbaka
+  // till rånamnet. Kategori sätts via CATEGORY_KEYWORDS nedan där ≠ Skafferi.
+  // Spannmål / pasta / nudlar (Skafferi)
+  "havregryn": "havregryn", "smulade havregryn": "havregryn",
+  "couscous": "couscous", "pärlcouscous": "couscous",
+  "risoni": "risoni", "risony": "risoni",
+  "vermicelli": "vermicelli",
+  "spaghetti": "spaghetti", "fullkornsspaghetti": "spaghetti",
+  "makaroner": "makaroner",
+  "tagliatelle": "tagliatelle",
+  "fettuccine": "fettuccine", "fettuccini": "fettuccine",
+  "risnudlar": "nudlar", "äggnudlar": "nudlar", "glasnudlar": "nudlar",
+  "udonnudlar": "nudlar", "sobanudlar": "nudlar", "ramennudlar": "nudlar",
+  // Kryddor & skafferi
+  "lagerblad": "lagerblad",
+  "kardemumma": "kardemumma",
+  "senap": "senap", "dijonsenap": "senap", "grovkornig senap": "senap",
+  "senapsfrö": "senapsfrö", "senapsfrön": "senapsfrö",
+  "fänkålsfrö": "fänkålsfrö", "fänkålsfrön": "fänkålsfrö",
+  "kokosflingor": "kokosflingor",
+  // Socker
+  "muscovadosocker": "socker", "farinsocker": "socker", "brun farin": "socker", "farin": "socker",
+  // Nötter
+  "hasselnötter": "hasselnötter",
+  "pekannötter": "pekannötter",
+  "pistaschnötter": "pistaschnötter", "pistagenötter": "pistaschnötter",
+  // Mejeri
+  "kärnmjölk": "kärnmjölk",
+  // Grönsaker
+  "savojkål": "savojkål",
+  "salladskål": "salladskål",
+  "palsternacka": "palsternacka", "palsternackor": "palsternacka",
+  "sparris": "sparris", "grön sparris": "sparris",
+  "kålrabbi": "kålrabbi",
+  "isbergssallad": "sallad",
+  "edamame": "edamame", "edamamebönor": "edamame",
+  "kidneybönor": "kidneybönor",
+  // Frukt (kategoriseras redan via CATEGORY_KEYWORDS → Frukt)
+  "jordgubbar": "jordgubbar", "jordgubb": "jordgubbar",
+  "blåbär": "blåbär", "hallon": "hallon",
+  "päron": "päron", "päronen": "päron",
 };
 
 // Steg 5: Kategorinyckelord (utökade)
@@ -253,7 +296,7 @@ const CATEGORY_KEYWORDS = {
     "smör", "margarin",
     "ost", "parmesan", "pecorino", "mozzarella", "fetaost", "halloumi",
     "cheddar", "chèvre", "gruyère", "ricotta", "mascarpone", "kvarg", "keso", "färskost",
-    "crème fraiche", "gräddfil", "yoghurt", "turkisk yoghurt", "filmjölk", "kefir",
+    "crème fraiche", "gräddfil", "yoghurt", "turkisk yoghurt", "filmjölk", "kefir", "kärnmjölk",
     "ägg", "äggula", "äggvita",
   ],
   Grönsaker: [
@@ -268,7 +311,7 @@ const CATEGORY_KEYWORDS = {
     "champinjoner", "svamp", "shiitake", "kantareller",
     "selleri", "palsternacka", "jordärtskocka", "fänkål", "rödbetor",
     "sparris", "majs", "ärtor", "ärter", "sockerärtor", "haricots verts",
-    "bönor", "kikärtor", "linser", "belugalinser",
+    "bönor", "kikärtor", "linser", "belugalinser", "edamame", "kidneybönor",
     "sallad", "salladsblad", "ruccola", "romansallad", "rädisa",
     "avokado", "butternutpumpa", "squash", "rödkål",
     "persilja", "koriander", "dill", "basilika", "timjan", "gräslök",

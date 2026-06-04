@@ -218,6 +218,24 @@ assertTrue(brandBlocked({ name: "Eldorado Pasta", brandLine: "" }, ["eldorado"])
 assertFalse(brandBlocked({ name: "Krossade Tomater", brandLine: "Mutti" }, ["eldorado"]), "Mutti passerar när bara eldorado blockas");
 assertFalse(brandBlocked({ name: "Pasta", brandLine: "Garant" }, []), "tom blocklist blockerar inget");
 
+// ─── Session 81 (nattjobb): konservativ täckningsutökning ───────────
+assertEq(normalizeName("havregryn"), "havregryn", "havregryn är canon");
+assertEq(normalizeName("couscous"), "couscous", "couscous är canon");
+assertEq(normalizeName("dijonsenap"), "senap", "dijonsenap → senap");
+assertEq(normalizeName("muscovadosocker"), "socker", "muscovadosocker → socker");
+assertEq(normalizeName("risnudlar"), "nudlar", "risnudlar → nudlar");
+assertEq(normalizeName("udonnudlar"), "nudlar", "udonnudlar → nudlar");
+assertEq(normalizeName("isbergssallad"), "sallad", "isbergssallad → sallad");
+assertEq(normalizeName("palsternackor"), "palsternacka", "palsternackor → palsternacka");
+assertEq(normalizeName("jordgubb"), "jordgubbar", "jordgubb → jordgubbar");
+assertEq(normalizeName("fullkornsspaghetti"), "spaghetti", "fullkornsspaghetti → spaghetti");
+assertTrue(CANON_SET.has("edamame"), "CANON_SET innehåller edamame");
+assertTrue(CANON_SET.has("kärnmjölk"), "CANON_SET innehåller kärnmjölk");
+assertTrue(CANON_SET.has("sparris"), "CANON_SET innehåller sparris");
+// extractOfferCanon hittar de nya canons i Willys-produktnamn
+assertEq(extractOfferCanon({ name: "Färsk Sparris Grön Klass 1", brandLine: "" }), "sparris", "produktnamn → sparris-canon");
+assertEq(extractOfferCanon({ name: "Havregryn Glutenfria", brandLine: "AXA" }), "havregryn", "produktnamn → havregryn-canon");
+
 // ─── Slutrapport ──────────────────────────────────────────────────
 console.log(`\n${passed} passerade, ${failed} failade.`);
 if (failed) {
