@@ -237,27 +237,61 @@ export async function runDispatch({ shoppingList, offers, searchClient, cartClie
     return { ok: false, error: "no_matches" };
   }
 
-  const codes = matched.map(m => m.code);
+  const codes = matched.map(m => m.code).filter(Boolean);
   console.log(`MATCH:${matched.length}/${canons.length}`);
-  const post = await cartClient.addProducts(codes);
-  if (!post.ok) {
-    console.log(`POST:${post.status}`);
+
+  // Lägg till EN produkt i taget. Willys addProducts avvisar HELA batchen med
+  // 400 (error.illegal.argument) om en enda kod är ogiltig (utgången vara, ej
+  // köpbar online, fel köpenhet m.m.). Per-produkt gör att alla giltiga koder
+  // ändå hamnar i korgen och de ogiltiga rapporteras som saknade. Begränsad
+  // parallellism håller oss snabba utan att hamra cart-API:t.
+  const add = await addProductsOneByOne(cartClient, codes);
+  if (add.authExpired) {
+    return { ok: false, error: "auth_expired", postStatus: 401, matchedCount: matched.length, canonCount: canons.length };
+  }
+  console.log(`ADD:${add.added.length}/${codes.length} fail${add.failed.length}`);
+  if (add.added.length === 0) {
     return {
       ok: false,
-      error: post.status === 401 ? "auth_expired" : "post_failed",
-      postStatus: post.status,
+      error: "post_failed",
+      postStatus: add.lastStatus,
       matchedCount: matched.length,
       canonCount: canons.length,
-      postResponse: (() => { try { return JSON.stringify(post.response).slice(0, 300); } catch { return null; } })(),
     };
   }
 
-  const missing = unmatched.slice();
+  const failedSet = new Set(add.failed);
+  const addedMatched = matched.filter(m => !failedSet.has(m.code));
+  const failedCanons = matched.filter(m => failedSet.has(m.code)).map(m => m.canon);
+  const missing = unmatched.concat(failedCanons);
   const sources = {
-    rea: matched.filter(m => m.source === "rea").length,
-    search: matched.filter(m => m.source === "search").length,
+    rea: addedMatched.filter(m => m.source === "rea").length,
+    search: addedMatched.filter(m => m.source === "search").length,
   };
-  return { ok: true, addedCount: matched.length, missing, sources };
+  return { ok: true, addedCount: add.added.length, missing, sources, failedCount: add.failed.length };
+}
+
+// Lägger produkter en och en (bounded concurrency). Returnerar listor på
+// lyckade/misslyckade koder + authExpired-flagga om någon add ger 401.
+async function addProductsOneByOne(cartClient, codes, { concurrency = 4 } = {}) {
+  const added = [];
+  const failed = [];
+  let authExpired = false;
+  let lastStatus = null;
+  let cursor = 0;
+  async function worker() {
+    while (cursor < codes.length && !authExpired) {
+      const code = codes[cursor++];
+      const res = await cartClient.addProducts([code]);
+      lastStatus = res.status;
+      if (res.ok) added.push(code);
+      else if (res.status === 401) authExpired = true;
+      else failed.push(code);
+    }
+  }
+  const n = Math.min(concurrency, codes.length);
+  await Promise.all(Array.from({ length: n }, () => worker()));
+  return { added, failed, authExpired, lastStatus };
 }
 
 // Läser aktiv inköpslista från Supabase och returnerar { recipeItems, manualItems }

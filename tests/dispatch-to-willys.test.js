@@ -295,11 +295,11 @@ function makeRecordingFetch(responses) {
       return null;
     },
   };
-  let captured = null;
+  const captured = [];
   const cartClient = {
     preflight: async () => ({ ok: true, status: 200 }),
     addProducts: async (codes) => {
-      captured = codes;
+      captured.push(...codes);
       return { ok: true, status: 200, response: {} };
     },
     verifyCart: async () => ({ ok: true, status: 200, entries: [] }),
@@ -307,7 +307,7 @@ function makeRecordingFetch(responses) {
 
   const result = await runDispatch({ shoppingList, offers, searchClient, cartClient });
   assertEq(result.ok, true, "dispatch ok");
-  assertTrue(captured, "addProducts anropades");
+  assertTrue(captured.length > 0, "addProducts anropades");
   assertTrue(captured.includes("rea_gradde_ST"), "rea-grädde med");
   assertTrue(captured.includes("s_mjolk_ST"), "search-mjölk med");
   assertTrue(captured.includes("s_purjo_ST"), "search-purjolök med");
@@ -359,16 +359,16 @@ function makeRecordingFetch(responses) {
       return null;
     },
   };
-  let captured = null;
+  const captured = [];
   const cartClient = {
     preflight: async () => ({ ok: true, status: 200 }),
-    addProducts: async (codes) => { captured = codes; return { ok: true, status: 200, response: {} }; },
+    addProducts: async (codes) => { captured.push(...codes); return { ok: true, status: 200, response: {} }; },
     verifyCart: async () => ({ ok: true, entries: [] }),
   };
   const result = await runDispatch({ shoppingList, offers, searchClient, cartClient });
   assertEq(result.ok, true, "manualItems → dispatch ok");
-  assertTrue(captured && captured.includes("s_kefir_ST"), "kefir från manualItems med");
-  assertTrue(captured && captured.includes("s_mjolk_ST"), "mjölk från manualItems med");
+  assertTrue(captured.includes("s_kefir_ST"), "kefir från manualItems med");
+  assertTrue(captured.includes("s_mjolk_ST"), "mjölk från manualItems med");
 }
 
 // D. addProducts fail (post_failed-path — code-reviewer request)
@@ -404,6 +404,33 @@ function makeRecordingFetch(responses) {
   };
   const result = await runDispatch({ shoppingList, offers, searchClient, cartClient });
   assertEq(result.error, "auth_expired", "POST 401 → auth_expired");
+}
+
+// F. Per-produkt: en kod ger 400, resten lyckas → ok=true, den dåliga blir missing
+{
+  const shoppingList = { recipeItems: { Mejeri: ["mjölk (1 l)", "grädde (2 dl)", "fil (1 l)"] } };
+  const offers = [];
+  const searchClient = {
+    findProductByCanon: async (canon) => {
+      if (canon === "mjölk") return { code: "ok_mjolk_ST", name: "Mjölk", brandLine: "" };
+      if (canon === "grädde") return { code: "BAD_gradde_ST", name: "Grädde", brandLine: "" };
+      if (canon === "fil") return { code: "ok_fil_ST", name: "Fil", brandLine: "" };
+      return null;
+    },
+  };
+  const cartClient = {
+    preflight: async () => ({ ok: true, status: 200 }),
+    addProducts: async (codes) =>
+      codes[0] === "BAD_gradde_ST"
+        ? { ok: false, status: 400, response: { errorMessage: "{error.illegal.argument}" } }
+        : { ok: true, status: 200, response: {} },
+    verifyCart: async () => ({ ok: true, entries: [] }),
+  };
+  const result = await runDispatch({ shoppingList, offers, searchClient, cartClient });
+  assertEq(result.ok, true, "delvis lyckat → ok=true");
+  assertEq(result.addedCount, 2, "två produkter tillagda");
+  assertEq(result.failedCount, 1, "en produkt misslyckad");
+  assertTrue(result.missing.includes("grädde"), "den dåliga produktens canon blir missing");
 }
 
 // ─── Task R: resolveWillysSecrets — gist + env-var fallback ───────
