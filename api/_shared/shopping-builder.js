@@ -230,6 +230,19 @@ export const NORMALIZATION_TABLE = {
   "äpple": "äpple", "äpplen": "äpple", "mango": "mango",
   "persika": "persika", "persikor": "persika",
   "limejuice": "lime", "färsk limejuice": "lime",
+
+  // ─── Session 80 — täckning för vanliga inköpsvaror ───────────────────────
+  // Ärter (frysta gröna ärter m.fl.)
+  "ärter": "ärtor", "ärtor": "ärtor", "gröna ärter": "ärtor", "gröna ärtor": "ärtor",
+  "frysta ärter": "ärtor", "frysta gröna ärter": "ärtor", "frysta gröna ärtor": "ärtor",
+  // Färskost (Philadelphia-typ)
+  "färskost": "färskost", "lätt färskost": "färskost", "philadelphia": "färskost",
+  // Kycklingbröst → samma som kycklingfilé
+  "kycklingbröst": "kycklingfilé", "kycklingbröstfilé": "kycklingfilé",
+  // Banan (vanlig frukt, self-canon)
+  "banan": "banan", "bananer": "banan",
+  // Hushållsvaror (manuella varor som ändå ska kunna matchas mot Willys)
+  "toalettpapper": "toalettpapper", "hushållspapper": "hushållspapper",
 };
 
 // Steg 5: Kategorinyckelord (utökade)
@@ -239,7 +252,7 @@ const CATEGORY_KEYWORDS = {
     "mjölk", "havremjölk", "mandelmjölk",
     "smör", "margarin",
     "ost", "parmesan", "pecorino", "mozzarella", "fetaost", "halloumi",
-    "cheddar", "chèvre", "gruyère", "ricotta", "mascarpone", "kvarg", "keso",
+    "cheddar", "chèvre", "gruyère", "ricotta", "mascarpone", "kvarg", "keso", "färskost",
     "crème fraiche", "gräddfil", "yoghurt", "turkisk yoghurt", "filmjölk", "kefir",
     "ägg", "äggula", "äggvita",
   ],
@@ -434,10 +447,14 @@ export const CANON_SET = new Set(Object.values(NORMALIZATION_TABLE));
 // matlagningsgrädde-recept (som skriver "grädde" i ingredienslistan).
 export const CANON_REJECT_PATTERNS = {
   "grädde": /\b(spray|sprayvispgrädde|gräddfil|havregrädde|kokosgrädde|sojagrädde|växtgrädde)\b|\bvispgrädde\b(?!.*\bmatlagning)/i,
-  "mjölk": /\b(havredryck|mandeldryck|sojadryck|kokosdryck|havremjölk|mandelmjölk|sojamjölk|gräddfil|syrad mjölk|kokosmjölk)\b/i,
+  "mjölk": /\b(havredryck|mandeldryck|sojadryck|kokosdryck|havremjölk|mandelmjölk|sojamjölk|gräddfil|syrad mjölk|kokosmjölk|kondenserad|mjölkpulver|mjölkfri)\b/i,
   "smör": /\b(margarin|bregott|becel|flora|milda växtfett|popcorn|mikropopcorn)\b/i,
   "rapsolja": /\b(sardell\w*|ansjovis\w*|tonfisk\w*|sill\w*|makrill\w*|inlagd\w*|konserv\w*)\b/i,
   "fisk": /\b(fiskpinnar|fiskbullar|fiskbullar)\b/i,
+  // Yoghurt: avvisa smaksatta/fruktade varianter — recept skriver "yoghurt" för naturell.
+  "yoghurt": /\b(körsbär\w*|jordgubb\w*|hallon|blåbär|skogsbär|lingon|hjortron|aprikos|persika|päron|mango|ananas|passion|vanilj\w*|citron|banan|fika|kola|choklad|smaksatt|müsli|granola|frukt)\b/i,
+  // Citron: avvisa drycker/läsk (t.ex. "Citron Kolsyrat Vatten") — recept vill ha frukt/saft.
+  "citron": /\b(kolsyrat|kolsyrad|läsk|soda|smoothie|sirap|nektar)\b/i,
 };
 
 // Adjektiv-prefix som strippas i fallback-stemming (Session 34).

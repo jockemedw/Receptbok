@@ -116,7 +116,19 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 79 (2026-06-04) — Bättre matchnings-täckning vid Willys-export (sök-fallback)
+### Senaste session — Session 80 (2026-06-04) — Willys-export: felmatchningar + fabrikat-blockering + täckning
+
+- **Bakgrund:** Session 79:s sök-fallback höjde träffarna 27→43, men live-körningen visade tre felmatchningar och en saknad funktion.
+- **Felmatchningar (reject-mönster i `shopping-builder.js`):** sökträffar som innehöll canon-ordet men var fel produktvariant slank igenom exakt-steget:
+  - `citron` → "Citron Kolsyrat Vatten" (läsk). Nytt mönster: `kolsyrat|kolsyrad|läsk|soda|smoothie|sirap|nektar`.
+  - `yoghurt` → "Körsbär Yoghurt" (smaksatt). Nytt mönster: fruktsmaker (körsbär/jordgubb/hallon/vanilj…). "Turkisk yoghurt" är egen canon → opåverkad.
+  - `mjölk` → "Kondenserad mjölk". Utökat mönster: `kondenserad|mjölkpulver|mjölkfri`.
+- **Fabrikat-blockering (önskemål):** blocklistan i Inköpspreferenser användes bara i AI-prompten, aldrig i "Skicka till Willys". Nu läser `dispatch-to-willys.js` `dispatch-preferences.json` (`fetchBlockedBrands()`) och trådar `blockedBrands` genom `matchCanons` (rea) + `createSearchClient` (sök). Ny `brandBlocked(offer, brands)` i `willys-matcher.js` matchar på namn + brandLine. Blockerad rea-vara faller automatiskt till sök efter ej-blockerat alternativ.
+- **Täckning (lexikon i `shopping-builder.js`):** `frysta gröna ärter`→`ärtor`, `lätt färskost`→`färskost` (+ Mejeri-kategori), `kycklingbröst …`→`kycklingfilé`, `bananer`→`banan`, `toalettpapper`/`hushållspapper` self-canon (→ exakt-steg istället för fallback).
+- **Tester:** match 60→78, dispatch 77→81. shopping 81 / select-recipes 432 / data-mapper 27 oförändrade gröna.
+- **Kvar (ej fixat):** `potatis` matchar troligen men add:en faller — lös färskvara prissätts per kg, men `addProducts` skickar `pickUnit: "pieces"` → 400 → hamnar i "kunde inte matchas". Kräver pick-unit per produkt från sökresultatet. Separat live-diagnos.
+
+### Session 79 (2026-06-04) — Bättre matchnings-täckning vid Willys-export (sök-fallback)
 
 - **Bakgrund:** Session 78:s skarpa körning hade 24 omatchade varor. Vanliga varor (färs, banan, toalettpapper m.fl.) hamnade aldrig i korgen.
 - **Rotorsak:** Sök-fallbacken i `willys-search.js` krävde att produktens **återextraherade canon var exakt lika** med sök-canonen (`extractOfferCanon(result) === canon`). För strikt: när vi aktivt söker Willys på en term är topp-träffen nästan alltid rätt produkt, även om dess namn stemmar till en **annan** canon ("färs" → "Nötfärs" → `köttfärs`) eller till **ingen** canon ("banan", "toalettpapper") → `extractOfferCanon` ger `null` → avvisas.

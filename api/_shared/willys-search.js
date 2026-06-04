@@ -12,11 +12,11 @@
 //     fångar vanliga varor vars Willys-namn stemmar till en annan/ingen canon:
 //     "färs" → "Nötfärs", "banan" → "Banan", "toalettpapper" → "Toalettpapper".
 
-import { extractOfferCanon, rejectsMatch, relevantToCanon } from "./willys-matcher.js";
+import { extractOfferCanon, rejectsMatch, relevantToCanon, brandBlocked } from "./willys-matcher.js";
 
 const SEARCH_URL = "https://www.willys.se/search";
 
-export function createSearchClient({ fetchImpl = fetch } = {}) {
+export function createSearchClient({ fetchImpl = fetch, blockedBrands = [] } = {}) {
   async function findProductByCanon(canon) {
     const url = `${SEARCH_URL}?q=${encodeURIComponent(canon)}&size=20`;
     const res = await fetchImpl(url, {
@@ -36,6 +36,7 @@ export function createSearchClient({ fetchImpl = fetch } = {}) {
       if (r.online === false) continue;
       const offerShape = { name: r.name || "", brandLine: r.productLine2 || "" };
       if (rejectsMatch(canon, offerShape)) continue;
+      if (brandBlocked(offerShape, blockedBrands)) continue;
       candidates.push({ r, offerShape });
     }
 

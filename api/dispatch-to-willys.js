@@ -21,6 +21,7 @@ import { createCartClient } from "./_shared/willys-cart-client.js";
 import { matchCanons } from "./_shared/dispatch-matcher.js";
 import { parseIngredient, normalizeName } from "./_shared/shopping-builder.js";
 import { createSecretsStore } from "./_shared/secrets-store.js";
+import { readFileRaw } from "./_shared/github.js";
 import { db } from "./_shared/supabase.js";
 
 const CART_URL = "https://www.willys.se/";
@@ -57,10 +58,11 @@ export default async function handler(req, res) {
   try {
     console.log(`dispatch source=${secrets.source}`);
     const shoppingList = await fetchShoppingListFromSupabase();
+    const blockedBrands = await fetchBlockedBrands();
     const offers = await fetchOffersFromWillys(secrets.storeId);
-    const searchClient = createSearchClient({});
+    const searchClient = createSearchClient({ blockedBrands });
     const cartClient = createCartClient({ cookies: secrets.cookies, csrf: secrets.csrf });
-    const result = await runDispatch({ shoppingList, offers, searchClient, cartClient });
+    const result = await runDispatch({ shoppingList, offers, searchClient, cartClient, blockedBrands });
 
     if (!result.ok && result.error === "auth_expired") {
       return res.status(200).json({
@@ -187,7 +189,7 @@ export async function resolveWillysSecrets({ store, env, userId = "joakim" }) {
 }
 
 // Exporterad för testbarhet. Ren funktion — inga globala sidoeffekter.
-export async function runDispatch({ shoppingList, offers, searchClient, cartClient }) {
+export async function runDispatch({ shoppingList, offers, searchClient, cartClient, blockedBrands = [] }) {
   const canons = extractCanonsFromShoppingList(shoppingList);
   if (canons.length === 0) {
     return { ok: false, error: "no_matches" };
@@ -198,7 +200,7 @@ export async function runDispatch({ shoppingList, offers, searchClient, cartClie
     return { ok: false, error: preflight.status === 401 ? "auth_expired" : "preflight_failed" };
   }
 
-  const { matched, unmatched } = await matchCanons(canons, offers, searchClient);
+  const { matched, unmatched } = await matchCanons(canons, offers, searchClient, { blockedBrands });
   if (matched.length === 0) {
     return { ok: false, error: "no_matches" };
   }
@@ -280,6 +282,19 @@ async function fetchShoppingListFromSupabase() {
     }
   }
   return { recipeItems, manualItems };
+}
+
+// Läser användarens inköpspreferenser (samma fil som AI-prompten + UI:t använder)
+// och returnerar listan blockerade varumärken. Saknad fil / fel → tom lista
+// (ingen filtrering), så dispatchen aldrig faller på en preferens-läsning.
+async function fetchBlockedBrands() {
+  try {
+    const prefs = await readFileRaw("dispatch-preferences.json");
+    const brands = Array.isArray(prefs?.blockedBrands) ? prefs.blockedBrands : [];
+    return brands.map((b) => String(b).toLowerCase().trim()).filter(Boolean);
+  } catch {
+    return [];
+  }
 }
 
 function extractCanonsFromShoppingList(shoppingList) {
