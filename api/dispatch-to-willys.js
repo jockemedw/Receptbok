@@ -64,11 +64,9 @@ export default async function handler(req, res) {
       .filter(Boolean);
     const hasSession = cookieNames.includes("JSESSIONID");
     const hasRemember = cookieNames.some(n => /remember/i.test(n));
-    console.log(
-      `dispatch source=${secrets.source} cookieCount=${cookieNames.length} ` +
-      `hasJSESSIONID=${hasSession} hasRememberMe=${hasRemember} csrfLen=${(secrets.csrf || "").length}`
-    );
-    console.log(`dispatch cookieNames=[${cookieNames.join(",")}]`);
+    // Korta loggrader — Vercel-loggtabellen klipper vid ~27 tecken.
+    console.log(`DIAG j${hasSession ? 1 : 0} r${hasRemember ? 1 : 0} n${cookieNames.length} csrf${(secrets.csrf || "").length} src=${secrets.source}`);
+    for (const n of cookieNames) console.log(`CK:${n}`);
 
     const shoppingList = await fetchShoppingListFromSupabase();
     const offers = await fetchOffersFromWillys(secrets.storeId);
@@ -218,7 +216,7 @@ export async function runDispatch({ shoppingList, offers, searchClient, cartClie
 
   const preflight = await cartClient.preflight();
   if (!preflight.ok) {
-    console.log(`dispatch preflight failed status=${preflight.status}`);
+    console.log(`PF:${preflight.status}`);
     return {
       ok: false,
       error: preflight.status === 401 ? "auth_expired" : "preflight_failed",
