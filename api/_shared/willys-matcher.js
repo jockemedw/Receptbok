@@ -12,13 +12,20 @@ import {
 
 const MAX_NGRAM = 3;
 
+// Färdigrätter / sammansatta rätter som aldrig ska matcha en grundingrediens,
+// oavsett canon (de innehåller ofta canon-ord: "Mac & Cheese" → cheese/ost,
+// "Köttbullar Färdigrätt" → kött). Gäller globalt i rejectsMatch.
+const PREPARED_DISH_RE = /\b(mac\s*&\s*cheese|färdigrätt\w*|färdig rätt|micro\w*|panerad\w*)\b/i;
+
 // Kontrollera om offer-texten funktionellt/produktmässigt passar canon.
 // Se CANON_REJECT_PATTERNS i shopping-builder.js — löser t.ex.
 // spraygrädde-vispgrädde-felmatchningen mot matlagningsgrädde-recept.
+// Plus ett globalt färdigrätts-filter som gäller alla canons.
 export function rejectsMatch(canon, offer) {
+  const text = `${offer.name} ${offer.brandLine || ""}`;
+  if (PREPARED_DISH_RE.test(text)) return true;
   const pattern = CANON_REJECT_PATTERNS[canon];
   if (!pattern) return false;
-  const text = `${offer.name} ${offer.brandLine || ""}`;
   return pattern.test(text);
 }
 
