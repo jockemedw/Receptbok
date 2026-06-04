@@ -11,7 +11,7 @@
 // eller willys-matcher.js och blockerar commit om en test failar.
 
 import { parseIngredient, normalizeName, CANON_SET, CANON_REJECT_PATTERNS } from "../api/_shared/shopping-builder.js";
-import { matchRecipe, extractOfferCanon, relevantToCanon, brandBlocked } from "../api/_shared/willys-matcher.js";
+import { matchRecipe, extractOfferCanon, relevantToCanon, brandBlocked, rejectsMatch } from "../api/_shared/willys-matcher.js";
 
 let passed = 0;
 let failed = 0;
@@ -193,6 +193,15 @@ assertTrue(CANON_REJECT_PATTERNS.citron.test("Citron Kolsyrat Vatten"), "citron-
 assertFalse(CANON_REJECT_PATTERNS.citron.test("Citron Klass 1"), "citron-reject släpper färsk citron");
 assertTrue(CANON_REJECT_PATTERNS.mjölk.test("Kondenserad Mjölk Sötad"), "mjölk-reject fångar kondenserad mjölk");
 assertFalse(CANON_REJECT_PATTERNS.mjölk.test("Mellanmjölk 1,5%"), "mjölk-reject släpper mellanmjölk");
+
+// Session 80b: yoghurt-dessert, sallad-endive, globalt färdigrätts-skydd
+assertTrue(rejectsMatch("yoghurt", { name: "Samoa Original Yoghurt", brandLine: "" }), "yoghurt-reject fångar Samoa-dessertyoghurt");
+assertFalse(rejectsMatch("yoghurt", { name: "Yoghurt Naturell 3%", brandLine: "Arla" }), "yoghurt-reject släpper naturell");
+assertTrue(rejectsMatch("sallad", { name: "Salad Endive Frisé", brandLine: "" }), "sallad-reject fångar endive");
+assertFalse(rejectsMatch("sallad", { name: "Sallad Blandad Klass 1", brandLine: "" }), "sallad-reject släpper vanlig sallad");
+assertTrue(rejectsMatch("ost", { name: "Mac & Cheese Färdigrätt", brandLine: "" }), "globalt skydd fångar Mac & Cheese oavsett canon");
+assertTrue(rejectsMatch("köttfärs", { name: "Köttbullar Färdigrätt", brandLine: "" }), "globalt skydd fångar färdigrätt");
+assertFalse(rejectsMatch("ost", { name: "Riven Ost Cheddar", brandLine: "" }), "globalt skydd släpper vanlig ost");
 
 // ─── Session 80: lexikon-täckning för vanliga inköpsvaror ───────────
 assertEq(normalizeName("frysta gröna ärter"), "ärtor", "frysta gröna ärter → ärtor");
