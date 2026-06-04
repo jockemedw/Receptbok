@@ -69,7 +69,7 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 - [x] 4A–4C — Research, PoC, UX-design klar
 - [x] 4D — Implementation live-verifierad (Session 39). `/api/dispatch-to-willys`, moduler: `willys-search.js`, `willys-cart-client.js`, `dispatch-matcher.js`. 56 assertions.
 - [x] 4E — Söknings-fallback live (Session 39). Publik `GET willys.se/search?q=<canon>`. Canon-guard via `CANON_REJECT_PATTERNS`.
-- [x] 4F — Cookie-refresh-automatisering klar (Session 42). Chrome-extension MV3 → secret gist → `secrets-store` (5-min cache). **Engångs-setup kvar** (se Öppna utredningar).
+- [x] 4F — Cookie-refresh-automatisering **live-verifierad (Session 78)**. Chrome-extension MV3 → secret gist → `secrets-store` (5-min cache). Engångs-setup klar (gist + env vars + extension). **Fas 4 helt klar** — 27 varor landade i korgen i skarp körning.
 
 **Fas 5 — App Store & monetisering** (`docs/marknadsanalys-2026-04.md`)
 - [x] Marknadsanalys
@@ -102,7 +102,7 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 Inga just nu.
 
 ### Öppna utredningar
-**Cookie-refresh-automatisering (Fas 4F) — ✅ IMPLEMENTATION KLAR, ⏳ ENGÅNGS-SETUP KVAR** (Session 42, 2026-04-26). Chrome-extension MV3 + `/api/cookies/willys` + secret gist + dispatch-fallback. Väntar på: (1) skapa secret gist, (2) sätt `GITHUB_GIST_PAT` + gist-ID i Vercel env vars, (3) installera extensionen i Chrome. Instruktioner: `extension/README.md`.
+*(Cookie-refresh-automatiseringen (Fas 4F) är klar och live-verifierad i Session 78 — flyttad ur utredningar.)*
 
 **Willys+ medlemserbjudanden — 3-fas utforskning:**
 - **Fas A — Rekon:** Vilka inloggningsmetoder erbjuder willys.se? BankID? E-post+lösenord? "Kom ihåg mig"-cookies? Mobilapp-OAuth?
@@ -116,7 +116,19 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 77 (2026-06-03) — Ingrediens-kvalitetskontroll: plan + audit-verktyg (Fas 8.0)
+### Senaste session — Session 78 (2026-06-04) — Fas 4F slutförd: "Skicka till Willys" live (27 varor i korgen)
+
+- **Bakgrund:** Användaren ville slutföra Fas 4F (cookie-refresh + dispatch). Visade sig att server-setupen (gist + env vars) redan fanns sedan Session 42 — bara extension-installation + felsökning återstod.
+- **Felsökning i ordning (varje fix egen squash-PR mot main):**
+  1. **Timeout** (PR #48): `matchCanons` körde sök-anrop sekventiellt → 20s+. Parallelliserat med bounded concurrency (6). +`maxDuration` på dispatch.
+  2. **Auth 401** (diagnos via DIAG/CK-loggar runt Vercel-loggtrunkering): cookie-setet var komplett (`JSESSIONID`+`axfoodRememberMe`) men sessionen **inaktuell** i gisten. "Uppdatera nu" i extensionen löste det. Inga Akamai/bot-cookies (replay funkar i princip).
+  3. **400 error.illegal.argument** (PR #54): Willys `addProducts` är **allt-eller-inget** — en ogiltig kod sänker hela batchen. Fix: `addProductsOneByOne()` lägger varje produkt separat (concurrency 6), giltiga hamnar i korgen, ogiltiga → `missing`. +partiellt-lyckat-test.
+  4. **FUNCTION_INVOCATION_TIMEOUT** (PR #55): per-produkt + sök översteg 15s. maxDuration 15→60, frontend-abort 20s→60s, cache-bust `app.js?v=88`.
+- **Resultat:** skarp körning → `addedCount: 27` (6 rea + 21 sök), 24 omatchade (matchnings-täckning, separat). All tillfällig diagnostik bortstädad.
+- **Tester:** dispatch 70→74 assertions. match/shopping/select-recipes/data-mapper oförändrade gröna.
+- **Kvar att förbättra (ej akut):** matchnings-täckningen — vanliga varor som färs, potatis, bananer, toalettpapper matchade inte (Fas 1D). Dashboard-omstrukturering påbörjades men pausades för 4F.
+
+### Session 77 (2026-06-03) — Ingrediens-kvalitetskontroll: plan + audit-verktyg (Fas 8.0)
 
 - **Bakgrund:** Mål att minska problem vid generering av ingrediens-/inköpslistor. En optimal ingrediens har definierbar mängd (antal/vikt/volym).
 - **Nyckelfynd:** `recipes.json` (263 recept) har glidit isär från Supabase (262 recept, id upp till 271). Inget i runtime läser filen — Supabase är sanningskällan. Beslut (användaren): städa i Supabase, **retirera `recipes.json` helt**.

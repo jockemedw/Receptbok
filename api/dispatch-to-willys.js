@@ -55,19 +55,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Diagnostik: bara cookie-NAMN loggas, aldrig värden (säkerhetsregel).
-    // Hjälper avgöra om gist-cookies saknar inloggad session (JSESSIONID /
-    // axfoodRememberMe) när preflight returnerar 401.
-    const cookieNames = (secrets.cookies || "")
-      .split(/;\s*/)
-      .map(c => c.split("=")[0].trim())
-      .filter(Boolean);
-    const hasSession = cookieNames.includes("JSESSIONID");
-    const hasRemember = cookieNames.some(n => /remember/i.test(n));
-    // Korta loggrader — Vercel-loggtabellen klipper vid ~27 tecken.
-    console.log(`DIAG j${hasSession ? 1 : 0} r${hasRemember ? 1 : 0} n${cookieNames.length} csrf${(secrets.csrf || "").length} src=${secrets.source}`);
-    for (const n of cookieNames) console.log(`CK:${n}`);
-
+    console.log(`dispatch source=${secrets.source}`);
     const shoppingList = await fetchShoppingListFromSupabase();
     const offers = await fetchOffersFromWillys(secrets.storeId);
     const searchClient = createSearchClient({});
@@ -79,15 +67,6 @@ export default async function handler(req, res) {
         ok: false,
         error: "auth_expired",
         message: "Dina Willys-cookies har gått ut. Be Joakim uppdatera dem i Vercel.",
-        // Tillfällig diagnostik — endast cookie-NAMN, aldrig värden.
-        debug: {
-          cookieNames,
-          hasJSESSIONID: hasSession,
-          hasRememberMe: hasRemember,
-          csrfLen: (secrets.csrf || "").length,
-          preflightStatus: result.preflightStatus,
-          source: secrets.source,
-        },
       });
     }
     if (!result.ok && result.error === "no_matches") {
@@ -102,14 +81,6 @@ export default async function handler(req, res) {
         ok: false,
         error: result.error || "unknown",
         message: "Kunde inte skicka till Willys — prova igen om en stund.",
-        // Tillfällig diagnostik — läsbar i DevTools → Network.
-        debug: {
-          error: result.error,
-          postStatus: result.postStatus,
-          matchedCount: result.matchedCount,
-          canonCount: result.canonCount,
-          postResponse: result.postResponse,
-        },
       });
     }
     return res.status(200).json({
@@ -224,12 +195,7 @@ export async function runDispatch({ shoppingList, offers, searchClient, cartClie
 
   const preflight = await cartClient.preflight();
   if (!preflight.ok) {
-    console.log(`PF:${preflight.status}`);
-    return {
-      ok: false,
-      error: preflight.status === 401 ? "auth_expired" : "preflight_failed",
-      preflightStatus: preflight.status,
-    };
+    return { ok: false, error: preflight.status === 401 ? "auth_expired" : "preflight_failed" };
   }
 
   const { matched, unmatched } = await matchCanons(canons, offers, searchClient);
@@ -238,7 +204,6 @@ export async function runDispatch({ shoppingList, offers, searchClient, cartClie
   }
 
   const codes = matched.map(m => m.code).filter(Boolean);
-  console.log(`MATCH:${matched.length}/${canons.length}`);
 
   // Lägg till EN produkt i taget. Willys addProducts avvisar HELA batchen med
   // 400 (error.illegal.argument) om en enda kod är ogiltig (utgången vara, ej
@@ -247,17 +212,11 @@ export async function runDispatch({ shoppingList, offers, searchClient, cartClie
   // parallellism håller oss snabba utan att hamra cart-API:t.
   const add = await addProductsOneByOne(cartClient, codes);
   if (add.authExpired) {
-    return { ok: false, error: "auth_expired", postStatus: 401, matchedCount: matched.length, canonCount: canons.length };
+    return { ok: false, error: "auth_expired" };
   }
-  console.log(`ADD:${add.added.length}/${codes.length} fail${add.failed.length}`);
+  console.log(`dispatch added=${add.added.length}/${codes.length} matched=${matched.length}/${canons.length}`);
   if (add.added.length === 0) {
-    return {
-      ok: false,
-      error: "post_failed",
-      postStatus: add.lastStatus,
-      matchedCount: matched.length,
-      canonCount: canons.length,
-    };
+    return { ok: false, error: "post_failed" };
   }
 
   const failedSet = new Set(add.failed);
