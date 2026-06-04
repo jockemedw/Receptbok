@@ -200,19 +200,21 @@ export async function runDispatch({ shoppingList, offers, searchClient, cartClie
     return { ok: false, error: preflight.status === 401 ? "auth_expired" : "preflight_failed" };
   }
 
-  const { matched, unmatched } = await matchCanons(canons, offers, searchClient, { blockedBrands });
+  // Sök-anropen är publika läsningar → tål högre parallellism. Håller dispatchen
+  // under Vercels 60s-tak även när många varor matchas via sök.
+  const { matched, unmatched } = await matchCanons(canons, offers, searchClient, { blockedBrands, concurrency: 10 });
   if (matched.length === 0) {
     return { ok: false, error: "no_matches" };
   }
 
   const codes = matched.map(m => m.code).filter(Boolean);
 
-  // Lägg till EN produkt i taget. Willys addProducts avvisar HELA batchen med
-  // 400 (error.illegal.argument) om en enda kod är ogiltig (utgången vara, ej
-  // köpbar online, fel köpenhet m.m.). Per-produkt gör att alla giltiga koder
-  // ändå hamnar i korgen och de ogiltiga rapporteras som saknade. Begränsad
-  // parallellism håller oss snabba utan att hamra cart-API:t.
-  const add = await addProductsOneByOne(cartClient, codes);
+  // Lägg till i batchar (snabbt) och faller bara tillbaka till en-i-taget för en
+  // batch som nekas. Willys addProducts är allt-eller-inget: en ogiltig kod
+  // sänker hela batchen med 400 (error.illegal.argument). Att skicka ~40 varor
+  // en-i-taget blev för långsamt (timeout); batchning skär ner antalet anrop
+  // drastiskt medan en-i-taget-fallbacken fortfarande isolerar ogiltiga koder.
+  const add = await addProductsInBatches(cartClient, codes);
   if (add.authExpired) {
     return { ok: false, error: "auth_expired" };
   }
@@ -232,27 +234,39 @@ export async function runDispatch({ shoppingList, offers, searchClient, cartClie
   return { ok: true, addedCount: add.added.length, missing, sources, failedCount: add.failed.length };
 }
 
-// Lägger produkter en och en (bounded concurrency). Returnerar listor på
+// Lägger produkter i batchar (bounded concurrency) och faller tillbaka till
+// en-i-taget bara för en batch som nekas (icke-401). Willys addProducts är
+// allt-eller-inget — en ogiltig kod sänker hela batchen — så en nekad batch
+// splittas för att isolera de giltiga koderna. Returnerar listor på
 // lyckade/misslyckade koder + authExpired-flagga om någon add ger 401.
-async function addProductsOneByOne(cartClient, codes, { concurrency = 6 } = {}) {
+async function addProductsInBatches(cartClient, codes, { batchSize = 8, concurrency = 4 } = {}) {
   const added = [];
   const failed = [];
   let authExpired = false;
-  let lastStatus = null;
+
+  const batches = [];
+  for (let i = 0; i < codes.length; i += batchSize) batches.push(codes.slice(i, i + batchSize));
+
   let cursor = 0;
   async function worker() {
-    while (cursor < codes.length && !authExpired) {
-      const code = codes[cursor++];
-      const res = await cartClient.addProducts([code]);
-      lastStatus = res.status;
-      if (res.ok) added.push(code);
-      else if (res.status === 401) authExpired = true;
-      else failed.push(code);
+    while (cursor < batches.length && !authExpired) {
+      const batch = batches[cursor++];
+      const res = await cartClient.addProducts(batch);
+      if (res.ok) { added.push(...batch); continue; }
+      if (res.status === 401) { authExpired = true; break; }
+      // Nekad batch → lägg om en-i-taget för att skilja giltiga från ogiltiga.
+      for (const code of batch) {
+        if (authExpired) break;
+        const single = await cartClient.addProducts([code]);
+        if (single.ok) added.push(code);
+        else if (single.status === 401) authExpired = true;
+        else failed.push(code);
+      }
     }
   }
-  const n = Math.min(concurrency, codes.length);
+  const n = Math.min(concurrency, batches.length);
   await Promise.all(Array.from({ length: n }, () => worker()));
-  return { added, failed, authExpired, lastStatus };
+  return { added, failed, authExpired };
 }
 
 // Läser aktiv inköpslista från Supabase och returnerar { recipeItems, manualItems }

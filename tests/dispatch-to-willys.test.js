@@ -495,17 +495,19 @@ function makeRecordingFetch(responses) {
       return null;
     },
   };
+  // Willys är allt-eller-inget: en ogiltig kod i en batch nekar HELA batchen.
+  // Batch-add:en ska då splittra batchen och isolera de giltiga koderna.
   const cartClient = {
     preflight: async () => ({ ok: true, status: 200 }),
     addProducts: async (codes) =>
-      codes[0] === "BAD_gradde_ST"
+      codes.some((c) => c.startsWith("BAD_"))
         ? { ok: false, status: 400, response: { errorMessage: "{error.illegal.argument}" } }
         : { ok: true, status: 200, response: {} },
     verifyCart: async () => ({ ok: true, entries: [] }),
   };
   const result = await runDispatch({ shoppingList, offers, searchClient, cartClient });
   assertEq(result.ok, true, "delvis lyckat → ok=true");
-  assertEq(result.addedCount, 2, "två produkter tillagda");
+  assertEq(result.addedCount, 2, "två produkter tillagda (batch splittad)");
   assertEq(result.failedCount, 1, "en produkt misslyckad");
   assertTrue(result.missing.includes("grädde"), "den dåliga produktens canon blir missing");
 }
