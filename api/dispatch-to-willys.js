@@ -242,37 +242,52 @@ export async function runDispatch({ shoppingList, offers, searchClient, cartClie
 }
 
 // Lägger produkter i batchar (bounded concurrency) och faller tillbaka till
-// en-i-taget bara för en batch som nekas (icke-401). Willys addProducts är
-// allt-eller-inget — en ogiltig kod sänker hela batchen — så en nekad batch
-// splittas för att isolera de giltiga koderna. Returnerar listor på
-// lyckade/misslyckade koder + authExpired-flagga om någon add ger 401.
+// en-i-taget för en nekad batch. Willys addProducts är allt-eller-inget — en
+// ogiltig kod sänker hela batchen — så en nekad batch splittas för att isolera
+// de varor som faktiskt nekas (även 401: en enstaka vara som Willys nekar ska
+// INTE felaktigt rapporteras som "cookie utgången"). Returnerar lyckade/
+// misslyckade koder + authExpired (sann bara om INGEN vara gick in och minst en
+// nekades med 401 — då är det sessionen, inte en enskild vara).
 async function addProductsInBatches(cartClient, codes, { batchSize = 8, concurrency = 4 } = {}) {
   const added = [];
   const failed = [];
-  let authExpired = false;
+  let auth401 = 0;     // antal enskilda varor som nekats med 401
+  let diagLogged = 0;  // begränsa diagnostik-loggning (inga hemligheter, bara kod + Willys-felkod)
+
+  function logFailure(scope, batch, res) {
+    if (diagLogged >= 5) return;
+    diagLogged++;
+    let body = "";
+    try { body = JSON.stringify(res.response).slice(0, 200); } catch { /* ej JSON */ }
+    console.log(`addProducts ${scope} status=${res.status} codes=[${batch.join(",")}] body=${body}`);
+  }
 
   const batches = [];
   for (let i = 0; i < codes.length; i += batchSize) batches.push(codes.slice(i, i + batchSize));
 
   let cursor = 0;
   async function worker() {
-    while (cursor < batches.length && !authExpired) {
+    while (cursor < batches.length) {
       const batch = batches[cursor++];
       const res = await cartClient.addProducts(batch);
       if (res.ok) { added.push(...batch); continue; }
-      if (res.status === 401) { authExpired = true; break; }
-      // Nekad batch → lägg om en-i-taget för att skilja giltiga från ogiltiga.
+      logFailure("batch", batch, res);
+      // Nekad batch → lägg om en-i-taget för att isolera den/de varor som nekas.
       for (const code of batch) {
-        if (authExpired) break;
         const single = await cartClient.addProducts([code]);
-        if (single.ok) added.push(code);
-        else if (single.status === 401) authExpired = true;
-        else failed.push(code);
+        if (single.ok) { added.push(code); continue; }
+        logFailure("single", [code], single);
+        if (single.status === 401) auth401++;
+        failed.push(code);
       }
     }
   }
   const n = Math.min(concurrency, batches.length);
   await Promise.all(Array.from({ length: n }, () => worker()));
+
+  // Äkta auth-utgång: ingen vara landade OCH minst en nekades med 401. Om något
+  // landade var 401:orna varuspecifika (enhet/kod), inte sessionen.
+  const authExpired = added.length === 0 && auth401 > 0;
   return { added, failed, authExpired };
 }
 
