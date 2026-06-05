@@ -531,6 +531,54 @@ assertEq(pickUnitForCode(undefined), "pieces", "undefined-kod → pieces (krasch
   assertTrue(result.missing.includes("grädde"), "den dåliga produktens canon blir missing");
 }
 
+// G. En enstaka vara ger 401 men resten lyckas → ok=true, varan blir missing
+//    (en poison-vara får INTE maskeras som "cookie utgången"/auth_expired)
+{
+  const shoppingList = { recipeItems: { Mejeri: ["mjölk (1 l)", "potatis (1 kg)", "fil (1 l)"] } };
+  const offers = [];
+  const searchClient = {
+    findProductByCanon: async (canon) => {
+      if (canon === "mjölk") return { code: "ok_mjolk_ST", name: "Mjölk", brandLine: "" };
+      if (canon === "potatis") return { code: "BAD_potatis_KG", name: "Potatis", brandLine: "" };
+      if (canon === "fil") return { code: "ok_fil_ST", name: "Fil", brandLine: "" };
+      return null;
+    },
+  };
+  const cartClient = {
+    preflight: async () => ({ ok: true, status: 200 }),
+    addProducts: async (codes) =>
+      codes.some((c) => c.startsWith("BAD_"))
+        ? { ok: false, status: 401, response: { errorMessage: "{error.illegal.argument}" } }
+        : { ok: true, status: 200, response: {} },
+    verifyCart: async () => ({ ok: true, entries: [] }),
+  };
+  const result = await runDispatch({ shoppingList, offers, searchClient, cartClient });
+  assertEq(result.ok, true, "en 401-vara bland lyckade → ok=true (ej auth_expired)");
+  assertEq(result.error, undefined, "ingen auth_expired när andra varor landade");
+  assertEq(result.addedCount, 2, "de två giltiga landade");
+  assertTrue(result.missing.includes("potatis"), "401-varan blir missing");
+}
+
+// H. Alla varor ger 401 → auth_expired (äkta session-utgång)
+{
+  const shoppingList = { recipeItems: { Mejeri: ["mjölk (1 l)", "fil (1 l)"] } };
+  const offers = [];
+  const searchClient = {
+    findProductByCanon: async (canon) => {
+      if (canon === "mjölk") return { code: "ok_mjolk_ST", name: "Mjölk", brandLine: "" };
+      if (canon === "fil") return { code: "ok_fil_ST", name: "Fil", brandLine: "" };
+      return null;
+    },
+  };
+  const cartClient = {
+    preflight: async () => ({ ok: true, status: 200 }),
+    addProducts: async () => ({ ok: false, status: 401, response: {} }),
+    verifyCart: async () => ({ ok: true, entries: [] }),
+  };
+  const result = await runDispatch({ shoppingList, offers, searchClient, cartClient });
+  assertEq(result.error, "auth_expired", "inget landade + 401 → auth_expired");
+}
+
 // ─── Task R: resolveWillysSecrets — gist + env-var fallback ───────
 
 // R1. Gist har user → använder gist-värden
