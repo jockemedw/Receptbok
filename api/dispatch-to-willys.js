@@ -209,6 +209,12 @@ export async function runDispatch({ shoppingList, offers, searchClient, cartClie
 
   const codes = matched.map(m => m.code).filter(Boolean);
 
+  // Diagnostik (canon-namn + kod-suffix, inga hemligheter): gör en skarp körning
+  // verifierbar från loggarna. Avslöjar bl.a. om lösvikts-fixen (PR #65) träffar
+  // en `_KG`-vara som potatis. Kan trimmas bort när potatis bekräftats landa.
+  const kgMatched = matched.filter(m => /_kg$/i.test(m.code || ""));
+  console.log(`dispatch kgMatched=${kgMatched.length} [${kgMatched.map(m => `${m.canon}:${m.code}`).join(", ")}]`);
+
   // Lägg till i batchar (snabbt) och faller bara tillbaka till en-i-taget för en
   // batch som nekas. Willys addProducts är allt-eller-inget: en ogiltig kod
   // sänker hela batchen med 400 (error.illegal.argument). Att skicka ~40 varor
@@ -227,6 +233,7 @@ export async function runDispatch({ shoppingList, offers, searchClient, cartClie
   const addedMatched = matched.filter(m => !failedSet.has(m.code));
   const failedCanons = matched.filter(m => failedSet.has(m.code)).map(m => m.canon);
   const missing = unmatched.concat(failedCanons);
+  console.log(`dispatch missing=${missing.length} [${missing.join(", ")}]`);
   const sources = {
     rea: addedMatched.filter(m => m.source === "rea").length,
     search: addedMatched.filter(m => m.source === "search").length,
