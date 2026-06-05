@@ -123,7 +123,8 @@ Självgående nattjobb i 4 faser, en PR per fas, alla auto-mergade till main. Ko
 - **Fas 2 — reject-härdning (PR #62):** globalt reject breddat till alla icke-ingrediens-klasser (`barnmat|klämmis|ostbågar|kattmat|hundmat|djurfoder` + färdigrätt). `smör`→nötsmör-reject. `lime`/`apelsin`→läsk-reject (juice OK). Ny `tests/match-corpus.test.js` (35 accept/reject-fall) wired i hooken.
 - **Fas 3 — självgranskning (PR #63):** moduler sunda; 1 robusthetsfix (`extractOfferCanon`/`rejectsMatch` coercar `offer.name || ""`).
 - **Tester:** match 51→103, ny korpus 35. dispatch 81 / shopping 81 / select-recipes 432 / data-mapper 27 oförändrade gröna.
-- **Bedömningsfall (väntar på Joakim, se rapport):** (1) ska generisk "grädde" få falla till vispgrädde? (2) potatis/toalettpapper = köpenhet-bugg (`pickUnit: pieces`), ej matchning — separat live-diagnos. (3) full audit av långsvansen kräver Supabase-nätåtkomst (blockerat i nattmiljön).
+- **Bedömningsfall (väntar på Joakim, se rapport):** (1) ska generisk "grädde" få falla till vispgrädde? (2) ~~potatis/toalettpapper = köpenhet-bugg~~ **FIXAD (PR #65)** — se nedan. (3) full audit av långsvansen kräver Supabase-nätåtkomst (blockerat i nattmiljön).
+- **Uppföljning samma session — lösvikts-fix (PR #65):** `addProducts` hårdkodade `pickUnit: "pieces"`. Willys-koder bär enheten i suffixet (`_ST` styck / `_KG` lösvikt). Lös potatis (`_KG`, pris/kg) skickad som "pieces" → 400 `error.illegal.argument` → "kunde inte matchas" trots korrekt träff. Ny `pickUnitForCode(code)` → `"kilograms"` för `_KG`, annars `"pieces"` (oförändrad default = ingen regression för styckvaror). +7 assertions (dispatch 81→88). **Live-verifiera:** vikt-enumet `"kilograms"` är inferred (`"pieces"` PoC-bekräftad); strikt förbättrande oavsett.
 
 ### Session 80 (2026-06-04) — Willys-export: felmatchningar + fabrikat-blockering + täckning
 
