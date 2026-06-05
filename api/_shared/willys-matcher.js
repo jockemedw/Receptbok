@@ -24,7 +24,7 @@ const GLOBAL_REJECT_RE = /\b(mac\s*&\s*cheese|färdigrätt\w*|färdig rätt|micr
 // spraygrädde-vispgrädde-felmatchningen mot matlagningsgrädde-recept.
 // Plus ett globalt filter (GLOBAL_REJECT_RE) som gäller alla canons.
 export function rejectsMatch(canon, offer) {
-  const text = `${offer.name} ${offer.brandLine || ""}`;
+  const text = `${offer.name || ""} ${offer.brandLine || ""}`;
   if (GLOBAL_REJECT_RE.test(text)) return true;
   const pattern = CANON_REJECT_PATTERNS[canon];
   if (!pattern) return false;
@@ -73,7 +73,7 @@ export function brandBlocked(offer, blockedBrands) {
 // Detta undviker "Fylld Gnocchi Tomat Mozzarella" → tomat/mozzarella
 // (produkten är gnocchi). 2-gram "fylld gnocchi" träffar först → "gnocchi".
 export function extractOfferCanon(offer) {
-  const text = `${offer.name} ${offer.brandLine || ""}`.toLowerCase();
+  const text = `${offer.name || ""} ${offer.brandLine || ""}`.toLowerCase();
   const tokens = text.split(/[\s,\-()\/]+/).filter(Boolean);
   for (let n = Math.min(MAX_NGRAM, tokens.length); n >= 1; n--) {
     for (let i = 0; i <= tokens.length - n; i++) {
