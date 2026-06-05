@@ -6,7 +6,7 @@ import { extractOfferCanon, rejectsMatch } from "../api/_shared/willys-matcher.j
 import { fetchOffersFromWillys } from "../api/willys-offers.js";
 import { createSearchClient } from "../api/_shared/willys-search.js";
 import { matchCanons } from "../api/_shared/dispatch-matcher.js";
-import { createCartClient } from "../api/_shared/willys-cart-client.js";
+import { createCartClient, pickUnitForCode } from "../api/_shared/willys-cart-client.js";
 import { runDispatch, resolveWillysSecrets } from "../api/dispatch-to-willys.js";
 
 let passed = 0;
@@ -332,7 +332,26 @@ function makeRecordingFetch(responses) {
   assertEq(body.products.length, 2, "body har 2 produkter");
   assertEq(body.products[0].productCodePost, "a_ST", "första productCodePost");
   assertEq(body.products[0].qty, 1, "qty=1 (spec)");
-  assertEq(body.products[0].pickUnit, "pieces", "pickUnit=pieces (spec)");
+  assertEq(body.products[0].pickUnit, "pieces", "pickUnit=pieces för _ST-kod");
+}
+
+// C2. pickUnitForCode härleder enhet ur kod-suffix (potatis/lösvikt-buggen)
+assertEq(pickUnitForCode("5727_ST"), "pieces", "_ST → pieces");
+assertEq(pickUnitForCode("101233933_KG"), "kilograms", "_KG → kilograms (lösvikt)");
+assertEq(pickUnitForCode("101233933_kg"), "kilograms", "_kg gemener → kilograms");
+assertEq(pickUnitForCode("plainid_utan_suffix"), "pieces", "okänt suffix → pieces (säker default)");
+assertEq(pickUnitForCode(undefined), "pieces", "undefined-kod → pieces (kraschar ej)");
+
+// C3. addProducts skickar kilograms för en _KG-vara i samma batch som en _ST-vara
+{
+  const fetchImpl = makeRecordingFetch({
+    "POST addProducts": { ok: true, status: 200, body: { cartModifications: [] } },
+  });
+  const client = createCartClient({ fetchImpl, cookies: "x=1", csrf: "tok" });
+  await client.addProducts(["banan_ST", "potatis_KG"]);
+  const body = JSON.parse(fetchImpl.calls.find(c => c.url.includes("addProducts")).body);
+  assertEq(body.products[0].pickUnit, "pieces", "styckvara → pieces");
+  assertEq(body.products[1].pickUnit, "kilograms", "lösviktsvara → kilograms");
 }
 
 // D. verifyCart returnerar entries
