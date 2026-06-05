@@ -491,7 +491,7 @@ export const CANON_SET = new Set(Object.values(NORMALIZATION_TABLE));
 export const CANON_REJECT_PATTERNS = {
   "grädde": /\b(spray|sprayvispgrädde|gräddfil|havregrädde|kokosgrädde|sojagrädde|växtgrädde)\b|\bvispgrädde\b(?!.*\bmatlagning)/i,
   "mjölk": /\b(havredryck|mandeldryck|sojadryck|kokosdryck|havremjölk|mandelmjölk|sojamjölk|gräddfil|syrad mjölk|kokosmjölk|kondenserad|mjölkpulver|mjölkfri)\b/i,
-  "smör": /\b(margarin|bregott|becel|flora|milda växtfett|popcorn|mikropopcorn)\b/i,
+  "smör": /\b(margarin|bregott|becel|flora|milda växtfett|popcorn|mikropopcorn|jordnötssmör|cashewsmör|mandelsmör|nötsmör|kakaosmör|sheasmör|solrossmör)\b/i,
   "rapsolja": /\b(sardell\w*|ansjovis\w*|tonfisk\w*|sill\w*|makrill\w*|inlagd\w*|konserv\w*)\b/i,
   "fisk": /\b(fiskpinnar|fiskbullar|fiskbullar)\b/i,
   // Yoghurt: avvisa smaksatta/fruktade/dessert-varianter — recept skriver "yoghurt" för naturell.
@@ -500,6 +500,9 @@ export const CANON_REJECT_PATTERNS = {
   "citron": /\b(kolsyrat|kolsyrad|läsk|soda|smoothie|sirap|nektar)\b/i,
   // Sallad: avvisa bittra specialblad (endive/frisé/cikoria) — recept vill ha vanlig sallad.
   "sallad": /\b(endive|frisé|frise|cikoria|witlof)\b/i,
+  // Citrus: avvisa läsk/dryck-varianter (juice är OK och mappas separat till frukten).
+  "lime": /\b(kolsyrat|kolsyrad|läsk|soda|cordial|sirap|nektar)\b/i,
+  "apelsin": /\b(kolsyrat|kolsyrad|läsk|soda|fanta|zingo|sirap|nektar)\b/i,
 };
 
 // Adjektiv-prefix som strippas i fallback-stemming (Session 34).
