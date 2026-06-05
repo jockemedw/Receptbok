@@ -116,7 +116,16 @@ Inga just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 80 (2026-06-04) — Willys-export: felmatchningar + fabrikat-blockering + täckning
+### Senaste session — Session 81 (2026-06-05) — Nattjobb: matchnings-härdning (4 faser, auto-mergat)
+
+Självgående nattjobb i 4 faser, en PR per fas, alla auto-mergade till main. Kod-only, test-gated, ingen live-data rörd. Full rapport: `docs/match-hardening-natt-2026-06-05.md`.
+- **Fas 1 — täckning (PR #61):** ~45 nya canon-mappningar (havregryn, couscous, senap/dijonsenap, pastor: spaghetti/makaroner/tagliatelle/fettuccine, alla nudel-typer→`nudlar`, lagerblad, kardemumma, muscovado/farin→`socker`, hasselnötter/pekan/pistasch, kärnmjölk, savojkål/salladskål/palsternacka/sparris/kålrabbi, isbergssallad→`sallad`, edamame, kidneybönor, jordgubbar/blåbär/hallon/päron). CANON_SET → 220. Kategori-fix: kärnmjölk→Mejeri, edamame/kidneybönor→Grönsaker.
+- **Fas 2 — reject-härdning (PR #62):** globalt reject breddat till alla icke-ingrediens-klasser (`barnmat|klämmis|ostbågar|kattmat|hundmat|djurfoder` + färdigrätt). `smör`→nötsmör-reject. `lime`/`apelsin`→läsk-reject (juice OK). Ny `tests/match-corpus.test.js` (35 accept/reject-fall) wired i hooken.
+- **Fas 3 — självgranskning (PR #63):** moduler sunda; 1 robusthetsfix (`extractOfferCanon`/`rejectsMatch` coercar `offer.name || ""`).
+- **Tester:** match 51→103, ny korpus 35. dispatch 81 / shopping 81 / select-recipes 432 / data-mapper 27 oförändrade gröna.
+- **Bedömningsfall (väntar på Joakim, se rapport):** (1) ska generisk "grädde" få falla till vispgrädde? (2) potatis/toalettpapper = köpenhet-bugg (`pickUnit: pieces`), ej matchning — separat live-diagnos. (3) full audit av långsvansen kräver Supabase-nätåtkomst (blockerat i nattmiljön).
+
+### Session 80 (2026-06-04) — Willys-export: felmatchningar + fabrikat-blockering + täckning
 
 - **Bakgrund:** Session 79:s sök-fallback höjde träffarna 27→43, men live-körningen visade tre felmatchningar och en saknad funktion.
 - **Runda 2 (live 46 varor, timeout borta):** tre nya felmatchningar fixade. `sallad` → "Salad Endive" (reject `endive|frisé|cikoria|witlof`). `yoghurt` → "Samoa Original Yoghurt" (yoghurt-reject utökat med `samoa|kokos|lakrits|dessert|drick…`). "Mac & Cheese"-färdigrätt → nytt **globalt** `PREPARED_DISH_RE` i `rejectsMatch` (`mac & cheese|färdigrätt|micro|panerad`) som gäller alla canons, eftersom färdigrätter ofta innehåller canon-ord. Kvar omatchat: bara `potatis` + `toalettpapper` (cart-add-enhet, se nedan).
