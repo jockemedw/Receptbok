@@ -9,6 +9,16 @@
 const BASE = "https://www.willys.se";
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36";
 
+// Härleder rätt pickUnit ur produktkodens enhets-suffix. Willys/Axfood-koder är
+// `<id>_ST` (styck) eller `<id>_KG` (lösvikt, prissatt per kg). En vikt-vara som
+// skickas med pickUnit "pieces" avvisas av addProducts med 400
+// (error.illegal.argument) — det var roten till att lös potatis aldrig landade i
+// korgen. Default "pieces" bevarar beteendet exakt för allt utom uttalade
+// kg-varor (som ändå failade tidigare), så ändringen kan bara förbättra utfallet.
+export function pickUnitForCode(code) {
+  return /_kg$/i.test(String(code)) ? "kilograms" : "pieces";
+}
+
 export function createCartClient({ fetchImpl = fetch, cookies, csrf }) {
   function baseHeaders(extra = {}) {
     return {
@@ -33,7 +43,7 @@ export function createCartClient({ fetchImpl = fetch, cookies, csrf }) {
       products: codes.map(code => ({
         productCodePost: code,
         qty: 1,
-        pickUnit: "pieces",
+        pickUnit: pickUnitForCode(code),
         hideDiscountToolTip: false,
         noReplacementFlag: false,
       })),
