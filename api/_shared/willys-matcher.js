@@ -12,18 +12,20 @@ import {
 
 const MAX_NGRAM = 3;
 
-// Färdigrätter / sammansatta rätter som aldrig ska matcha en grundingrediens,
-// oavsett canon (de innehåller ofta canon-ord: "Mac & Cheese" → cheese/ost,
-// "Köttbullar Färdigrätt" → kött). Gäller globalt i rejectsMatch.
-const PREPARED_DISH_RE = /\b(mac\s*&\s*cheese|färdigrätt\w*|färdig rätt|micro\w*|panerad\w*)\b/i;
+// Produkter som ALDRIG är en receptingrediens, oavsett canon — de innehåller
+// ofta canon-ord ("Mac & Cheese" → ost, "Barnmat Kyckling" → kyckling,
+// "Kattmat Lax" → lax, "Ostbågar" → ost). Gäller globalt i rejectsMatch.
+// Medvetet snäv: bara klasser som aldrig handlas som ingrediens, så att inga
+// riktiga ingredienser fastnar.
+const GLOBAL_REJECT_RE = /\b(mac\s*&\s*cheese|färdigrätt\w*|färdig rätt|micro\w*|panerad\w*|barnmat|klämmis\w*|ostbåge\w*|kattmat|kattfoder|hundmat|hundfoder|djurfoder|hundgodis)\b/i;
 
 // Kontrollera om offer-texten funktionellt/produktmässigt passar canon.
 // Se CANON_REJECT_PATTERNS i shopping-builder.js — löser t.ex.
 // spraygrädde-vispgrädde-felmatchningen mot matlagningsgrädde-recept.
-// Plus ett globalt färdigrätts-filter som gäller alla canons.
+// Plus ett globalt filter (GLOBAL_REJECT_RE) som gäller alla canons.
 export function rejectsMatch(canon, offer) {
   const text = `${offer.name} ${offer.brandLine || ""}`;
-  if (PREPARED_DISH_RE.test(text)) return true;
+  if (GLOBAL_REJECT_RE.test(text)) return true;
   const pattern = CANON_REJECT_PATTERNS[canon];
   if (!pattern) return false;
   return pattern.test(text);

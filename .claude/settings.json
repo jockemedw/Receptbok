@@ -45,6 +45,10 @@
           },
           {
             "type": "command",
+            "command": "INPUT=$(cat); FILE=$(echo \"$INPUT\" | grep -o '\"file_path\"[[:space:]]*:[[:space:]]*\"[^\"]*\"' | head -1 | sed 's/.*\"\\([^\"]*\\)\"/\\1/'); case \"$FILE\" in *shopping-builder.js|*willys-matcher.js|*willys-search.js) node tests/match-corpus.test.js >&2 || { echo 'BLOCKERAD: korpus-regressiontester failade — kör node tests/match-corpus.test.js för detaljer.' >&2; exit 2; };; esac; exit 0"
+          },
+          {
+            "type": "command",
             "command": "INPUT=$(cat); FILE=$(echo \"$INPUT\" | grep -o '\"file_path\"[[:space:]]*:[[:space:]]*\"[^\"]*\"' | head -1 | sed 's/.*\"\\([^\"]*\\)\"/\\1/'); case \"$FILE\" in *shopping-builder.js) node tests/shopping.test.js >&2 || { echo 'BLOCKERAD: shopping-regressiontester failade — kör node tests/shopping.test.js för detaljer.' >&2; exit 2; };; esac; exit 0"
           },
           {
