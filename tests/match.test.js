@@ -236,6 +236,11 @@ assertTrue(CANON_SET.has("sparris"), "CANON_SET innehåller sparris");
 assertEq(extractOfferCanon({ name: "Färsk Sparris Grön Klass 1", brandLine: "" }), "sparris", "produktnamn → sparris-canon");
 assertEq(extractOfferCanon({ name: "Havregryn Glutenfria", brandLine: "AXA" }), "havregryn", "produktnamn → havregryn-canon");
 
+// ─── Session 81 (nattjobb fas 3): robusthet mot saknat produktnamn ──
+assertFalse(rejectsMatch("mjölk", { brandLine: "Arla" }), "rejectsMatch kraschar inte på saknat name");
+assertEq(extractOfferCanon({ brandLine: "Mellanmjölk" }), "mjölk", "extractOfferCanon läser brandLine när name saknas");
+assertEq(extractOfferCanon({ name: undefined, brandLine: undefined }), null, "extractOfferCanon → null på helt tomt erbjudande");
+
 // ─── Slutrapport ──────────────────────────────────────────────────
 console.log(`\n${passed} passerade, ${failed} failade.`);
 if (failed) {
