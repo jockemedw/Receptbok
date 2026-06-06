@@ -146,7 +146,9 @@ export async function saveRecipe() {
         ${t ? `<span class="pill pill-time">⏱ ${t}</span>` : ''}
         <span class="pill ${updated.tested ? 'pill-tested' : 'pill-untested'} pill-toggle"
               onclick="toggleTested(event, ${updated.id})">${updated.tested ? '✓ Provat' : 'Ej provat'}</span>`;
-      card.querySelector('.detail-inner').innerHTML = renderDetailInner(updated);
+      const inner = card.querySelector('.detail-inner');
+      inner.innerHTML = renderDetailInner(updated);
+      inner.dataset.rendered = '1';
     }
     closeEditModal();
   } catch {

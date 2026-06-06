@@ -49,13 +49,18 @@ function updateSearchClear() {
   searchClear.classList.toggle('hidden', searchInput.value.length === 0);
 }
 window.updateSearchClear = updateSearchClear;
+// Debounce själva omritningen: X-knappen uppdateras direkt, men listan byggs
+// om först när användaren slutat skriva (~140ms) — annars fryser varje tangent.
+let searchDebounce = null;
 searchInput.addEventListener('input', () => {
   updateSearchClear();
-  window.renderRecipeBrowser();
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(() => window.renderRecipeBrowser(), 140);
 });
 searchClear.addEventListener('click', () => {
   searchInput.value = '';
   updateSearchClear();
+  clearTimeout(searchDebounce);
   window.renderRecipeBrowser();
   searchInput.focus();
 });

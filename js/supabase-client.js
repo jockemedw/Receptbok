@@ -27,12 +27,24 @@ export async function getHouseholdId() {
   if (_householdIdPromise) return _householdIdPromise;
 
   _householdIdPromise = (async () => {
-    const { data: { user } } = await auth.getUser();
+    // getSession läser från localStorage (inget nätverksanrop) — snabbare än getUser().
+    const { data: { session } } = await auth.getSession();
+    const user = session?.user || null;
+
+    // Snabb väg: household_id är stabilt per användare → cacha mellan sidladdningar
+    // så vi slipper en extra nätverksrunda vid varje omladdning.
+    const lsKey = user ? `hh:${user.id}` : null;
+    if (lsKey) {
+      const stored = localStorage.getItem(lsKey);
+      if (stored) { _householdIdCache = stored; return stored; }
+    }
+
     let q = supabase.from('household_members').select('household_id').limit(1).maybeSingle();
     if (user) q = q.eq('user_id', user.id);
     const { data, error } = await q;
     if (error || !data) return null;
     _householdIdCache = data.household_id;
+    if (lsKey) localStorage.setItem(lsKey, data.household_id);
     return _householdIdCache;
   })();
 

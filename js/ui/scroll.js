@@ -5,9 +5,12 @@ export const scrollBtn = document.getElementById('scrolltop');
 
 const HEADER_SHOW_THRESHOLD = 80;
 
-// Justera body-padding när header ändrar storlek
+// Cacha header-höjden så scroll-handlern slipper läsa offsetHeight (tvingad reflow)
+// på varje frame. ResizeObserver håller värdet aktuellt när headern ändrar storlek.
+let headerHeight = headerEl.offsetHeight;
 new ResizeObserver(() => {
-  document.body.style.paddingTop = headerEl.offsetHeight + 'px';
+  headerHeight = headerEl.offsetHeight;
+  document.body.style.paddingTop = headerHeight + 'px';
 }).observe(headerEl);
 
 window.addEventListener('scroll', () => {
@@ -17,7 +20,7 @@ window.addEventListener('scroll', () => {
   if (!window.isSnapping) {
     if (y > window.lastScrollY) {
       window.scrollUpAccum = 0;
-      if (y > headerEl.offsetHeight) headerEl.classList.add('header-hidden');
+      if (y > headerHeight) headerEl.classList.add('header-hidden');
     } else {
       window.scrollUpAccum += window.lastScrollY - y;
       if (window.scrollUpAccum >= HEADER_SHOW_THRESHOLD) headerEl.classList.remove('header-hidden');

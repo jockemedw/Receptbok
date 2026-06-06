@@ -113,15 +113,27 @@ export function renderCard(r) {
     <span class="card-chevron">›</span>
   </div>
   <div class="recipe-detail">
-    <div class="detail-inner">${renderDetailInner(r)}</div>
+    <div class="detail-inner"></div>
   </div>
 </div>`;
+}
+
+// Bygg receptdetaljen först när kortet öppnas — håller DOM:en liten tills den behövs.
+function ensureDetail(card) {
+  const inner = card.querySelector('.detail-inner');
+  if (!inner || inner.dataset.rendered) return;
+  const id = Number(card.dataset.id);
+  const r  = window.RECIPES.find(x => x.id === id);
+  if (!r) return;
+  inner.innerHTML = renderDetailInner(r);
+  inner.dataset.rendered = '1';
 }
 
 export function toggleCard(card) {
   const wasOpen = card.classList.contains('open');
   document.querySelectorAll('.recipe-card.open').forEach(c => c.classList.remove('open'));
   if (!wasOpen) {
+    ensureDetail(card);
     card.classList.add('open');
     window.isSnapping   = true;
     window.scrollUpAccum = 0;
