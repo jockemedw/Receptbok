@@ -105,16 +105,20 @@
       "reason": "ren"
     },
     "13": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "14": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "15": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "16": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "17": {
       "status": "changed",
@@ -129,13 +133,16 @@
       "warns": []
     },
     "18": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "20": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "21": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "22": {
       "status": "changed",
@@ -148,13 +155,16 @@
       "warns": []
     },
     "23": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "24": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "25": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "27": {
       "status": "changed",
@@ -169,7 +179,8 @@
       "warns": []
     },
     "28": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "29": {
       "status": "changed",
@@ -221,7 +232,8 @@
       "warns": []
     },
     "34": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "35": {
       "status": "changed",
@@ -234,10 +246,12 @@
       "warns": []
     },
     "36": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "37": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "38": {
       "status": "changed",
@@ -250,13 +264,16 @@
       "warns": []
     },
     "39": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "40": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "41": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "42": {
       "status": "changed",
@@ -276,19 +293,24 @@
       "reason": "ren förutom nöt/frö-mix"
     },
     "44": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "45": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "46": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "47": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "48": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "49": {
       "status": "unchanged",
@@ -298,19 +320,24 @@
       "reason": "vag huvudmängd"
     },
     "50": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "51": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "52": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "53": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "54": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "55": {
       "status": "changed",
@@ -340,16 +367,20 @@
       "reason": "ren förutom nöt/frö-mix"
     },
     "59": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "60": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "61": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "62": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "63": {
       "status": "changed",
@@ -372,19 +403,24 @@
       "warns": []
     },
     "65": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "66": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "67": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "68": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "69": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "70": {
       "status": "unchanged",
@@ -394,25 +430,32 @@
       "reason": "ren förutom örtmix-mängd"
     },
     "71": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "72": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "73": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "74": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "75": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "76": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "77": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "78": {
       "status": "changed",
@@ -425,19 +468,24 @@
       "warns": []
     },
     "79": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "80": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "81": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "82": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "83": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "84": {
       "status": "changed",
@@ -450,25 +498,32 @@
       "warns": []
     },
     "85": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "86": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "87": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "88": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "89": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "90": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "91": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "93": {
       "status": "changed",
@@ -481,91 +536,120 @@
       "warns": []
     },
     "94": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "95": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "96": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "97": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "98": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "99": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "100": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "101": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "102": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "103": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "104": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "105": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "107": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "108": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "109": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "110": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "111": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "112": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "113": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "114": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "115": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "116": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "117": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "118": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "119": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "120": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "121": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "122": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "123": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "124": {
       "status": "changed",
@@ -573,60 +657,77 @@
         "ingredients"
       ],
       "oldScore": 12,
-      "newScore": 2,
+      "newScore": 1,
       "flags": [],
       "warns": []
     },
     "125": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "126": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "127": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "129": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "130": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "131": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "132": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "133": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "134": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "135": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "137": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "138": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "139": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "140": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "141": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "142": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "143": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "144": {
       "status": "changed",
@@ -639,55 +740,72 @@
       "warns": []
     },
     "145": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "146": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "148": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "149": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "150": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "151": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "152": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "153": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "154": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "155": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "156": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "157": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "158": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "159": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "160": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "161": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "162": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "163": {
       "status": "changed",
@@ -700,70 +818,92 @@
       "warns": []
     },
     "164": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "165": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "166": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "167": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "168": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "169": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "170": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "171": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "172": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "173": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "174": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "175": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "176": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "177": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "178": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "179": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "180": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "181": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "182": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "183": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "184": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "185": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "186": {
       "status": "changed",
@@ -776,22 +916,28 @@
       "warns": []
     },
     "187": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "188": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "189": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "190": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "191": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "192": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "193": {
       "status": "changed",
@@ -804,40 +950,52 @@
       "warns": []
     },
     "194": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "195": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "196": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "197": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "198": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "199": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "200": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "201": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "202": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "203": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "204": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "205": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "206": {
       "status": "changed",
@@ -850,16 +1008,20 @@
       "warns": []
     },
     "207": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "208": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "209": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "210": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "211": {
       "status": "changed",
@@ -872,58 +1034,76 @@
       "warns": []
     },
     "212": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "213": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "214": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "215": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "216": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "217": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "218": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "219": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "220": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "221": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "222": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "223": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "224": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "225": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "226": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "227": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "228": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "229": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "230": {
       "status": "changed",
@@ -936,16 +1116,20 @@
       "warns": []
     },
     "231": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "232": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "233": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "234": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "235": {
       "status": "unchanged",
@@ -955,34 +1139,44 @@
       "reason": "slaw döljer extra varor i parentes"
     },
     "236": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "237": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "238": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "239": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "240": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "241": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "242": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "243": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "244": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "245": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "246": {
       "status": "changed",
@@ -995,34 +1189,44 @@
       "warns": []
     },
     "247": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "248": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "249": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "250": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "251": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "252": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "253": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "254": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "255": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "256": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "257": {
       "status": "changed",
@@ -1045,13 +1249,16 @@
       "warns": []
     },
     "259": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "260": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "261": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "263": {
       "status": "changed",
@@ -1086,10 +1293,12 @@
       "warns": []
     },
     "266": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "267": {
-      "status": "pending"
+      "status": "unchanged",
+      "reason": "audit-ren: ingrediensrader inspekterade, inga P0/P1; instruktioner utan uppenbara logikfel"
     },
     "268": {
       "status": "changed",
@@ -1134,12 +1343,12 @@
     }
   },
   "totals": {
-    "processed": 53,
+    "processed": 262,
     "changed": 37,
-    "unchanged": 16,
+    "unchanged": 225,
     "skipped": 0,
     "flagged": 21
   },
-  "lastBatch": "batch-04",
-  "lastUpdate": "2026-06-07T07:03:35.705Z"
+  "lastBatch": "batch-05",
+  "lastUpdate": "2026-06-07T07:23:49.448Z"
 }
