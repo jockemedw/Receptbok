@@ -1,18 +1,18 @@
 {
-  "date": "2026-06-03",
-  "source": "fil: /tmp/recipes-supabase.json",
+  "date": "2026-06-07",
+  "source": "fil: docs/recipe-backup-20260607.json",
   "recipes": 262,
   "totalLines": 3791,
   "sevCount": {
     "P0": 0,
     "P1": 68,
-    "P2": 772
+    "P2": 657
   },
   "classCount": {
-    "C1 okänt namn (ej canon)": 519,
+    "C1 okänt namn (ej canon)": 399,
     "C2 saknad mängd": 53,
     "C4 beskrivande brus": 319,
     "C3 flera ingredienser/rad": 22
   },
-  "nonCanonUnique": 401
+  "nonCanonUnique": 332
 }

@@ -1,0 +1,867 @@
+{
+  "started": "2026-06-07T06:15:10.355Z",
+  "backupFile": "docs/recipe-backup-20260607.json",
+  "backupTable": "recipes_qc_backup_20260607",
+  "baseline": {
+    "P0": 0,
+    "P1": 68,
+    "P2": 657,
+    "nonCanon": 332,
+    "lines": 3791,
+    "recipes": 262
+  },
+  "batchSize": 12,
+  "recipes": {
+    "1": {
+      "status": "unchanged",
+      "flags": [
+        "canon-kandidat: \"matvete\" (förekommer i #1,#2,#3)",
+        "canon-kandidat: \"torsk\""
+      ],
+      "reason": "ren; canon-luckor noterade"
+    },
+    "2": {
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 11,
+      "newScore": 1,
+      "flags": [],
+      "warns": []
+    },
+    "3": {
+      "status": "unchanged",
+      "flags": [],
+      "reason": "ren"
+    },
+    "4": {
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 1,
+      "newScore": 0,
+      "flags": [],
+      "warns": []
+    },
+    "5": {
+      "status": "unchanged",
+      "flags": [
+        "canon-kandidat (plural): \"grönsaksbuljongtärningar\" → grönsaksbuljong"
+      ],
+      "reason": "ren; canon-lucka"
+    },
+    "6": {
+      "status": "unchanged",
+      "flags": [
+        "canon-kandidat: \"färdiggrillad kyckling\" (hel grillad kyckling)"
+      ],
+      "reason": "ren; canon-lucka"
+    },
+    "7": {
+      "status": "unchanged",
+      "flags": [
+        "canon-kandidat: \"pizzadeg\""
+      ],
+      "reason": "ren; canon-lucka"
+    },
+    "8": {
+      "status": "unchanged",
+      "flags": [
+        "canon-kandidat (plural): \"hönsbuljongtärningar\" → hönsbuljong"
+      ],
+      "reason": "ren; canon-lucka"
+    },
+    "9": {
+      "status": "unchanged",
+      "flags": [
+        "canon-kandidat (plural): \"buljongtärningar\" → buljongtärning"
+      ],
+      "reason": "ren; canon-lucka"
+    },
+    "10": {
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 13,
+      "newScore": 3,
+      "flags": [
+        "canon-kandidat: \"nori-ark\", \"citrongräs\", \"umamibuljongtärningar\""
+      ],
+      "warns": []
+    },
+    "11": {
+      "status": "unchanged",
+      "flags": [
+        "canon-kandidat: \"HP-sås\" (HP Sauce / brun sås)"
+      ],
+      "reason": "ren; canon-lucka"
+    },
+    "12": {
+      "status": "unchanged",
+      "flags": [],
+      "reason": "ren"
+    },
+    "13": {
+      "status": "pending"
+    },
+    "14": {
+      "status": "pending"
+    },
+    "15": {
+      "status": "pending"
+    },
+    "16": {
+      "status": "pending"
+    },
+    "17": {
+      "status": "pending"
+    },
+    "18": {
+      "status": "pending"
+    },
+    "20": {
+      "status": "pending"
+    },
+    "21": {
+      "status": "pending"
+    },
+    "22": {
+      "status": "pending"
+    },
+    "23": {
+      "status": "pending"
+    },
+    "24": {
+      "status": "pending"
+    },
+    "25": {
+      "status": "pending"
+    },
+    "27": {
+      "status": "pending"
+    },
+    "28": {
+      "status": "pending"
+    },
+    "29": {
+      "status": "pending"
+    },
+    "30": {
+      "status": "pending"
+    },
+    "31": {
+      "status": "pending"
+    },
+    "32": {
+      "status": "pending"
+    },
+    "33": {
+      "status": "pending"
+    },
+    "34": {
+      "status": "pending"
+    },
+    "35": {
+      "status": "pending"
+    },
+    "36": {
+      "status": "pending"
+    },
+    "37": {
+      "status": "pending"
+    },
+    "38": {
+      "status": "pending"
+    },
+    "39": {
+      "status": "pending"
+    },
+    "40": {
+      "status": "pending"
+    },
+    "41": {
+      "status": "pending"
+    },
+    "42": {
+      "status": "pending"
+    },
+    "43": {
+      "status": "pending"
+    },
+    "44": {
+      "status": "pending"
+    },
+    "45": {
+      "status": "pending"
+    },
+    "46": {
+      "status": "pending"
+    },
+    "47": {
+      "status": "pending"
+    },
+    "48": {
+      "status": "pending"
+    },
+    "49": {
+      "status": "pending"
+    },
+    "50": {
+      "status": "pending"
+    },
+    "51": {
+      "status": "pending"
+    },
+    "52": {
+      "status": "pending"
+    },
+    "53": {
+      "status": "pending"
+    },
+    "54": {
+      "status": "pending"
+    },
+    "55": {
+      "status": "pending"
+    },
+    "56": {
+      "status": "pending"
+    },
+    "58": {
+      "status": "pending"
+    },
+    "59": {
+      "status": "pending"
+    },
+    "60": {
+      "status": "pending"
+    },
+    "61": {
+      "status": "pending"
+    },
+    "62": {
+      "status": "pending"
+    },
+    "63": {
+      "status": "pending"
+    },
+    "64": {
+      "status": "pending"
+    },
+    "65": {
+      "status": "pending"
+    },
+    "66": {
+      "status": "pending"
+    },
+    "67": {
+      "status": "pending"
+    },
+    "68": {
+      "status": "pending"
+    },
+    "69": {
+      "status": "pending"
+    },
+    "70": {
+      "status": "pending"
+    },
+    "71": {
+      "status": "pending"
+    },
+    "72": {
+      "status": "pending"
+    },
+    "73": {
+      "status": "pending"
+    },
+    "74": {
+      "status": "pending"
+    },
+    "75": {
+      "status": "pending"
+    },
+    "76": {
+      "status": "pending"
+    },
+    "77": {
+      "status": "pending"
+    },
+    "78": {
+      "status": "pending"
+    },
+    "79": {
+      "status": "pending"
+    },
+    "80": {
+      "status": "pending"
+    },
+    "81": {
+      "status": "pending"
+    },
+    "82": {
+      "status": "pending"
+    },
+    "83": {
+      "status": "pending"
+    },
+    "84": {
+      "status": "pending"
+    },
+    "85": {
+      "status": "pending"
+    },
+    "86": {
+      "status": "pending"
+    },
+    "87": {
+      "status": "pending"
+    },
+    "88": {
+      "status": "pending"
+    },
+    "89": {
+      "status": "pending"
+    },
+    "90": {
+      "status": "pending"
+    },
+    "91": {
+      "status": "pending"
+    },
+    "93": {
+      "status": "pending"
+    },
+    "94": {
+      "status": "pending"
+    },
+    "95": {
+      "status": "pending"
+    },
+    "96": {
+      "status": "pending"
+    },
+    "97": {
+      "status": "pending"
+    },
+    "98": {
+      "status": "pending"
+    },
+    "99": {
+      "status": "pending"
+    },
+    "100": {
+      "status": "pending"
+    },
+    "101": {
+      "status": "pending"
+    },
+    "102": {
+      "status": "pending"
+    },
+    "103": {
+      "status": "pending"
+    },
+    "104": {
+      "status": "pending"
+    },
+    "105": {
+      "status": "pending"
+    },
+    "107": {
+      "status": "pending"
+    },
+    "108": {
+      "status": "pending"
+    },
+    "109": {
+      "status": "pending"
+    },
+    "110": {
+      "status": "pending"
+    },
+    "111": {
+      "status": "pending"
+    },
+    "112": {
+      "status": "pending"
+    },
+    "113": {
+      "status": "pending"
+    },
+    "114": {
+      "status": "pending"
+    },
+    "115": {
+      "status": "pending"
+    },
+    "116": {
+      "status": "pending"
+    },
+    "117": {
+      "status": "pending"
+    },
+    "118": {
+      "status": "pending"
+    },
+    "119": {
+      "status": "pending"
+    },
+    "120": {
+      "status": "pending"
+    },
+    "121": {
+      "status": "pending"
+    },
+    "122": {
+      "status": "pending"
+    },
+    "123": {
+      "status": "pending"
+    },
+    "124": {
+      "status": "pending"
+    },
+    "125": {
+      "status": "pending"
+    },
+    "126": {
+      "status": "pending"
+    },
+    "127": {
+      "status": "pending"
+    },
+    "129": {
+      "status": "pending"
+    },
+    "130": {
+      "status": "pending"
+    },
+    "131": {
+      "status": "pending"
+    },
+    "132": {
+      "status": "pending"
+    },
+    "133": {
+      "status": "pending"
+    },
+    "134": {
+      "status": "pending"
+    },
+    "135": {
+      "status": "pending"
+    },
+    "137": {
+      "status": "pending"
+    },
+    "138": {
+      "status": "pending"
+    },
+    "139": {
+      "status": "pending"
+    },
+    "140": {
+      "status": "pending"
+    },
+    "141": {
+      "status": "pending"
+    },
+    "142": {
+      "status": "pending"
+    },
+    "143": {
+      "status": "pending"
+    },
+    "144": {
+      "status": "pending"
+    },
+    "145": {
+      "status": "pending"
+    },
+    "146": {
+      "status": "pending"
+    },
+    "148": {
+      "status": "pending"
+    },
+    "149": {
+      "status": "pending"
+    },
+    "150": {
+      "status": "pending"
+    },
+    "151": {
+      "status": "pending"
+    },
+    "152": {
+      "status": "pending"
+    },
+    "153": {
+      "status": "pending"
+    },
+    "154": {
+      "status": "pending"
+    },
+    "155": {
+      "status": "pending"
+    },
+    "156": {
+      "status": "pending"
+    },
+    "157": {
+      "status": "pending"
+    },
+    "158": {
+      "status": "pending"
+    },
+    "159": {
+      "status": "pending"
+    },
+    "160": {
+      "status": "pending"
+    },
+    "161": {
+      "status": "pending"
+    },
+    "162": {
+      "status": "pending"
+    },
+    "163": {
+      "status": "pending"
+    },
+    "164": {
+      "status": "pending"
+    },
+    "165": {
+      "status": "pending"
+    },
+    "166": {
+      "status": "pending"
+    },
+    "167": {
+      "status": "pending"
+    },
+    "168": {
+      "status": "pending"
+    },
+    "169": {
+      "status": "pending"
+    },
+    "170": {
+      "status": "pending"
+    },
+    "171": {
+      "status": "pending"
+    },
+    "172": {
+      "status": "pending"
+    },
+    "173": {
+      "status": "pending"
+    },
+    "174": {
+      "status": "pending"
+    },
+    "175": {
+      "status": "pending"
+    },
+    "176": {
+      "status": "pending"
+    },
+    "177": {
+      "status": "pending"
+    },
+    "178": {
+      "status": "pending"
+    },
+    "179": {
+      "status": "pending"
+    },
+    "180": {
+      "status": "pending"
+    },
+    "181": {
+      "status": "pending"
+    },
+    "182": {
+      "status": "pending"
+    },
+    "183": {
+      "status": "pending"
+    },
+    "184": {
+      "status": "pending"
+    },
+    "185": {
+      "status": "pending"
+    },
+    "186": {
+      "status": "pending"
+    },
+    "187": {
+      "status": "pending"
+    },
+    "188": {
+      "status": "pending"
+    },
+    "189": {
+      "status": "pending"
+    },
+    "190": {
+      "status": "pending"
+    },
+    "191": {
+      "status": "pending"
+    },
+    "192": {
+      "status": "pending"
+    },
+    "193": {
+      "status": "pending"
+    },
+    "194": {
+      "status": "pending"
+    },
+    "195": {
+      "status": "pending"
+    },
+    "196": {
+      "status": "pending"
+    },
+    "197": {
+      "status": "pending"
+    },
+    "198": {
+      "status": "pending"
+    },
+    "199": {
+      "status": "pending"
+    },
+    "200": {
+      "status": "pending"
+    },
+    "201": {
+      "status": "pending"
+    },
+    "202": {
+      "status": "pending"
+    },
+    "203": {
+      "status": "pending"
+    },
+    "204": {
+      "status": "pending"
+    },
+    "205": {
+      "status": "pending"
+    },
+    "206": {
+      "status": "pending"
+    },
+    "207": {
+      "status": "pending"
+    },
+    "208": {
+      "status": "pending"
+    },
+    "209": {
+      "status": "pending"
+    },
+    "210": {
+      "status": "pending"
+    },
+    "211": {
+      "status": "pending"
+    },
+    "212": {
+      "status": "pending"
+    },
+    "213": {
+      "status": "pending"
+    },
+    "214": {
+      "status": "pending"
+    },
+    "215": {
+      "status": "pending"
+    },
+    "216": {
+      "status": "pending"
+    },
+    "217": {
+      "status": "pending"
+    },
+    "218": {
+      "status": "pending"
+    },
+    "219": {
+      "status": "pending"
+    },
+    "220": {
+      "status": "pending"
+    },
+    "221": {
+      "status": "pending"
+    },
+    "222": {
+      "status": "pending"
+    },
+    "223": {
+      "status": "pending"
+    },
+    "224": {
+      "status": "pending"
+    },
+    "225": {
+      "status": "pending"
+    },
+    "226": {
+      "status": "pending"
+    },
+    "227": {
+      "status": "pending"
+    },
+    "228": {
+      "status": "pending"
+    },
+    "229": {
+      "status": "pending"
+    },
+    "230": {
+      "status": "pending"
+    },
+    "231": {
+      "status": "pending"
+    },
+    "232": {
+      "status": "pending"
+    },
+    "233": {
+      "status": "pending"
+    },
+    "234": {
+      "status": "pending"
+    },
+    "235": {
+      "status": "pending"
+    },
+    "236": {
+      "status": "pending"
+    },
+    "237": {
+      "status": "pending"
+    },
+    "238": {
+      "status": "pending"
+    },
+    "239": {
+      "status": "pending"
+    },
+    "240": {
+      "status": "pending"
+    },
+    "241": {
+      "status": "pending"
+    },
+    "242": {
+      "status": "pending"
+    },
+    "243": {
+      "status": "pending"
+    },
+    "244": {
+      "status": "pending"
+    },
+    "245": {
+      "status": "pending"
+    },
+    "246": {
+      "status": "pending"
+    },
+    "247": {
+      "status": "pending"
+    },
+    "248": {
+      "status": "pending"
+    },
+    "249": {
+      "status": "pending"
+    },
+    "250": {
+      "status": "pending"
+    },
+    "251": {
+      "status": "pending"
+    },
+    "252": {
+      "status": "pending"
+    },
+    "253": {
+      "status": "pending"
+    },
+    "254": {
+      "status": "pending"
+    },
+    "255": {
+      "status": "pending"
+    },
+    "256": {
+      "status": "pending"
+    },
+    "257": {
+      "status": "pending"
+    },
+    "258": {
+      "status": "pending"
+    },
+    "259": {
+      "status": "pending"
+    },
+    "260": {
+      "status": "pending"
+    },
+    "261": {
+      "status": "pending"
+    },
+    "263": {
+      "status": "pending"
+    },
+    "264": {
+      "status": "pending"
+    },
+    "265": {
+      "status": "pending"
+    },
+    "266": {
+      "status": "pending"
+    },
+    "267": {
+      "status": "pending"
+    },
+    "268": {
+      "status": "pending"
+    },
+    "269": {
+      "status": "pending"
+    },
+    "270": {
+      "status": "pending"
+    },
+    "271": {
+      "status": "pending"
+    }
+  },
+  "totals": {
+    "processed": 12,
+    "changed": 3,
+    "unchanged": 9,
+    "skipped": 0,
+    "flagged": 8
+  },
+  "lastBatch": "batch-01",
+  "lastUpdate": "2026-06-07T06:21:32.856Z"
+}

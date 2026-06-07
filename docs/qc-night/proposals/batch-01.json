@@ -1,0 +1,102 @@
+[
+  { "id": 1, "skip": true, "reason": "ren; canon-luckor noterade",
+    "flags": ["canon-kandidat: \"matvete\" (förekommer i #1,#2,#3)", "canon-kandidat: \"torsk\""] },
+
+  { "id": 2,
+    "set": { "ingredients": [
+      "3 dl matvete",
+      "olivolja, till stekning",
+      "400 g blomkål, i bitar",
+      "200 g halloumi, grovriven",
+      "400 g gröna ärter, tinade",
+      "1 rödlök, tunt strimlad",
+      "Salt och svartpeppar",
+      "Myntavinägrett: ½ dl olivolja",
+      "Myntavinägrett: 2 msk vitvinsvinäger",
+      "Myntavinägrett: 1 citron, pressad saft",
+      "Myntavinägrett: 2 tsk torkad mynta",
+      "Myntavinägrett: salt och svartpeppar"
+    ] },
+    "changes": ["[1] \"Olivolja\" → \"olivolja, till stekning\" — det är stekoljan (steg 2 \"Hetta upp olja\"); tar bort P1 saknad mängd utan att ändra inköp"] },
+
+  { "id": 3, "skip": true, "reason": "ren" },
+
+  { "id": 4,
+    "set": { "ingredients": [
+      "4 dl basmatiris",
+      "900 g kycklingfilé",
+      "1 kruka koriander, till servering",
+      "Marinad: 1 msk neutral olja",
+      "Marinad: 1 citron, pressad saft",
+      "Marinad: 2 vitlöksklyftor, rivna",
+      "Marinad: 2 msk tomatpuré",
+      "Marinad: 1 tsk senapsfrön",
+      "Marinad: 1 tsk malen koriander",
+      "Marinad: 1 tsk salt",
+      "Sås: 2 dl naturella cashewnötter",
+      "Sås: 1–2 msk neutral olja",
+      "Sås: ½ msk malen koriander",
+      "Sås: ½ msk malen ingefära",
+      "Sås: ½ msk spiskummin",
+      "Sås: 2 tsk gurkmeja",
+      "Sås: 1 tsk kardemumma",
+      "Sås: ½ tsk svartpeppar",
+      "Sås: ½ tsk cayennepeppar",
+      "Sås: 1 gul lök, finhackad",
+      "Sås: 2 msk neutral olja",
+      "Sås: 1 vitlöksklyfta, riven",
+      "Sås: 4–5 dl vatten",
+      "Sås: 1 dl kokosmjölk eller kokosgrädde",
+      "Sås: 1 tsk salt"
+    ] },
+    "renames": { "kokosgrädde": "kokosmjölk" },
+    "changes": ["[23] \"kokosgrädde eller kokosmjölk\" → \"kokosmjölk eller kokosgrädde\" — sätter den canon-matchbara kokosmjölken som primär (tar bort P2 icke-canon); samma alternativ kvar"] },
+
+  { "id": 5, "skip": true, "reason": "ren; canon-lucka",
+    "flags": ["canon-kandidat (plural): \"grönsaksbuljongtärningar\" → grönsaksbuljong"] },
+
+  { "id": 6, "skip": true, "reason": "ren; canon-lucka",
+    "flags": ["canon-kandidat: \"färdiggrillad kyckling\" (hel grillad kyckling)"] },
+
+  { "id": 7, "skip": true, "reason": "ren; canon-lucka",
+    "flags": ["canon-kandidat: \"pizzadeg\""] },
+
+  { "id": 8, "skip": true, "reason": "ren; canon-lucka",
+    "flags": ["canon-kandidat (plural): \"hönsbuljongtärningar\" → hönsbuljong"] },
+
+  { "id": 9, "skip": true, "reason": "ren; canon-lucka",
+    "flags": ["canon-kandidat (plural): \"buljongtärningar\" → buljongtärning"] },
+
+  { "id": 10,
+    "set": { "ingredients": [
+      "4 ägg",
+      "200 g nudlar, valfria",
+      "2 salladslökar, strimlade",
+      "150 g salladskål",
+      "1 nori-ark, i tunna strimlor",
+      "1 kruka koriander (stjälk och blad)",
+      "1 lime, i klyftor",
+      "torrostade sesamfrön, till servering",
+      "Buljong: 12 dl vatten",
+      "Buljong: 2 umamibuljongtärningar",
+      "Buljong: 20 g ingefära, strimlad som tändstickor",
+      "Buljong: 1 vitlöksklyfta, skivad",
+      "Buljong: ½–1 röd chili, skivad",
+      "Buljong: 2 msk japansk soja",
+      "Buljong: 1 msk fisksås",
+      "Buljong: 1 msk råsocker",
+      "Buljong: 1 citrongräs",
+      "Inlagd svamp: 1 dl vatten",
+      "Inlagd svamp: ½ dl vitvinsvinäger",
+      "Inlagd svamp: 1 msk råsocker",
+      "Inlagd svamp: 100 g champinjoner",
+      "Inlagd svamp: 1 morot"
+    ] },
+    "changes": ["[7] \"torrostade sesamfrön\" → \"torrostade sesamfrön, till servering\" — topping enligt steg 5; tar bort P1 saknad mängd"],
+    "flags": ["canon-kandidat: \"nori-ark\", \"citrongräs\", \"umamibuljongtärningar\""] },
+
+  { "id": 11, "skip": true, "reason": "ren; canon-lucka",
+    "flags": ["canon-kandidat: \"HP-sås\" (HP Sauce / brun sås)"] },
+
+  { "id": 12, "skip": true, "reason": "ren" }
+]
