@@ -259,10 +259,21 @@
       "status": "pending"
     },
     "42": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 11,
+      "newScore": 1,
+      "flags": [],
+      "warns": []
     },
     "43": {
-      "status": "pending"
+      "status": "unchanged",
+      "flags": [
+        "[5] \"1 dl blandade nötter och frön\": medveten blandning — lämnad (delning artificiell)."
+      ],
+      "reason": "ren förutom nöt/frö-mix"
     },
     "44": {
       "status": "pending"
@@ -280,7 +291,11 @@
       "status": "pending"
     },
     "49": {
-      "status": "pending"
+      "status": "unchanged",
+      "flags": [
+        "[0] \"pärlcouscous (för 4 portioner)\": avsiktligt vag mängd på huvudingrediensen — lämnad."
+      ],
+      "reason": "vag huvudmängd"
     },
     "50": {
       "status": "pending"
@@ -298,13 +313,31 @@
       "status": "pending"
     },
     "55": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 10,
+      "newScore": 1,
+      "flags": [],
+      "warns": []
     },
     "56": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 10,
+      "newScore": 1,
+      "flags": [],
+      "warns": []
     },
     "58": {
-      "status": "pending"
+      "status": "unchanged",
+      "flags": [
+        "[0] \"1 dl nötter och frön\": medveten blandning — lämnad."
+      ],
+      "reason": "ren förutom nöt/frö-mix"
     },
     "59": {
       "status": "pending"
@@ -319,10 +352,24 @@
       "status": "pending"
     },
     "63": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 42,
+      "newScore": 2,
+      "flags": [],
+      "warns": []
     },
     "64": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 12,
+      "newScore": 2,
+      "flags": [],
+      "warns": []
     },
     "65": {
       "status": "pending"
@@ -340,7 +387,11 @@
       "status": "pending"
     },
     "70": {
-      "status": "pending"
+      "status": "unchanged",
+      "flags": [
+        "[15] \"basilika och koriander, blandat (0,6 dl)\": delad mängd på två örter i sås — lämnad (delning tvetydig)."
+      ],
+      "reason": "ren förutom örtmix-mängd"
     },
     "71": {
       "status": "pending"
@@ -364,7 +415,14 @@
       "status": "pending"
     },
     "78": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 12,
+      "newScore": 2,
+      "flags": [],
+      "warns": []
     },
     "79": {
       "status": "pending"
@@ -382,7 +440,14 @@
       "status": "pending"
     },
     "84": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 14,
+      "newScore": 4,
+      "flags": [],
+      "warns": []
     },
     "85": {
       "status": "pending"
@@ -406,7 +471,14 @@
       "status": "pending"
     },
     "93": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 12,
+      "newScore": 1,
+      "flags": [],
+      "warns": []
     },
     "94": {
       "status": "pending"
@@ -496,7 +568,14 @@
       "status": "pending"
     },
     "124": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 12,
+      "newScore": 2,
+      "flags": [],
+      "warns": []
     },
     "125": {
       "status": "pending"
@@ -550,7 +629,14 @@
       "status": "pending"
     },
     "144": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 16,
+      "newScore": 6,
+      "flags": [],
+      "warns": []
     },
     "145": {
       "status": "pending"
@@ -604,7 +690,14 @@
       "status": "pending"
     },
     "163": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 13,
+      "newScore": 3,
+      "flags": [],
+      "warns": []
     },
     "164": {
       "status": "pending"
@@ -929,12 +1022,12 @@
     }
   },
   "totals": {
-    "processed": 22,
-    "changed": 12,
-    "unchanged": 10,
+    "processed": 37,
+    "changed": 23,
+    "unchanged": 14,
     "skipped": 0,
-    "flagged": 12
+    "flagged": 16
   },
-  "lastBatch": "batch-02",
-  "lastUpdate": "2026-06-07T06:55:49.208Z"
+  "lastBatch": "batch-03",
+  "lastUpdate": "2026-06-07T06:59:25.578Z"
 }

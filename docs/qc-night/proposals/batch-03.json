@@ -1,0 +1,116 @@
+[
+  { "id": 42,
+    "set": { "ingredients": [
+      "Buljong: 1 bit ingefära","Buljong: 15 dl vatten","Buljong: 3 påsar kycklingbuljong","Buljong: japansk soja, efter smak",
+      "Buljong: 125 g champinjoner","Buljong: 1 pak choy","Buljong: 1 msk vitvinsvinäger","Buljong: 1 msk sesamolja",
+      "Fläskfärs: 500 g fläskfärs","Fläskfärs: 2 vitlöksklyftor","Fläskfärs: 1 tsk chiliflakes","Fläskfärs: 1 tsk salt",
+      "Till servering: 4 ägg","Till servering: 1 förp nudlar","Till servering: 20 g koriander"
+    ] },
+    "changes": ["[3] \"japansk soja\" → \"japansk soja, efter smak\" (buljongkryddning; tar bort P1)"] },
+
+  { "id": 43, "skip": true, "reason": "ren förutom nöt/frö-mix",
+    "flags": ["[5] \"1 dl blandade nötter och frön\": medveten blandning — lämnad (delning artificiell)."] },
+
+  { "id": 49, "skip": true, "reason": "vag huvudmängd",
+    "flags": ["[0] \"pärlcouscous (för 4 portioner)\": avsiktligt vag mängd på huvudingrediensen — lämnad."] },
+
+  { "id": 55,
+    "set": { "ingredients": ["4 laxfiléer","2 gula lökar","4 vitlöksklyftor","2 ägg","örtkryddor, efter smak","salt","peppar"] },
+    "changes": ["[4] \"örtkryddor\" → \"örtkryddor, efter smak\" (kryddas efter smak, steg 2; tar bort P1)"] },
+
+  { "id": 56,
+    "set": { "ingredients": [
+      "1 dl hackad gul lök","4 vitlöksklyftor","4–6 morötter (ca 400 g), rivna","800 g krossade tomater",
+      "1 grönsaksbuljongtärning","2 dl crème fraiche eller matyoghurt","oregano (eller basilika), efter smak","200 g champinjoner"
+    ] },
+    "changes": ["[6] \"oregano eller basilika\" → \"oregano (eller basilika), efter smak\" (kryddning; tar bort P1 C2+C3)"] },
+
+  { "id": 58, "skip": true, "reason": "ren förutom nöt/frö-mix",
+    "flags": ["[0] \"1 dl nötter och frön\": medveten blandning — lämnad."] },
+
+  { "id": 63,
+    "set": { "ingredients": [
+      "Rostade kikärtor: 1 förp färdigkokta kikärtor, sköljda och avrunna (à ca 400 g)",
+      "Rostade kikärtor: 1 tsk paprikapulver","Rostade kikärtor: 1 tsk vitlökspulver","Rostade kikärtor: 1 msk rapsolja",
+      "Brödchips: 2 libabröd","Brödchips: 2 msk olivolja",
+      "Dressing: 1 kruka färsk basilika (spara några blad till garnering)",
+      "Dressing: 1 kruka färsk koriander (spara några blad till garnering)",
+      "Dressing: 1 dl olivolja","Dressing: 1 avokado","Dressing: 0,5 citron, pressad saft",
+      "Dressing: 2 msk vit balsamvinäger","Dressing: 2 klyftor vitlök, rivna","Dressing: 2-3 dl parmesanost, riven",
+      "Dressing: 3 dl matyoghurt",
+      "Sallad: 1,5 dl valnötter","Sallad: 1 spetskål (litet)","Sallad: 1 gurka","Sallad: 8 cm purjolök",
+      "Sallad: 2 avokador","Sallad: salt","Sallad: peppar"
+    ] },
+    "changes": ["[0,5,8,18] rubrikrader (\"Rostade kikärtor\", \"Tunna brödchips\", \"Dressing\", \"Sallad\") låg som egna ingrediensrader → flyttade in som sektionsprefix på respektive ingrediens. Tar bort 4× P1. Inköpsvaror oförändrade."] },
+
+  { "id": 64,
+    "set": { "ingredients": [
+      "2 rejäla rödlökar","1 purjolök","1 röd + 1 gul paprika","1 stor morot","4 stjälkar bladselleri",
+      "2 msk olivolja","grovt milt salt (ca 1 tsk)","ca 1 tsk garam masala","svartpeppar, efter smak"
+    ] },
+    "changes": ["[8] \"lite svartpeppar ur kvarn\" → \"svartpeppar, efter smak\" (tar bort P1)"] },
+
+  { "id": 70, "skip": true, "reason": "ren förutom örtmix-mängd",
+    "flags": ["[15] \"basilika och koriander, blandat (0,6 dl)\": delad mängd på två örter i sås — lämnad (delning tvetydig)."] },
+
+  { "id": 78,
+    "set": { "ingredients": [
+      "vit fisk (t.ex. torsk, 450 g)","salt (0,75 tsk)","svartpeppar, nymalen (0,25 tsk)","olivolja (2 msk)",
+      "fänkålsknöl, tunt skivad eller hyvlad på mandolin, blasten reserverad till garnering (1)",
+      "schalottenlök, fint hackad (0,6 dl)","vitlöksklyfta, pressad (2)","mild harissapasta (1,5 msk)",
+      "färsk citronsaft, uppdelat (2 msk)","kapris (1,5 msk)"
+    ] },
+    "changes": ["[0] förenklade \"vit fisk utan skinn och ben, t.ex. hälleflundra eller torsk (450 g)\" → \"vit fisk (t.ex. torsk, 450 g)\" (tar bort C3 \"och/eller\" + C4-brus; canon fisk kvar)"] },
+
+  { "id": 84,
+    "set": { "ingredients": [
+      "fänkålsknöl, tunt skivad (1 liten, plus 1 msk finhackade fänkålsblad)","risvinäger (1,2 dl)","strösocker (1,5 msk)",
+      "salt (1,5 tsk, uppdelat)","tonfisk i vatten, avrunnen (2 burkar à 140 g)","majonnäs eller grekisk yoghurt (3 msk)",
+      "dijonsenap (1 tsk)","1 citron, skal och saft","färsk persilja, finhackad (2 msk)","kapris, avrunnen (2 tsk)",
+      "svartpeppar, nymalen (0,5 tsk)","fullkornsbröd (5 skivor)","mozzarella, nyriven (2,4 dl)"
+    ] },
+    "changes": ["[7] \"citronskal och saft (1 citron)\" → \"1 citron, skal och saft\" (en citron är inköpsvaran; tar bort P1 C3)"] },
+
+  { "id": 93,
+    "set": { "ingredients": [
+      "laxfilé (450 g)","ägg (1)","kryddat ströbröd (1,2 dl)","dijonsenap (2 msk)","schalottenlök, fint hackad (1)",
+      "vitlöksklyfta, pressad (2)","färsk dill, fint hackad (1 msk)","gräslök, fint hackad (1 msk)",
+      "färskriven ingefära, eller 0,5 tsk mald (1 tsk)","rökt paprikapulver (1 tsk)","olivolja till stekning (1 msk)",
+      "salt och peppar efter smak","småfrallor (10)","valfria tillbehör: sallad eller ruccola, avokado, rödlök tunt skivad",
+      "grekisk yoghurt 0% (3 msk)","lätt majonnäs (2 msk)","dijonsenap (1 tsk)",
+      "färsk dill, fint hackad (1–2 tsk)","gräslök, fint hackad (1–2 tsk)","1 citron","salt och peppar efter smak"
+    ] },
+    "changes": [
+      "[17] \"färsk dill och gräslök, fint hackad (1–2 tsk av varje)\" → delad i \"färsk dill (1–2 tsk)\" + \"gräslök (1–2 tsk)\" (av varje = vardera; tar bort C3)",
+      "[0] \"laxfilé utan ben (450 g)\" → \"laxfilé (450 g)\" (tar bort C4-brus \"utan ben\")"
+    ] },
+
+  { "id": 124,
+    "set": { "ingredients": [
+      "sojasås med låg salthalt (3 msk, uppdelat)","risvinäger (2 msk)","jordnötssmör (2 msk)","röd currypasta (1 msk)",
+      "strösocker (1 tsk)","salt (0,5 tsk)","vegetabilisk olja eller olivolja (3 msk)","creminisvamp, tunt skivad (225 g)",
+      "shiitakesvamp, grova stjälkar borttagna (170 g)","salladslök, trimmad och grovhackad (1 knippe)",
+      "vitlöksklyfta, pressad (2)","färsk ingefära, finhackad (1 msk)","ägg, vispade (3 stora)",
+      "kokt och kylt vitt eller brunt ris (6 dl)","hackade jordnötter och rostad sesamolja till garnering (valfritt)"
+    ] },
+    "renames": { "baby bella-svamp/creminisvamp": "champinjoner" },
+    "changes": ["[7] \"baby bella-svamp/creminisvamp ...\" → \"creminisvamp ...\" (samma svamp; canon champinjoner; tar bort C3 \"/\")"] },
+
+  { "id": 144,
+    "set": { "ingredients": [
+      "torr pasta (340 g)","kycklingbröst, tärnad (450 g)","salt (1 tsk), uppdelat","nymald svartpeppar (1 tsk), uppdelat",
+      "olivolja (2 msk)","tärnad pancetta (55 g)","salladslök, fint hackad (1,2 dl)","soltorkade tomater på burk, avrunna (1,2 dl)",
+      "vitlöksklyfta, pressad (4)","färsk babyspenat (3–4 nävar)","lätt färskost, rumstempererad (115 g)",
+      "osötad cashewmjölk (2,4 dl)","riven parmesan, plus mer till garnering (0,8 dl)","fint hackad persilja eller basilika (0,6 dl)"
+    ] },
+    "changes": ["[1] \"kycklingbröst utan ben och skinn, tärnad (450 g)\" → \"kycklingbröst, tärnad (450 g)\" (tar bort C3+C4; canon kycklingfilé kvar)"] },
+
+  { "id": 163,
+    "set": { "ingredients": [
+      "kycklingbröst (450 g, tärnad i munsbitar)","apelsinmarmelad (1,2 dl)","vitlöksklyfta (3, pressad)","risvinäger (2 msk)",
+      "honung (1 msk)","färskriven ingefära (1–2 tsk, alternativt 0,5 tsk mald ingefära)","1 apelsin","sesamolja (2 tsk)",
+      "sockerärtor (2,4 dl)","färsk basilika (1,2 dl)","jasminris eller basmatris (2,4 dl)","lätt kokosmjölk (2,4 dl)",
+      "rostade pumpakärnor (2 msk)","salt (0,5 tsk)"
+    ] },
+    "changes": ["[0] \"kycklingbröst utan ben och skinn (450 g, ...)\" → \"kycklingbröst (450 g, ...)\" (tar bort C3+C4; canon kycklingfilé kvar)"] }
+]
