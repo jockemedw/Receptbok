@@ -1,0 +1,100 @@
+[
+  { "id": 17,
+    "set": { "ingredients": [
+      "2 morötter","1 palsternacka","1 gul lök","1½ liter vatten","2 grönsaksbuljongtärningar",
+      "2 lagerblad","1 dl krossad vermicelli","2 msk finhackad persilja","neutral olja till stekning",
+      "örtsalt (t ex Vegeta allkrydda), efter smak","nymalen svartpeppar",
+      "Vitlöksbröd: 1 baguette","Vitlöksbröd: 50 g rumstempererat smör","Vitlöksbröd: 1 vitlöksklyfta, pressad",
+      "Vitlöksbröd: 2 msk finhackad persilja","Vitlöksbröd: salt"
+    ] },
+    "changes": ["[9] \"örtsalt (t ex Vegeta allkrydda)\" → tillägg \", efter smak\" (kryddning efter smak; tar bort P1)"],
+    "flags": ["canon-kandidat (plural): \"grönsaksbuljongtärningar\""] },
+
+  { "id": 22,
+    "set": { "ingredients": [
+      "ca 16 kokta potatisar","2 msk olivolja","2 dl finriven parmesan","flingsalt","2 dl crème fraiche",
+      "1 citron","salt och svartpeppar","400 g kallrökt lax i skivor","salladsblad, till servering"
+    ] },
+    "changes": ["[8] \"salladsblad\" → \"salladsblad, till servering\" (serveras till enligt steg 5; tar bort P1)"] },
+
+  { "id": 27,
+    "set": { "ingredients": [
+      "4 dl blomkål, i bitar","4 msk olivolja","2 tsk malen spiskummin","2 tsk sambal oelek","salt",
+      "20 padrones","600–800 g färdig hummus","2 dl oliver och hackade soltorkade tomater",
+      "1 citron, pressad saft","libabröd (eller lantbröd), till servering"
+    ] },
+    "changes": [
+      "[8] \"pressad citron\" → \"1 citron, pressad saft\" (en citron; tar bort P1)",
+      "[9] \"libabröd eller lantbröd\" → \"libabröd (eller lantbröd), till servering\" (alternativ i parentes + serveringssida; tar bort P1 C3+C2)"
+    ],
+    "flags": ["[7] \"2 dl oliver och hackade soltorkade tomater\": tvetydig mängddelning (2 dl gäller bägge?) — parsern tappar idag oliver och listar bara tomat. Lämnad; behöver manuell delning."] },
+
+  { "id": 29,
+    "set": { "ingredients": [
+      "3 vitlöksklyftor","150 g vitkål eller spetskål, strimlad","2 morötter","rapsolja, till stekning",
+      "1 msk gul currypulver","300 g nötfärs eller vegofärs","1 dl gröna ärtor",
+      "6–8 dl kokt ris (eller bulgur/matvete)","ca 2 msk japansk sojasås",
+      "strimlad salladslök, till servering","hackade nötter, till servering","Gott till: srirachasås"
+    ] },
+    "renames": { "ris/bulgur/matvete": "ris" },
+    "changes": [
+      "[3] rapsolja → \"rapsolja, till stekning\"",
+      "[7] \"6–8 dl kokt ris/bulgur/matvete\" → \"6–8 dl kokt ris (eller bulgur/matvete)\" (canon ris primär; tar bort P1 C3)",
+      "[9] strimlad salladslök → \"...till servering\"",
+      "[10] hackade nötter → \"...till servering\""
+    ] },
+
+  { "id": 30, "skip": true, "reason": "behåller medveten flexibilitet",
+    "flags": ["[0] \"en plåt grönsaker/rotfrukter (t ex ...)\": avsiktligt flexibel (valfri blandning) — lämnad oförändrad; genuin författar-vaghet."] },
+
+  { "id": 31,
+    "set": { "ingredients": [
+      "3 vitlöksklyftor","1 röd chilifrukt","olivolja, till stekning","1 rejäl aubergine (ca 400 g)",
+      "0,75 dl torkade linser (t ex puy- eller belugalinser)","400 g passerade tomater",
+      "2 dl grädde (alternativt havregrädde)","2 msk tomatpuré","1 näve körsbärstomater (kan uteslutas)",
+      "1–2 msk japansk sojasås","torkad oregano, efter smak","svartpeppar","pasta för 4 personer"
+    ] },
+    "changes": [
+      "[2] olivolja → \"olivolja, till stekning\"",
+      "[8] \"en näve körsbärstomater\" → \"1 näve körsbärstomater\" (näve = mängd; tar bort P1)",
+      "[10] torkad oregano → \"...efter smak\""
+    ],
+    "flags": ["[12] \"pasta för 4 personer\": avsiktligt vag mängd — lämnad."] },
+
+  { "id": 32,
+    "set": { "ingredients": [
+      "1 spetskålshuvud eller vitkål (ca 400 g)","1 kruka färsk koriander","2 gula lökar","4 vitlöksklyftor",
+      "rapsolja, till stekning","salt","2 tsk chiliflakes","2 msk smör","8 ägg","2 dl riven ost",
+      "4 stora tortillas","Till servering: chilisås"
+    ] },
+    "changes": ["[4] rapsolja → \"rapsolja, till stekning\""] },
+
+  { "id": 33,
+    "set": { "ingredients": [
+      "450 g potatis","1 stor gul lök","rapsolja, till stekning","salt","150 g grönkål","150 g riven gratängost",
+      "8 små tortillabröd","Syrlig koriandersås: 1 kruka färsk koriander","Syrlig koriandersås: 1 jalapeño",
+      "Syrlig koriandersås: 1 vitlöksklyfta","Syrlig koriandersås: 1 lime","Syrlig koriandersås: 3 msk olivolja",
+      "Syrlig koriandersås: 1 msk rostade sesamfrön","Syrlig koriandersås: salt"
+    ] },
+    "changes": ["[2] rapsolja → \"rapsolja, till stekning\""] },
+
+  { "id": 35,
+    "set": { "ingredients": [
+      "Sojamajonnäs: 1 dl majonnäs","Sojamajonnäs: 1 tsk ljus soja","Sojamajonnäs: 1 tsk citronsaft",
+      "Sojamajonnäs: 1 tsk ljus sirap","Sojamajonnäs: 1 nypa salt","Pankopanerad tofu: 400 g tofu",
+      "Pankopanerad tofu: 2 dl rapsolja","Pankopanerad tofu: 2 dl vetemjöl","Pankopanerad tofu: 1 tsk salt",
+      "Pankopanerad tofu: 1 tsk chiliflakes","Pankopanerad tofu: 2 ägg","Pankopanerad tofu: 1 msk ljus soja",
+      "Pankopanerad tofu: 2–3 dl panko ströbröd","Kålsallad: ½ huvud spetskål (eller vitkål)",
+      "Kålsallad: 2 salladslökar","8 skivor brioche (ganska tjocka)"
+    ] },
+    "renames": { "vitkål": "spetskål" },
+    "changes": ["[13] \"½ huvud spetskål eller färsk vitkål\" → \"½ huvud spetskål (eller vitkål)\" (canon spetskål; tar bort P1 C3)"] },
+
+  { "id": 38,
+    "set": { "ingredients": [
+      "½ vitkålshuvud (ca 400 g)","1 stor gul lök","400 g potatis","zucchini (ca 400 g)","rapsolja, till stekning",
+      "salt","2 tsk tomatpuré","3 msk mjöl","4 tomater (ca 400 g)","½ dl crème fraiche","3 dl vatten",
+      "2–3 vitlöksklyftor","1 kruka färsk dill","1 citron","Till servering: baguette eller annat rustikt bröd"
+    ] },
+    "changes": ["[4] rapsolja → \"rapsolja, till stekning\""] }
+]

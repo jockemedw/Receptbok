@@ -1,8 +1,3 @@
-# Receptkvalitet nattjobb — rapport 2026-06-07
-
-Baseline: P0=0 P1=68 P2=657, 262 recept.
-Backup: in-DB `recipes_qc_backup_20260607` + `docs/recipe-backup-20260607.json`. Revert: säg "revert nattjobbet".
-
 ## Batch batch-01
 
 ### #1 — Gräddig fiskgratäng med purjo

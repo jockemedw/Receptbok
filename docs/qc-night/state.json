@@ -117,7 +117,16 @@
       "status": "pending"
     },
     "17": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 12,
+      "newScore": 3,
+      "flags": [
+        "canon-kandidat (plural): \"grönsaksbuljongtärningar\""
+      ],
+      "warns": []
     },
     "18": {
       "status": "pending"
@@ -129,7 +138,14 @@
       "status": "pending"
     },
     "22": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 10,
+      "newScore": 0,
+      "flags": [],
+      "warns": []
     },
     "23": {
       "status": "pending"
@@ -141,31 +157,81 @@
       "status": "pending"
     },
     "27": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 32,
+      "newScore": 12,
+      "flags": [
+        "[7] \"2 dl oliver och hackade soltorkade tomater\": tvetydig mängddelning (2 dl gäller bägge?) — parsern tappar idag oliver och listar bara tomat. Lämnad; behöver manuell delning."
+      ],
+      "warns": []
     },
     "28": {
       "status": "pending"
     },
     "29": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 40,
+      "newScore": 0,
+      "flags": [],
+      "warns": []
     },
     "30": {
-      "status": "pending"
+      "status": "unchanged",
+      "flags": [
+        "[0] \"en plåt grönsaker/rotfrukter (t ex ...)\": avsiktligt flexibel (valfri blandning) — lämnad oförändrad; genuin författar-vaghet."
+      ],
+      "reason": "behåller medveten flexibilitet"
     },
     "31": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 41,
+      "newScore": 11,
+      "flags": [
+        "[12] \"pasta för 4 personer\": avsiktligt vag mängd — lämnad."
+      ],
+      "warns": []
     },
     "32": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 12,
+      "newScore": 2,
+      "flags": [],
+      "warns": []
     },
     "33": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 10,
+      "newScore": 0,
+      "flags": [],
+      "warns": []
     },
     "34": {
       "status": "pending"
     },
     "35": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 13,
+      "newScore": 3,
+      "flags": [],
+      "warns": []
     },
     "36": {
       "status": "pending"
@@ -174,7 +240,14 @@
       "status": "pending"
     },
     "38": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 11,
+      "newScore": 1,
+      "flags": [],
+      "warns": []
     },
     "39": {
       "status": "pending"
@@ -856,12 +929,12 @@
     }
   },
   "totals": {
-    "processed": 12,
-    "changed": 3,
-    "unchanged": 9,
+    "processed": 22,
+    "changed": 12,
+    "unchanged": 10,
     "skipped": 0,
-    "flagged": 8
+    "flagged": 12
   },
-  "lastBatch": "batch-01",
-  "lastUpdate": "2026-06-07T06:21:32.856Z"
+  "lastBatch": "batch-02",
+  "lastUpdate": "2026-06-07T06:55:49.208Z"
 }

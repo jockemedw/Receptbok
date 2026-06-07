@@ -11,13 +11,12 @@
 //
 // Kör:  node scripts/qc-night/process-batch.mjs <proposals.json> <batchTag>
 
-import { readFileSync, writeFileSync, appendFileSync, existsSync } from "fs";
+import { readFileSync, writeFileSync, existsSync } from "fs";
 import { validateOne } from "./validate.mjs";
 
 const ROOT = new URL("../../", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 const BACKUP = `${ROOT}docs/recipe-backup-20260607.json`;
 const STATE = `${ROOT}docs/qc-night/state.json`;
-const REPORT = `${ROOT}docs/qc-night/report-2026-06-07.md`;
 
 const [, , proposalsPath, batchTag] = process.argv;
 if (!proposalsPath || !batchTag) { console.error("Användning: process-batch.mjs <proposals.json> <batchTag>"); process.exit(2); }
@@ -48,7 +47,8 @@ function sqlValue(field, val) {
 }
 
 let sql = `-- ${batchTag} — genererad ${new Date().toISOString()}\nbegin;\n`;
-let report = `\n## Batch ${batchTag}\n`;
+let report = `## Batch ${batchTag}\n`;
+const pushRows = []; // rader att POSTa till qc_import-bryggan (validerade ändringar)
 let nChanged = 0, nUnchanged = 0, nSkipped = 0, nFlagged = 0, nSql = 0;
 
 for (const p of proposals) {
@@ -87,6 +87,13 @@ for (const p of proposals) {
   if (sets.length) {
     sql += `update recipes set ${sets.join(", ")} where id = ${p.id}; -- ${title.replace(/\n/g, " ")}\n`;
     nSql++;
+    // Push-rad till bryggan: bara ändrade fält, time_note-nyckel mappad
+    const row = { id: p.id };
+    for (const [field, val] of Object.entries(p.set)) {
+      if (!COL[field]) continue;
+      row[COL[field]] = val;
+    }
+    pushRows.push(row);
   }
   nChanged++;
   state.recipes[p.id] = { status: "changed", changedFields: Object.keys(p.set), oldScore: v.oldScore, newScore: v.newScore, flags: p.flags || [], warns: v.warns };
@@ -100,9 +107,9 @@ for (const p of proposals) {
 
 sql += "commit;\n";
 
-// Skriv SQL-fil
-const sqlPath = `${ROOT}docs/qc-night/proposals/${batchTag}.sql`;
-writeFileSync(sqlPath, sql, "utf-8");
+// Skriv SQL-fil (backup-väg) + push-fil (primär skrivväg via bryggan)
+writeFileSync(`${ROOT}docs/qc-night/proposals/${batchTag}.sql`, sql, "utf-8");
+writeFileSync(`${ROOT}docs/qc-night/proposals/${batchTag}.push.json`, JSON.stringify(pushRows, null, 2) + "\n", "utf-8");
 
 // Räkna om totals från state (idempotent — säkert att köra om en batch)
 const all = Object.values(state.recipes);
@@ -117,12 +124,9 @@ state.lastBatch = batchTag;
 state.lastUpdate = new Date().toISOString();
 writeFileSync(STATE, JSON.stringify(state, null, 2) + "\n", "utf-8");
 
-// Rapport (skapa header om saknas)
-if (!existsSync(REPORT)) {
-  writeFileSync(REPORT, `# Receptkvalitet nattjobb — rapport 2026-06-07\n\nBaseline: P0=${state.baseline.P0} P1=${state.baseline.P1} P2=${state.baseline.P2}, ${state.baseline.recipes} recept.\nBackup: in-DB \`${state.backupTable}\` + \`${state.backupFile}\`. Revert: säg "revert nattjobbet".\n`, "utf-8");
-}
-appendFileSync(REPORT, report, "utf-8");
+// Per-batch rapportfil (idempotent — skrivs över vid omkörning; slås ihop i slutet)
+writeFileSync(`${ROOT}docs/qc-night/report-${batchTag}.md`, report, "utf-8");
 
 console.log(`Batch ${batchTag}: ändrade=${nChanged} oförändrade=${nUnchanged} skippade=${nSkipped} flaggade=${nFlagged}`);
-console.log(`SQL (${nSql} updates): docs/qc-night/proposals/${batchTag}.sql`);
-if (nSql === 0) console.log("INGEN SQL att köra för denna batch.");
+console.log(`Push (${pushRows.length} rader): docs/qc-night/proposals/${batchTag}.push.json`);
+if (nSql === 0) console.log("INGEN ändring att skriva för denna batch.");
