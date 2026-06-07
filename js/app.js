@@ -16,6 +16,7 @@ import './recipes/recipe-editor.js';
 import './recipes/recipe-import.js';
 import './weekly-plan/plan-generator.js';
 import './weekly-plan/plan-viewer.js';
+import './weekly-plan/plan-viewer-deluxe.js';
 
 async function init() {
   try {
