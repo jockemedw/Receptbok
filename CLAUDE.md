@@ -106,6 +106,12 @@ Inga bekräftade just nu.
 - **"Gör fri dag" (free/unfree)** (Session 71): `api/skip-day.js` omskriven + verifierad via standalone-simulering, men aldrig körd mot live-DB (skulle mutera aktiv plan). Bekräfta på en testplan att free→unfree round-trip bevarar planen.
 
 ### Öppna utredningar
+**Receptkvalitet — uppföljning från nattjobbet (Session 83, se `docs/qc-night/report-2026-06-07.md`):**
+- **Canon-kandidater (kod, EJ tillämpat):** säkra tillägg till `NORMALIZATION_TABLE` höjer pris-matchbarhet — plural-buljongtärningar (`grönsaksbuljongtärningar`→grönsaksbuljong m.fl.), self-canons (`matvete`, `torsk`, `pizzadeg`, `nori`, `citrongräs`), `portobellosvamp`/`baby bella-svamp`→champinjoner. Hölls utanför nattjobbets data-scope; vänta på Joakims OK.
+- **Manuell uppdelning behövs (parentes döljer varor):** #27 `2 dl oliver och hackade soltorkade tomater` (oliver tappas idag), #235 `rödkål (… morötter, salladslök, vinäger …)` (slaw-varor hamnar ej på listan). Kräver mängdbeslut.
+- **Avsiktligt vaga (lämnade):** "för 4 pers"-kolhydrater (#31,#49,#265,#269,#270,#271) + nöt/frö-mixar (#43,#58,#70). Lista i rapporten.
+- **Revert hela jobbet:** in-DB snapshot `recipes_qc_backup_20260607` finns kvar → säg *"revert nattjobbet"*.
+
 **Matchnings-täckning — långsvansen (löpande):** vanliga varor förbättrades över Sessions 78–81, men en full audit av sällan-matchade ingredienser kräver Supabase-nätåtkomst. Öppet bedömningsfall (väntar på Joakim, se `docs/match-hardening-natt-2026-06-05.md`): ska generisk "grädde" tillåtas falla till vispgrädde i sök-fallbacken?
 
 **Willys+ medlemserbjudanden — 3-fas utforskning:**
@@ -120,21 +126,18 @@ Inga bekräftade just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 82 (2026-06-06) — Prestanda: upplevd lagg eliminerad (mätt mot live)
+### Senaste session — Session 83 (2026-06-07) — Nattjobb: receptkvalitet (ingredienser + pedagogik, autonomt)
 
-Mål: appen ska kännas helt lagg-/laddfri vid öppning och scroll. Mätte baslinjen mot live med Playwright under 4× CPU-strypning (≈ mellanklassmobil), åtgärdade, deployade och ommätte.
+Mål: systematiskt gå igenom alla 262 recept och korrigera ingredienslistor + uppenbara logikfel, optimerat för inköpslistegenerering. Kördes oövervakat (schemalagd start 05:05). Spec: `docs/superpowers/specs/2026-06-07-receptkvalitet-nattjobb-design.md`. Slutrapport: `docs/qc-night/report-2026-06-07.md`.
 
-- **Rotorsak:** `renderRecipeBrowser()` byggde alla ~262 receptkort *med fulla dolda detaljer* (ingredienser+instruktioner) upfront → **13 340 DOM-noder**, 4 977 dolda `<li>`. Funktionen tog **~1251 ms** under 4× strypning och körs vid **varje sökbokstav, varje filter och vid laddning** → kändes som total frysning.
-- **Fix 1 — lazy receptdetalj** (`recipe-browser.js` + `recipe-editor.js`): `renderCard` lämnar `.detail-inner` tom; `ensureDetail(card)` bygger den först vid öppning, flaggar `dataset.rendered`. DOM **13 340 → 4 486 noder (−66%)**, render **1251 → 161 ms (−87%)**. Sök matchar fortfarande på `window.RECIPES`-datan (ej DOM) → ingen regression.
-- **Fix 2 — debounce sök** (`app.js`): listan byggs om först 140 ms efter sista tangenttryck. X-knappen uppdateras direkt.
-- **Fix 3 — resurs-hints** (`index.html`): `preconnect` gstatic/supabase/jsdelivr + `modulepreload` av Supabase-ESM → snabbare kallstart.
-- **Fix 4 — scroll-reflow** (`scroll.js`): cacha header-höjd i variabel (ResizeObserver håller den färsk) ist.f. `offsetHeight` per scroll-frame (tvingad layout).
-- **Fix 5 — household-cache** (`supabase-client.js`): `household_id` cachas i localStorage (nyckel `hh:<userId>`) + `getSession` (lokalt) ist.f. `getUser` (nätverk) → tar bort ~590 ms sekventiell runda vid omladdning.
-- **Verifierat live (deploy f65b183):** 262 kort, alla detaljer tomma tills öppning, öppnat kort får rätt ingredienser+steg. Matsedel-tidslinjen lätt (60 dagskort, 354 noder). Tester gröna (match 103, dispatch 88, shopping 81, select 432, data-mapper 27). Cache-bust `app.js?v=89`.
-- **Not:** Playwright bakgrunds-throttlar `requestAnimationFrame` till 1 fps (idle rAF = 1001 ms oavsett DOM) → scroll-FPS går ej att mäta i harnessen; den enda rena mätningen (innan throttling rörts) gav 7 ms/frame, 0 droppade, redan med den *större* DOM:en. Scroll är alltså inte boven; den lättare DOM:en gör den ändå billigare.
+- **Beslut (brainstorm):** konservativ steg-redigering (fixa uppenbart, flagga oklart), alla säkra fält utom `title`/`id`, live-skrivning med full backup + revert-bar rapport.
+- **Arkitektur:** Endast MCP kan skriva till Supabase. Tre roller: *omdöme* (modellen föreslår ändrade fält), *validering* (`scripts/qc-night/validate.mjs` — 5 hårda invarianter mot den riktiga parsern: ingen prissatt ingrediens tappas, audit-icke-regression, sifferbevaring i steg, struktur/enum-skydd), *skrivning* (MCP). Dataväg: anon-läs/skriv-**bryggor** (`qc_export`/`qc_import` + PostgREST med publika anon-nyckeln) → ingen hand-transkribering av prod-data. Backup = in-DB snapshot `recipes_qc_backup_20260607` (primär revert) + JSON i git.
+- **Resultat:** **37 recept ändrade live, 225 rena, 0 skippade, 21 flaggade.** Audit **P1 68→12 (−82%)**, P0 kvar 0; viktad svårighetsgrad −42% (1337→782). Fixmönster: stekolja→"till stekning", garnering→"till servering", `en nypa`→`1 nypa`, citrus skal+saft→`N citron`, mangled "X eller Y"/"/"→canon, rubrikrader-som-ingredienser (#63), "utan ben/skinn"-brus bort, herb-split (#93), ris-mangling (#124 "och kylt vitt"→ris).
+- **Verifierat:** beroendefri testsvit grön (match 103, match-corpus 35, shopping 81, select 432, data-mapper 27). End-to-end `buildShoppingList` på ändrade recept ger rena rader. Bryggor borttagna; bara snapshot-backupen kvar.
+- **Not:** Canon-tabell-tillägg (kod) hölls medvetet utanför (data-scope). P2 sänktes inte (kvar ~660) — domineras av ofarliga "uppdelat"/"på burk"-beskrivningar som redan parsas rätt + äkta namn utan canon. Se canon-kandidatlistan i rapporten + *Öppna utredningar*.
 
 ### Tidigare sessioner
-Session 8–81 i `docs/session-log-archive.md`. Full git-historik: `git log --oneline`.
+Session 8–82 i `docs/session-log-archive.md`. Full git-historik: `git log --oneline`.
 
 ## Kommandon (tester & skript)
 Inga npm-scripts — allt körs direkt med `node` (inga externa deps utom de tester som kräver `node_modules`).
