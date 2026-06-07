@@ -766,7 +766,14 @@
       "status": "pending"
     },
     "186": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 13,
+      "newScore": 3,
+      "flags": [],
+      "warns": []
     },
     "187": {
       "status": "pending"
@@ -787,7 +794,14 @@
       "status": "pending"
     },
     "193": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 14,
+      "newScore": 4,
+      "flags": [],
+      "warns": []
     },
     "194": {
       "status": "pending"
@@ -826,7 +840,14 @@
       "status": "pending"
     },
     "206": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 13,
+      "newScore": 3,
+      "flags": [],
+      "warns": []
     },
     "207": {
       "status": "pending"
@@ -841,7 +862,14 @@
       "status": "pending"
     },
     "211": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 16,
+      "newScore": 5,
+      "flags": [],
+      "warns": []
     },
     "212": {
       "status": "pending"
@@ -898,7 +926,14 @@
       "status": "pending"
     },
     "230": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 14,
+      "newScore": 4,
+      "flags": [],
+      "warns": []
     },
     "231": {
       "status": "pending"
@@ -913,7 +948,11 @@
       "status": "pending"
     },
     "235": {
-      "status": "pending"
+      "status": "unchanged",
+      "flags": [
+        "[13] \"rödkål (strimlad, blandad med strimlade morötter, skivad salladslök, ...)\": parentesen döljer morötter+salladslök+vinäger som idag inte hamnar på inköpslistan. Behöver manuell uppdelning."
+      ],
+      "reason": "slaw döljer extra varor i parentes"
     },
     "236": {
       "status": "pending"
@@ -946,7 +985,14 @@
       "status": "pending"
     },
     "246": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 16,
+      "newScore": 6,
+      "flags": [],
+      "warns": []
     },
     "247": {
       "status": "pending"
@@ -979,10 +1025,24 @@
       "status": "pending"
     },
     "257": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 14,
+      "newScore": 5,
+      "flags": [],
+      "warns": []
     },
     "258": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 15,
+      "newScore": 4,
+      "flags": [],
+      "warns": []
     },
     "259": {
       "status": "pending"
@@ -994,13 +1054,36 @@
       "status": "pending"
     },
     "263": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 33,
+      "newScore": 3,
+      "flags": [],
+      "warns": []
     },
     "264": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 22,
+      "newScore": 3,
+      "flags": [],
+      "warns": []
     },
     "265": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 33,
+      "newScore": 14,
+      "flags": [
+        "[3] \"potatis för 4 pers\": avsiktligt vag mängd — lämnad."
+      ],
+      "warns": []
     },
     "266": {
       "status": "pending"
@@ -1009,25 +1092,54 @@
       "status": "pending"
     },
     "268": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 43,
+      "newScore": 4,
+      "flags": [],
+      "warns": []
     },
     "269": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 42,
+      "newScore": 13,
+      "flags": [
+        "[0] \"ris eller bulgur för 4 pers\": avsiktligt vag mängd — lämnad."
+      ],
+      "warns": []
     },
     "270": {
-      "status": "pending"
+      "status": "unchanged",
+      "flags": [
+        "[5] \"spagetti för 4 pers\": avsiktligt vag mängd — lämnad."
+      ],
+      "reason": "vag huvudmängd"
     },
     "271": {
-      "status": "pending"
+      "status": "changed",
+      "changedFields": [
+        "ingredients"
+      ],
+      "oldScore": 42,
+      "newScore": 13,
+      "flags": [
+        "[0] \"ris eller bulgur för 4 pers\": avsiktligt vag mängd — lämnad."
+      ],
+      "warns": []
     }
   },
   "totals": {
-    "processed": 37,
-    "changed": 23,
-    "unchanged": 14,
+    "processed": 53,
+    "changed": 37,
+    "unchanged": 16,
     "skipped": 0,
-    "flagged": 16
+    "flagged": 21
   },
-  "lastBatch": "batch-03",
-  "lastUpdate": "2026-06-07T06:59:25.578Z"
+  "lastBatch": "batch-04",
+  "lastUpdate": "2026-06-07T07:03:35.705Z"
 }

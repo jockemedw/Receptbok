@@ -1,0 +1,172 @@
+[
+  { "id": 186,
+    "set": { "ingredients": [
+      "sötpotatis, tärnad i 2,5 cm bitar (450 g)","olivolja (0,6 dl + 1 msk), uppdelat","salt (1/2 tsk), uppdelat",
+      "svartpeppar (1/2 tsk), uppdelat","gröna linser, sköljda (1,8 dl)","koriander, fint hackad (3 msk)",
+      "persilja, fint hackad (3 msk)","pistaschnötter, fint hackade (2 msk)","1 lime, skal och saft",
+      "malen spiskummin (1/2 tsk)","tahini (1,5 msk)"
+    ] },
+    "changes": ["[8] \"limeskal och limejuice (2 msk juice totalt)\" → \"1 lime, skal och saft\" (1 lime är inköpsvaran; tar bort C3)"] },
+
+  { "id": 193,
+    "set": { "ingredients": [
+      "spagettipumpa (1 st, ca 1,2–1,4 kg)","matolja på spray (efter behov)","salt (1 tsk, uppdelat)",
+      "vitlöksklyfta (5 st, varav 2 rivna och 3 pressade)","extra virgin olivolja (4 msk, uppdelat)",
+      "stora råa räkor, skalade och rensade (450 g)","schalottenlök, fint hackad (1,2 dl)",
+      "chilipulver (0,5–1 tsk, 0,5 tsk för mild hetta; 1 tsk för medelhetta)",
+      "torrt vitt vin (0,8 dl, alternativt 5 msk grönsaksbuljong blandat med 1 msk vit vinäger)",
+      "½ citron, pressad saft","osaltat smör (3 msk)","färsk persilja, fint hackad (3 msk, uppdelat)",
+      "nymalen svartpeppar (efter smak)"
+    ] },
+    "changes": ["[9] \"pressad saft från en halv citron\" → \"½ citron, pressad saft\" (½ = angiven mängd; tar bort P1)"] },
+
+  { "id": 206,
+    "set": { "ingredients": [
+      "rödlök, tunt skivad (1/2)","äppelcidervinäger (1,2 dl)","valfritt sötningsmedel – strösocker, honung eller lönnsirap (1 msk)",
+      "salt (1 tsk)","quinoa, torr (1,8 dl)","grönsaksbuljong (3,6 dl)","olivolja (1 msk)",
+      "kikärtor, sköljda, avrunnna och torkade (1 burk à 425 g)","rökt paprikapulver (0,5 tsk)","vitlökspulver (0,25 tsk)",
+      "BBQ-sås (0,6 dl)","tinad ugnsrostad majs, värmad (1,8 dl)","avokado, tärnad (1 st)","riven skarp vit cheddar (1,2 dl)",
+      "grekisk yoghurt 2% (1,8 dl)","majonnäs (2 msk)","färskpressad citronsaft (1,5 tsk)","fint hackad färsk gräslök (1 msk)",
+      "torkad dill – eller 2 tsk färsk (0,5 tsk)","vitlökspulver (0,5 tsk)","lökpulver (0,25 tsk)","salt och svartpeppar (0,25 tsk vardera)"
+    ] },
+    "changes": ["[11] \"fryst/tinad ugnsrostad majs ...\" → \"tinad ugnsrostad majs ...\" (tar bort C3 \"/\"; canon majs)"] },
+
+  { "id": 211,
+    "set": { "ingredients": [
+      "fullkornsnudlar (340 g, torra; eller vanliga äggsnudlar)","olivolja (2 msk)","baby bella-svamp (225 g, tunt skivad)",
+      "gul lök (3,6 dl, fint hackad)","vitlöksklyfta (3, pressad)","färska timjanblad (1 msk, plus extra till garnering)",
+      "osaltat smör (2 msk)","vetemjöl (3 msk)","grönsaksbuljong (4,8 dl)","helmjölk (4,8 dl; eller osötad cashewmjölk)",
+      "dijonsenap (2 tsk)","salt (1 tsk)","svartpeppar (0,5 tsk)","sellerifrön (0,25 tsk)","riven vit cheddar (2,4 dl, uppdelat)",
+      "1 citron, skal och saft","tonfisk i vatten (3 burkar à 115 g, avrunnen)","frysta gröna ärtor (2,4 dl, delvis tinade)",
+      "ströbröd, panko (1,2 dl)"
+    ] },
+    "renames": { "grönsaksbuljongen": "grönsaksbuljong" },
+    "changes": [
+      "[8] \"grönsaksbuljongen (4,8 dl)\" → \"grönsaksbuljong (4,8 dl)\" (bestämd form → canon)",
+      "[15] \"citronskal och saft (1 citron)\" → \"1 citron, skal och saft\" (tar bort C3)"
+    ] },
+
+  { "id": 230,
+    "set": { "ingredients": [
+      "Yukon Gold- eller röda potatisar, små till medelstora, halverade eller delade i fjärdedelar beroende på storlek (450 g)",
+      "laxfilé med skinn (4 st à 170 g)","olivolja, uppdelat (3 msk)","chilipulver (1 tsk)","vitlökspulver (1 tsk)",
+      "salt, uppdelat (1,25 tsk)","svartpeppar, uppdelat (0,5 tsk)","haricots verts, trimmade (225 g)","1 citron, rivet skal",
+      "gräddfil eller majonnäs (0,6 dl)","färsk citronsaft (1–2 msk)","fint hackad färsk persilja, plus mer till garnering (1 msk)",
+      "dijonsenap (2 tsk)","pressad vitlök (1 tsk), alternativt 0,5 tsk vitlökspulver","salt och svartpeppar efter smak"
+    ] },
+    "changes": ["[8] \"rivet citronskal från 1 citron\" → \"1 citron, rivet skal\" (1 citron = angiven mängd; tar bort P1)"] },
+
+  { "id": 235, "skip": true, "reason": "slaw döljer extra varor i parentes",
+    "flags": ["[13] \"rödkål (strimlad, blandad med strimlade morötter, skivad salladslök, ...)\": parentesen döljer morötter+salladslök+vinäger som idag inte hamnar på inköpslistan. Behöver manuell uppdelning."] },
+
+  { "id": 246,
+    "set": { "ingredients": [
+      "olivolja (3 msk)","cremini-svamp, tunt skivad (225 g)","gul lök, fint hackad (1 medelstor)","tomatpuré (0,6 dl)",
+      "vitlöksklyfta, pressad (4)","chilipulver (1 nypa)","nyriven muskotnöt (0,25 tsk)","vodka (1,2 dl)",
+      "pumpapuré på burk (2,4 dl)","kokosmjölk (full fetthalt) eller vispgrädde (36%, 1,8 dl)","salt (1 tsk, uppdelat)",
+      "torr rigatoni (450 g)","lacinato-grönkål, stjälkar borttagna och grovhackad (1 knippe, alternativt 4 dl färsk babyspenat)",
+      "färska timjanblad (1–2 msk)","riven parmesan, valfritt (till servering)"
+    ] },
+    "changes": ["[5] \"chilipulver (en nypa)\" → \"chilipulver (1 nypa)\" (nypa = mängd; tar bort P1)"] },
+
+  { "id": 257,
+    "set": { "ingredients": [
+      "citron (3, uppdelat)","majonnäs (1,2 dl, gärna avokadoolja-majonnäs)","inlagda gurkor, finhackade (3 msk)",
+      "kapris, finhackad (1 msk)","Old Bay-krydda (1 tsk)","het sås (t.ex. Tabasco), efter smak",
+      "regnbågsöring eller laxfilé med skinn (4 x 170 g)","salt (3/4 tsk)","svartpeppar, grovmalen (1/2 tsk)",
+      "olivolja, extra virgin (3 msk, uppdelat)","färsk persilja och färsk dill till garnering (valfritt)"
+    ] },
+    "changes": ["[5] \"stänk av het sås (t.ex. Tabasco)\" → \"het sås (t.ex. Tabasco), efter smak\" (tar bort P1)"] },
+
+  { "id": 258,
+    "set": { "ingredients": [
+      "skalade tomater (800 g)","olivolja (0,6 dl)","vitlöksklyfta, tunt skivad (4–6)","ansjovisfilé (4)",
+      "chilipulver (1 nypa)","tomatpuré (2 msk)","kalamataoliver, grovhackade (1,2 dl)","kapris, avrunnen (1 msk)",
+      "salt (0,5 tsk)","basilikakvistar (2)","ditalini eller annan kortpasta, torr (3,6 dl)",
+      "kikärtor, avrunna och sköljda (425 g)","svartpeppar, nymald (efter smak)"
+    ] },
+    "renames": { "hela skalade san marzano-tomater på burk": "tomat" },
+    "changes": [
+      "[0] \"hela skalade San Marzano-tomater på burk (800 g)\" → \"skalade tomater (800 g)\" (tar bort C4-brus; canon tomat)",
+      "[4] \"chilipulver (en nypa)\" → \"chilipulver (1 nypa)\" (tar bort P1)"
+    ] },
+
+  { "id": 263,
+    "set": { "ingredients": [
+      "2 vitlöksklyftor","olivolja, till stekning","800 g passerade tomater","2 grönsaksbuljongtärningar","2-3 dl vatten",
+      "150 g torkad tortellini","0,5 dl grädde eller crème fraiche","basilika (eller oregano), efter smak","1 nypa socker",
+      "Salt","Peppar","Parmesanost eller annan god riven ost (för servering)","Färska örter, t.ex. oregano (för servering)"
+    ] },
+    "changes": [
+      "[1] \"Olivolja\" → \"olivolja, till stekning\"",
+      "[7] \"Basilika eller oregano (torkad eller färsk)\" → \"basilika (eller oregano), efter smak\" (tar bort P1 C2+C3)",
+      "[8] \"En nypa socker\" → \"1 nypa socker\" (tar bort P1)"
+    ] },
+
+  { "id": 264,
+    "set": { "ingredients": [
+      "1 dl crème fraiche","2 tsk dijonsenap","1 äpple, gärna syrligt","8 skivor bröd, gärna fullkornsbröd",
+      "4–8 skivor rökt kalkon alternativt rökt tofu, hyvlad i tunna skivor","1 tsk timjan","8 skivor ost",
+      "fett till våffeljärnet","plockgrönsaker, till servering","mjölk, till servering"
+    ] },
+    "changes": [
+      "[8] \"plockgrönsaker (tillbehör)\" → \"plockgrönsaker, till servering\"",
+      "[9] \"mjölk (tillbehör)\" → \"mjölk, till servering\""
+    ] },
+
+  { "id": 265,
+    "set": { "ingredients": [
+      "400 g torskfilé eller annan vit fisk, gärna miljömärkt","0,75 tsk salt","1 tsk socker","potatis för 4 pers","4 ägg",
+      "1 msk olivolja","grönsaker (t ex tomater och gröna ärtor), till servering","färsk persilja (gärna krusbladig), till servering",
+      "2 msk fett, t ex raps- och smörblandning (till såsen)","2 msk vetemjöl (till såsen)","4 dl mjölk (till såsen)",
+      "1 msk fiskfond (till såsen)","vitpeppar (till såsen)","ev lite rivet citronskal (till såsen)",
+      "1–2 msk grädde eller crème fraiche (till såsen)"
+    ] },
+    "changes": [
+      "[6] \"grönsaker, t ex ...\" → \"... , till servering\" (tar bort P1)",
+      "[7] \"färsk persilja, gärna krusbladig\" → \"... , till servering\" (tar bort P1)"
+    ],
+    "flags": ["[3] \"potatis för 4 pers\": avsiktligt vag mängd — lämnad."] },
+
+  { "id": 268,
+    "set": { "ingredients": [
+      "700 g grönsaker, t ex 7 dl strimlad grönkål/vitkål/spetskål, 2 morötter, 1 paprika, 1 kålrabbi och några färska champinjoner",
+      "3 vitlöksklyftor","300 g fast tofu, vegobitar, kyckling, biff eller ägg","rapsolja att woka i","ca 0,75 dl ostronsås",
+      "250 g nudlar, t ex ägg- eller risnudlar","ca 1 msk japansk sojasås","hackade nötter (t ex cashew/jordnötter), till servering",
+      "salladslök, till servering","thaibasilika (eller färsk koriander), till servering","1 limefrukt i klyftor","srirachasås, valfritt"
+    ] },
+    "changes": [
+      "[7] hackade nötter → \"...till servering\"","[8] salladslök → \"...till servering\"",
+      "[9] \"thaibasilika eller färsk koriander\" → \"thaibasilika (eller färsk koriander), till servering\"",
+      "[11] \"något starkt att ringla över ..., t ex srirachasås\" → \"srirachasås, valfritt\" (tar bort P1+brus)"
+    ] },
+
+  { "id": 269,
+    "set": { "ingredients": [
+      "ris eller bulgur för 4 pers","300 g kyckling, tofu, vegobitar eller blomkålsbuketter","1 msk japansk sojasås",
+      "2 tsk limejuice","1 lök","2 vitlöksklyftor","1 msk curry","rapsolja att steka i","3 medelstora palsternackor (ca 200 g)",
+      "1 msk gurkmeja","5 dl vatten","1 grönsaksbuljongtärning","1 dl grädde av något slag","1 dl cashewnötter","100 g haricot verts",
+      "1 tsk japansk sojasås","kokosflingor (gärna rostade i torr panna), till servering","grönsaker (t ex tomater och kikärtor), till servering",
+      "färsk koriander, till servering"
+    ] },
+    "changes": [
+      "[16] kokosflingor → \"...till servering\"","[17] grönsaker → \"...till servering\"","[18] färsk koriander → \"...till servering\""
+    ],
+    "flags": ["[0] \"ris eller bulgur för 4 pers\": avsiktligt vag mängd — lämnad."] },
+
+  { "id": 270, "skip": true, "reason": "vag huvudmängd",
+    "flags": ["[5] \"spagetti för 4 pers\": avsiktligt vag mängd — lämnad."] },
+
+  { "id": 271,
+    "set": { "ingredients": [
+      "ris eller bulgur för 4 pers","1 liten gul lök","3 vitlöksklyftor","1 bit färsk ingefära motsvarande 3 msk hackad",
+      "rapsolja att steka i","1 påse tikka-masala kryddblandning (eller egen kryddblandning, se tips nedan)","1 morot (ca 70 g)",
+      "400 g krossade tomater","4 dl kokosmjölk","2 msk tomatpuré","salt efter smak",
+      "400 g av något att fylla basen med (t.ex. tärnad tofu, paneer, kikärtor, vegetariska grytbitar eller strimlad kyckling)",
+      "färsk koriander, till servering","mangotärningar (tinade frysta är enklast), till servering","hackade jordnötter, till servering"
+    ] },
+    "changes": [
+      "[12] färsk koriander → \"...till servering\"","[13] mangotärningar → \"...till servering\"","[14] hackade jordnötter → \"...till servering\""
+    ],
+    "flags": ["[0] \"ris eller bulgur för 4 pers\": avsiktligt vag mängd — lämnad."] }
+]
