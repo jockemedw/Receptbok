@@ -351,11 +351,17 @@ function renderDayCard(d) {
   // Helg → dovare kort-bakgrund. Klassen injiceras på ett ställe så att alla
   // korttyper täcks utan att röra varje mall. Suppr. på "idag" (rust-ramen räcker).
   if (d.isWeekend && !d.isToday) html = html.replace('class="dlx-day', 'class="dlx-day is-weekend');
-  // Helgdag → högerställd chip strax före chevronen, så markeringen aldrig
-  // knuffar "+ Planera dagen"/innehållet i den trånga datumkolumnen.
-  if (d.holiday && html.includes('dlx-day-chev')) {
+  // Helgdag (midsommar m.fl.) → chip-markering, så den aldrig trängs in i den
+  // smala datumkolumnen. På gap-/fri-dag-kort ligger den till vänster i main och
+  // åtgärden ("+ Planera dagen"/"Fri dag") högerställs (CSS) — på övriga kort
+  // (recept/egen planering) ligger chippen strax före chevronen.
+  if (d.holiday) {
     const chip = `<span class="dlx-day-holiday">${esc(d.holiday)}</span>`;
-    html = html.replace('<span class="dlx-day-chev"', `${chip}<span class="dlx-day-chev"`);
+    if (!d.isCustom && !d.recipeId) {
+      html = html.replace('<div class="dlx-day-main">', `<div class="dlx-day-main">${chip}`);
+    } else if (html.includes('dlx-day-chev')) {
+      html = html.replace('<span class="dlx-day-chev"', `${chip}<span class="dlx-day-chev"`);
+    }
   }
   return html;
 }

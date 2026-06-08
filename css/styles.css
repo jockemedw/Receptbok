@@ -3988,8 +3988,8 @@ body.week-deluxe .week-meta { display: none; }
   width: fit-content;
 }
 .dlx-day-flag.today { background: var(--rust); color: #fff; }
-/* Helgdags-chip (midsommar m.fl.) — högerställd vid chevronen, krymper inte och
-   bryter inte rad, så den aldrig flyttar dagens innehåll. */
+/* Helgdags-chip (midsommar m.fl.) — kompakt pill som inte krymper eller bryter rad,
+   så den aldrig flyttar dagens innehåll. */
 .dlx-day-holiday {
   flex: 0 0 auto;
   align-self: center;
@@ -4003,6 +4003,12 @@ body.week-deluxe .week-meta { display: none; }
   color: var(--rust-deep);
   white-space: nowrap;
 }
+/* Gap-/fri-dag-kort: åtgärden ("+ Planera dagen"/"Fri dag") högerställs vid
+   chevronen; ev. helgdags-chip ligger kvar till vänster i main. */
+.dlx-day.gap .dlx-day-main,
+.dlx-day.free .dlx-day-main { display: flex; align-items: center; gap: 0.6rem; }
+.dlx-day.gap .dlx-day-note,
+.dlx-day.free .dlx-day-note { margin-left: auto; }
 
 .dlx-day-main { flex: 1 1 auto; min-width: 0; }
 .dlx-day-tag {
