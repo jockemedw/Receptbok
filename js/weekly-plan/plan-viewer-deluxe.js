@@ -182,7 +182,8 @@ function dayBadges(d) {
   const out = [];
   if (d.isToday) out.push('<span class="dlx-day-flag today">Idag</span>');
   if (d.holiday) out.push(`<span class="dlx-day-flag holiday">${esc(d.holiday)}</span>`);
-  if (d.isWeekend && !d.isToday) out.push('<span class="dlx-day-flag weekend">Helg</span>');
+  // Helg markeras inte längre med en pill här — den visas som en diskret prick på
+  // färgryggen (.dlx-day.is-weekend), så att helgkort inte blir högre än vardagskort.
   return out.join('');
 }
 
@@ -345,10 +346,27 @@ function renderDayCard(d) {
     active: d.planId === 'active',
     cls: (d.isToday ? ' is-today' : '') + (d.isPast ? ' is-past' : '') + (d.isArchive ? ' is-archive' : ''),
   };
-  if (d.recipeId && !d.isCustom) return recipeDayCard(d, opts);
-  if (d.isCustom && d.customRecipeId) return emptyDayCard(d);
-  if (d.recipeId && d.isCustom) return emptyDayCard(d);
-  return emptyDayCard(d);
+  const html = (d.recipeId && !d.isCustom) ? recipeDayCard(d, opts) : emptyDayCard(d);
+  // Helg-prick på färgryggen — injiceras på själva kortet (ej i flödet) så att
+  // alla kort behåller samma höjd. Suppr. på "idag" (egen rust-ram räcker).
+  if (d.isWeekend && !d.isToday) return html.replace('class="dlx-day', 'class="dlx-day is-weekend');
+  return html;
+}
+
+// Renderar en lista dagskort med en tunn "Vecka N"-avdelare där ISO-veckan byter.
+// Ingen avdelare före första kortet — hero-rutan visar redan startveckan.
+function renderDayList(days) {
+  let html = '';
+  let lastWeek = null;
+  for (const d of days) {
+    const wk = isoWeekNumber(d.date);
+    if (lastWeek !== null && wk !== lastWeek) {
+      html += `<div class="dlx-week-sep"><span>Vecka ${wk}</span></div>`;
+    }
+    lastWeek = wk;
+    html += renderDayCard(d);
+  }
+  return html;
 }
 
 // ── Huvudrendering ────────────────────────────────────────────────────────────
@@ -371,7 +389,7 @@ export function renderDeluxe() {
   const hero = buildHero(plan, pending);
 
   const upcomingHtml = upcoming.length
-    ? upcoming.map(renderDayCard).join('')
+    ? renderDayList(upcoming)
     : `<div class="dlx-empty-future">Inga kommande dagar planerade ännu.</div>`;
 
   let historyHtml = '';
@@ -382,7 +400,7 @@ export function renderDeluxe() {
         <span>${open ? 'Dölj historik' : `Visa historik (${history.length})`}</span>
         <span class="dlx-history-chev">›</span>
       </button>
-      <div class="dlx-history${open ? ' open' : ''}">${open ? history.map(renderDayCard).join('') : ''}</div>`;
+      <div class="dlx-history${open ? ' open' : ''}">${open ? renderDayList(history) : ''}</div>`;
   }
 
   host.innerHTML = `${hero}${historyHtml}<div class="dlx-days">${upcomingHtml}</div>`;

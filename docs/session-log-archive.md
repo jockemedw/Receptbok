@@ -1,8 +1,18 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–83. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–84. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
 
 ---
+
+## Session 84 (2026-06-08) — Premiumvy för matsedeln (alternativ high-end vy)
+
+Mål: bygga en helt alternativ vy/utformning av fliken Matsedeln som hanterar alla befintliga funktioner — imponerande, välfungerande, snygg och praktisk. Startad autonomt (användaren sov).
+
+- **Beslut:** additiv parallellvy, inte ersättning. Klassiska vyn + all plandata orörd (hård regel). Segmenterad växel **Premium/Klassisk** (presentationspreferens i `localStorage`), Premium som default.
+- **Arkitektur:** ny VSA-modul `js/weekly-plan/plan-viewer-deluxe.js` (självinjicerande: lägger till växel + `#weekDeluxe`-container i `#weekContent`). Läser samma data (`window._timelineByDate`, `_lastPlan`, `RECIPES`) och **wrappar `renderWeeklyPlanData`** så båda vyerna alltid hålls i synk. Åtgärder återanvänder befintliga endpoints (`/api/replace-recipe`, `/api/swap-days`, `/api/skip-day`) + window-funktioner (`enterReplaceMode`, `openCustomDay`, `openBlockedDay`, `openSavingPopover`, confirm/discard).
+- **UI:** mörkgrön hero med veckosammanfattning (måltider, vegdagar, sparat, proteinbalansmätare) + vertikala redaktionella dagskort (protein-färgrygg, inline-expansion av ingredienser/steg/noteringar) + egna swap-läge, hopfällbar historik, egen planering, fria/tomma dagar. CSS i `css/styles.css` (block "PREMIUMVY"). Versioner bumpade: `styles.css?v=93`, `app.js?v=90`.
+- **Verifierat:** `node --check` ren, hela beroendefria testsviten grön (match 103, corpus 35, shopping 81, select 432, data-mapper 27). PR #69 → **mergad till main** (fast-forward `943c0fd`) på användarens begäran (preview-URL nåddes inte pga Vercels förhandsvisningsskydd → testas på produktionsadressen istället).
+- **Kvar:** live-verifiering på mobil mot produktion (se *Väntar på live-verifiering*).
 
 ## Session 83 (2026-06-07) — Nattjobb: receptkvalitet (ingredienser + pedagogik, autonomt)
 

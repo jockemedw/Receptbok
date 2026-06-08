@@ -104,7 +104,7 @@ Inga bekräftade just nu.
 ### Väntar på live-verifiering (kod klar, ej körd skarpt)
 - **Lösvikts-enum vid Willys-export** (PR #65): `pickUnitForCode()` skickar `"kilograms"` för `_KG`-koder (lös färskvara, t.ex. potatis). Enum-värdet är *inferred* — bara `"pieces"` är PoC-bekräftat. Bekräfta i en skarp körning att lös potatis landar i korgen.
 - **"Gör fri dag" (free/unfree)** (Session 71): `api/skip-day.js` omskriven + verifierad via standalone-simulering, men aldrig körd mot live-DB (skulle mutera aktiv plan). Bekräfta på en testplan att free→unfree round-trip bevarar planen.
-- **Premiumvy för matsedeln** (Session 84, PR #69, mergad): kod klar + testsvit grön, men inte verifierad på mobil mot produktion. Bekräfta att Premium-vyn renderar, att alla åtgärder fungerar (slumpa/välj/byt dag/fri dag/besparing/egen planering) och att växeln Premium↔Klassisk håller båda vyerna i synk. Default är Premium — flippa till Klassisk om något strular.
+- **Premiumvy för matsedeln** (Session 84, PR #69, mergad; justerad Session 85, PR #70): kod klar + testsvit grön, men inte verifierad på mobil mot produktion. Bekräfta att Premium-vyn renderar, att alla åtgärder fungerar (slumpa/välj/byt dag/fri dag/besparing/egen planering) och att växeln Premium↔Klassisk håller båda vyerna i synk. Default är Premium — flippa till Klassisk om något strular. **Session 85-tillägg att kolla:** (1) helg visas nu som en diskret prick på dagkortets färgrygg (ej textpill) → bekräfta att helgkort är lika höga som vardagskort; (2) "Vecka N"-avdelare dyker upp i listan där ISO-veckan byter (syns bara på planer som spänner två veckor).
 
 ### Öppna utredningar
 **Receptkvalitet — uppföljning från nattjobbet (Session 83, se `docs/qc-night/report-2026-06-07.md`):**
@@ -127,14 +127,14 @@ Inga bekräftade just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 84 (2026-06-08) — Premiumvy för matsedeln (alternativ high-end vy)
+### Senaste session — Session 85 (2026-06-08) — Premiumvyns dagkort: jämn höjd + veckonummer
 
-Mål: bygga en helt alternativ vy/utformning av fliken Matsedeln som hanterar alla befintliga funktioner — imponerande, välfungerande, snygg och praktisk. Startad autonomt (användaren sov).
+Mål (användarbegäran): justera "Helg"-indikatorns läge i dagkorten — den gjorde att helgkort blev högre än vardagskort — och lägga till veckonummer i listan.
 
-- **Beslut:** additiv parallellvy, inte ersättning. Klassiska vyn + all plandata orörd (hård regel). Segmenterad växel **Premium/Klassisk** (presentationspreferens i `localStorage`), Premium som default.
-- **Arkitektur:** ny VSA-modul `js/weekly-plan/plan-viewer-deluxe.js` (självinjicerande: lägger till växel + `#weekDeluxe`-container i `#weekContent`). Läser samma data (`window._timelineByDate`, `_lastPlan`, `RECIPES`) och **wrappar `renderWeeklyPlanData`** så båda vyerna alltid hålls i synk. Åtgärder återanvänder befintliga endpoints (`/api/replace-recipe`, `/api/swap-days`, `/api/skip-day`) + window-funktioner (`enterReplaceMode`, `openCustomDay`, `openBlockedDay`, `openSavingPopover`, confirm/discard).
-- **UI:** mörkgrön hero med veckosammanfattning (måltider, vegdagar, sparat, proteinbalansmätare) + vertikala redaktionella dagskort (protein-färgrygg, inline-expansion av ingredienser/steg/noteringar) + egna swap-läge, hopfällbar historik, egen planering, fria/tomma dagar. CSS i `css/styles.css` (block "PREMIUMVY"). Versioner bumpade: `styles.css?v=93`, `app.js?v=90`.
-- **Verifierat:** `node --check` ren, hela beroendefria testsviten grön (match 103, corpus 35, shopping 81, select 432, data-mapper 27). PR #69 → **mergad till main** (fast-forward `943c0fd`) på användarens begäran (preview-URL nåddes inte pga Vercels förhandsvisningsskydd → testas på produktionsadressen istället).
+- **Helg → diskret prick på färgryggen:** textpillen "Helg" togs bort ur `dayBadges()` (låg staplad i vänsterkolumnen → varierande korthöjd). Helg markeras nu som en liten prick (`var(--lichen-deep)` + halo) på dagkortets färgrygg via `.dlx-day.is-weekend .dlx-rail::after`. Klassen injiceras på ett ställe i `renderDayCard()` (`html.replace('class="dlx-day', …)`) så alla 5 korttyper (recept/custom/fri/gap) täcks utan att röra varje mall. Suppr. på "idag" (rust-ramen räcker). Markören ligger utanför flödet → alla kort lika höga.
+- **Veckoavdelare:** ny `renderDayList()` interfolierar en tunn `<div class="dlx-week-sep">Vecka N</div>` där ISO-veckan byter (ingen avdelare före första kortet — hero visar redan startveckan). Används för både kommande och historik. CSS: centrerad etikett med linjer på båda sidor (`var(--moss-muted)`/`var(--birch-soft)`). Hero-rutan visar fortsatt "Vecka X" / "Vecka X–Y".
+- **Beslut bekräftade med användaren:** prick-på-rygg (ej hörnmärke/inline) + avdelare-i-listan (ej per-kort).
+- **Verifierat:** `node --check` ren på modul + `app.js`. Hela beroendefria testsviten grön (match 103, corpus 35, shopping 81, select 432, data-mapper 27). Versioner bumpade: `styles.css?v=94`, `app.js?v=92`. Klassiska vyn + all plandata orörd.
 - **Kvar:** live-verifiering på mobil mot produktion (se *Väntar på live-verifiering*).
 
 ### Tidigare sessioner
