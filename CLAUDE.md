@@ -104,6 +104,7 @@ Inga bekräftade just nu.
 ### Väntar på live-verifiering (kod klar, ej körd skarpt)
 - **Lösvikts-enum vid Willys-export** (PR #65): `pickUnitForCode()` skickar `"kilograms"` för `_KG`-koder (lös färskvara, t.ex. potatis). Enum-värdet är *inferred* — bara `"pieces"` är PoC-bekräftat. Bekräfta i en skarp körning att lös potatis landar i korgen.
 - **"Gör fri dag" (free/unfree)** (Session 71): `api/skip-day.js` omskriven + verifierad via standalone-simulering, men aldrig körd mot live-DB (skulle mutera aktiv plan). Bekräfta på en testplan att free→unfree round-trip bevarar planen.
+- **Premiumvy för matsedeln** (Session 84, PR #69, mergad): kod klar + testsvit grön, men inte verifierad på mobil mot produktion. Bekräfta att Premium-vyn renderar, att alla åtgärder fungerar (slumpa/välj/byt dag/fri dag/besparing/egen planering) och att växeln Premium↔Klassisk håller båda vyerna i synk. Default är Premium — flippa till Klassisk om något strular.
 
 ### Öppna utredningar
 **Receptkvalitet — uppföljning från nattjobbet (Session 83, se `docs/qc-night/report-2026-06-07.md`):**
@@ -126,15 +127,15 @@ Inga bekräftade just nu.
 - Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 
-### Senaste session — Session 83 (2026-06-07) — Nattjobb: receptkvalitet (ingredienser + pedagogik, autonomt)
+### Senaste session — Session 84 (2026-06-08) — Premiumvy för matsedeln (alternativ high-end vy)
 
-Mål: systematiskt gå igenom alla 262 recept och korrigera ingredienslistor + uppenbara logikfel, optimerat för inköpslistegenerering. Kördes oövervakat (schemalagd start 05:05). Spec: `docs/superpowers/specs/2026-06-07-receptkvalitet-nattjobb-design.md`. Slutrapport: `docs/qc-night/report-2026-06-07.md`.
+Mål: bygga en helt alternativ vy/utformning av fliken Matsedeln som hanterar alla befintliga funktioner — imponerande, välfungerande, snygg och praktisk. Startad autonomt (användaren sov).
 
-- **Beslut (brainstorm):** konservativ steg-redigering (fixa uppenbart, flagga oklart), alla säkra fält utom `title`/`id`, live-skrivning med full backup + revert-bar rapport.
-- **Arkitektur:** Endast MCP kan skriva till Supabase. Tre roller: *omdöme* (modellen föreslår ändrade fält), *validering* (`scripts/qc-night/validate.mjs` — 5 hårda invarianter mot den riktiga parsern: ingen prissatt ingrediens tappas, audit-icke-regression, sifferbevaring i steg, struktur/enum-skydd), *skrivning* (MCP). Dataväg: anon-läs/skriv-**bryggor** (`qc_export`/`qc_import` + PostgREST med publika anon-nyckeln) → ingen hand-transkribering av prod-data. Backup = in-DB snapshot `recipes_qc_backup_20260607` (primär revert) + JSON i git.
-- **Resultat:** **37 recept ändrade live, 225 rena, 0 skippade, 21 flaggade.** Audit **P1 68→12 (−82%)**, P0 kvar 0; viktad svårighetsgrad −42% (1337→782). Fixmönster: stekolja→"till stekning", garnering→"till servering", `en nypa`→`1 nypa`, citrus skal+saft→`N citron`, mangled "X eller Y"/"/"→canon, rubrikrader-som-ingredienser (#63), "utan ben/skinn"-brus bort, herb-split (#93), ris-mangling (#124 "och kylt vitt"→ris).
-- **Verifierat:** beroendefri testsvit grön (match 103, match-corpus 35, shopping 81, select 432, data-mapper 27). End-to-end `buildShoppingList` på ändrade recept ger rena rader. Bryggor borttagna; bara snapshot-backupen kvar.
-- **Not:** Canon-tabell-tillägg (kod) hölls medvetet utanför (data-scope). P2 sänktes inte (kvar ~660) — domineras av ofarliga "uppdelat"/"på burk"-beskrivningar som redan parsas rätt + äkta namn utan canon. Se canon-kandidatlistan i rapporten + *Öppna utredningar*.
+- **Beslut:** additiv parallellvy, inte ersättning. Klassiska vyn + all plandata orörd (hård regel). Segmenterad växel **Premium/Klassisk** (presentationspreferens i `localStorage`), Premium som default.
+- **Arkitektur:** ny VSA-modul `js/weekly-plan/plan-viewer-deluxe.js` (självinjicerande: lägger till växel + `#weekDeluxe`-container i `#weekContent`). Läser samma data (`window._timelineByDate`, `_lastPlan`, `RECIPES`) och **wrappar `renderWeeklyPlanData`** så båda vyerna alltid hålls i synk. Åtgärder återanvänder befintliga endpoints (`/api/replace-recipe`, `/api/swap-days`, `/api/skip-day`) + window-funktioner (`enterReplaceMode`, `openCustomDay`, `openBlockedDay`, `openSavingPopover`, confirm/discard).
+- **UI:** mörkgrön hero med veckosammanfattning (måltider, vegdagar, sparat, proteinbalansmätare) + vertikala redaktionella dagskort (protein-färgrygg, inline-expansion av ingredienser/steg/noteringar) + egna swap-läge, hopfällbar historik, egen planering, fria/tomma dagar. CSS i `css/styles.css` (block "PREMIUMVY"). Versioner bumpade: `styles.css?v=93`, `app.js?v=90`.
+- **Verifierat:** `node --check` ren, hela beroendefria testsviten grön (match 103, corpus 35, shopping 81, select 432, data-mapper 27). PR #69 → **mergad till main** (fast-forward `943c0fd`) på användarens begäran (preview-URL nåddes inte pga Vercels förhandsvisningsskydd → testas på produktionsadressen istället).
+- **Kvar:** live-verifiering på mobil mot produktion (se *Väntar på live-verifiering*).
 
 ### Tidigare sessioner
 Session 8–82 i `docs/session-log-archive.md`. Full git-historik: `git log --oneline`.

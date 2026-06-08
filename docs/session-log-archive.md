@@ -1,8 +1,18 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–82. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–83. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
 
 ---
+
+## Session 83 (2026-06-07) — Nattjobb: receptkvalitet (ingredienser + pedagogik, autonomt)
+
+Mål: systematiskt gå igenom alla 262 recept och korrigera ingredienslistor + uppenbara logikfel, optimerat för inköpslistegenerering. Kördes oövervakat (schemalagd start 05:05). Spec: `docs/superpowers/specs/2026-06-07-receptkvalitet-nattjobb-design.md`. Slutrapport: `docs/qc-night/report-2026-06-07.md`.
+
+- **Beslut (brainstorm):** konservativ steg-redigering (fixa uppenbart, flagga oklart), alla säkra fält utom `title`/`id`, live-skrivning med full backup + revert-bar rapport.
+- **Arkitektur:** Endast MCP kan skriva till Supabase. Tre roller: *omdöme* (modellen föreslår ändrade fält), *validering* (`scripts/qc-night/validate.mjs` — 5 hårda invarianter mot den riktiga parsern: ingen prissatt ingrediens tappas, audit-icke-regression, sifferbevaring i steg, struktur/enum-skydd), *skrivning* (MCP). Dataväg: anon-läs/skriv-**bryggor** (`qc_export`/`qc_import` + PostgREST med publika anon-nyckeln) → ingen hand-transkribering av prod-data. Backup = in-DB snapshot `recipes_qc_backup_20260607` (primär revert) + JSON i git.
+- **Resultat:** **37 recept ändrade live, 225 rena, 0 skippade, 21 flaggade.** Audit **P1 68→12 (−82%)**, P0 kvar 0; viktad svårighetsgrad −42% (1337→782). Fixmönster: stekolja→"till stekning", garnering→"till servering", `en nypa`→`1 nypa`, citrus skal+saft→`N citron`, mangled "X eller Y"/"/"→canon, rubrikrader-som-ingredienser (#63), "utan ben/skinn"-brus bort, herb-split (#93), ris-mangling (#124 "och kylt vitt"→ris).
+- **Verifierat:** beroendefri testsvit grön (match 103, match-corpus 35, shopping 81, select 432, data-mapper 27). End-to-end `buildShoppingList` på ändrade recept ger rena rader. Bryggor borttagna; bara snapshot-backupen kvar.
+- **Not:** Canon-tabell-tillägg (kod) hölls medvetet utanför (data-scope). P2 sänktes inte (kvar ~660) — domineras av ofarliga "uppdelat"/"på burk"-beskrivningar som redan parsas rätt + äkta namn utan canon. Se canon-kandidatlistan i rapporten + *Öppna utredningar*.
 
 ## Session 82 (2026-06-06) — Prestanda: upplevd lagg eliminerad (mätt mot live)
 
