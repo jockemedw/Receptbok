@@ -3950,18 +3950,9 @@ body.week-deluxe .week-meta { display: none; }
   width: 4px;
   background: var(--rail, var(--lichen));
 }
-/* Helg-markör: diskret prick på färgryggen. Sitter ovanpå skenan utan att påverka
-   kortets höjd (jämn höjd vardag/helg). Halo i kortfärgen lyfter pricken från skenan. */
-.dlx-day.is-weekend .dlx-rail::after {
-  content: '';
-  position: absolute;
-  left: 3px;
-  top: 1rem;
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--lichen-deep);
-  box-shadow: 0 0 0 2px var(--linen-card);
-}
+/* Helg-markör: en dovare, varmare kort-bakgrund (markerar helgdagar lugnt utan att
+   påverka korthöjden). Tydligt skild från både kortet (#fdfcf8) och sidan (#f5f1e8). */
+.dlx-day.is-weekend { background: #ede5d4; border-color: var(--birch); }
 
 .dlx-day-head {
   display: flex;
@@ -3997,7 +3988,21 @@ body.week-deluxe .week-meta { display: none; }
   width: fit-content;
 }
 .dlx-day-flag.today { background: var(--rust); color: #fff; }
-.dlx-day-flag.holiday { background: var(--clay); color: var(--rust-deep); text-transform: none; letter-spacing: 0; }
+/* Helgdags-chip (midsommar m.fl.) — högerställd vid chevronen, krymper inte och
+   bryter inte rad, så den aldrig flyttar dagens innehåll. */
+.dlx-day-holiday {
+  flex: 0 0 auto;
+  align-self: center;
+  margin-left: 0.4rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  padding: 0.16rem 0.5rem;
+  border-radius: 999px;
+  background: var(--clay);
+  color: var(--rust-deep);
+  white-space: nowrap;
+}
 
 .dlx-day-main { flex: 1 1 auto; min-width: 0; }
 .dlx-day-tag {

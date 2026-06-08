@@ -181,9 +181,10 @@ function buildHero(plan, pending) {
 function dayBadges(d) {
   const out = [];
   if (d.isToday) out.push('<span class="dlx-day-flag today">Idag</span>');
-  if (d.holiday) out.push(`<span class="dlx-day-flag holiday">${esc(d.holiday)}</span>`);
-  // Helg markeras inte längre med en pill här — den visas som en diskret prick på
-  // färgryggen (.dlx-day.is-weekend), så att helgkort inte blir högre än vardagskort.
+  // Helg markeras med en dovare kort-bakgrund (.dlx-day.is-weekend) — inte med en pill.
+  // Helgdag (midsommar m.fl.) renderas som en högerställd chip vid chevronen
+  // (injiceras i renderDayCard), så den aldrig trängs in i den smala datumkolumnen
+  // och knuffar dagens innehåll. Båda hålls utanför flödet → jämn korthöjd.
   return out.join('');
 }
 
@@ -346,10 +347,16 @@ function renderDayCard(d) {
     active: d.planId === 'active',
     cls: (d.isToday ? ' is-today' : '') + (d.isPast ? ' is-past' : '') + (d.isArchive ? ' is-archive' : ''),
   };
-  const html = (d.recipeId && !d.isCustom) ? recipeDayCard(d, opts) : emptyDayCard(d);
-  // Helg-prick på färgryggen — injiceras på själva kortet (ej i flödet) så att
-  // alla kort behåller samma höjd. Suppr. på "idag" (egen rust-ram räcker).
-  if (d.isWeekend && !d.isToday) return html.replace('class="dlx-day', 'class="dlx-day is-weekend');
+  let html = (d.recipeId && !d.isCustom) ? recipeDayCard(d, opts) : emptyDayCard(d);
+  // Helg → dovare kort-bakgrund. Klassen injiceras på ett ställe så att alla
+  // korttyper täcks utan att röra varje mall. Suppr. på "idag" (rust-ramen räcker).
+  if (d.isWeekend && !d.isToday) html = html.replace('class="dlx-day', 'class="dlx-day is-weekend');
+  // Helgdag → högerställd chip strax före chevronen, så markeringen aldrig
+  // knuffar "+ Planera dagen"/innehållet i den trånga datumkolumnen.
+  if (d.holiday && html.includes('dlx-day-chev')) {
+    const chip = `<span class="dlx-day-holiday">${esc(d.holiday)}</span>`;
+    html = html.replace('<span class="dlx-day-chev"', `${chip}<span class="dlx-day-chev"`);
+  }
   return html;
 }
 
