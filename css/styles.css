@@ -3910,6 +3910,24 @@ body.week-deluxe .week-meta { display: none; }
 /* ── Dagslista ── */
 .dlx-days { display: flex; flex-direction: column; gap: 0.6rem; padding: 0 1rem; }
 
+/* Veckoavdelare — tunn "Vecka N"-rad där ISO-veckan byter i listan. */
+.dlx-week-sep {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin: 0.45rem 0.15rem 0.1rem;
+}
+.dlx-week-sep::before,
+.dlx-week-sep::after { content: ''; flex: 1; height: 1px; background: var(--birch-soft); }
+.dlx-week-sep span {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--moss-muted);
+  white-space: nowrap;
+}
+
 .dlx-day {
   position: relative;
   overflow: hidden;
@@ -3931,6 +3949,18 @@ body.week-deluxe .week-meta { display: none; }
   left: 0; top: 0; bottom: 0;
   width: 4px;
   background: var(--rail, var(--lichen));
+}
+/* Helg-markör: diskret prick på färgryggen. Sitter ovanpå skenan utan att påverka
+   kortets höjd (jämn höjd vardag/helg). Halo i kortfärgen lyfter pricken från skenan. */
+.dlx-day.is-weekend .dlx-rail::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 1rem;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--lichen-deep);
+  box-shadow: 0 0 0 2px var(--linen-card);
 }
 
 .dlx-day-head {
@@ -3968,7 +3998,6 @@ body.week-deluxe .week-meta { display: none; }
 }
 .dlx-day-flag.today { background: var(--rust); color: #fff; }
 .dlx-day-flag.holiday { background: var(--clay); color: var(--rust-deep); text-transform: none; letter-spacing: 0; }
-.dlx-day-flag.weekend { background: var(--moss-soft); color: var(--lichen-deep); }
 
 .dlx-day-main { flex: 1 1 auto; min-width: 0; }
 .dlx-day-tag {
