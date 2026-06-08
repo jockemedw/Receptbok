@@ -522,21 +522,51 @@ async function dlxPickSwapTarget(toDate) {
   }
 }
 
-// ── Wrappa renderWeeklyPlanData så båda vyerna hålls i synk ───────────────────
-function installRenderHook() {
-  const orig = window.renderWeeklyPlanData;
+// ── Håll båda vyerna i synk ───────────────────────────────────────────────────
+// Vi wrappar flera ingångar eftersom plan-viewer.js internt anropar sin LOKALA
+// renderWeeklyPlanData (inte window.*), så det räcker inte att bara wrappa den.
+// - renderWeeklyPlanData: genereringsväg + våra egna deluxe-åtgärder (window.*)
+// - loadWeeklyPlan: första laddning (boot) + realtime-omladdning
+// - switchTab: säkerhetsnät när man öppnar fliken Matsedeln
+function wrapSync(name, { async = false } = {}) {
+  const orig = window[name];
   if (typeof orig !== 'function' || orig.__dlxWrapped) return;
-  const wrapped = function (...args) {
-    const r = orig.apply(this, args);
-    try { renderDeluxe(); } catch (e) { console.error('renderDeluxe', e); }
-    return r;
-  };
+  let wrapped;
+  if (async) {
+    wrapped = async function (...args) {
+      const r = await orig.apply(this, args);
+      try { renderDeluxe(); } catch (e) { console.error('renderDeluxe', e); }
+      return r;
+    };
+  } else {
+    wrapped = function (...args) {
+      const r = orig.apply(this, args);
+      try { renderDeluxe(); } catch (e) { console.error('renderDeluxe', e); }
+      return r;
+    };
+  }
   wrapped.__dlxWrapped = true;
-  window.renderWeeklyPlanData = wrapped;
+  window[name] = wrapped;
 }
 
-// plan-viewer.js importeras före denna modul → window.renderWeeklyPlanData finns.
-installRenderHook();
+function installHooks() {
+  wrapSync('renderWeeklyPlanData');
+  wrapSync('loadWeeklyPlan', { async: true });
+  // switchTab: rendera bara när vi faktiskt landar på veckofliken.
+  const origSwitch = window.switchTab;
+  if (typeof origSwitch === 'function' && !origSwitch.__dlxWrapped) {
+    const wrappedSwitch = function (tab) {
+      const r = origSwitch.apply(this, arguments);
+      if (tab === 'vecka') { try { renderDeluxe(); } catch (e) { console.error('renderDeluxe', e); } }
+      return r;
+    };
+    wrappedSwitch.__dlxWrapped = true;
+    window.switchTab = wrappedSwitch;
+  }
+}
+
+// Modulerna ovan importeras före denna → window.*-funktionerna finns redan.
+installHooks();
 // Säkerställ skal + läge så snart DOM finns.
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => { ensureScaffold(); });
