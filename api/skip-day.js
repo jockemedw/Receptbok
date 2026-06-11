@@ -106,7 +106,7 @@ export default createSupabaseHandler(async (req, res) => {
           saving:                content[i].saving,
           saving_matches:        content[i].saving_matches,
           blocked:               content[i].blocked,
-        }).eq("household_id", householdId).eq("date", dates[i])
+        }).eq("plan_id", plan.id).eq("date", dates[i])
       );
     }
     const tail = content[content.length - 1];
@@ -153,11 +153,11 @@ export default createSupabaseHandler(async (req, res) => {
         saving:                content[i].saving,
         saving_matches:        content[i].saving_matches,
         blocked:               content[i].blocked,
-      }).eq("household_id", householdId).eq("date", newDates[i])
+      }).eq("plan_id", plan.id).eq("date", newDates[i])
     );
   }
   writes.push(
-    db.from("meal_days").delete().eq("household_id", householdId).eq("date", removedDate)
+    db.from("meal_days").delete().eq("plan_id", plan.id).eq("date", removedDate)
   );
   writes.push(db.from("weekly_plans").update({ end_date: newEnd }).eq("id", plan.id));
   await Promise.all(writes);

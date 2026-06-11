@@ -2,6 +2,15 @@
  * Wrapper som hanterar CORS, OPTIONS, metodkontroll och GITHUB_PAT.
  * Anvaends: export default createHandler(async (req, res, pat) => { ... })
  */
+
+// Avsiktligt kastade fel (new Error("Kunde inte ...")) har begripliga svenska
+// meddelanden och får visas för användaren. Programfel (TypeError m.fl.) och
+// icke-Error-throws läcker tekniska detaljer — de maskeras med ett generiskt
+// meddelande och loggas i sin helhet på servern.
+function userMessage(err) {
+  const intentional = err instanceof Error && err.constructor === Error && err.message;
+  return intentional ? err.message : "Något gick fel — prova igen om en stund.";
+}
 export function createHandler(fn) {
   return async (req, res) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -18,7 +27,7 @@ export function createHandler(fn) {
       await fn(req, res, pat);
     } catch (err) {
       console.error(err);
-      res.status(500).json({ error: err.message || "Något gick fel." });
+      res.status(500).json({ error: userMessage(err) });
     }
   };
 }
@@ -42,7 +51,7 @@ export function createSupabaseHandler(fn, { allowGet = false } = {}) {
       await fn(req, res);
     } catch (err) {
       console.error(err);
-      res.status(500).json({ error: err.message || "Något gick fel." });
+      res.status(500).json({ error: userMessage(err) });
     }
   };
 }
