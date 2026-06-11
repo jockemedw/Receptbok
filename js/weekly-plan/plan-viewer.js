@@ -898,7 +898,13 @@ export function closeSavingPopover() {
 // ── Bekräftelse ───────────────────────────────────────────────────────────────
 
 export async function discardPlan() {
-  if (!confirm('Kassera den här föreslagna matsedeln? Dina tidigare matsedlar och inköpslista påverkas inte.')) return;
+  const ok = await window.confirmDialog({
+    title: 'Kassera förslaget?',
+    message: 'Den föreslagna matsedeln tas bort. Dina tidigare matsedlar och inköpslistan påverkas inte.',
+    confirmLabel: 'Kassera',
+    danger: true,
+  });
+  if (!ok) return;
   const btn = document.getElementById('discardPlanBtn');
   const confirmBtn = document.getElementById('confirmPlanBtn');
   const statusEl = document.getElementById('confirmStatus');
@@ -972,6 +978,7 @@ export async function confirmPlan() {
       data.shoppingList?.recipeItemsMovedAt || null,
       true
     );
+    window.showToast?.('Matsedeln bekräftad — veckans ingredienser är klara.', { type: 'success' });
   } catch (e) {
     btn.disabled    = false;
     btn.textContent = '✓ Bekräfta och bygg inköpslista';

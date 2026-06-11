@@ -104,6 +104,35 @@ function recipeById(id) {
   return id ? (window.RECIPES || []).find(r => r.id === id) : null;
 }
 
+// ── "Ikväll"-rad — svarar på familjens vanligaste fråga direkt i heron ───────
+function buildTonight(timeline) {
+  const todayIso = fmtIso(new Date());
+  const d = timeline.find(t => t.date === todayIso);
+  if (!d) return '';
+
+  let label, sub = '';
+  if (d.recipeId && !d.isCustom) {
+    const r = recipeById(d.recipeId);
+    label = d.recipe || '';
+    sub = [r?.time ? `${r.time} min` : null, r ? PROTEIN_LABEL[r.protein] : null].filter(Boolean).join(' · ');
+  } else if (d.isCustom && (d.customRecipeTitle || d.customNote)) {
+    label = d.customRecipeTitle || d.customNote;
+    sub = 'Egen planering';
+  } else if (d.blocked) {
+    label = 'Fri dag';
+    sub = 'Ingen middag planerad';
+  } else {
+    return '';
+  }
+
+  return `
+    <button type="button" class="dlx-tonight" onclick="dlxToggleDay('${d.date}')">
+      <span class="dlx-tonight-eyebrow">${I.pot} Ikväll</span>
+      <span class="dlx-tonight-title">${esc(label)}</span>
+      ${sub ? `<span class="dlx-tonight-sub">${esc(sub)}</span>` : ''}
+    </button>`;
+}
+
 // ── Hero-statistik ────────────────────────────────────────────────────────────
 function buildHero(plan, pending) {
   const days = plan?.days || [];
@@ -255,7 +284,9 @@ function recipeDetail(d, r, opts) {
 
   return `
     <div class="dlx-detail" onclick="event.stopPropagation()">
-      <div class="dlx-detail-head">${statusPill}<span class="dlx-detail-portions">${r.servings} portioner</span></div>
+      <div class="dlx-detail-head">${statusPill}<span class="dlx-detail-portions">${r.servings} portioner</span>
+        <button type="button" class="dlx-cook-btn" onclick="event.stopPropagation();openCookMode(${r.id})">${I.pot}<span>Börja laga</span></button>
+      </div>
       <div class="dlx-detail-cols">
         <section class="dlx-detail-block">
           <h4>Ingredienser</h4>
@@ -400,6 +431,7 @@ export function renderDeluxe() {
   const upcoming = timeline.filter(d => d.date >= todayIso);
 
   const hero = buildHero(plan, pending);
+  const tonight = buildTonight(timeline);
 
   const upcomingHtml = upcoming.length
     ? renderDayList(upcoming)
@@ -416,7 +448,7 @@ export function renderDeluxe() {
       <div class="dlx-history${open ? ' open' : ''}">${open ? renderDayList(history) : ''}</div>`;
   }
 
-  host.innerHTML = `${hero}${historyHtml}<div class="dlx-days">${upcomingHtml}</div>`;
+  host.innerHTML = `${hero}${tonight}${historyHtml}<div class="dlx-days">${upcomingHtml}</div>`;
 }
 
 // ── Interaktion ───────────────────────────────────────────────────────────────

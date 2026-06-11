@@ -2,7 +2,7 @@
 // Läser state: RECIPES, groupBy, isSnapping, scrollUpAccum
 // Skriver state: isSnapping, scrollUpAccum
 
-import { proteinLabel, timeStr, renderDetailInner, escapeHtml } from '../utils.js';
+import { proteinLabel, timeStr, renderDetailInner, escapeHtml, PROTEIN_COLOR } from '../utils.js';
 
 // ── Grupperingsdefinitioner ───────────────────────────────────────────────────
 // Varje grupp är en lista av sektioner. Sektionerna utvärderas i ordning;
@@ -91,6 +91,7 @@ export function renderCard(r) {
   const t = timeStr(r);
   return `
 <div class="recipe-card"
+     style="--rail:${PROTEIN_COLOR[r.protein] || 'var(--birch-soft)'}"
      data-id="${r.id}"
      data-title="${escapeHtml(r.title).toLowerCase()}"
      data-protein="${r.protein}"

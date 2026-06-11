@@ -207,11 +207,12 @@ export async function generatePlan() {
     const end = new Date(endVal + 'T00:00:00');
     const daysAhead = Math.round((end - today) / 86400000);
     if (daysAhead > 7) {
-      const ok = confirm(
-        'Reapriserna gäller oftast bara innevarande vecka. Din matsedel sträcker sig ' +
-        `till ${endVal} — en del erbjudanden kan ha löpt ut när du handlar.\n\n` +
-        'Fortsätta med prisoptimering?'
-      );
+      const ok = await window.confirmDialog({
+        title: 'Prisoptimera så långt fram?',
+        message: 'Reapriserna gäller oftast bara innevarande vecka. Din matsedel sträcker sig ' +
+          `till ${endVal} — en del erbjudanden kan ha löpt ut när du handlar.`,
+        confirmLabel: 'Fortsätt',
+      });
       if (!ok) return;
     }
   }
@@ -288,6 +289,24 @@ export function toggleTrigger() {
   document.getElementById('triggerSection').classList.remove('collapsed');
 }
 
+// CTA från tomma matsedelsvyn: öppna genereringspanelen och scrolla dit.
+export function openNewPlan() {
+  toggleTrigger();
+  const section = document.getElementById('triggerSection');
+  requestAnimationFrame(() => section?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+}
+
+// Touch-vänliga −/+-knappar runt sifferfälten i inställningarna.
+export function stepNum(id, delta) {
+  const input = document.getElementById(id);
+  if (!input) return;
+  const min = parseInt(input.min) || 0;
+  const max = parseInt(input.max) || 15;
+  const cur = parseInt(input.value) || 0;
+  input.value = Math.min(max, Math.max(min, cur + delta));
+  updateSettingsPreview();
+}
+
 window.initDatePickers      = initDatePickers;
 window.getSelectedProteins  = getSelectedProteins;
 window.toggleProtein        = toggleProtein;
@@ -298,3 +317,5 @@ window.toggleDayBlock       = toggleDayBlock;
 window.getBlockedDates      = getBlockedDates;
 window.generatePlan         = generatePlan;
 window.toggleTrigger        = toggleTrigger;
+window.openNewPlan          = openNewPlan;
+window.stepNum              = stepNum;
