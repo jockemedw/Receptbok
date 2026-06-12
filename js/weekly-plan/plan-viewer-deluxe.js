@@ -115,7 +115,6 @@ function buildTonight(timeline) {
   const d = timeline.find(t => t.date === todayIso);
   if (!d) return '';
 
-  const dateLabel = `${d.day} ${d.dayNum} ${MONTH_NAMES_SHORT[d.month]}`;
   const expanded = window._dlxExpanded === d.date;
 
   let label, sub = '', click = `dlxToggleDay('${d.date}')`, kind = '', detail = '';
@@ -145,9 +144,17 @@ function buildTonight(timeline) {
   return `
     <article class="dlx-tonight${expanded ? ' expanded' : ''}" data-date="${d.date}"${kind ? ` data-kind="${kind}"` : ''}
              role="button" tabindex="0" onclick="${click}">
-      <span class="dlx-tonight-eyebrow">${I.pot} Ikväll · ${esc(dateLabel)}</span>
-      <span class="dlx-tonight-title">${esc(label)}</span>
-      ${sub ? `<span class="dlx-tonight-sub">${esc(sub)}</span>` : ''}
+      <span class="dlx-tonight-eyebrow">${I.pot} Ikväll</span>
+      <div class="dlx-tonight-head">
+        <div class="dlx-day-when">
+          <span class="dlx-day-dow">${esc(d.day)}</span>
+          <span class="dlx-day-date">${d.dayNum} ${MONTH_NAMES_SHORT[d.month]}</span>
+        </div>
+        <div class="dlx-tonight-main">
+          <span class="dlx-tonight-title">${esc(label)}</span>
+          ${sub ? `<span class="dlx-tonight-sub">${esc(sub)}</span>` : ''}
+        </div>
+      </div>
       <span class="dlx-tonight-chev" aria-hidden="true">›</span>
       ${detail}
     </article>`;

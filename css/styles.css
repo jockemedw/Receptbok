@@ -4710,6 +4710,20 @@ body.cook-open { overflow: hidden; }
   transition: transform 0.2s ease;
 }
 .dlx-tonight.expanded .dlx-tonight-chev { transform: rotate(90deg); }
+/* Datum i vänsterkolumn — samma layoutspråk som dagkorten (.dlx-day-when) */
+.dlx-tonight-head {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: 100%;
+  margin-top: 0.35rem;
+}
+.dlx-tonight-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
 /* Kortet har redan horisontell padding — nollställ detaljens egna sidopaddingar */
 .dlx-tonight .dlx-detail { width: 100%; cursor: default; margin-top: 0.6rem; padding: 0.4rem 0 0; }
 .dlx-tonight-eyebrow {
