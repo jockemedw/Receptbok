@@ -4394,6 +4394,20 @@ body.cook-open { overflow: hidden; }
   overscroll-behavior: contain;
 }
 .cook-overlay.show { opacity: 1; transform: translateY(0); }
+/* iPhone-pannan (notch/Dynamic Island): i installerad app ritas innehållet ända
+   upp under statusfältet. En linen-remsa täcker safe-arean så att scrollande
+   innehåll inte syns bakom pannan, och progressraden fastnar strax under den.
+   På enheter utan panna är env() = 0 → remsan blir osynlig och top: 0 som förr. */
+.cook-overlay::before {
+  content: '';
+  display: block;
+  position: sticky;
+  top: 0;
+  height: env(safe-area-inset-top, 0px);
+  margin-bottom: calc(-1 * env(safe-area-inset-top, 0px));
+  background: var(--linen);
+  z-index: 6;
+}
 .cook-head {
   display: flex;
   align-items: flex-start;
@@ -4436,7 +4450,7 @@ body.cook-open { overflow: hidden; }
 .cook-close:active { background: var(--birch-soft); }
 .cook-progress {
   position: sticky;
-  top: 0;
+  top: env(safe-area-inset-top, 0px);
   z-index: 5;
   background: var(--linen);
   display: flex;

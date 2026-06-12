@@ -140,7 +140,8 @@ Mål (användarbegäran, fria händer): nattjobb med komplett analys + omtag dä
 - **"Ikväll"-rad i premium-heron:** `buildTonight()` visar dagens middag (recept/egen planering/fri dag); tryck expanderar dagens kort.
 - **Touch & tillgänglighet:** −/+-steppers runt sifferfälten i inställningarna (`stepNum`), `.prot-btn` ≥40px, `.pill-toggle` utökad träffyta (~44px), header-tab-kontrast 0.45→0.72, `.pill-untested`-kontrast höjd. Tomma matsedelsvyn fick CTA "+ Skapa matsedel" (`openNewPlan`). Receptkorten fick proteinfärgad rygg (samma språk som premiumvyns dagkort).
 - **Backend-härdning:** `handler.js` maskerar programfel (TypeError m.fl.) med generiskt svenskt meddelande — avsiktliga `new Error("…")` visas fortfarande; `skip-day`/`swap-days` skriver nu med `plan_id`-filter (skyddar egen planering-rader på samma datum); `generate.js` validerar serverside (max 15 dagar, inställningsvärden klampas till spannet).
-- **Verifierat:** `node --check` rent på alla ändrade filer; hela testsviten grön — match 103, corpus 35, shopping 81, select 432, data-mapper 27, dispatch 93, cookies 29 (800 assertions). Versioner: `styles.css?v=97`, `app.js?v=95`.
+- **Verifierat:** `node --check` rent på alla ändrade filer; hela testsviten grön — match 103, corpus 35, shopping 81, select 432, data-mapper 27, dispatch 93, cookies 29 (800 assertions). Versioner: `styles.css?v=98`, `app.js?v=95`.
+- **Efterfix (PR #74):** matlagningslägets progressrad döljdes bakom iPhone-pannan (Dynamic Island) i installerad app — sticky-`top` flyttad till `env(safe-area-inset-top)` + linen-remsa (`.cook-overlay::before`) som täcker safe-arean vid scroll.
 - **Kvar:** snabbkoll mot produktion efter merge (se *Väntar på live-verifiering*).
 
 ### Tidigare sessioner
