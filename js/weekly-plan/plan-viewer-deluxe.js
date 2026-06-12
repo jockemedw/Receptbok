@@ -22,6 +22,7 @@ const I = {
   shuffle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h3.5c1.2 0 2.3.6 3 1.6l5 7c.7 1 1.8 1.6 3 1.6H21"/><path d="M18 4l3 3-3 3"/><path d="M3 17h3.5c1.2 0 2.3-.6 3-1.6l.7-1M14.8 9.6l.7-1c.7-1 1.8-1.6 3-1.6H21"/><path d="M18 14l3 3-3 3"/></svg>',
   pencil: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10-10a2 2 0 0 0-2.8-2.8L5 17v3z"/><path d="M13.5 6.5l4 4"/></svg>',
   swap: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h13M14 4l3 3-3 3"/><path d="M20 17H7M10 14l-3 3 3 3"/></svg>',
+  move: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16"/><path d="M4 20h16"/><path d="M12 8v8"/><path d="m8.5 12.5 3.5 3.5 3.5-3.5"/></svg>',
   free: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4 M8 2v4 M3 10h18"/><path d="M9 15l6 0"/></svg>',
   pot: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13c0-3.5 3.5-6 8-6s8 2.5 8 6"/><path d="M3 13h18"/><path d="M5.5 13v2c0 1.5 1 2.5 2.5 2.5h8c1.5 0 2.5-1 2.5-2.5v-2"/><path d="M11 4.5c0-.8.5-1.5 1-1.5s1 .7 1 1.5"/></svg>',
   note: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h11l3 3v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><path d="M8 11h8 M8 14h8 M8 17h5"/></svg>',
@@ -308,7 +309,9 @@ function recipeDetail(d, r, opts) {
         <button class="dlx-act" onclick="event.stopPropagation();enterReplaceMode('${d.date}', '${attr(d.day)}')">${I.pencil}<span>Välj själv</span></button>` : ''}
         ${canMove ? `
         <button class="dlx-act" onclick="event.stopPropagation();dlxStartSwap('${d.date}')">${I.swap}<span>Byt dag</span></button>` : ''}
-        ${canMove && !d.isPast ? `<button class="dlx-act" onclick="event.stopPropagation();dlxFreeDay('${d.date}', this)">${I.free}<span>Fri dag — skjut planen</span></button>` : ''}
+        ${canMove && !d.isPast ? `
+        <button class="dlx-act" onclick="event.stopPropagation();dlxStartMove('${d.date}')">${I.move}<span>Flytta dag</span></button>
+        <button class="dlx-act" onclick="event.stopPropagation();dlxFreeDay('${d.date}', this)">${I.free}<span>Fri dag — skjut planen</span></button>` : ''}
       </div>`;
   } else if (d.isArchive) {
     actions = `<p class="dlx-readonly">📜 Historisk plan — bara för referens.</p>`;
@@ -391,9 +394,10 @@ function emptyDayCard(d) {
       </article>`;
   }
 
-  // Tom dag (gap) — bara framtida är klickbar
+  // Tom dag (gap) — bara framtida är klickbar. dlxGapClick routar: i byt
+  // dag-läge väljs dagen som mål (receptet flyttas dit), annars egen planering.
   const clickable = !d.isPast;
-  const click = clickable ? `onclick="openCustomDay('${d.date}', '${attr(d.day)}')"` : '';
+  const click = clickable ? `onclick="dlxGapClick('${d.date}', '${attr(d.day)}')"` : '';
   return `
     <article class="dlx-day gap slim${clickable ? '' : ' inert'}" data-date="${d.date}" ${click}>
       <span class="dlx-rail" style="background:transparent"></span>
@@ -434,6 +438,7 @@ function renderDayCard(d) {
 // Renderar en lista dagskort med en tunn "Vecka N"-avdelare där ISO-veckan byter.
 // Ingen avdelare före första kortet — hero-rutan visar redan startveckan.
 function renderDayList(days) {
+  const zones = moveZoneCtx();   // släppzoner i flytta dag-läge (annars null)
   let html = '';
   let lastWeek = null;
   for (const d of days) {
@@ -442,7 +447,9 @@ function renderDayList(days) {
       html += `<div class="dlx-week-sep"><span>Vecka ${wk}</span></div>`;
     }
     lastWeek = wk;
+    if (zones?.set.has(d.date)) html += dropZone(d.date);
     html += renderDayCard(d);
+    if (zones?.endAfter === d.date) html += dropZone(null);
   }
   return html;
 }
@@ -481,7 +488,10 @@ export function renderDeluxe() {
     : '';
   host.classList.toggle('has-history', !!history.length);
 
-  host.innerHTML = `${historyHtml}${hero}${tonight}<div class="dlx-days">${upcomingHtml}</div>`;
+  // Släppzon för "kläm in före ikväll" — Ikväll-kortet ligger utanför dagslistan
+  const tonightZone = (tonight && moveZoneCtx()?.set.has(todayIso)) ? dropZone(todayIso) : '';
+
+  host.innerHTML = `${historyHtml}${hero}${tonightZone}${tonight}<div class="dlx-days">${upcomingHtml}</div>`;
 
   // Engångspositionering vid första datarendering (täcker deep-link ?tab=vecka
   // vid boot). Senare omrenderingar (expandera/byta recept/realtime) får ALDRIG
@@ -508,6 +518,7 @@ function snapToHero() {
 // ── Interaktion ───────────────────────────────────────────────────────────────
 window.dlxToggleDay = function (date) {
   if (window._dlxSwap) { dlxPickSwapTarget(date); return; }
+  if (window._dlxMove) return;   // i flytta-läge är bara släppzonerna klickbara
   window._dlxExpanded = (window._dlxExpanded === date) ? null : date;
   renderDeluxe();
   if (window._dlxExpanded === date) {
@@ -588,24 +599,28 @@ function dlxFlashError(date, msg) {
 }
 
 // ── Byt dag (swap) ────────────────────────────────────────────────────────────
+function dlxBanner(label, cancelFn) {
+  const host = document.getElementById('weekDeluxe');
+  if (!host || host.querySelector('.dlx-swap-banner')) return;
+  const banner = document.createElement('div');
+  banner.className = 'dlx-swap-banner';
+  banner.innerHTML = `<span>${label}</span><button onclick="${cancelFn}()">Avbryt</button>`;
+  host.insertBefore(banner, host.querySelector('.dlx-days') || host.firstChild);
+}
+
 window.dlxStartSwap = function (fromDate) {
   window._dlxSwap = { from: fromDate };
   window._dlxExpanded = null;
   renderDeluxe();
-  const host = document.getElementById('weekDeluxe');
-  if (host && !host.querySelector('.dlx-swap-banner')) {
-    const banner = document.createElement('div');
-    banner.className = 'dlx-swap-banner';
-    banner.innerHTML = `<span>${I.swap} Välj dagen du vill byta med</span>
-      <button onclick="dlxCancelSwap()">Avbryt</button>`;
-    host.insertBefore(banner, host.querySelector('.dlx-days') || host.firstChild);
-  }
-  // Markera giltiga mål
+  dlxBanner(`${I.swap} Välj dagen att byta med — även en tom dag`, 'dlxCancelSwap');
+  // Markera giltiga mål. Fria dagar (free) utesluts — de kan inte bytas.
+  // Tomma dagar (gap) är giltiga: receptet flyttas dit, källdagen blir tom.
   const todayIso = fmtIso(new Date());
   document.querySelectorAll('#weekDeluxe .dlx-day').forEach(c => {
     const d = c.dataset.date;
     if (!d || d === fromDate) return;
-    if (c.classList.contains('is-archive') || c.classList.contains('custom') || c.classList.contains('inert')) return;
+    if (c.classList.contains('is-archive') || c.classList.contains('custom') ||
+        c.classList.contains('inert') || c.classList.contains('free')) return;
     if (c.classList.contains('gap') && d < todayIso) return;
     c.classList.add('dlx-swap-target');
   });
@@ -616,9 +631,84 @@ window.dlxStartSwap = function (fromDate) {
   if (tn) tn.classList.add(tn.dataset.date === fromDate ? 'dlx-swap-source' : 'dlx-swap-target');
 };
 
+// Tomma dagar: i byt dag-läge = välj som mål; i flytta dag-läge = ignorera
+// (bara släppzonerna gäller); annars = öppna egen planering.
+window.dlxGapClick = function (date, dayName) {
+  if (window._dlxSwap) { window.dlxToggleDay(date); return; }
+  if (window._dlxMove) return;
+  window.openCustomDay(date, dayName);
+};
+
 window.dlxCancelSwap = function () {
   window._dlxSwap = null;
   renderDeluxe();
+};
+
+// ── Flytta dag (kläm in mellan två dagar) ─────────────────────────────────────
+// Källdagen lyfts ur och kläms in på vald position; mellanliggande recept
+// roteras (datumen ligger fast). Släppzoner renderas mellan korten av
+// renderDeluxe/renderDayList när _dlxMove är satt.
+
+// Zon-kontext för pågående flytt: vilka "före"-datum som får en släppzon,
+// och efter vilket kort slutzonen ("sist i planen") ligger.
+function moveZoneCtx() {
+  const from = window._dlxMove?.from;
+  if (!from) return null;
+  const todayIso = fmtIso(new Date());
+  const movable = (window._lastPlan?.days || []).filter(d => !d.blocked && d.recipeId);
+  const srcIdx = movable.findIndex(d => d.date === from);
+  if (srcIdx === -1) return null;
+  const successor = movable[srcIdx + 1]?.date || null;
+
+  const set = new Set();
+  for (const d of movable) {
+    if (d.date < todayIso) continue;       // inga flytt till passerade positioner
+    if (d.date === from) continue;         // zonen före källan = no-op
+    if (d.date === successor) continue;    // zonen direkt efter källan = no-op
+    set.add(d.date);
+  }
+  // Slutzon efter sista flyttbara dagen — utom när källan redan ligger sist
+  const last = movable[movable.length - 1]?.date || null;
+  const endAfter = (last && last !== from) ? last : null;
+  return { set, endAfter };
+}
+
+function dropZone(before) {
+  return `<button type="button" class="dlx-drop-zone" onclick="dlxPickMoveTarget('${before || ''}')">
+    <span>${I.move} Flytta hit</span>
+  </button>`;
+}
+
+window.dlxStartMove = function (fromDate) {
+  window._dlxMove = { from: fromDate };
+  window._dlxExpanded = null;
+  renderDeluxe();
+  dlxBanner(`${I.move} Tryck på platsen dit dagen ska flyttas`, 'dlxCancelMove');
+  const src = document.querySelector(`#weekDeluxe [data-date="${fromDate}"]`);
+  if (src) src.classList.add('dlx-swap-source');
+};
+
+window.dlxCancelMove = function () {
+  window._dlxMove = null;
+  renderDeluxe();
+};
+
+window.dlxPickMoveTarget = async function (before) {
+  const from = window._dlxMove?.from;
+  window._dlxMove = null;
+  if (!from) { renderDeluxe(); return; }
+  try {
+    const res = await fetch('/api/move-day', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: from, before: before || null }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'fel');
+    rerender(data.weeklyPlan, window._lastShop);
+  } catch (e) {
+    renderDeluxe();
+    window.showToast?.(e.message?.length > 4 ? e.message : 'Kunde inte flytta dagen — prova igen.', { type: 'error' });
+  }
 };
 
 async function dlxPickSwapTarget(toDate) {
@@ -633,8 +723,9 @@ async function dlxPickSwapTarget(toDate) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'fel');
     rerender(data.weeklyPlan, data.shoppingList || window._lastShop);
-  } catch {
+  } catch (e) {
     renderDeluxe();
+    window.showToast?.(e.message?.length > 4 ? e.message : 'Kunde inte byta dagarna — prova igen.', { type: 'error' });
   }
 }
 

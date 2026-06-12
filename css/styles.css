@@ -4751,6 +4751,29 @@ body.cook-open { overflow: hidden; }
   color: var(--moss-muted);
 }
 
+/* ── Flytta dag: släppzoner mellan korten ── */
+.dlx-drop-zone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  width: 100%;
+  min-height: 2.7rem;
+  border: 2px dashed var(--lichen);
+  border-radius: 12px;
+  background: var(--moss-soft);
+  color: var(--lichen-deep);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  animation: dlxPulse 1.8s ease-in-out infinite;
+}
+.dlx-drop-zone svg { width: 1.1em; height: 1.1em; }
+.dlx-drop-zone:active { background: var(--lichen); color: #fff; }
+/* Zonen mellan hero och Ikväll-kortet ligger utanför .dlx-days → egen luft */
+#weekDeluxe > .dlx-drop-zone { margin-top: 0.85rem; }
+
 /* ── CTA i tomma matsedelsvyn ── */
 .empty-cta-btn {
   margin-top: 1rem;
