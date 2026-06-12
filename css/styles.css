@@ -4694,7 +4694,9 @@ body.cook-open { overflow: hidden; }
   border-left: 4px solid var(--rust);
   border-radius: 14px;
   padding: 0.85rem 2.2rem 0.85rem 1.1rem;
-  margin: 0.85rem 0 0.2rem;
+  /* 0.9rem ner till första dagkortet — något mer än kortens inbördes 0.6rem,
+     så sektionsbytet ikväll → kommande dagar får luft */
+  margin: 0.85rem 0 0.9rem;
   cursor: pointer;
   font-family: inherit;
   box-shadow: 0 1px 4px rgba(45,52,40,0.05);
