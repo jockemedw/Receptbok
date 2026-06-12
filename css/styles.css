@@ -4395,16 +4395,17 @@ body.cook-open { overflow: hidden; }
 }
 .cook-overlay.show { opacity: 1; transform: translateY(0); }
 /* iPhone-pannan (notch/Dynamic Island): i installerad app ritas innehållet ända
-   upp under statusfältet. En linen-remsa täcker safe-arean så att scrollande
-   innehåll inte syns bakom pannan, och progressraden fastnar strax under den.
-   På enheter utan panna är env() = 0 → remsan blir osynlig och top: 0 som förr. */
-.cook-overlay::before {
-  content: '';
-  display: block;
+   upp under statusfältet. En linen-remsa ligger i normalt flöde överst (tar
+   safe-areans höjd) och fastnar vid scroll — så att scrollande innehåll aldrig
+   syns bakom pannan. Progressraden fastnar strax under den. På enheter utan
+   panna är env() = 0 → remsan är osynlig och allt beter sig som förr.
+   OBS: ett riktigt element, inte ::before — sticky på pseudoelement till
+   scroll-containern är opålitligt i iOS Safari. */
+.cook-safe-strip {
   position: sticky;
   top: 0;
+  flex-shrink: 0;
   height: env(safe-area-inset-top, 0px);
-  margin-bottom: calc(-1 * env(safe-area-inset-top, 0px));
   background: var(--linen);
   z-index: 6;
 }
@@ -4412,7 +4413,8 @@ body.cook-open { overflow: hidden; }
   display: flex;
   align-items: flex-start;
   gap: 1rem;
-  padding: calc(env(safe-area-inset-top, 0px) + 1.1rem) 1.25rem 0.4rem;
+  /* safe-arean hanteras av .cook-safe-strip ovanför — bara vanlig luft här */
+  padding: 1.1rem 1.25rem 0.4rem;
 }
 .cook-head-info { flex: 1; min-width: 0; }
 .cook-eyebrow {
