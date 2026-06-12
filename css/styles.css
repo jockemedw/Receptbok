@@ -4684,8 +4684,9 @@ body.cook-open { overflow: hidden; }
 .stepper .setting-num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .stepper .setting-num { -moz-appearance: textfield; appearance: textfield; width: 2.6rem; }
 
-/* ── "Ikväll"-rad i premium-heron ── */
+/* ── "Ikväll"-kort i premium-heron (ersätter dagens kort i listan) ── */
 .dlx-tonight {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -4696,13 +4697,25 @@ body.cook-open { overflow: hidden; }
   border: 1px solid var(--birch-soft);
   border-left: 4px solid var(--rust);
   border-radius: 14px;
-  padding: 0.85rem 1.1rem;
+  padding: 0.85rem 2.2rem 0.85rem 1.1rem;
   margin: 0.85rem 0 0.2rem;
   cursor: pointer;
   font-family: inherit;
   box-shadow: 0 1px 4px rgba(45,52,40,0.05);
 }
-.dlx-tonight:active { background: var(--stone); }
+.dlx-tonight:active:not(.expanded) { background: var(--stone); }
+.dlx-tonight-chev {
+  position: absolute;
+  top: 0.85rem;
+  right: 0.95rem;
+  color: var(--birch);
+  font-size: 1.15rem;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+.dlx-tonight.expanded .dlx-tonight-chev { transform: rotate(90deg); }
+/* Kortet har redan horisontell padding — nollställ detaljens egna sidopaddingar */
+.dlx-tonight .dlx-detail { width: 100%; cursor: default; margin-top: 0.6rem; padding: 0.4rem 0 0; }
 .dlx-tonight-eyebrow {
   display: inline-flex;
   align-items: center;
