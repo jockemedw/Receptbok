@@ -104,7 +104,7 @@ Inga bekräftade just nu.
 ### Väntar på live-verifiering (kod klar, ej körd skarpt)
 - **Lösvikts-enum vid Willys-export** (PR #65): `pickUnitForCode()` skickar `"kilograms"` för `_KG`-koder (lös färskvara, t.ex. potatis). Enum-värdet är *inferred* — bara `"pieces"` är PoC-bekräftat. Bekräfta i en skarp körning att lös potatis landar i korgen.
 - **"Gör fri dag" (free/unfree)** (Session 71): `api/skip-day.js` omskriven + verifierad via standalone-simulering, men aldrig körd mot live-DB (skulle mutera aktiv plan). Bekräfta på en testplan att free→unfree round-trip bevarar planen.
-- **Helhetsomtaget Session 86 (PR från `claude/fable5-redesign-overhaul-4rb4dx`, EJ mergad):** hela nattjobbet väntar på mobilverifiering före merge. Checklista: (1) toast + bekräftelsedialoger (rensa lista, kassera plan, ta bort recept, rea-varning), (2) Ångra på borttagen inköpsvara, (3) inköpslistans progress + räknare uppdateras vid bockning och från annan enhet, (4) matlagningsläget öppnar/stänger + skärmen hålls vaken, (5) "Ikväll"-raden i premium-heron, (6) steppers i inställningarna, (7) PWA: "Lägg till på hemskärmen" ger egen ikon + appen öppnar offline (skalet), (8) skip-day/swap-days funkar fortfarande mot live-DB (nu med plan_id-filter).
+- **Helhetsomtaget Session 86 (PR #73, mergad till main 2026-06-12):** preview-testat av Joakim före merge. Kvar att bekräfta mot produktion (snabbkoll): (1) PWA: "Lägg till på hemskärmen" från produktions-URL:en ger egen ikon + appen öppnar offline (skalet), (2) matlagningslägets Wake Lock på riktig mobil, (3) skip-day/swap-days mot live-DB (nu med plan_id-filter), (4) Ångra på borttagen inköpsvara + progress-synk från annan enhet.
 - **Premiumvy för matsedeln** (Session 84, PR #69, mergad; justerad Session 85, PR #70): kod klar + testsvit grön, men inte verifierad på mobil mot produktion. Bekräfta att Premium-vyn renderar, att alla åtgärder fungerar (slumpa/välj/byt dag/fri dag/besparing/egen planering) och att växeln Premium↔Klassisk håller båda vyerna i synk. Default är Premium — flippa till Klassisk om något strular. **Session 85-tillägg att kolla:** (1) helg visas nu som en diskret prick på dagkortets färgrygg (ej textpill) → bekräfta att helgkort är lika höga som vardagskort; (2) "Vecka N"-avdelare dyker upp i listan där ISO-veckan byter (syns bara på planer som spänner två veckor).
 
 ### Öppna utredningar
@@ -131,7 +131,7 @@ Inga bekräftade just nu.
 
 ### Senaste session — Session 86 (2026-06-11) — Helhetsomtag (Fable 5-natten): feedback, matlagningsläge, PWA
 
-Mål (användarbegäran, fria händer): nattjobb med komplett analys + omtag där det ger värde. Två granskningsagenter auditerade frontend/backend; implementation på branch `claude/fable5-redesign-overhaul-4rb4dx` → **PR, EJ mergad till main** (stort UI-omtag ska live-verifieras på mobil först).
+Mål (användarbegäran, fria händer): nattjobb med komplett analys + omtag där det ger värde. Två granskningsagenter auditerade frontend/backend; implementation på branch `claude/fable5-redesign-overhaul-4rb4dx` → **PR #73, preview-testad av Joakim och mergad till main 2026-06-12**.
 
 - **Feedback-fundament (`js/ui/feedback.js`):** toast-system (`showToast`) + promise-baserad bekräftelsedialog (`confirmDialog`) i appens designspråk. Alla `alert()`/`confirm()` ersatta (shopping-list, ingredient-preview, kassera plan, ta bort recept, rea-varningen). **"Rensa lista" hade INGEN bekräftelse — nu kräver den en.** Borttagna inköpsvaror får "Ångra"-toast (raden hämtas före delete, återinsätts vid ångra).
 - **Inköpslistan:** progressrad "X av Y klara" + progressbar (`updateShopProgress` uppdaterar på plats, även från realtime), kategoriräknare "klara av totalt", touch-vänliga rader (~48px), runda checkboxar, premium-kortstil. Nycklar/bock-logik orörda.
@@ -141,7 +141,7 @@ Mål (användarbegäran, fria händer): nattjobb med komplett analys + omtag dä
 - **Touch & tillgänglighet:** −/+-steppers runt sifferfälten i inställningarna (`stepNum`), `.prot-btn` ≥40px, `.pill-toggle` utökad träffyta (~44px), header-tab-kontrast 0.45→0.72, `.pill-untested`-kontrast höjd. Tomma matsedelsvyn fick CTA "+ Skapa matsedel" (`openNewPlan`). Receptkorten fick proteinfärgad rygg (samma språk som premiumvyns dagkort).
 - **Backend-härdning:** `handler.js` maskerar programfel (TypeError m.fl.) med generiskt svenskt meddelande — avsiktliga `new Error("…")` visas fortfarande; `skip-day`/`swap-days` skriver nu med `plan_id`-filter (skyddar egen planering-rader på samma datum); `generate.js` validerar serverside (max 15 dagar, inställningsvärden klampas till spannet).
 - **Verifierat:** `node --check` rent på alla ändrade filer; hela testsviten grön — match 103, corpus 35, shopping 81, select 432, data-mapper 27, dispatch 93, cookies 29 (800 assertions). Versioner: `styles.css?v=97`, `app.js?v=95`.
-- **Kvar:** live-verifiering på mobil (se *Väntar på live-verifiering*) + merge av PR:en när Joakim godkänt.
+- **Kvar:** snabbkoll mot produktion efter merge (se *Väntar på live-verifiering*).
 
 ### Tidigare sessioner
 Session 8–85 i `docs/session-log-archive.md`. Full git-historik: `git log --oneline`.
