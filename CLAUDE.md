@@ -142,6 +142,7 @@ Mål (användarbegäran, fria händer): nattjobb med komplett analys + omtag dä
 - **Backend-härdning:** `handler.js` maskerar programfel (TypeError m.fl.) med generiskt svenskt meddelande — avsiktliga `new Error("…")` visas fortfarande; `skip-day`/`swap-days` skriver nu med `plan_id`-filter (skyddar egen planering-rader på samma datum); `generate.js` validerar serverside (max 15 dagar, inställningsvärden klampas till spannet).
 - **Verifierat:** `node --check` rent på alla ändrade filer; hela testsviten grön — match 103, corpus 35, shopping 81, select 432, data-mapper 27, dispatch 93, cookies 29 (800 assertions). Versioner: `styles.css?v=98`, `app.js?v=95`.
 - **Efterfix (PR #74 + #75):** matlagningslägets progressrad döljdes bakom iPhone-pannan (Dynamic Island) i installerad app — sticky-`top` flyttad till `env(safe-area-inset-top)` + linen-remsa som täcker safe-arean vid scroll. Remsan måste vara ett riktigt element (`.cook-safe-strip` i normalt flöde) — sticky på `::before` till scroll-containern fastnade inte på iOS.
+- **Efterfix (PR #76):** premiumvyn gömde ALLA dagåtgärder på bekräftad plan — "Byt dag" + "Fri dag — skjut planen" ska (som i klassiska vyn) finnas kvar även efter bekräftelse, eftersom de inte ändrar receptmängden/inköpslistan. Gaten delad i `canReplace` (slumpa/välj själv, kräver obekräftad) och `canMove` (byt/fri dag, kräver bara aktiv plan).
 - **Kvar:** snabbkoll mot produktion efter merge (se *Väntar på live-verifiering*).
 
 ### Tidigare sessioner
