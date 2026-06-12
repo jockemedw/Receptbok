@@ -1,13 +1,14 @@
 import { createSupabaseHandler } from "./_shared/handler.js";
 import { db, getHouseholdId } from "./_shared/supabase.js";
+import { planAfterMove, changedRows, contentOf } from "./_shared/day-ops.js";
 
 // "Flytta dag" — lyfter ut en dags recept och klämmer in det före en annan dag.
 //
 // Datumen ligger fast; det är INNEHÅLLET (recept, besparing) som roteras mellan
-// raderna: dagen före målpositionen och allt efter skjuts ett steg framåt, och
-// luckan där receptet stod sluts. Fria dagar (blocked) är PINNADE vid sina
-// datum — de är valda för att familjen är borta just de kvällarna — så
-// rotationen sker bara över icke-fria rader.
+// raderna. Fria dagar (blocked) är PINNADE vid sina datum — de är valda för att
+// familjen är borta just de kvällarna. Rotationslogiken bor i _shared/day-ops.js
+// (enhetstestad) och verifierar att receptmängden är oförändrad innan något
+// skrivs. Skrivningen sker som EN bulk-upsert (en SQL-sats → atomär).
 //
 // Receptmängden är oförändrad → inköpslistan rörs inte (bockningar bevaras).
 //
@@ -32,69 +33,55 @@ function toWeeklyPlan(plan, orderedRows) {
 export default createSupabaseHandler(async (req, res) => {
   const { date, before = null } = req.body || {};
   if (!date) return res.status(400).json({ error: "date saknas" });
-  if (before === date) return res.status(200).json({ ok: true, noop: true });
 
   const householdId = await getHouseholdId();
 
-  const { data: plans } = await db
+  const { data: plans, error: planErr } = await db
     .from("weekly_plans")
     .select("id, start_date, end_date, confirmed_at")
     .eq("household_id", householdId)
     .eq("is_active", true)
     .limit(1);
+  if (planErr) throw new Error("Kunde inte läsa matsedeln — prova igen.");
   const plan = plans?.[0];
   if (!plan) return res.status(404).json({ error: "Ingen aktiv plan hittades." });
 
-  const { data: rows } = await db
+  const { data: rows, error: rowsErr } = await db
     .from("meal_days")
     .select("date, recipe_id, recipe_title_snapshot, saving, saving_matches, blocked")
     .eq("plan_id", plan.id)
     .order("date");
+  if (rowsErr) throw new Error("Kunde inte läsa matsedeln — prova igen.");
   if (!rows?.length) return res.status(404).json({ error: "Inga dagar i planen." });
 
-  const movable = rows.filter((r) => r.blocked !== true);
-  const srcIdx = movable.findIndex((r) => r.date === date);
-  if (srcIdx === -1) {
-    return res.status(400).json({ error: "Dagen kan inte flyttas." });
+  const result = planAfterMove(rows, date, before);
+  if (result.error === "src")    return res.status(400).json({ error: "Dagen kan inte flyttas." });
+  if (result.error === "target") return res.status(400).json({ error: "Måldagen finns inte i planen." });
+  if (result.error === "invariant") {
+    console.error("move-day: invariant bruten — avbryter utan att skriva", { date, before });
+    return res.status(500).json({ error: "Flytten avbröts som säkerhetsåtgärd — ingenting har ändrats. Prova igen." });
   }
-  let tgtIdx = movable.length; // before = null → kläm in sist
-  if (before) {
-    tgtIdx = movable.findIndex((r) => r.date === before);
-    if (tgtIdx === -1) {
-      return res.status(400).json({ error: "Måldagen finns inte i planen." });
-    }
+  if (result.noop) {
+    return res.status(200).json({ ok: true, noop: true, weeklyPlan: toWeeklyPlan(plan, rows) });
   }
 
-  // Rotera innehållet: lyft ur källan, kläm in på målpositionen
-  const contents = movable.map((r) => ({
-    recipe_id:             r.recipe_id,
-    recipe_title_snapshot: r.recipe_title_snapshot,
-    saving:                r.saving,
-    saving_matches:        r.saving_matches,
+  // Bara de roterade raderna skrivs — i EN bulk-upsert mot PK (household_id, date)
+  const payload = changedRows(rows, result.next).map((r) => ({
+    household_id: householdId,
+    plan_id:      plan.id,
+    date:         r.date,
+    blocked:      false,
+    ...contentOf(r),
   }));
-  const [moved] = contents.splice(srcIdx, 1);
-  const insertIdx = tgtIdx - (srcIdx < tgtIdx ? 1 : 0);
-
-  if (insertIdx !== srcIdx) {
-    contents.splice(insertIdx, 0, moved);
-    // Bara raderna i det roterade spannet ändras
-    const lo = Math.min(srcIdx, insertIdx);
-    const hi = Math.max(srcIdx, insertIdx);
-    const writes = [];
-    for (let i = lo; i <= hi; i++) {
-      writes.push(
-        db.from("meal_days").update(contents[i])
-          .eq("plan_id", plan.id).eq("date", movable[i].date)
-      );
+  if (payload.length) {
+    const { error: writeErr } = await db
+      .from("meal_days")
+      .upsert(payload, { onConflict: "household_id,date" });
+    if (writeErr) {
+      console.error("move-day: upsert misslyckades", writeErr);
+      throw new Error("Kunde inte spara flytten — prova igen.");
     }
-    await Promise.all(writes);
-  } else {
-    contents.splice(insertIdx, 0, moved); // no-op-flytt → oförändrat innehåll
   }
 
-  const byDate = new Map(movable.map((r, i) => [r.date, contents[i]]));
-  const respRows = rows.map((r) =>
-    r.blocked === true ? r : { date: r.date, blocked: false, ...byDate.get(r.date) }
-  );
-  return res.status(200).json({ ok: true, weeklyPlan: toWeeklyPlan(plan, respRows) });
+  return res.status(200).json({ ok: true, weeklyPlan: toWeeklyPlan(plan, result.next) });
 });

@@ -29,6 +29,10 @@ function subscribeMealDays(householdId) {
       // Ladda inte om om användaren är mitt i en interaktion
       if (window.replaceMode || window.customPickMode) return;
       if (document.querySelector('.week-day-card.swap-source')) return;
+      if (window._dlxSwap || window._dlxMove) return;   // premiumvyns byt/flytta-läge
+      // Eko-dämpning: våra egna skrivningar har redan uppdaterat vyn från
+      // API-svaret — hoppa över omhämtningen som annars orsakar ett blink.
+      if (window._planMutateUntil && Date.now() < window._planMutateUntil) return;
       window.loadWeeklyPlan();
     })
     .subscribe();

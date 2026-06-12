@@ -4807,3 +4807,50 @@ body.cook-open { overflow: hidden; }
 
 /* Detaljhuvudet i premiumvyn har nu tre barn (status, portioner, laga-knapp) */
 .dlx-detail-head { justify-content: flex-start; gap: 0.65rem; flex-wrap: wrap; }
+
+/* ═══ Session 87 — dagflytt-polish: diff-sektioner, busy-states, glöd-kvitto ═══ */
+
+/* Sektionswrappers för diff-rendering — osynliga för layouten */
+.dlx-sec { display: contents; }
+
+/* Byt/flytta-bannern: sticky så den följer med när man scrollar bland målen */
+.dlx-swap-banner {
+  position: sticky;
+  top: calc(var(--header-h, 56px) + 6px);
+  z-index: 30;
+  box-shadow: 0 4px 14px rgba(44,63,51,0.25);
+}
+.dlx-swap-banner.busy span::before {
+  content: '';
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: dlxSpin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+/* Nedtonade kort i byt/flytta-läge — ogiltiga mål (fortfarande tryckbara:
+   trycket ger en förklarande toast istället för att tyst ignoreras) */
+.dlx-dim { opacity: 0.4; }
+
+/* Pågående skrivning — källa + valt mål pulserar tills servern svarat */
+.dlx-busy {
+  pointer-events: none;
+  animation: dlxBusyPulse 1s ease-in-out infinite;
+}
+@keyframes dlxBusyPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+/* Glöd-kvitto: berörda dagar lyser till efter en lyckad åtgärd */
+.dlx-flash {
+  animation: dlxFlashGlow 1.4s ease both;
+}
+@keyframes dlxFlashGlow {
+  0%   { box-shadow: 0 0 0 3px var(--lichen); background-color: var(--moss-soft); }
+  60%  { box-shadow: 0 0 0 3px rgba(122,148,130,0.35); }
+  100% { box-shadow: 0 0 0 0 rgba(122,148,130,0); }
+}

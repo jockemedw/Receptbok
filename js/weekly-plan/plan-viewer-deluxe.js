@@ -118,12 +118,13 @@ function buildTonight(timeline) {
 
   const expanded = window._dlxExpanded === d.date;
 
-  let label, sub = '', click = `dlxToggleDay('${d.date}')`, kind = '', detail = '';
+  let label, sub = '', click = `dlxToggleDay('${d.date}')`, kind = '', mkind = 'custom', detail = '';
   if (d.recipeId && !d.isCustom) {
     const r = recipeById(d.recipeId);
     label = d.recipe || '';
     sub = [r?.time ? `${r.time} min` : null, r ? PROTEIN_LABEL[r.protein] : null].filter(Boolean).join(' · ');
     kind = 'recipe';
+    mkind = 'recipe';
     if (expanded) detail = recipeDetail(d, r, { active: d.planId === 'active' });
   } else if (d.isCustom && d.customRecipeId) {
     const r = recipeById(d.customRecipeId);
@@ -133,17 +134,18 @@ function buildTonight(timeline) {
   } else if (d.isCustom && (d.customRecipeTitle || d.customNote)) {
     label = d.customRecipeTitle || d.customNote;
     sub = 'Egen planering';
-    click = `openCustomDay('${d.date}', '${attr(d.day)}')`;
+    click = `dlxCustomClick('${d.date}', '${attr(d.day)}')`;
   } else if (d.blocked) {
     label = 'Fri dag';
     sub = 'Ingen middag planerad';
-    click = `openBlockedDay('${d.date}', '${attr(d.day)}')`;
+    mkind = 'free';
+    click = `dlxFreeClick('${d.date}', '${attr(d.day)}')`;
   } else {
     return '';
   }
 
   return `
-    <article class="dlx-tonight${expanded ? ' expanded' : ''}" data-date="${d.date}"${kind ? ` data-kind="${kind}"` : ''}
+    <article class="dlx-tonight${expanded ? ' expanded' : ''}${modeCls(d, mkind)}" data-date="${d.date}"${kind ? ` data-kind="${kind}"` : ''}
              role="button" tabindex="0" onclick="${click}">
       <span class="dlx-tonight-eyebrow">${I.pot} Ikväll</span>
       <div class="dlx-tonight-head">
@@ -235,6 +237,23 @@ function buildHero(plan, pending) {
 }
 
 // ── Dagskort ──────────────────────────────────────────────────────────────────
+
+// Tilläggsklasser under pågående byt/flytta-läge: källa, giltigt mål eller
+// nedtonad. Beräknas i renderingen (state-driven) så markeringarna alltid
+// stämmer — även efter en re-render mitt i flödet.
+function modeCls(d, kind) {
+  const mode = window._dlxSwap || window._dlxMove;
+  if (!mode) return '';
+  if (d.date === mode.from) return ' dlx-swap-source' + (mode.pending ? ' dlx-busy' : '');
+  if (window._dlxMove) return ' dlx-dim';   // i flytta-läge är bara släppzonerna mål
+  const eligible =
+    kind === 'recipe' ? (d.planId === 'active' && !d.isArchive) :
+    kind === 'gap'    ? !d.isPast :
+    false;                                  // egen planering/fri dag kan aldrig bytas
+  if (!eligible) return ' dlx-dim';
+  return ' dlx-swap-target' + (window._dlxSwap.pending === d.date ? ' dlx-busy' : '');
+}
+
 function dayBadges(d) {
   const out = [];
   if (d.isToday) out.push('<span class="dlx-day-flag today">Idag</span>');
@@ -263,7 +282,7 @@ function recipeDayCard(d, opts) {
   if (time) metaParts.push(`<span class="dlx-meta-time">${I.clock}${time}</span>`);
 
   return `
-    <article class="dlx-day${opts.cls}${expanded ? ' expanded' : ''}" data-date="${d.date}"
+    <article class="dlx-day${opts.cls}${expanded ? ' expanded' : ''}${modeCls(d, 'recipe')}" data-date="${d.date}"
              style="--rail:${color}" onclick="dlxToggleDay('${d.date}')">
       <span class="dlx-rail"></span>
       <div class="dlx-day-head">
@@ -347,7 +366,7 @@ function emptyDayCard(d) {
       const color = r ? (PROTEIN_COLOR[r.protein] || 'var(--lichen)') : 'var(--lichen)';
       const expanded = window._dlxExpanded === d.date;
       return `
-        <article class="dlx-day custom${expanded ? ' expanded' : ''}" data-date="${d.date}" style="--rail:${color}"
+        <article class="dlx-day custom${expanded ? ' expanded' : ''}${modeCls(d, 'custom')}" data-date="${d.date}" style="--rail:${color}"
                  onclick="dlxToggleDay('${d.date}')">
           <span class="dlx-rail"></span>
           <div class="dlx-day-head">
@@ -364,7 +383,7 @@ function emptyDayCard(d) {
         </article>`;
     }
     return `
-      <article class="dlx-day custom slim" data-date="${d.date}" onclick="openCustomDay('${d.date}', '${attr(d.day)}')">
+      <article class="dlx-day custom slim${modeCls(d, 'custom')}" data-date="${d.date}" onclick="dlxCustomClick('${d.date}', '${attr(d.day)}')">
         <span class="dlx-rail" style="background:var(--birch)"></span>
         <div class="dlx-day-head">
           <div class="dlx-day-when"><span class="dlx-day-dow">${esc(d.day)}</span>
@@ -380,9 +399,9 @@ function emptyDayCard(d) {
   }
 
   if (d.blocked) {
-    const click = `onclick="openBlockedDay('${d.date}', '${attr(d.day)}')"`;
+    const click = `onclick="dlxFreeClick('${d.date}', '${attr(d.day)}')"`;
     return `
-      <article class="dlx-day free slim" data-date="${d.date}" ${click}>
+      <article class="dlx-day free slim${modeCls(d, 'free')}" data-date="${d.date}" ${click}>
         <span class="dlx-rail" style="background:var(--birch-soft)"></span>
         <div class="dlx-day-head">
           <div class="dlx-day-when"><span class="dlx-day-dow">${esc(d.day)}</span>
@@ -399,7 +418,7 @@ function emptyDayCard(d) {
   const clickable = !d.isPast;
   const click = clickable ? `onclick="dlxGapClick('${d.date}', '${attr(d.day)}')"` : '';
   return `
-    <article class="dlx-day gap slim${clickable ? '' : ' inert'}" data-date="${d.date}" ${click}>
+    <article class="dlx-day gap slim${clickable ? '' : ' inert'}${modeCls(d, 'gap')}" data-date="${d.date}" ${click}>
       <span class="dlx-rail" style="background:transparent"></span>
       <div class="dlx-day-head">
         <div class="dlx-day-when"><span class="dlx-day-dow">${esc(d.day)}</span>
@@ -455,6 +474,39 @@ function renderDayList(days) {
 }
 
 // ── Huvudrendering ────────────────────────────────────────────────────────────
+// Sektionsvis diff-rendering: varje del (historik/hero/banner/ikväll/dagar)
+// bor i en egen wrapper (display: contents → påverkar inte layouten) och får
+// sin innerHTML utbytt BARA när innehållet faktiskt ändrats. Det gör att t.ex.
+// heron aldrig byggs om när man expanderar ett kort eller när realtime-ekot
+// från ens egen skrivning kommer — inget blink, ingen fladder.
+function setSec(host, name, html) {
+  let el = host.querySelector(`:scope > .dlx-sec[data-sec="${name}"]`);
+  if (!el) {
+    el = document.createElement('div');
+    el.className = 'dlx-sec';
+    el.dataset.sec = name;
+    host.appendChild(el);
+  }
+  if (el._dlxHtml !== html) { el.innerHTML = html; el._dlxHtml = html; }
+}
+
+// Banner för pågående byt/flytta-läge — state-driven så den överlever re-renders.
+function modeBannerHtml() {
+  if (window._dlxSwap) {
+    const busy = !!window._dlxSwap.pending;
+    return `<div class="dlx-swap-banner${busy ? ' busy' : ''}">
+      <span>${busy ? `${I.swap} Byter dag…` : `${I.swap} Välj dagen att byta med — recept eller tom dag`}</span>
+      ${busy ? '' : '<button onclick="dlxCancelSwap()">Avbryt</button>'}</div>`;
+  }
+  if (window._dlxMove) {
+    const busy = !!window._dlxMove.pending;
+    return `<div class="dlx-swap-banner${busy ? ' busy' : ''}">
+      <span>${busy ? `${I.move} Flyttar dag…` : `${I.move} Tryck på platsen dit dagen ska flyttas`}</span>
+      ${busy ? '' : '<button onclick="dlxCancelMove()">Avbryt</button>'}</div>`;
+  }
+  return '';
+}
+
 export function renderDeluxe() {
   if (!ensureScaffold()) return;
   const host = document.getElementById('weekDeluxe');
@@ -491,7 +543,11 @@ export function renderDeluxe() {
   // Släppzon för "kläm in före ikväll" — Ikväll-kortet ligger utanför dagslistan
   const tonightZone = (tonight && moveZoneCtx()?.set.has(todayIso)) ? dropZone(todayIso) : '';
 
-  host.innerHTML = `${historyHtml}${hero}${tonightZone}${tonight}<div class="dlx-days">${upcomingHtml}</div>`;
+  setSec(host, 'history', historyHtml);
+  setSec(host, 'hero', hero);
+  setSec(host, 'banner', modeBannerHtml());
+  setSec(host, 'today', `${tonightZone}${tonight}`);
+  setSec(host, 'days', `<div class="dlx-days">${upcomingHtml}</div>`);
 
   // Engångspositionering vid första datarendering (täcker deep-link ?tab=vecka
   // vid boot). Senare omrenderingar (expandera/byta recept/realtime) får ALDRIG
@@ -551,8 +607,11 @@ function rerender(plan, shop) {
 }
 
 window.dlxShuffle = async function (date, btn) {
+  if (_opBusy) return;
+  _opBusy = true;
   if (btn) { btn.disabled = true; btn.classList.add('loading'); }
   const day = window._lastPlan?.days?.find(d => d.date === date);
+  suppressEcho();
   try {
     const res = await fetch('/api/replace-recipe', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -566,15 +625,22 @@ window.dlxShuffle = async function (date, btn) {
     if (!res.ok) throw new Error(data.error || 'fel');
     patchPlanDay(date, data.recipeId, data.recipe);
     window._dlxExpanded = date;
+    suppressEcho();
     rerender(window._lastPlan, data.shoppingList || window._lastShop);
+    dlxFlashDates([date]);
   } catch {
     if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
     dlxFlashError(date, 'Kunde inte byta recept — prova igen.');
+  } finally {
+    _opBusy = false;
   }
 };
 
 window.dlxFreeDay = async function (date, btn) {
+  if (_opBusy) return;
+  _opBusy = true;
   if (btn) { btn.disabled = true; btn.classList.add('loading'); }
+  suppressEcho();
   try {
     const res = await fetch('/api/skip-day', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -583,10 +649,14 @@ window.dlxFreeDay = async function (date, btn) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'fel');
     window._dlxExpanded = null;
+    suppressEcho();
     rerender(data.weeklyPlan, data.shoppingList || window._lastShop);
+    dlxFlashDates([date]);
   } catch {
     if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
     dlxFlashError(date, 'Kunde inte göra dagen fri — prova igen.');
+  } finally {
+    _opBusy = false;
   }
 };
 
@@ -599,50 +669,72 @@ function dlxFlashError(date, msg) {
 }
 
 // ── Byt dag (swap) ────────────────────────────────────────────────────────────
-function dlxBanner(label, cancelFn) {
-  const host = document.getElementById('weekDeluxe');
-  if (!host || host.querySelector('.dlx-swap-banner')) return;
-  const banner = document.createElement('div');
-  banner.className = 'dlx-swap-banner';
-  banner.innerHTML = `<span>${label}</span><button onclick="${cancelFn}()">Avbryt</button>`;
-  host.insertBefore(banner, host.querySelector('.dlx-days') || host.firstChild);
+// State-driven: _dlxSwap = { from, pending } styr banner, mål-markeringar och
+// nedtonade kort via renderDeluxe/modeCls — inga imperativa DOM-patchar som
+// kan tappas vid re-render. _opBusy spärrar parallella åtgärder (dubbel-tryck
+// eller två ändringar samtidigt = klassisk källa till trasiga planer).
+let _opBusy = false;
+
+// Eko-dämpning: våra egna skrivningar triggar realtime-events som annars
+// orsakar en onödig full omhämtning sekunden efter (blinket). Svaret från
+// API:t är redan sanningen — be realtime-lyssnaren ignorera ekot en stund.
+function suppressEcho() {
+  window._planMutateUntil = Date.now() + 4000;
+}
+
+// Kort glöd-markering på berörda dagar efter en lyckad åtgärd — kvitto för ögat.
+function dlxFlashDates(dates) {
+  requestAnimationFrame(() => {
+    for (const date of dates) {
+      document.querySelectorAll(`#weekDeluxe [data-date="${date}"]`).forEach(el => {
+        el.classList.add('dlx-flash');
+        setTimeout(() => el.classList.remove('dlx-flash'), 1400);
+      });
+    }
+  });
 }
 
 window.dlxStartSwap = function (fromDate) {
-  window._dlxSwap = { from: fromDate };
+  if (_opBusy) return;
+  window._dlxMove = null;
+  window._dlxSwap = { from: fromDate, pending: null };
   window._dlxExpanded = null;
   renderDeluxe();
-  dlxBanner(`${I.swap} Välj dagen att byta med — även en tom dag`, 'dlxCancelSwap');
-  // Markera giltiga mål. Fria dagar (free) utesluts — de kan inte bytas.
-  // Tomma dagar (gap) är giltiga: receptet flyttas dit, källdagen blir tom.
-  const todayIso = fmtIso(new Date());
-  document.querySelectorAll('#weekDeluxe .dlx-day').forEach(c => {
-    const d = c.dataset.date;
-    if (!d || d === fromDate) return;
-    if (c.classList.contains('is-archive') || c.classList.contains('custom') ||
-        c.classList.contains('inert') || c.classList.contains('free')) return;
-    if (c.classList.contains('gap') && d < todayIso) return;
-    c.classList.add('dlx-swap-target');
-  });
-  const src = document.querySelector(`#weekDeluxe .dlx-day[data-date="${fromDate}"]`);
-  if (src) src.classList.add('dlx-swap-source');
-  // Ikväll-kortet ersätter dagens kort i listan → låt det delta i bytet
-  const tn = document.querySelector('#weekDeluxe .dlx-tonight[data-kind="recipe"]');
-  if (tn) tn.classList.add(tn.dataset.date === fromDate ? 'dlx-swap-source' : 'dlx-swap-target');
+};
+
+window.dlxCancelSwap = function () {
+  if (window._dlxSwap?.pending) return;   // mitt i en skrivning — låt den landa
+  window._dlxSwap = null;
+  renderDeluxe();
 };
 
 // Tomma dagar: i byt dag-läge = välj som mål; i flytta dag-läge = ignorera
 // (bara släppzonerna gäller); annars = öppna egen planering.
 window.dlxGapClick = function (date, dayName) {
-  if (window._dlxSwap) { window.dlxToggleDay(date); return; }
+  if (window._dlxSwap) { dlxPickSwapTarget(date); return; }
   if (window._dlxMove) return;
   window.openCustomDay(date, dayName);
 };
 
-window.dlxCancelSwap = function () {
-  window._dlxSwap = null;
-  renderDeluxe();
+// Egen planering / fri dag: förklara varför de inte går att byta (istället för
+// att tyst öppna sina vanliga flöden mitt i ett byte).
+window.dlxCustomClick = function (date, dayName) {
+  if (window._dlxSwap) { window.showToast?.('Egen planering kan inte bytas — redigera dagen istället.', { type: 'info' }); return; }
+  if (window._dlxMove) return;
+  window.openCustomDay(date, dayName);
 };
+window.dlxFreeClick = function (date, dayName) {
+  if (window._dlxSwap) { window.showToast?.('Fria dagar kan inte bytas — ångra fri dag först.', { type: 'info' }); return; }
+  if (window._dlxMove) return;
+  window.openBlockedDay(date, dayName);
+};
+
+// Avbryt pågående läge med Escape (mobil har Avbryt-knappen i bannern)
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (window._dlxSwap && !window._dlxSwap.pending) window.dlxCancelSwap();
+  if (window._dlxMove && !window._dlxMove.pending) window.dlxCancelMove();
+});
 
 // ── Flytta dag (kläm in mellan två dagar) ─────────────────────────────────────
 // Källdagen lyfts ur och kläms in på vald position; mellanliggande recept
@@ -680,23 +772,33 @@ function dropZone(before) {
 }
 
 window.dlxStartMove = function (fromDate) {
-  window._dlxMove = { from: fromDate };
+  if (_opBusy) return;
+  window._dlxSwap = null;
+  window._dlxMove = { from: fromDate, pending: null };
   window._dlxExpanded = null;
   renderDeluxe();
-  dlxBanner(`${I.move} Tryck på platsen dit dagen ska flyttas`, 'dlxCancelMove');
-  const src = document.querySelector(`#weekDeluxe [data-date="${fromDate}"]`);
-  if (src) src.classList.add('dlx-swap-source');
 };
 
 window.dlxCancelMove = function () {
+  if (window._dlxMove?.pending) return;   // mitt i en skrivning — låt den landa
   window._dlxMove = null;
   renderDeluxe();
 };
 
 window.dlxPickMoveTarget = async function (before) {
-  const from = window._dlxMove?.from;
-  window._dlxMove = null;
-  if (!from) { renderDeluxe(); return; }
+  const move = window._dlxMove;
+  if (!move || move.pending || _opBusy) return;
+  const from = move.from;
+
+  // Omedelbar feedback: banner växlar till "Flyttar dag…", källan får spinner
+  _opBusy = true;
+  move.pending = before || '__end__';
+  renderDeluxe();
+  suppressEcho();
+
+  // Receptet som flyttas — för glöd-kvittot på landningsdagen efteråt
+  const movedId = (window._lastPlan?.days || []).find(x => x.date === from)?.recipeId ?? null;
+
   try {
     const res = await fetch('/api/move-day', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -704,28 +806,59 @@ window.dlxPickMoveTarget = async function (before) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'fel');
+    window._dlxMove = null;
+    suppressEcho();
     rerender(data.weeklyPlan, window._lastShop);
+    const landed = movedId != null
+      ? (data.weeklyPlan?.days || []).find(x => x.recipeId === movedId && x.date !== from)?.date
+      : null;
+    dlxFlashDates(landed ? [landed] : [from]);
   } catch (e) {
-    renderDeluxe();
+    move.pending = null;
+    renderDeluxe();   // läget kvar — användaren kan välja en annan plats eller avbryta
     window.showToast?.(e.message?.length > 4 ? e.message : 'Kunde inte flytta dagen — prova igen.', { type: 'error' });
+  } finally {
+    _opBusy = false;
   }
 };
 
 async function dlxPickSwapTarget(toDate) {
-  const from = window._dlxSwap?.from;
-  window._dlxSwap = null;
-  if (!from || from === toDate) { renderDeluxe(); return; }
+  const swap = window._dlxSwap;
+  if (!swap || swap.pending || _opBusy) return;
+  if (toDate === swap.from) return;
+
+  // Förvalidera mot tidslinjen — begripligt besked direkt, ingen server-tur
+  const t = (window._timelineByDate || {})[toDate];
+  if (t) {
+    if (t.isArchive) { window.showToast?.('Arkiverade veckor är historik och kan inte ändras — bara dagar i aktuella matsedeln går att byta.', { type: 'info' }); return; }
+    if (t.isCustom)  { window.showToast?.('Egen planering kan inte bytas — redigera dagen istället.', { type: 'info' }); return; }
+    if (t.blocked)   { window.showToast?.('Fria dagar kan inte bytas — ångra fri dag först.', { type: 'info' }); return; }
+    if (!t.recipeId && t.isPast) { window.showToast?.('Passerade tomma dagar kan inte väljas.', { type: 'info' }); return; }
+  }
+
+  // Omedelbar feedback: banner växlar till "Byter dag…", båda korten markeras
+  _opBusy = true;
+  swap.pending = toDate;
+  renderDeluxe();
+  suppressEcho();
+
   try {
     const res = await fetch('/api/swap-days', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date1: from, date2: toDate }),
+      body: JSON.stringify({ date1: swap.from, date2: toDate }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'fel');
+    window._dlxSwap = null;
+    suppressEcho();
     rerender(data.weeklyPlan, data.shoppingList || window._lastShop);
+    dlxFlashDates([swap.from, toDate]);
   } catch (e) {
-    renderDeluxe();
+    swap.pending = null;
+    renderDeluxe();   // läget kvar — användaren kan välja ett annat mål eller avbryta
     window.showToast?.(e.message?.length > 4 ? e.message : 'Kunde inte byta dagarna — prova igen.', { type: 'error' });
+  } finally {
+    _opBusy = false;
   }
 }
 
