@@ -104,6 +104,7 @@ Inga bekräftade just nu.
 ### Väntar på live-verifiering (kod klar, ej körd skarpt)
 - **Lösvikts-enum vid Willys-export** (PR #65): `pickUnitForCode()` skickar `"kilograms"` för `_KG`-koder (lös färskvara, t.ex. potatis). Enum-värdet är *inferred* — bara `"pieces"` är PoC-bekräftat. Bekräfta i en skarp körning att lös potatis landar i korgen.
 - **"Gör fri dag" (free/unfree)** (Session 71): `api/skip-day.js` omskriven + verifierad via standalone-simulering, men aldrig körd mot live-DB (skulle mutera aktiv plan). Bekräfta på en testplan att free→unfree round-trip bevarar planen.
+- **Helhetsomtaget Session 86 (PR #73, mergad till main 2026-06-12):** preview-testat av Joakim före merge. Kvar att bekräfta mot produktion (snabbkoll): (1) PWA: "Lägg till på hemskärmen" från produktions-URL:en ger egen ikon + appen öppnar offline (skalet), (2) matlagningslägets Wake Lock på riktig mobil, (3) skip-day/swap-days mot live-DB (nu med plan_id-filter), (4) Ångra på borttagen inköpsvara + progress-synk från annan enhet.
 - **Premiumvy för matsedeln** (Session 84, PR #69, mergad; justerad Session 85, PR #70): kod klar + testsvit grön, men inte verifierad på mobil mot produktion. Bekräfta att Premium-vyn renderar, att alla åtgärder fungerar (slumpa/välj/byt dag/fri dag/besparing/egen planering) och att växeln Premium↔Klassisk håller båda vyerna i synk. Default är Premium — flippa till Klassisk om något strular. **Session 85-tillägg att kolla:** (1) helg visas nu som en diskret prick på dagkortets färgrygg (ej textpill) → bekräfta att helgkort är lika höga som vardagskort; (2) "Vecka N"-avdelare dyker upp i listan där ISO-veckan byter (syns bara på planer som spänner två veckor).
 
 ### Öppna utredningar
@@ -124,21 +125,26 @@ Inga bekräftade just nu.
 *(Inga öppna idéer just nu — Mobil bottom-tab-nav implementerad i Session 41.)*
 
 ### Claudes idéer
-- Offline-stöd via service worker — appen fungerar utan nät (recepten cachas lokalt, synkar vid anslutning)
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
+- Portionsskalning i matlagningsläget — ×0.5/×2 räknar om mängderna i ingredienslistan
+- ~~Offline-stöd via service worker~~ — implementerad i Session 86 (appskalet cachas; data kräver nät)
 
-### Senaste session — Session 85 (2026-06-08) — Premiumvyns dagkort: jämn höjd + veckonummer
+### Senaste session — Session 86 (2026-06-11) — Helhetsomtag (Fable 5-natten): feedback, matlagningsläge, PWA
 
-Mål (användarbegäran): justera "Helg"-indikatorns läge i dagkorten — den gjorde att helgkort blev högre än vardagskort — och lägga till veckonummer i listan.
+Mål (användarbegäran, fria händer): nattjobb med komplett analys + omtag där det ger värde. Två granskningsagenter auditerade frontend/backend; implementation på branch `claude/fable5-redesign-overhaul-4rb4dx` → **PR #73, preview-testad av Joakim och mergad till main 2026-06-12**.
 
-- **Helg → diskret prick på färgryggen:** textpillen "Helg" togs bort ur `dayBadges()` (låg staplad i vänsterkolumnen → varierande korthöjd). Helg markeras nu som en liten prick (`var(--lichen-deep)` + halo) på dagkortets färgrygg via `.dlx-day.is-weekend .dlx-rail::after`. Klassen injiceras på ett ställe i `renderDayCard()` (`html.replace('class="dlx-day', …)`) så alla 5 korttyper (recept/custom/fri/gap) täcks utan att röra varje mall. Suppr. på "idag" (rust-ramen räcker). Markören ligger utanför flödet → alla kort lika höga.
-- **Veckoavdelare:** ny `renderDayList()` interfolierar en tunn `<div class="dlx-week-sep">Vecka N</div>` där ISO-veckan byter (ingen avdelare före första kortet — hero visar redan startveckan). Används för både kommande och historik. CSS: centrerad etikett med linjer på båda sidor (`var(--moss-muted)`/`var(--birch-soft)`). Hero-rutan visar fortsatt "Vecka X" / "Vecka X–Y".
-- **Beslut bekräftade med användaren:** prick-på-rygg (ej hörnmärke/inline) + avdelare-i-listan (ej per-kort).
-- **Verifierat:** `node --check` ren på modul + `app.js`. Hela beroendefria testsviten grön (match 103, corpus 35, shopping 81, select 432, data-mapper 27). Versioner bumpade: `styles.css?v=94`, `app.js?v=92`. Klassiska vyn + all plandata orörd.
-- **Kvar:** live-verifiering på mobil mot produktion (se *Väntar på live-verifiering*).
+- **Feedback-fundament (`js/ui/feedback.js`):** toast-system (`showToast`) + promise-baserad bekräftelsedialog (`confirmDialog`) i appens designspråk. Alla `alert()`/`confirm()` ersatta (shopping-list, ingredient-preview, kassera plan, ta bort recept, rea-varningen). **"Rensa lista" hade INGEN bekräftelse — nu kräver den en.** Borttagna inköpsvaror får "Ångra"-toast (raden hämtas före delete, återinsätts vid ångra).
+- **Inköpslistan:** progressrad "X av Y klara" + progressbar (`updateShopProgress` uppdaterar på plats, även från realtime), kategoriräknare "klara av totalt", touch-vänliga rader (~48px), runda checkboxar, premium-kortstil. Nycklar/bock-logik orörda.
+- **Matlagningsläge (`js/ui/cook-mode.js`):** "Börja laga" i receptdetaljen (receptboken via `renderDetailInner` + premiumvyn via `dlx-cook-btn`) → fullskärmsvy med stor text, bockbara ingredienser + steg, progressbar och **Wake Lock** (skärmen släcks inte vid spisen; återtas vid visibilitychange).
+- **PWA:** `manifest.webmanifest` + `service-worker.js` (navigering: nät först, cache bara offline; statiska filer: stale-while-revalidate; `/api/` + andra origins rörs aldrig) + ikoner i `icons/` från `scripts/generate-icons.py` (ren Python, tallrik i Scandi-paletten, maskable + apple-touch-icon). Registreras i `app.js` med relativ sökväg (Vercel + GitHub Pages).
+- **"Ikväll"-rad i premium-heron:** `buildTonight()` visar dagens middag (recept/egen planering/fri dag); tryck expanderar dagens kort.
+- **Touch & tillgänglighet:** −/+-steppers runt sifferfälten i inställningarna (`stepNum`), `.prot-btn` ≥40px, `.pill-toggle` utökad träffyta (~44px), header-tab-kontrast 0.45→0.72, `.pill-untested`-kontrast höjd. Tomma matsedelsvyn fick CTA "+ Skapa matsedel" (`openNewPlan`). Receptkorten fick proteinfärgad rygg (samma språk som premiumvyns dagkort).
+- **Backend-härdning:** `handler.js` maskerar programfel (TypeError m.fl.) med generiskt svenskt meddelande — avsiktliga `new Error("…")` visas fortfarande; `skip-day`/`swap-days` skriver nu med `plan_id`-filter (skyddar egen planering-rader på samma datum); `generate.js` validerar serverside (max 15 dagar, inställningsvärden klampas till spannet).
+- **Verifierat:** `node --check` rent på alla ändrade filer; hela testsviten grön — match 103, corpus 35, shopping 81, select 432, data-mapper 27, dispatch 93, cookies 29 (800 assertions). Versioner: `styles.css?v=97`, `app.js?v=95`.
+- **Kvar:** snabbkoll mot produktion efter merge (se *Väntar på live-verifiering*).
 
 ### Tidigare sessioner
-Session 8–82 i `docs/session-log-archive.md`. Full git-historik: `git log --oneline`.
+Session 8–85 i `docs/session-log-archive.md`. Full git-historik: `git log --oneline`.
 
 ## Kommandon (tester & skript)
 Inga npm-scripts — allt körs direkt med `node` (inga externa deps utom de tester som kräver `node_modules`).
@@ -150,7 +156,7 @@ node tests/match-corpus.test.js     # 35  — accept/reject-korpus
 node tests/shopping.test.js         # 81  — inköpslista (clean→parse→merge→categorize)
 node tests/select-recipes.test.js   # 432 — deterministiskt receptval
 node tests/data-mapper.test.js      # 27  — recipeFromRow/recipeToRow
-node tests/dispatch-to-willys.test.js  # 88 — kräver node_modules
+node tests/dispatch-to-willys.test.js  # 93 — kräver node_modules
 node tests/cookies-endpoint.test.js    # 29 — kräver node_modules
 
 node --check js/app.js              # syntaxkoll (PostToolUse-hooken gör detta auto vid Edit av js/)

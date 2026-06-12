@@ -58,7 +58,7 @@ export async function moveToShoppingList() {
     window.switchTab('shop');
     if (window.loadShoppingTab) window.loadShoppingTab();
   } catch {
-    alert('Kunde inte flytta varorna — prova igen.');
+    window.showToast('Kunde inte flytta varorna — prova igen.', { type: 'error' });
     btn.textContent = 'Flytta till inköpslista →';
     btn.disabled    = false;
   }

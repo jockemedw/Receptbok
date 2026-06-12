@@ -124,7 +124,7 @@
     background: none;
     border: none;
     border-bottom: 2px solid transparent;
-    color: rgba(250,247,242,0.45);
+    color: rgba(250,247,242,0.72); /* var 0.45 — under WCAG-kontrast på lichen */
     font-family: 'DM Sans', sans-serif;
     font-size: 0.88rem;
     font-weight: 500;
@@ -152,7 +152,7 @@
       flex-direction: column;
       align-items: center;
       gap: 0.28rem;
-      color: rgba(250,247,242,0.52);
+      color: rgba(250,247,242,0.72);
       padding: 0.3rem 1.5rem 0.5rem;
       flex: none;
       position: relative;
@@ -805,9 +805,15 @@
   .pill-protein  { background: var(--clay); color: var(--rust); }
   .pill-time     { background: #f2ede8; color: var(--text-muted); }
   .pill-tested   { background: var(--moss-soft); color: var(--color-success-dark); }
-  .pill-untested { background: #f4f2ef; color: #b0a090; }
-  .pill-toggle   { cursor: pointer; }
+  .pill-untested { background: #f4f2ef; color: #857a64; } /* mörkare — läsbar kontrast */
+  .pill-toggle   { cursor: pointer; position: relative; }
   .pill-toggle:active { opacity: 0.6; }
+  /* Osynligt utökad träffyta — pillen är visuellt liten men touch-målet blir ~44px */
+  .pill-toggle::after {
+    content: '';
+    position: absolute;
+    inset: -0.7rem -0.4rem;
+  }
 
   /* ── ICON UTILITY (inline SVG follows text) ── */
   .icon {
@@ -2157,9 +2163,10 @@
   .shopping-category {
     background: white;
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 14px;
     overflow: hidden;
-    margin-bottom: 0.8rem;
+    margin-bottom: 0.85rem;
+    box-shadow: 0 1px 4px rgba(45,52,40,0.05);
   }
 
   .shopping-cat-header {
@@ -2195,7 +2202,8 @@
     display: flex;
     align-items: center;
     gap: 0.85rem;
-    padding: 0.55rem 1rem;
+    padding: 0.7rem 1rem;       /* touch-vänlig radhöjd (~48px) */
+    min-height: 2.9rem;
     border-bottom: 1px solid #f5f0ea;
     cursor: pointer;
     transition: background 0.15s;
@@ -2214,15 +2222,15 @@
   }
 
   .item-checkbox {
-    width: 1.15rem;
-    height: 1.15rem;
-    border: 1.5px solid var(--border);
-    border-radius: 4px;
+    width: 1.45rem;
+    height: 1.45rem;
+    border: 2px solid var(--birch-soft);
+    border-radius: 50%;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.7rem;
+    font-size: 0.78rem;
     background: white;
     transition: background 0.15s, border-color 0.15s;
   }
@@ -2518,9 +2526,10 @@
     background: #f4f2ef;
     border: 1.5px solid var(--border);
     color: var(--text-muted);
-    padding: 0.3rem 0.75rem;
+    padding: 0.55rem 0.95rem;   /* touch-vänligt: ≥40px höjd */
+    min-height: 2.5rem;
     border-radius: 20px;
-    font-size: 0.78rem;
+    font-size: 0.82rem;
     cursor: pointer;
     font-family: 'DM Sans', sans-serif;
     font-weight: 500;
@@ -4248,3 +4257,489 @@ body.week-deluxe .week-meta { display: none; }
   .dlx-actions { grid-template-columns: repeat(4, 1fr); }
   .dlx-hero-title { font-size: 2rem; }
 }
+
+/* ═══ Session 86 — Fable 5-omtag: feedback, matlagningsläge, PWA-polish ═══ */
+
+/* ── Toast-notiser ── */
+#toastHost {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--bottom-nav-h) + 1rem);
+  transform: translateX(-50%);
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: min(92vw, 26rem);
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  width: 100%;
+  background: var(--forest-deep);
+  color: var(--linen);
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(44,63,51,0.35);
+  font-size: 0.9rem;
+  line-height: 1.35;
+  opacity: 0;
+  transform: translateY(0.6rem);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.toast-success { background: var(--lichen-deep); }
+.toast-error   { background: var(--rust-deep); }
+.toast-text { flex: 1; }
+.toast-action {
+  background: rgba(255,255,255,0.16);
+  border: none;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.toast-action:active { background: rgba(255,255,255,0.3); }
+
+/* ── Bekräftelsedialog ── */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  background: rgba(44,63,51,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.confirm-overlay.show { opacity: 1; }
+.confirm-box {
+  background: var(--linen-card);
+  border-radius: 16px;
+  padding: 1.4rem 1.3rem 1.1rem;
+  width: min(100%, 23rem);
+  box-shadow: 0 18px 50px rgba(44,63,51,0.35);
+  transform: scale(0.95);
+  transition: transform 0.2s ease;
+}
+.confirm-overlay.show .confirm-box { transform: scale(1); }
+.confirm-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--forest-deep);
+  margin-bottom: 0.5rem;
+}
+.confirm-msg {
+  font-size: 0.9rem;
+  color: var(--moss-muted);
+  line-height: 1.5;
+  margin-bottom: 1.1rem;
+}
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
+}
+.confirm-actions button {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.65rem 1.15rem;
+  border-radius: 10px;
+  cursor: pointer;
+  min-height: 2.75rem;
+}
+.confirm-cancel {
+  background: transparent;
+  border: 1.5px solid var(--birch-soft);
+  color: var(--forest);
+}
+.confirm-cancel:active { background: var(--stone); }
+.confirm-ok {
+  background: var(--lichen-deep);
+  border: 1.5px solid var(--lichen-deep);
+  color: #fff;
+}
+.confirm-ok.danger {
+  background: var(--rust-deep);
+  border-color: var(--rust-deep);
+}
+.confirm-ok:active { filter: brightness(1.08); }
+
+/* ── Matlagningsläge ── */
+body.cook-open { overflow: hidden; }
+.cook-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  background: var(--linen);
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  transform: translateY(2rem);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+.cook-overlay.show { opacity: 1; transform: translateY(0); }
+.cook-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: calc(env(safe-area-inset-top, 0px) + 1.1rem) 1.25rem 0.4rem;
+}
+.cook-head-info { flex: 1; min-width: 0; }
+.cook-eyebrow {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lichen-deep);
+  margin-bottom: 0.25rem;
+}
+.cook-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--forest-deep);
+  line-height: 1.2;
+}
+.cook-meta {
+  font-size: 0.85rem;
+  color: var(--moss-muted);
+  margin-top: 0.3rem;
+}
+.cook-close {
+  background: var(--stone);
+  border: none;
+  color: var(--forest);
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  font-size: 1.05rem;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.cook-close:active { background: var(--birch-soft); }
+.cook-progress {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--linen);
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.7rem 1.25rem;
+  border-bottom: 1px solid var(--birch-soft);
+}
+.cook-progress-track,
+.shop-progress-track {
+  flex: 1;
+  height: 0.5rem;
+  background: var(--stone);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.cook-progress-fill,
+.shop-progress-fill {
+  height: 100%;
+  width: 0;
+  background: var(--lichen-deep);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+.cook-progress-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--forest);
+  white-space: nowrap;
+}
+.cook-body {
+  padding: 1rem 1.25rem calc(env(safe-area-inset-bottom, 0px) + 2rem);
+  max-width: 42rem;
+  margin: 0 auto;
+  width: 100%;
+}
+.cook-ings-wrap {
+  background: var(--linen-card);
+  border: 1px solid var(--birch-soft);
+  border-radius: 14px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 1.1rem;
+}
+.cook-ings-wrap summary {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--forest-deep);
+  cursor: pointer;
+  user-select: none;
+}
+.cook-ings { list-style: none; margin-top: 0.6rem; }
+.cook-ing {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.5rem 0;
+  font-size: 0.95rem;
+  color: var(--forest);
+  cursor: pointer;
+  border-bottom: 1px solid #f0ebe2;
+}
+.cook-ing:last-child { border-bottom: none; }
+.cook-ing-box {
+  width: 1.3rem;
+  height: 1.3rem;
+  border: 2px solid var(--birch-soft);
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  transition: background 0.15s, border-color 0.15s;
+}
+.cook-ing.done { color: var(--moss-muted); text-decoration: line-through; }
+.cook-ing.done .cook-ing-box {
+  background: var(--lichen-deep);
+  border-color: var(--lichen-deep);
+}
+.cook-ing.done .cook-ing-box::after { content: '✓'; color: #fff; }
+.cook-steps {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  counter-reset: none;
+}
+.cook-step {
+  display: flex;
+  gap: 0.9rem;
+  align-items: flex-start;
+  background: var(--linen-card);
+  border: 1px solid var(--birch-soft);
+  border-radius: 14px;
+  padding: 1rem;
+  font-size: 1.05rem;          /* stor text — läsbar på armlängds avstånd vid spisen */
+  line-height: 1.55;
+  color: var(--forest);
+  cursor: pointer;
+  transition: opacity 0.2s, border-color 0.2s;
+}
+.cook-step.current { border-color: var(--rust); box-shadow: 0 2px 10px rgba(181,106,76,0.12); }
+.cook-step.done { opacity: 0.45; }
+.cook-step.done .cook-step-text { text-decoration: line-through; }
+.cook-step-num {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--lichen-deep);
+  background: var(--moss-soft);
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.cook-step.done .cook-step-num { background: var(--lichen-deep); color: #fff; }
+.cook-notes {
+  margin-top: 1.1rem;
+  background: var(--clay);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--forest);
+}
+.cook-done-btn {
+  display: block;
+  width: 100%;
+  margin-top: 1.4rem;
+  background: var(--lichen-deep);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 0.95rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cook-done-btn:active { filter: brightness(1.08); }
+
+/* "Börja laga"-knappar i receptdetaljerna */
+.cook-mode-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 1rem;
+  background: var(--lichen-deep);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 0.8rem;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cook-mode-btn:active { filter: brightness(1.08); }
+.dlx-cook-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: auto;
+  background: var(--lichen-deep);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 0.5rem 0.95rem;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dlx-cook-btn svg { width: 1em; height: 1em; }
+.dlx-cook-btn:active { filter: brightness(1.08); }
+
+/* ── Inköpslistans progress ── */
+.shop-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  background: var(--linen-card);
+  border: 1px solid var(--birch-soft);
+  border-radius: 14px;
+  padding: 0.8rem 1rem;
+  margin-bottom: 0.85rem;
+  box-shadow: 0 1px 4px rgba(45,52,40,0.05);
+}
+.shop-progress-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--forest);
+  white-space: nowrap;
+}
+.shop-progress.complete .shop-progress-label { color: var(--lichen-deep); }
+
+/* ── Steppers i inställningarna ── */
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.step-btn {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-radius: 50%;
+  border: 1.5px solid var(--birch-soft);
+  background: var(--linen-card);
+  color: var(--forest);
+  font-size: 1.15rem;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.step-btn:active { background: var(--moss-soft); border-color: var(--lichen); }
+/* Göm webbläsarens egna spinners — stepparna ersätter dem */
+.stepper .setting-num::-webkit-outer-spin-button,
+.stepper .setting-num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.stepper .setting-num { -moz-appearance: textfield; appearance: textfield; width: 2.6rem; }
+
+/* ── "Ikväll"-rad i premium-heron ── */
+.dlx-tonight {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  width: 100%;
+  text-align: left;
+  background: var(--linen-card);
+  border: 1px solid var(--birch-soft);
+  border-left: 4px solid var(--rust);
+  border-radius: 14px;
+  padding: 0.85rem 1.1rem;
+  margin: 0.85rem 0 0.2rem;
+  cursor: pointer;
+  font-family: inherit;
+  box-shadow: 0 1px 4px rgba(45,52,40,0.05);
+}
+.dlx-tonight:active { background: var(--stone); }
+.dlx-tonight-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--rust);
+}
+.dlx-tonight-eyebrow svg { width: 1.1em; height: 1.1em; }
+.dlx-tonight-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--forest-deep);
+  line-height: 1.25;
+}
+.dlx-tonight-sub {
+  font-size: 0.82rem;
+  color: var(--moss-muted);
+}
+
+/* ── CTA i tomma matsedelsvyn ── */
+.empty-cta-btn {
+  margin-top: 1rem;
+  background: var(--rust);
+  border: none;
+  color: #fff;
+  padding: 0.75rem 1.4rem;
+  border-radius: 999px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 3px 12px rgba(181,106,76,0.3);
+}
+.empty-cta-btn:active { background: var(--rust-deep); }
+
+/* ── Receptkortens färgrygg (samma språk som premiumvyns dagkort) ── */
+.recipe-card { position: relative; }
+.recipe-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--rail, transparent);
+  border-radius: 4px 0 0 4px;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+/* Detaljhuvudet i premiumvyn har nu tre barn (status, portioner, laga-knapp) */
+.dlx-detail-head { justify-content: flex-start; gap: 0.65rem; flex-wrap: wrap; }

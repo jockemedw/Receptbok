@@ -419,11 +419,21 @@ export default createSupabaseHandler(async (req, res) => {
     return res.status(400).json({ error: "Startdatum måste vara före slutdatum." });
   }
 
+  // Servervalidering (frontenden begränsar redan, men API:t ska stå på egna ben):
+  // max 15 dagar, och inställningsvärdena kan aldrig överstiga antalet dagar.
+  const spanDays = Math.round(
+    (new Date(end_date + "T12:00:00") - new Date(start_date + "T12:00:00")) / 864e5
+  ) + 1;
+  if (spanDays > 15) {
+    return res.status(400).json({ error: "Max 15 dagar per matsedel — välj ett kortare spann." });
+  }
+  const clampCount = (v) => Math.min(Math.max(parseInt(v) || 0, 0), spanDays);
+
   const constraints = {
     allowed_proteins: allowed_proteins.split(",").map((p) => p.trim()).filter(Boolean),
-    untested_count: parseInt(untested_count) || 0,
-    vegetarian_days: parseInt(vegetarian_days) || 0,
-    ture_days: parseInt(ture_days) || 0,
+    untested_count: clampCount(untested_count),
+    vegetarian_days: clampCount(vegetarian_days),
+    ture_days: clampCount(ture_days),
   };
 
   const householdId = await getHouseholdId();

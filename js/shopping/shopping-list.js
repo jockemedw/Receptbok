@@ -47,6 +47,7 @@ function subscribeShoppingItems(listId) {
           el.querySelector('.item-checkbox').textContent = serverChecked ? '✓' : '';
         }
         rebuildShopText();
+        updateShopProgress();
       } else if (eventType === 'DELETE') {
         // Borttagen vara → ta bort på plats (bevarar ordning, ingen omladdning).
         // Lokala borttagningar är redan hanterade → då blir detta en no-op.
@@ -181,15 +182,42 @@ function applyRemovalById(id) {
   return true;
 }
 
+// Tar bort en vara med Ångra-möjlighet: raden hämtas före borttagningen och kan
+// återskapas från toast-knappen. Ingen omladdning — ordningen bevaras.
+async function deleteWithUndo(id) {
+  const { data: row, error: readErr } = await window.db
+    .from('shopping_items').select('*').eq('id', id).maybeSingle();
+  if (readErr || !row) throw readErr || new Error('rad saknas');
+  const { error } = await window.db.from('shopping_items').delete().eq('id', id);
+  if (error) throw error;
+  applyRemovalById(id);
+  updateShopProgress();
+  window.showToast(`${row.name} borttagen`, {
+    type: 'success',
+    action: {
+      label: 'Ångra',
+      onClick: async () => {
+        try {
+          const { id: _omit, ...fields } = row;
+          const { error: insErr } = await window.db.from('shopping_items').insert(fields);
+          if (insErr) throw insErr;
+          window._preserveChecked = true;
+          loadShoppingTab();
+        } catch {
+          window.showToast('Kunde inte ångra — lägg till varan manuellt.', { type: 'error' });
+        }
+      },
+    },
+  });
+}
+
 export async function removeShopItem(key) {
   const id = window._shopItemIds?.[key];
-  if (!id) { alert('Kunde inte ta bort varan — prova igen.'); return; }
+  if (!id) { window.showToast('Kunde inte ta bort varan — prova igen.', { type: 'error' }); return; }
   try {
-    const { error } = await window.db.from('shopping_items').delete().eq('id', id);
-    if (error) throw error;
-    applyRemovalById(id);   // uppdatera på plats — ingen omladdning, ordning bevaras
+    await deleteWithUndo(id);
   } catch {
-    alert('Kunde inte ta bort varan — prova igen.');
+    window.showToast('Kunde inte ta bort varan — prova igen.', { type: 'error' });
   }
 }
 
@@ -219,7 +247,55 @@ export function toggleShopItem(el, key) {
   el.classList.toggle('checked', nowChecked);
   el.querySelector('.item-checkbox').textContent = nowChecked ? '✓' : '';
   rebuildShopText();
+  updateShopProgress();
   scheduleCheckedSave();
+}
+
+// ── Progress: "X av Y klara" + räknare per kategori ──────────────────────────
+// Räknar från in-memory-state och uppdaterar DOM på plats (ingen re-render).
+function shopCounts() {
+  let total = 0, done = 0;
+  const perCat = {};
+  for (const [cat, items] of Object.entries(window._shopRecipeItems || {})) {
+    const c = { total: items.length, done: 0 };
+    items.forEach((_, idx) => { if (window._checkedItems[`recipe::${cat}::${idx}`]) c.done++; });
+    perCat[cat] = c;
+    total += c.total; done += c.done;
+  }
+  const manual = window._shopManualItems || [];
+  if (manual.length) {
+    const c = { total: manual.length, done: 0 };
+    manual.forEach((item) => { if (window._checkedItems[`manual::${item}`]) c.done++; });
+    perCat['__manual'] = c;
+    total += c.total; done += c.done;
+  }
+  return { total, done, perCat };
+}
+
+export function updateShopProgress() {
+  const { total, done, perCat } = shopCounts();
+  const bar = document.querySelector('#shopProgress .shop-progress-fill');
+  const lbl = document.querySelector('#shopProgress .shop-progress-label');
+  if (bar) bar.style.width = total ? `${(done / total) * 100}%` : '0%';
+  if (lbl) lbl.textContent = total
+    ? (done >= total ? 'Allt klart! 🎉' : `${done} av ${total} klara`)
+    : '';
+  document.querySelectorAll('#shopProgress, .shop-progress').forEach(el =>
+    el.classList.toggle('complete', total > 0 && done >= total));
+  document.querySelectorAll('.shopping-cat-count[data-cat]').forEach(el => {
+    const c = perCat[el.dataset.cat];
+    if (c) el.textContent = `${c.done} av ${c.total}`;
+  });
+}
+
+function shopProgressHtml() {
+  const { total, done } = shopCounts();
+  if (!total) return '';
+  const pct = (done / total) * 100;
+  return `<div id="shopProgress" class="shop-progress${done >= total ? ' complete' : ''}">
+    <div class="shop-progress-track"><div class="shop-progress-fill" style="width:${pct}%"></div></div>
+    <span class="shop-progress-label">${done >= total ? 'Allt klart! 🎉' : `${done} av ${total} klara`}</span>
+  </div>`;
 }
 
 // Textcell för en vara: redigerbart fält i redigera-läge, annars vanlig text.
@@ -259,7 +335,7 @@ export async function renameShopItem(inputEl) {
     if (document.body.contains(inputEl)) inputEl.value = orig;
     if (wasManual) renderFullShoppingList(window._shopRecipeItems, window._shopManualItems);
     else rebuildShopText();
-    alert('Kunde inte ändra varan — prova igen.');
+    window.showToast('Kunde inte ändra varan — prova igen.', { type: 'error' });
   }
 }
 
@@ -354,10 +430,11 @@ export function renderFullShoppingList(recipeItems, manualItems) {
                     onclick="event.stopPropagation();removeShopItem(this.dataset.key)">×</button>
           </li>`;
         }).join('');
+        const catDone = items.filter((_, idx) => window._checkedItems[`recipe::${cat}::${idx}`]).length;
         return `<div class="shopping-category">
           <div class="shopping-cat-header">
             <span class="shopping-cat-name">${icon} ${cat}</span>
-            <span class="shopping-cat-count">${items.length} varor</span>
+            <span class="shopping-cat-count" data-cat="${cat}">${catDone} av ${items.length}</span>
           </div>
           <ul class="shopping-items">${itemsHtml}</ul>
         </div>`;
@@ -396,10 +473,11 @@ export function renderFullShoppingList(recipeItems, manualItems) {
         <button class="remove-item-btn" data-item="${escapeHtml(item)}" title="Ta bort varan" onclick="event.stopPropagation();removeManualItem(this.dataset.item)">×</button>
       </li>`;
     }).join('');
+    const manualDone = manualItems.filter((item) => window._checkedItems[`manual::${item}`]).length;
     checkHtml += `<div class="shopping-category">
       <div class="shopping-cat-header">
         <span class="shopping-cat-name">${ICON_NOTE} Egna tillägg</span>
-        <span class="shopping-cat-count">${manualItems.length} varor</span>
+        <span class="shopping-cat-count" data-cat="__manual">${manualDone} av ${manualItems.length}</span>
       </div>
       <ul class="shopping-items">${manualHtml}</ul>
     </div>`;
@@ -414,7 +492,7 @@ export function renderFullShoppingList(recipeItems, manualItems) {
     }
   }
 
-  document.getElementById('shoppingList').innerHTML = checkHtml;
+  document.getElementById('shoppingList').innerHTML = shopProgressHtml() + checkHtml;
   const textEl = document.getElementById('shoppingText');
   textEl.innerHTML = textBlocksHtml +
     `<button class="shop-copy-btn" onclick="copyShoppingList()">Kopiera hela listan</button>`;
@@ -494,7 +572,7 @@ export async function addManualItem(inputId = 'manualItemInput', btnId = 'manual
     window._preserveChecked = true;
     loadShoppingTab();
   } catch {
-    alert('Kunde inte lägga till varan — prova igen.');
+    window.showToast('Kunde inte lägga till varan — prova igen.', { type: 'error' });
   } finally {
     btn.disabled = false;
   }
@@ -503,17 +581,22 @@ export async function addManualItem(inputId = 'manualItemInput', btnId = 'manual
 export async function removeManualItem(item) {
   const idx = (window._shopManualItems || []).indexOf(item);
   const id = idx === -1 ? null : window._shopItemIds?.[`manual::${idx}`];
-  if (!id) { alert('Kunde inte ta bort varan — prova igen.'); return; }
+  if (!id) { window.showToast('Kunde inte ta bort varan — prova igen.', { type: 'error' }); return; }
   try {
-    const { error } = await window.db.from('shopping_items').delete().eq('id', id);
-    if (error) throw error;
-    applyRemovalById(id);   // uppdatera på plats — ingen omladdning, ordning bevaras
+    await deleteWithUndo(id);
   } catch {
-    alert('Kunde inte ta bort varan — prova igen.');
+    window.showToast('Kunde inte ta bort varan — prova igen.', { type: 'error' });
   }
 }
 
 export async function clearShoppingList() {
+  const ok = await window.confirmDialog({
+    title: 'Rensa hela inköpslistan?',
+    message: 'Alla varor tas bort — även egna tillägg och det som redan är avbockat. Det går inte att ångra.',
+    confirmLabel: 'Rensa listan',
+    danger: true,
+  });
+  if (!ok) return;
   const btn = document.getElementById('modeBtnClear');
   btn.disabled = true;
   btn.textContent = 'Rensar…';
@@ -533,10 +616,10 @@ export async function clearShoppingList() {
     window._shopListId   = null;
     loadShoppingTab();
   } catch {
-    alert('Kunde inte rensa listan — prova igen.');
+    window.showToast('Kunde inte rensa listan — prova igen.', { type: 'error' });
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Rensa';
+    btn.textContent = 'Rensa lista';
   }
 }
 

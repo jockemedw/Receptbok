@@ -159,7 +159,13 @@ export async function saveRecipe() {
 }
 
 export async function deleteRecipe() {
-  if (!confirm('Ta bort receptet permanent? Det går inte att ångra.')) return;
+  const ok = await window.confirmDialog({
+    title: 'Ta bort receptet?',
+    message: 'Receptet tas bort permanent ur familjens receptbok. Det går inte att ångra.',
+    confirmLabel: 'Ta bort',
+    danger: true,
+  });
+  if (!ok) return;
   const delBtn   = document.querySelector('#editModal .btn-delete');
   const feedback = document.getElementById('editFeedback');
   delBtn.disabled      = true;

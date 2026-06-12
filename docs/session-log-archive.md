@@ -1,6 +1,18 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–84. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–85. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 85 (2026-06-08) — Premiumvyns dagkort: jämn höjd + veckonummer
+
+Mål (användarbegäran): justera "Helg"-indikatorns läge i dagkorten — den gjorde att helgkort blev högre än vardagskort — och lägga till veckonummer i listan.
+
+- **Helg → diskret prick på färgryggen:** textpillen "Helg" togs bort ur `dayBadges()` (låg staplad i vänsterkolumnen → varierande korthöjd). Helg markeras nu som en liten prick (`var(--lichen-deep)` + halo) på dagkortets färgrygg via `.dlx-day.is-weekend .dlx-rail::after`. Klassen injiceras på ett ställe i `renderDayCard()` (`html.replace('class="dlx-day', …)`) så alla 5 korttyper (recept/custom/fri/gap) täcks utan att röra varje mall. Suppr. på "idag" (rust-ramen räcker). Markören ligger utanför flödet → alla kort lika höga.
+- **Veckoavdelare:** ny `renderDayList()` interfolierar en tunn `<div class="dlx-week-sep">Vecka N</div>` där ISO-veckan byter (ingen avdelare före första kortet — hero visar redan startveckan). Används för både kommande och historik. CSS: centrerad etikett med linjer på båda sidor (`var(--moss-muted)`/`var(--birch-soft)`). Hero-rutan visar fortsatt "Vecka X" / "Vecka X–Y".
+- **Beslut bekräftade med användaren:** prick-på-rygg (ej hörnmärke/inline) + avdelare-i-listan (ej per-kort).
+- **Verifierat:** `node --check` ren på modul + `app.js`. Hela beroendefria testsviten grön (match 103, corpus 35, shopping 81, select 432, data-mapper 27). Versioner bumpade: `styles.css?v=94`, `app.js?v=92`. Klassiska vyn + all plandata orörd.
+- **Kvar:** live-verifiering på mobil mot produktion (se *Väntar på live-verifiering*).
 
 ---
 

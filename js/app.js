@@ -8,6 +8,8 @@ import { requireAuth } from './auth-gate.js';
 import { recipeFromRow } from './data-mapper.js';
 import './ui/scroll.js';
 import './ui/navigation.js';
+import './ui/feedback.js';
+import './ui/cook-mode.js';
 import './shopping/shopping-list.js';
 import './shopping/dispatch-ui.js';
 import './weekly-plan/ingredient-preview.js';
@@ -211,6 +213,13 @@ async function boot() {
   const tabParam = new URLSearchParams(window.location.search).get('tab');
   if (tabParam && ['recept', 'vecka', 'shop'].includes(tabParam)) {
     window.switchTab(tabParam);
+  }
+
+  // PWA: service worker cachar appskalet så appen öppnar direkt och funkar
+  // utan nät (data hämtas fortfarande live från Supabase när nät finns).
+  // Relativ sökväg → fungerar både på Vercel (rot) och GitHub Pages (underkatalog).
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./service-worker.js').catch(() => { /* offline-stöd är bara bonus */ });
   }
 }
 

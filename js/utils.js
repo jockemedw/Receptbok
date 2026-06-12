@@ -80,6 +80,10 @@ export function renderDetailInner(r) {
       <ol class="steps-list">${stepsHtml}</ol>
     </div>
     ${notesHtml}
+    <button class="cook-mode-btn" onclick="event.stopPropagation();openCookMode(${r.id})">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13c0-3.5 3.5-6 8-6s8 2.5 8 6"/><path d="M3 13h18"/><path d="M5.5 13v2c0 1.5 1 2.5 2.5 2.5h8c1.5 0 2.5-1 2.5-2.5v-2"/><path d="M11 4.5c0-.8.5-1.5 1-1.5s1 .7 1 1.5"/></svg>
+      Börja laga
+    </button>
     <button class="edit-recipe-btn" onclick="openEditModal(event, ${r.id})">✏️ Redigera recept</button>`;
 }
 
