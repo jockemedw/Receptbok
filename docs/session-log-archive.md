@@ -1,6 +1,28 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–85. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–86. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 86 (2026-06-11) — Helhetsomtag (Fable 5-natten): feedback, matlagningsläge, PWA
+
+Mål (användarbegäran, fria händer): nattjobb med komplett analys + omtag där det ger värde. Två granskningsagenter auditerade frontend/backend; implementation på branch `claude/fable5-redesign-overhaul-4rb4dx` → **PR #73, preview-testad av Joakim och mergad till main 2026-06-12**.
+
+- **Feedback-fundament (`js/ui/feedback.js`):** toast-system (`showToast`) + promise-baserad bekräftelsedialog (`confirmDialog`) i appens designspråk. Alla `alert()`/`confirm()` ersatta (shopping-list, ingredient-preview, kassera plan, ta bort recept, rea-varningen). **"Rensa lista" hade INGEN bekräftelse — nu kräver den en.** Borttagna inköpsvaror får "Ångra"-toast (raden hämtas före delete, återinsätts vid ångra).
+- **Inköpslistan:** progressrad "X av Y klara" + progressbar (`updateShopProgress` uppdaterar på plats, även från realtime), kategoriräknare "klara av totalt", touch-vänliga rader (~48px), runda checkboxar, premium-kortstil. Nycklar/bock-logik orörda.
+- **Matlagningsläge (`js/ui/cook-mode.js`):** "Börja laga" i receptdetaljen (receptboken via `renderDetailInner` + premiumvyn via `dlx-cook-btn`) → fullskärmsvy med stor text, bockbara ingredienser + steg, progressbar och **Wake Lock** (skärmen släcks inte vid spisen; återtas vid visibilitychange).
+- **PWA:** `manifest.webmanifest` + `service-worker.js` (navigering: nät först, cache bara offline; statiska filer: stale-while-revalidate; `/api/` + andra origins rörs aldrig) + ikoner i `icons/` från `scripts/generate-icons.py` (ren Python, tallrik i Scandi-paletten, maskable + apple-touch-icon). Registreras i `app.js` med relativ sökväg (Vercel + GitHub Pages).
+- **"Ikväll"-rad i premium-heron:** `buildTonight()` visar dagens middag (recept/egen planering/fri dag); tryck expanderar dagens kort.
+- **Touch & tillgänglighet:** −/+-steppers runt sifferfälten i inställningarna (`stepNum`), `.prot-btn` ≥40px, `.pill-toggle` utökad träffyta (~44px), header-tab-kontrast 0.45→0.72, `.pill-untested`-kontrast höjd. Tomma matsedelsvyn fick CTA "+ Skapa matsedel" (`openNewPlan`). Receptkorten fick proteinfärgad rygg (samma språk som premiumvyns dagkort).
+- **Backend-härdning:** `handler.js` maskerar programfel (TypeError m.fl.) med generiskt svenskt meddelande — avsiktliga `new Error("…")` visas fortfarande; `skip-day`/`swap-days` skriver nu med `plan_id`-filter (skyddar egen planering-rader på samma datum); `generate.js` validerar serverside (max 15 dagar, inställningsvärden klampas till spannet).
+- **Verifierat:** `node --check` rent på alla ändrade filer; hela testsviten grön — match 103, corpus 35, shopping 81, select 432, data-mapper 27, dispatch 93, cookies 29 (800 assertions). Versioner: `styles.css?v=98`, `app.js?v=95`.
+- **Efterfix (PR #74 + #75):** matlagningslägets progressrad döljdes bakom iPhone-pannan (Dynamic Island) i installerad app — sticky-`top` flyttad till `env(safe-area-inset-top)` + linen-remsa som täcker safe-arean vid scroll. Remsan måste vara ett riktigt element (`.cook-safe-strip` i normalt flöde) — sticky på `::before` till scroll-containern fastnade inte på iOS.
+- **Efterfix (PR #76):** premiumvyn gömde ALLA dagåtgärder på bekräftad plan — "Byt dag" + "Fri dag — skjut planen" ska (som i klassiska vyn) finnas kvar även efter bekräftelse, eftersom de inte ändrar receptmängden/inköpslistan. Gaten delad i `canReplace` (slumpa/välj själv, kräver obekräftad) och `canMove` (byt/fri dag, kräver bara aktiv plan).
+- **Efterfix (PR #77):** Ikväll-kortet ERSÄTTER nu dagens kort i listan (dubblerade samma info). Kortet visar datum ("Ikväll · Fredag 12 juni"), expanderar till full receptdetalj vid tryck (`recipeDetail` återanvänds, `<article>` — inte `<button>`, nästlade knappar är ogiltig HTML) och deltar i byt dag-flödet (`data-kind="recipe"` markeras som swap-källa/mål). Helt oplanerad dag (gap) ligger kvar i listan som "+ Planera dagen".
+- **Efterfix (PR #79):** Ikväll-kortets datum flyttat till vänsterkolumn (`.dlx-day-when`/`dow`/`date` återanvänds) — samma layoutspråk som dagkorten. Eyebrow är åter bara "Ikväll". **(PR #80):** luft mellan Ikväll-kortet och första dagkortet (margin 0.2→0.9rem).
+- **Ny funktion (PR #81): Flytta dag + Byt dag mot tomma dagar.** `api/move-day.js`: källdagens recept lyfts ur och kläms in före vald dag (eller sist) — innehållet roteras över plandagarnas fasta datum, fria dagar pinnade, inköpslistan orörd. Premiumvyn visar pulsande släppzoner (`.dlx-drop-zone`, `moveZoneCtx()` filtrerar no-op/passerade positioner; zon även före Ikväll-kortet + sist). `api/swap-days.js` gap-gren: byt mot oplanerad dag = receptet flyttas dit, källdagen blir tom, 409-krockskydd mot egen planering, plan-gränser räknas om + persisteras. Gap-klick routas via `dlxGapClick` (swap-läge → mål, flytta-läge → ignorera, annars egen planering). Fria dagar exkluderade som swap-mål. Se *Väntar på live-verifiering*.
+- **Efterfix (PR #78):** "Visa historik"-knappen ersatt med scroll-reveal: historiken ligger i flödet ovanför heron, vyn positioneras vid heron via `snapToHero()` (flikbyte/lägesbyte/första datarender — ALDRIG på interaktions-omrenderingar, skulle rycka i scrollen) och `html { scroll-snap-type: y proximity }` + snap-ankare på `.dlx-hero` (gate: `.has-history`) gör att lätta uppåtscrollar fjädrar tillbaka — en bestämd scroll tar fram historiken. `--header-h` exponeras från scroll.js för `scroll-margin-top`.
+- **Kvar:** snabbkoll mot produktion efter merge (se *Väntar på live-verifiering*).
 
 ---
 
