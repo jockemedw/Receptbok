@@ -90,6 +90,7 @@ export function openCookMode(recipeId) {
   _overlay = document.createElement('div');
   _overlay.className = 'cook-overlay';
   _overlay.innerHTML = `
+    <div class="cook-safe-strip"></div>
     <div class="cook-head">
       <div class="cook-head-info">
         <span class="cook-eyebrow">Nu lagar vi</span>
