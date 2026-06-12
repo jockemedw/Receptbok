@@ -104,33 +104,50 @@ function recipeById(id) {
   return id ? (window.RECIPES || []).find(r => r.id === id) : null;
 }
 
-// ── "Ikväll"-rad — svarar på familjens vanligaste fråga direkt i heron ───────
+// ── "Ikväll"-kort — svarar på familjens vanligaste fråga direkt i heron ──────
+// ERSÄTTER dagens kort i listan (ingen dubblering): visar datum, expanderar
+// till full receptdetalj vid tryck och deltar i byt dag-flödet som vanliga kort.
 function buildTonight(timeline) {
   const todayIso = fmtIso(new Date());
   const d = timeline.find(t => t.date === todayIso);
   if (!d) return '';
 
-  let label, sub = '';
+  const dateLabel = `${d.day} ${d.dayNum} ${MONTH_NAMES_SHORT[d.month]}`;
+  const expanded = window._dlxExpanded === d.date;
+
+  let label, sub = '', click = `dlxToggleDay('${d.date}')`, kind = '', detail = '';
   if (d.recipeId && !d.isCustom) {
     const r = recipeById(d.recipeId);
     label = d.recipe || '';
     sub = [r?.time ? `${r.time} min` : null, r ? PROTEIN_LABEL[r.protein] : null].filter(Boolean).join(' · ');
+    kind = 'recipe';
+    if (expanded) detail = recipeDetail(d, r, { active: d.planId === 'active' });
+  } else if (d.isCustom && d.customRecipeId) {
+    const r = recipeById(d.customRecipeId);
+    label = d.customRecipeTitle || '';
+    sub = 'Egen planering';
+    if (expanded) detail = recipeDetail({ ...d, recipeId: d.customRecipeId }, r, { active: false });
   } else if (d.isCustom && (d.customRecipeTitle || d.customNote)) {
     label = d.customRecipeTitle || d.customNote;
     sub = 'Egen planering';
+    click = `openCustomDay('${d.date}', '${attr(d.day)}')`;
   } else if (d.blocked) {
     label = 'Fri dag';
     sub = 'Ingen middag planerad';
+    click = `openBlockedDay('${d.date}', '${attr(d.day)}')`;
   } else {
     return '';
   }
 
   return `
-    <button type="button" class="dlx-tonight" onclick="dlxToggleDay('${d.date}')">
-      <span class="dlx-tonight-eyebrow">${I.pot} Ikväll</span>
+    <article class="dlx-tonight${expanded ? ' expanded' : ''}" data-date="${d.date}"${kind ? ` data-kind="${kind}"` : ''}
+             role="button" tabindex="0" onclick="${click}">
+      <span class="dlx-tonight-eyebrow">${I.pot} Ikväll · ${esc(dateLabel)}</span>
       <span class="dlx-tonight-title">${esc(label)}</span>
       ${sub ? `<span class="dlx-tonight-sub">${esc(sub)}</span>` : ''}
-    </button>`;
+      <span class="dlx-tonight-chev" aria-hidden="true">›</span>
+      ${detail}
+    </article>`;
 }
 
 // ── Hero-statistik ────────────────────────────────────────────────────────────
@@ -433,12 +450,13 @@ export function renderDeluxe() {
   const pending = !!(plan?.days?.length) && !plan?.confirmedAt && !window.planConfirmed;
   const todayIso = fmtIso(new Date());
 
-  // Dela upp: historik (förflutet, ej idag) vs aktuellt/framtid
-  const history = timeline.filter(d => d.date < todayIso);
-  const upcoming = timeline.filter(d => d.date >= todayIso);
-
+  // Dela upp: historik (förflutet, ej idag) vs aktuellt/framtid.
+  // Ikväll-kortet ersätter dagens kort i listan — ingen dubblering. Bara om
+  // dagen är helt oplanerad (gap) ligger den kvar i listan ("+ Planera dagen").
   const hero = buildHero(plan, pending);
   const tonight = buildTonight(timeline);
+  const history = timeline.filter(d => d.date < todayIso);
+  const upcoming = timeline.filter(d => (tonight ? d.date > todayIso : d.date >= todayIso));
 
   const upcomingHtml = upcoming.length
     ? renderDayList(upcoming)
@@ -465,7 +483,7 @@ window.dlxToggleDay = function (date) {
   renderDeluxe();
   if (window._dlxExpanded === date) {
     requestAnimationFrame(() => {
-      const el = document.querySelector(`#weekDeluxe .dlx-day[data-date="${date}"]`);
+      const el = document.querySelector(`#weekDeluxe [data-date="${date}"]`);
       if (el) {
         const hh = document.querySelector('header')?.offsetHeight || 0;
         const top = el.getBoundingClientRect().top + window.scrollY - hh - 12;
@@ -568,6 +586,9 @@ window.dlxStartSwap = function (fromDate) {
   });
   const src = document.querySelector(`#weekDeluxe .dlx-day[data-date="${fromDate}"]`);
   if (src) src.classList.add('dlx-swap-source');
+  // Ikväll-kortet ersätter dagens kort i listan → låt det delta i bytet
+  const tn = document.querySelector('#weekDeluxe .dlx-tonight[data-kind="recipe"]');
+  if (tn) tn.classList.add(tn.dataset.date === fromDate ? 'dlx-swap-source' : 'dlx-swap-target');
 };
 
 window.dlxCancelSwap = function () {
