@@ -265,16 +265,23 @@ function recipeDetail(d, r, opts) {
   const notes = r.notes ? `<div class="dlx-notes">💡 ${esc(r.notes)}</div>` : '';
   const statusPill = `<span class="dlx-status ${r.tested ? 'tested' : 'untested'}">${r.tested ? '✓ Provat' : 'Ej provat'}</span>`;
 
-  // Åtgärder bara på aktiv, ej-bekräftad plandag
-  const canEdit = opts.active && !window.planConfirmed && !d.isArchive;
+  // Åtgärder — samma regler som klassiska vyn:
+  //  - Byta RECEPT (slumpa/välj själv) bara på ej-bekräftad plan (inköpslistan
+  //    är redan byggd efter bekräftelse).
+  //  - Flytta DAGAR (byt dag / fri dag = "skjut planen →") även på bekräftad
+  //    plan — receptmängden är oförändrad, så inköpslistan påverkas inte.
+  const canReplace = opts.active && !window.planConfirmed && !d.isArchive;
+  const canMove    = opts.active && !d.isArchive;
   let actions = '';
-  if (canEdit) {
+  if (canReplace || canMove) {
     actions = `
       <div class="dlx-actions">
+        ${canReplace ? `
         <button class="dlx-act primary" onclick="event.stopPropagation();dlxShuffle('${d.date}', this)">${I.shuffle}<span>Slumpa nytt</span></button>
-        <button class="dlx-act" onclick="event.stopPropagation();enterReplaceMode('${d.date}', '${attr(d.day)}')">${I.pencil}<span>Välj själv</span></button>
-        <button class="dlx-act" onclick="event.stopPropagation();dlxStartSwap('${d.date}')">${I.swap}<span>Byt dag</span></button>
-        ${!d.isPast ? `<button class="dlx-act" onclick="event.stopPropagation();dlxFreeDay('${d.date}', this)">${I.free}<span>Fri dag</span></button>` : ''}
+        <button class="dlx-act" onclick="event.stopPropagation();enterReplaceMode('${d.date}', '${attr(d.day)}')">${I.pencil}<span>Välj själv</span></button>` : ''}
+        ${canMove ? `
+        <button class="dlx-act" onclick="event.stopPropagation();dlxStartSwap('${d.date}')">${I.swap}<span>Byt dag</span></button>` : ''}
+        ${canMove && !d.isPast ? `<button class="dlx-act" onclick="event.stopPropagation();dlxFreeDay('${d.date}', this)">${I.free}<span>Fri dag — skjut planen</span></button>` : ''}
       </div>`;
   } else if (d.isArchive) {
     actions = `<p class="dlx-readonly">📜 Historisk plan — bara för referens.</p>`;
