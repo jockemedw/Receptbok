@@ -11,6 +11,8 @@ let headerHeight = headerEl.offsetHeight;
 new ResizeObserver(() => {
   headerHeight = headerEl.offsetHeight;
   document.body.style.paddingTop = headerHeight + 'px';
+  // Exponeras för CSS (t.ex. scroll-margin-top på snap-ankare i premiumvyn)
+  document.documentElement.style.setProperty('--header-h', headerHeight + 'px');
 }).observe(headerEl);
 
 window.addEventListener('scroll', () => {

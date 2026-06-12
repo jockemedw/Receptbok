@@ -3893,28 +3893,24 @@ body.week-deluxe .week-meta { display: none; }
 .dlx-legend-dot { width: 8px; height: 8px; border-radius: 50%; }
 
 /* ── Historik-toggle ── */
-.dlx-history-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: calc(100% - 2rem);
-  margin: 0 1rem 0.7rem;
-  padding: 0.6rem 0.95rem;
-  background: transparent;
-  border: 1.5px dashed var(--birch-soft);
-  border-radius: 14px;
-  color: var(--moss-muted);
-  font-family: inherit;
-  font-size: 0.8rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: border-color 0.2s, color 0.2s;
+/* Historik via scroll (ersätter "Visa historik"-knappen): historiken ligger i
+   flödet ovanför heron; vyn positioneras vid heron när fliken öppnas. proximity-
+   snap på roten = lätta uppåtscrollar fjädrar tillbaka till heron, en bestämd
+   scroll tar sig förbi och fram till historiken ("trög" reveal). Snap-ankaret
+   finns bara när historik existerar (.has-history) → noll påverkan annars. */
+html { scroll-snap-type: y proximity; }
+#weekDeluxe.has-history .dlx-hero {
+  scroll-snap-align: start;
+  scroll-margin-top: calc(var(--header-h, 56px) + 10px);
 }
-.dlx-history-toggle:hover { border-color: var(--lichen); color: var(--forest); }
-.dlx-history-chev { transition: transform 0.25s; font-size: 1.1rem; }
-.dlx-history-toggle.open .dlx-history-chev { transform: rotate(90deg); }
-.dlx-history { display: flex; flex-direction: column; gap: 0.6rem; padding: 0 1rem; margin-bottom: 0.9rem; }
-.dlx-history .dlx-day { opacity: 0.72; }
+.dlx-history-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0 1rem;
+  margin-bottom: 1.1rem;
+}
+.dlx-history-flow .dlx-day { opacity: 0.72; }
 
 /* ── Dagslista ── */
 .dlx-days { display: flex; flex-direction: column; gap: 0.6rem; padding: 0 1rem; }

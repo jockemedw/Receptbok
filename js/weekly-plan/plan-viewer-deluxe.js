@@ -59,6 +59,9 @@ function setMode(mode) {
   if (mode === 'classic' && window.centerTodayCard) {
     requestAnimationFrame(() => window.centerTodayCard({ smooth: false }));
   }
+  if (mode === 'deluxe') {
+    requestAnimationFrame(() => snapToHero());
+  }
 }
 window.setWeekViewMode = setMode;
 
@@ -462,18 +465,37 @@ export function renderDeluxe() {
     ? renderDayList(upcoming)
     : `<div class="dlx-empty-future">Inga kommande dagar planerade ännu.</div>`;
 
-  let historyHtml = '';
-  if (history.length) {
-    const open = !!window._dlxHistoryOpen;
-    historyHtml = `
-      <button type="button" class="dlx-history-toggle${open ? ' open' : ''}" onclick="dlxToggleHistory()">
-        <span>${open ? 'Dölj historik' : `Visa historik (${history.length})`}</span>
-        <span class="dlx-history-chev">›</span>
-      </button>
-      <div class="dlx-history${open ? ' open' : ''}">${open ? renderDayList(history) : ''}</div>`;
-  }
+  // Historiken ligger i flödet OVANFÖR heron (ingen knapp). Vyn positioneras
+  // vid heron när fliken öppnas; html-scroll-snap (proximity) gör att lätta
+  // uppåtscrollar fjädrar tillbaka till heron — en bestämd scroll tar fram
+  // historiken. Snap-ankaret är .dlx-hero (gate:as via .has-history).
+  const historyHtml = history.length
+    ? `<div class="dlx-history-flow">${renderDayList(history)}</div>`
+    : '';
+  host.classList.toggle('has-history', !!history.length);
 
-  host.innerHTML = `${hero}${tonight}${historyHtml}<div class="dlx-days">${upcomingHtml}</div>`;
+  host.innerHTML = `${historyHtml}${hero}${tonight}<div class="dlx-days">${upcomingHtml}</div>`;
+
+  // Engångspositionering vid första datarendering (täcker deep-link ?tab=vecka
+  // vid boot). Senare omrenderingar (expandera/byta recept/realtime) får ALDRIG
+  // rycka i scrollpositionen — flik- och lägesbyten hanteras i sina hooks.
+  if (!window._dlxDidSnap && history.length && document.body.dataset.activeTab === 'vecka') {
+    window._dlxDidSnap = true;
+    requestAnimationFrame(() => snapToHero());
+  }
+}
+
+// Positionerar vyn så att heron ligger precis under headern → historiken
+// hamnar utanför skärmen ovanför och nås genom att scrolla uppåt.
+function snapToHero() {
+  if (!document.body.classList.contains('week-deluxe')) return;
+  const host = document.getElementById('weekDeluxe');
+  if (!host || !host.classList.contains('has-history')) return;
+  const hero = host.querySelector('.dlx-hero');
+  if (!hero) return;
+  const hh = document.querySelector('header')?.offsetHeight || 0;
+  const top = hero.getBoundingClientRect().top + window.scrollY - hh - 10;
+  window.scrollTo({ top: Math.max(0, top) });
 }
 
 // ── Interaktion ───────────────────────────────────────────────────────────────
@@ -494,10 +516,6 @@ window.dlxToggleDay = function (date) {
   }
 };
 
-window.dlxToggleHistory = function () {
-  window._dlxHistoryOpen = !window._dlxHistoryOpen;
-  renderDeluxe();
-};
 
 // Lokalt minne av aktiv plan-dag (spegel av plan-viewer.updateLastPlanDay)
 function patchPlanDay(date, recipeId, recipe) {
@@ -648,7 +666,12 @@ function installHooks() {
   if (typeof origSwitch === 'function' && !origSwitch.__dlxWrapped) {
     const wrappedSwitch = function (tab) {
       const r = origSwitch.apply(this, arguments);
-      if (tab === 'vecka') { try { renderDeluxe(); } catch (e) { console.error('renderDeluxe', e); } }
+      if (tab === 'vecka') {
+        try { renderDeluxe(); } catch (e) { console.error('renderDeluxe', e); }
+        // switchTab scrollar till toppen — flytta ner till heron så att
+        // historiken börjar ovanför skärmen (rAF: efter att layouten satt sig).
+        requestAnimationFrame(() => snapToHero());
+      }
       return r;
     };
     wrappedSwitch.__dlxWrapped = true;
