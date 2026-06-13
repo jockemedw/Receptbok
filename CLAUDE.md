@@ -101,11 +101,12 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 ### Kända buggar
 Inga bekräftade just nu.
 
+### Live-verifierat (Joakim, 2026-06-13)
+- **Dagflytt-funktionerna fungerar bra mot produktion:** byt dag (inkl. historiska/passerade dagar), flytta dag (kläm in mellan dagar), fri dag (free/unfree) och byt mot tom dag — alla bekräftade live i den installerade appen. Flimmerfritt, responsivt, inköpslistan orörd. (Session 87, PR #83.)
+
 ### Väntar på live-verifiering (kod klar, ej körd skarpt)
 - **Lösvikts-enum vid Willys-export** (PR #65): `pickUnitForCode()` skickar `"kilograms"` för `_KG`-koder (lös färskvara, t.ex. potatis). Enum-värdet är *inferred* — bara `"pieces"` är PoC-bekräftat. Bekräfta i en skarp körning att lös potatis landar i korgen.
-- **"Gör fri dag" (free/unfree)** (Session 71): `api/skip-day.js` omskriven + verifierad via standalone-simulering, men aldrig körd mot live-DB (skulle mutera aktiv plan). Bekräfta på en testplan att free→unfree round-trip bevarar planen.
-- **"Flytta dag" + byt mot tom dag** (Session 86 PR #81, härdade i Session 87 PR #83): `api/move-day.js` + `api/swap-days.js` gap-gren — nu atomära bulk-skrivningar, recept-invariant och enhetstestade via `tests/day-ops.test.js` (34 assertions), men aldrig körda mot live-DB. Bekräfta: (1) flytt mellan två dagar roterar rätt och bevarar fria dagar, (2) byt mot tom dag utanför planspannet uppdaterar start/slut, (3) byt med passerad dag i aktiva planen, (4) inköpslistan orörd i alla fallen.
-- **Helhetsomtaget Session 86 (PR #73, mergad till main 2026-06-12):** preview-testat av Joakim före merge. Kvar att bekräfta mot produktion (snabbkoll): (1) PWA: "Lägg till på hemskärmen" från produktions-URL:en ger egen ikon + appen öppnar offline (skalet), (2) matlagningslägets Wake Lock på riktig mobil, (3) skip-day/swap-days mot live-DB (nu med plan_id-filter), (4) Ångra på borttagen inköpsvara + progress-synk från annan enhet.
+- **Helhetsomtaget Session 86 (PR #73, mergad till main 2026-06-12):** preview-testat av Joakim före merge. Kvar att bekräfta mot produktion (snabbkoll): (1) PWA: "Lägg till på hemskärmen" från produktions-URL:en ger egen ikon + appen öppnar offline (skalet), (2) matlagningslägets Wake Lock på riktig mobil, (3) Ångra på borttagen inköpsvara + progress-synk från annan enhet.
 - **Premiumvy för matsedeln** (Session 84, PR #69, mergad; justerad Session 85, PR #70): kod klar + testsvit grön, men inte verifierad på mobil mot produktion. Bekräfta att Premium-vyn renderar, att alla åtgärder fungerar (slumpa/välj/byt dag/fri dag/besparing/egen planering) och att växeln Premium↔Klassisk håller båda vyerna i synk. Default är Premium — flippa till Klassisk om något strular. **Session 85-tillägg att kolla:** (1) helg visas nu som en diskret prick på dagkortets färgrygg (ej textpill) → bekräfta att helgkort är lika höga som vardagskort; (2) "Vecka N"-avdelare dyker upp i listan där ISO-veckan byter (syns bara på planer som spänner två veckor).
 
 ### Öppna utredningar
