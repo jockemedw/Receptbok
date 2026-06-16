@@ -8,7 +8,7 @@
 //   3. SubtotalOrderPromotion med threshold > 0 (villkorad ordersumma) skippas
 //   4. MixMatch-beteendet är oförändrat (priser/saving)
 
-import { normalizeOffers } from "../api/willys-offers.js";
+import { normalizeOffers, isBulkVolume } from "../api/willys-offers.js";
 
 let passed = 0;
 let failed = 0;
@@ -101,6 +101,16 @@ assertEq(byCode["400000003_ST"], undefined, "Okänd promo-typ skippas");
 // 6. MixMatch-beteendet oförändrat (Brie-priser intakta).
 assertEq(byCode["100379305_ST"]?.promoPrice, 49.9, "Brie promoPrice = 49.9 (oförändrat)");
 assertEq(byCode["100379305_ST"]?.savingPerUnit, 14.36, "Brie savingPerUnit = 14.36 (oförändrat)");
+
+// 7. Storpack-flagga (isBulkVolume): ≥1 kg/1 l = bulk.
+assertEq(isBulkVolume("2kg"), true, "2kg = storpack");
+assertEq(isBulkVolume("1,5l"), true, "1,5l = storpack");
+assertEq(isBulkVolume("ca: 1.8kg"), true, "ca 1.8kg = storpack");
+assertEq(isBulkVolume("500g"), false, "500g = ej storpack");
+assertEq(isBulkVolume("830g"), false, "830g = ej storpack");
+assertEq(isBulkVolume("10p"), false, "10p (antal) = ej storpack");
+assertEq(isBulkVolume(""), false, "tom volym = ej storpack");
+assertEq(isBulkVolume(null), false, "null volym = ej storpack");
 
 console.log(`\nwillys-offers.test.js: ${passed} passed, ${failed} failed`);
 if (failed > 0) {

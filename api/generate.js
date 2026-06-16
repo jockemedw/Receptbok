@@ -485,6 +485,7 @@ export default createSupabaseHandler(async (req, res) => {
                 byCanon.set(canon, {
                   canon, name: offer.name, brandLine: offer.brandLine || null,
                   loyalty: offer.loyalty || false,
+                  bulk: offer.bulk || false,
                   regularPrice: offer.regularPrice, promoPrice: offer.promoPrice,
                   savingPerUnit: offer.savingPerUnit, validUntil: offer.validUntil,
                 });

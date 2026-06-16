@@ -111,6 +111,20 @@ export default async function handler(req, res) {
   }
 }
 
+// Tolkar förpackningsstorlek ("2kg", "1,5l", "ca: 1.8kg", "500g", "10p") till
+// gram/ml och flaggar storpack (≥1 kg / 1 l). Används för att märka och nedvikta
+// fynd där receptet bara förbrukar en bråkdel av förpackningen.
+export function isBulkVolume(displayVolume) {
+  if (!displayVolume) return false;
+  const s = String(displayVolume).toLowerCase().replace(/ca[:.]?\s*/g, "").replace(",", ".").trim();
+  const m = s.match(/([\d.]+)\s*(kg|g|l|dl|cl|ml)\b/);
+  if (!m) return false;
+  const val = parseFloat(m[1]);
+  if (!Number.isFinite(val)) return false;
+  const factor = { kg: 1000, g: 1, l: 1000, dl: 100, cl: 10, ml: 1 }[m[2]];
+  return val * factor >= 1000;
+}
+
 export function normalizeOffers(results) {
   const offers = [];
   for (const item of results) {
@@ -128,6 +142,8 @@ export function normalizeOffers(results) {
       name: item.name,
       brandLine: item.productLine2 || null,
       loyalty: promo.campaignType === "LOYALTY",
+      bulk: isBulkVolume(item.displayVolume),
+      displayVolume: item.displayVolume || null,
       regularPrice,
       promoPrice,
       savingPerUnit,

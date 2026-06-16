@@ -149,12 +149,12 @@ export function matchRecipes(recipes, offers) {
 //   chosenIds    – array med recept-id som redan ligger i planen
 //   recipeLookup – (id) => recipe | undefined (för titel/protein/tid)
 export function buildDealCandidates(savingsById, chosenIds, recipeLookup, opts = {}) {
-  const { minSaving = 10, limit = 20 } = opts;
+  const { minSaving = 10, limit = 20, bulkWeight = 0.5 } = opts;
   const chosen = new Set(chosenIds);
   return Object.entries(savingsById || {})
-    .map(([id, e]) => ({ recipeId: Number(id), total: e.total, matches: e.matches }))
+    .map(([id, e]) => ({ recipeId: Number(id), total: e.total, matches: e.matches, rank: rankSaving(e.matches, e.total, bulkWeight) }))
     .filter((c) => !chosen.has(c.recipeId) && c.total >= minSaving)
-    .sort((a, b) => b.total - a.total)
+    .sort((a, b) => b.rank - a.rank)
     .slice(0, limit)
     .map((c) => {
       const r = recipeLookup(c.recipeId) || null;
@@ -167,4 +167,22 @@ export function buildDealCandidates(savingsById, chosenIds, recipeLookup, opts =
         matches: c.matches,
       };
     });
+}
+
+// Rankningspoäng: storpack (bulk) nedviktas eftersom receptet ofta bara
+// förbrukar en bråkdel — så ett recept som nätt och jämnt nuddar en stor
+// rabatterad förpackning inte rankas över ett där rabatten faktiskt går åt.
+// Visad besparing (saving) ändras INTE; bara sorteringen. Faller tillbaka på
+// total när matchningarna saknar savingPerUnit (t.ex. i tester).
+function rankSaving(matches, total, bulkWeight) {
+  if (!Array.isArray(matches) || !matches.length) return total;
+  let any = false;
+  let sum = 0;
+  for (const m of matches) {
+    if (typeof m.savingPerUnit === "number") {
+      any = true;
+      sum += m.bulk ? m.savingPerUnit * bulkWeight : m.savingPerUnit;
+    }
+  }
+  return any ? sum : total;
 }
