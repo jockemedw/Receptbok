@@ -1775,6 +1775,11 @@
   .deal-section { margin-bottom: 1.2rem; }
   .deal-section-title {
     margin: 0 0 0.2rem; font-size: 0.95rem; font-weight: 700; color: var(--forest, var(--lichen));
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .deal-count {
+    font-size: 0.72rem; font-weight: 700; color: var(--text-muted);
+    background: rgba(92,61,30,0.08); border-radius: 999px; padding: 0.05rem 0.45rem;
   }
   .deal-section-sub { margin: 0 0 0.7rem; font-size: 0.8rem; color: var(--text-muted); }
   .deal-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.7rem; }
@@ -1786,6 +1791,17 @@
   }
   .deal-card.in-plan { background: rgba(94,122,104,0.06); }
   .deal-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.6rem; }
+  /* Kollapsbart kort-huvud (knapp) */
+  .deal-card-toggle {
+    width: 100%; text-align: left; background: none; border: none; font: inherit;
+    cursor: pointer; padding: 0; -webkit-appearance: none; appearance: none;
+  }
+  .deal-matchcount { font-size: 0.72rem; color: var(--text-muted); }
+  .deal-chev {
+    display: inline-block; transition: transform 0.18s ease; color: var(--text-muted);
+    font-weight: 400; margin-left: 0.15rem;
+  }
+  .deal-card-toggle.open .deal-chev { transform: rotate(90deg); }
   .deal-title { font-weight: 700; font-size: 0.98rem; line-height: 1.25; color: var(--forest, var(--lichen)); }
   .deal-meta { display: flex; gap: 0.4rem; align-items: center; margin-top: 0.25rem; flex-wrap: wrap; }
   .deal-when, .deal-time { font-size: 0.78rem; color: var(--text-muted); }
