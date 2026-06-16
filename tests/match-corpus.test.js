@@ -63,6 +63,16 @@ const CORPUS = [
   // ── Barnmat ──
   ["kyckling", "Barnmat Kyckling & Ris 6 mån", "Semper", false],
   ["banan", "Klämmis Banan Äpple", "BabyFood", false],
+  ["äpple", "Fruktstång Druvor/äpple Från 1-3 År", "Nestlé", false], // småbarnsmat (år)
+  ["äpple", "Fruktsmoothie Äpple Banan Från 6 Månader", "Nestlé", false], // barnmat (mån)
+
+  // ── Grillspett (kött kryddat med grönsak i namnet) ──
+  ["paprika", "Kycklingspett Paprika Örter Sverige", "Lönneberga", false],
+  ["paprika", "Paprika Röd Klass 1", "", true], // färsk paprika ska matcha
+
+  // ── Smaksatt vatten / bärdryck ──
+  ["jordgubbar", "Hydrate Rabarber/jordgubb Stilla Vatten Pet", "Vitamin Well", false],
+  ["jordgubbar", "Jordgubbar Klass 1", "", true], // färska jordgubbar ska matcha
 
   // ── Djurmat ──
   ["lax", "Kattmat Lax i Gelé", "Whiskas", false],

@@ -23,16 +23,18 @@ const SAVING_SKIP_CANONS = new Set([
   "olivolja", "rapsolja", "sesamolja", "avokadoolja", "smör", "margarin",
 ]);
 
-// Barnmat anges ofta med ålder ("Från 6 Månader") snarare än ordet "barnmat".
-// Kräver "från" så att lagrad ost/chark ("Lagrad 24 Månader") inte fastnar.
-const BABY_FOOD_RE = /\bfrån\s+\d+\s*mån/i;
+// Barnmat anges ofta med ålder ("Från 6 Månader", "Från 1–3 År") snarare än
+// ordet "barnmat". Kräver "från" så att lagrad ost/chark ("Lagrad 24 Månader")
+// inte fastnar. Täcker både månader och år samt intervall ("1–3 år").
+const BABY_FOOD_RE = /\bfrån\s+\d+\s*[-–]?\s*\d*\s*(mån|år)/i;
 
 // Produkter som ALDRIG är en receptingrediens, oavsett canon — de innehåller
 // ofta canon-ord ("Mac & Cheese" → ost, "Barnmat Kyckling" → kyckling,
-// "Kattmat Lax" → lax, "Ostbågar" → ost). Gäller globalt i rejectsMatch.
-// Medvetet snäv: bara klasser som aldrig handlas som ingrediens, så att inga
-// riktiga ingredienser fastnar.
-const GLOBAL_REJECT_RE = /\b(mac\s*&\s*cheese|färdigrätt\w*|färdig rätt|micro\w*|panerad\w*|barnmat|klämmis\w*|ostbåge\w*|kattmat|kattfoder|hundmat|hundfoder|djurfoder|hundgodis)\b/i;
+// "Kattmat Lax" → lax, "Ostbågar" → ost, "Kycklingspett Paprika" → paprika).
+// Gäller globalt i rejectsMatch. Medvetet snäv: bara klasser som aldrig handlas
+// som ingrediens, så att inga riktiga ingredienser fastnar. "spett" = grillspett
+// (kött-/kycklingspett) som ofta är kryddade med en grönsak i namnet.
+const GLOBAL_REJECT_RE = /\b(mac\s*&\s*cheese|färdigrätt\w*|färdig rätt|micro\w*|panerad\w*|barnmat|klämmis\w*|ostbåge\w*|kattmat|kattfoder|hundmat|hundfoder|djurfoder|hundgodis|[a-zåäö]*spett)\b/i;
 
 // Kontrollera om offer-texten funktionellt/produktmässigt passar canon.
 // Se CANON_REJECT_PATTERNS i shopping-builder.js — löser t.ex.
