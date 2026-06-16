@@ -15,7 +15,19 @@ const DEFAULT_STORE = "2160";
 const MATCHABLE_PROMO_TYPES = new Set([
   "MixMatchPricePromotion",
   "MixMatchPercentagePromotion",
+  "SubtotalOrderPromotion",
 ]);
+
+// Avgör om en promotion ger ett rent styckpris vi kan räkna besparing på.
+// SubtotalOrderPromotion bär ofta Willys Plus-klubbpriser (campaignType
+// "LOYALTY"), men kan också vara villkorade av ordersumman (threshold > 0) —
+// då är priset inte ett styckpris och saving går inte att räkna per vara.
+// Klubbpriserna har threshold 0/null (ovillkorade) → bara dem släpper vi in.
+function isMatchablePromo(p) {
+  if (!MATCHABLE_PROMO_TYPES.has(p.promotionType)) return false;
+  if (p.promotionType === "SubtotalOrderPromotion" && p.threshold) return false;
+  return true;
+}
 
 // Willys campaigns-endpoint returnerar alla kampanjer i butiken, inte bara
 // mat. Filtrerar bort icke-mat via substring-blocklist så matcher/UI inte
@@ -103,9 +115,7 @@ export function normalizeOffers(results) {
   const offers = [];
   for (const item of results) {
     if (isNonFood(item)) continue;
-    const promo = (item.potentialPromotions || []).find((p) =>
-      MATCHABLE_PROMO_TYPES.has(p.promotionType)
-    );
+    const promo = (item.potentialPromotions || []).find(isMatchablePromo);
     if (!promo) continue;
 
     const regularPrice = typeof item.priceValue === "number" ? item.priceValue : null;
@@ -117,6 +127,7 @@ export function normalizeOffers(results) {
       code: item.code,
       name: item.name,
       brandLine: item.productLine2 || null,
+      loyalty: promo.campaignType === "LOYALTY",
       regularPrice,
       promoPrice,
       savingPerUnit,
