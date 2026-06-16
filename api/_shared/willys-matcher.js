@@ -23,16 +23,18 @@ const SAVING_SKIP_CANONS = new Set([
   "olivolja", "rapsolja", "sesamolja", "avokadoolja", "smör", "margarin",
 ]);
 
-// Barnmat anges ofta med ålder ("Från 6 Månader") snarare än ordet "barnmat".
-// Kräver "från" så att lagrad ost/chark ("Lagrad 24 Månader") inte fastnar.
-const BABY_FOOD_RE = /\bfrån\s+\d+\s*mån/i;
+// Barnmat anges ofta med ålder ("Från 6 Månader", "Från 1–3 År") snarare än
+// ordet "barnmat". Kräver "från" så att lagrad ost/chark ("Lagrad 24 Månader")
+// inte fastnar. Täcker både månader och år samt intervall ("1–3 år").
+const BABY_FOOD_RE = /\bfrån\s+\d+\s*[-–]?\s*\d*\s*(mån|år)/i;
 
 // Produkter som ALDRIG är en receptingrediens, oavsett canon — de innehåller
 // ofta canon-ord ("Mac & Cheese" → ost, "Barnmat Kyckling" → kyckling,
-// "Kattmat Lax" → lax, "Ostbågar" → ost). Gäller globalt i rejectsMatch.
-// Medvetet snäv: bara klasser som aldrig handlas som ingrediens, så att inga
-// riktiga ingredienser fastnar.
-const GLOBAL_REJECT_RE = /\b(mac\s*&\s*cheese|färdigrätt\w*|färdig rätt|micro\w*|panerad\w*|barnmat|klämmis\w*|ostbåge\w*|kattmat|kattfoder|hundmat|hundfoder|djurfoder|hundgodis)\b/i;
+// "Kattmat Lax" → lax, "Ostbågar" → ost, "Kycklingspett Paprika" → paprika).
+// Gäller globalt i rejectsMatch. Medvetet snäv: bara klasser som aldrig handlas
+// som ingrediens, så att inga riktiga ingredienser fastnar. "spett" = grillspett
+// (kött-/kycklingspett) som ofta är kryddade med en grönsak i namnet.
+const GLOBAL_REJECT_RE = /\b(mac\s*&\s*cheese|färdigrätt\w*|färdig rätt|micro\w*|panerad\w*|barnmat|klämmis\w*|ostbåge\w*|kattmat|kattfoder|hundmat|hundfoder|djurfoder|hundgodis|[a-zåäö]*spett)\b/i;
 
 // Kontrollera om offer-texten funktionellt/produktmässigt passar canon.
 // Se CANON_REJECT_PATTERNS i shopping-builder.js — löser t.ex.
@@ -147,12 +149,12 @@ export function matchRecipes(recipes, offers) {
 //   chosenIds    – array med recept-id som redan ligger i planen
 //   recipeLookup – (id) => recipe | undefined (för titel/protein/tid)
 export function buildDealCandidates(savingsById, chosenIds, recipeLookup, opts = {}) {
-  const { minSaving = 10, limit = 20 } = opts;
+  const { minSaving = 10, limit = 20, bulkWeight = 0.5 } = opts;
   const chosen = new Set(chosenIds);
   return Object.entries(savingsById || {})
-    .map(([id, e]) => ({ recipeId: Number(id), total: e.total, matches: e.matches }))
+    .map(([id, e]) => ({ recipeId: Number(id), total: e.total, matches: e.matches, rank: rankSaving(e.matches, e.total, bulkWeight) }))
     .filter((c) => !chosen.has(c.recipeId) && c.total >= minSaving)
-    .sort((a, b) => b.total - a.total)
+    .sort((a, b) => b.rank - a.rank)
     .slice(0, limit)
     .map((c) => {
       const r = recipeLookup(c.recipeId) || null;
@@ -165,4 +167,22 @@ export function buildDealCandidates(savingsById, chosenIds, recipeLookup, opts =
         matches: c.matches,
       };
     });
+}
+
+// Rankningspoäng: storpack (bulk) nedviktas eftersom receptet ofta bara
+// förbrukar en bråkdel — så ett recept som nätt och jämnt nuddar en stor
+// rabatterad förpackning inte rankas över ett där rabatten faktiskt går åt.
+// Visad besparing (saving) ändras INTE; bara sorteringen. Faller tillbaka på
+// total när matchningarna saknar savingPerUnit (t.ex. i tester).
+function rankSaving(matches, total, bulkWeight) {
+  if (!Array.isArray(matches) || !matches.length) return total;
+  let any = false;
+  let sum = 0;
+  for (const m of matches) {
+    if (typeof m.savingPerUnit === "number") {
+      any = true;
+      sum += m.bulk ? m.savingPerUnit * bulkWeight : m.savingPerUnit;
+    }
+  }
+  return any ? sum : total;
 }

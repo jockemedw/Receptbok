@@ -1,6 +1,28 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–91. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–93. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 93 (2026-06-16) — Storpack-medvetenhet i besparingen
+
+Mål (användarinvändning): hela varans besparing tillgodoräknas receptet, fast bara en bråkdel ofta används (t.ex. 2 kg ris). Exakt proportionering är opålitlig (dl vs kg, "ca"-vikter, ingen densitet) → vald väg: ärlig siffra + genomskinlighet + de-skewad rankning.
+
+- **Förpackningsstorlek:** `normalizeOffers()` läser `displayVolume` och flaggar `bulk` via `isBulkVolume()` (≥1 kg / 1 l). `bulk` + `displayVolume` bärs med i offer och trådas genom `savingMatches` (generate.js byCanon).
+- **"storpack"-tag** i fynd-raderna (Veckans fynd-popup + dag-popover) så man ser vilka besparingar som gäller en stor förpackning. Skärpt fotnot.
+- **Nedviktad rankning:** `buildDealCandidates()` rankar via `rankSaving()` där storpack räknas till 50 % — **visad besparing (saving) ändras INTE**, raderna summerar fortfarande till rubriken; bara sorteringen av "Fler fynd" påverkas så ett recept som nätt och jämnt nuddar en stor rabatt inte toppar listan. Faller tillbaka på total när matchningar saknar savingPerUnit.
+- **Verifierat:** +8 willys-offers (11→19, bulk-parsning) +4 match (rankning + att visad siffra är oförändrad). Hela sviten grön — match 123, corpus 41, shopping 81, select 432, data-mapper 27, day-ops 34, willys-offers 19, dispatch 93, cookies 29 (**879 assertions**). Versioner: `styles.css?v=109`, `app.js?v=106`, SW-cache v14.
+
+---
+
+## Session 92 (2026-06-16) — Fler korpus-fixar för besparings-matchern
+
+Mål (användarbegäran, ny omgång skärmbilder från Veckans fynd): tre kvarvarande falska träffar som popupen avslöjade.
+
+- **Grillspett → grönsak:** "Kycklingspett Paprika Örter" matchade `paprika` (−12,3 kr). GLOBAL_REJECT_RE fångar nu `[a-zåäö]*spett` (kött-/kycklingspett kryddade med en grönsak i namnet).
+- **Småbarnsmat med åldersintervall:** "Fruktstång Druvor/äpple Från 1–3 År" matchade `äpple` (−10 kr). BABY_FOOD_RE utökad från bara `mån` till `(mån|år)` + intervall (`från \d+ [-–] \d* (mån|år)`).
+- **Smaksatt bärvatten:** "Hydrate … Jordgubb Stilla Vatten Pet" matchade `jordgubbar` (−6,1 kr). Nya CANON_REJECT_PATTERNS för `jordgubbar`/`hallon`/`blåbär` (stilla vatten/hydrate/läsk/smoothie/saft…), i linje med befintliga citron/lime/apelsin-rejects.
+- **Verifierat:** +6 korpus-fall (35→41), inkl. positiva guards (färsk paprika/jordgubbar matchar fortfarande). Hela sviten grön — match 119, corpus 41, shopping 81, select 432, data-mapper 27, day-ops 34, willys-offers 11, dispatch 93, cookies 29 (**867 assertions**). Backend-only, ingen version-bump.
 
 ---
 

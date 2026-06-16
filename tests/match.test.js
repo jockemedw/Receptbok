@@ -297,6 +297,22 @@ assertFalse(rejectsMatch("ost", { name: "Parmesan Lagrad 24 Månader", brandLine
     "buildDealCandidates: limit kapar listan");
 }
 
+// ─── Veckans fynd: storpack nedviktas i rankningen (Session 93) ──────
+{
+  // Recept 1 har högre rå besparing men allt är storpack (rank 20×0.5=10);
+  // recept 2 lägre rå besparing men ingen storpack (rank 16) → 2 rankas först.
+  const savingsById = {
+    1: { total: 20, matches: [{ canon: "ris", savingPerUnit: 20, bulk: true }] },
+    2: { total: 16, matches: [{ canon: "räkor", savingPerUnit: 16, bulk: false }] },
+  };
+  const lookup = (id) => ({ 1: { id: 1, title: "Risrätt" }, 2: { id: 2, title: "Räkpasta" } }[id]);
+  const cands = buildDealCandidates(savingsById, [], lookup);
+  assertEq(cands[0].recipeId, 2, "bulk-dämpning: icke-storpack rankas före storpack");
+  assertEq(cands[0].saving, 16, "visad besparing = rå total (16)");
+  assertEq(cands[1].recipeId, 1, "storpack-recept hamnar tvåa");
+  assertEq(cands[1].saving, 20, "visad besparing oförändrad (20) trots dämpad rank");
+}
+
 // ─── Slutrapport ──────────────────────────────────────────────────
 console.log(`\n${passed} passerade, ${failed} failade.`);
 if (failed) {

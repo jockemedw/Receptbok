@@ -502,6 +502,10 @@ export const CANON_REJECT_PATTERNS = {
   "yoghurt": /\b(körsbär\w*|jordgubb\w*|hallon|blåbär|skogsbär|lingon|hjortron|aprikos|persika|päron|mango|ananas|passion|vanilj\w*|citron|banan|fika|kola|choklad|samoa|kokos|lakrits|dessert|smoothie|drick\w*|müsli|granola|frukt|smaksatt)\b/i,
   // Citron: avvisa drycker/läsk (t.ex. "Citron Kolsyrat Vatten") — recept vill ha frukt/saft.
   "citron": /\b(kolsyrat|kolsyrad|läsk|soda|smoothie|sirap|nektar)\b/i,
+  // Bär: avvisa smaksatt vatten/dryck (t.ex. "Hydrate … Jordgubb Stilla Vatten Pet").
+  "jordgubbar": /\b(stilla vatten|vatten pet|hydrate|kolsyrat|kolsyrad|läsk|smoothie|saft|sirap|nektar|dryck)\b/i,
+  "hallon": /\b(stilla vatten|vatten pet|hydrate|kolsyrat|kolsyrad|läsk|smoothie|saft|sirap|nektar|dryck)\b/i,
+  "blåbär": /\b(stilla vatten|vatten pet|hydrate|kolsyrat|kolsyrad|läsk|smoothie|saft|sirap|nektar|dryck)\b/i,
   // Sallad: avvisa bittra specialblad (endive/frisé/cikoria) — recept vill ha vanlig sallad.
   "sallad": /\b(endive|frisé|frise|cikoria|witlof)\b/i,
   // Citrus: avvisa läsk/dryck-varianter (juice är OK och mappas separat till frukten).

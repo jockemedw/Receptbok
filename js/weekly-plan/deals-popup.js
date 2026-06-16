@@ -26,11 +26,12 @@ export function hasWeeklyDeals() {
 function matchRows(matches) {
   return (matches || []).map((m) => {
     const loyalty = m.loyalty ? '<span class="saving-loyalty">Willys Plus</span>' : '';
+    const bulk = m.bulk ? '<span class="saving-bulk" title="Stor förpackning — räcker ofta till fler måltider">storpack</span>' : '';
     const brand = m.brandLine ? `<div class="saving-brand">${escapeHtml(m.brandLine)}</div>` : '';
     return `
       <li class="saving-row">
         <div class="saving-row-main">
-          <div class="saving-canon">${escapeHtml(m.canon)}${loyalty}</div>
+          <div class="saving-canon">${escapeHtml(m.canon)}${loyalty}${bulk}</div>
           <div class="saving-product">${escapeHtml(m.name)}</div>
           ${brand}
           <div class="saving-prices">
@@ -135,7 +136,7 @@ export function openDealsPopup() {
         ${inPlanHtml}
         ${candHtml}
       </div>
-      <p class="saving-footnote">Reapriser kan ändras eller löpa ut. Besparingen räknas per enhet och förutsätter att du handlar erbjudandet.</p>
+      <p class="saving-footnote">Besparingen avser hela förpackningen och förutsätter att du handlar erbjudandet — varor märkta <span class="saving-bulk">storpack</span> räcker ofta till fler måltider. Reapriser kan ändras eller löpa ut.</p>
     </div>`;
   document.body.appendChild(overlay);
 }
