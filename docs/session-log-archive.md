@@ -1,6 +1,17 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–90. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–91. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 91 (2026-06-16) — Veckans fynd P2: kollapsbara recept-kort
+
+Mål (forts. på Session 89–90): popupens "I din matsedel"-lista var en vägg (8+ recept × flera rader) och "Fler fynd att haka på" begravdes långt under. Gör listan scanbar.
+
+- **Kollapsbara kort:** varje recept-kort (både i planen och kandidater) har nu ett tryckbart huvud (recept + besparing + chevron + "N fynd"); varulistan är dold tills man fäller ut den (`dealToggleCard`). "Byt in" på kandidater ligger kvar synlig. `aria-expanded` sätts på huvudet.
+- **Sektionsantal:** rubrikerna visar antal recept ("I din matsedel 8", "Fler fynd att haka på 12") så man förstår omfånget direkt.
+- **Verifierat:** `node --check` rent; kärnsviten grön (frontend-only ändring, inga nya assertions). Versioner: `styles.css?v=108`, `app.js?v=105`, SW-cache v13.
+- **Kvar:** live-verifiering att layouten känns scanbar på mobil.
 
 ---
 

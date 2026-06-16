@@ -69,16 +69,17 @@ function candidateCard(c) {
       <span class="deal-day-cur">nu: ${escapeHtml(d.recipe || '–')}</span>
     </button>`).join('');
 
+  const n = (c.matches || []).length;
   return `
-    <li class="deal-card" data-recipe="${c.recipeId}">
-      <div class="deal-card-head">
+    <li class="deal-card collapsible" data-recipe="${c.recipeId}">
+      <button type="button" class="deal-card-head deal-card-toggle" onclick="dealToggleCard(this)" aria-expanded="false">
         <div class="deal-card-main">
           <div class="deal-title">${escapeHtml(c.title)}</div>
-          <div class="deal-meta">${meta}</div>
+          <div class="deal-meta">${meta}<span class="deal-matchcount">${n} ${n === 1 ? 'fynd' : 'fynd'}</span></div>
         </div>
-        <div class="deal-saving">${COIN} ${c.saving} kr</div>
-      </div>
-      <ul class="saving-list deal-matches">${matchRows(c.matches)}</ul>
+        <div class="deal-saving">${COIN} ${c.saving} kr <span class="deal-chev" aria-hidden="true">›</span></div>
+      </button>
+      <ul class="saving-list deal-matches" hidden>${matchRows(c.matches)}</ul>
       <button type="button" class="deal-bytin-btn" onclick="dealBytIn(${c.recipeId}, this)">Byt in i matsedeln</button>
       <div class="deal-day-picker" hidden>
         <p class="deal-day-hint">Vilken dag ska bytas till <strong>${escapeHtml(c.title)}</strong>?</p>
@@ -96,24 +97,27 @@ export function openDealsPopup() {
 
   const inPlanHtml = inPlan.length ? `
     <section class="deal-section">
-      <h3 class="deal-section-title">I din matsedel</h3>
+      <h3 class="deal-section-title">I din matsedel <span class="deal-count">${inPlan.length}</span></h3>
       <ul class="deal-list">
-        ${inPlan.map((d) => `
-          <li class="deal-card in-plan">
-            <div class="deal-card-head">
+        ${inPlan.map((d) => {
+          const n = (d.savingMatches || []).length;
+          return `
+          <li class="deal-card in-plan collapsible">
+            <button type="button" class="deal-card-head deal-card-toggle" onclick="dealToggleCard(this)" aria-expanded="false">
               <div class="deal-card-main"><div class="deal-title">${escapeHtml(d.recipe)}</div>
-                <div class="deal-meta"><span class="deal-when">${escapeHtml(d.day || fmtShort(d.date))}</span></div></div>
-              <div class="deal-saving">${COIN} ${d.saving} kr</div>
-            </div>
-            <ul class="saving-list deal-matches">${matchRows(d.savingMatches)}</ul>
-          </li>`).join('')}
+                <div class="deal-meta"><span class="deal-when">${escapeHtml(d.day || fmtShort(d.date))}</span><span class="deal-matchcount">${n} fynd</span></div></div>
+              <div class="deal-saving">${COIN} ${d.saving} kr <span class="deal-chev" aria-hidden="true">›</span></div>
+            </button>
+            <ul class="saving-list deal-matches" hidden>${matchRows(d.savingMatches)}</ul>
+          </li>`;
+        }).join('')}
       </ul>
     </section>` : '';
 
   const candHtml = `
     <section class="deal-section">
-      <h3 class="deal-section-title">Fler fynd att haka på</h3>
-      <p class="deal-section-sub">Rea-recept som inte kom med — tryck "Byt in" för att lägga ett på en dag.</p>
+      <h3 class="deal-section-title">Fler fynd att haka på <span class="deal-count">${candidates.length}</span></h3>
+      <p class="deal-section-sub">Rea-recept som inte kom med — tryck på ett för att se varorna, "Byt in" för att lägga det på en dag.</p>
       <ul class="deal-list">${candidates.map(candidateCard).join('')}</ul>
     </section>`;
 
@@ -138,6 +142,18 @@ export function openDealsPopup() {
 
 export function closeDealsPopup() {
   document.querySelectorAll('.deals-overlay').forEach((el) => el.remove());
+}
+
+// Fäll ut/ihop ett recept-korts varulista.
+export function dealToggleCard(btnEl) {
+  const card = btnEl.closest('.deal-card');
+  if (!card) return;
+  const matches = card.querySelector('.deal-matches');
+  if (!matches) return;
+  const open = matches.hidden;
+  matches.hidden = !open;
+  btnEl.classList.toggle('open', open);
+  btnEl.setAttribute('aria-expanded', open ? 'true' : 'false');
 }
 
 // Tryck på "Byt in" → fäll ut dag-väljaren under kortet.
@@ -213,6 +229,7 @@ export async function dealConfirmDay(recipeId, date, btnEl) {
 
 window.openDealsPopup = openDealsPopup;
 window.closeDealsPopup = closeDealsPopup;
+window.dealToggleCard = dealToggleCard;
 window.dealBytIn = dealBytIn;
 window.dealConfirmDay = dealConfirmDay;
 window.hasWeeklyDeals = hasWeeklyDeals;
