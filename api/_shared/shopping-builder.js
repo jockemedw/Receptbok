@@ -346,7 +346,7 @@ const SKAFFERI_OVERRIDE = new Set([
 
 const SMALL_UNITS = new Set(["tsk", "krm", "msk", "nypa", "tumme", "näve", "nävar"]);
 
-const PANTRY_ALWAYS_SKIP = new Set([
+export const PANTRY_ALWAYS_SKIP = new Set([
   "salt", "svartpeppar", "vitpeppar", "vatten", "salt & peppar", "salt och svartpeppar",
   "salt och peppar", "lite vatten", "valfria grönsaker",
 ]);
@@ -493,6 +493,10 @@ export const CANON_REJECT_PATTERNS = {
   "mjölk": /\b(havredryck|mandeldryck|sojadryck|kokosdryck|havremjölk|mandelmjölk|sojamjölk|gräddfil|syrad mjölk|kokosmjölk|kondenserad|mjölkpulver|mjölkfri)\b/i,
   "smör": /\b(margarin|bregott|becel|flora|milda växtfett|popcorn|mikropopcorn|jordnötssmör|cashewsmör|mandelsmör|nötsmör|kakaosmör|sheasmör|solrossmör)\b/i,
   "rapsolja": /\b(sardell\w*|ansjovis\w*|tonfisk\w*|sill\w*|makrill\w*|inlagd\w*|konserv\w*)\b/i,
+  // Lax: recepten vill ha färsk laxfilé — avvisa rökt/gravad delikatessvariant.
+  "lax": /\b(kallrökt|varmrökt|gravad|gravlax|rökt|rökta)\b/i,
+  // Vitlök: avvisa marinerad antipasti (recepten vill ha färsk vitlök).
+  "vitlöksklyftor": /\bmarinerad/i,
   "fisk": /\b(fiskpinnar|fiskbullar|fiskbullar)\b/i,
   // Yoghurt: avvisa smaksatta/fruktade/dessert-varianter — recept skriver "yoghurt" för naturell.
   "yoghurt": /\b(körsbär\w*|jordgubb\w*|hallon|blåbär|skogsbär|lingon|hjortron|aprikos|persika|päron|mango|ananas|passion|vanilj\w*|citron|banan|fika|kola|choklad|samoa|kokos|lakrits|dessert|smoothie|drick\w*|müsli|granola|frukt|smaksatt)\b/i,
