@@ -1,6 +1,23 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–86. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–87. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 87 (2026-06-12, natt) — Dagflytt-robusthet: flimmerfritt, atomära skrivningar, day-ops-tester
+
+Mål (användarbegäran, nattjobb): byt/flytta/fri dag kändes oresponsivt, heron blinkade/fladdrade, och byten med historiska dagar fungerade inte som önskat. Förbättra UX-polish + säkra databaskopplingen. → **PR #83.**
+
+- **Flimret löst i roten — sektionsvis diff-rendering:** `renderDeluxe()` skriver nu till fem persistenta sektioner (`setSec`: history/hero/banner/today/days, `.dlx-sec { display: contents }`) och byter innerHTML BARA när sektionens HTML faktiskt ändrats. Heron byggs aldrig om vid kortexpansion/byten, och realtime-ekot från egna skrivningar blir en visuell no-op.
+- **Eko-dämpning:** egna skrivningar satte tidigare igång `loadWeeklyPlan()` via realtime ~1 s senare (full omhämtning = blinket). Nu: `suppressEcho()` sätter `window._planMutateUntil` (4 s) som `subscribeMealDays`-handlern respekterar; den hoppar också över reload när premiumvyns byt/flytta-läge är aktivt.
+- **Responsivitet:** state-driven swap/flytt (`_dlxSwap/_dlxMove = { from, pending }`). Målval ger OMEDELBAR feedback — bannern växlar till "Byter dag…/Flyttar dag…" med spinner, källa+mål pulserar (`.dlx-busy`), och vid fel ligger läget kvar så man kan välja nytt mål eller avbryta. `_opBusy`-spärr mot dubbel-tryck/parallella åtgärder. Escape avbryter. Glöd-kvitto (`.dlx-flash`) på berörda dagar efter lyckad åtgärd. Bannern är sticky (följer med när man scrollar bland målen).
+- **Historiska dagar:** aktiva planens passerade dagar är fullvärdiga byt-källor och mål (var redan tillåtet i backend — nu tydligt markerade). Ogiltiga mål (arkiverade veckor, egen planering, fria dagar, passerade tomma dagar) är nedtonade (`.dlx-dim`) men tryckbara → förklarande toast (arkiv är snapshots i `plan_archives` och kan inte muteras). Markeringarna beräknas i renderingen (`modeCls`) — inga imperativa klasspatchar som tappas vid re-render.
+- **Backend-kvalitetssäkring (`api/_shared/day-ops.js` + omskrivna endpoints):**
+  - Rotationslogiken utbruten till rena, enhetstestade funktioner (`planAfterMove`/`planAfterFree`/`planAfterUnfree`/`changedRows`) med **hård invariant: receptmängden får aldrig ändras** — verifieras före varje skrivning, annars 500 utan att röra DB.
+  - **Atomära skrivningar:** rotationer går som EN bulk-upsert mot PK `(household_id, date)` (meal_days har INGEN id-kolumn — komposit-PK). Byt-mot-tom-dag är nu en enda `UPDATE date` (raden behåller allt) istället för insert+delete. skip-day free skapar svansdagen FÖRE rotationen → ett avbrott kan aldrig tappa recept (värsta fall en tillfällig dubblett).
+  - **Alla DB-fel kontrolleras nu** — supabase-js kastar inte; tidigare `Promise.all`-skrivningar kunde misslyckas TYST och svara "ok". Varje write checkar `error` och ger begriplig svenska.
+- **Verifierat:** ny testsvit `tests/day-ops.test.js` (34 assertions: rotation åt båda håll/sist/no-op, fria dagar pinnade, free→unfree round-trip exakt återställning, invariant, changedRows-minimalitet). Hela sviten grön — match 103, corpus 35, shopping 81, select 432, data-mapper 27, day-ops 34, dispatch 93, cookies 29 (**834 assertions**). `node --check` rent. Versioner: `styles.css?v=105`, `app.js?v=102`, SW-cache v10.
+- **Live-verifierat (Joakim, 2026-06-13):** byt dag (inkl. historiska/passerade dagar), flytta dag (kläm in mellan dagar), fri dag (free/unfree) och byt mot tom dag — alla bekräftade live i den installerade appen. Flimmerfritt, responsivt, inköpslistan orörd.
 
 ---
 

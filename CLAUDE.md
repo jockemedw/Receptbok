@@ -46,108 +46,37 @@ Kopiera sektionerna rakt av (markdown-format). Enda tillagda info är git-status
 som visas som tre rader i klartext (branch, status, senaste commit) överst.
 
 ### Roadmap
-**Fas 1 — Extrapriser → receptförslag** (research klar → `docs/research-extrapriser.md`)
-- [x] 1A — Tjek/eTilbudsavis API — otillräcklig (14% täckning)
-- [ ] 1B — ICA inofficiellt API — hoppas över (Willys räcker)
-- [x] 1C — Willys API: `GET /search/campaigns/online?q=<storeId>&type=PERSONAL_GENERAL&size=500` (ingen auth). Store 2160 = Ekholmen → 199 erbjudanden
-- [ ] 1C2 — Willys+ medlemserbjudanden — utforskning pågår (se Öppna utredningar)
-- [x] 1D — Matchningslogik klar (Session 35, `docs/match-audit-2026-04-19.md`). 53/62 recept, 149 matches. `CANON_REJECT_PATTERNS` + n-gram-stemming. 51 assertions i `tests/match.test.js`.
-- [x] 1E — UX-design beslutad
-- [x] 1F — Implementation klar + live-verifierad (Session 51). `dry_run`-parameter, 51 assertions i match.test.js.
+**Klart** (detaljer i `docs/session-log-archive.md`): Fas 1 (extrapriser → receptförslag), Fas 3 (internationell receptimport), Fas 4 (automatisk varukorgsfyllning), Fas 6 (säsongsoptimering), Fas 7 (Supabase-migration), Fas 8 (ingrediens-kvalitetskontroll).
 
-**Fas 2 — Familjelärande algoritm**
-- [ ] 2A — Analysera befintlig data
-- [ ] 2B — Designa viktningsmodell
-- [ ] 2C — Implementation + "Favoriter"-vy
-
-**Fas 3 — Internationell receptimport**
-- [x] 3A — Format + sajter kartlagda (Session 28, `docs/research-internationell-import.md`). 7/18 bot-blockerade. JSON-LD + Gemini-fallback.
-- [x] 3B — Konverteringsmodul klar (Session 64). `postProcessForeignRecipe()` + `callGeminiRaw()` + enhetskonvertering (cups→dl, °F→°C m.fl.) + ingrediensöversättning.
-- [x] 3C — Live-verifierat (Session 64): budgetbytes.com, kochbar.de, jamieoliver.com → svenska ingredienser + metriska enheter. **Fas 3 helt klar.**
-
-**Fas 4 — Automatisk varukorgsfyllning** (spec: `docs/superpowers/specs/2026-04-20-willys-dispatch-design.md`)
-- [x] 4A–4C — Research, PoC, UX-design klar
-- [x] 4D — Implementation live-verifierad (Session 39). `/api/dispatch-to-willys`, moduler: `willys-search.js`, `willys-cart-client.js`, `dispatch-matcher.js`. 56 assertions.
-- [x] 4E — Söknings-fallback live (Session 39). Publik `GET willys.se/search?q=<canon>`. Canon-guard via `CANON_REJECT_PATTERNS`.
-- [x] 4F — Cookie-refresh-automatisering **live-verifierad (Session 78)**. Chrome-extension MV3 → secret gist → `secrets-store` (5-min cache). Engångs-setup klar (gist + env vars + extension). **Fas 4 helt klar** — 27 varor landade i korgen i skarp körning.
-
-**Fas 5 — App Store & monetisering** (`docs/marknadsanalys-2026-04.md`)
-- [x] Marknadsanalys
-- [x] 5A — Rekommendation: Capacitor (3–5 v). PWA blockas iOS (Guideline 4.2), RN = full omskrivning. (`docs/research-teknisk-vag-app.md`)
-- [ ] 5B — Autentisering & datamodell
-- [ ] 5C — Kostnads- och intäktskalkyl
-
-**Fas 6 — Säsongsoptimering** (klar, Session 52)
-- [x] 6A — Research: säsongstabell ~120 ingredienser × 12 månader → `docs/research-sasong.md`
-- [x] 6B — 242/264 recept taggade med `seasons`-fält. 22 neutrala.
-- [x] 6C — `applySeasonWeight()` i `selectRecipes()`: in-season 2x, neutral 1x, off-season 0.5x. Toggle `season_weight`.
-- [x] 6D — "Säsongsanpassning"-toggle i inställningar + säsongsfilter (vår/sommar/höst/vinter) i receptboken.
-- [x] 6E — 3 säsongstaggar rättade (Session 63): ID 12, 98, 172.
-
-**Fas 7 — Supabase-migration** ✅ **KLAR (Session 60, mergad till main 2026-05-23)**
-- [x] 7A — Tabellschema + RLS + households
-- [x] 7B — Seedning: 264 recept + alla JSON-filer via `scripts/migrate-to-supabase.mjs --commit`
-- [x] 7C steg 1–4 — Frontend-omskrivning + realtime-subscriptions för `meal_days` + `shopping_items` (Sessions 58, 63)
-- [x] 7D — Backend: alla API-endpoints mot Supabase (Session 59)
-- [x] 7E — Cutover mergad till main (Session 60, commit `45a6433`). 671 assertions.
-
-**Fas 8 — Ingrediens-kvalitetskontroll** (plan: `docs/ingredient-qc-plan-2026-06-03.md`)
-- [x] 8.0 — Audit-verktyg (`scripts/audit-ingredients.mjs`) mot Supabase. Baseline (Session 77): P0=1, P1=309, P2=1372, 567 icke-canon-namn. Rapport: `docs/ingredient-audit-2026-06-03.md`.
-- [x] 8.1 — Parser-buggfix: ⅓⅔⅛-fraktioner (`FRACS` + regexar + display). P0 1→0. +5 assertions (shopping 67/67).
-- [x] 8.2 — Canon-utökning (~80 mappningar + kategori-nyckelord). Canon-täckning 17%→30%, P2 1372→728, icke-canon 567→404.
-- [x] 8.3 — Löst i kod (ingen datamutation): doh-parsern skannar nu alla parenteser/klausuler + "ca/från/+/storleksadjektiv", och audit-heuristiken hoppar vaga/valfria + adjektiv-"och". **P1 309→68** (−78 %). +14 assertions (shopping 81/81). 68 kvar = genuin författar-vaghet (stek-olja, "för 4 pers", valfria garneringar).
-- [x] 8.4 — `recipes.json` retirerad. Delad Supabase-källa (`scripts/_lib/recipes-source.mjs`) + `export-recipes.mjs` → gitignorerad cache. Läsare repekade (recipe-audit, season-analysis, audit-ingredients). Import-pipeline (scrape/promote) skriver nu direkt till Supabase. Obsoleta engångsskript spärrade (recipe-fix, classify-cuisine, migrate, generate_weekly_plan.py). Kanoniskt format dokumenterat.
+**Öppet:**
+- **Fas 2 — Familjelärande algoritm:** 2A analysera data · 2B viktningsmodell · 2C "Favoriter"-vy
+- **Fas 5 — App Store & monetisering:** 5B auth & datamodell · 5C kostnads-/intäktskalkyl (5A klar: Capacitor, `docs/research-teknisk-vag-app.md`)
+- **Fas 1C2 — Willys+ medlemserbjudanden:** se *Öppna utredningar*
 
 ### Kända buggar
 Inga bekräftade just nu.
 
-### Live-verifierat (Joakim, 2026-06-13)
-- **Dagflytt-funktionerna fungerar bra mot produktion:** byt dag (inkl. historiska/passerade dagar), flytta dag (kläm in mellan dagar), fri dag (free/unfree) och byt mot tom dag — alla bekräftade live i den installerade appen. Flimmerfritt, responsivt, inköpslistan orörd. (Session 87, PR #83.)
-
 ### Väntar på live-verifiering (kod klar, ej körd skarpt)
-- **Lösvikts-enum vid Willys-export** (PR #65): `pickUnitForCode()` skickar `"kilograms"` för `_KG`-koder (lös färskvara, t.ex. potatis). Enum-värdet är *inferred* — bara `"pieces"` är PoC-bekräftat. Bekräfta i en skarp körning att lös potatis landar i korgen.
-- **Helhetsomtaget Session 86 (PR #73, mergad till main 2026-06-12):** preview-testat av Joakim före merge. Kvar att bekräfta mot produktion (snabbkoll): (1) PWA: "Lägg till på hemskärmen" från produktions-URL:en ger egen ikon + appen öppnar offline (skalet), (2) matlagningslägets Wake Lock på riktig mobil, (3) Ångra på borttagen inköpsvara + progress-synk från annan enhet.
-- **Premiumvy för matsedeln** (Session 84, PR #69, mergad; justerad Session 85, PR #70): kod klar + testsvit grön, men inte verifierad på mobil mot produktion. Bekräfta att Premium-vyn renderar, att alla åtgärder fungerar (slumpa/välj/byt dag/fri dag/besparing/egen planering) och att växeln Premium↔Klassisk håller båda vyerna i synk. Default är Premium — flippa till Klassisk om något strular. **Session 85-tillägg att kolla:** (1) helg visas nu som en diskret prick på dagkortets färgrygg (ej textpill) → bekräfta att helgkort är lika höga som vardagskort; (2) "Vecka N"-avdelare dyker upp i listan där ISO-veckan byter (syns bara på planer som spänner två veckor).
+- **Lösvikts-enum vid Willys-export** (PR #65): `pickUnitForCode()` skickar `"kilograms"` för `_KG`-koder (lös färskvara, t.ex. potatis). Enum-värdet är *inferred* — bara `"pieces"` är PoC-bekräftat. Bekräfta att lös potatis landar i korgen i skarp körning.
+- **Helhetsomtaget Session 86 (PR #73):** snabbkoll mot produktion: (1) PWA "Lägg till på hemskärmen" ger egen ikon + öppnar offline (skalet), (2) matlagningslägets Wake Lock på riktig mobil, (3) Ångra på borttagen inköpsvara + progress-synk från annan enhet.
+- **Premiumvy för matsedeln** (Session 84–85, PR #69/#70): testsvit grön men ej verifierad på mobil mot produktion. Bekräfta att vyn renderar, att alla åtgärder fungerar (slumpa/välj/byt dag/fri dag/besparing/egen planering) och att växeln Premium↔Klassisk håller båda i synk. Kolla även: helgkort lika höga som vardagskort (helg = prick på färgryggen), och "Vecka N"-avdelare på planer som spänner två veckor.
 
 ### Öppna utredningar
-**Receptkvalitet — uppföljning från nattjobbet (Session 83, se `docs/qc-night/report-2026-06-07.md`):**
-- **Canon-kandidater (kod, EJ tillämpat):** säkra tillägg till `NORMALIZATION_TABLE` höjer pris-matchbarhet — plural-buljongtärningar (`grönsaksbuljongtärningar`→grönsaksbuljong m.fl.), self-canons (`matvete`, `torsk`, `pizzadeg`, `nori`, `citrongräs`), `portobellosvamp`/`baby bella-svamp`→champinjoner. Hölls utanför nattjobbets data-scope; vänta på Joakims OK.
-- **Manuell uppdelning behövs (parentes döljer varor):** #27 `2 dl oliver och hackade soltorkade tomater` (oliver tappas idag), #235 `rödkål (… morötter, salladslök, vinäger …)` (slaw-varor hamnar ej på listan). Kräver mängdbeslut.
-- **Avsiktligt vaga (lämnade):** "för 4 pers"-kolhydrater (#31,#49,#265,#269,#270,#271) + nöt/frö-mixar (#43,#58,#70). Lista i rapporten.
-- **Revert hela jobbet:** in-DB snapshot `recipes_qc_backup_20260607` finns kvar → säg *"revert nattjobbet"*.
+**Receptkvalitet — uppföljning från nattjobbet (Session 83, `docs/qc-night/report-2026-06-07.md`):**
+- **Canon-kandidater (kod, EJ tillämpat):** säkra tillägg till `NORMALIZATION_TABLE` (plural-buljongtärningar, self-canons `matvete`/`torsk`/`pizzadeg`/`nori`/`citrongräs`, `portobellosvamp`→champinjoner). Vänta på Joakims OK.
+- **Manuell uppdelning behövs:** #27 `oliver och hackade soltorkade tomater` (oliver tappas), #235 `rödkål (…morötter, salladslök, vinäger…)` (slaw-varor saknas). Kräver mängdbeslut.
+- **Revert hela jobbet:** in-DB snapshot `recipes_qc_backup_20260607` finns → säg *"revert nattjobbet"*.
 
-**Matchnings-täckning — långsvansen (löpande):** vanliga varor förbättrades över Sessions 78–81, men en full audit av sällan-matchade ingredienser kräver Supabase-nätåtkomst. Öppet bedömningsfall (väntar på Joakim, se `docs/match-hardening-natt-2026-06-05.md`): ska generisk "grädde" tillåtas falla till vispgrädde i sök-fallbacken?
+**Matchnings-täckning — långsvansen:** full audit av sällan-matchade ingredienser kräver Supabase-nätåtkomst. Öppet bedömningsfall (`docs/match-hardening-natt-2026-06-05.md`): ska generisk "grädde" tillåtas falla till vispgrädde i sök-fallbacken?
 
-**Willys+ medlemserbjudanden — 3-fas utforskning:**
-- **Fas A — Rekon:** Vilka inloggningsmetoder erbjuder willys.se? BankID? E-post+lösenord? "Kom ihåg mig"-cookies? Mobilapp-OAuth?
-- **Fas B — Validering:** Logga in manuellt, hämta `https://www.willys.se/search/campaigns/online?q=2160&type=PERSONAL_SEGMENTED&page=0&size=500` i devtools och klistra in svaret. Avgör om Fas C är värd tid.
-- **Fas C — Automatiseringsväg:** Väg 1: manuell cookie-export (lätt, skört). Väg 2: scripted login (medelsvårt). Väg 3: BankID — dödsvägen. Väg 4: acceptera anonyma priser, märk UI:t.
-
-### Idéer (användarens)
-*(Inga öppna idéer just nu — Mobil bottom-tab-nav implementerad i Session 41.)*
+**Willys+ medlemserbjudanden:** kräver inloggning. Fas B: hämta `willys.se/search/campaigns/online?q=2160&type=PERSONAL_SEGMENTED` manuellt i devtools, avgör om automatisering (cookie-export vs scripted login vs BankID) är värt tiden.
 
 ### Claudes idéer
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 - Portionsskalning i matlagningsläget — ×0.5/×2 räknar om mängderna i ingredienslistan
-- ~~Offline-stöd via service worker~~ — implementerad i Session 86 (appskalet cachas; data kräver nät)
 
-### Senaste session — Session 87 (2026-06-12, natt) — Dagflytt-robusthet: flimmerfritt, atomära skrivningar, day-ops-tester
-
-Mål (användarbegäran, nattjobb): byt/flytta/fri dag kändes oresponsivt, heron blinkade/fladdrade, och byten med historiska dagar fungerade inte som önskat. Förbättra UX-polish + säkra databaskopplingen. → **PR #83.**
-
-- **Flimret löst i roten — sektionsvis diff-rendering:** `renderDeluxe()` skriver nu till fem persistenta sektioner (`setSec`: history/hero/banner/today/days, `.dlx-sec { display: contents }`) och byter innerHTML BARA när sektionens HTML faktiskt ändrats. Heron byggs aldrig om vid kortexpansion/byten, och realtime-ekot från egna skrivningar blir en visuell no-op.
-- **Eko-dämpning:** egna skrivningar satte tidigare igång `loadWeeklyPlan()` via realtime ~1 s senare (full omhämtning = blinket). Nu: `suppressEcho()` sätter `window._planMutateUntil` (4 s) som `subscribeMealDays`-handlern respekterar; den hoppar också över reload när premiumvyns byt/flytta-läge är aktivt.
-- **Responsivitet:** state-driven swap/flytt (`_dlxSwap/_dlxMove = { from, pending }`). Målval ger OMEDELBAR feedback — bannern växlar till "Byter dag…/Flyttar dag…" med spinner, källa+mål pulserar (`.dlx-busy`), och vid fel ligger läget kvar så man kan välja nytt mål eller avbryta. `_opBusy`-spärr mot dubbel-tryck/parallella åtgärder. Escape avbryter. Glöd-kvitto (`.dlx-flash`) på berörda dagar efter lyckad åtgärd. Bannern är sticky (följer med när man scrollar bland målen).
-- **Historiska dagar:** aktiva planens passerade dagar är fullvärdiga byt-källor och mål (var redan tillåtet i backend — nu tydligt markerade). Ogiltiga mål (arkiverade veckor, egen planering, fria dagar, passerade tomma dagar) är nedtonade (`.dlx-dim`) men tryckbara → förklarande toast (arkiv är snapshots i `plan_archives` och kan inte muteras). Markeringarna beräknas i renderingen (`modeCls`) — inga imperativa klasspatchar som tappas vid re-render.
-- **Backend-kvalitetssäkring (`api/_shared/day-ops.js` + omskrivna endpoints):**
-  - Rotationslogiken utbruten till rena, enhetstestade funktioner (`planAfterMove`/`planAfterFree`/`planAfterUnfree`/`changedRows`) med **hård invariant: receptmängden får aldrig ändras** — verifieras före varje skrivning, annars 500 utan att röra DB.
-  - **Atomära skrivningar:** rotationer går som EN bulk-upsert mot PK `(household_id, date)` (meal_days har INGEN id-kolumn — komposit-PK). Byt-mot-tom-dag är nu en enda `UPDATE date` (raden behåller allt) istället för insert+delete. skip-day free skapar svansdagen FÖRE rotationen → ett avbrott kan aldrig tappa recept (värsta fall en tillfällig dubblett).
-  - **Alla DB-fel kontrolleras nu** — supabase-js kastar inte; tidigare `Promise.all`-skrivningar kunde misslyckas TYST och svara "ok". Varje write checkar `error` och ger begriplig svenska.
-- **Verifierat:** ny testsvit `tests/day-ops.test.js` (34 assertions: rotation åt båda håll/sist/no-op, fria dagar pinnade, free→unfree round-trip exakt återställning, invariant, changedRows-minimalitet). Hela sviten grön — match 103, corpus 35, shopping 81, select 432, data-mapper 27, day-ops 34, dispatch 93, cookies 29 (**834 assertions**). `node --check` rent. Versioner: `styles.css?v=105`, `app.js?v=102`, SW-cache v10.
-- **Kvar:** live-verifiering av flytta/byt-mot-tom-dag (se *Väntar på live-verifiering* — uppdaterad).
-
-### Tidigare sessioner
-Session 8–86 i `docs/session-log-archive.md`. Full git-historik: `git log --oneline`.
+### Senaste session
+Session 8–87 i `docs/session-log-archive.md`. Full git-historik: `git log --oneline`.
 
 ## Kommandon (tester & skript)
 Inga npm-scripts — allt körs direkt med `node` (inga externa deps utom de tester som kräver `node_modules`).
