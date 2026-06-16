@@ -1,6 +1,18 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–87. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–88. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 88 (2026-06-16) — Willys Plus-erbjudanden + dashboard-bantning
+
+Två separata uppgifter.
+
+- **Dashboard-bantning (PR #85, mergad):** dashboarden i CLAUDE.md hade svällt till en vägg av avklarad historik. Kollapsade de sex klara faserna (1, 3, 4, 6, 7, 8) till en "Klart"-rad, flyttade Session 87-prosan + live-verifieringen hit till arkivet, behöll bara aktivt innehåll. Netto −89/+35 rader.
+- **Willys+ medlemserbjudanden — utredningen klar (Fas 1C2):** jämförde inloggat vs inkognito-svar från `campaigns/online?type=PERSONAL_GENERAL`. Identiska → Willys Plus-erbjudanden är **generiska klubbpriser, ingen inloggning behövs**, ligger redan i feeden appen hämtar anonymt. Hela 3-fas-utforskningen (BankID/cookie/scripted login) faller bort. `PERSONAL_SEGMENTED` var en återvändsgränd (tomt — individuellt riktade kuponger).
+  - **Åtgärd:** `normalizeOffers()` tittade bara på `promotionType`, aldrig `campaignType`. Nu: (1) offers får `loyalty:true` när vald promo är `LOYALTY` → trådas genom `savingMatches` → "Willys Plus"-badge i besparings-popoveren; (2) `SubtotalOrderPromotion` släpps in (guard: `threshold` 0/null) → fångar klubbpriser som föll bort förut (Oxfilé −100 kr/kg, vattenmelon −15 kr/kg).
+  - **Verifierat:** ny `tests/willys-offers.test.js` (11 assertions). Hela sviten grön — match 103, corpus 35, shopping 81, select 432, data-mapper 27, day-ops 34, willys-offers 11, dispatch 93, cookies 29 (**845 assertions**). Versioner: `styles.css?v=106`, `app.js?v=103`, SW-cache v11. Detaljer: `docs/research-willys-plus-2026-06-16.md`.
+  - **Kvar:** live-verifiering mot produktion (badge syns + nya fynd räknas in) — se *Väntar på live-verifiering*.
 
 ---
 

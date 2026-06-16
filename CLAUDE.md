@@ -51,7 +51,6 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 **Öppet:**
 - **Fas 2 — Familjelärande algoritm:** 2A analysera data · 2B viktningsmodell · 2C "Favoriter"-vy
 - **Fas 5 — App Store & monetisering:** 5B auth & datamodell · 5C kostnads-/intäktskalkyl (5A klar: Capacitor, `docs/research-teknisk-vag-app.md`)
-- **Fas 1C2 — Willys+ medlemserbjudanden:** se *Öppna utredningar*
 
 ### Kända buggar
 Inga bekräftade just nu.
@@ -60,6 +59,7 @@ Inga bekräftade just nu.
 - **Lösvikts-enum vid Willys-export** (PR #65): `pickUnitForCode()` skickar `"kilograms"` för `_KG`-koder (lös färskvara, t.ex. potatis). Enum-värdet är *inferred* — bara `"pieces"` är PoC-bekräftat. Bekräfta att lös potatis landar i korgen i skarp körning.
 - **Helhetsomtaget Session 86 (PR #73):** snabbkoll mot produktion: (1) PWA "Lägg till på hemskärmen" ger egen ikon + öppnar offline (skalet), (2) matlagningslägets Wake Lock på riktig mobil, (3) Ångra på borttagen inköpsvara + progress-synk från annan enhet.
 - **Premiumvy för matsedeln** (Session 84–85, PR #69/#70): testsvit grön men ej verifierad på mobil mot produktion. Bekräfta att vyn renderar, att alla åtgärder fungerar (slumpa/välj/byt dag/fri dag/besparing/egen planering) och att växeln Premium↔Klassisk håller båda i synk. Kolla även: helgkort lika höga som vardagskort (helg = prick på färgryggen), och "Vecka N"-avdelare på planer som spänner två veckor.
+- **Willys Plus-erbjudanden** (Session 88): `normalizeOffers()` märker nu LOYALTY-erbjudanden med "Willys Plus"-badge i besparings-popoveren + släpper in `SubtotalOrderPromotion`-klubbpriser (kött/frukt som föll bort förut). Bekräfta mot produktion att badgen syns och att de nya fynden räknas in. Detaljer: `docs/research-willys-plus-2026-06-16.md`.
 
 ### Öppna utredningar
 **Receptkvalitet — uppföljning från nattjobbet (Session 83, `docs/qc-night/report-2026-06-07.md`):**
@@ -69,7 +69,7 @@ Inga bekräftade just nu.
 
 **Matchnings-täckning — långsvansen:** full audit av sällan-matchade ingredienser kräver Supabase-nätåtkomst. Öppet bedömningsfall (`docs/match-hardening-natt-2026-06-05.md`): ska generisk "grädde" tillåtas falla till vispgrädde i sök-fallbacken?
 
-**Willys+ medlemserbjudanden:** kräver inloggning. Fas B: hämta `willys.se/search/campaigns/online?q=2160&type=PERSONAL_SEGMENTED` manuellt i devtools, avgör om automatisering (cookie-export vs scripted login vs BankID) är värt tiden.
+*(Willys+ medlemserbjudanden — löst Session 88: generiska klubbpriser, ingen inloggning behövs, ligger redan i `PERSONAL_GENERAL`-feeden. Se `docs/research-willys-plus-2026-06-16.md`.)*
 
 ### Claudes idéer
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata

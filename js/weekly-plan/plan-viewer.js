@@ -857,13 +857,14 @@ export function openSavingPopover(dateIso) {
 
   const rows = day.savingMatches.map((m) => {
     const brand = m.brandLine ? `<div class="saving-brand">${esc(m.brandLine)}</div>` : '';
+    const loyalty = m.loyalty ? `<span class="saving-loyalty">Willys Plus</span>` : '';
     const validStr = m.validUntil
       ? `Gäller t.o.m. ${fmtShort(m.validUntil.slice(0, 10))}`
       : '';
     return `
       <li class="saving-row">
         <div class="saving-row-main">
-          <div class="saving-canon">${esc(m.canon)}</div>
+          <div class="saving-canon">${esc(m.canon)}${loyalty}</div>
           <div class="saving-product">${esc(m.name)}</div>
           ${brand}
           <div class="saving-prices">

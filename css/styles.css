@@ -1691,6 +1691,19 @@
     letter-spacing: 0.04em;
     margin-bottom: 0.15rem;
   }
+  .saving-loyalty {
+    display: inline-block;
+    margin-left: 0.4rem;
+    padding: 0.05rem 0.4rem;
+    border-radius: 999px;
+    background: var(--ochre, #c89a3e);
+    color: #fff;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    vertical-align: middle;
+  }
   .saving-product {
     font-size: 0.95rem;
     color: var(--lichen);
