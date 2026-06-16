@@ -1,6 +1,17 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–89. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–90. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 90 (2026-06-16) — Brusrensning av besparings-matchningen
+
+Mål (användarbegäran efter mobil-test av Veckans fynd-popupen): popupen avslöjade att besparings-matchern släppte igenom skräp — "Salt Hallon Ferrari" (godis) på `salt`, "Nötspett Peppar" (köttspett) på `peppar`, barnmat på `äpple`, marinerad antipasti på `vitlök`, rökt lax på `lax`, oljeblandning på `smör` — och att skafferivaror blåste upp besparingen. Inventerade problemen från 8 skärmbilder, bollade fram en plan, byggde P0.
+
+- **Skafferi-exkludering (rotorsaken):** `extractRecipeCanons()` skippar nu `SAVING_SKIP_CANONS` = `PANTRY_ALWAYS_SKIP` (salt/peppar/vatten, nu exporterad) + matlagningsfett (olivolja/rapsolja/sesamolja/avokadoolja/smör/margarin). Påverkar BARA besparings-matchningen — inköpslista/dispatch orörda (oljor med mängd kan fortfarande hamna på listan). Dödar de mest upprepade falska träffarna och avinflaterar besparingen.
+- **Reject-mönster:** `lax` → `kallrökt|varmrökt|gravad|gravlax|rökt` (recepten vill ha färsk filé), `vitlöksklyftor` → `marinerad`, samt globalt barnmat `från \d+ mån` (kräver "från" så lagrad ost/chark inte fastnar).
+- **Verifierat:** +8 assertions i `match.test.js` (111→119) som låser A1–A6. Hela sviten grön — match 119, corpus 35, shopping 81, select 432, data-mapper 27, day-ops 34, willys-offers 11, dispatch 93, cookies 29 (**861 assertions**). Backend-only, ingen version-bump.
+- **Kvar:** live-verifiering att besparingarna nu är rimliga (se *Väntar på live-verifiering*). P2 (UX): utvärdera popupens layout när bruset är borta — ej påbörjat.
 
 ---
 

@@ -241,6 +241,33 @@ assertFalse(rejectsMatch("mjölk", { brandLine: "Arla" }), "rejectsMatch krascha
 assertEq(extractOfferCanon({ brandLine: "Mellanmjölk" }), "mjölk", "extractOfferCanon läser brandLine när name saknas");
 assertEq(extractOfferCanon({ name: undefined, brandLine: undefined }), null, "extractOfferCanon → null på helt tomt erbjudande");
 
+// ─── Veckans fynd: brusrensning av besparings-matchningen (Session 90) ──
+// Skafferi + matlagningsfett ska aldrig matchas (de blåste upp besparingen
+// och drog in skräpprodukter som "Salt Hallon Ferrari"/"Nötspett Peppar").
+{
+  const offers = [
+    { name: "Salt Hallon Ferrari Påse", brandLine: "TOMS, 120g", regularPrice: 13.2, promoPrice: 11.7, savingPerUnit: 4.5 },
+    { name: "Nötspett Peppar", brandLine: "SCAN, 400g", regularPrice: 87.9, promoPrice: 74.9, savingPerUnit: 13 },
+    { name: "Olivolja Extra Virgin", brandLine: "TERRA DELYSSA, 1l", regularPrice: 125, promoPrice: 99, savingPerUnit: 26 },
+    { name: "Smör-&rapsolja Flytande Original 80%", brandLine: "ARLA KÖKET, 5dl", regularPrice: 23.5, promoPrice: 19.9, savingPerUnit: 3.6 },
+  ];
+  const recipe = {
+    id: 500, tags: ["helg60"], protein: "fisk",
+    ingredients: ["1 nypa salt", "svartpeppar", "2 msk olivolja", "50 g smör", "600 g torsk"],
+  };
+  const result = matchRecipe(recipe, offers);
+  assertEq(result.matches.length, 0, "skafferi/fett-recept matchar inga skräp-erbjudanden");
+  assertEq(result.totalSaving, 0, "skafferi/fett ger ingen uppblåst besparing");
+}
+
+// Reject-mönster: rökt lax, marinerad vitlök, barnmat ("Från X Månader")
+assertTrue(rejectsMatch("lax", { name: "Kallrökt Lax Skivor", brandLine: "FALKENBERG, 300g" }), "kallrökt lax avvisas för lax-recept");
+assertFalse(rejectsMatch("lax", { name: "Laxfilé Färsk", brandLine: "" }), "färsk laxfilé släpps igenom");
+assertTrue(rejectsMatch("vitlöksklyftor", { name: "Vitlöksklyftor Marinerade", brandLine: "RIDDERHEIMS, 160g" }), "marinerad vitlök avvisas");
+assertFalse(rejectsMatch("vitlöksklyftor", { name: "Vitlök Klass 1", brandLine: "" }), "färsk vitlök släpps igenom");
+assertTrue(rejectsMatch("äpple", { name: "Fruktsmoothie Äpple Banan Jordgubb Från 6 Månader", brandLine: "NESTLÉ, 90g" }), "barnmat (från 6 mån) avvisas");
+assertFalse(rejectsMatch("ost", { name: "Parmesan Lagrad 24 Månader", brandLine: "" }), "lagrad ost (utan 'från') släpps igenom");
+
 // ─── Veckans fynd: buildDealCandidates (Session 89) ──────────────────
 {
   const savingsById = {

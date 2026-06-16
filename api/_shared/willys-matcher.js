@@ -8,9 +8,24 @@ import {
   normalizeName,
   CANON_SET,
   CANON_REJECT_PATTERNS,
+  PANTRY_ALWAYS_SKIP,
 } from "./shopping-builder.js";
 
 const MAX_NGRAM = 3;
+
+// Canons som ALDRIG räknas som besparing: skafferi (salt/peppar/vatten) +
+// matlagningsfett (oljor, smör, margarin). De står i recept men handlas sällan
+// separat — att räkna dem skulle blåsa upp besparingen med varor familjen ändå
+// har hemma. Bredare än PANTRY_ALWAYS_SKIP (som bara styr inköpslistan; oljor med
+// mängd ska fortfarande kunna hamna där). Påverkar enbart matchRecipe/besparing.
+const SAVING_SKIP_CANONS = new Set([
+  ...PANTRY_ALWAYS_SKIP,
+  "olivolja", "rapsolja", "sesamolja", "avokadoolja", "smör", "margarin",
+]);
+
+// Barnmat anges ofta med ålder ("Från 6 Månader") snarare än ordet "barnmat".
+// Kräver "från" så att lagrad ost/chark ("Lagrad 24 Månader") inte fastnar.
+const BABY_FOOD_RE = /\bfrån\s+\d+\s*mån/i;
 
 // Produkter som ALDRIG är en receptingrediens, oavsett canon — de innehåller
 // ofta canon-ord ("Mac & Cheese" → ost, "Barnmat Kyckling" → kyckling,
@@ -25,7 +40,7 @@ const GLOBAL_REJECT_RE = /\b(mac\s*&\s*cheese|färdigrätt\w*|färdig rätt|micr
 // Plus ett globalt filter (GLOBAL_REJECT_RE) som gäller alla canons.
 export function rejectsMatch(canon, offer) {
   const text = `${offer.name || ""} ${offer.brandLine || ""}`;
-  if (GLOBAL_REJECT_RE.test(text)) return true;
+  if (GLOBAL_REJECT_RE.test(text) || BABY_FOOD_RE.test(text)) return true;
   const pattern = CANON_REJECT_PATTERNS[canon];
   if (!pattern) return false;
   return pattern.test(text);
@@ -91,7 +106,7 @@ function extractRecipeCanons(recipe) {
   for (const raw of recipe.ingredients || []) {
     const { name } = parseIngredient(raw);
     const canon = normalizeName(name);
-    if (canon) canons.add(canon);
+    if (canon && !SAVING_SKIP_CANONS.has(canon)) canons.add(canon);
   }
   return canons;
 }
