@@ -199,11 +199,23 @@ function buildHero(plan, pending) {
     title = 'Veckans måltider';
   }
 
-  const savingStat = totalSaving >= 1 ? `
-      <div class="dlx-stat dlx-stat-saving">
-        <div class="dlx-stat-num">${I.coin}${fmtKr(totalSaving)}</div>
-        <div class="dlx-stat-lbl">sparat mot normalpris</div>
-      </div>` : '';
+  const hasDeals = !!(window._weeklyDeals?.candidates?.length);
+  const savingStat = totalSaving >= 1 ? (
+    hasDeals
+      ? `<button type="button" class="dlx-stat dlx-stat-saving has-deals" onclick="openDealsPopup()" title="Se veckans fynd">
+          <div class="dlx-stat-num">${I.coin}${fmtKr(totalSaving)}</div>
+          <div class="dlx-stat-lbl">sparat · se fynd ›</div>
+        </button>`
+      : `<div class="dlx-stat dlx-stat-saving">
+          <div class="dlx-stat-num">${I.coin}${fmtKr(totalSaving)}</div>
+          <div class="dlx-stat-lbl">sparat mot normalpris</div>
+        </div>`
+  ) : (hasDeals
+      ? `<button type="button" class="dlx-stat dlx-stat-saving has-deals" onclick="openDealsPopup()" title="Se veckans fynd">
+          <div class="dlx-stat-num">${I.coin}</div>
+          <div class="dlx-stat-lbl">se veckans fynd ›</div>
+        </button>`
+      : '');
 
   const pendingTag = pending
     ? `<span class="dlx-hero-badge">Förslag — ej bekräftat</span>`

@@ -4,7 +4,7 @@ import { db, getHouseholdId } from "./_shared/supabase.js";
 import { shuffle } from "./_shared/history.js";
 
 export default createSupabaseHandler(async (req, res) => {
-  const { date, currentRecipeId, weekRecipeIds = [], newRecipeId } = req.body || {};
+  const { date, currentRecipeId, weekRecipeIds = [], newRecipeId, saving, savingMatches } = req.body || {};
   if (!date) return res.status(400).json({ error: "date saknas" });
 
   const householdId = await getHouseholdId();
@@ -97,13 +97,19 @@ export default createSupabaseHandler(async (req, res) => {
 
   const today = new Date().toISOString().slice(0, 10);
 
+  // Vid "Byt in" från Veckans fynd skickas receptets besparing med så den
+  // behålls; vid vanligt slumpbyte saknas den → nollställs (priserna gäller
+  // bara det specifika receptet).
+  const keepSaving = newRecipeId && typeof saving === "number" ? saving : null;
+  const keepMatches = newRecipeId && Array.isArray(savingMatches) ? savingMatches : null;
+
   // Uppdatera meal_days + recipe_history parallellt
   await Promise.all([
     db.from("meal_days").update({
       recipe_id: picked.id,
       recipe_title_snapshot: picked.title,
-      saving: null,
-      saving_matches: null,
+      saving: keepSaving,
+      saving_matches: keepMatches,
     }).eq("household_id", householdId).eq("date", date),
     db.from("recipe_history").upsert(
       { household_id: householdId, recipe_id: picked.id, used_on: today },
@@ -178,8 +184,8 @@ export default createSupabaseHandler(async (req, res) => {
       recipeItems: shoppingCategories, recipeItemsMovedAt,
       manualItems, checkedItems,
     };
-    return res.status(200).json({ recipe: picked.title, recipeId: picked.id, shoppingList });
+    return res.status(200).json({ recipe: picked.title, recipeId: picked.id, saving: keepSaving, savingMatches: keepMatches, shoppingList });
   }
 
-  return res.status(200).json({ recipe: picked.title, recipeId: picked.id });
+  return res.status(200).json({ recipe: picked.title, recipeId: picked.id, saving: keepSaving, savingMatches: keepMatches });
 });

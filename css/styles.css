@@ -1752,6 +1752,77 @@
     line-height: 1.45;
   }
 
+  /* ── Veckans fynd-popup ───────────────────────────────────────────── */
+  .deals-box { max-width: 560px; }
+  .deals-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+  .deals-head h2 { margin: 0; display: flex; align-items: center; gap: 0.4rem; }
+  .deals-head .modal-close {
+    background: none; border: none; font-size: 1.6rem; line-height: 1;
+    color: var(--text-muted); cursor: pointer; padding: 0 0.3rem;
+  }
+  .deal-intro { margin: 0.2rem 0 0.9rem; font-size: 0.86rem; color: var(--text-muted); }
+  .deals-body {
+    max-height: 62vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 0.8rem;
+  }
+  .deal-section { margin-bottom: 1.2rem; }
+  .deal-section-title {
+    margin: 0 0 0.2rem; font-size: 0.95rem; font-weight: 700; color: var(--forest, var(--lichen));
+  }
+  .deal-section-sub { margin: 0 0 0.7rem; font-size: 0.8rem; color: var(--text-muted); }
+  .deal-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.7rem; }
+  .deal-card {
+    border: 1px solid rgba(92,61,30,0.14);
+    border-radius: 12px;
+    padding: 0.75rem 0.85rem;
+    background: #fff;
+  }
+  .deal-card.in-plan { background: rgba(94,122,104,0.06); }
+  .deal-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.6rem; }
+  .deal-title { font-weight: 700; font-size: 0.98rem; line-height: 1.25; color: var(--forest, var(--lichen)); }
+  .deal-meta { display: flex; gap: 0.4rem; align-items: center; margin-top: 0.25rem; flex-wrap: wrap; }
+  .deal-when, .deal-time { font-size: 0.78rem; color: var(--text-muted); }
+  .deal-chip {
+    font-size: 0.72rem; font-weight: 600; padding: 0.05rem 0.45rem; border-radius: 999px;
+    color: #fff; background: var(--chip, var(--lichen));
+  }
+  .deal-saving {
+    font-weight: 800; white-space: nowrap; display: flex; align-items: center; gap: 0.2rem;
+    color: var(--lichen-deep, #5e7a68); font-size: 0.98rem;
+  }
+  .deal-matches { margin: 0.6rem 0 0.7rem; }
+  .deal-bytin-btn {
+    width: 100%; padding: 0.5rem; border: 1px solid var(--rust, #b56a4c); border-radius: 9px;
+    background: none; color: var(--rust, #b56a4c); font-weight: 700; font-size: 0.88rem; cursor: pointer;
+  }
+  .deal-bytin-btn.active, .deal-bytin-btn:active { background: var(--rust, #b56a4c); color: #fff; }
+  .deal-bytin-btn.is-loading { opacity: 0.6; pointer-events: none; }
+  .deal-day-picker { margin-top: 0.6rem; }
+  .deal-day-hint { margin: 0 0 0.45rem; font-size: 0.82rem; color: var(--text-muted); }
+  .deal-day-chips { display: flex; flex-direction: column; gap: 0.4rem; }
+  .deal-day-chip {
+    text-align: left; padding: 0.5rem 0.65rem; border: 1px solid rgba(92,61,30,0.16);
+    border-radius: 9px; background: #fff; cursor: pointer; display: flex; flex-direction: column; gap: 0.1rem;
+  }
+  .deal-day-chip:active { border-color: var(--rust, #b56a4c); }
+  .deal-day-chip.is-loading { opacity: 0.6; pointer-events: none; }
+  .deal-day-when { font-weight: 700; font-size: 0.86rem; }
+  .deal-day-cur { font-size: 0.76rem; color: var(--text-muted); }
+
+  /* Hero-statistiken blir tryckbar när fynd finns */
+  .dlx-stat-saving.has-deals {
+    cursor: pointer; border: none; background: none; font: inherit; text-align: inherit;
+    -webkit-appearance: none; appearance: none;
+  }
+  .dlx-stat-saving.has-deals .dlx-stat-lbl { color: var(--ochre, #c89a3e); font-weight: 600; }
+
   .week-recipe-detail {
     overflow: hidden;
     max-height: 0;

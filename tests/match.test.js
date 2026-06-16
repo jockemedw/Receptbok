@@ -11,7 +11,7 @@
 // eller willys-matcher.js och blockerar commit om en test failar.
 
 import { parseIngredient, normalizeName, CANON_SET, CANON_REJECT_PATTERNS } from "../api/_shared/shopping-builder.js";
-import { matchRecipe, extractOfferCanon, relevantToCanon, brandBlocked, rejectsMatch } from "../api/_shared/willys-matcher.js";
+import { matchRecipe, extractOfferCanon, relevantToCanon, brandBlocked, rejectsMatch, buildDealCandidates } from "../api/_shared/willys-matcher.js";
 
 let passed = 0;
 let failed = 0;
@@ -240,6 +240,35 @@ assertEq(extractOfferCanon({ name: "Havregryn Glutenfria", brandLine: "AXA" }), 
 assertFalse(rejectsMatch("mjölk", { brandLine: "Arla" }), "rejectsMatch kraschar inte på saknat name");
 assertEq(extractOfferCanon({ brandLine: "Mellanmjölk" }), "mjölk", "extractOfferCanon läser brandLine när name saknas");
 assertEq(extractOfferCanon({ name: undefined, brandLine: undefined }), null, "extractOfferCanon → null på helt tomt erbjudande");
+
+// ─── Veckans fynd: buildDealCandidates (Session 89) ──────────────────
+{
+  const savingsById = {
+    10: { total: 45, matches: [{ canon: "torsk" }] },   // störst besparing
+    20: { total: 12, matches: [{ canon: "lax" }] },
+    30: { total: 8,  matches: [{ canon: "ris" }] },      // under tröskel (10)
+    40: { total: 30, matches: [{ canon: "kyckling" }] }, // men redan vald
+  };
+  const lookup = (id) => ({
+    10: { id: 10, title: "Torskgryta", protein: "fisk", time: 40 },
+    20: { id: 20, title: "Laxpasta", protein: "fisk", time: 25 },
+    30: { id: 30, title: "Risrätt", protein: "vegetarisk", time: 20 },
+    40: { id: 40, title: "Kycklingwok", protein: "kyckling", time: 30 },
+  }[id]);
+
+  const cands = buildDealCandidates(savingsById, [40], lookup);
+  assertEq(cands.length, 2, "buildDealCandidates: vald (40) + under tröskel (30) exkluderas");
+  assertEq(cands[0].recipeId, 10, "buildDealCandidates: störst besparing först");
+  assertEq(cands[0].saving, 45, "buildDealCandidates: saving avrundas/följer med");
+  assertEq(cands[0].title, "Torskgryta", "buildDealCandidates: titel slås upp");
+  assertEq(cands[1].recipeId, 20, "buildDealCandidates: näst störst (lax) tvåa");
+  assertTrue(cands.every((c) => c.recipeId !== 40), "buildDealCandidates: valda recept aldrig med");
+  assertTrue(cands.every((c) => c.recipeId !== 30), "buildDealCandidates: under-tröskel aldrig med");
+  // Respekterar limit
+  const many = {}; for (let i = 1; i <= 25; i++) many[i] = { total: 100 + i, matches: [] };
+  assertEq(buildDealCandidates(many, [], (id) => ({ id, title: `R${id}` }), { limit: 5 }).length, 5,
+    "buildDealCandidates: limit kapar listan");
+}
 
 // ─── Slutrapport ──────────────────────────────────────────────────
 console.log(`\n${passed} passerade, ${failed} failade.`);

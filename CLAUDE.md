@@ -60,6 +60,8 @@ Inga bekräftade just nu.
 - **Helhetsomtaget Session 86 (PR #73):** snabbkoll mot produktion: (1) PWA "Lägg till på hemskärmen" ger egen ikon + öppnar offline (skalet), (2) matlagningslägets Wake Lock på riktig mobil, (3) Ångra på borttagen inköpsvara + progress-synk från annan enhet.
 - **Premiumvy för matsedeln** (Session 84–85, PR #69/#70): testsvit grön men ej verifierad på mobil mot produktion. Bekräfta att vyn renderar, att alla åtgärder fungerar (slumpa/välj/byt dag/fri dag/besparing/egen planering) och att växeln Premium↔Klassisk håller båda i synk. Kolla även: helgkort lika höga som vardagskort (helg = prick på färgryggen), och "Vecka N"-avdelare på planer som spänner två veckor.
 - **Willys Plus-erbjudanden** (Session 88): `normalizeOffers()` märker nu LOYALTY-erbjudanden med "Willys Plus"-badge i besparings-popoveren + släpper in `SubtotalOrderPromotion`-klubbpriser (kött/frukt som föll bort förut). Bekräfta mot produktion att badgen syns och att de nya fynden räknas in. Detaljer: `docs/research-willys-plus-2026-06-16.md`.
+- **"Veckans fynd"-popup** (Session 89): efter prisoptimerad generering öppnas en popup med (1) fynden planen redan fångar och (2) rea-recept att byta in (rankade efter besparing, "Byt in" → välj dag). Hero-besparingen i premiumvyn öppnar den igen. Bekräfta på mobil: popupen renderar, "Byt in" landar receptet rätt + behåller besparingen, inköpslistan följer med.
+- **Kontroll #2 — dispatch väljer rätt rea-vara:** när ett Willys-erbjudande utnyttjats (besparing räknats på en specifik produkt) måste varukorgs-exporten (`/api/dispatch-to-willys`, `dispatch-matcher.js`) lägga *just den produkten* i korgen — inte en godtycklig sökträff på samma canon. Verifiera i skarp körning att rea-varan matchas mot erbjudandets produktkod, inte bara namnet.
 
 ### Öppna utredningar
 **Receptkvalitet — uppföljning från nattjobbet (Session 83, `docs/qc-night/report-2026-06-07.md`):**
@@ -76,7 +78,7 @@ Inga bekräftade just nu.
 - Portionsskalning i matlagningsläget — ×0.5/×2 räknar om mängderna i ingredienslistan
 
 ### Senaste session
-Session 8–87 i `docs/session-log-archive.md`. Full git-historik: `git log --oneline`.
+Session 8–89 i `docs/session-log-archive.md`. Full git-historik: `git log --oneline`.
 
 ## Kommandon (tester & skript)
 Inga npm-scripts — allt körs direkt med `node` (inga externa deps utom de tester som kräver `node_modules`).

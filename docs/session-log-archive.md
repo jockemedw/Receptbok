@@ -1,6 +1,17 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–88. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–89. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 89 (2026-06-16) — "Veckans fynd"-popup: transparens + byt in rea-recept
+
+Mål (användarbegäran, bollat fram): vid prisoptimerad matsedel — en popup som visar vilka varor optimeringen hittat på rea och föreslår recept att välja efter. Vald design (efter tre frågerundor): popup *efter* generering, bara fynd som matchar recept, förslagslistan organiserad per recept, "Byt in" → användaren väljer dag.
+
+- **Backend:** `api/generate.js` returnerar nu `deals: { candidates }` när `optimize_prices` är på — rea-recept som inte valdes, rankade efter besparing. Ren, testbar `buildDealCandidates()` i `willys-matcher.js` (exkluderar valda + under 10 kr, top 20). `api/replace-recipe.js` tar emot valfri `saving`/`savingMatches` vid specifikt byte och behåller dem (annars nollställs de som förr) + returnerar dem.
+- **Frontend:** ny modul `js/weekly-plan/deals-popup.js` — popup i två delar (I din matsedel / Fler fynd att haka på). Varje förslag visar fångade rea-varor + "Byt in" som fäller ut en inbäddad dag-väljare (inget cross-view klick-fångande). Bytet går via `/api/replace-recipe` med besparingen medskickad, uppdaterar in-memory-planen + re-renderar. Premiumvyns hero-besparing blir en knapp som öppnar popupen; auto-öppnas en gång efter optimerad generering (`plan-generator.js`).
+- **Verifierat:** `buildDealCandidates`-tester i `match.test.js` (103→111). Hela sviten grön — match 111, corpus 35, shopping 81, select 432, data-mapper 27, day-ops 34, willys-offers 11, dispatch 93, cookies 29 (**853 assertions**). `node --check` rent. Versioner: `styles.css?v=107`, `app.js?v=104`, SW-cache v12.
+- **Kvar:** live-verifiering på mobil (se *Väntar på live-verifiering*). Ny **Kontroll #2** inlagd: dispatch till varukorgen måste välja just den rea-produkt besparingen räknats på (produktkod, ej bara canon-namn).
 
 ---
 
