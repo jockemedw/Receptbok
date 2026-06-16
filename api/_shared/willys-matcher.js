@@ -124,3 +124,30 @@ export function matchRecipe(recipe, offers) {
 export function matchRecipes(recipes, offers) {
   return recipes.map((r) => matchRecipe(r, offers));
 }
+
+// Bygger "Veckans fynd"-förslag: recept som INTE valts till matsedeln men som
+// fångar rea-varor, rankade efter total besparing (störst först). Ren funktion
+// så den kan enhetstestas utan Supabase.
+//   savingsById  – { [recipeId]: { total, matches } } (från generate.js)
+//   chosenIds    – array med recept-id som redan ligger i planen
+//   recipeLookup – (id) => recipe | undefined (för titel/protein/tid)
+export function buildDealCandidates(savingsById, chosenIds, recipeLookup, opts = {}) {
+  const { minSaving = 10, limit = 20 } = opts;
+  const chosen = new Set(chosenIds);
+  return Object.entries(savingsById || {})
+    .map(([id, e]) => ({ recipeId: Number(id), total: e.total, matches: e.matches }))
+    .filter((c) => !chosen.has(c.recipeId) && c.total >= minSaving)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, limit)
+    .map((c) => {
+      const r = recipeLookup(c.recipeId) || null;
+      return {
+        recipeId: c.recipeId,
+        title: r?.title || "",
+        protein: r?.protein || null,
+        time: r?.time || null,
+        saving: Math.round(c.total),
+        matches: c.matches,
+      };
+    });
+}

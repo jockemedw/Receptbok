@@ -277,7 +277,12 @@ export async function generatePlan() {
       } catch { /* OK, kör utan uppdatering */ }
       window.renderWeeklyPlanData(data.weeklyPlan, null, true, archive, customDays);
     }
+    // Veckans fynd: spara rea-förslagen och öppna popupen en gång.
+    window._weeklyDeals = data.deals || null;
     window.switchTab('vecka');
+    if (window._weeklyDeals?.candidates?.length && window.openDealsPopup) {
+      setTimeout(() => window.openDealsPopup(), 400);
+    }
   } catch (err) {
     status.textContent = `Fel: ${err.message}`;
     status.className   = 'trigger-status error';

@@ -3,7 +3,7 @@ import { createSupabaseHandler } from "./_shared/handler.js";
 import { db, getHouseholdId } from "./_shared/supabase.js";
 import { shuffle } from "./_shared/history.js";
 import { normalizeOffers } from "./willys-offers.js";
-import { matchRecipe } from "./_shared/willys-matcher.js";
+import { matchRecipe, buildDealCandidates } from "./_shared/willys-matcher.js";
 
 const WILLYS_URL = "https://www.willys.se/search/campaigns/online?q=2160&type=PERSONAL_GENERAL&page=0&size=500";
 const SAVING_THRESHOLD = 10;
@@ -517,8 +517,17 @@ export default createSupabaseHandler(async (req, res) => {
   const today = new Date().toISOString().slice(0, 10);
   const weeklyPlan = { generated: today, startDate: start_date, endDate: end_date, days };
 
+  // "Veckans fynd": rea-recept som inte hamnade i planen, för popupen i UI:t.
+  let deals = null;
+  if (optimize_prices && savingsById) {
+    const chosenIds = days.map((d) => d.recipeId).filter(Boolean);
+    const recipeMap = new Map(filtered.map((r) => [r.id, r]));
+    const candidates = buildDealCandidates(savingsById, chosenIds, (id) => recipeMap.get(id));
+    if (candidates.length) deals = { candidates };
+  }
+
   if (dry_run) {
-    return res.status(200).json({ ok: true, dry_run: true, days: days.length, weeklyPlan });
+    return res.status(200).json({ ok: true, dry_run: true, days: days.length, weeklyPlan, deals });
   }
 
   try { await archiveOldPlan(start_date, householdId); } catch (e) { console.error("archive error:", e); }
@@ -541,5 +550,5 @@ export default createSupabaseHandler(async (req, res) => {
     };
   }
 
-  return res.status(200).json({ ok: true, days: days.length, weeklyPlan, shoppingList });
+  return res.status(200).json({ ok: true, days: days.length, weeklyPlan, shoppingList, deals });
 });
