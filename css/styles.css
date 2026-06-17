@@ -4016,6 +4016,10 @@ html { scroll-snap-type: y proximity; }
   scroll-snap-align: start;
   scroll-margin-top: calc(var(--header-h, 56px) + 10px);
 }
+/* När ett kort är utfällt: ta bort hero-snappen (enda snap-ankaret) så att
+   proximity-snappen inte rycker tillbaka skärmen och hindrar centrering på
+   det utfällda kortet. */
+#weekDeluxe.has-expanded.has-history .dlx-hero { scroll-snap-align: none; }
 .dlx-history-flow {
   display: flex;
   flex-direction: column;
@@ -4071,6 +4075,10 @@ html { scroll-snap-type: y proximity; }
 /* Helg-markör: en dovare, varmare kort-bakgrund (markerar helgdagar lugnt utan att
    påverka korthöjden). Tydligt skild från både kortet (#fdfcf8) och sidan (#f5f1e8). */
 .dlx-day.is-weekend { background: #ede5d4; border-color: var(--birch); }
+/* Utfällt helgkort: BEHÅLL den dovare helg-tonen (markören) men lägg tillbaka
+   utfällningens lichen-accent — annars vinner is-weekend:s birch-ram pga
+   källordning och kortet ser avvikande ut mot vardagskortens utfällning. */
+.dlx-day.is-weekend.expanded { border-color: var(--lichen); }
 
 .dlx-day-head {
   display: flex;
