@@ -152,7 +152,7 @@ export function buildDealCandidates(savingsById, chosenIds, recipeLookup, opts =
   const { minSaving = 10, limit = 20, bulkWeight = 0.5 } = opts;
   const chosen = new Set(chosenIds);
   return Object.entries(savingsById || {})
-    .map(([id, e]) => ({ recipeId: Number(id), total: e.total, matches: e.matches, rank: rankSaving(e.matches, e.total, bulkWeight) }))
+    .map(([id, e]) => ({ recipeId: Number(id), total: e.total, matches: e.matches, rank: weightedSaving(e.matches, e.total, bulkWeight) }))
     .filter((c) => !chosen.has(c.recipeId) && c.total >= minSaving)
     .sort((a, b) => b.rank - a.rank)
     .slice(0, limit)
@@ -169,20 +169,46 @@ export function buildDealCandidates(savingsById, chosenIds, recipeLookup, opts =
     });
 }
 
-// Rankningspoäng: storpack (bulk) nedviktas eftersom receptet ofta bara
-// förbrukar en bråkdel — så ett recept som nätt och jämnt nuddar en stor
-// rabatterad förpackning inte rankas över ett där rabatten faktiskt går åt.
-// Visad besparing (saving) ändras INTE; bara sorteringen. Faller tillbaka på
-// total när matchningarna saknar savingPerUnit (t.ex. i tester).
-function rankSaving(matches, total, bulkWeight) {
-  if (!Array.isArray(matches) || !matches.length) return total;
+// Värdeviktning för rankning/prioritering — "prio mot proteiner och dyra varor".
+// En sparad krona på en dyr vara (lax, kött) ska väga tyngre än en sparad krona
+// på en billig stapelvara (vitlök, lök, citron, örter), så att vanliga billiga
+// rea-varor inte översvämmar förslagen ("för mycket vitlök"). Datadrivet via
+// erbjudandets ordinarie pris — proteiner är naturligt dyra och lyfts automatiskt,
+// plus en extra boost för proteinträffar. Påverkar ENBART rankning/bucketing,
+// aldrig visad besparing (kr).
+const PRICE_PIVOT = 40;          // kr — mellanprisvara ger vikt ≈ 1.0 (≈ rå kr)
+const MIN_VALUE_WEIGHT = 0.2;    // golv: billigaste varor trycks ner hårt
+const MAX_VALUE_WEIGHT = 2.2;    // tak innan protein-boost så enstaka dyr vara inte exploderar
+const PROTEIN_BOOST = 1.5;       // extra lyft när canon är ett protein (kött/fisk/…)
+// Substring-matchning håller listan låg-underhåll: täcker sammansättningar
+// (kycklingFILÉ, nötFÄRS, fläskKARRÉ) och plural utan att räkna upp varje canon.
+const PROTEIN_CANON_RE = /färs|kyckling|fläsk|kött|biff|karré|kassler|kotlett|skinka|bacon|korv|lax|torsk|sej|fisk|räk|skaldjur|kalkon|lamm|revben|filé/i;
+
+// Vikt för en enskild rea-träff. bulkWeight (storpack) bevarad från Session 93.
+function valueWeight(match, bulkWeight) {
+  const price = typeof match.regularPrice === "number" ? match.regularPrice : null;
+  let w = price ? price / PRICE_PIVOT : 1;            // okänt pris → neutral 1.0
+  if (w < MIN_VALUE_WEIGHT) w = MIN_VALUE_WEIGHT;
+  if (w > MAX_VALUE_WEIGHT) w = MAX_VALUE_WEIGHT;
+  if (match.canon && PROTEIN_CANON_RE.test(match.canon)) w *= PROTEIN_BOOST;
+  if (match.bulk) w *= bulkWeight;                    // storpack förbrukas sällan helt
+  return w;
+}
+
+// Värdeviktad rankningspoäng: summerar savingPerUnit per träff gånger dess
+// värdevikt. Ett recept vars besparing kommer från en dyr proteinrea rankas
+// över ett vars besparing bara är billig vitlök. Visad besparing (saving) ändras
+// INTE; bara sorteringen/prioriteringen. Faller tillbaka på total när matchningar
+// saknar savingPerUnit (t.ex. i tester utan prisdata).
+export function weightedSaving(matches, total, bulkWeight = 0.5) {
+  if (!Array.isArray(matches) || !matches.length) return total || 0;
   let any = false;
   let sum = 0;
   for (const m of matches) {
     if (typeof m.savingPerUnit === "number") {
       any = true;
-      sum += m.bulk ? m.savingPerUnit * bulkWeight : m.savingPerUnit;
+      sum += m.savingPerUnit * valueWeight(m, bulkWeight);
     }
   }
-  return any ? sum : total;
+  return any ? sum : (total || 0);
 }

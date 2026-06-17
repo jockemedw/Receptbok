@@ -22,6 +22,7 @@
 // ändras och testet börjar faila flaggar det att extract/kopia är ute av sync.
 
 import { shuffle } from "../api/_shared/history.js";
+import { weightedSaving } from "../api/_shared/willys-matcher.js";
 
 // ─── Inline-kopia av selectRecipes + bucketBySaving (api/generate.js) ─────────
 // VARNING: håll synkroniserad med api/generate.js. Om du ändrar
@@ -34,8 +35,9 @@ function bucketBySaving(pool, savingsById) {
   if (!savingsById) return shuffle(pool);
   const high = [], low = [];
   for (const r of pool) {
-    const total = savingsById[r.id]?.total || 0;
-    if (total >= SAVING_THRESHOLD) high.push(r);
+    const e = savingsById[r.id];
+    const score = e ? weightedSaving(e.matches, e.total) : 0;
+    if (score >= SAVING_THRESHOLD) high.push(r);
     else low.push(r);
   }
   return [...shuffle(high), ...shuffle(low)];

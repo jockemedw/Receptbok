@@ -3,7 +3,7 @@ import { createSupabaseHandler } from "./_shared/handler.js";
 import { db, getHouseholdId } from "./_shared/supabase.js";
 import { shuffle } from "./_shared/history.js";
 import { normalizeOffers } from "./willys-offers.js";
-import { matchRecipe, buildDealCandidates } from "./_shared/willys-matcher.js";
+import { matchRecipe, buildDealCandidates, weightedSaving } from "./_shared/willys-matcher.js";
 
 const WILLYS_URL = "https://www.willys.se/search/campaigns/online?q=2160&type=PERSONAL_GENERAL&page=0&size=500";
 const SAVING_THRESHOLD = 10;
@@ -178,12 +178,16 @@ async function archiveOldPlan(newStartDate, householdId) {
   await db.from("weekly_plans").update({ is_active: false }).eq("id", oldPlan.id);
 }
 
+// Prioriterar in rea-recept i matsedeln. Tröskeln mäts på VÄRDEVIKTAD besparing
+// (weightedSaving) i stället för rå kr — så att ett recept vars besparing bara är
+// billig vitlök/lök inte trycks in, medan dyra protein-/färskvarureor lyfts.
 function bucketBySaving(pool, savingsById) {
   if (!savingsById) return shuffle(pool);
   const high = [], low = [];
   for (const r of pool) {
-    const total = savingsById[r.id]?.total || 0;
-    if (total >= SAVING_THRESHOLD) high.push(r);
+    const e = savingsById[r.id];
+    const score = e ? weightedSaving(e.matches, e.total) : 0;
+    if (score >= SAVING_THRESHOLD) high.push(r);
     else low.push(r);
   }
   return [...shuffle(high), ...shuffle(low)];

@@ -11,7 +11,7 @@
 // eller willys-matcher.js och blockerar commit om en test failar.
 
 import { parseIngredient, normalizeName, CANON_SET, CANON_REJECT_PATTERNS } from "../api/_shared/shopping-builder.js";
-import { matchRecipe, extractOfferCanon, relevantToCanon, brandBlocked, rejectsMatch, buildDealCandidates } from "../api/_shared/willys-matcher.js";
+import { matchRecipe, extractOfferCanon, relevantToCanon, brandBlocked, rejectsMatch, buildDealCandidates, weightedSaving } from "../api/_shared/willys-matcher.js";
 
 let passed = 0;
 let failed = 0;
@@ -311,6 +311,32 @@ assertFalse(rejectsMatch("ost", { name: "Parmesan Lagrad 24 Månader", brandLine
   assertEq(cands[0].saving, 16, "visad besparing = rå total (16)");
   assertEq(cands[1].recipeId, 1, "storpack-recept hamnar tvåa");
   assertEq(cands[1].saving, 20, "visad besparing oförändrad (20) trots dämpad rank");
+}
+
+// ─── Värdeviktning: prio mot proteiner & dyra varor (Session 94) ─────
+{
+  // Lika rå besparing (20 kr) men ena receptet sparar på billig vitlök,
+  // det andra på dyr lax → laxen ska rankas först (dyrt + protein-boost).
+  const savingsById = {
+    1: { total: 20, matches: [{ canon: "vitlök", savingPerUnit: 20, regularPrice: 12 }] },
+    2: { total: 20, matches: [{ canon: "lax",    savingPerUnit: 20, regularPrice: 89 }] },
+  };
+  const lookup = (id) => ({ 1: { id: 1, title: "Vitlökspasta" }, 2: { id: 2, title: "Laxgryta" } }[id]);
+  const cands = buildDealCandidates(savingsById, [], lookup);
+  assertEq(cands[0].recipeId, 2, "värdevikt: dyr proteinrea (lax) rankas före billig vitlök");
+  assertEq(cands[0].saving, 20, "värdevikt: visad besparing oförändrad (20) för laxen");
+  assertEq(cands[1].saving, 20, "värdevikt: visad besparing oförändrad (20) för vitlöken");
+
+  // En besparing som BARA består av billig vitlök väger ner under tröskeln 10,
+  // medan en lika stor proteinbesparing håller sig kvar (bucketBySaving-tröskel).
+  assertTrue(weightedSaving([{ canon: "vitlök", savingPerUnit: 14, regularPrice: 10 }], 14) < 10,
+    "värdevikt: ren vitlöksbesparing (14 kr) viktas under 10 → prioriteras ej in");
+  assertTrue(weightedSaving([{ canon: "fläskkarré", savingPerUnit: 14, regularPrice: 70 }], 14) >= 10,
+    "värdevikt: protein-/dyr besparing (14 kr) håller sig över tröskeln");
+
+  // Saknar prisdata → faller tillbaka på rå total (bakåtkompatibelt).
+  assertEq(weightedSaving([{ canon: "ris" }], 25), 25, "värdevikt: utan savingPerUnit faller till total");
+  assertEq(weightedSaving([], 25), 25, "värdevikt: tom matchlista faller till total");
 }
 
 // ─── Slutrapport ──────────────────────────────────────────────────
