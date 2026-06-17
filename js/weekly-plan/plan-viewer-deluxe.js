@@ -556,6 +556,9 @@ export function renderDeluxe() {
     ? `<div class="dlx-history-flow">${renderDayList(history)}</div>`
     : '';
   host.classList.toggle('has-history', !!history.length);
+  // När ett kort är utfällt: stäng av hero-snappen (CSS) så att proximity-snappen
+  // inte drar tillbaka skärmen till heron och hindrar centrering på kortet.
+  host.classList.toggle('has-expanded', !!window._dlxExpanded);
 
   // Släppzon för "kläm in före ikväll" — Ikväll-kortet ligger utanför dagslistan
   const tonightZone = (tonight && moveZoneCtx()?.set.has(todayIso)) ? dropZone(todayIso) : '';
