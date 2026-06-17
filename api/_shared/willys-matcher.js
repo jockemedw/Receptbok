@@ -143,30 +143,103 @@ export function matchRecipes(recipes, offers) {
 }
 
 // Bygger "Veckans fynd"-förslag: recept som INTE valts till matsedeln men som
-// fångar rea-varor, rankade efter total besparing (störst först). Ren funktion
-// så den kan enhetstestas utan Supabase.
+// fångar rea-varor. Topplistan styrs av HUVUDPROTEINETS besparing (receptets
+// `protein`-kategori) — inte totalen, så att billig lök/vitlök aldrig lyfter ett
+// recept till toppen. Ovanpå det vägs VARIATION in: samma proteintyp dämpas för
+// varje gång den återkommer, så listan inte fylls av 25 kycklingrätter bara för
+// att kyckling är extrapris. Recept där huvudproteinet inte är på rea hamnar
+// under proteinfynden, sorterade på värdeviktad besparing. Ren funktion → testbar.
 //   savingsById  – { [recipeId]: { total, matches } } (från generate.js)
 //   chosenIds    – array med recept-id som redan ligger i planen
 //   recipeLookup – (id) => recipe | undefined (för titel/protein/tid)
 export function buildDealCandidates(savingsById, chosenIds, recipeLookup, opts = {}) {
-  const { minSaving = 10, limit = 20, bulkWeight = 0.5 } = opts;
+  const { minSaving = 10, limit = 20, bulkWeight = 0.5, diversityDecay = 0.55 } = opts;
   const chosen = new Set(chosenIds);
-  return Object.entries(savingsById || {})
-    .map(([id, e]) => ({ recipeId: Number(id), total: e.total, matches: e.matches, rank: weightedSaving(e.matches, e.total, bulkWeight) }))
-    .filter((c) => !chosen.has(c.recipeId) && c.total >= minSaving)
-    .sort((a, b) => b.rank - a.rank)
-    .slice(0, limit)
-    .map((c) => {
-      const r = recipeLookup(c.recipeId) || null;
+
+  const all = Object.entries(savingsById || {})
+    .map(([id, e]) => {
+      const recipeId = Number(id);
+      const r = recipeLookup(recipeId) || null;
+      const protein = r?.protein || null;
       return {
-        recipeId: c.recipeId,
-        title: r?.title || "",
-        protein: r?.protein || null,
-        time: r?.time || null,
-        saving: Math.round(c.total),
-        matches: c.matches,
+        recipeId, total: e.total, matches: e.matches, protein,
+        title: r?.title || "", time: r?.time || null,
+        proteinSaving: mainProteinSaving(e.matches, protein, bulkWeight),
+        valueSaving: weightedSaving(e.matches, e.total, bulkWeight),
       };
-    });
+    })
+    .filter((c) => !chosen.has(c.recipeId) && c.total >= minSaving);
+
+  // Recept vars huvudprotein är på rea → variationsdämpad topplista.
+  const proteinDeals = diversifyByProtein(all.filter((c) => c.proteinSaving > 0), diversityDecay);
+  // Övriga rea-recept (proteinet ej på rea / vegetariskt) → efter, på värde.
+  const others = all.filter((c) => c.proteinSaving <= 0).sort((a, b) => b.valueSaving - a.valueSaving);
+
+  return [...proteinDeals, ...others]
+    .slice(0, limit)
+    .map((c) => ({
+      recipeId: c.recipeId,
+      title: c.title,
+      protein: c.protein,
+      time: c.time,
+      saving: Math.round(c.total),
+      matches: c.matches,
+    }));
+}
+
+// Bästa besparingen på receptets HUVUDPROTEIN: max savingPerUnit bland de träffar
+// vars canon tillhör receptets protein-kategori. Storpack dämpas (bulkWeight) som
+// i värdeviktningen. 0 om proteinet inte är på rea (eller vegetariskt recept).
+function mainProteinSaving(matches, protein, bulkWeight) {
+  if (!protein || protein === "vegetarisk" || !Array.isArray(matches)) return 0;
+  let best = 0;
+  for (const m of matches) {
+    if (typeof m.savingPerUnit !== "number") continue;
+    if (canonProteinCategory(m.canon) !== protein) continue;
+    const s = m.bulk ? m.savingPerUnit * bulkWeight : m.savingPerUnit;
+    if (s > best) best = s;
+  }
+  return best;
+}
+
+// Variationsdämpad sortering: girigt val där varje recept poängsätts på sin
+// proteinbesparing × decay^(antal redan valda av samma proteintyp). Ett starkt
+// kycklingfynd toppar fortfarande, men nästa kyckling dämpas så en annan
+// proteintyp med nära besparing slinker före → blandad topplista.
+function diversifyByProtein(list, decay) {
+  const remaining = list.slice();
+  const out = [];
+  const seen = {};
+  while (remaining.length) {
+    let bestIdx = 0, bestScore = -Infinity;
+    for (let i = 0; i < remaining.length; i++) {
+      const c = remaining[i];
+      const score = c.proteinSaving * Math.pow(decay, seen[c.protein] || 0);
+      if (score > bestScore) { bestScore = score; bestIdx = i; }
+    }
+    const [picked] = remaining.splice(bestIdx, 1);
+    seen[picked.protein] = (seen[picked.protein] || 0) + 1;
+    out.push(picked);
+  }
+  return out;
+}
+
+// Klassificerar en canon till receptets protein-kategori (fisk|kyckling|kött|fläsk)
+// eller null. Ordningen är medveten: fläsk före kött (karré/kassler), så att
+// "fläskfärs" landar på fläsk och inte fastnar på köttmönstrets "färs".
+const PROTEIN_CATEGORY_PATTERNS = [
+  ["kyckling", /kyckling|kalkon/],
+  ["fläsk",    /fläsk|bacon|skinka|kassler|karré|revben|prosciutto|salami|chorizo/],
+  ["fisk",     /lax|torsk|sej|fisk|räk|skaldjur|tonfisk|sill|makrill|hoki|krabb|mussl|kräft|hummer|ansjovis/],
+  ["kött",     /färs|nöt|biff|oxe|oxfilé|oxstek|högrev|entrecote|ryggbiff|lamm|kött|kotlett/],
+];
+function canonProteinCategory(canon) {
+  if (!canon) return null;
+  const c = String(canon).toLowerCase();
+  for (const [cat, re] of PROTEIN_CATEGORY_PATTERNS) {
+    if (re.test(c)) return cat;
+  }
+  return null;
 }
 
 // Värdeviktning för rankning/prioritering — "prio mot proteiner och dyra varor".
