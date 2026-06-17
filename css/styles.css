@@ -4296,7 +4296,10 @@ html { scroll-snap-type: y proximity; }
   gap: 0.4rem;
   padding: 0.6rem 0.5rem;
   border: 1.5px solid var(--birch-soft);
-  background: var(--paper);
+  /* Genomskinlig så knappen ärver kortets yta (linne på vardag, sand på helg) —
+     definieras av ramen, inte en vit fyllning. Annars syns vita block i den
+     sandfärgade helg-utfällningen. */
+  background: transparent;
   border-radius: 12px;
   color: var(--forest);
   font-family: inherit;
@@ -4316,7 +4319,7 @@ html { scroll-snap-type: y proximity; }
   margin-top: 0.9rem;
   padding: 0.5rem 0.9rem;
   border: 1.5px solid var(--birch-soft);
-  background: var(--paper);
+  background: transparent;   /* ärver kortets yta — se .dlx-act ovan */
   border-radius: 10px;
   color: var(--forest);
   font-family: inherit;
