@@ -1,6 +1,11 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–93. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–98. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 98 — Premiumvyn: helg-utfällning + hero-snap
+Joakim: (1) helgkort har avvikande färg som inte harmoniserar när de fälls ut, (2) hero-snappen rycker tillbaka skärmen så ett utfällt kort inte kan centreras. Fixar (CSS + en JS-rad): (1) `.dlx-day.is-weekend.expanded` lägger tillbaka utfällningens lichen-accent (annars vann `is-weekend`:s birch-ram pga källordning) — helg-tonen **behålls** även utfällt (Joakims val: behåll färgen, harmonisera bara accenten). (2) `renderDeluxe` togglar `host.has-expanded` när ett kort är utfällt, och `#weekDeluxe.has-expanded.has-history .dlx-hero { scroll-snap-align: none }` tar bort enda snap-ankaret så proximity-snappen inte drar tillbaka skärmen. Bumpat `styles.css?v=111`, `app.js?v=108`, SW-cache v17.
 
 ---
 
