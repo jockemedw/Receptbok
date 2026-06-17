@@ -4282,6 +4282,14 @@ html { scroll-snap-type: y proximity; }
 .dlx-readonly { font-size: 0.8rem; color: var(--moss-muted); margin: 0.8rem 0 0; }
 .dlx-err { color: var(--rust); font-size: 0.8rem; margin: 0.6rem 0 0; }
 
+/* Egen-planering-editorn (Session 97) delas med klassiska vyns bottenpanel, där
+   .detail-inner har en ljus panel-bakgrund (--linen-card) och .custom-option är
+   vita kort. Inline i premiumvyns kort ska editorn i stället ärva kortets yta
+   (sand på helg, linne på vardag) — annars syns en vit platta inne i det
+   sandfärgade helgkortet. .dlx-detail ger redan ram + padding. */
+.dlx-detail-custom .detail-inner { background: transparent; border-top: none; padding: 0; }
+.dlx-detail-custom .custom-option { background: transparent; }
+
 /* ── Åtgärder ── */
 .dlx-actions {
   display: grid;
