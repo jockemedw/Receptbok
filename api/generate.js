@@ -310,11 +310,10 @@ function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), use
 }
 
 async function savePlanToSupabase(weeklyPlan, householdId) {
-  // Deaktivera alla eventuellt kvarvarande aktiva planer (skyddar mot misslyckat archiveOldPlan)
-  await db.from("weekly_plans").update({ is_active: false })
-    .eq("household_id", householdId).eq("is_active", true);
-
   const today = new Date().toISOString();
+  // Plan-raden skapas INAKTIV. Den tas i bruk (activatePlan) först när alla
+  // dagar är skrivna — så att en aktiv plan ALDRIG kan sakna sina dagar (ger
+  // annars en tom matsedel utan åtgärdsknappar om dag-skrivningen glappar).
   const { data: newPlan, error: planErr } = await db
     .from("weekly_plans")
     .insert({
@@ -322,7 +321,7 @@ async function savePlanToSupabase(weeklyPlan, householdId) {
       start_date: weeklyPlan.startDate,
       end_date: weeklyPlan.endDate,
       generated_at: today,
-      is_active: true,
+      is_active: false,
     })
     .select()
     .single();
@@ -341,9 +340,24 @@ async function savePlanToSupabase(weeklyPlan, householdId) {
   }));
 
   const { error: daysErr } = await db.from("meal_days").insert(mealDayRows);
-  if (daysErr) throw daysErr;
+  if (daysErr) {
+    // Städa bort den halv-skrivna plan-raden så den aldrig kan dyka upp som
+    // en tom aktiv plan. Den gamla planen är ännu orörd (arkiveras senare).
+    await db.from("weekly_plans").delete().eq("id", newPlan.id);
+    throw daysErr;
+  }
 
   return newPlan.id;
+}
+
+// Tar en färdigskriven (inaktiv) plan i bruk allra sist: stäng av alla andra
+// aktiva planer och slå på den nya i ett svep. Eftersom dagarna redan sitter har
+// en aktiv plan alltid sitt innehåll.
+async function activatePlan(planId, householdId) {
+  await db.from("weekly_plans").update({ is_active: false })
+    .eq("household_id", householdId).eq("is_active", true);
+  const { error } = await db.from("weekly_plans").update({ is_active: true }).eq("id", planId);
+  if (error) throw error;
 }
 
 async function saveHistoryToSupabase(days, householdId) {
@@ -535,12 +549,16 @@ export default createSupabaseHandler(async (req, res) => {
     return res.status(200).json({ ok: true, dry_run: true, days: days.length, weeklyPlan, deals });
   }
 
-  try { await archiveOldPlan(start_date, householdId); } catch (e) { console.error("archive error:", e); }
-
   const selectedIds = days.map((d) => d.recipeId).filter(Boolean);
   const shoppingCategories = skip_shopping ? null : buildShoppingList(selectedIds, allRecipes);
 
-  await savePlanToSupabase(weeklyPlan, householdId);
+  // Skriv nya planen + alla dagar (inaktiv). Glappar dag-skrivningen kastas det
+  // här och den gamla aktiva planen är fortfarande orörd — användaren behåller
+  // sin matsedel i stället för att få en tom.
+  const newPlanId = await savePlanToSupabase(weeklyPlan, householdId);
+  // Först nu, när dagarna sitter: arkivera gamla planen och aktivera den nya.
+  try { await archiveOldPlan(start_date, householdId); } catch (e) { console.error("archive error:", e); }
+  await activatePlan(newPlanId, householdId);
   await saveHistoryToSupabase(days, householdId);
 
   let shoppingList = null;
