@@ -394,8 +394,9 @@ function emptyDayCard(d) {
           ${expanded ? recipeDetail({ ...d, recipeId: d.customRecipeId }, r, { active: false }) : ''}
         </article>`;
     }
+    const expanded = window._dlxExpanded === d.date;
     return `
-      <article class="dlx-day custom slim${modeCls(d, 'custom')}" data-date="${d.date}" onclick="dlxCustomClick('${d.date}', '${attr(d.day)}')">
+      <article class="dlx-day custom${expanded ? ' expanded' : ' slim'}${modeCls(d, 'custom')}" data-date="${d.date}" onclick="dlxCustomClick('${d.date}', '${attr(d.day)}')">
         <span class="dlx-rail" style="background:var(--birch)"></span>
         <div class="dlx-day-head">
           <div class="dlx-day-when"><span class="dlx-day-dow">${esc(d.day)}</span>
@@ -407,6 +408,7 @@ function emptyDayCard(d) {
           </div>
           <span class="dlx-day-chev" aria-hidden="true">›</span>
         </div>
+        ${expanded ? `<div class="dlx-detail dlx-detail-custom" onclick="event.stopPropagation()">${window.customDayEditorHtml(d.date, d.day)}</div>` : ''}
       </article>`;
   }
 
@@ -426,11 +428,13 @@ function emptyDayCard(d) {
   }
 
   // Tom dag (gap) — bara framtida är klickbar. dlxGapClick routar: i byt
-  // dag-läge väljs dagen som mål (receptet flyttas dit), annars egen planering.
+  // dag-läge väljs dagen som mål (receptet flyttas dit), annars fälls DET
+  // klickade kortet ut inline med egen-planering-editorn.
   const clickable = !d.isPast;
+  const expanded = clickable && window._dlxExpanded === d.date;
   const click = clickable ? `onclick="dlxGapClick('${d.date}', '${attr(d.day)}')"` : '';
   return `
-    <article class="dlx-day gap slim${clickable ? '' : ' inert'}${modeCls(d, 'gap')}" data-date="${d.date}" ${click}>
+    <article class="dlx-day gap${expanded ? ' expanded' : ' slim'}${clickable ? '' : ' inert'}${modeCls(d, 'gap')}" data-date="${d.date}" ${click}>
       <span class="dlx-rail" style="background:transparent"></span>
       <div class="dlx-day-head">
         <div class="dlx-day-when"><span class="dlx-day-dow">${esc(d.day)}</span>
@@ -439,6 +443,7 @@ function emptyDayCard(d) {
         <div class="dlx-day-main"><p class="dlx-day-note muted">${clickable ? '+ Planera dagen' : '—'}</p></div>
         ${clickable ? '<span class="dlx-day-chev" aria-hidden="true">›</span>' : ''}
       </div>
+      ${expanded ? `<div class="dlx-detail dlx-detail-custom" onclick="event.stopPropagation()">${window.customDayEditorHtml(d.date, d.day)}</div>` : ''}
     </article>`;
 }
 
@@ -725,7 +730,7 @@ window.dlxCancelSwap = function () {
 window.dlxGapClick = function (date, dayName) {
   if (window._dlxSwap) { dlxPickSwapTarget(date); return; }
   if (window._dlxMove) return;
-  window.openCustomDay(date, dayName);
+  window.dlxToggleDay(date);   // fäll ut DET klickade kortet inline (egen-planering-editorn)
 };
 
 // Egen planering / fri dag: förklara varför de inte går att byta (istället för
@@ -733,7 +738,7 @@ window.dlxGapClick = function (date, dayName) {
 window.dlxCustomClick = function (date, dayName) {
   if (window._dlxSwap) { window.showToast?.('Egen planering kan inte bytas — redigera dagen istället.', { type: 'info' }); return; }
   if (window._dlxMove) return;
-  window.openCustomDay(date, dayName);
+  window.dlxToggleDay(date);   // fäll ut inline i stället för delade bottenpanelen
 };
 window.dlxFreeClick = function (date, dayName) {
   if (window._dlxSwap) { window.showToast?.('Fria dagar kan inte bytas — ångra fri dag först.', { type: 'info' }); return; }
