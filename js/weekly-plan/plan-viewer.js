@@ -1354,17 +1354,17 @@ function renderCustomBulkBanner(timeline, plan) {
   `;
 }
 
-export function openCustomDay(dateIso, dayName) {
-  const panel = document.getElementById('weekRecipeDetail');
+// Bygger editor-HTML:n för en egen-planering-dag. Bryts ut så premiumvyn kan
+// rendera SAMMA editor inline i det utfällda kortet (annars hamnade den i den
+// delade #weekRecipeDetail-panelen längst ner — såg ut som att fel kort fälldes
+// ut). Knapparna kallar globala window-funktioner och bryr sig inte om var
+// HTML:n sitter.
+export function customDayEditorHtml(dateIso, dayName) {
   const existing = (window._customDays?.entries || {})[dateIso];
   const note = existing?.note || '';
   const hasExisting = !!existing;
   const todayIso = fmtIso(new Date());
   const isPastDay = dateIso < todayIso;
-
-  document.querySelectorAll('.week-day-card').forEach(c => c.classList.remove('selected'));
-  const card = document.querySelector(`.week-day-card[data-date="${dateIso}"]`);
-  if (card) card.classList.add('selected');
 
   const escDayName = (dayName || '').replace(/'/g, "\\'");
   const dateLabel = fmtShort(dateIso);
@@ -1400,7 +1400,7 @@ export function openCustomDay(dateIso, dayName) {
     ? `<button type="button" class="custom-day-remove" onclick="clearCustomDay('${dateIso}')">Ta bort markering</button>`
     : '';
 
-  panel.innerHTML = `<div class="detail-inner custom-day-editor">
+  return `<div class="detail-inner custom-day-editor">
     <div class="custom-day-header">
       <div class="custom-day-title">${dayName}</div>
       <div class="custom-day-sub">${dateLabel}${hasExisting ? ' · egen planering' : ''}</div>
@@ -1412,6 +1412,16 @@ export function openCustomDay(dateIso, dayName) {
     </div>
     ${removeBtn}
   </div>`;
+}
+
+export function openCustomDay(dateIso, dayName) {
+  const panel = document.getElementById('weekRecipeDetail');
+
+  document.querySelectorAll('.week-day-card').forEach(c => c.classList.remove('selected'));
+  const card = document.querySelector(`.week-day-card[data-date="${dateIso}"]`);
+  if (card) card.classList.add('selected');
+
+  panel.innerHTML = customDayEditorHtml(dateIso, dayName);
   panel.classList.add('open');
   window.isSnapping = true;
   window.scrollUpAccum = 0;
@@ -1590,6 +1600,7 @@ window.loadWeeklyPlan      = loadWeeklyPlan;
 window.centerTodayCard     = centerTodayCard;
 window.centerOnDate        = centerOnDate;
 window.openCustomDay       = openCustomDay;
+window.customDayEditorHtml = customDayEditorHtml;
 window.openCustomBulk      = openCustomBulk;
 window.openBlockedDay      = openBlockedDay;
 window.saveCustomDay       = saveCustomDay;
