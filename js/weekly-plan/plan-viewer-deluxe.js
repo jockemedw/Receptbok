@@ -151,7 +151,7 @@ function buildTonight(timeline) {
       <div class="dlx-tonight-head">
         <div class="dlx-day-when">
           <span class="dlx-day-dow">${esc(d.day)}</span>
-          <span class="dlx-day-date">${d.dayNum} ${MONTH_NAMES_SHORT[d.month]}</span>
+          <span class="dlx-day-date"><span class="dlx-day-num">${d.dayNum}</span><span class="dlx-day-mon">${MONTH_NAMES_SHORT[d.month]}</span></span>
         </div>
         <div class="dlx-tonight-main">
           <span class="dlx-tonight-title">${esc(label)}</span>
@@ -300,7 +300,7 @@ function recipeDayCard(d, opts) {
       <div class="dlx-day-head">
         <div class="dlx-day-when">
           <span class="dlx-day-dow">${esc(d.day)}</span>
-          <span class="dlx-day-date">${d.dayNum} ${MONTH_NAMES_SHORT[d.month]}</span>
+          <span class="dlx-day-date"><span class="dlx-day-num">${d.dayNum}</span><span class="dlx-day-mon">${MONTH_NAMES_SHORT[d.month]}</span></span>
           <span class="dlx-day-flags">${dayBadges(d)}</span>
         </div>
         <div class="dlx-day-main">
@@ -383,7 +383,7 @@ function emptyDayCard(d) {
           <span class="dlx-rail"></span>
           <div class="dlx-day-head">
             <div class="dlx-day-when"><span class="dlx-day-dow">${esc(d.day)}</span>
-              <span class="dlx-day-date">${d.dayNum} ${MONTH_NAMES_SHORT[d.month]}</span>
+              <span class="dlx-day-date"><span class="dlx-day-num">${d.dayNum}</span><span class="dlx-day-mon">${MONTH_NAMES_SHORT[d.month]}</span></span>
               <span class="dlx-day-flags">${dayBadges(d)}</span></div>
             <div class="dlx-day-main">
               <span class="dlx-day-tag">${I.pot} Egen planering</span>
@@ -400,7 +400,7 @@ function emptyDayCard(d) {
         <span class="dlx-rail" style="background:var(--birch)"></span>
         <div class="dlx-day-head">
           <div class="dlx-day-when"><span class="dlx-day-dow">${esc(d.day)}</span>
-            <span class="dlx-day-date">${d.dayNum} ${MONTH_NAMES_SHORT[d.month]}</span>
+            <span class="dlx-day-date"><span class="dlx-day-num">${d.dayNum}</span><span class="dlx-day-mon">${MONTH_NAMES_SHORT[d.month]}</span></span>
             <span class="dlx-day-flags">${dayBadges(d)}</span></div>
           <div class="dlx-day-main">
             <span class="dlx-day-tag">${I.note} Egen planering</span>
@@ -419,7 +419,7 @@ function emptyDayCard(d) {
         <span class="dlx-rail" style="background:var(--birch-soft)"></span>
         <div class="dlx-day-head">
           <div class="dlx-day-when"><span class="dlx-day-dow">${esc(d.day)}</span>
-            <span class="dlx-day-date">${d.dayNum} ${MONTH_NAMES_SHORT[d.month]}</span>
+            <span class="dlx-day-date"><span class="dlx-day-num">${d.dayNum}</span><span class="dlx-day-mon">${MONTH_NAMES_SHORT[d.month]}</span></span>
             <span class="dlx-day-flags">${dayBadges(d)}</span></div>
           <div class="dlx-day-main"><p class="dlx-day-note">${I.free} Fri dag</p></div>
           <span class="dlx-day-chev" aria-hidden="true">›</span>
@@ -438,7 +438,7 @@ function emptyDayCard(d) {
       <span class="dlx-rail" style="background:transparent"></span>
       <div class="dlx-day-head">
         <div class="dlx-day-when"><span class="dlx-day-dow">${esc(d.day)}</span>
-          <span class="dlx-day-date">${d.dayNum} ${MONTH_NAMES_SHORT[d.month]}</span>
+          <span class="dlx-day-date"><span class="dlx-day-num">${d.dayNum}</span><span class="dlx-day-mon">${MONTH_NAMES_SHORT[d.month]}</span></span>
           <span class="dlx-day-flags">${dayBadges(d)}</span></div>
         <div class="dlx-day-main"><p class="dlx-day-note muted">${clickable ? '+ Planera dagen' : '—'}</p></div>
         ${clickable ? '<span class="dlx-day-chev" aria-hidden="true">›</span>' : ''}
@@ -456,16 +456,15 @@ function renderDayCard(d) {
   // Helg → dovare kort-bakgrund. Klassen injiceras på ett ställe så att alla
   // korttyper täcks utan att röra varje mall. Suppr. på "idag" (rust-ramen räcker).
   if (d.isWeekend && !d.isToday) html = html.replace('class="dlx-day', 'class="dlx-day is-weekend');
-  // Helgdag (midsommar m.fl.) → chip-markering, så den aldrig trängs in i den
-  // smala datumkolumnen. På gap-/fri-dag-kort ligger den till vänster i main och
-  // åtgärden ("+ Planera dagen"/"Fri dag") högerställs (CSS) — på övriga kort
-  // (recept/egen planering) ligger chippen strax före chevronen.
+  // Helgdag (midsommar m.fl.) → chip-markering med EN placering på alla korttyper:
+  // strax före chevronen (höger). Bara icke-klickbara kort (förfluten gap utan
+  // chevron) faller tillbaka på main. Aldrig i den smala datumkolumnen (radbryts).
   if (d.holiday) {
     const chip = `<span class="dlx-day-holiday">${esc(d.holiday)}</span>`;
-    if (!d.isCustom && !d.recipeId) {
-      html = html.replace('<div class="dlx-day-main">', `<div class="dlx-day-main">${chip}`);
-    } else if (html.includes('dlx-day-chev')) {
+    if (html.includes('dlx-day-chev')) {
       html = html.replace('<span class="dlx-day-chev"', `${chip}<span class="dlx-day-chev"`);
+    } else {
+      html = html.replace('<div class="dlx-day-main">', `<div class="dlx-day-main">${chip}`);
     }
   }
   return html;

@@ -24,6 +24,7 @@
 
     /* Highlight */
     --ochre: #c89a3e;
+    --ochre-deep: #8a6818;
 
     /* Semantic aliases (för bakåtkompatibilitet under migrationen) */
     --border: var(--birch-soft);
@@ -4074,7 +4075,7 @@ html { scroll-snap-type: y proximity; }
 }
 /* Helg-markör: en dovare, varmare kort-bakgrund (markerar helgdagar lugnt utan att
    påverka korthöjden). Tydligt skild från både kortet (#fdfcf8) och sidan (#f5f1e8). */
-.dlx-day.is-weekend { background: #ede5d4; border-color: var(--birch); }
+.dlx-day.is-weekend { background: #efe8db; border-color: var(--birch-soft); }
 /* Utfällt helgkort: BEHÅLL den dovare helg-tonen (markören) men lägg tillbaka
    utfällningens lichen-accent — annars vinner is-weekend:s birch-ram pga
    källordning och kortet ser avvikande ut mot vardagskortens utfällning. */
@@ -4102,7 +4103,18 @@ html { scroll-snap-type: y proximity; }
   text-transform: uppercase;
   color: var(--moss-muted);
 }
-.dlx-day-date { font-size: 0.95rem; font-weight: 600; color: var(--forest); }
+/* Kalender-stil datum: dag-nummer stort, månad litet versalt under — jämn
+   vertikal rytm på alla kort (annars radbröt "20 juni" ojämnt i den smala kolumnen). */
+.dlx-day-date { display: flex; flex-direction: column; line-height: 1; }
+.dlx-day-num { font-size: 1.3rem; font-weight: 700; color: var(--forest); }
+.dlx-day-mon {
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--moss-muted);
+  margin-top: 0.1rem;
+}
 .dlx-day-flags { display: flex; flex-direction: column; gap: 0.2rem; margin-top: 0.25rem; }
 .dlx-day-flag {
   font-size: 0.58rem;
@@ -4115,7 +4127,8 @@ html { scroll-snap-type: y proximity; }
 }
 .dlx-day-flag.today { background: var(--rust); color: #fff; }
 /* Helgdags-chip (midsommar m.fl.) — kompakt pill som inte krymper eller bryter rad,
-   så den aldrig flyttar dagens innehåll. */
+   så den aldrig flyttar dagens innehåll. Dov ockra-ton (festdag) i stället för
+   clay+rust, så rusten reserveras för "Idag" och protein. */
 .dlx-day-holiday {
   flex: 0 0 auto;
   align-self: center;
@@ -4125,8 +4138,8 @@ html { scroll-snap-type: y proximity; }
   letter-spacing: 0.01em;
   padding: 0.16rem 0.5rem;
   border-radius: 999px;
-  background: var(--clay);
-  color: var(--rust-deep);
+  background: color-mix(in srgb, var(--ochre) 16%, transparent);
+  color: var(--ochre-deep);
   white-space: nowrap;
 }
 /* Gap-/fri-dag-kort: åtgärden ("+ Planera dagen"/"Fri dag") högerställs vid
