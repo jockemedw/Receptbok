@@ -4057,7 +4057,7 @@ html { scroll-snap-type: y proximity; }
   border: 1px solid var(--birch-soft);
   border-radius: 18px;
   cursor: pointer;
-  transition: box-shadow 0.22s, border-color 0.22s, background 0.22s, transform 0.12s;
+  transition: box-shadow 0.22s, border-color 0.22s, transform 0.12s;
   animation: dlxFadeIn 0.4s ease both;
 }
 @keyframes dlxFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
@@ -4075,11 +4075,10 @@ html { scroll-snap-type: y proximity; }
 /* Helg-markör: en dovare, varmare kort-bakgrund (markerar helgdagar lugnt utan att
    påverka korthöjden). Tydligt skild från både kortet (#fdfcf8) och sidan (#f5f1e8). */
 .dlx-day.is-weekend { background: #ede5d4; border-color: var(--birch); }
-/* Utfällt helgkort harmoniserar med vardagskorten: lägg tillbaka utfällningens
-   lichen-accent (annars vinner is-weekend pga källordning) och neutralisera
-   helg-tonen så den utfällda detaljen läser likadant. Kollapsade helgkort
-   behåller sin dovare ton som scan-markör. */
-.dlx-day.is-weekend.expanded { background: var(--linen-card); border-color: var(--lichen); }
+/* Utfällt helgkort: BEHÅLL den dovare helg-tonen (markören) men lägg tillbaka
+   utfällningens lichen-accent — annars vinner is-weekend:s birch-ram pga
+   källordning och kortet ser avvikande ut mot vardagskortens utfällning. */
+.dlx-day.is-weekend.expanded { border-color: var(--lichen); }
 
 .dlx-day-head {
   display: flex;
