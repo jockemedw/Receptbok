@@ -339,6 +339,32 @@ assertFalse(rejectsMatch("ost", { name: "Parmesan Lagrad 24 Månader", brandLine
   assertEq(weightedSaving([], 25), 25, "värdevikt: tom matchlista faller till total");
 }
 
+// ─── Veckans fynd: huvudprotein-sortering + variation (Session 96) ──
+{
+  const savingsById = {
+    1: { total: 35, matches: [{ canon: "kyckling", savingPerUnit: 30, regularPrice: 60 }, { canon: "lök", savingPerUnit: 5, regularPrice: 8 }] },
+    2: { total: 32, matches: [{ canon: "kycklingfilé", savingPerUnit: 28, regularPrice: 70 }] },
+    3: { total: 31, matches: [{ canon: "kyckling", savingPerUnit: 27, regularPrice: 60 }] },
+    4: { total: 25, matches: [{ canon: "lax", savingPerUnit: 25, regularPrice: 89 }] },
+    5: { total: 12, matches: [{ canon: "vitlök", savingPerUnit: 12, regularPrice: 10 }] }, // kött, men kött ej på rea
+  };
+  const proteinOf = { 1: "kyckling", 2: "kyckling", 3: "kyckling", 4: "fisk", 5: "kött" };
+  const lookup = (id) => ({ id, title: `R${id}`, protein: proteinOf[id], time: 30 });
+
+  const cands = buildDealCandidates(savingsById, [], lookup);
+  assertEq(cands[0].recipeId, 1, "protein-sort: bästa kycklingfyndet (30) toppar");
+  assertEq(cands[1].recipeId, 4, "variation: lax (25) slinker till andraplats trots lägre besparing än fler kycklingar");
+  assertEq(cands[1].protein, "fisk", "variation: andra kortet är en annan proteintyp");
+  assertEq(cands[cands.length - 1].recipeId, 5, "recept utan protein-rea hamnar sist");
+  assertEq(cands.find((c) => c.recipeId === 1).saving, 35, "visad besparing = rå total (35), oförändrad");
+
+  // Huvudproteinets besparing styr — inte lök-träffen i samma recept.
+  // Utan variationsvikt (decay = 1) blir det ren proteinsortering: 1,2,3,4.
+  const noDiv = buildDealCandidates(savingsById, [], lookup, { diversityDecay: 1 });
+  assertEq(noDiv.map((c) => c.recipeId).join(","), "1,2,3,4,5",
+    "decay=1: ren proteinsortering (alla kycklingar före lax)");
+}
+
 // ─── Slutrapport ──────────────────────────────────────────────────
 console.log(`\n${passed} passerade, ${failed} failade.`);
 if (failed) {
