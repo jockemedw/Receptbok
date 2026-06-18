@@ -1,6 +1,13 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–98. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–99. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 99 — Premiumvyn: vit platta i helg-utfällningen
+Joakim: utfällningen av helg-korten blir vit inom det annars sandfärgade kortet (bild: ett "+ Planera dagen"-kort på söndag). Två fixar: (1) **Egen-planering-editorn** (huvudboven, Session 97 renderar den inline): editorn delas med klassiska vyns bottenpanel, där `.detail-inner` har ljus panel-bakgrund (`--linen-card`) och `.custom-option` är vita kort. Inline i premiumvyns sandkort blev det en vit platta. Scoped fix: `.dlx-detail-custom .detail-inner { background: transparent; border-top: none; padding: 0 }` + `.dlx-detail-custom .custom-option { background: transparent }` → editorn ärver kortets yta (sand på helg, linne på vardag), `.dlx-detail` ger redan ram + padding. (2) **Recept-korten:** `.dlx-act` / `.dlx-mini-btn` hade `background: var(--paper)` (rent vitt) → satt till `transparent` så outline-knapparna ärver kortets yta. Primärknappen (`Slumpa nytt`, rust) oförändrad. Bumpat `styles.css?v=113`, SW-cache v19.
+
+**Sedan: tidslinjen kändes "busy" (bild)** — analys + Joakim valde A/C/D (ej B). (A) **Helgdags-chippen unifierad:** låg förut till vänster i main på gap-kort men till höger på receptkort (`renderDayCard`) — nu *alltid* strax före chevronen på alla korttyper; clay+rust-pillen bytt till dov ockra-ton (`color-mix(--ochre 16%)` + nya `--ochre-deep`) så rust reserveras för "Idag"/protein. (C) **Datum kalender-stil:** `<span class="dlx-day-date">` delad i `.dlx-day-num` (stort) + `.dlx-day-mon` (litet versalt) — slut på ojämn radbrytning av "20 juni" i den smala kolumnen (6 mallar via replace_all + tonight-kortet). (D) **Lugnare palett:** helg-sanden mjukad `#ede5d4`→`#efe8db` med `border-color` birch→birch-soft. (B — protein-dubbelkodning — valdes bort.) Bumpat `styles.css?v=114`, `app.js?v=109`, SW-cache v20.
 
 ---
 
