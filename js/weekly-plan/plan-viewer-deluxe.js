@@ -135,6 +135,11 @@ function buildTonight(timeline) {
     label = d.customRecipeTitle || d.customNote;
     sub = 'Egen planering';
     click = `dlxCustomClick('${d.date}', '${attr(d.day)}')`;
+    // Fäll ut samma egen-planering-editor inline som i dagslistan — annars
+    // togglar tryck bara expand-state utan att visa något (död interaktion).
+    if (expanded && window.customDayEditorHtml) {
+      detail = `<div class="dlx-detail dlx-detail-custom" onclick="event.stopPropagation()">${window.customDayEditorHtml(d.date, d.day)}</div>`;
+    }
   } else if (d.blocked) {
     label = 'Fri dag';
     sub = 'Ingen middag planerad';

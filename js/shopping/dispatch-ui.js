@@ -126,6 +126,13 @@ function escapeHtml(s) {
   }[c]));
 }
 
+// Escape stänger Willys-dialogen (men inte mitt i en pågående skickning).
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Escape") return;
+  const modal = document.getElementById("dispatchModal");
+  if (modal && modal.style.display !== "none") closeDispatchModal();
+});
+
 // Exponera på window för inline onclick
 window.openDispatchConfirm = openDispatchConfirm;
 window.runDispatch = runDispatch;

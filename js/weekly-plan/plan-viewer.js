@@ -895,9 +895,15 @@ export function openSavingPopover(dateIso) {
     </div>`;
   document.body.appendChild(overlay);
   requestAnimationFrame(() => overlay.classList.add('open'));
+  document.addEventListener('keydown', onSavingKey);
+}
+
+function onSavingKey(e) {
+  if (e.key === 'Escape') closeSavingPopover();
 }
 
 export function closeSavingPopover() {
+  document.removeEventListener('keydown', onSavingKey);
   document.querySelectorAll('.saving-overlay').forEach((el) => el.remove());
 }
 
