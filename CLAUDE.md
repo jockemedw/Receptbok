@@ -53,7 +53,8 @@ som visas som tre rader i klartext (branch, status, senaste commit) överst.
 - **Fas 5 — App Store & monetisering:** 5B auth & datamodell · 5C kostnads-/intäktskalkyl (5A klar: Capacitor, `docs/research-teknisk-vag-app.md`)
 
 ### Kända buggar
-Inga bekräftade just nu.
+- **Ris rankas över protein i prisoptimerade förslag** (Joakim, Session 100): vid prisoptimering hamnar besparingar på *ris* ovanför både kyckling och fetaost i de föreslagna recepten. Beslutet är att **protein + stora besparingar alltid ska gå först** — ris är en billig stapelvara och ska inte lyfta ett recept över en proteinrea. Sannolik rotorsak i rankningskedjan `weightedSaving()` / `mainProteinSaving()` / `buildDealCandidates()` (`api/_shared/willys-matcher.js`): ris viktas för högt eller saknar nedviktning som vitlök/lök fick. Att fixa nästa session.
+- **"Kassera förslag"-raden hamnar längst ned i hela matsedeln** (Joakim, Session 100): när en ny matsedel just föreslagits ska bekräfta-/kassera-raden visas *tillfälligt under sista dagen inom matsedeln*, inte längst ned i hela vyn (efter ingredienser m.m.). Gäller `#confirmPlanWrap` (`index.html` rad ~112, ligger nu efter `#weekGrid`/timeline i `.week-section`). I premiumvyn behöver raden renderas i `#weekDeluxe`-flödet efter sista dagskortet. Att fixa nästa session.
 
 ### Väntar på live-verifiering (kod klar, ej körd skarpt)
 - **Lösvikts-enum vid Willys-export** (PR #65): `pickUnitForCode()` skickar `"kilograms"` för `_KG`-koder (lös färskvara, t.ex. potatis). Enum-värdet är *inferred* — bara `"pieces"` är PoC-bekräftat. Bekräfta att lös potatis landar i korgen i skarp körning.
