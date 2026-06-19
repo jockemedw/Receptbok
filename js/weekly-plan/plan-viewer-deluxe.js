@@ -57,6 +57,8 @@ function applyMode(mode) {
 function setMode(mode) {
   try { localStorage.setItem(STORAGE_KEY, mode); } catch { /* strunt */ }
   applyMode(mode);
+  // Flytta bekräfta/kassera-raden till rätt vy direkt (renderDeluxe körs inte här).
+  relocateConfirmRow();
   if (mode === 'classic' && window.centerTodayCard) {
     requestAnimationFrame(() => window.centerTodayCard({ smooth: false }));
   }
@@ -135,6 +137,11 @@ function buildTonight(timeline) {
     label = d.customRecipeTitle || d.customNote;
     sub = 'Egen planering';
     click = `dlxCustomClick('${d.date}', '${attr(d.day)}')`;
+    // Fäll ut samma egen-planering-editor inline som i dagslistan — annars
+    // togglar tryck bara expand-state utan att visa något (död interaktion).
+    if (expanded && window.customDayEditorHtml) {
+      detail = `<div class="dlx-detail dlx-detail-custom" onclick="event.stopPropagation()">${window.customDayEditorHtml(d.date, d.day)}</div>`;
+    }
   } else if (d.blocked) {
     label = 'Fri dag';
     sub = 'Ingen middag planerad';
@@ -575,6 +582,48 @@ export function renderDeluxe() {
     window._dlxDidSnap = true;
     requestAnimationFrame(() => snapToHero());
   }
+
+  // Bekräfta-/kassera-raden hör hemma i den klassiska .week-section, men i
+  // premiumvyn ska den synas direkt under sista dagskortet — inte ligga kvar som
+  // en lös rad efter dagslistan (och före ingredienssektionen). Flytta in själva
+  // noden så den blir sista sektionen i flödet; återställs i klassisk vy.
+  relocateConfirmRow();
+
+  // Entré-reveal: korten fade:as in EN gång när matsedeln först visas. Klassen
+  // sitter på det persistenta värdelementet (inte korten, som återskapas vid
+  // varje omrendering) → ingen re-fade-flimmer när man fäller ut/byter dag.
+  if (!window._dlxEntered && document.body.dataset.activeTab === 'vecka') {
+    window._dlxEntered = true;
+    host.classList.add('dlx-enter');
+    // Längre än sista kortets delay (0.25s) + faden (0.4s) så kaskaden hinner klart.
+    setTimeout(() => host.classList.remove('dlx-enter'), 900);
+  }
+}
+
+// Placerar #confirmPlanWrap (bekräfta/kassera) rätt beroende på vy:
+//  • Premium  → sista sektionen INUTI #weekDeluxe, direkt efter dagslistan.
+//  • Klassisk → tillbaka till ursprungsplatsen (precis före receptdetalj-panelen).
+// Samma DOM-nod flyttas i båda fallen → knappar, id:n och onclick-handlers bevaras
+// (ingen dubblering, inga krockande id:n).
+function relocateConfirmRow() {
+  const wrap = document.getElementById('confirmPlanWrap');
+  if (!wrap) return;
+  const host = document.getElementById('weekDeluxe');
+  if (document.body.classList.contains('week-deluxe') && host) {
+    let slot = host.querySelector(':scope > .dlx-sec[data-sec="confirm"]');
+    if (!slot) {
+      slot = document.createElement('div');
+      slot.className = 'dlx-sec';
+      slot.dataset.sec = 'confirm';
+    }
+    // appendChild flyttar slotten sist (efter 'days') även om den redan fanns.
+    if (slot !== host.lastElementChild) host.appendChild(slot);
+    if (wrap.parentElement !== slot) slot.appendChild(wrap);
+  } else {
+    // Klassisk vy: tillbaka till ursprungspositionen i .week-section.
+    const detail = document.getElementById('weekRecipeDetail');
+    if (detail && wrap.nextElementSibling !== detail) detail.before(wrap);
+  }
 }
 
 // Positionerar vyn så att heron ligger precis under headern → historiken
@@ -591,22 +640,73 @@ function snapToHero() {
 }
 
 // ── Interaktion ───────────────────────────────────────────────────────────────
+function prefersReducedMotion() {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+}
+
+// Mjuk höjd-animering vid ut-/infällning. Diff-renderingen (setSec) äger DOM:en
+// och bygger om hela 'days'-sektionen vid varje toggle, så detaljen poppar
+// annars in/ut tvärt. Vi animerar height på det enskilda kortets .dlx-detail —
+// helt lokalt, kan inte återintroducera listflimret (som rörde ALLA kort).
+function expandDetailHeight(detail) {
+  // Sätt 0 SYNKRONT (före paint) så detaljen inte blinkar fram i full höjd
+  // först. scrollHeight rapporterar ändå innehållets höjd trots height:0.
+  detail.style.overflow = 'hidden';
+  detail.style.height = '0px';
+  requestAnimationFrame(() => {
+    detail.style.transition = 'height 0.28s ease';
+    detail.style.height = detail.scrollHeight + 'px';
+  });
+  const cleanup = () => {
+    detail.style.height = '';
+    detail.style.overflow = '';
+    detail.style.transition = '';
+  };
+  detail.addEventListener('transitionend', cleanup, { once: true });
+}
+
+function collapseDetailHeight(detail, done) {
+  detail.style.overflow = 'hidden';
+  detail.style.height = detail.scrollHeight + 'px';
+  detail.getBoundingClientRect();
+  detail.style.transition = 'height 0.22s ease';
+  detail.style.height = '0px';
+  let finished = false;
+  const finish = () => { if (finished) return; finished = true; done(); };
+  detail.addEventListener('transitionend', finish, { once: true });
+  setTimeout(finish, 300);                  // fallback om transitionend uteblir
+}
+
 window.dlxToggleDay = function (date) {
   if (window._dlxSwap) { dlxPickSwapTarget(date); return; }
   if (window._dlxMove) return;   // i flytta-läge är bara släppzonerna klickbara
-  window._dlxExpanded = (window._dlxExpanded === date) ? null : date;
-  renderDeluxe();
-  if (window._dlxExpanded === date) {
-    requestAnimationFrame(() => {
-      const el = document.querySelector(`#weekDeluxe [data-date="${date}"]`);
-      if (el) {
-        const hh = document.querySelector('header')?.offsetHeight || 0;
-        const top = el.getBoundingClientRect().top + window.scrollY - hh - 12;
-        if (window.smoothScrollTo) window.smoothScrollTo(top, 360);
-        else window.scrollTo({ top, behavior: 'smooth' });
-      }
-    });
+
+  const opening = window._dlxExpanded !== date;
+
+  // Stänga: animera ihop det öppna kortet FÖRE omrenderingen (som tar bort det).
+  if (!opening) {
+    const open = document.querySelector(`#weekDeluxe [data-date="${date}"].expanded .dlx-detail`);
+    // Skydda mot kapplöpning: om man hinner öppna ett annat kort medan detta
+    // animeras ihop ska den fördröjda callbacken inte stänga det nya kortet.
+    const reRender = () => { if (window._dlxExpanded === date) { window._dlxExpanded = null; renderDeluxe(); } };
+    if (open && !prefersReducedMotion()) collapseDetailHeight(open, reRender);
+    else reRender();
+    return;
   }
+
+  // Öppna: rendera in detaljen, sätt höjd 0 synkront + animera upp, scrolla in.
+  window._dlxExpanded = date;
+  renderDeluxe();
+  const el = document.querySelector(`#weekDeluxe [data-date="${date}"]`);
+  const detail = el?.querySelector('.dlx-detail');
+  if (detail && !prefersReducedMotion()) expandDetailHeight(detail);
+  requestAnimationFrame(() => {
+    if (!el) return;
+    const hh = document.querySelector('header')?.offsetHeight || 0;
+    const top = el.getBoundingClientRect().top + window.scrollY - hh - 12;
+    if (window.smoothScrollTo) window.smoothScrollTo(top, 360);
+    else window.scrollTo({ top, behavior: 'smooth' });
+  });
 };
 
 

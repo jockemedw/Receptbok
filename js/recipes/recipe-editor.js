@@ -192,6 +192,15 @@ export async function deleteRecipe() {
   }
 }
 
+// Escape stänger redigeringsmodalen — men låt bekräftelsedialogen (ta bort)
+// äga Escape när den ligger överst.
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (document.querySelector('.confirm-overlay')) return;
+  const modal = document.getElementById('editModal');
+  if (modal && modal.style.display === 'block') closeEditModal();
+});
+
 window.openEditModal         = openEditModal;
 window.closeEditModal        = closeEditModal;
 window.handleModalOverlayClick = handleModalOverlayClick;

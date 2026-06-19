@@ -155,6 +155,13 @@ export function openImportPreview(recipe) {
 document.getElementById('importCameraInput').addEventListener('change', function() { handlePhotoSelect(this); });
 document.getElementById('importFileInput').addEventListener('change', function() { handlePhotoSelect(this); });
 
+// Escape stänger import-sheeten (samma vana som övriga lager i appen).
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const modal = document.getElementById('importModal');
+  if (modal && modal.classList.contains('open')) closeImportModal();
+});
+
 window.openImportModal    = openImportModal;
 window.closeImportModal   = closeImportModal;
 window.switchImportTab    = switchImportTab;

@@ -895,9 +895,15 @@ export function openSavingPopover(dateIso) {
     </div>`;
   document.body.appendChild(overlay);
   requestAnimationFrame(() => overlay.classList.add('open'));
+  document.addEventListener('keydown', onSavingKey);
+}
+
+function onSavingKey(e) {
+  if (e.key === 'Escape') closeSavingPopover();
 }
 
 export function closeSavingPopover() {
+  document.removeEventListener('keydown', onSavingKey);
   document.querySelectorAll('.saving-overlay').forEach((el) => el.remove());
 }
 
@@ -1120,7 +1126,7 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
           <div class="${cls} custom-has-recipe" data-date="${d.date}" data-day="${d.day}"
             data-recipeid="${d.customRecipeId}" data-readonly="1" data-custom="1"
             onclick="openWeekRecipe(${d.customRecipeId}, '${safeTitle}', this)">
-            <div class="week-day-recipe">${ICON_POT} ${title}</div>
+            <div class="week-day-recipe">${ICON_POT} ${esc(title)}</div>
           </div>
         </div>`;
       }
@@ -1198,7 +1204,7 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
         data-recipeid="${rid}" data-date="${d.date}" data-day="${d.day}"
         data-readonly="${readOnly ? '1' : ''}" data-past="${d.isPast ? '1' : ''}"
         onclick="openWeekRecipe(${rid || 'null'}, '${safeTitle}', this)">
-        <div class="week-day-recipe">${d.recipe}</div>
+        <div class="week-day-recipe">${esc(d.recipe)}</div>
         ${recipe?.time ? `<div class="week-day-time">${recipe.time} min</div>` : ''}
         ${savingBadge}
         ${pendingBadge}

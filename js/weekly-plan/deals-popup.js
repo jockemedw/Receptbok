@@ -139,9 +139,15 @@ export function openDealsPopup() {
       <p class="saving-footnote">Besparingen avser hela förpackningen och förutsätter att du handlar erbjudandet — varor märkta <span class="saving-bulk">storpack</span> räcker ofta till fler måltider. Reapriser kan ändras eller löpa ut.</p>
     </div>`;
   document.body.appendChild(overlay);
+  document.addEventListener('keydown', onDealsKey);
+}
+
+function onDealsKey(e) {
+  if (e.key === 'Escape') closeDealsPopup();
 }
 
 export function closeDealsPopup() {
+  document.removeEventListener('keydown', onDealsKey);
   document.querySelectorAll('.deals-overlay').forEach((el) => el.remove());
 }
 

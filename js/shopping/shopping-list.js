@@ -89,10 +89,14 @@ function buildShopState(list, items) {
     });
   }
 
+  // Manuella varor nycklas på namn (`manual::<namn>`) — samma schema som
+  // renderingen, bockräknarna, copy-läget OCH servern (api/generate|confirm|
+  // replace skickar `manual::<namn>`). Index-nycklar här skulle tappa bocken
+  // vid omladdning och aldrig spara (scheduleCheckedSave läser via itemIds).
   const manualSorted = manualRows.slice().sort((a, b) => a.position - b.position);
   const manualItems = manualSorted.map((row) => row.name);
-  manualSorted.forEach((row, idx) => {
-    const key = `manual::${idx}`;
+  manualSorted.forEach((row) => {
+    const key = `manual::${row.name}`;
     checkedItems[key] = row.checked === true;
     itemIds[key] = row.id;
   });
@@ -162,17 +166,14 @@ function applyRemovalById(id) {
   }
 
   const manualItems = [];
-  (window._shopManualItems || []).forEach((name, i) => {
-    const rowId = window._shopItemIds?.[`manual::${i}`];
+  (window._shopManualItems || []).forEach((name) => {
+    const key = `manual::${name}`;
+    const rowId = window._shopItemIds?.[key];
     if (rowId === id) { found = true; return; }
-    itemIds[`manual::${manualItems.length}`] = rowId;
+    itemIds[key] = rowId;
+    if (window._checkedItems?.[key] !== undefined) checkedItems[key] = window._checkedItems[key];
     manualItems.push(name);
   });
-  // Manuella bock-nycklar är textbaserade i renderingen — bevara dem
-  for (const name of manualItems) {
-    const tk = `manual::${name}`;
-    if (window._checkedItems?.[tk] !== undefined) checkedItems[tk] = window._checkedItems[tk];
-  }
 
   if (!found) return false;
 
@@ -349,16 +350,21 @@ function updateNameInMemory(id, newName) {
     if (window._shopRecipeItems?.[cat]) window._shopRecipeItems[cat][idx] = newName;
     return false;
   }
-  const mm = key.match(/^manual::(\d+)$/);
+  const mm = key.match(/^manual::(.+)$/);
   if (mm) {
-    const idx = parseInt(mm[1], 10);
-    const oldName = window._shopManualItems?.[idx];
-    if (window._shopManualItems) window._shopManualItems[idx] = newName;
-    if (oldName != null && oldName !== newName) {
+    const oldName = mm[1];
+    const idx = (window._shopManualItems || []).indexOf(oldName);
+    if (idx !== -1) window._shopManualItems[idx] = newName;
+    if (oldName !== newName) {
       const oldK = `manual::${oldName}`, newK = `manual::${newName}`;
+      // Flytta både bock-state och id-mappning till den nya namn-nyckeln.
       if (window._checkedItems?.[oldK] !== undefined) {
         window._checkedItems[newK] = window._checkedItems[oldK];
         delete window._checkedItems[oldK];
+      }
+      if (window._shopItemIds?.[oldK] !== undefined) {
+        window._shopItemIds[newK] = window._shopItemIds[oldK];
+        delete window._shopItemIds[oldK];
       }
     }
     return true;
@@ -461,10 +467,10 @@ export function renderFullShoppingList(recipeItems, manualItems) {
   }
 
   if (manualItems.length > 0) {
-    const manualHtml = manualItems.map((item, idx) => {
+    const manualHtml = manualItems.map((item) => {
       const key     = `manual::${item}`;
       const checked = window._checkedItems[key] || false;
-      const rowId   = window._shopItemIds?.[`manual::${idx}`];
+      const rowId   = window._shopItemIds?.[key];
       return `<li class="shopping-item${checked ? ' checked' : ''}"
                   data-key="${escapeHtml(key)}"
                   onclick="toggleShopItem(this,this.dataset.key)">
@@ -579,8 +585,7 @@ export async function addManualItem(inputId = 'manualItemInput', btnId = 'manual
 }
 
 export async function removeManualItem(item) {
-  const idx = (window._shopManualItems || []).indexOf(item);
-  const id = idx === -1 ? null : window._shopItemIds?.[`manual::${idx}`];
+  const id = window._shopItemIds?.[`manual::${item}`];
   if (!id) { window.showToast('Kunde inte ta bort varan — prova igen.', { type: 'error' }); return; }
   try {
     await deleteWithUndo(id);

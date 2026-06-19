@@ -65,7 +65,7 @@ function renderBrandPills() {
   const container = document.getElementById("brandPills");
   if (!container) return;
   container.innerHTML = prefs.blockedBrands
-    .map((b) => `<span class="pref-pill">${escapeHtml(b)}<button class="pref-pill-x" onclick="removeBrand('${escapeHtml(b)}')">&times;</button></span>`)
+    .map((b) => `<span class="pref-pill">${escapeHtml(b)}<button class="pref-pill-x" data-brand="${escapeHtml(b)}" onclick="removeBrand(this.dataset.brand)">&times;</button></span>`)
     .join("");
 }
 
@@ -98,7 +98,7 @@ export function renderPreferencesUI() {
   const cats = getShoppingCategories();
 
   const brandPillsHtml = prefs.blockedBrands
-    .map((b) => `<span class="pref-pill">${escapeHtml(b)}<button class="pref-pill-x" onclick="removeBrand('${escapeHtml(b)}')">&times;</button></span>`)
+    .map((b) => `<span class="pref-pill">${escapeHtml(b)}<button class="pref-pill-x" data-brand="${escapeHtml(b)}" onclick="removeBrand(this.dataset.brand)">&times;</button></span>`)
     .join("");
 
   const organicToggles = cats.map((cat) => {

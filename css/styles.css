@@ -3902,6 +3902,9 @@ body.week-deluxe #timelineNav,
 body.week-deluxe .timeline-outer,
 body.week-deluxe #customBulkBanner { display: none !important; }
 body.week-deluxe .week-meta { display: none; }
+/* Bekräfta-/kassera-raden flyttas in i premiumflödet (sista .dlx-sec) — ge den
+   lite luft så den läses som "under sista dagskortet", inte hopklistrad. */
+#weekDeluxe > .dlx-sec[data-sec="confirm"] .confirm-plan-wrap { margin-top: 0.6rem; }
 
 /* ── Hero ── */
 .dlx-hero {
@@ -4059,8 +4062,19 @@ html { scroll-snap-type: y proximity; }
   border-radius: 18px;
   cursor: pointer;
   transition: box-shadow 0.22s, border-color 0.22s, transform 0.12s;
-  animation: dlxFadeIn 0.4s ease both;
 }
+/* Entré-fade spelas BARA en gång när matsedeln först visas (#weekDeluxe.dlx-enter),
+   inte på varje omrendering. Annars re-fadear hela dagslistan vid varje
+   utfällning (setSec byter ut 'days'-sektionens innerHTML) — ett flimmer. */
+#weekDeluxe.dlx-enter .dlx-day { animation: dlxFadeIn 0.4s ease both; }
+/* Stegvis intoning av dagslistan vid engångs-entrén. nth-of-type räknar bara
+   <article>-korten (vecko-avdelare/släppzoner är div/button) → rätt kaskad
+   även med inskjutna avdelare. Capad vid kort 6 så listan inte släpar. */
+#weekDeluxe.dlx-enter .dlx-days > .dlx-day:nth-of-type(2) { animation-delay: 0.05s; }
+#weekDeluxe.dlx-enter .dlx-days > .dlx-day:nth-of-type(3) { animation-delay: 0.10s; }
+#weekDeluxe.dlx-enter .dlx-days > .dlx-day:nth-of-type(4) { animation-delay: 0.15s; }
+#weekDeluxe.dlx-enter .dlx-days > .dlx-day:nth-of-type(5) { animation-delay: 0.20s; }
+#weekDeluxe.dlx-enter .dlx-days > .dlx-day:nth-of-type(n+6) { animation-delay: 0.25s; }
 @keyframes dlxFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .dlx-day:active { transform: scale(0.992); }
 .dlx-day:hover { box-shadow: 0 10px 26px -18px rgba(44,63,51,0.5); border-color: var(--birch); }
@@ -4998,4 +5012,16 @@ body.cook-open { overflow: hidden; }
   0%   { box-shadow: 0 0 0 3px var(--lichen); background-color: var(--moss-soft); }
   60%  { box-shadow: 0 0 0 3px rgba(122,148,130,0.35); }
   100% { box-shadow: 0 0 0 0 rgba(122,148,130,0); }
+}
+
+/* Respektera OS-inställningen "reducera rörelse" — neutralisera animationer och
+   övergångar (men behåll slut-tillstånd). Appen driver scroll/snap i JS via
+   rAF, inte transitionend, så inget logikflöde bryts. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
