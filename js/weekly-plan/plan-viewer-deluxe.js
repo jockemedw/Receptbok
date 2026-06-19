@@ -587,7 +587,8 @@ export function renderDeluxe() {
   if (!window._dlxEntered && document.body.dataset.activeTab === 'vecka') {
     window._dlxEntered = true;
     host.classList.add('dlx-enter');
-    setTimeout(() => host.classList.remove('dlx-enter'), 700);
+    // Längre än sista kortets delay (0.25s) + faden (0.4s) så kaskaden hinner klart.
+    setTimeout(() => host.classList.remove('dlx-enter'), 900);
   }
 }
 
