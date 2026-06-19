@@ -4059,8 +4059,11 @@ html { scroll-snap-type: y proximity; }
   border-radius: 18px;
   cursor: pointer;
   transition: box-shadow 0.22s, border-color 0.22s, transform 0.12s;
-  animation: dlxFadeIn 0.4s ease both;
 }
+/* Entré-fade spelas BARA en gång när matsedeln först visas (#weekDeluxe.dlx-enter),
+   inte på varje omrendering. Annars re-fadear hela dagslistan vid varje
+   utfällning (setSec byter ut 'days'-sektionens innerHTML) — ett flimmer. */
+#weekDeluxe.dlx-enter .dlx-day { animation: dlxFadeIn 0.4s ease both; }
 @keyframes dlxFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .dlx-day:active { transform: scale(0.992); }
 .dlx-day:hover { box-shadow: 0 10px 26px -18px rgba(44,63,51,0.5); border-color: var(--birch); }
@@ -4998,4 +5001,16 @@ body.cook-open { overflow: hidden; }
   0%   { box-shadow: 0 0 0 3px var(--lichen); background-color: var(--moss-soft); }
   60%  { box-shadow: 0 0 0 3px rgba(122,148,130,0.35); }
   100% { box-shadow: 0 0 0 0 rgba(122,148,130,0); }
+}
+
+/* Respektera OS-inställningen "reducera rörelse" — neutralisera animationer och
+   övergångar (men behåll slut-tillstånd). Appen driver scroll/snap i JS via
+   rAF, inte transitionend, så inget logikflöde bryts. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

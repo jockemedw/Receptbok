@@ -580,6 +580,15 @@ export function renderDeluxe() {
     window._dlxDidSnap = true;
     requestAnimationFrame(() => snapToHero());
   }
+
+  // Entré-reveal: korten fade:as in EN gång när matsedeln först visas. Klassen
+  // sitter på det persistenta värdelementet (inte korten, som återskapas vid
+  // varje omrendering) → ingen re-fade-flimmer när man fäller ut/byter dag.
+  if (!window._dlxEntered && document.body.dataset.activeTab === 'vecka') {
+    window._dlxEntered = true;
+    host.classList.add('dlx-enter');
+    setTimeout(() => host.classList.remove('dlx-enter'), 700);
+  }
 }
 
 // Positionerar vyn så att heron ligger precis under headern → historiken
