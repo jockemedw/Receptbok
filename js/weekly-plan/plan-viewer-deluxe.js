@@ -57,6 +57,8 @@ function applyMode(mode) {
 function setMode(mode) {
   try { localStorage.setItem(STORAGE_KEY, mode); } catch { /* strunt */ }
   applyMode(mode);
+  // Flytta bekräfta/kassera-raden till rätt vy direkt (renderDeluxe körs inte här).
+  relocateConfirmRow();
   if (mode === 'classic' && window.centerTodayCard) {
     requestAnimationFrame(() => window.centerTodayCard({ smooth: false }));
   }
@@ -581,6 +583,12 @@ export function renderDeluxe() {
     requestAnimationFrame(() => snapToHero());
   }
 
+  // Bekräfta-/kassera-raden hör hemma i den klassiska .week-section, men i
+  // premiumvyn ska den synas direkt under sista dagskortet — inte ligga kvar som
+  // en lös rad efter dagslistan (och före ingredienssektionen). Flytta in själva
+  // noden så den blir sista sektionen i flödet; återställs i klassisk vy.
+  relocateConfirmRow();
+
   // Entré-reveal: korten fade:as in EN gång när matsedeln först visas. Klassen
   // sitter på det persistenta värdelementet (inte korten, som återskapas vid
   // varje omrendering) → ingen re-fade-flimmer när man fäller ut/byter dag.
@@ -589,6 +597,32 @@ export function renderDeluxe() {
     host.classList.add('dlx-enter');
     // Längre än sista kortets delay (0.25s) + faden (0.4s) så kaskaden hinner klart.
     setTimeout(() => host.classList.remove('dlx-enter'), 900);
+  }
+}
+
+// Placerar #confirmPlanWrap (bekräfta/kassera) rätt beroende på vy:
+//  • Premium  → sista sektionen INUTI #weekDeluxe, direkt efter dagslistan.
+//  • Klassisk → tillbaka till ursprungsplatsen (precis före receptdetalj-panelen).
+// Samma DOM-nod flyttas i båda fallen → knappar, id:n och onclick-handlers bevaras
+// (ingen dubblering, inga krockande id:n).
+function relocateConfirmRow() {
+  const wrap = document.getElementById('confirmPlanWrap');
+  if (!wrap) return;
+  const host = document.getElementById('weekDeluxe');
+  if (document.body.classList.contains('week-deluxe') && host) {
+    let slot = host.querySelector(':scope > .dlx-sec[data-sec="confirm"]');
+    if (!slot) {
+      slot = document.createElement('div');
+      slot.className = 'dlx-sec';
+      slot.dataset.sec = 'confirm';
+    }
+    // appendChild flyttar slotten sist (efter 'days') även om den redan fanns.
+    if (slot !== host.lastElementChild) host.appendChild(slot);
+    if (wrap.parentElement !== slot) slot.appendChild(wrap);
+  } else {
+    // Klassisk vy: tillbaka till ursprungspositionen i .week-section.
+    const detail = document.getElementById('weekRecipeDetail');
+    if (detail && wrap.nextElementSibling !== detail) detail.before(wrap);
   }
 }
 

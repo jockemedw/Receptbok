@@ -339,6 +339,34 @@ assertFalse(rejectsMatch("ost", { name: "Parmesan Lagrad 24 Månader", brandLine
   assertEq(weightedSaving([], 25), 25, "värdevikt: tom matchlista faller till total");
 }
 
+// ─── Stapelvaror nedviktas: ris lyfter ej recept över protein (Session 100) ──
+{
+  // Ris kan ha hyggligt ordinariepris (1 kg-paket ~40 kr) → prisvikten ensam
+  // dämpar det INTE. Stapel-penaltyn ska ändå se till att en rea på ris rankas
+  // under en lika stor proteinrea (kyckling) OCH under en mejerirea (fetaost).
+  assertTrue(
+    weightedSaving([{ canon: "ris", savingPerUnit: 20, regularPrice: 40 }], 20) <
+    weightedSaving([{ canon: "kyckling", savingPerUnit: 20, regularPrice: 40 }], 20),
+    "stapel: ris-besparing (20 kr) viktas under en lika stor kycklingbesparing");
+  assertTrue(
+    weightedSaving([{ canon: "ris", savingPerUnit: 20, regularPrice: 40 }], 20) <
+    weightedSaving([{ canon: "fetaost", savingPerUnit: 20, regularPrice: 40 }], 20),
+    "stapel: ris-besparing (20 kr) viktas under en lika stor fetaost-besparing");
+
+  // I Veckans fynd hamnar ett rent ris-recept under en proteinrea trots samma
+  // rå kr-besparing — visad besparing oförändrad.
+  const savingsById = {
+    1: { total: 20, matches: [{ canon: "ris",      savingPerUnit: 20, regularPrice: 40 }] },
+    2: { total: 18, matches: [{ canon: "fetaost",  savingPerUnit: 18, regularPrice: 35 }] },
+  };
+  const lookup = (id) => ({ 1: { id: 1, title: "Risrätt", protein: "vegetarisk" },
+                            2: { id: 2, title: "Fetaostsallad", protein: "vegetarisk" } }[id]);
+  const cands = buildDealCandidates(savingsById, [], lookup);
+  assertEq(cands[0].recipeId, 2, "stapel: fetaost-recept rankas före rent ris-recept trots lägre rå kr");
+  assertEq(cands[0].saving, 18, "stapel: visad besparing oförändrad (18) för fetaosten");
+  assertEq(cands[1].saving, 20, "stapel: visad besparing oförändrad (20) för riset");
+}
+
 // ─── Veckans fynd: huvudprotein-sortering + variation (Session 96) ──
 {
   const savingsById = {

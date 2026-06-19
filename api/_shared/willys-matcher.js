@@ -257,6 +257,18 @@ const PROTEIN_BOOST = 1.5;       // extra lyft när canon är ett protein (kött
 // (kycklingFILÉ, nötFÄRS, fläskKARRÉ) och plural utan att räkna upp varje canon.
 const PROTEIN_CANON_RE = /färs|kyckling|fläsk|kött|biff|karré|kassler|kotlett|skinka|bacon|korv|lax|torsk|sej|fisk|räk|skaldjur|kalkon|lamm|revben|filé/i;
 
+// Billiga skafferi-stapelvaror (ris, pasta, nudlar, couscous, bulgur …) ska
+// ALDRIG lyfta ett recept över en proteinrea (Joakim, Session 100: "ris rankas
+// över kyckling och fetaost"). Prisvikten ensam räcker inte — ett 1 kg-rispaket
+// kan ha ordinariepris ~40 kr → vikt ~1.0, alltså INGEN nedviktning som billig
+// vitlök/lök får. Vi dämpar därför stapelstärkelserna explicit (motsatsen till
+// protein-boosten). Påverkar ENBART rankning, aldrig visad kr-besparing.
+const STAPLE_PENALTY = 0.3;
+const STAPLE_CANONS = new Set([
+  "ris", "risotto-ris", "farro", "bulgur", "matvete", "couscous", "nudlar",
+  "pasta", "spaghetti", "makaroner", "penne", "tagliatelle", "lasagneplattor",
+]);
+
 // Vikt för en enskild rea-träff. bulkWeight (storpack) bevarad från Session 93.
 function valueWeight(match, bulkWeight) {
   const price = typeof match.regularPrice === "number" ? match.regularPrice : null;
@@ -264,6 +276,7 @@ function valueWeight(match, bulkWeight) {
   if (w < MIN_VALUE_WEIGHT) w = MIN_VALUE_WEIGHT;
   if (w > MAX_VALUE_WEIGHT) w = MAX_VALUE_WEIGHT;
   if (match.canon && PROTEIN_CANON_RE.test(match.canon)) w *= PROTEIN_BOOST;
+  if (match.canon && STAPLE_CANONS.has(match.canon)) w *= STAPLE_PENALTY;
   if (match.bulk) w *= bulkWeight;                    // storpack förbrukas sällan helt
   return w;
 }

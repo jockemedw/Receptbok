@@ -3902,6 +3902,9 @@ body.week-deluxe #timelineNav,
 body.week-deluxe .timeline-outer,
 body.week-deluxe #customBulkBanner { display: none !important; }
 body.week-deluxe .week-meta { display: none; }
+/* Bekräfta-/kassera-raden flyttas in i premiumflödet (sista .dlx-sec) — ge den
+   lite luft så den läses som "under sista dagskortet", inte hopklistrad. */
+#weekDeluxe > .dlx-sec[data-sec="confirm"] .confirm-plan-wrap { margin-top: 0.6rem; }
 
 /* ── Hero ── */
 .dlx-hero {
