@@ -605,22 +605,73 @@ function snapToHero() {
 }
 
 // ── Interaktion ───────────────────────────────────────────────────────────────
+function prefersReducedMotion() {
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true;
+}
+
+// Mjuk höjd-animering vid ut-/infällning. Diff-renderingen (setSec) äger DOM:en
+// och bygger om hela 'days'-sektionen vid varje toggle, så detaljen poppar
+// annars in/ut tvärt. Vi animerar height på det enskilda kortets .dlx-detail —
+// helt lokalt, kan inte återintroducera listflimret (som rörde ALLA kort).
+function expandDetailHeight(detail) {
+  // Sätt 0 SYNKRONT (före paint) så detaljen inte blinkar fram i full höjd
+  // först. scrollHeight rapporterar ändå innehållets höjd trots height:0.
+  detail.style.overflow = 'hidden';
+  detail.style.height = '0px';
+  requestAnimationFrame(() => {
+    detail.style.transition = 'height 0.28s ease';
+    detail.style.height = detail.scrollHeight + 'px';
+  });
+  const cleanup = () => {
+    detail.style.height = '';
+    detail.style.overflow = '';
+    detail.style.transition = '';
+  };
+  detail.addEventListener('transitionend', cleanup, { once: true });
+}
+
+function collapseDetailHeight(detail, done) {
+  detail.style.overflow = 'hidden';
+  detail.style.height = detail.scrollHeight + 'px';
+  detail.getBoundingClientRect();
+  detail.style.transition = 'height 0.22s ease';
+  detail.style.height = '0px';
+  let finished = false;
+  const finish = () => { if (finished) return; finished = true; done(); };
+  detail.addEventListener('transitionend', finish, { once: true });
+  setTimeout(finish, 300);                  // fallback om transitionend uteblir
+}
+
 window.dlxToggleDay = function (date) {
   if (window._dlxSwap) { dlxPickSwapTarget(date); return; }
   if (window._dlxMove) return;   // i flytta-läge är bara släppzonerna klickbara
-  window._dlxExpanded = (window._dlxExpanded === date) ? null : date;
-  renderDeluxe();
-  if (window._dlxExpanded === date) {
-    requestAnimationFrame(() => {
-      const el = document.querySelector(`#weekDeluxe [data-date="${date}"]`);
-      if (el) {
-        const hh = document.querySelector('header')?.offsetHeight || 0;
-        const top = el.getBoundingClientRect().top + window.scrollY - hh - 12;
-        if (window.smoothScrollTo) window.smoothScrollTo(top, 360);
-        else window.scrollTo({ top, behavior: 'smooth' });
-      }
-    });
+
+  const opening = window._dlxExpanded !== date;
+
+  // Stänga: animera ihop det öppna kortet FÖRE omrenderingen (som tar bort det).
+  if (!opening) {
+    const open = document.querySelector(`#weekDeluxe [data-date="${date}"].expanded .dlx-detail`);
+    // Skydda mot kapplöpning: om man hinner öppna ett annat kort medan detta
+    // animeras ihop ska den fördröjda callbacken inte stänga det nya kortet.
+    const reRender = () => { if (window._dlxExpanded === date) { window._dlxExpanded = null; renderDeluxe(); } };
+    if (open && !prefersReducedMotion()) collapseDetailHeight(open, reRender);
+    else reRender();
+    return;
   }
+
+  // Öppna: rendera in detaljen, sätt höjd 0 synkront + animera upp, scrolla in.
+  window._dlxExpanded = date;
+  renderDeluxe();
+  const el = document.querySelector(`#weekDeluxe [data-date="${date}"]`);
+  const detail = el?.querySelector('.dlx-detail');
+  if (detail && !prefersReducedMotion()) expandDetailHeight(detail);
+  requestAnimationFrame(() => {
+    if (!el) return;
+    const hh = document.querySelector('header')?.offsetHeight || 0;
+    const top = el.getBoundingClientRect().top + window.scrollY - hh - 12;
+    if (window.smoothScrollTo) window.smoothScrollTo(top, 360);
+    else window.scrollTo({ top, behavior: 'smooth' });
+  });
 };
 
 
