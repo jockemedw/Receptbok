@@ -40,6 +40,7 @@ pdf-pages/
 
 # Willys cart PoC (Session 36) — cookies är privata
 scripts/.willys-cookies.local
+scripts/.hemkop-cookies.local
 scripts/willys-cart-poc-*.log
 
 # Dishingouthealth-scrape (Session 43) — engångs-import-artefakter
