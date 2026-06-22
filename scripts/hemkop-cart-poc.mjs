@@ -2,8 +2,11 @@
 // Spegling av scripts/willys-cart-poc.mjs (Session 37).
 //
 // Körs manuellt:  node scripts/hemkop-cart-poc.mjs [söktermin]
-// Läser cookies/CSRF/butiks-ID från scripts/.hemkop-cookies.local (gitignorerad):
-//   { "cookie": "<full cookie-sträng>", "csrf": "<x-csrf-token>", "storeId": "<id>" }
+// Cred-källor (i prioritetsordning, båda gitignorerade):
+//   1. scripts/.hemkop-curl.local  — rå "Copy as cURL" (Windows-cmd) från addProducts-anropet.
+//      cookie + x-csrf-token parsas ut automatiskt. Butiks-ID kan inte härledas härur.
+//   2. scripts/.hemkop-cookies.local — JSON { "cookie", "csrf", "storeId" }.
+// storeId är valfritt; saknas det hoppas erbjudande-proben (ej kärnan i frågan).
 //
 // PoC:n lägger EN vara i korgen och verifierar. Ingen checkout, ingen tömning.
 
@@ -13,16 +16,38 @@ import { dirname, join } from "node:path";
 
 const BASE = "https://www.hemkop.se";
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36";
-const CREDS_FILE = join(dirname(fileURLToPath(import.meta.url)), ".hemkop-cookies.local");
+const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
+const CREDS_FILE = join(SCRIPT_DIR, ".hemkop-cookies.local");
+const CURL_FILE = join(SCRIPT_DIR, ".hemkop-curl.local");
+
+// Plockar cookie + x-csrf-token ur en rå Windows-cmd "Copy as cURL".
+// Chrome-cmd escapar varje specialtecken med caret (^); att ta bort alla
+// caret-tecken återställer den avsedda strängen ( ^%^2F → %2F, ^" → " osv).
+function parseCurl(raw) {
+  const clean = raw.replace(/\^/g, "");
+  const cookie = clean.match(/-b "([^"]+)"/)?.[1];
+  const csrf = clean.match(/-H "x-csrf-token:\s*([^"]+)"/i)?.[1];
+  if (!cookie) throw new Error(`${CURL_FILE} saknar en -b "..."-cookie-sträng.`);
+  if (!csrf) throw new Error(`${CURL_FILE} saknar en x-csrf-token-header.`);
+  return { cookie, csrf, storeId: null };
+}
 
 async function loadCreds() {
+  // 1. cURL-fil (om den finns) — parsa cookie + csrf.
+  try {
+    const raw = await readFile(CURL_FILE, "utf8");
+    return parseCurl(raw);
+  } catch (err) {
+    if (err.code !== "ENOENT") throw err; // parse-fel ska bubbla upp
+  }
+  // 2. JSON-fil.
   let raw;
   try {
     raw = await readFile(CREDS_FILE, "utf8");
   } catch {
     throw new Error(
-      `Hittar inte ${CREDS_FILE}. Skapa filen med { "cookie": "...", "csrf": "...", "storeId": "..." } ` +
-      `— se docs/superpowers/specs/2026-06-22-hemkop-poc-design.md för devtools-proceduren.`
+      `Hittar varken ${CURL_FILE} eller ${CREDS_FILE}. Klistra in "Copy as cURL" i den förra, ` +
+      `eller skapa den senare med { "cookie": "...", "csrf": "...", "storeId": "..." }.`
     );
   }
   let parsed;
@@ -31,12 +56,12 @@ async function loadCreds() {
   } catch {
     throw new Error(`${CREDS_FILE} är inte giltig JSON.`);
   }
-  for (const field of ["cookie", "csrf", "storeId"]) {
+  for (const field of ["cookie", "csrf"]) {
     if (!parsed[field] || typeof parsed[field] !== "string") {
       throw new Error(`${CREDS_FILE} saknar fältet "${field}" (eller det är tomt).`);
     }
   }
-  return { cookie: parsed.cookie, csrf: parsed.csrf, storeId: parsed.storeId };
+  return { cookie: parsed.cookie, csrf: parsed.csrf, storeId: parsed.storeId || null };
 }
 
 function baseHeaders(creds, extra = {}) {
@@ -85,7 +110,9 @@ async function probeSearch(creds, term) {
 }
 
 // [4b] Erbjudanden: campaigns-endpoint med butiks-ID → kampanj-array.
+// Hoppas (pass=null) om butiks-ID saknas — den frågan är sekundär.
 async function probeOffers(creds) {
+  if (!creds.storeId) return { pass: null, status: null, count: 0 };
   const url = `${BASE}/search/campaigns/online?q=${creds.storeId}&type=PERSONAL_GENERAL&page=0&size=500`;
   const res = await fetch(url, { headers: baseHeaders(creds, { accept: "application/json" }) });
   if (res.status !== 200) {
@@ -138,7 +165,7 @@ async function probeAddAndVerify(creds, code) {
 async function main() {
   const creds = await loadCreds();
   const term = process.argv[2] || "mjölk";
-  console.log(`Hemköp-PoC mot ${BASE} (store ${creds.storeId}, sökterm "${term}")\n`);
+  console.log(`Hemköp-PoC mot ${BASE} (store ${creds.storeId || "—"}, sökterm "${term}")\n`);
 
   const rows = [];
 
@@ -149,7 +176,8 @@ async function main() {
   rows.push(["4a. Sök (GET /search)", search.pass, `status ${search.status}, kod ${search.code || "—"}`]);
 
   const offers = await probeOffers(creds);
-  rows.push(["4b. Erbjudanden (campaigns)", offers.pass, `status ${offers.status}, antal ${offers.count}`]);
+  rows.push(["4b. Erbjudanden (campaigns)", offers.pass,
+    offers.pass === null ? "hoppad — inget butiks-ID i cURL" : `status ${offers.status}, antal ${offers.count}`]);
 
   if (search.code) {
     const av = await probeAddAndVerify(creds, search.code);
@@ -162,9 +190,12 @@ async function main() {
 
   console.log("\n─── Sammanfattning ───");
   for (const [label, pass, detail] of rows) {
-    console.log(`  ${pass ? "PASS" : "FAIL"}  ${label}  (${detail})`);
+    const tag = pass === null ? "SKIP" : pass ? "PASS" : "FAIL";
+    console.log(`  ${tag}  ${label}  (${detail})`);
   }
-  const allPass = rows.every(([, pass]) => pass);
+  // SKIP-rader (null) räknas inte mot verdict:et — bara äkta PASS/FAIL.
+  const graded = rows.filter(([, pass]) => pass !== null);
+  const allPass = graded.every(([, pass]) => pass);
   console.log(`\n${allPass ? "ALLA PASS — Hemköp-dispatch genomförbar." : "DELVIS/FAIL — se rader ovan + loggade rå-svar."}`);
 }
 
