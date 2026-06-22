@@ -121,7 +121,14 @@ async function probeAddAndVerify(creds, code) {
   const verRes = await fetch(`${BASE}/axfood/rest/cart`, { method: "GET", headers: baseHeaders(creds) });
   let entries = [];
   if (verRes.status === 200) {
-    try { const d = JSON.parse(await verRes.text()); entries = d.entries || d.products || []; } catch { /* ej JSON */ }
+    let d = null;
+    try { d = JSON.parse(await verRes.text()); } catch { /* ej JSON */ }
+    entries = d?.entries || d?.products || [];
+    if (entries.length === 0 && d) {
+      console.log(`  verify: korgen saknar kända fält (entries/products) — faktiska nycklar: ${Object.keys(d).join(", ")}`);
+    }
+  } else {
+    console.log(`  verify oväntat svar (${verRes.status}): ${await bodyPreview(verRes)}`);
   }
   const landed = entries.some((e) => JSON.stringify(e).includes(code.split("_")[0]));
   const codeFormat = /_(st|kg)$/i.test(code) ? "matchar <id>_ST/_KG" : `avviker: "${code}"`;
