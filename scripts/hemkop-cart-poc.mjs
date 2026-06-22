@@ -144,11 +144,10 @@ async function main() {
   const offers = await probeOffers(creds);
   rows.push(["4b. Erbjudanden (campaigns)", offers.pass, `status ${offers.status}, antal ${offers.count}`]);
 
-  let addRow;
   if (search.code) {
     const av = await probeAddAndVerify(creds, search.code);
     rows.push(["1. Korg (POST addProducts)", av.addStatus === 200, `addStatus ${av.addStatus}`]);
-    rows.push(["3. Verify + kods-format", av.pass, `verify ${av.verifyStatus ?? "—"}, ${av.codeFormat}`]);
+    rows.push(["3. Verify + kods-format", av.pass, `verify ${av.verifyStatus ?? "—"}, ${av.codeFormat ?? "—"}`]);
   } else {
     rows.push(["1. Korg (POST addProducts)", false, "hoppad — ingen kod från sök"]);
     rows.push(["3. Verify + kods-format", false, "hoppad — ingen kod från sök"]);
