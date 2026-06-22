@@ -76,6 +76,8 @@ Inga bekräftade just nu.
 
 *(Willys+ medlemserbjudanden — löst Session 88: generiska klubbpriser, ingen inloggning behövs, ligger redan i `PERSONAL_GENERAL`-feeden. Se `docs/research-willys-plus-2026-06-16.md`.)*
 
+**Hemköp parallell dispatch (PoC klar 2026-06-23 — väntar på beslut att bygga):** Hemköp ligger på samma Axfood-plattform som Willys; korgfyllning är bekräftad genomförbar — `scripts/hemkop-cart-poc.mjs` gav skarpt 200 på auth/sök/addProducts/verify, kod landade i korgen, format `<id>_ST`. Spec: `docs/superpowers/specs/2026-06-22-hemkop-poc-design.md`. Att bygga featuren ("Skicka till Hemköp" parallellt med Willys, två knappar i inköpslistan): (1) parametrisera bas-URL i `willys-cart-client`/`-search`/`-offers` → delade `axfood-*`-klienter; (2) separat Hemköp-cookie-uppsättning — gist-schema per butik + extensionen utökas att fånga `hemkop.se`-cookies; (3) butiksval-UI. **Öppen detalj:** Hemköp-butiks-ID behövs för erbjudande-/rea-matchning (campaigns-endpoint) — fanns ej i PoC-cURL:en, fråga användaren vid bygge. PoC-verktyget körs med rå "Copy as cURL" i `scripts/.hemkop-curl.local`.
+
 ### Claudes idéer
 - "Veckans vinnare"-vy — familjen röstar på bästa receptet varje vecka, bygger favoritdata
 - Portionsskalning i matlagningsläget — ×0.5/×2 räknar om mängderna i ingredienslistan
