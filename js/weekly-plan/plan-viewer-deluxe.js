@@ -47,13 +47,14 @@ let _injected = false;
 function ensureScaffold() {
   if (_injected) return true;
   const content = document.getElementById('weekContent');
-  const timelineOuter = document.getElementById('timelineOuter');
-  if (!content || !timelineOuter) return false;
+  if (!content) return false;
 
-  // Premiumvyns container — direkt efter den klassiska tidslinjen.
+  // Premiumvyns container — placeras före bekräfta-rutan i weekContent.
   const host = document.createElement('div');
   host.id = 'weekDeluxe';
-  timelineOuter.after(host);
+  const confirmWrap = document.getElementById('confirmPlanWrap');
+  if (confirmWrap) confirmWrap.before(host);
+  else content.appendChild(host);
 
   _injected = true;
   // Premium är enda vyn — klassiska tidslinjen avvecklad. body.week-deluxe styr

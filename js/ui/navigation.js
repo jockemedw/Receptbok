@@ -11,9 +11,7 @@ export function switchTab(tab) {
   closeHeaderSearch();
   document.getElementById('fabImport').style.display              = tab === 'recept' ? 'block' : 'none';
   if (tab === 'shop') window.loadShoppingTab();
-  if (tab === 'vecka' && window.centerTodayCard) {
-    requestAnimationFrame(() => window.centerTodayCard({ smooth: false }));
-  }
+  // Veckovyn positioneras av premiumvyns egen switchTab-wrap (snapToHero).
   window.scrollTo({ top: 0 });
 }
 
