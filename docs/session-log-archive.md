@@ -1,6 +1,11 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–99. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–100. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 100 — Byt dag för egna anteckningar + todo-hook
+Joakim: (1) lägg en hook som alltid startar en todo-lista vid sessionsstart, (2) gör det möjligt att byta plats på dagar man inte har recept på (egna anteckningar). **(1)** Ny andra SessionStart-hook i `.claude/settings.json` som echo:ar en TODO-påminnelse. **(2)** Egna anteckningar (egen planering) lagras som `meal_days`-rader med `plan_id = null`; de blockerades förut från "Byt dag" i premiumvyn (`modeCls`, `dlxCustomClick`, `dlxPickSwapTarget`) och i backend (`/api/swap-days` läste bara aktiva plan-rader och avvisade flytt *till* en custom-dag med 409). Fix — scope per Joakim: **full byt dag, bara premiumvyn** (klassiska vyn lämnad orörd, togs bort i Session 101). Backend `swap-days.js` omskriven: läser båda dagarna oavsett `plan_id`, byter *fullt* innehåll (inkl. `plan_id` + `custom_note`) i en atomär upsert när båda finns, annars flyttar raden via datumbyte (matchar nu på household+datum, inte `plan_id`); returnerar `customDays` i svaret. Premiumvyn: `modeCls` gör `custom` bytbar, "Byt dag"-knapp i custom-detaljen, `dlxCustomClick` väljer mål, `window._customDays` speglas från svaret. Invariant bevarad: ett recept byter bara dag → inköpslistan rörs ej. Bumpat `app.js?v=110`, SW-cache v21. Tester gröna (day-ops 34, match, corpus, shopping, select 432, data-mapper).
 
 ---
 
