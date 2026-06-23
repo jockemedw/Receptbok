@@ -8,8 +8,6 @@ const ICON_COIN = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="cur
 const ICON_POT = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13c0-3.5 3.5-6 8-6s8 2.5 8 6"/><path d="M3 13h18"/><path d="M5.5 13v2c0 1.5 1 2.5 2.5 2.5h8c1.5 0 2.5-1 2.5-2.5v-2"/><path d="M11 4.5c0-.8.5-1.5 1-1.5s1 .7 1 1.5"/></svg>';
 const ICON_NOTE = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h11l3 3v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><path d="M8 11h8 M8 14h8 M8 17h5"/></svg>';
 const ICON_CALENDAR = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>';
-const ICON_SHUFFLE = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h3.5c1.2 0 2.3.6 3 1.6l5 7c.7 1 1.8 1.6 3 1.6H21"/><path d="M18 4l3 3-3 3"/><path d="M3 17h3.5c1.2 0 2.3-.6 3-1.6l.7-1M14.8 9.6l.7-1c.7-1 1.8-1.6 3-1.6H21"/><path d="M18 14l3 3-3 3"/></svg>';
-const ICON_PENCIL = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4l10-10a2 2 0 0 0-2.8-2.8L5 17v3z"/><path d="M13.5 6.5l4 4"/></svg>';
 
 // ── Realtime-prenumeration för matsedeln ──────────────────────────────────────
 let _planChannel = null;
@@ -43,7 +41,6 @@ const TIMELINE_DAYS_FORWARD_MIN = 14;
 const TIMELINE_DAYS_CAP = 45;
 const DAY_NAMES_SHORT = ['Sön', 'Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör'];
 const DAY_NAMES_LONG  = ['Söndag', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag'];
-const MONTH_NAMES_LONG = ['Januari', 'Februari', 'Mars', 'April', 'Maj', 'Juni', 'Juli', 'Augusti', 'September', 'Oktober', 'November', 'December'];
 
 function diffDaysIso(a, b) {
   const da = new Date(a + 'T12:00:00');
@@ -144,27 +141,6 @@ function buildTimeline(plan, archive, customDays) {
     });
   }
   return days;
-}
-
-// Centrerar en given dag (eller dagens kort som fallback) horisontellt i timeline-wrap.
-// scrollIntoView funkar dåligt när fliken är dold (display:none) — därför explicit scrollLeft.
-export function centerOnDate(dateIso, { smooth = true } = {}) {
-  const wrap = document.querySelector('.timeline-wrap');
-  if (!wrap) return;
-  let target = null;
-  if (dateIso) target = document.querySelector(`.week-day-card[data-date="${dateIso}"]`);
-  if (!target) target = document.querySelector('.week-day-card.today')
-                     || document.querySelector('.week-day-card:not(.past):not(.gap)');
-  if (!target) return;
-  const container = target.closest('.timeline-day') || target;
-  const wantScroll = container.offsetLeft
-                   - (wrap.clientWidth / 2)
-                   + (container.offsetWidth / 2);
-  wrap.scrollTo({ left: Math.max(0, wantScroll), behavior: smooth ? 'smooth' : 'auto' });
-}
-
-export function centerTodayCard(opts = {}) {
-  return centerOnDate(null, opts);
 }
 
 async function loadArchive() {
@@ -375,6 +351,7 @@ export async function selectRecipeForCustomDay(event, recipeId, title) {
     if (dbErr) throw dbErr;
     const updatedEntries = { ...(window._customDays?.entries || {}), [date]: { note: existing.note || '', recipeId, recipeTitle: title } };
     window._customDays = { entries: updatedEntries };
+    window._dlxEditCustom = null;
     exitCustomPickMode();
     renderWeeklyPlanData(
       window._lastPlan || null,
@@ -416,101 +393,15 @@ export function startPlanFromDate(dateIso) {
   if (window.updateSettingsPreview) window.updateSettingsPreview();
   if (window.toggleTrigger) window.toggleTrigger();
 
+  window._dlxExpanded = null;
   const panel = document.getElementById('weekRecipeDetail');
-  panel.classList.remove('open');
-  panel.innerHTML = '';
-  document.querySelectorAll('.week-day-card').forEach(c => c.classList.remove('selected'));
+  if (panel) { panel.classList.remove('open'); panel.innerHTML = ''; }
 
   const trigger = document.getElementById('triggerSection');
   if (trigger) {
     const hh = document.querySelector('header').offsetHeight || 0;
     const top = trigger.getBoundingClientRect().top + window.scrollY - hh - 8;
     window.smoothScrollTo(top, 380);
-  }
-}
-
-// ── Dagbyte ───────────────────────────────────────────────────────────────────
-
-// Capture-phase-lyssnare: när en swap-target klickas i swap-mode, hoppa över
-// kortets vanliga onclick (öppna recept / öppna fri dag / öppna custom-day)
-// och kör swapDays istället. Installeras en gång vid första enterSwapMode.
-let _swapClickHandlerInstalled = false;
-function installSwapClickHandler() {
-  if (_swapClickHandlerInstalled) return;
-  document.addEventListener('click', (e) => {
-    const card = e.target.closest('.week-day-card.swap-target');
-    if (!card) return;
-    const src = document.querySelector('.week-day-card.swap-source');
-    if (!src) return;
-    e.stopImmediatePropagation();
-    e.preventDefault();
-    swapDays(src.dataset.date, card.dataset.date);
-  }, true);
-  _swapClickHandlerInstalled = true;
-}
-
-export function enterSwapMode(fromDate) {
-  cancelSwapMode();
-  const fromCard = document.querySelector(`.week-day-card[data-date="${fromDate}"]`);
-  if (!fromCard) return;
-
-  const panel = document.getElementById('weekRecipeDetail');
-  panel.classList.remove('open');
-  panel.innerHTML = '';
-
-  installSwapClickHandler();
-
-  fromCard.classList.remove('selected');
-  fromCard.classList.add('swap-source');
-
-  const todayIso = new Date().toISOString().slice(0, 10);
-  document.querySelectorAll('.week-day-card').forEach(c => {
-    if (c === fromCard) return;
-    if (c.classList.contains('archive')) return;       // gamla planer = oföränderliga
-    if (c.classList.contains('custom')) return;        // egen planering hanteras separat
-    if (c.dataset.readonly === '1') return;
-    // Gap-dagar (utanför plan): bara framtida — historisk gap-dag är inget vettigt swap-mål
-    if (c.classList.contains('gap')) {
-      const d = c.dataset.date;
-      if (!d || d < todayIso) return;
-    }
-    c.classList.add('swap-target');
-  });
-}
-
-export function cancelSwapMode() {
-  document.querySelectorAll('.week-day-card.swap-source').forEach(c => c.classList.remove('swap-source'));
-  document.querySelectorAll('.week-day-card.swap-target').forEach(c => c.classList.remove('swap-target'));
-}
-
-export async function swapDays(date1, date2) {
-  cancelSwapMode();
-  document.querySelectorAll('.week-day-card').forEach(c => c.classList.remove('selected'));
-  const panel = document.getElementById('weekRecipeDetail');
-  panel.classList.remove('open');
-  panel.innerHTML = '';
-
-  try {
-    const res = await fetch('/api/swap-days', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date1, date2 }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Okänt fel');
-
-    const shop = data.shoppingList || null;
-    renderWeeklyPlanData(data.weeklyPlan, shop);
-    if (shop && window.renderShoppingData) {
-      window.renderShoppingData(shop);
-    }
-  } catch (e) {
-    const errEl = document.createElement('p');
-    errEl.style.cssText = 'color:var(--rust);font-size:0.82rem;padding:0.5rem 1rem';
-    errEl.textContent = e.message || 'Kunde inte byta dag — prova igen.';
-    panel.innerHTML = '';
-    panel.appendChild(errEl);
-    panel.classList.add('open');
   }
 }
 
@@ -528,215 +419,9 @@ function updateLastPlanDay(date, recipeId, recipe) {
   }
 }
 
-// Snabb-slumpa direkt från ett dagkort i tidslinjen (ej-bekräftad plan).
-// Läser nuvarande recept-id live från kortet (undviker inbakat förlegat id),
-// och gör en full re-render efteråt — precis som dagbyte — så att inget blir stale.
-export async function shuffleDay(date, btnEl) {
-  const card = document.querySelector(`.week-day-card[data-date="${date}"]`);
-  const currentId = card ? parseInt(card.dataset.recipeid, 10) : NaN;
-
-  btnEl.disabled = true;
-  btnEl.classList.add('is-loading');
-
-  const weekRecipeIds = Array.from(document.querySelectorAll('.week-day-card[data-recipeid]'))
-    .map(c => parseInt(c.dataset.recipeid, 10))
-    .filter(id => !isNaN(id));
-
-  try {
-    const res = await fetch('/api/replace-recipe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        date,
-        currentRecipeId: isNaN(currentId) ? undefined : currentId,
-        weekRecipeIds,
-      }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Okänt fel');
-
-    // Uppdatera plan-data i minnet → full re-render (konsekvent med dagbyte)
-    updateLastPlanDay(date, data.recipeId, data.recipe);
-    renderWeeklyPlanData(window._lastPlan, window._lastShop, false, window._planArchive, window._customDays);
-
-    // Re-öppna detaljpanelen för dagen med det nya receptet
-    const newCard = document.querySelector(`.week-day-card[data-date="${date}"]`);
-    if (newCard) openWeekRecipe(data.recipeId, data.recipe, newCard);
-  } catch (e) {
-    btnEl.disabled = false;
-    btnEl.classList.remove('is-loading');
-    const panel = document.getElementById('weekRecipeDetail');
-    if (panel) {
-      const errEl = document.createElement('p');
-      errEl.style.cssText = 'color:var(--rust);font-size:0.82rem;padding:0.5rem 1rem';
-      errEl.textContent = 'Kunde inte byta recept — prova igen.';
-      panel.innerHTML = '';
-      panel.appendChild(errEl);
-      panel.classList.add('open');
-    }
-  }
-}
-
-export async function replaceRecipe(currentId, date, btnEl) {
-  btnEl.disabled    = true;
-  btnEl.textContent = 'Letar recept…';
-
-  const weekRecipeIds = Array.from(document.querySelectorAll('.week-day-card[data-recipeid]'))
-    .map(c => parseInt(c.dataset.recipeid, 10))
-    .filter(id => !isNaN(id));
-
-  try {
-    const res = await fetch('/api/replace-recipe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date, currentRecipeId: currentId, weekRecipeIds }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Okänt fel');
-
-    const selectedCard = document.querySelector('.week-day-card.selected');
-    if (selectedCard) {
-      selectedCard.dataset.recipeid = data.recipeId;
-      selectedCard.querySelector('.week-day-recipe').textContent = data.recipe;
-      updateLastPlanDay(selectedCard.dataset.date || date, data.recipeId, data.recipe);
-      selectedCard.classList.remove('selected');
-      openWeekRecipe(data.recipeId, data.recipe, selectedCard);
-    }
-    if (data.shoppingList) {
-      window.renderIngredientPreview(
-        data.shoppingList.recipeItems || null,
-        data.shoppingList.recipeItemsMovedAt || null,
-        false
-      );
-      if (window.renderShoppingData) window.renderShoppingData(data.shoppingList);
-    }
-  } catch (e) {
-    btnEl.disabled    = false;
-    btnEl.textContent = 'Slumpa nytt recept';
-    const panel  = document.getElementById('weekRecipeDetail');
-    const errEl  = panel.querySelector('.replace-error');
-    if (!errEl) {
-      const p = document.createElement('p');
-      p.className    = 'replace-error';
-      p.style.cssText = 'color:var(--rust);font-size:0.82rem;margin-top:0.5rem';
-      p.textContent   = 'Kunde inte byta recept — prova igen.';
-      btnEl.after(p);
-    }
-  }
-}
-
-// ── Detaljpanel ───────────────────────────────────────────────────────────────
-
-export function openWeekRecipe(recipeId, title, cardEl) {
-  if (cardEl.classList.contains('swap-target')) {
-    const fromDate = document.querySelector('.week-day-card.swap-source')?.dataset.date;
-    if (fromDate) swapDays(fromDate, cardEl.dataset.date);
-    return;
-  }
-
-  const panel          = document.getElementById('weekRecipeDetail');
-  const alreadySelected = cardEl.classList.contains('selected');
-  cancelSwapMode();
-  document.querySelectorAll('.week-day-card').forEach(c => c.classList.remove('selected'));
-
-  if (alreadySelected) {
-    panel.classList.remove('open');
-    panel.innerHTML = '';
-    return;
-  }
-
-  const r = recipeId ? window.RECIPES.find(x => x.id === recipeId) : null;
-  if (!r) { window.jumpToRecipe(title); return; }
-
-  cardEl.classList.add('selected');
-
-  const t        = r.time ? (r.timeNote ? `${r.time} min · ${r.timeNote}` : `${r.time} min`) : '';
-  const ingHtml  = (r.ingredients || []).map(i => `<li>${esc(i)}</li>`).join('');
-  const stepsHtml = (r.instructions || []).map(s =>
-    `<li onclick="toggleStep(this)"><span>${esc(s)}</span></li>`
-  ).join('');
-  const notesHtml = r.notes
-    ? `<div class="detail-section"><p class="recipe-notes">${esc(r.notes)}</p></div>` : '';
-  const date    = cardEl.dataset.date || '';
-  const dayName = cardEl.dataset.day  || '';
-
-  const PROTEIN_LABEL = { fisk: 'Fisk', kyckling: 'Kyckling', kött: 'Kött', fläsk: 'Fläsk', vegetarisk: 'Vegetarisk' };
-
-  const readOnly = cardEl.dataset.readonly === '1';
-  const isPast = cardEl.dataset.past === '1';
-  const isCustom = cardEl.dataset.custom === '1';
-
-  // Primära byt-recept-knappar — lyfts fram direkt (ej gömda under disclosure)
-  // så att man enkelt kan slumpa om eller välja manuellt i en ej-bekräftad matsedel.
-  const canReplace = !readOnly && !window.planConfirmed && !isCustom;
-  const replaceActions = canReplace ? `
-    <div class="day-replace-actions">
-      <p class="day-replace-hint">Vill du ha något annat den här dagen?</p>
-      <div class="day-replace-btns">
-        <button class="day-replace-btn day-replace-btn-primary" onclick="replaceRecipe(${r.id}, '${date}', this)">${ICON_SHUFFLE} Slumpa nytt recept</button>
-        <button class="day-replace-btn" onclick="enterReplaceMode('${date}', '${dayName}')">${ICON_PENCIL} Välj manuellt</button>
-      </div>
-    </div>` : '';
-
-  // Sekundära åtgärder (byt dag, fri dag, redigera egen planering) — under disclosure
-  const swapBtn = !readOnly
-    ? `<button class="day-action-btn" onclick="enterSwapMode('${date}')">Byt dag</button>` : '';
-  const freeBtn = (!readOnly && !isPast)
-    ? `<button class="day-action-btn" onclick="freeDay('${date}')">Gör fri dag — skjut planen →</button>` : '';
-  const dayActionBtns = (swapBtn || freeBtn)
-    ? `<div class="day-action-btns">${swapBtn}${freeBtn}</div>` : '';
-  const customEditBtn = isCustom
-    ? `<button class="replace-recipe-btn" onclick="openCustomDay('${date}', '${dayName}')">Redigera egen planering</button>`
-    : '';
-  const readOnlyNote = readOnly && !isCustom
-    ? `<p class="readonly-note">📜 Historisk plan — bara för referens.</p>`
-    : '';
-  const customNote = isCustom
-    ? `<p class="readonly-note">✏️ Egen planering — inget recept från matsedeln.</p>`
-    : '';
-  const secondaryActions = `${dayActionBtns}${customEditBtn}`;
-  const actionsDetails = secondaryActions.trim() ? `
-    <details class="day-actions-details">
-      <summary>Fler val</summary>
-      <div class="day-actions-inner">${secondaryActions}</div>
-    </details>` : '';
-  const actionBtns = replaceActions + actionsDetails + readOnlyNote + customNote;
-
-  panel.innerHTML = `<div class="detail-inner">
-    <div class="week-recipe-header">
-      <div class="week-recipe-title">${esc(r.title)}</div>
-      <span class="pill pill-protein">${PROTEIN_LABEL[r.protein] || r.protein}</span>
-      ${t ? `<span class="pill pill-time">⏱ ${t}</span>` : ''}
-      <span class="pill ${r.tested ? 'pill-tested' : 'pill-untested'} pill-toggle"
-            onclick="toggleTested(event, ${r.id})">${r.tested ? '✓ Provat' : 'Ej provat'}</span>
-    </div>
-    <div class="detail-section">
-      <h3>Ingredienser · ${r.servings} portioner</h3>
-      <ul class="ingredients-list">${ingHtml}</ul>
-    </div>
-    <div class="detail-section">
-      <h3>Tillagning</h3>
-      <ol class="steps-list">${stepsHtml}</ol>
-    </div>
-    ${notesHtml}
-    ${actionBtns}
-  </div>`;
-
-  panel.classList.add('open');
-  window.isSnapping    = true;
-  window.scrollUpAccum = 0;
-  document.querySelector('header').classList.remove('header-hidden');
-  const hh  = document.querySelector('header').offsetHeight;
-  const top = panel.getBoundingClientRect().top + window.scrollY - hh - 8;
-  window.smoothScrollTo(top, 380);
-}
-
 // ── Fri dag (gör fri / ångra fri) ────────────────────────────────────────────
 
 async function modifyDay(date, action) {
-  const cards = document.querySelectorAll('.week-day-card');
-  cards.forEach(c => c.style.pointerEvents = 'none');
-
   try {
     const res = await fetch('/api/skip-day', {
       method: 'POST',
@@ -746,11 +431,8 @@ async function modifyDay(date, action) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Okänt fel');
 
-    // Stäng detaljpanelen
-    const panel = document.getElementById('weekRecipeDetail');
-    panel.classList.remove('open');
-    panel.innerHTML = '';
-    document.querySelectorAll('.week-day-card').forEach(c => c.classList.remove('selected'));
+    // Premiumvyn fäller ut fri-dag-editorn inline → kollapsa kortet efteråt.
+    window._dlxExpanded = null;
 
     // Re-rendera planen. Fri dag/ångra ändrar inte receptmängden → ingen ny
     // inköpslista skickas; återanvänd senaste shop-summering så ingrediens-
@@ -763,31 +445,21 @@ async function modifyDay(date, action) {
       window.renderShoppingData(data.shoppingList);
     }
   } catch (e) {
-    const panel = document.getElementById('weekRecipeDetail');
-    const errEl = document.createElement('p');
-    errEl.style.cssText = 'color:var(--rust);font-size:0.82rem;padding:0.5rem 1rem';
     const actionMsg = { free: 'göra fri', unfree: 'ångra fri dag på' };
     const fallback = `Kunde inte ${actionMsg[action] || 'ändra'} dagen — prova igen.`;
-    errEl.textContent = (e.message && e.message !== 'Okänt fel') ? e.message : fallback;
-    panel.innerHTML = '';
-    panel.appendChild(errEl);
-    panel.classList.add('open');
-  } finally {
-    cards.forEach(c => c.style.pointerEvents = '');
+    window.showToast?.((e.message && e.message !== 'Okänt fel') ? e.message : fallback, { type: 'error' });
   }
 }
 
 export function freeDay(date) { return modifyDay(date, 'free'); }
 export function unfreeDay(date) { return modifyDay(date, 'unfree'); }
 
-export function openBlockedDay(dateIso, dayName) {
-  const panel = document.getElementById('weekRecipeDetail');
-  document.querySelectorAll('.week-day-card').forEach(c => c.classList.remove('selected'));
-  const card = document.querySelector(`.week-day-card[data-date="${dateIso}"]`);
-  if (card) card.classList.add('selected');
-
+// Editor-HTML för en fri dag — renderas inline i premiumvyns utfällda kort
+// (samma mönster som customDayEditorHtml). Knapparna kallar globala
+// window-funktioner och bryr sig inte om var HTML:n sitter.
+export function blockedDayEditorHtml(dateIso, dayName) {
   const dateLabel = fmtShort(dateIso);
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = fmtIso(new Date());
   const isPast = dateIso < todayIso;
 
   // På passerade fri-dagar är "Ångra fri dag" meningslöst (kan inte skjuta
@@ -802,7 +474,7 @@ export function openBlockedDay(dateIso, dayName) {
     ? 'T.ex. rester, åt ute, beställde hem…'
     : 'T.ex. pizza, rester, äter ute…';
 
-  panel.innerHTML = `<div class="detail-inner custom-day-editor">
+  return `<div class="detail-inner custom-day-editor">
     <div class="custom-day-header">
       <div class="custom-day-title">${dayName}</div>
       <div class="custom-day-sub">${dateLabel} · Fri dag</div>
@@ -819,20 +491,15 @@ export function openBlockedDay(dateIso, dayName) {
       </div>
     </div>
   </div>`;
-  panel.classList.add('open');
-  window.isSnapping = true;
-  window.scrollUpAccum = 0;
-  document.querySelector('header').classList.remove('header-hidden');
-  const hh = document.querySelector('header').offsetHeight;
-  const top = panel.getBoundingClientRect().top + window.scrollY - hh - 8;
-  window.smoothScrollTo(top, 380);
 }
+window.blockedDayEditorHtml = blockedDayEditorHtml;
 
 export async function convertBlockedToCustom(dateIso) {
   const note = document.getElementById('blockedDayNote')?.value?.trim();
   if (!note) return;
   try {
     await postCustomDays('set', [dateIso], note);
+    window._dlxExpanded = null;
     window.loadWeeklyPlan();
   } catch { /* tyst */ }
 }
@@ -926,9 +593,9 @@ export async function discardPlan() {
     if (!res.ok) throw new Error(data.error || `Serverfel ${res.status}`);
 
     window.planConfirmed = false;
+    window._dlxExpanded = null;
     const panel = document.getElementById('weekRecipeDetail');
-    panel.classList.remove('open');
-    panel.innerHTML = '';
+    if (panel) { panel.classList.remove('open'); panel.innerHTML = ''; }
 
     // Använd returnerad tomma planen direkt — Vercels statiska weekly-plan.json
     // har inte hunnit re-deploya efter API-commiten (~30 sek), så fetch skulle
@@ -975,9 +642,7 @@ export async function confirmPlan() {
     document.querySelectorAll('.day-card-actions').forEach(b => b.remove());
 
     const panel = document.getElementById('weekRecipeDetail');
-    panel.classList.remove('open');
-    panel.innerHTML = '';
-    document.querySelectorAll('.week-day-card').forEach(c => c.classList.remove('selected'));
+    if (panel) { panel.classList.remove('open'); panel.innerHTML = ''; }
 
     window.renderIngredientPreview(
       data.shoppingList?.recipeItems || null,
@@ -1024,205 +689,12 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
 
   const confirmed = !!plan?.confirmedAt;
   window.planConfirmed = confirmed;
-  const pendingPlan = hasActivePlan && !confirmed;
 
-  const navWrap = document.getElementById('timelineNav');
   const timeline = buildTimeline(plan, archiveData, customData);
-
-  // ── Nav-chips (Historik · Idag · Matsedel →) ───────────────────────────────
-  if (navWrap) {
-    if (window._archiveExpanded === undefined) window._archiveExpanded = false;
-    const archiveDayCount = timeline.filter(d => d.isArchive).length;
-    const chips = [];
-    if (archiveDayCount > 0) {
-      const archiveLbl = window._archiveExpanded ? 'Dölj historik' : `Historik (${archiveDayCount})`;
-      chips.push(`<button class="timeline-chip timeline-chip-archive" onclick="toggleArchive()">${archiveLbl}</button>`);
-    }
-    chips.push('<button class="timeline-chip" onclick="centerOnDate(null, { smooth: true })">Idag</button>');
-    if (hasActivePlan && plan.startDate) {
-      const planLabel = pendingPlan ? 'Ny matsedel →' : 'Matsedel →';
-      chips.push(`<button class="timeline-chip timeline-chip-plan${pendingPlan ? ' pending' : ''}" onclick="centerOnDate('${plan.startDate}', { smooth: true })">${planLabel}</button>`);
-    }
-    navWrap.innerHTML = chips.join('');
-    navWrap.style.display = '';
-  }
+  // Premiumvyn (plan-viewer-deluxe.js) renderar matsedeln från denna karta.
+  // Den klassiska tidslinjen (grid + nav-chips + horisontell scroll) är
+  // avvecklad — bara datapreppen lever kvar här.
   window._timelineByDate = Object.fromEntries(timeline.map((d) => [d.date, d]));
-  let prevPlanId = null;
-  let prevMonth = null;
-  let prevWeek = null;
-
-  document.getElementById('weekGrid').innerHTML = timeline.map((d, idx) => {
-    const planChanged = d.planId && d.planId !== prevPlanId;
-    const monthChanged = d.month !== prevMonth;
-    const weekChanged = idx > 0 && d.weekNumber !== prevWeek;
-    prevPlanId = d.planId;
-    prevMonth = d.month;
-    prevWeek = d.weekNumber;
-
-    const monthLabel = monthChanged
-      ? `<span class="timeline-month-tag">${MONTH_NAMES_LONG[d.month]}</span>`
-      : '';
-    const weekLabel = weekChanged
-      ? `<span class="timeline-week-tag">v. ${d.weekNumber}</span>`
-      : '';
-    const planLabel = planChanged
-      ? `<span class="timeline-plan-tag">Matsedel ${d.planLabel}</span>`
-      : '';
-    const topRow = `<div class="timeline-day-top">${monthLabel}${weekLabel}${planLabel}</div>`;
-
-    const isPendingActive = d.planId === 'active' && pendingPlan;
-    const timelineDayClsParts = ['timeline-day'];
-    if (weekChanged) timelineDayClsParts.push('week-start');
-    // Slim om dagen saknar innehåll: fri-dag utan anteckning, gap-dag, eller
-    // tom custom-day. Med recept eller anteckning → normal bredd.
-    const hasContent = !!d.recipeId || (d.isCustom && (d.customNote || d.customRecipeId));
-    if (!hasContent) timelineDayClsParts.push('slim');
-    if (d.isToday) timelineDayClsParts.push('is-today');
-    if (d.isPast) timelineDayClsParts.push('is-past');
-    if (d.isWeekend) timelineDayClsParts.push('is-weekend');
-    if (d.isArchive) timelineDayClsParts.push('archive-day');
-    const timelineDayCls = timelineDayClsParts.join(' ');
-
-    const clsParts = ['week-day-card'];
-    if (d.isToday) clsParts.push('today');
-    else if (d.isPast) clsParts.push('past');
-    if (d.isWeekend) clsParts.push('weekend');
-    if (d.holiday) clsParts.push('holiday');
-    if (d.blocked) clsParts.push('blocked');
-    if (d.isArchive) clsParts.push('archive');
-    if (d.isCustom) clsParts.push('custom');
-    if (!d.planId && !d.isCustom) clsParts.push('gap');
-    if (d.planColorIndex !== null && d.planColorIndex >= 0) {
-      clsParts.push(`plan-color-${d.planColorIndex}`);
-    } else if (d.planId === 'active') {
-      clsParts.push('plan-active');
-    }
-    if (isPendingActive) clsParts.push('plan-pending');
-    const cls = clsParts.join(' ');
-
-    const holidayDot = d.holiday
-      ? `<span class="holiday-dot" title="${d.holiday}" aria-label="${d.holiday}"></span>`
-      : '';
-    const dateRow = `<div class="timeline-day-date">${d.dayShort} ${d.dayNum}${holidayDot}</div>`;
-    const pendingBadge = isPendingActive
-      ? '<span class="pending-badge" title="Ingår i matsedeln du ska godkänna">NY</span>'
-      : '';
-
-    // Custom-dag (egen planering)
-    if (d.isCustom) {
-      // Med valt recept: öppna receptet i read-only-läge (knapparna döljs via data-readonly="1")
-      if (d.customRecipeId) {
-        const title = d.customRecipeTitle || '';
-        const safeTitle = title.replace(/'/g, "\\'");
-        return `<div class="${timelineDayCls}">
-          ${topRow}
-          ${dateRow}
-          <div class="${cls} custom-has-recipe" data-date="${d.date}" data-day="${d.day}"
-            data-recipeid="${d.customRecipeId}" data-readonly="1" data-custom="1"
-            onclick="openWeekRecipe(${d.customRecipeId}, '${safeTitle}', this)">
-            <div class="week-day-recipe">${ICON_POT} ${title}</div>
-          </div>
-        </div>`;
-      }
-      // Bara notering
-      const noteEsc = (d.customNote || '').replace(/"/g, '&quot;');
-      return `<div class="${timelineDayCls}">
-        ${topRow}
-        ${dateRow}
-        <div class="${cls}" data-date="${d.date}" data-day="${d.day}"
-          onclick="openCustomDay('${d.date}', '${d.day}')">
-          <div class="week-day-recipe custom-note" title="${noteEsc}">${d.customNote ? esc(d.customNote) : '✏️ Egen'}</div>
-        </div>
-      </div>`;
-    }
-
-    // Gap (ingen plan, inget custom) eller blockerad dag utan recept
-    if (!d.recipeId) {
-      const label = d.blocked ? 'Fri dag' : '—';
-      // Fri dag är alltid klickbar — även passerad, så man kan skriva en
-      // post-hoc notering ("Vi åt rester"). Gap-dagar bara framåt.
-      let onclick = '';
-      if (d.blocked) {
-        onclick = ` onclick="openBlockedDay('${d.date}', '${d.day}')"`;
-      } else if (!d.isPast && !d.planId) {
-        onclick = ` onclick="openCustomDay('${d.date}', '${d.day}')"`;
-      }
-      return `<div class="${timelineDayCls}">
-        ${topRow}
-        ${dateRow}
-        <div class="${cls}" data-date="${d.date}" data-day="${d.day}"${onclick}>
-          <div class="week-day-recipe blocked-recipe-text">${label}</div>
-        </div>
-      </div>`;
-    }
-
-    const safeTitle = (d.recipe || '').replace(/'/g, "\\'");
-    const rid = d.recipeId;
-    const recipe = rid ? window.RECIPES.find(r => r.id === rid) : null;
-    const proteinColor = recipe ? (PROTEIN_COLOR[recipe.protein] || '') : '';
-    const borderStyle = proteinColor ? ` style="border-left: 3px solid ${proteinColor}"` : '';
-
-    // Snabbåtgärder på aktiv, icke-bekräftad plandag: slumpa nytt recept + byt dag.
-    // Visas när kortet är markerat (se CSS .week-day-card.selected .day-card-actions).
-    const showDayActions = d.planId === 'active' && !d.blocked && !window.planConfirmed && !!rid;
-    const swapBtn = showDayActions
-      ? `<div class="day-card-actions">
-           <button class="card-icon-btn" title="Slumpa nytt recept"
-             onclick="event.stopPropagation();shuffleDay('${d.date}', this)"
-           >${ICON_SHUFFLE}</button>
-           <button class="card-icon-btn" title="Flytta till annan dag"
-             onclick="event.stopPropagation();enterSwapMode('${d.date}')"
-           ><svg xmlns="http://www.w3.org/2000/svg" width="13" height="10" viewBox="0 0 13 10"
-             fill="none" stroke="currentColor" stroke-width="1.6"
-             stroke-linecap="round" stroke-linejoin="round">
-             <path d="M1 2.5h11M9 0.5l2.5 2L9 4.5"/>
-             <path d="M12 7.5H1M4 5.5L1.5 7.5 4 9.5"/>
-           </svg></button>
-         </div>`
-      : '';
-    let savingBadge = '';
-    if (d.saving && d.saving >= 10) {
-      if (d.savingMatches?.length) {
-        savingBadge = `<button type="button" class="week-day-saving has-details"
-           title="Tryck för att se var besparingen sker"
-           onclick="event.stopPropagation();openSavingPopover('${d.date}')">${ICON_COIN} ${d.saving} kr</button>`;
-      } else {
-        savingBadge = `<div class="week-day-saving" title="Uppskattad besparing jämfört med normalpris">${ICON_COIN} ${d.saving} kr</div>`;
-      }
-    }
-    const readOnly = d.isArchive;
-    return `<div class="${timelineDayCls}">
-      ${topRow}
-      ${dateRow}
-      <div class="${cls}"${borderStyle}
-        data-recipeid="${rid}" data-date="${d.date}" data-day="${d.day}"
-        data-readonly="${readOnly ? '1' : ''}" data-past="${d.isPast ? '1' : ''}"
-        onclick="openWeekRecipe(${rid || 'null'}, '${safeTitle}', this)">
-        <div class="week-day-recipe">${d.recipe}</div>
-        ${recipe?.time ? `<div class="week-day-time">${recipe.time} min</div>` : ''}
-        ${savingBadge}
-        ${pendingBadge}
-        ${swapBtn}
-      </div>
-    </div>`;
-  }).join('');
-
-  // ── Bulk "markera som egen planering" för tomma dagar före planstart ─────
-  renderCustomBulkBanner(timeline, plan);
-
-  // ── Scroll: till planstart om ny/opåbörjad plan, annars till idag ──────
-  requestAnimationFrame(() => {
-    if (pendingPlan && plan.startDate) {
-      centerOnDate(plan.startDate, { smooth: false });
-    } else {
-      centerOnDate(null, { smooth: false });
-    }
-    updateTimelineFades();
-    document.getElementById('weekGrid')?.classList.toggle('archive-collapsed', !window._archiveExpanded);
-    wrapPlanGroup(hasActivePlan ? plan : null);
-  });
-
-  initTimelineFadeListener();
 
   const confirmWrap   = document.getElementById('confirmPlanWrap');
   const confirmStatus = document.getElementById('confirmStatus');
@@ -1276,83 +748,7 @@ export async function loadWeeklyPlan() {
   }
 }
 
-// ── Matsedel-gruppruta ────────────────────────────────────────────────────────
-
-function wrapPlanGroup(plan) {
-  const grid = document.getElementById('weekGrid');
-  if (!grid) return;
-
-  // Tear down any existing group (restore days to grid flow first)
-  const existing = grid.querySelector('.plan-group');
-  if (existing) {
-    const daysRow = existing.querySelector('.plan-group-days');
-    Array.from(daysRow?.children ?? []).forEach(d => existing.before(d));
-    existing.remove();
-  }
-  if (!plan) return;
-
-  const cards = grid.querySelectorAll('.week-day-card.plan-active, .week-day-card.plan-pending');
-  if (!cards.length) return;
-
-  const planDays = Array.from(
-    new Set(Array.from(cards).map(c => c.closest('.timeline-day')).filter(Boolean))
-  );
-  if (!planDays.length) return;
-
-  const group = document.createElement('div');
-  group.className = 'plan-group';
-
-  if (plan.startDate && plan.endDate) {
-    const label = document.createElement('div');
-    label.className = 'plan-backdrop-label';
-    label.textContent = `Matsedel  ${fmtShort(plan.startDate)} – ${fmtShort(plan.endDate)}`;
-    group.appendChild(label);
-  }
-
-  const daysRow = document.createElement('div');
-  daysRow.className = 'plan-group-days';
-  group.appendChild(daysRow);
-
-  planDays[0].before(group);
-  planDays.forEach(d => daysRow.appendChild(d));
-}
-
 // ── Egen planering (custom days) ──────────────────────────────────────────────
-
-function renderCustomBulkBanner(timeline, plan) {
-  const banner = document.getElementById('customBulkBanner');
-  if (!banner) return;
-
-  // Bara visa banner när det finns en aktiv plan i framtiden — annars är
-  // "alla tomma dagar" en oändlig hink som är meningslös att markera.
-  const cutoff = plan?.startDate;
-  if (!cutoff) {
-    banner.style.display = 'none';
-    banner.innerHTML = '';
-    return;
-  }
-
-  const emptyDates = timeline
-    .filter(d => !d.isPast && !d.isToday && !d.recipeId && !d.isCustom && !d.planId && !d.blocked)
-    .filter(d => d.date < cutoff)
-    .map(d => d.date);
-
-  if (emptyDates.length < 1) {
-    banner.style.display = 'none';
-    banner.innerHTML = '';
-    return;
-  }
-
-  banner.style.display = '';
-  banner.innerHTML = `
-    <span class="custom-bulk-text">
-      ${emptyDates.length} tom${emptyDates.length === 1 ? ' dag' : 'ma dagar'} innan matsedeln (${fmtShort(cutoff)})
-    </span>
-    <button class="custom-bulk-btn" onclick='openCustomBulk(${JSON.stringify(emptyDates)})'>
-      ✏️ Markera ${emptyDates.length === 1 ? 'dagen' : 'alla'} som egen planering
-    </button>
-  `;
-}
 
 // Bygger editor-HTML:n för en egen-planering-dag. Bryts ut så premiumvyn kan
 // rendera SAMMA editor inline i det utfällda kortet (annars hamnade den i den
@@ -1414,49 +810,6 @@ export function customDayEditorHtml(dateIso, dayName) {
   </div>`;
 }
 
-export function openCustomDay(dateIso, dayName) {
-  const panel = document.getElementById('weekRecipeDetail');
-
-  document.querySelectorAll('.week-day-card').forEach(c => c.classList.remove('selected'));
-  const card = document.querySelector(`.week-day-card[data-date="${dateIso}"]`);
-  if (card) card.classList.add('selected');
-
-  panel.innerHTML = customDayEditorHtml(dateIso, dayName);
-  panel.classList.add('open');
-  window.isSnapping = true;
-  window.scrollUpAccum = 0;
-  document.querySelector('header').classList.remove('header-hidden');
-  const hh = document.querySelector('header').offsetHeight;
-  const top = panel.getBoundingClientRect().top + window.scrollY - hh - 8;
-  window.smoothScrollTo(top, 380);
-}
-
-export function openCustomBulk(dates) {
-  const panel = document.getElementById('weekRecipeDetail');
-  const count = Array.isArray(dates) ? dates.length : 0;
-  if (!count) return;
-
-  panel.innerHTML = `<div class="detail-inner custom-day-editor">
-    <div class="week-recipe-header">
-      <div class="week-recipe-title">✏️ Egen planering — ${count} dagar</div>
-    </div>
-    <label class="custom-day-label">
-      Notering (valfritt, samma för alla ${count} dagarna)
-      <input type="text" id="customDayNote" maxlength="140"
-             placeholder="T.ex. Rester / improvisera / äter ute">
-    </label>
-    <div class="custom-day-actions">
-      <button class="replace-recipe-btn" onclick='saveCustomDaysBulk(${JSON.stringify(dates)})'>Markera ${count} dagar</button>
-    </div>
-  </div>`;
-  panel.classList.add('open');
-  window.isSnapping = true;
-  document.querySelector('header').classList.remove('header-hidden');
-  const hh = document.querySelector('header').offsetHeight;
-  const top = panel.getBoundingClientRect().top + window.scrollY - hh - 8;
-  window.smoothScrollTo(top, 380);
-}
-
 async function postCustomDays(action, dates, note) {
   const householdId = await window.getHouseholdId();
   const entries = { ...(window._customDays?.entries || {}) };
@@ -1495,8 +848,9 @@ export async function saveCustomDay(dateIso) {
   try {
     await postCustomDays('set', [dateIso], note);
     const panel = document.getElementById('weekRecipeDetail');
-    panel.classList.remove('open');
-    panel.innerHTML = '';
+    if (panel) { panel.classList.remove('open'); panel.innerHTML = ''; }
+    window._dlxExpanded = null;
+    window._dlxEditCustom = null;
     renderWeeklyPlanData(
       window._lastPlan || null,
       window._lastShop || null,
@@ -1506,33 +860,14 @@ export async function saveCustomDay(dateIso) {
     );
   } catch (e) {
     if (btn) { btn.disabled = false; btn.textContent = 'Spara notering'; }
-    const panel = document.getElementById('weekRecipeDetail');
-    const err = document.createElement('p');
-    err.style.cssText = 'color:var(--rust);font-size:0.82rem;padding:0.5rem 0';
-    err.textContent = 'Kunde inte spara — prova igen.';
-    panel.querySelector('.custom-day-editor')?.appendChild(err);
-  }
-}
-
-export async function saveCustomDaysBulk(dates) {
-  const input = document.getElementById('customDayNote');
-  const note = input ? input.value : '';
-  const btn = document.querySelector('.custom-day-actions .replace-recipe-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Sparar…'; }
-  try {
-    await postCustomDays('set', dates, note);
-    const panel = document.getElementById('weekRecipeDetail');
-    panel.classList.remove('open');
-    panel.innerHTML = '';
-    renderWeeklyPlanData(
-      window._lastPlan || null,
-      window._lastShop || null,
-      false,
-      window._planArchive,
-      window._customDays
-    );
-  } catch (e) {
-    if (btn) { btn.disabled = false; btn.textContent = `Markera ${dates.length} dagar`; }
+    const editor = document.querySelector('.custom-day-editor');
+    if (editor && !editor.querySelector('.custom-save-err')) {
+      const err = document.createElement('p');
+      err.className = 'custom-save-err';
+      err.style.cssText = 'color:var(--rust);font-size:0.82rem;padding:0.5rem 0';
+      err.textContent = 'Kunde inte spara — prova igen.';
+      editor.appendChild(err);
+    }
   }
 }
 
@@ -1540,8 +875,9 @@ export async function clearCustomDay(dateIso) {
   try {
     await postCustomDays('clear', [dateIso]);
     const panel = document.getElementById('weekRecipeDetail');
-    panel.classList.remove('open');
-    panel.innerHTML = '';
+    if (panel) { panel.classList.remove('open'); panel.innerHTML = ''; }
+    window._dlxExpanded = null;
+    window._dlxEditCustom = null;
     renderWeeklyPlanData(
       window._lastPlan || null,
       window._lastShop || null,
@@ -1555,56 +891,15 @@ export async function clearCustomDay(dateIso) {
 window.enterReplaceMode    = enterReplaceMode;
 window.exitReplaceMode     = exitReplaceMode;
 window.selectRecipeForDay  = selectRecipeForDay;
-window.enterSwapMode       = enterSwapMode;
-window.cancelSwapMode      = cancelSwapMode;
-window.swapDays            = swapDays;
-window.replaceRecipe       = replaceRecipe;
-window.shuffleDay          = shuffleDay;
-window.openWeekRecipe      = openWeekRecipe;
 window.freeDay             = freeDay;
-window.toggleArchive       = toggleArchive;
-
-function toggleArchive() {
-  window._archiveExpanded = !window._archiveExpanded;
-  document.getElementById('weekGrid')?.classList.toggle('archive-collapsed', !window._archiveExpanded);
-  const chip = document.querySelector('.timeline-chip-archive');
-  if (chip) {
-    const count = document.querySelectorAll('.timeline-day.archive-day').length;
-    chip.textContent = window._archiveExpanded ? 'Dölj historik' : `Historik (${count})`;
-  }
-}
 window.openSavingPopover   = openSavingPopover;
-function updateTimelineFades() {
-  const outer = document.getElementById('timelineOuter');
-  const wrap = outer?.querySelector('.timeline-wrap');
-  if (!outer || !wrap) return;
-  const threshold = 8;
-  outer.classList.toggle('fade-left', wrap.scrollLeft > threshold);
-  outer.classList.toggle('fade-right',
-    wrap.scrollLeft + wrap.clientWidth < wrap.scrollWidth - threshold);
-}
-
-let _fadeWrap = null;
-function initTimelineFadeListener() {
-  const wrap = document.querySelector('#timelineOuter .timeline-wrap');
-  if (!wrap || wrap === _fadeWrap) return;
-  wrap.addEventListener('scroll', updateTimelineFades, { passive: true });
-  _fadeWrap = wrap;
-}
-
 window.closeSavingPopover  = closeSavingPopover;
 window.confirmPlan         = confirmPlan;
 window.discardPlan         = discardPlan;
 window.renderWeeklyPlanData = renderWeeklyPlanData;
 window.loadWeeklyPlan      = loadWeeklyPlan;
-window.centerTodayCard     = centerTodayCard;
-window.centerOnDate        = centerOnDate;
-window.openCustomDay       = openCustomDay;
 window.customDayEditorHtml = customDayEditorHtml;
-window.openCustomBulk      = openCustomBulk;
-window.openBlockedDay      = openBlockedDay;
 window.saveCustomDay       = saveCustomDay;
-window.saveCustomDaysBulk  = saveCustomDaysBulk;
 window.clearCustomDay      = clearCustomDay;
 window.unfreeDay           = unfreeDay;
 window.convertBlockedToCustom = convertBlockedToCustom;
