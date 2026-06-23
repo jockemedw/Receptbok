@@ -91,6 +91,8 @@ Inga bekräftade just nu.
 
 **Hotfix efter deploy (bekräftad löst av Joakim):** matsedeln visade "Ingen matsedel ännu" på mobilen efter deployen. Orsak: SW:n serverade undermoduler **stale-while-revalidate med bar sökväg som nyckel** — ny `index.html` (utan `#weekGrid`) möttes av gammal cachad `plan-viewer.js` som körde `getElementById('weekGrid').innerHTML` → null-krasch → `loadWeeklyPlan`-catch visade no-data. Planen var aldrig borta (inga delete-anrop). Fix: (1) versionerade de tre ändrade modul-importerna i `app.js` (`?v=112`) + `app.js?v=112` → färska URL:er tvingar omladdning; (2) SW:n serverar nu **JS nätet-först** (de saknar `?v=N` och måste matcha aktuell markup), CSS/ikoner kvar SWR, cache v23. Lärdom: [[project_pwa_cache_strategy]].
 
+**Mjukare hero-snap (Joakim):** `snapToHero` gjorde ett hårt `window.scrollTo({top})` varje gång Matsedeln öppnades → kändes aggressivt + ingen animering. Nu mjuk glidning via `smoothScrollTo` (460 ms, eased) + hoppar över om vyn redan ligger ≈rätt (<24 px) så det inte rycker till. Global `scroll-behavior: smooth` undveks medvetet (skulle krocka med `smoothScrollTo`-loopen + scroll-återställning i `app.js`/`cook-mode.js`). Bumpat `app.js?v=113`, `plan-viewer-deluxe.js?v=113`.
+
 Session 8–100 i `docs/session-log-archive.md`. Full git-historik: `git log --oneline`.
 
 ## Kommandon (tester & skript)

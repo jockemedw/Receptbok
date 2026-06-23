@@ -560,7 +560,9 @@ export function renderDeluxe() {
 }
 
 // Positionerar vyn så att heron ligger precis under headern → historiken
-// hamnar utanför skärmen ovanför och nås genom att scrolla uppåt.
+// hamnar utanför skärmen ovanför och nås genom att scrolla uppåt. Mjuk glidning
+// (eased, samma animation som övriga vyn) i stället för ett hårt hopp — och
+// hoppa över helt om vi i praktiken redan ligger rätt, så det inte rycker till.
 function snapToHero() {
   if (!document.body.classList.contains('week-deluxe')) return;
   const host = document.getElementById('weekDeluxe');
@@ -568,8 +570,13 @@ function snapToHero() {
   const hero = host.querySelector('.dlx-hero');
   if (!hero) return;
   const hh = document.querySelector('header')?.offsetHeight || 0;
-  const top = hero.getBoundingClientRect().top + window.scrollY - hh - 10;
-  window.scrollTo({ top: Math.max(0, top) });
+  const top = Math.max(0, hero.getBoundingClientRect().top + window.scrollY - hh - 10);
+  if (Math.abs(top - window.scrollY) < 24) return;   // redan ungefär på plats → ingen ryckning
+  // isSnapping = sövd header under den programmatiska glidningen (smoothScrollTo
+  // nollställer den när animationen är klar).
+  window.isSnapping = true;
+  if (window.smoothScrollTo) window.smoothScrollTo(top, 460);
+  else { window.scrollTo({ top, behavior: 'smooth' }); window.isSnapping = false; }
 }
 
 // ── Interaktion ───────────────────────────────────────────────────────────────
