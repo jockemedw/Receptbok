@@ -8,7 +8,7 @@
 //
 // CACHE_VERSION bumpas när precache-listan ändras — gamla cachar städas i activate.
 
-const CACHE_VERSION = 'receptbok-v21';
+const CACHE_VERSION = 'receptbok-v22';
 
 const PRECACHE = [
   './',

@@ -3863,45 +3863,12 @@ html.auth-required body {
    En alternativ presentation av samma data. Visas via body.week-deluxe.
    ════════════════════════════════════════════════════════════════════════ */
 
-/* ── Växel Premium / Klassisk ── */
-.dlx-switch {
-  display: flex;
-  gap: 0.25rem;
-  margin: 0.25rem 1rem 0.9rem;
-  padding: 0.25rem;
-  background: var(--stone);
-  border-radius: 999px;
-  width: fit-content;
-}
-.dlx-switch-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  border: none;
-  background: transparent;
-  color: var(--moss-muted);
-  font-family: inherit;
-  font-size: 0.82rem;
-  font-weight: 500;
-  padding: 0.4rem 0.95rem;
-  border-radius: 999px;
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
-}
-.dlx-switch-btn svg { width: 15px; height: 15px; }
-.dlx-switch-btn.active {
-  background: var(--paper);
-  color: var(--forest);
-  box-shadow: 0 1px 3px rgba(45,63,51,0.12);
-}
-
-/* ── Visningslogik: visa endast en vy åt gången ── */
-#weekDeluxe { display: none; }
-body.week-deluxe #weekDeluxe { display: block; }
-body.week-deluxe #timelineNav,
-body.week-deluxe .timeline-outer,
-body.week-deluxe #customBulkBanner { display: none !important; }
-body.week-deluxe .week-meta { display: none; }
+/* ── Visningslogik ── */
+/* Premiumvyn är enda vyn — klassiska tidslinjen och Premium/Klassisk-växeln
+   är avvecklade (nedmontering Session 101). body.week-deluxe sätts fortfarande
+   av JS men styr inget längre här. */
+#weekDeluxe { display: block; }
+.week-meta { display: none; }
 
 /* ── Hero ── */
 .dlx-hero {
