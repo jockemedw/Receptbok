@@ -11,7 +11,6 @@
 
 import { fmtIso, fmtShort, PROTEIN_COLOR, isoWeekNumber } from '../utils.js';
 
-const STORAGE_KEY = 'weekViewMode'; // 'deluxe' | 'classic' — ren presentationspreferens
 const DAY_NAMES_LONG = ['Söndag', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag'];
 const MONTH_NAMES_SHORT = ['jan', 'feb', 'mars', 'apr', 'maj', 'juni', 'juli', 'aug', 'sep', 'okt', 'nov', 'dec'];
 const PROTEIN_LABEL = { fisk: 'Fisk', kyckling: 'Kyckling', kött: 'Kött', fläsk: 'Fläsk', vegetarisk: 'Vegetariskt' };
@@ -43,29 +42,6 @@ function fmtKr(value) {
   return `${r} kr`;
 }
 
-// ── Växel mellan Premium / Klassisk ──────────────────────────────────────────
-function currentMode() {
-  try { return localStorage.getItem(STORAGE_KEY) || 'deluxe'; }
-  catch { return 'deluxe'; }
-}
-function applyMode(mode) {
-  document.body.classList.toggle('week-deluxe', mode === 'deluxe');
-  document.querySelectorAll('.dlx-switch-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.mode === mode);
-  });
-}
-function setMode(mode) {
-  try { localStorage.setItem(STORAGE_KEY, mode); } catch { /* strunt */ }
-  applyMode(mode);
-  if (mode === 'classic' && window.centerTodayCard) {
-    requestAnimationFrame(() => window.centerTodayCard({ smooth: false }));
-  }
-  if (mode === 'deluxe') {
-    requestAnimationFrame(() => snapToHero());
-  }
-}
-window.setWeekViewMode = setMode;
-
 // ── Injektion av DOM-skal (körs en gång) ─────────────────────────────────────
 let _injected = false;
 function ensureScaffold() {
@@ -74,27 +50,15 @@ function ensureScaffold() {
   const timelineOuter = document.getElementById('timelineOuter');
   if (!content || !timelineOuter) return false;
 
-  // Segmenterad växel — synlig i båda lägena, högst upp i weekContent.
-  const sw = document.createElement('div');
-  sw.className = 'dlx-switch';
-  sw.innerHTML = `
-    <button type="button" class="dlx-switch-btn" data-mode="deluxe" onclick="setWeekViewMode('deluxe')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.4 5.3L20 9l-4 4 1 6-5-2.8L7 19l1-6-4-4 5.6-.7z"/></svg>
-      <span>Premium</span>
-    </button>
-    <button type="button" class="dlx-switch-btn" data-mode="classic" onclick="setWeekViewMode('classic')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18 M9 4v16"/></svg>
-      <span>Klassisk</span>
-    </button>`;
-  content.insertBefore(sw, content.firstChild);
-
   // Premiumvyns container — direkt efter den klassiska tidslinjen.
   const host = document.createElement('div');
   host.id = 'weekDeluxe';
   timelineOuter.after(host);
 
   _injected = true;
-  applyMode(currentMode());
+  // Premium är enda vyn — klassiska tidslinjen avvecklad. body.week-deluxe styr
+  // CSS:en som döljer den klassiska markupen och visar premiumvyn.
+  document.body.classList.add('week-deluxe');
   return true;
 }
 
