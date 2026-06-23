@@ -92,19 +92,20 @@ function buildTonight(timeline) {
     mkind = 'recipe';
     if (expanded) detail = recipeDetail(d, r, { active: d.planId === 'active' });
   } else if (d.isCustom && d.customRecipeId) {
-    const r = recipeById(d.customRecipeId);
     label = d.customRecipeTitle || '';
     sub = 'Egen planering';
-    if (expanded) detail = recipeDetail({ ...d, recipeId: d.customRecipeId }, r, { active: false });
+    if (expanded) detail = customDetailHtml(d);
   } else if (d.isCustom && (d.customRecipeTitle || d.customNote)) {
     label = d.customRecipeTitle || d.customNote;
     sub = 'Egen planering';
     click = `dlxCustomClick('${d.date}', '${attr(d.day)}')`;
+    if (expanded) detail = `<div class="dlx-detail dlx-detail-custom" onclick="event.stopPropagation()">${window.customDayEditorHtml(d.date, d.day)}${d.customNote && !d.isArchive ? `<div class="dlx-actions"><button class="dlx-act" onclick="event.stopPropagation();dlxStartSwap('${d.date}')">${I.swap}<span>Byt dag</span></button></div>` : ''}</div>`;
   } else if (d.blocked) {
     label = 'Fri dag';
     sub = 'Ingen middag planerad';
     mkind = 'free';
     click = `dlxFreeClick('${d.date}', '${attr(d.day)}')`;
+    if (expanded) detail = `<div class="dlx-detail dlx-detail-custom" onclick="event.stopPropagation()">${window.blockedDayEditorHtml(d.date, d.day)}</div>`;
   } else {
     return '';
   }
@@ -314,7 +315,7 @@ function recipeDetail(d, r, opts) {
     actions = `<p class="dlx-readonly">📜 Historisk plan — bara för referens.</p>`;
   } else if (d.isCustom) {
     actions = `<div class="dlx-actions">
-        <button class="dlx-act" onclick="event.stopPropagation();openCustomDay('${d.date}', '${attr(d.day)}')">${I.pencil}<span>Redigera</span></button>
+        <button class="dlx-act" onclick="event.stopPropagation();dlxEditCustom('${d.date}')">${I.pencil}<span>Redigera</span></button>
         ${!d.isArchive ? `<button class="dlx-act" onclick="event.stopPropagation();dlxStartSwap('${d.date}')">${I.swap}<span>Byt dag</span></button>` : ''}
       </div>`;
   }
@@ -339,6 +340,17 @@ function recipeDetail(d, r, opts) {
     </div>`;
 }
 
+// Utfälld vy för en egen-planering-dag MED recept: antingen recept-läsläge
+// (med Redigera/Byt dag) eller den inline-editorn när "Redigera" klickats
+// (window._dlxEditCustom === dagen). Ersätter den gamla delade bottenpanelen.
+function customDetailHtml(d) {
+  if (window._dlxEditCustom === d.date) {
+    return `<div class="dlx-detail dlx-detail-custom" onclick="event.stopPropagation()">${window.customDayEditorHtml(d.date, d.day)}</div>`;
+  }
+  const r = recipeById(d.customRecipeId);
+  return recipeDetail({ ...d, recipeId: d.customRecipeId }, r, { active: false });
+}
+
 function emptyDayCard(d) {
   // Gap, fri dag, eller tom custom-dag
   if (d.isCustom) {
@@ -360,7 +372,7 @@ function emptyDayCard(d) {
             </div>
             <span class="dlx-day-chev" aria-hidden="true">›</span>
           </div>
-          ${expanded ? recipeDetail({ ...d, recipeId: d.customRecipeId }, r, { active: false }) : ''}
+          ${expanded ? customDetailHtml(d) : ''}
         </article>`;
     }
     const expanded = window._dlxExpanded === d.date;
@@ -382,9 +394,9 @@ function emptyDayCard(d) {
   }
 
   if (d.blocked) {
-    const click = `onclick="dlxFreeClick('${d.date}', '${attr(d.day)}')"`;
+    const expanded = window._dlxExpanded === d.date;
     return `
-      <article class="dlx-day free slim${modeCls(d, 'free')}" data-date="${d.date}" ${click}>
+      <article class="dlx-day free${expanded ? ' expanded' : ' slim'}${modeCls(d, 'free')}" data-date="${d.date}" onclick="dlxFreeClick('${d.date}', '${attr(d.day)}')">
         <span class="dlx-rail" style="background:var(--birch-soft)"></span>
         <div class="dlx-day-head">
           <div class="dlx-day-when"><span class="dlx-day-dow">${esc(d.day)}</span>
@@ -393,6 +405,7 @@ function emptyDayCard(d) {
           <div class="dlx-day-main"><p class="dlx-day-note">${I.free} Fri dag</p></div>
           <span class="dlx-day-chev" aria-hidden="true">›</span>
         </div>
+        ${expanded ? `<div class="dlx-detail dlx-detail-custom" onclick="event.stopPropagation()">${window.blockedDayEditorHtml(d.date, d.day)}</div>` : ''}
       </article>`;
   }
 
@@ -563,6 +576,8 @@ function snapToHero() {
 window.dlxToggleDay = function (date) {
   if (window._dlxSwap) { dlxPickSwapTarget(date); return; }
   if (window._dlxMove) return;   // i flytta-läge är bara släppzonerna klickbara
+  // Att fälla ut/in ett kort lämnar alltid editor-läget (custom-med-recept).
+  window._dlxEditCustom = null;
   window._dlxExpanded = (window._dlxExpanded === date) ? null : date;
   renderDeluxe();
   if (window._dlxExpanded === date) {
@@ -576,6 +591,14 @@ window.dlxToggleDay = function (date) {
       }
     });
   }
+};
+
+// "Redigera" på en egen-planering-dag med recept → byt det utfällda kortets
+// innehåll från recept-läsläge till inline-editorn (customDayEditorHtml).
+window.dlxEditCustom = function (date) {
+  window._dlxExpanded = date;
+  window._dlxEditCustom = date;
+  renderDeluxe();
 };
 
 
@@ -714,7 +737,7 @@ window.dlxCustomClick = function (date, dayName) {
 window.dlxFreeClick = function (date, dayName) {
   if (window._dlxSwap) { window.showToast?.('Fria dagar kan inte bytas — ångra fri dag först.', { type: 'info' }); return; }
   if (window._dlxMove) return;
-  window.openBlockedDay(date, dayName);
+  window.dlxToggleDay(date);   // fäll ut fri-dag-editorn inline (blockedDayEditorHtml)
 };
 
 // Avbryt pågående läge med Escape (mobil har Avbryt-knappen i bannern)

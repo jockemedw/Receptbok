@@ -375,6 +375,7 @@ export async function selectRecipeForCustomDay(event, recipeId, title) {
     if (dbErr) throw dbErr;
     const updatedEntries = { ...(window._customDays?.entries || {}), [date]: { note: existing.note || '', recipeId, recipeTitle: title } };
     window._customDays = { entries: updatedEntries };
+    window._dlxEditCustom = null;
     exitCustomPickMode();
     renderWeeklyPlanData(
       window._lastPlan || null,
@@ -416,10 +417,9 @@ export function startPlanFromDate(dateIso) {
   if (window.updateSettingsPreview) window.updateSettingsPreview();
   if (window.toggleTrigger) window.toggleTrigger();
 
+  window._dlxExpanded = null;
   const panel = document.getElementById('weekRecipeDetail');
-  panel.classList.remove('open');
-  panel.innerHTML = '';
-  document.querySelectorAll('.week-day-card').forEach(c => c.classList.remove('selected'));
+  if (panel) { panel.classList.remove('open'); panel.innerHTML = ''; }
 
   const trigger = document.getElementById('triggerSection');
   if (trigger) {
@@ -734,9 +734,6 @@ export function openWeekRecipe(recipeId, title, cardEl) {
 // ── Fri dag (gör fri / ångra fri) ────────────────────────────────────────────
 
 async function modifyDay(date, action) {
-  const cards = document.querySelectorAll('.week-day-card');
-  cards.forEach(c => c.style.pointerEvents = 'none');
-
   try {
     const res = await fetch('/api/skip-day', {
       method: 'POST',
@@ -746,11 +743,8 @@ async function modifyDay(date, action) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Okänt fel');
 
-    // Stäng detaljpanelen
-    const panel = document.getElementById('weekRecipeDetail');
-    panel.classList.remove('open');
-    panel.innerHTML = '';
-    document.querySelectorAll('.week-day-card').forEach(c => c.classList.remove('selected'));
+    // Premiumvyn fäller ut fri-dag-editorn inline → kollapsa kortet efteråt.
+    window._dlxExpanded = null;
 
     // Re-rendera planen. Fri dag/ångra ändrar inte receptmängden → ingen ny
     // inköpslista skickas; återanvänd senaste shop-summering så ingrediens-
@@ -763,31 +757,21 @@ async function modifyDay(date, action) {
       window.renderShoppingData(data.shoppingList);
     }
   } catch (e) {
-    const panel = document.getElementById('weekRecipeDetail');
-    const errEl = document.createElement('p');
-    errEl.style.cssText = 'color:var(--rust);font-size:0.82rem;padding:0.5rem 1rem';
     const actionMsg = { free: 'göra fri', unfree: 'ångra fri dag på' };
     const fallback = `Kunde inte ${actionMsg[action] || 'ändra'} dagen — prova igen.`;
-    errEl.textContent = (e.message && e.message !== 'Okänt fel') ? e.message : fallback;
-    panel.innerHTML = '';
-    panel.appendChild(errEl);
-    panel.classList.add('open');
-  } finally {
-    cards.forEach(c => c.style.pointerEvents = '');
+    window.showToast?.((e.message && e.message !== 'Okänt fel') ? e.message : fallback, { type: 'error' });
   }
 }
 
 export function freeDay(date) { return modifyDay(date, 'free'); }
 export function unfreeDay(date) { return modifyDay(date, 'unfree'); }
 
-export function openBlockedDay(dateIso, dayName) {
-  const panel = document.getElementById('weekRecipeDetail');
-  document.querySelectorAll('.week-day-card').forEach(c => c.classList.remove('selected'));
-  const card = document.querySelector(`.week-day-card[data-date="${dateIso}"]`);
-  if (card) card.classList.add('selected');
-
+// Editor-HTML för en fri dag — renderas inline i premiumvyns utfällda kort
+// (samma mönster som customDayEditorHtml). Knapparna kallar globala
+// window-funktioner och bryr sig inte om var HTML:n sitter.
+export function blockedDayEditorHtml(dateIso, dayName) {
   const dateLabel = fmtShort(dateIso);
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = fmtIso(new Date());
   const isPast = dateIso < todayIso;
 
   // På passerade fri-dagar är "Ångra fri dag" meningslöst (kan inte skjuta
@@ -802,7 +786,7 @@ export function openBlockedDay(dateIso, dayName) {
     ? 'T.ex. rester, åt ute, beställde hem…'
     : 'T.ex. pizza, rester, äter ute…';
 
-  panel.innerHTML = `<div class="detail-inner custom-day-editor">
+  return `<div class="detail-inner custom-day-editor">
     <div class="custom-day-header">
       <div class="custom-day-title">${dayName}</div>
       <div class="custom-day-sub">${dateLabel} · Fri dag</div>
@@ -819,20 +803,15 @@ export function openBlockedDay(dateIso, dayName) {
       </div>
     </div>
   </div>`;
-  panel.classList.add('open');
-  window.isSnapping = true;
-  window.scrollUpAccum = 0;
-  document.querySelector('header').classList.remove('header-hidden');
-  const hh = document.querySelector('header').offsetHeight;
-  const top = panel.getBoundingClientRect().top + window.scrollY - hh - 8;
-  window.smoothScrollTo(top, 380);
 }
+window.blockedDayEditorHtml = blockedDayEditorHtml;
 
 export async function convertBlockedToCustom(dateIso) {
   const note = document.getElementById('blockedDayNote')?.value?.trim();
   if (!note) return;
   try {
     await postCustomDays('set', [dateIso], note);
+    window._dlxExpanded = null;
     window.loadWeeklyPlan();
   } catch { /* tyst */ }
 }
@@ -926,9 +905,9 @@ export async function discardPlan() {
     if (!res.ok) throw new Error(data.error || `Serverfel ${res.status}`);
 
     window.planConfirmed = false;
+    window._dlxExpanded = null;
     const panel = document.getElementById('weekRecipeDetail');
-    panel.classList.remove('open');
-    panel.innerHTML = '';
+    if (panel) { panel.classList.remove('open'); panel.innerHTML = ''; }
 
     // Använd returnerad tomma planen direkt — Vercels statiska weekly-plan.json
     // har inte hunnit re-deploya efter API-commiten (~30 sek), så fetch skulle
@@ -975,9 +954,7 @@ export async function confirmPlan() {
     document.querySelectorAll('.day-card-actions').forEach(b => b.remove());
 
     const panel = document.getElementById('weekRecipeDetail');
-    panel.classList.remove('open');
-    panel.innerHTML = '';
-    document.querySelectorAll('.week-day-card').forEach(c => c.classList.remove('selected'));
+    if (panel) { panel.classList.remove('open'); panel.innerHTML = ''; }
 
     window.renderIngredientPreview(
       data.shoppingList?.recipeItems || null,
@@ -1302,8 +1279,9 @@ export async function saveCustomDay(dateIso) {
   try {
     await postCustomDays('set', [dateIso], note);
     const panel = document.getElementById('weekRecipeDetail');
-    panel.classList.remove('open');
-    panel.innerHTML = '';
+    if (panel) { panel.classList.remove('open'); panel.innerHTML = ''; }
+    window._dlxExpanded = null;
+    window._dlxEditCustom = null;
     renderWeeklyPlanData(
       window._lastPlan || null,
       window._lastShop || null,
@@ -1313,11 +1291,14 @@ export async function saveCustomDay(dateIso) {
     );
   } catch (e) {
     if (btn) { btn.disabled = false; btn.textContent = 'Spara notering'; }
-    const panel = document.getElementById('weekRecipeDetail');
-    const err = document.createElement('p');
-    err.style.cssText = 'color:var(--rust);font-size:0.82rem;padding:0.5rem 0';
-    err.textContent = 'Kunde inte spara — prova igen.';
-    panel.querySelector('.custom-day-editor')?.appendChild(err);
+    const editor = document.querySelector('.custom-day-editor');
+    if (editor && !editor.querySelector('.custom-save-err')) {
+      const err = document.createElement('p');
+      err.className = 'custom-save-err';
+      err.style.cssText = 'color:var(--rust);font-size:0.82rem;padding:0.5rem 0';
+      err.textContent = 'Kunde inte spara — prova igen.';
+      editor.appendChild(err);
+    }
   }
 }
 
@@ -1329,8 +1310,8 @@ export async function saveCustomDaysBulk(dates) {
   try {
     await postCustomDays('set', dates, note);
     const panel = document.getElementById('weekRecipeDetail');
-    panel.classList.remove('open');
-    panel.innerHTML = '';
+    if (panel) { panel.classList.remove('open'); panel.innerHTML = ''; }
+    window._dlxExpanded = null;
     renderWeeklyPlanData(
       window._lastPlan || null,
       window._lastShop || null,
@@ -1347,8 +1328,9 @@ export async function clearCustomDay(dateIso) {
   try {
     await postCustomDays('clear', [dateIso]);
     const panel = document.getElementById('weekRecipeDetail');
-    panel.classList.remove('open');
-    panel.innerHTML = '';
+    if (panel) { panel.classList.remove('open'); panel.innerHTML = ''; }
+    window._dlxExpanded = null;
+    window._dlxEditCustom = null;
     renderWeeklyPlanData(
       window._lastPlan || null,
       window._lastShop || null,
@@ -1409,7 +1391,6 @@ window.centerOnDate        = centerOnDate;
 window.openCustomDay       = openCustomDay;
 window.customDayEditorHtml = customDayEditorHtml;
 window.openCustomBulk      = openCustomBulk;
-window.openBlockedDay      = openBlockedDay;
 window.saveCustomDay       = saveCustomDay;
 window.saveCustomDaysBulk  = saveCustomDaysBulk;
 window.clearCustomDay      = clearCustomDay;

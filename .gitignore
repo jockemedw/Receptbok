@@ -60,3 +60,12 @@ scripts/dish-scrape/staging-pilot-report.md
 scripts/.cache/
 __pycache__/
 *.pyc
+
+# Lokala miljö-/verktygsfiler — får ALDRIG checkas in (hemligheter, lokal state)
+.env
+.env.local
+.env.*.local
+.vercel/
+.superpowers/
+STATUS.md
+/node
