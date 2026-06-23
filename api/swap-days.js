@@ -1,15 +1,37 @@
 import { createSupabaseHandler } from "./_shared/handler.js";
 import { db, getHouseholdId } from "./_shared/supabase.js";
-import { contentOf } from "./_shared/day-ops.js";
 
-// "Byt dag" — byter innehåll mellan två dagar i aktiva planen.
+// "Byt dag" — byter innehåll mellan två dagar i matsedeln.
 //
-// Båda dagarna i planen  → innehållet byts i EN bulk-upsert (atomär).
-// Ena dagen oplanerad    → receptet flyttas dit genom att radens DATUM byts
-//                          (en enda UPDATE → atomär, raden behåller lås m.m.);
-//                          källdagen blir tom. Planens gränser räknas om.
+// En dag är en rad i meal_days. Plan-dagar har plan_id = aktiva planen;
+// "egen planering"-dagar (egna anteckningar, valfritt med eget recept) har
+// plan_id = null. Båda byts likadant: innehållet (recept, anteckning, plan-
+// tillhörighet …) byter DATUM, datumen ligger fast.
 //
-// Receptmängden är oförändrad → inköpslistan rörs inte.
+// Båda dagarna finns      → byt fullt innehåll i EN bulk-upsert (atomär).
+//                           plan_id följer med, så en plan-dag som byter med
+//                           en anteckning lämnar planen och anteckningen går in.
+// Ena dagen oplanerad/tom → flytta raden dit genom att byta dess DATUM (en
+//                           UPDATE → atomär, raden behåller plan_id/lås/not);
+//                           källdagen blir tom. Planens gränser räknas om.
+//
+// Receptmängden i planen är oförändrad vid varje byte (ett recept lämnar bara
+// sin dag och ett annat tar dess plats) → inköpslistan rörs inte.
+
+// Hela radens innehåll = allt UTOM datumet. Inkluderar plan_id och custom_note
+// så att en plan-dag och en egen-planering-dag kan byta plats fullt ut.
+function fullContent(r) {
+  return {
+    plan_id:               r?.plan_id ?? null,
+    recipe_id:             r?.recipe_id ?? null,
+    recipe_title_snapshot: r?.recipe_title_snapshot ?? null,
+    saving:                r?.saving ?? null,
+    saving_matches:        r?.saving_matches ?? null,
+    custom_note:           r?.custom_note ?? null,
+    locked:                r?.locked === true,
+    blocked:               r?.blocked === true,
+  };
+}
 
 export default createSupabaseHandler(async (req, res) => {
   const { date1, date2 } = req.body || {};
@@ -25,91 +47,103 @@ export default createSupabaseHandler(async (req, res) => {
     .eq("is_active", true)
     .limit(1);
   if (planErr) throw new Error("Kunde inte läsa matsedeln — prova igen.");
-  const plan = plans?.[0];
-  if (!plan) return res.status(404).json({ error: "Ingen aktiv plan hittades." });
+  const plan = plans?.[0] || null;
 
+  // Läs båda dagarna OAVSETT plan_id → fångar både plan-dagar och egna
+  // anteckningar (plan_id null), så de kan byta plats med varandra.
   const { data: rows, error: rowsErr } = await db
     .from("meal_days")
-    .select("date, recipe_id, recipe_title_snapshot, saving, saving_matches, blocked, locked")
-    .eq("plan_id", plan.id)
+    .select("date, plan_id, recipe_id, recipe_title_snapshot, saving, saving_matches, blocked, locked, custom_note")
+    .eq("household_id", householdId)
     .in("date", [date1, date2]);
   if (rowsErr) throw new Error("Kunde inte läsa matsedeln — prova igen.");
 
   const d1 = rows?.find((r) => r.date === date1);
   const d2 = rows?.find((r) => r.date === date2);
 
-  if (!d1 && !d2) return res.status(404).json({ error: "Ingen av dagarna finns i planen." });
-  if (d1?.blocked || d2?.blocked) return res.status(400).json({ error: "Blockerade dagar kan inte bytas." });
+  if (!d1 && !d2) return res.status(404).json({ error: "Ingen av dagarna finns i matsedeln." });
+  if (d1?.blocked || d2?.blocked) return res.status(400).json({ error: "Fria dagar kan inte bytas — ångra fri dag först." });
 
   if (d1 && d2) {
-    // Båda dagarna finns → byt innehåll i EN bulk-upsert (en SQL-sats, atomär)
+    // Båda dagarna finns → byt fullt innehåll i EN bulk-upsert (en SQL-sats, atomär)
     const { error: writeErr } = await db.from("meal_days").upsert([
-      { household_id: householdId, plan_id: plan.id, date: d1.date, blocked: false, ...contentOf(d2) },
-      { household_id: householdId, plan_id: plan.id, date: d2.date, blocked: false, ...contentOf(d1) },
+      { household_id: householdId, date: d1.date, ...fullContent(d2) },
+      { household_id: householdId, date: d2.date, ...fullContent(d1) },
     ], { onConflict: "household_id,date" });
     if (writeErr) {
       console.error("swap-days: upsert misslyckades", writeErr);
       throw new Error("Kunde inte byta dagarna — prova igen.");
     }
   } else {
-    // En av dagarna är oplanerad → flytta receptet dit genom att byta radens
-    // datum (atomärt, raden behåller allt annat). Källdagen blir tom.
+    // En av dagarna är oplanerad/tom → flytta raden dit genom att byta dess
+    // datum (atomärt, raden behåller plan_id, lås och not). Källdagen blir tom.
+    // Matcha på household + datum (INTE plan_id) så att även egen-planering-
+    // rader (plan_id null) kan flyttas.
     const src = d1 || d2;
     const emptyDate = d1 ? date2 : date1;
-
-    // Måldagen får inte vara upptagen av något annat (t.ex. egen planering)
-    const { data: clash } = await db
-      .from("meal_days")
-      .select("date")
-      .eq("household_id", householdId)
-      .eq("date", emptyDate)
-      .maybeSingle();
-    if (clash) {
-      return res.status(409).json({ error: "Dagen är redan upptagen — välj en annan dag." });
-    }
 
     const { error: moveErr } = await db
       .from("meal_days")
       .update({ date: emptyDate })
-      .eq("plan_id", plan.id)
+      .eq("household_id", householdId)
       .eq("date", src.date);
     if (moveErr) {
       console.error("swap-days: datumbyte misslyckades", moveErr);
-      throw new Error("Kunde inte flytta receptet — prova igen.");
+      throw new Error("Kunde inte flytta dagen — prova igen.");
     }
   }
 
-  // Bygg svarsplan från uppdaterade rader. Planens gränser kan ha ändrats
-  // (flytt till tom dag utanför spannet) → räkna om från raderna och persistera.
-  const { data: allRows, error: reReadErr } = await db
-    .from("meal_days")
-    .select("date, recipe_id, recipe_title_snapshot, saving, saving_matches, blocked")
-    .eq("plan_id", plan.id)
-    .order("date");
-  if (reReadErr) throw new Error("Bytet sparades, men matsedeln kunde inte läsas om — ladda om sidan.");
+  // ── Bygg svar ────────────────────────────────────────────────────────────
+  // Plan-delen: läs om planens rader (ett byte kan ha flyttat ett recept utanför
+  // det gamla spannet → räkna om gränserna och persistera).
+  let weeklyPlan = null;
+  if (plan) {
+    const { data: planRows, error: reReadErr } = await db
+      .from("meal_days")
+      .select("date, recipe_id, recipe_title_snapshot, saving, saving_matches, blocked")
+      .eq("plan_id", plan.id)
+      .order("date");
+    if (reReadErr) throw new Error("Bytet sparades, men matsedeln kunde inte läsas om — ladda om sidan.");
 
-  const newStart = allRows?.[0]?.date ?? plan.start_date;
-  const newEnd   = allRows?.[allRows.length - 1]?.date ?? plan.end_date;
-  if (newStart !== plan.start_date || newEnd !== plan.end_date) {
-    const { error: boundsErr } = await db.from("weekly_plans")
-      .update({ start_date: newStart, end_date: newEnd })
-      .eq("id", plan.id);
-    if (boundsErr) console.error("swap-days: kunde inte uppdatera plan-gränser", boundsErr);
+    const newStart = planRows?.[0]?.date ?? plan.start_date;
+    const newEnd   = planRows?.[planRows.length - 1]?.date ?? plan.end_date;
+    if (newStart !== plan.start_date || newEnd !== plan.end_date) {
+      const { error: boundsErr } = await db.from("weekly_plans")
+        .update({ start_date: newStart, end_date: newEnd })
+        .eq("id", plan.id);
+      if (boundsErr) console.error("swap-days: kunde inte uppdatera plan-gränser", boundsErr);
+    }
+
+    weeklyPlan = {
+      startDate:   newStart,
+      endDate:     newEnd,
+      confirmedAt: plan.confirmed_at || null,
+      days: (planRows || []).map((d) => ({
+        date:          d.date,
+        recipe:        d.recipe_title_snapshot || null,
+        recipeId:      d.recipe_id ?? null,
+        saving:        d.saving ?? null,
+        savingMatches: d.saving_matches ?? null,
+        blocked:       d.blocked === true,
+      })),
+    };
   }
 
-  const weeklyPlan = {
-    startDate:   newStart,
-    endDate:     newEnd,
-    confirmedAt: plan.confirmed_at || null,
-    days: (allRows || []).map((d) => ({
-      date:          d.date,
-      recipe:        d.recipe_title_snapshot || null,
-      recipeId:      d.recipe_id ?? null,
-      saving:        d.saving ?? null,
-      savingMatches: d.saving_matches ?? null,
-      blocked:       d.blocked === true,
-    })),
-  };
+  // Egen planering-delen: läs om alla plan_id null-rader så att frontend kan
+  // spegla att en anteckning bytt datum (samma form som loadCustomDays).
+  const { data: customRows } = await db
+    .from("meal_days")
+    .select("date, custom_note, recipe_id, recipe_title_snapshot")
+    .eq("household_id", householdId)
+    .is("plan_id", null);
+  const customDays = { entries: {} };
+  for (const r of customRows || []) {
+    customDays.entries[r.date] = {
+      note:        r.custom_note || "",
+      recipeId:    r.recipe_id ?? null,
+      recipeTitle: r.recipe_title_snapshot || "",
+    };
+  }
 
-  return res.status(200).json({ ok: true, weeklyPlan });
+  return res.status(200).json({ ok: true, weeklyPlan, customDays });
 });

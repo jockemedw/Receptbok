@@ -260,8 +260,9 @@ function modeCls(d, kind) {
   if (window._dlxMove) return ' dlx-dim';   // i flytta-läge är bara släppzonerna mål
   const eligible =
     kind === 'recipe' ? (d.planId === 'active' && !d.isArchive) :
+    kind === 'custom' ? !d.isArchive :      // egen planering = bytbar (byter datum)
     kind === 'gap'    ? !d.isPast :
-    false;                                  // egen planering/fri dag kan aldrig bytas
+    false;                                  // fri dag kan aldrig bytas
   if (!eligible) return ' dlx-dim';
   return ' dlx-swap-target' + (window._dlxSwap.pending === d.date ? ' dlx-busy' : '');
 }
@@ -347,7 +348,10 @@ function recipeDetail(d, r, opts) {
   } else if (d.isArchive) {
     actions = `<p class="dlx-readonly">📜 Historisk plan — bara för referens.</p>`;
   } else if (d.isCustom) {
-    actions = `<button class="dlx-mini-btn" onclick="event.stopPropagation();openCustomDay('${d.date}', '${attr(d.day)}')">Redigera egen planering</button>`;
+    actions = `<div class="dlx-actions">
+        <button class="dlx-act" onclick="event.stopPropagation();openCustomDay('${d.date}', '${attr(d.day)}')">${I.pencil}<span>Redigera</span></button>
+        ${!d.isArchive ? `<button class="dlx-act" onclick="event.stopPropagation();dlxStartSwap('${d.date}')">${I.swap}<span>Byt dag</span></button>` : ''}
+      </div>`;
   }
 
   return `
@@ -408,7 +412,7 @@ function emptyDayCard(d) {
           </div>
           <span class="dlx-day-chev" aria-hidden="true">›</span>
         </div>
-        ${expanded ? `<div class="dlx-detail dlx-detail-custom" onclick="event.stopPropagation()">${window.customDayEditorHtml(d.date, d.day)}</div>` : ''}
+        ${expanded ? `<div class="dlx-detail dlx-detail-custom" onclick="event.stopPropagation()">${window.customDayEditorHtml(d.date, d.day)}${d.customNote && !d.isArchive ? `<div class="dlx-actions"><button class="dlx-act" onclick="event.stopPropagation();dlxStartSwap('${d.date}')">${I.swap}<span>Byt dag</span></button></div>` : ''}</div>` : ''}
       </article>`;
   }
 
@@ -511,7 +515,7 @@ function modeBannerHtml() {
   if (window._dlxSwap) {
     const busy = !!window._dlxSwap.pending;
     return `<div class="dlx-swap-banner${busy ? ' busy' : ''}">
-      <span>${busy ? `${I.swap} Byter dag…` : `${I.swap} Välj dagen att byta med — recept eller tom dag`}</span>
+      <span>${busy ? `${I.swap} Byter dag…` : `${I.swap} Välj dagen att byta med — recept, egen planering eller tom dag`}</span>
       ${busy ? '' : '<button onclick="dlxCancelSwap()">Avbryt</button>'}</div>`;
   }
   if (window._dlxMove) {
@@ -735,10 +739,10 @@ window.dlxGapClick = function (date, dayName) {
   window.dlxToggleDay(date);   // fäll ut DET klickade kortet inline (egen-planering-editorn)
 };
 
-// Egen planering / fri dag: förklara varför de inte går att byta (istället för
-// att tyst öppna sina vanliga flöden mitt i ett byte).
+// Egen planering: i byt dag-läge = välj som mål (anteckningen byter datum);
+// annars = fäll ut editorn inline.
 window.dlxCustomClick = function (date, dayName) {
-  if (window._dlxSwap) { window.showToast?.('Egen planering kan inte bytas — redigera dagen istället.', { type: 'info' }); return; }
+  if (window._dlxSwap) { dlxPickSwapTarget(date); return; }
   if (window._dlxMove) return;
   window.dlxToggleDay(date);   // fäll ut inline i stället för delade bottenpanelen
 };
@@ -850,9 +854,8 @@ async function dlxPickSwapTarget(toDate) {
   const t = (window._timelineByDate || {})[toDate];
   if (t) {
     if (t.isArchive) { window.showToast?.('Arkiverade veckor är historik och kan inte ändras — bara dagar i aktuella matsedeln går att byta.', { type: 'info' }); return; }
-    if (t.isCustom)  { window.showToast?.('Egen planering kan inte bytas — redigera dagen istället.', { type: 'info' }); return; }
     if (t.blocked)   { window.showToast?.('Fria dagar kan inte bytas — ångra fri dag först.', { type: 'info' }); return; }
-    if (!t.recipeId && t.isPast) { window.showToast?.('Passerade tomma dagar kan inte väljas.', { type: 'info' }); return; }
+    if (!t.recipeId && !t.isCustom && t.isPast) { window.showToast?.('Passerade tomma dagar kan inte väljas.', { type: 'info' }); return; }
   }
 
   // Omedelbar feedback: banner växlar till "Byter dag…", båda korten markeras
@@ -870,7 +873,9 @@ async function dlxPickSwapTarget(toDate) {
     if (!res.ok) throw new Error(data.error || 'fel');
     window._dlxSwap = null;
     suppressEcho();
-    rerender(data.weeklyPlan, data.shoppingList || window._lastShop);
+    // Egna anteckningar kan ha bytt datum → spegla det innan re-render.
+    if (data.customDays) window._customDays = data.customDays;
+    rerender(data.weeklyPlan || window._lastPlan, data.shoppingList || window._lastShop);
     dlxFlashDates([swap.from, toDate]);
   } catch (e) {
     swap.pending = null;
