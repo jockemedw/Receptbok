@@ -93,6 +93,8 @@ Inga bekräftade just nu.
 
 **Mjukare hero-snap (Joakim):** `snapToHero` gjorde ett hårt `window.scrollTo({top})` varje gång Matsedeln öppnades → kändes aggressivt + ingen animering. Nu mjuk glidning via `smoothScrollTo` (460 ms, eased) + hoppar över om vyn redan ligger ≈rätt (<24 px) så det inte rycker till. Global `scroll-behavior: smooth` undveks medvetet (skulle krocka med `smoothScrollTo`-loopen + scroll-återställning i `app.js`/`cook-mode.js`). Bumpat `app.js?v=113`, `plan-viewer-deluxe.js?v=113`.
 
+**Rationaliserade dagkorten (Joakim, bild på "salig blandning"):** egen-planering-dagar renderades i två stilar (valt recept = serif 1.08; fritext-not = sans 0.9) + en upprepad versal "EGEN PLANERING"-etikett. Fix: (1) etiketten borttagen → liten dämpad markör-ikon (`I.own`, `.dlx-own`) inline före rätten; (2) noteringar använder nu samma serif-titelstil (`.dlx-day-recipe`) som recept → en konsekvent rad oavsett typ; (3) tomma dagar visar en lugn plus-ikon (`I.plus`, `.dlx-add`) i stället för "+ Planera dagen"; (4) Ikväll-kortet använder samma markör i stället för "Egen planering"-undertexten. Gäller både list- och Ikväll-kort. Bumpat `app.js?v=114`, `plan-viewer-deluxe.js?v=114`, `styles.css?v=115`, SW-cache v24.
+
 Session 8–100 i `docs/session-log-archive.md`. Full git-historik: `git log --oneline`.
 
 ## Kommandon (tester & skript)

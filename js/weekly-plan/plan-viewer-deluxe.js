@@ -27,6 +27,9 @@ const I = {
   note: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h11l3 3v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><path d="M8 11h8 M8 14h8 M8 17h5"/></svg>',
   chef: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14v5a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-5"/><path d="M7 14a4 4 0 0 1-1-7.9A4 4 0 0 1 13 4a4 4 0 0 1 5 8"/></svg>',
   leaf: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/><path d="M2 21c0-3 1.85-5.36 5.08-6"/></svg>',
+  // Markör för egen planering (ersätter texten "EGEN PLANERING") + plus för tom dag.
+  own: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10-10a2 2 0 0 0-2.8-2.8L5 17v3z"/><path d="M13.5 6.5l4 4"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14 M5 12h14"/></svg>',
 };
 
 function esc(s) {
@@ -83,7 +86,9 @@ function buildTonight(timeline) {
 
   const expanded = window._dlxExpanded === d.date;
 
-  let label, sub = '', click = `dlxToggleDay('${d.date}')`, kind = '', mkind = 'custom', detail = '';
+  // ownMark = liten ikon-markör för egen planering (ersätter undertexten).
+  const ownMark = `<span class="dlx-own" title="Egen planering" aria-label="Egen planering">${I.own}</span>`;
+  let label, sub = '', mark = '', click = `dlxToggleDay('${d.date}')`, kind = '', mkind = 'custom', detail = '';
   if (d.recipeId && !d.isCustom) {
     const r = recipeById(d.recipeId);
     label = d.recipe || '';
@@ -93,11 +98,11 @@ function buildTonight(timeline) {
     if (expanded) detail = recipeDetail(d, r, { active: d.planId === 'active' });
   } else if (d.isCustom && d.customRecipeId) {
     label = d.customRecipeTitle || '';
-    sub = 'Egen planering';
+    mark = ownMark;
     if (expanded) detail = customDetailHtml(d);
   } else if (d.isCustom && (d.customRecipeTitle || d.customNote)) {
     label = d.customRecipeTitle || d.customNote;
-    sub = 'Egen planering';
+    mark = ownMark;
     click = `dlxCustomClick('${d.date}', '${attr(d.day)}')`;
     if (expanded) detail = `<div class="dlx-detail dlx-detail-custom" onclick="event.stopPropagation()">${window.customDayEditorHtml(d.date, d.day)}${d.customNote && !d.isArchive ? `<div class="dlx-actions"><button class="dlx-act" onclick="event.stopPropagation();dlxStartSwap('${d.date}')">${I.swap}<span>Byt dag</span></button></div>` : ''}</div>`;
   } else if (d.blocked) {
@@ -120,7 +125,7 @@ function buildTonight(timeline) {
           <span class="dlx-day-date"><span class="dlx-day-num">${d.dayNum}</span><span class="dlx-day-mon">${MONTH_NAMES_SHORT[d.month]}</span></span>
         </div>
         <div class="dlx-tonight-main">
-          <span class="dlx-tonight-title">${esc(label)}</span>
+          <span class="dlx-tonight-title">${mark}${esc(label)}</span>
           ${sub ? `<span class="dlx-tonight-sub">${esc(sub)}</span>` : ''}
         </div>
       </div>
@@ -367,8 +372,7 @@ function emptyDayCard(d) {
               <span class="dlx-day-date"><span class="dlx-day-num">${d.dayNum}</span><span class="dlx-day-mon">${MONTH_NAMES_SHORT[d.month]}</span></span>
               <span class="dlx-day-flags">${dayBadges(d)}</span></div>
             <div class="dlx-day-main">
-              <span class="dlx-day-tag">${I.pot} Egen planering</span>
-              <h3 class="dlx-day-recipe">${esc(d.customRecipeTitle || '')}</h3>
+              <h3 class="dlx-day-recipe"><span class="dlx-own" title="Egen planering" aria-label="Egen planering">${I.own}</span>${esc(d.customRecipeTitle || '')}</h3>
             </div>
             <span class="dlx-day-chev" aria-hidden="true">›</span>
           </div>
@@ -384,8 +388,7 @@ function emptyDayCard(d) {
             <span class="dlx-day-date"><span class="dlx-day-num">${d.dayNum}</span><span class="dlx-day-mon">${MONTH_NAMES_SHORT[d.month]}</span></span>
             <span class="dlx-day-flags">${dayBadges(d)}</span></div>
           <div class="dlx-day-main">
-            <span class="dlx-day-tag">${I.note} Egen planering</span>
-            <p class="dlx-day-note">${d.customNote ? esc(d.customNote) : 'Tryck för att lägga till'}</p>
+            <h3 class="dlx-day-recipe"><span class="dlx-own" title="Egen planering" aria-label="Egen planering">${I.own}</span>${d.customNote ? esc(d.customNote) : 'Lägg till en notering'}</h3>
           </div>
           <span class="dlx-day-chev" aria-hidden="true">›</span>
         </div>
@@ -422,7 +425,7 @@ function emptyDayCard(d) {
         <div class="dlx-day-when"><span class="dlx-day-dow">${esc(d.day)}</span>
           <span class="dlx-day-date"><span class="dlx-day-num">${d.dayNum}</span><span class="dlx-day-mon">${MONTH_NAMES_SHORT[d.month]}</span></span>
           <span class="dlx-day-flags">${dayBadges(d)}</span></div>
-        <div class="dlx-day-main"><p class="dlx-day-note muted">${clickable ? '+ Planera dagen' : '—'}</p></div>
+        <div class="dlx-day-main"><p class="dlx-day-note muted">${clickable ? `<span class="dlx-add" title="Planera dagen" aria-label="Planera dagen">${I.plus}</span>` : '—'}</p></div>
         ${clickable ? '<span class="dlx-day-chev" aria-hidden="true">›</span>' : ''}
       </div>
       ${expanded ? `<div class="dlx-detail dlx-detail-custom" onclick="event.stopPropagation()">${window.customDayEditorHtml(d.date, d.day)}</div>` : ''}

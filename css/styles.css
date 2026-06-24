@@ -4145,6 +4145,13 @@ html { scroll-snap-type: y proximity; }
 .dlx-day-note { margin: 0; font-size: 0.9rem; color: var(--forest); display: inline-flex; align-items: center; gap: 0.4rem; }
 .dlx-day-note svg { width: 15px; height: 15px; color: var(--moss-muted); }
 .dlx-day-note.muted { color: var(--lichen); font-weight: 500; }
+/* Liten markör för egen planering — ersätter den gamla "EGEN PLANERING"-texten.
+   Sitter inline före rättens namn (serif-titeln), dämpad så den inte konkurrerar. */
+.dlx-own { color: var(--moss-muted); opacity: 0.7; }
+.dlx-own svg { width: 14px; height: 14px; vertical-align: -0.12em; margin-right: 0.34rem; }
+/* Plus-ikon på tom dag — ersätter "+ Planera dagen". Lugn affordans. */
+.dlx-add { display: inline-flex; color: var(--moss-muted); }
+.dlx-add svg { width: 18px; height: 18px; }
 .dlx-day.inert { cursor: default; opacity: 0.55; }
 .dlx-day.inert:hover { box-shadow: none; border-color: var(--birch-soft); }
 
