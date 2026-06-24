@@ -86,8 +86,10 @@ function buildTonight(timeline) {
 
   const expanded = window._dlxExpanded === d.date;
 
-  // ownMark = liten ikon-markör för egen planering (ersätter undertexten).
-  const ownMark = `<span class="dlx-own" title="Egen planering" aria-label="Egen planering">${I.own}</span>`;
+  // Markör-ikon för egen planering (ersätter undertexten): gryta = recept ur
+  // receptboken, penna = egen notering.
+  const recipeMark = `<span class="dlx-own dlx-own-recipe" title="Recept ur receptboken" aria-label="Recept ur receptboken">${I.pot}</span>`;
+  const noteMark = `<span class="dlx-own" title="Egen notering" aria-label="Egen notering">${I.own}</span>`;
   let label, sub = '', mark = '', click = `dlxToggleDay('${d.date}')`, kind = '', mkind = 'custom', detail = '';
   if (d.recipeId && !d.isCustom) {
     const r = recipeById(d.recipeId);
@@ -98,11 +100,11 @@ function buildTonight(timeline) {
     if (expanded) detail = recipeDetail(d, r, { active: d.planId === 'active' });
   } else if (d.isCustom && d.customRecipeId) {
     label = d.customRecipeTitle || '';
-    mark = ownMark;
+    mark = recipeMark;
     if (expanded) detail = customDetailHtml(d);
   } else if (d.isCustom && (d.customRecipeTitle || d.customNote)) {
     label = d.customRecipeTitle || d.customNote;
-    mark = ownMark;
+    mark = noteMark;
     click = `dlxCustomClick('${d.date}', '${attr(d.day)}')`;
     if (expanded) detail = `<div class="dlx-detail dlx-detail-custom" onclick="event.stopPropagation()">${window.customDayEditorHtml(d.date, d.day)}${d.customNote && !d.isArchive ? `<div class="dlx-actions"><button class="dlx-act" onclick="event.stopPropagation();dlxStartSwap('${d.date}')">${I.swap}<span>Byt dag</span></button></div>` : ''}</div>`;
   } else if (d.blocked) {
@@ -372,7 +374,7 @@ function emptyDayCard(d) {
               <span class="dlx-day-date"><span class="dlx-day-num">${d.dayNum}</span><span class="dlx-day-mon">${MONTH_NAMES_SHORT[d.month]}</span></span>
               <span class="dlx-day-flags">${dayBadges(d)}</span></div>
             <div class="dlx-day-main">
-              <h3 class="dlx-day-recipe"><span class="dlx-own" title="Egen planering" aria-label="Egen planering">${I.own}</span>${esc(d.customRecipeTitle || '')}</h3>
+              <h3 class="dlx-day-recipe"><span class="dlx-own dlx-own-recipe" title="Recept ur receptboken" aria-label="Recept ur receptboken">${I.pot}</span>${esc(d.customRecipeTitle || '')}</h3>
             </div>
             <span class="dlx-day-chev" aria-hidden="true">›</span>
           </div>
@@ -388,7 +390,7 @@ function emptyDayCard(d) {
             <span class="dlx-day-date"><span class="dlx-day-num">${d.dayNum}</span><span class="dlx-day-mon">${MONTH_NAMES_SHORT[d.month]}</span></span>
             <span class="dlx-day-flags">${dayBadges(d)}</span></div>
           <div class="dlx-day-main">
-            <h3 class="dlx-day-recipe"><span class="dlx-own" title="Egen planering" aria-label="Egen planering">${I.own}</span>${d.customNote ? esc(d.customNote) : 'Lägg till en notering'}</h3>
+            <h3 class="dlx-day-recipe"><span class="dlx-own" title="Egen notering" aria-label="Egen notering">${I.own}</span>${d.customNote ? esc(d.customNote) : 'Lägg till en notering'}</h3>
           </div>
           <span class="dlx-day-chev" aria-hidden="true">›</span>
         </div>
