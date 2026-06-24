@@ -3973,21 +3973,11 @@ html.auth-required body {
 }
 .dlx-legend-dot { width: 8px; height: 8px; border-radius: 50%; }
 
-/* ── Historik-toggle ── */
-/* Historik via scroll (ersätter "Visa historik"-knappen): historiken ligger i
-   flödet ovanför heron; vyn positioneras vid heron när fliken öppnas. proximity-
-   snap på roten = lätta uppåtscrollar fjädrar tillbaka till heron, en bestämd
-   scroll tar sig förbi och fram till historiken ("trög" reveal). Snap-ankaret
-   finns bara när historik existerar (.has-history) → noll påverkan annars. */
-html { scroll-snap-type: y proximity; }
-#weekDeluxe.has-history .dlx-hero {
-  scroll-snap-align: start;
-  scroll-margin-top: calc(var(--header-h, 56px) + 10px);
-}
-/* När ett kort är utfällt: ta bort hero-snappen (enda snap-ankaret) så att
-   proximity-snappen inte rycker tillbaka skärmen och hindrar centrering på
-   det utfällda kortet. */
-#weekDeluxe.has-expanded.has-history .dlx-hero { scroll-snap-align: none; }
+/* ── Historik via scroll ── */
+/* Historiken ligger i flödet ovanför heron; vyn positioneras mjukt vid heron
+   när fliken öppnas (snapToHero i JS). INGEN CSS scroll-snap — den proximity-
+   snappen ryckte tillbaka skärmen abrupt vid varje liten uppåtscroll. Nu fri,
+   mjuk native-rullning: man scrollar upp för att se historiken och stannar där. */
 .dlx-history-flow {
   display: flex;
   flex-direction: column;
