@@ -30,6 +30,9 @@ const I = {
   // Markör för egen planering (ersätter texten "EGEN PLANERING") + plus för tom dag.
   own: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10-10a2 2 0 0 0-2.8-2.8L5 17v3z"/><path d="M13.5 6.5l4 4"/></svg>',
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14 M5 12h14"/></svg>',
+  // Historik (klocka med bakåtpil) + upp-chevron för att fälla ihop.
+  history: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 9a9 9 0 1 1-.6 5"/><path d="M3 4.5V9h4.5"/><path d="M12 8v4.5l3 1.8"/></svg>',
+  chevUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>',
 };
 
 function esc(s) {
@@ -534,17 +537,23 @@ export function renderDeluxe() {
     ? renderDayList(upcoming)
     : `<div class="dlx-empty-future">Inga kommande dagar planerade ännu.</div>`;
 
-  // Historiken ligger i flödet OVANFÖR heron (ingen knapp). Vyn positioneras
-  // vid heron när fliken öppnas; html-scroll-snap (proximity) gör att lätta
-  // uppåtscrollar fjädrar tillbaka till heron — en bestämd scroll tar fram
-  // historiken. Snap-ankaret är .dlx-hero (gate:as via .has-history).
-  const historyHtml = history.length
-    ? `<div class="dlx-history-flow">${renderDayList(history)}</div>`
+  // Tidigare recept ligger INTE i flödet by default — sidan vilar på rubriken +
+  // heron. En "forcerad uppåtscroll" (pull i toppen, se touch/wheel-lyssnarna)
+  // armar en knapp (_dlxHistoryArmed); knappen fäller ut historiken som ett
+  // dragspel NEDÅT (_dlxHistoryOpen) ovanför heron — utfällning nedåt vid toppen
+  // ger ingen scroll-ryckning.
+  window._dlxHasHistory = history.length > 0;
+  if (!history.length) { window._dlxHistoryArmed = false; window._dlxHistoryOpen = false; }
+  const showZone = history.length && (window._dlxHistoryArmed || window._dlxHistoryOpen);
+  const open = !!window._dlxHistoryOpen;
+  const historyHtml = showZone
+    ? `<div class="dlx-history-zone">
+         <button type="button" class="dlx-history-btn${open ? ' open' : ''}" onclick="dlxToggleHistory()">
+           ${open ? I.chevUp : I.history}<span>${open ? 'Dölj tidigare recept' : 'Visa tidigare recept'}</span>
+         </button>
+         ${open ? `<div class="dlx-history-flow">${renderDayList(history)}</div>` : ''}
+       </div>`
     : '';
-  host.classList.toggle('has-history', !!history.length);
-  // När ett kort är utfällt: stäng av hero-snappen (CSS) så att proximity-snappen
-  // inte drar tillbaka skärmen till heron och hindrar centrering på kortet.
-  host.classList.toggle('has-expanded', !!window._dlxExpanded);
 
   // Släppzon för "kläm in före ikväll" — Ikväll-kortet ligger utanför dagslistan
   const tonightZone = (tonight && moveZoneCtx()?.set.has(todayIso)) ? dropZone(todayIso) : '';
@@ -554,35 +563,56 @@ export function renderDeluxe() {
   setSec(host, 'banner', modeBannerHtml());
   setSec(host, 'today', `${tonightZone}${tonight}`);
   setSec(host, 'days', `<div class="dlx-days">${upcomingHtml}</div>`);
+}
 
-  // Engångspositionering vid första datarendering (täcker deep-link ?tab=vecka
-  // vid boot). Senare omrenderingar (expandera/byta recept/realtime) får ALDRIG
-  // rycka i scrollpositionen — flik- och lägesbyten hanteras i sina hooks.
-  if (!window._dlxDidSnap && history.length && document.body.dataset.activeTab === 'vecka') {
-    window._dlxDidSnap = true;
-    requestAnimationFrame(() => snapToHero());
+// ── Tidigare recept: pull-to-reveal-knapp + dragspel ──────────────────────────
+// Sidan vilar på rubrik + hero. Forcerad uppåtscroll i toppen (rubber-band på
+// touch, hjul-upp på desktop) "armar" knappen; knappen fäller ut historiken.
+window.dlxToggleHistory = function () {
+  window._dlxHistoryOpen = !window._dlxHistoryOpen;
+  if (!window._dlxHistoryOpen) window._dlxHistoryArmed = false;   // stäng → göm knappen
+  renderDeluxe();
+};
+
+function armHistory() {
+  if (!window._dlxHasHistory || window._dlxHistoryArmed || window._dlxHistoryOpen) return;
+  if (document.body.dataset.activeTab !== 'vecka') return;
+  window._dlxHistoryArmed = true;
+  renderDeluxe();
+}
+
+// Touch: pull nedåt (~64 px) medan man redan är i toppen → arma på touchend
+// (committas vid släpp så layouten inte rycker mitt i gesten).
+let _pullStartY = null, _pullMax = 0;
+document.addEventListener('touchstart', (e) => {
+  _pullStartY = (window.scrollY <= 2 && document.body.dataset.activeTab === 'vecka')
+    ? e.touches[0].clientY : null;
+  _pullMax = 0;
+}, { passive: true });
+document.addEventListener('touchmove', (e) => {
+  if (_pullStartY != null) _pullMax = Math.max(_pullMax, e.touches[0].clientY - _pullStartY);
+}, { passive: true });
+document.addEventListener('touchend', () => {
+  if (_pullStartY != null && _pullMax > 64 && window.scrollY <= 2) armHistory();
+  _pullStartY = null; _pullMax = 0;
+}, { passive: true });
+
+// Desktop: hjul-upp medan man är i toppen.
+let _wheelAccum = 0;
+document.addEventListener('wheel', (e) => {
+  if (window.scrollY <= 2 && e.deltaY < 0) {
+    _wheelAccum += -e.deltaY;
+    if (_wheelAccum > 120) { _wheelAccum = 0; armHistory(); }
+  } else _wheelAccum = 0;
+}, { passive: true });
+
+// Armad men ej öppnad: scrollar man ner igen göms knappen.
+window.addEventListener('scroll', () => {
+  if (window._dlxHistoryArmed && !window._dlxHistoryOpen && window.scrollY > 40) {
+    window._dlxHistoryArmed = false;
+    renderDeluxe();
   }
-}
-
-// Positionerar vyn så att heron ligger precis under headern → historiken
-// hamnar utanför skärmen ovanför och nås genom att scrolla uppåt. Mjuk glidning
-// (eased, samma animation som övriga vyn) i stället för ett hårt hopp — och
-// hoppa över helt om vi i praktiken redan ligger rätt, så det inte rycker till.
-function snapToHero() {
-  if (!document.body.classList.contains('week-deluxe')) return;
-  const host = document.getElementById('weekDeluxe');
-  if (!host || !host.classList.contains('has-history')) return;
-  const hero = host.querySelector('.dlx-hero');
-  if (!hero) return;
-  const hh = document.querySelector('header')?.offsetHeight || 0;
-  const top = Math.max(0, hero.getBoundingClientRect().top + window.scrollY - hh - 10);
-  if (Math.abs(top - window.scrollY) < 24) return;   // redan ungefär på plats → ingen ryckning
-  // isSnapping = sövd header under den programmatiska glidningen (smoothScrollTo
-  // nollställer den när animationen är klar).
-  window.isSnapping = true;
-  if (window.smoothScrollTo) window.smoothScrollTo(top, 460);
-  else { window.scrollTo({ top, behavior: 'smooth' }); window.isSnapping = false; }
-}
+}, { passive: true });
 
 // ── Interaktion ───────────────────────────────────────────────────────────────
 window.dlxToggleDay = function (date) {
@@ -920,12 +950,13 @@ function installHooks() {
   const origSwitch = window.switchTab;
   if (typeof origSwitch === 'function' && !origSwitch.__dlxWrapped) {
     const wrappedSwitch = function (tab) {
+      // Lämna alltid historik-läget när man byter flik → fliken öppnas på
+      // rubrik + hero (switchTab scrollar redan till toppen i navigation.js).
+      window._dlxHistoryArmed = false;
+      window._dlxHistoryOpen = false;
       const r = origSwitch.apply(this, arguments);
       if (tab === 'vecka') {
         try { renderDeluxe(); } catch (e) { console.error('renderDeluxe', e); }
-        // switchTab scrollar till toppen — flytta ner till heron så att
-        // historiken börjar ovanför skärmen (rAF: efter att layouten satt sig).
-        requestAnimationFrame(() => snapToHero());
       }
       return r;
     };

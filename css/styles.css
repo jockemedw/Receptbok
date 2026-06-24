@@ -3973,17 +3973,44 @@ html.auth-required body {
 }
 .dlx-legend-dot { width: 8px; height: 8px; border-radius: 50%; }
 
-/* ── Historik via scroll ── */
-/* Historiken ligger i flödet ovanför heron; vyn positioneras mjukt vid heron
-   när fliken öppnas (snapToHero i JS). INGEN CSS scroll-snap — den proximity-
-   snappen ryckte tillbaka skärmen abrupt vid varje liten uppåtscroll. Nu fri,
-   mjuk native-rullning: man scrollar upp för att se historiken och stannar där. */
+/* ── Tidigare recept (pull-to-reveal) ── */
+/* Sidan vilar på rubrik + hero. En forcerad uppåtscroll i toppen armar knappen
+   nedan; knappen fäller ut historiken som ett dragspel nedåt (ingen scroll-ryck
+   eftersom innehållet växer under toppen). */
+.dlx-history-zone {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin: 0.1rem 0 1rem;
+}
+.dlx-history-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  align-self: center;
+  margin: 0 1rem;
+  padding: 0.55rem 1.15rem;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--forest);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 8px -4px rgba(45,63,51,0.25);
+  transition: background 0.18s, box-shadow 0.18s, color 0.18s;
+}
+.dlx-history-btn:hover,
+.dlx-history-btn:focus-visible { background: var(--linen-card, var(--stone)); color: var(--forest-deep); }
+.dlx-history-btn svg { width: 16px; height: 16px; }
+.dlx-history-btn.open { color: var(--moss-muted); }
 .dlx-history-flow {
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
   padding: 0 1rem;
-  margin-bottom: 1.1rem;
 }
 .dlx-history-flow .dlx-day { opacity: 0.72; }
 
