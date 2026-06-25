@@ -28,7 +28,7 @@
     <h1>Recept<em>boken</em></h1>
   </div>
   <nav class="header-nav">
-    <button class="header-tab active" id="tabRecept" data-tab="recept" onclick="switchTab('recept')">
+    <button class="header-tab active" id="tabRecept" data-tab="recept" aria-current="page" onclick="switchTab('recept')">
       <span class="header-tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
       <span class="header-tab-label">Recept</span>
     </button>
@@ -365,7 +365,7 @@
 <button class="fab-import" id="fabImport" onclick="openImportModal()" title="Importera recept" aria-label="Importera recept"><svg class="icon icon-em-1-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
 
 <nav class="bottom-nav" aria-label="Huvudnavigering">
-  <button class="bottom-nav-tab active" data-tab="recept" onclick="switchTab('recept')" aria-label="Recept">
+  <button class="bottom-nav-tab active" data-tab="recept" aria-current="page" onclick="switchTab('recept')" aria-label="Recept">
     <span class="bottom-nav-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
@@ -547,6 +547,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=116"></script>
+<script type="module" src="js/app.js?v=117"></script>
 </body>
 </html>

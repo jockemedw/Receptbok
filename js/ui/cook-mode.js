@@ -63,7 +63,14 @@ export function closeCookMode() {
 }
 
 function onCookKey(e) {
-  if (e.key === 'Escape') closeCookMode();
+  if (e.key === 'Escape') { closeCookMode(); return; }
+  // Bocka av ingrediens/steg med tangentbord — raderna är role="button"
+  // (inget visuellt ändras). Enter/Mellanslag syntar samma klick som touch.
+  if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+  const row = e.target.closest?.('.cook-ing, .cook-step');
+  if (!row || row !== e.target) return;
+  e.preventDefault();
+  row.click();
 }
 
 export function openCookMode(recipeId) {
@@ -72,10 +79,10 @@ export function openCookMode(recipeId) {
   if (_overlay) closeCookMode();
 
   const ings = (r.ingredients || []).map((i) =>
-    `<li class="cook-ing" onclick="this.classList.toggle('done')"><span class="cook-ing-box"></span><span>${escapeHtml(i)}</span></li>`
+    `<li class="cook-ing" role="button" tabindex="0" onclick="this.classList.toggle('done')"><span class="cook-ing-box"></span><span>${escapeHtml(i)}</span></li>`
   ).join('');
   const steps = (r.instructions || []).map((s, i) =>
-    `<li class="cook-step" onclick="this.classList.toggle('done');window._cookProgress()">
+    `<li class="cook-step" role="button" tabindex="0" onclick="this.classList.toggle('done');window._cookProgress()">
        <span class="cook-step-num">${i + 1}</span><span class="cook-step-text">${escapeHtml(s)}</span>
      </li>`
   ).join('');

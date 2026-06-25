@@ -6,7 +6,11 @@ export function switchTab(tab) {
   document.getElementById('weekView').classList.toggle('visible',     tab === 'vecka');
   document.getElementById('shopView').classList.toggle('visible',     tab === 'shop');
   document.querySelectorAll('[data-tab]').forEach(el => {
-    el.classList.toggle('active', el.dataset.tab === tab);
+    const on = el.dataset.tab === tab;
+    el.classList.toggle('active', on);
+    // aria-current annonserar vald flik för skärmläsare (.active är rent visuellt).
+    if (on) el.setAttribute('aria-current', 'page');
+    else el.removeAttribute('aria-current');
   });
   closeHeaderSearch();
   document.getElementById('fabImport').style.display              = tab === 'recept' ? 'block' : 'none';

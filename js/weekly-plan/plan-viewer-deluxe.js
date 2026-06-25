@@ -272,7 +272,7 @@ function recipeDayCard(d, opts) {
 
   return `
     <article class="dlx-day${opts.cls}${expanded ? ' expanded' : ''}${modeCls(d, 'recipe')}" data-date="${d.date}"
-             style="--rail:${color}" onclick="dlxToggleDay('${d.date}')">
+             role="button" tabindex="0" style="--rail:${color}" onclick="dlxToggleDay('${d.date}')">
       <span class="dlx-rail"></span>
       <div class="dlx-day-head">
         <div class="dlx-day-when">
@@ -370,7 +370,7 @@ function emptyDayCard(d) {
       const expanded = window._dlxExpanded === d.date;
       return `
         <article class="dlx-day custom${expanded ? ' expanded' : ''}${modeCls(d, 'custom')}" data-date="${d.date}" style="--rail:${color}"
-                 onclick="dlxToggleDay('${d.date}')">
+                 role="button" tabindex="0" onclick="dlxToggleDay('${d.date}')">
           <span class="dlx-rail"></span>
           <div class="dlx-day-head">
             <div class="dlx-day-when"><span class="dlx-day-dow">${esc(d.day)}</span>
@@ -386,7 +386,7 @@ function emptyDayCard(d) {
     }
     const expanded = window._dlxExpanded === d.date;
     return `
-      <article class="dlx-day custom${expanded ? ' expanded' : ' slim'}${modeCls(d, 'custom')}" data-date="${d.date}" onclick="dlxCustomClick('${d.date}', '${attr(d.day)}')">
+      <article class="dlx-day custom${expanded ? ' expanded' : ' slim'}${modeCls(d, 'custom')}" data-date="${d.date}" role="button" tabindex="0" onclick="dlxCustomClick('${d.date}', '${attr(d.day)}')">
         <span class="dlx-rail" style="background:var(--birch)"></span>
         <div class="dlx-day-head">
           <div class="dlx-day-when"><span class="dlx-day-dow">${esc(d.day)}</span>
@@ -404,7 +404,7 @@ function emptyDayCard(d) {
   if (d.blocked) {
     const expanded = window._dlxExpanded === d.date;
     return `
-      <article class="dlx-day free${expanded ? ' expanded' : ' slim'}${modeCls(d, 'free')}" data-date="${d.date}" onclick="dlxFreeClick('${d.date}', '${attr(d.day)}')">
+      <article class="dlx-day free${expanded ? ' expanded' : ' slim'}${modeCls(d, 'free')}" data-date="${d.date}" role="button" tabindex="0" onclick="dlxFreeClick('${d.date}', '${attr(d.day)}')">
         <span class="dlx-rail" style="background:var(--birch-soft)"></span>
         <div class="dlx-day-head">
           <div class="dlx-day-when"><span class="dlx-day-dow">${esc(d.day)}</span>
@@ -422,7 +422,7 @@ function emptyDayCard(d) {
   // klickade kortet ut inline med egen-planering-editorn.
   const clickable = !d.isPast;
   const expanded = clickable && window._dlxExpanded === d.date;
-  const click = clickable ? `onclick="dlxGapClick('${d.date}', '${attr(d.day)}')"` : '';
+  const click = clickable ? `role="button" tabindex="0" onclick="dlxGapClick('${d.date}', '${attr(d.day)}')"` : '';
   return `
     <article class="dlx-day gap${expanded ? ' expanded' : ' slim'}${clickable ? '' : ' inert'}${modeCls(d, 'gap')}" data-date="${d.date}" ${click}>
       <span class="dlx-rail" style="background:transparent"></span>
@@ -787,6 +787,18 @@ document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
   if (window._dlxSwap && !window._dlxSwap.pending) window.dlxCancelSwap();
   if (window._dlxMove && !window._dlxMove.pending) window.dlxCancelMove();
+});
+
+// Tangentbordsaktivering för dagskorten: de är klickbara <article role="button">
+// (ingen native-knapp, så inget visuellt ändras), och aktiveras med Enter/Mellanslag
+// genom att synta ett klick → samma onclick-flöde som touch/mus. Bara när själva
+// kortet har fokus — inre riktiga <button> sköter sina egna tangenttryck.
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter' && e.key !== ' ' && e.key !== 'Spacebar') return;
+  const card = e.target.closest?.('.dlx-day[role="button"], .dlx-tonight[role="button"]');
+  if (!card || card !== e.target) return;
+  e.preventDefault();          // Mellanslag ska aktivera, inte scrolla sidan
+  card.click();
 });
 
 // ── Flytta dag (kläm in mellan två dagar) ─────────────────────────────────────
