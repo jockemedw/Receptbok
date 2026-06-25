@@ -7,9 +7,9 @@ import './supabase-client.js';
 import { requireAuth } from './auth-gate.js';
 import { recipeFromRow } from './data-mapper.js';
 import './ui/scroll.js';
-import './ui/navigation.js?v=112';
+import './ui/navigation.js?v=117';
 import './ui/feedback.js';
-import './ui/cook-mode.js';
+import './ui/cook-mode.js?v=117';
 import './shopping/shopping-list.js';
 import './shopping/dispatch-ui.js';
 import './weekly-plan/ingredient-preview.js';
@@ -18,7 +18,7 @@ import './recipes/recipe-editor.js';
 import './recipes/recipe-import.js';
 import './weekly-plan/plan-generator.js';
 import './weekly-plan/plan-viewer.js?v=112';
-import './weekly-plan/plan-viewer-deluxe.js?v=116';
+import './weekly-plan/plan-viewer-deluxe.js?v=117';
 import './weekly-plan/deals-popup.js';
 
 async function init() {
