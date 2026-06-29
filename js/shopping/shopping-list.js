@@ -236,7 +236,11 @@ export function scheduleCheckedSave() {
       if (checkedIds.length)   ps.push(window.db.from('shopping_items').update({ checked: true  }).in('id', checkedIds));
       if (uncheckedIds.length) ps.push(window.db.from('shopping_items').update({ checked: false }).in('id', uncheckedIds));
       await Promise.all(ps);
-    } catch { /* tyst fel — nästa bockning försöker igen */ }
+    } catch {
+      // Nästa bockning försöker igen, men säg till så en ensam bockning inte
+      // tappas tyst om appen stängs innan dess.
+      window.showToast?.('Kunde inte spara bockningen — kolla nätet och prova igen.', { type: 'error' });
+    }
   }, 600);
 }
 
@@ -629,6 +633,9 @@ export function copyShoppingList() {
     const btn = el.querySelector('.shop-copy-btn');
     btn.textContent = 'Kopierad!';
     setTimeout(() => { btn.textContent = 'Kopiera hela listan'; }, 2000);
+  }).catch(() => {
+    // Clipboard nekas i osäker kontext / äldre iOS — ge besked i stället för tyst.
+    window.showToast?.('Kunde inte kopiera listan — markera texten och kopiera manuellt.', { type: 'error' });
   });
 }
 
