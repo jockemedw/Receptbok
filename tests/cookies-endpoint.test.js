@@ -3,7 +3,7 @@
 // Hook: se .claude/settings.json — blockerar commit vid regression.
 
 import { createSecretsStore } from "../api/_shared/secrets-store.js";
-import { runRefresh } from "../api/dispatch-to-willys.js";
+import { runRefresh, secretsMatch } from "../api/dispatch-to-willys.js";
 
 let passed = 0;
 let failed = 0;
@@ -258,6 +258,21 @@ function fakeStore(initial = {}) {
   assertEq(result.status, 502, "store-fel → 502");
   assertEq(result.body.error, "store_write_failed", "felkod store_write_failed");
 }
+
+// ─── secretsMatch (konstant-tids-jämförelse) ─────────────────────────────────
+// Q. Identiska hemligheter matchar
+assertTrue(secretsMatch("hemlig-abc123", "hemlig-abc123"), "secretsMatch: identiska → true");
+// R. Olika hemligheter (samma längd) matchar inte
+assertFalse(secretsMatch("hemlig-abc123", "hemlig-xyz789"), "secretsMatch: olika samma längd → false");
+// S. Olika längd matchar inte (och kastar inte)
+assertFalse(secretsMatch("kort", "mycket-längre-hemlighet"), "secretsMatch: olika längd → false");
+// T. Tom/saknad hemlighet matchar aldrig (env ej satt → alltid avvisa)
+assertFalse(secretsMatch("", ""), "secretsMatch: båda tomma → false");
+assertFalse(secretsMatch("abc", ""), "secretsMatch: tom förväntad → false");
+assertFalse(secretsMatch(undefined, "abc"), "secretsMatch: undefined header → false");
+assertFalse(secretsMatch("abc", undefined), "secretsMatch: undefined expected → false");
+// U. En presensskillnad i sista tecknet fångas
+assertFalse(secretsMatch("hemlighet1", "hemlighet2"), "secretsMatch: skillnad i sista tecknet → false");
 
 console.log(`\n${passed} passerade, ${failed} failade`);
 if (failed > 0) {

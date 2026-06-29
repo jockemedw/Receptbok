@@ -68,7 +68,7 @@ export default createHandler(async (req, res) => {
 
 // ── URL-import ──────────────────────────────────────────────────────────────
 
-function isPrivateIp(ip) {
+export function isPrivateIp(ip) {
   // IPv4
   if (/^\d+\.\d+\.\d+\.\d+$/.test(ip)) {
     const [a, b] = ip.split(".").map(Number);

@@ -501,7 +501,9 @@ export async function convertBlockedToCustom(dateIso) {
     await postCustomDays('set', [dateIso], note);
     window._dlxExpanded = null;
     window.loadWeeklyPlan();
-  } catch { /* tyst */ }
+  } catch {
+    window.showToast?.('Kunde inte spara noteringen — prova igen.', { type: 'error' });
+  }
 }
 
 // ── Besparings-popover ───────────────────────────────────────────────────────
@@ -885,7 +887,9 @@ export async function clearCustomDay(dateIso) {
       window._planArchive,
       window._customDays
     );
-  } catch (e) { /* tyst — knappen står kvar */ }
+  } catch {
+    window.showToast?.('Kunde inte ta bort markeringen — prova igen.', { type: 'error' });
+  }
 }
 
 window.enterReplaceMode    = enterReplaceMode;

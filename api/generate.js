@@ -1,12 +1,12 @@
 import { buildShoppingList } from "./_shared/shopping-builder.js";
 import { createSupabaseHandler } from "./_shared/handler.js";
 import { db, getHouseholdId } from "./_shared/supabase.js";
-import { shuffle } from "./_shared/history.js";
 import { normalizeOffers } from "./willys-offers.js";
-import { matchRecipe, buildDealCandidates, weightedSaving } from "./_shared/willys-matcher.js";
+import { matchRecipe, buildDealCandidates } from "./_shared/willys-matcher.js";
+import { selectRecipes, bucketBySaving, hasTure } from "./_shared/select-recipes.js";
+import { notifyAlert } from "./_shared/alert.js";
 
 const WILLYS_URL = "https://www.willys.se/search/campaigns/online?q=2160&type=PERSONAL_GENERAL&page=0&size=500";
-const SAVING_THRESHOLD = 10;
 
 function getCurrentSeason(dateStr) {
   const month = new Date(dateStr).getMonth() + 1;
@@ -14,20 +14,6 @@ function getCurrentSeason(dateStr) {
   if (month >= 6 && month <= 8) return "sommar";
   if (month >= 9 && month <= 11) return "höst";
   return "vinter";
-}
-
-function applySeasonWeight(pool, currentSeason) {
-  if (!currentSeason) return pool;
-  const weighted = pool.map((r) => {
-    const seasons = r.seasons || [];
-    let weight;
-    if (seasons.length === 0) weight = 1;
-    else if (seasons.includes(currentSeason)) weight = 2;
-    else weight = 0.5;
-    return { r, sort: Math.random() * weight };
-  });
-  weighted.sort((a, b) => b.sort - a.sort);
-  return weighted.map((w) => w.r);
 }
 
 const DAY_NAMES = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag", "Lördag", "Söndag"];
@@ -128,8 +114,8 @@ async function fetchExistingShoppingList(householdId) {
 
 // Arkiverar plan-dagar som ligger före newStartDate i plan_archives,
 // sedan deaktiveras den gamla planen.
-async function archiveOldPlan(newStartDate, householdId) {
-  const { data: plans } = await db
+export async function archiveOldPlan(newStartDate, householdId, database = db) {
+  const { data: plans } = await database
     .from("weekly_plans")
     .select("id, start_date, end_date")
     .eq("household_id", householdId)
@@ -138,7 +124,7 @@ async function archiveOldPlan(newStartDate, householdId) {
   if (!plans?.length) return;
 
   const oldPlan = plans[0];
-  const { data: daysToArchive } = await db
+  const { data: daysToArchive } = await database
     .from("meal_days")
     .select("date, recipe_id, recipe_title_snapshot, saving")
     .eq("plan_id", oldPlan.id)
@@ -153,7 +139,7 @@ async function archiveOldPlan(newStartDate, householdId) {
       recipeId: d.recipe_id,
       ...(d.saving ? { saving: d.saving } : {}),
     }));
-    await db.from("plan_archives").insert({
+    await database.from("plan_archives").insert({
       household_id: householdId,
       start_date: daysToArchive[0].date,
       end_date: daysToArchive[daysToArchive.length - 1].date,
@@ -163,158 +149,27 @@ async function archiveOldPlan(newStartDate, householdId) {
 
     // Trimma plan_archives — behåll bara plans med endDate inom 30 dagar bakåt
     const cutoff = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
-    const { data: old } = await db
+    const { data: old } = await database
       .from("plan_archives")
       .select("id, end_date")
       .eq("household_id", householdId)
       .lt("end_date", cutoff);
     if (old?.length) {
-      await db.from("plan_archives").delete().in("id", old.map((r) => r.id));
+      await database.from("plan_archives").delete().in("id", old.map((r) => r.id));
     }
   }
 
   // Deaktivera gammal plan + ta bort dess meal_days (de är arkiverade eller överskrivna)
-  await db.from("meal_days").delete().eq("plan_id", oldPlan.id);
-  await db.from("weekly_plans").update({ is_active: false }).eq("id", oldPlan.id);
+  await database.from("meal_days").delete().eq("plan_id", oldPlan.id);
+  await database.from("weekly_plans").update({ is_active: false }).eq("id", oldPlan.id);
 }
 
-// Prioriterar in rea-recept i matsedeln. Tröskeln mäts på VÄRDEVIKTAD besparing
-// (weightedSaving) i stället för rå kr — så att ett recept vars besparing bara är
-// billig vitlök/lök inte trycks in, medan dyra protein-/färskvarureor lyfts.
-function bucketBySaving(pool, savingsById) {
-  if (!savingsById) return shuffle(pool);
-  const high = [], low = [];
-  for (const r of pool) {
-    const e = savingsById[r.id];
-    const score = e ? weightedSaving(e.matches, e.total) : 0;
-    if (score >= SAVING_THRESHOLD) high.push(r);
-    else low.push(r);
-  }
-  return [...shuffle(high), ...shuffle(low)];
-}
-
-const hasTure = (r) => (r.tags || []).some((t) => t.toLowerCase() === "ture");
-
-function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), usedOn = {}, savingsById = null, currentSeason = null) {
-  const MAX_PER_PROTEIN = 2;
-
-  const fresh = recipes.filter((r) => !recentIds.has(r.id));
-  let pool;
-  if (fresh.length >= dayList.length) {
-    pool = fresh;
-  } else {
-    const needed = dayList.length - fresh.length;
-    const oldest = recipes
-      .filter((r) => recentIds.has(r.id))
-      .sort((a, b) => (usedOn[a.id] ?? "") < (usedOn[b.id] ?? "") ? -1 : 1)
-      .slice(0, needed);
-    pool = [...fresh, ...oldest];
-  }
-  if (pool.length === 0) pool = recipes;
-
-  const weekdayPool = applySeasonWeight(bucketBySaving(pool.filter((r) => r.tags.includes("vardag30")), savingsById), currentSeason);
-  const weekendPool = applySeasonWeight(bucketBySaving(pool.filter((r) => r.tags.includes("helg60")), savingsById), currentSeason);
-
-  const tureCount = constraints.ture_days;
-  const shuffledIndices = shuffle(dayList.map((_, i) => i));
-  const tureDaySet = new Set(shuffledIndices.slice(0, tureCount));
-
-  const vegCount = constraints.vegetarian_days;
-  const remainingIndices = shuffledIndices.filter((i) => !tureDaySet.has(i));
-  const vegDaySet = new Set(remainingIndices.slice(0, vegCount));
-
-  const maxVeg = Math.max(2, vegCount);
-
-  const usedIds = new Set();
-  const proteinUsage = {};
-  const result = [];
-  let untestedSoFar = 0;
-
-  function pick(dayPool, altPool, mustBeVeg, mustBeTure) {
-    const maxForProtein = (p) => p === "vegetarisk" ? maxVeg : MAX_PER_PROTEIN;
-    const underUntestedLimit = (r) => r.tested || untestedSoFar < constraints.untested_count;
-    const tureOk = (r) => !mustBeTure || hasTure(r);
-    const vegOk = (r) => {
-      if (mustBeVeg) return r.protein === "vegetarisk";
-      if (!mustBeTure) return r.protein !== "vegetarisk";
-      return true;
-    };
-    const saveTure = tureCount > 0 && !mustBeTure;
-    const preferNonTure = (r) => !saveTure || !hasTure(r);
-    for (const r of dayPool) {
-      if (usedIds.has(r.id)) continue;
-      if (!tureOk(r)) continue;
-      if (!vegOk(r)) continue;
-      if (!preferNonTure(r)) continue;
-      if ((proteinUsage[r.protein] || 0) >= maxForProtein(r.protein)) continue;
-      if (!underUntestedLimit(r)) continue;
-      return r;
-    }
-    for (const r of dayPool) {
-      if (usedIds.has(r.id)) continue;
-      if (!tureOk(r)) continue;
-      if (!vegOk(r)) continue;
-      if (!preferNonTure(r)) continue;
-      if (!underUntestedLimit(r)) continue;
-      return r;
-    }
-    for (const r of altPool) {
-      if (usedIds.has(r.id)) continue;
-      if (!tureOk(r)) continue;
-      if (!vegOk(r)) continue;
-      if (!preferNonTure(r)) continue;
-      if (!underUntestedLimit(r)) continue;
-      return r;
-    }
-    for (const r of recipes) {
-      if (usedIds.has(r.id)) continue;
-      if (!tureOk(r)) continue;
-      if (!vegOk(r)) continue;
-      if (!underUntestedLimit(r)) continue;
-      return r;
-    }
-    for (const r of recipes) {
-      if (usedIds.has(r.id)) continue;
-      if (!tureOk(r)) continue;
-      if (!vegOk(r)) continue;
-      return r;
-    }
-    return null;
-  }
-
-  const processingOrder = dayList.map((_, i) => i);
-  processingOrder.sort((a, b) => (tureDaySet.has(a) ? 0 : 1) - (tureDaySet.has(b) ? 0 : 1));
-
-  for (const i of processingOrder) {
-    const day = dayList[i];
-    const isVegDay = vegDaySet.has(i);
-    const isTureDay = tureDaySet.has(i);
-    const dayPool = day.is_weekend ? weekendPool : weekdayPool;
-    const altPool = day.is_weekend ? weekdayPool : weekendPool;
-    const recipe = pick(dayPool, altPool, isVegDay, isTureDay);
-    if (!recipe) {
-      throw new Error(
-        `Kunde inte hitta recept för ${day.day} (${day.date}) — ` +
-        `${isTureDay ? "ture " : ""}${isVegDay ? "vegetarisk " : ""}${day.is_weekend ? "helg" : "vardag"}. ` +
-        "Prova att ändra inställningarna."
-      );
-    }
-    usedIds.add(recipe.id);
-    proteinUsage[recipe.protein] = (proteinUsage[recipe.protein] || 0) + 1;
-    if (!recipe.tested) untestedSoFar++;
-    result.push({ date: day.date, day: day.day, recipe: recipe.title, recipeId: recipe.id });
-  }
-
-  result.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
-  return result;
-}
-
-async function savePlanToSupabase(weeklyPlan, householdId) {
+export async function savePlanToSupabase(weeklyPlan, householdId, database = db) {
   const today = new Date().toISOString();
   // Plan-raden skapas INAKTIV. Den tas i bruk (activatePlan) först när alla
   // dagar är skrivna — så att en aktiv plan ALDRIG kan sakna sina dagar (ger
   // annars en tom matsedel utan åtgärdsknappar om dag-skrivningen glappar).
-  const { data: newPlan, error: planErr } = await db
+  const { data: newPlan, error: planErr } = await database
     .from("weekly_plans")
     .insert({
       household_id: householdId,
@@ -339,11 +194,11 @@ async function savePlanToSupabase(weeklyPlan, householdId) {
     locked: false,
   }));
 
-  const { error: daysErr } = await db.from("meal_days").insert(mealDayRows);
+  const { error: daysErr } = await database.from("meal_days").insert(mealDayRows);
   if (daysErr) {
     // Städa bort den halv-skrivna plan-raden så den aldrig kan dyka upp som
     // en tom aktiv plan. Den gamla planen är ännu orörd (arkiveras senare).
-    await db.from("weekly_plans").delete().eq("id", newPlan.id);
+    await database.from("weekly_plans").delete().eq("id", newPlan.id);
     throw daysErr;
   }
 
@@ -353,10 +208,10 @@ async function savePlanToSupabase(weeklyPlan, householdId) {
 // Tar en färdigskriven (inaktiv) plan i bruk allra sist: stäng av alla andra
 // aktiva planer och slå på den nya i ett svep. Eftersom dagarna redan sitter har
 // en aktiv plan alltid sitt innehåll.
-async function activatePlan(planId, householdId) {
-  await db.from("weekly_plans").update({ is_active: false })
+export async function activatePlan(planId, householdId, database = db) {
+  await database.from("weekly_plans").update({ is_active: false })
     .eq("household_id", householdId).eq("is_active", true);
-  const { error } = await db.from("weekly_plans").update({ is_active: true }).eq("id", planId);
+  const { error } = await database.from("weekly_plans").update({ is_active: true }).eq("id", planId);
   if (error) throw error;
 }
 
@@ -483,6 +338,11 @@ export default createSupabaseHandler(async (req, res) => {
   const activeDays = allDays.filter((d) => !blockedSet.has(d.date));
 
   let savingsById = null;
+  // Tyst degradering: prisoptimeringen vilar på en oofficiell Willys-feed som kan
+  // sluta svara/ändra format utan förvarning — då blir resultatet 0 erbjudanden,
+  // vilket ser ut som "inga reor" snarare än "bruten". pricingDegraded flaggar det
+  // (returneras till UI:t) och skickar ett valfritt webhook-pling (notifyAlert).
+  let pricingDegraded = false;
   if (optimize_prices) {
     try {
       const upstream = await fetch(WILLYS_URL, {
@@ -492,6 +352,7 @@ export default createSupabaseHandler(async (req, res) => {
       if (upstream.ok) {
         const raw = await upstream.json();
         const offers = normalizeOffers(raw.results || []);
+        if (offers.length === 0) pricingDegraded = true; // 200 men inget parsebart = trolig API-ändring
         savingsById = {};
         for (const r of filtered) {
           const m = matchRecipe(r, offers);
@@ -512,9 +373,15 @@ export default createSupabaseHandler(async (req, res) => {
             savingsById[r.id] = { total: m.totalSaving, matches: [...byCanon.values()] };
           }
         }
+      } else {
+        pricingDegraded = true; // icke-ok HTTP-svar från feeden
       }
     } catch {
       savingsById = null;
+      pricingDegraded = true; // timeout/nätfel/parsefel
+    }
+    if (pricingDegraded) {
+      await notifyAlert(`Receptboken: prisoptimering gav inga erbjudanden (${start_date}). Willys-feeden kan vara bruten.`);
     }
   }
 
@@ -546,7 +413,7 @@ export default createSupabaseHandler(async (req, res) => {
   }
 
   if (dry_run) {
-    return res.status(200).json({ ok: true, dry_run: true, days: days.length, weeklyPlan, deals });
+    return res.status(200).json({ ok: true, dry_run: true, days: days.length, weeklyPlan, deals, pricingDegraded });
   }
 
   const selectedIds = days.map((d) => d.recipeId).filter(Boolean);
@@ -573,5 +440,5 @@ export default createSupabaseHandler(async (req, res) => {
     };
   }
 
-  return res.status(200).json({ ok: true, days: days.length, weeklyPlan, shoppingList, deals });
+  return res.status(200).json({ ok: true, days: days.length, weeklyPlan, shoppingList, deals, pricingDegraded });
 });

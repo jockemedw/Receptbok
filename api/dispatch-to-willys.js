@@ -23,8 +23,21 @@ import { parseIngredient, normalizeName } from "./_shared/shopping-builder.js";
 import { createSecretsStore } from "./_shared/secrets-store.js";
 import { readFileRaw } from "./_shared/github.js";
 import { db } from "./_shared/supabase.js";
+import { notifyAlert } from "./_shared/alert.js";
+import { timingSafeEqual } from "node:crypto";
 
 const CART_URL = "https://www.willys.se/";
+
+// Konstant-tids-jämförelse av delade hemligheter (X-Refresh-Secret) — undviker
+// att svarstiden läcker hur många tecken som stämmer. Olika längd → false direkt
+// (timingSafeEqual kräver lika buffertlängd); det är en acceptabel läcka.
+export function secretsMatch(a, b) {
+  if (typeof a !== "string" || typeof b !== "string" || a.length === 0 || b.length === 0) return false;
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  if (ab.length !== bb.length) return false;
+  return timingSafeEqual(ab, bb);
+}
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -65,6 +78,7 @@ export default async function handler(req, res) {
     const result = await runDispatch({ shoppingList, offers, searchClient, cartClient, blockedBrands });
 
     if (!result.ok && result.error === "auth_expired") {
+      await notifyAlert("Receptboken: Willys-cookies har gått ut — varukorgsexport fungerar inte förrän de förnyas.");
       return res.status(200).json({
         ok: false,
         error: "auth_expired",
@@ -130,7 +144,7 @@ async function handleRefreshCookies(req, res) {
 
 // Ren funktion — exporterad för test. Sidoeffekter sker bara via store.writeUser.
 export async function runRefresh({ secretHeader, expectedSecret, payload, store }) {
-  if (!secretHeader || secretHeader !== expectedSecret) {
+  if (!secretsMatch(secretHeader, expectedSecret)) {
     return { status: 401, body: { error: "unauthorized" } };
   }
   const { userId, cookie, csrf, storeId } = payload;
