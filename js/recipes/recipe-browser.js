@@ -299,14 +299,9 @@ export async function toggleTested(event, id) {
   }
 }
 
-// Bakåtkompatibla stubs — recipe-editor.js anropar dessa
-function initFilters() { /* no-op: gruppering ersätter filtersystemet */ }
-
 window.renderCard          = renderCard;
 window.toggleCard          = toggleCard;
 window.renderRecipeBrowser = renderRecipeBrowser;
 window.setGroupBy          = setGroupBy;
-window.applyFilters        = renderRecipeBrowser;  // alias för bakåtkompat
 window.jumpToRecipe        = jumpToRecipe;
 window.toggleTested        = toggleTested;
-window.initFilters         = initFilters;
