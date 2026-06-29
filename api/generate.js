@@ -4,6 +4,7 @@ import { db, getHouseholdId } from "./_shared/supabase.js";
 import { normalizeOffers } from "./willys-offers.js";
 import { matchRecipe, buildDealCandidates } from "./_shared/willys-matcher.js";
 import { selectRecipes, bucketBySaving, hasTure } from "./_shared/select-recipes.js";
+import { notifyAlert } from "./_shared/alert.js";
 
 const WILLYS_URL = "https://www.willys.se/search/campaigns/online?q=2160&type=PERSONAL_GENERAL&page=0&size=500";
 
@@ -337,6 +338,11 @@ export default createSupabaseHandler(async (req, res) => {
   const activeDays = allDays.filter((d) => !blockedSet.has(d.date));
 
   let savingsById = null;
+  // Tyst degradering: prisoptimeringen vilar på en oofficiell Willys-feed som kan
+  // sluta svara/ändra format utan förvarning — då blir resultatet 0 erbjudanden,
+  // vilket ser ut som "inga reor" snarare än "bruten". pricingDegraded flaggar det
+  // (returneras till UI:t) och skickar ett valfritt webhook-pling (notifyAlert).
+  let pricingDegraded = false;
   if (optimize_prices) {
     try {
       const upstream = await fetch(WILLYS_URL, {
@@ -346,6 +352,7 @@ export default createSupabaseHandler(async (req, res) => {
       if (upstream.ok) {
         const raw = await upstream.json();
         const offers = normalizeOffers(raw.results || []);
+        if (offers.length === 0) pricingDegraded = true; // 200 men inget parsebart = trolig API-ändring
         savingsById = {};
         for (const r of filtered) {
           const m = matchRecipe(r, offers);
@@ -366,9 +373,15 @@ export default createSupabaseHandler(async (req, res) => {
             savingsById[r.id] = { total: m.totalSaving, matches: [...byCanon.values()] };
           }
         }
+      } else {
+        pricingDegraded = true; // icke-ok HTTP-svar från feeden
       }
     } catch {
       savingsById = null;
+      pricingDegraded = true; // timeout/nätfel/parsefel
+    }
+    if (pricingDegraded) {
+      await notifyAlert(`Receptboken: prisoptimering gav inga erbjudanden (${start_date}). Willys-feeden kan vara bruten.`);
     }
   }
 
@@ -400,7 +413,7 @@ export default createSupabaseHandler(async (req, res) => {
   }
 
   if (dry_run) {
-    return res.status(200).json({ ok: true, dry_run: true, days: days.length, weeklyPlan, deals });
+    return res.status(200).json({ ok: true, dry_run: true, days: days.length, weeklyPlan, deals, pricingDegraded });
   }
 
   const selectedIds = days.map((d) => d.recipeId).filter(Boolean);
@@ -427,5 +440,5 @@ export default createSupabaseHandler(async (req, res) => {
     };
   }
 
-  return res.status(200).json({ ok: true, days: days.length, weeklyPlan, shoppingList, deals });
+  return res.status(200).json({ ok: true, days: days.length, weeklyPlan, shoppingList, deals, pricingDegraded });
 });

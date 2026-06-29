@@ -23,6 +23,7 @@ import { parseIngredient, normalizeName } from "./_shared/shopping-builder.js";
 import { createSecretsStore } from "./_shared/secrets-store.js";
 import { readFileRaw } from "./_shared/github.js";
 import { db } from "./_shared/supabase.js";
+import { notifyAlert } from "./_shared/alert.js";
 import { timingSafeEqual } from "node:crypto";
 
 const CART_URL = "https://www.willys.se/";
@@ -77,6 +78,7 @@ export default async function handler(req, res) {
     const result = await runDispatch({ shoppingList, offers, searchClient, cartClient, blockedBrands });
 
     if (!result.ok && result.error === "auth_expired") {
+      await notifyAlert("Receptboken: Willys-cookies har gått ut — varukorgsexport fungerar inte förrän de förnyas.");
       return res.status(200).json({
         ok: false,
         error: "auth_expired",
