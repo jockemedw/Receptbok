@@ -1,0 +1,38 @@
+name: Tester
+
+# Kör hela Node-testsviten vid varje push och pull request.
+# Ersätter den lokala .claude-hookens roll i CI så att ändringar gjorda utanför
+# en Claude-session (eller på vägar hooken inte fångar) också testas.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checka ut repo
+        uses: actions/checkout@v4
+
+      - name: Installera Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # package-lock.json är gitignorerad (deps installeras lokalt), så vi kör
+      # npm install i stället för npm ci. Endast @supabase/supabase-js behövs av
+      # dispatch-/cookies-testerna; övriga tester är beroendefria.
+      - name: Installera beroenden
+        run: npm install --no-audit --no-fund
+
+      - name: Kör testsviten
+        run: |
+          for f in tests/*.test.js; do
+            echo "== $f =="
+            node "$f"
+          done
+
+      - name: Syntaxkoll av frontend-moduler
+        run: node --check js/app.js
