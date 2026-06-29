@@ -113,8 +113,8 @@ async function fetchExistingShoppingList(householdId) {
 
 // Arkiverar plan-dagar som ligger före newStartDate i plan_archives,
 // sedan deaktiveras den gamla planen.
-async function archiveOldPlan(newStartDate, householdId) {
-  const { data: plans } = await db
+export async function archiveOldPlan(newStartDate, householdId, database = db) {
+  const { data: plans } = await database
     .from("weekly_plans")
     .select("id, start_date, end_date")
     .eq("household_id", householdId)
@@ -123,7 +123,7 @@ async function archiveOldPlan(newStartDate, householdId) {
   if (!plans?.length) return;
 
   const oldPlan = plans[0];
-  const { data: daysToArchive } = await db
+  const { data: daysToArchive } = await database
     .from("meal_days")
     .select("date, recipe_id, recipe_title_snapshot, saving")
     .eq("plan_id", oldPlan.id)
@@ -138,7 +138,7 @@ async function archiveOldPlan(newStartDate, householdId) {
       recipeId: d.recipe_id,
       ...(d.saving ? { saving: d.saving } : {}),
     }));
-    await db.from("plan_archives").insert({
+    await database.from("plan_archives").insert({
       household_id: householdId,
       start_date: daysToArchive[0].date,
       end_date: daysToArchive[daysToArchive.length - 1].date,
@@ -148,27 +148,27 @@ async function archiveOldPlan(newStartDate, householdId) {
 
     // Trimma plan_archives — behåll bara plans med endDate inom 30 dagar bakåt
     const cutoff = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
-    const { data: old } = await db
+    const { data: old } = await database
       .from("plan_archives")
       .select("id, end_date")
       .eq("household_id", householdId)
       .lt("end_date", cutoff);
     if (old?.length) {
-      await db.from("plan_archives").delete().in("id", old.map((r) => r.id));
+      await database.from("plan_archives").delete().in("id", old.map((r) => r.id));
     }
   }
 
   // Deaktivera gammal plan + ta bort dess meal_days (de är arkiverade eller överskrivna)
-  await db.from("meal_days").delete().eq("plan_id", oldPlan.id);
-  await db.from("weekly_plans").update({ is_active: false }).eq("id", oldPlan.id);
+  await database.from("meal_days").delete().eq("plan_id", oldPlan.id);
+  await database.from("weekly_plans").update({ is_active: false }).eq("id", oldPlan.id);
 }
 
-async function savePlanToSupabase(weeklyPlan, householdId) {
+export async function savePlanToSupabase(weeklyPlan, householdId, database = db) {
   const today = new Date().toISOString();
   // Plan-raden skapas INAKTIV. Den tas i bruk (activatePlan) först när alla
   // dagar är skrivna — så att en aktiv plan ALDRIG kan sakna sina dagar (ger
   // annars en tom matsedel utan åtgärdsknappar om dag-skrivningen glappar).
-  const { data: newPlan, error: planErr } = await db
+  const { data: newPlan, error: planErr } = await database
     .from("weekly_plans")
     .insert({
       household_id: householdId,
@@ -193,11 +193,11 @@ async function savePlanToSupabase(weeklyPlan, householdId) {
     locked: false,
   }));
 
-  const { error: daysErr } = await db.from("meal_days").insert(mealDayRows);
+  const { error: daysErr } = await database.from("meal_days").insert(mealDayRows);
   if (daysErr) {
     // Städa bort den halv-skrivna plan-raden så den aldrig kan dyka upp som
     // en tom aktiv plan. Den gamla planen är ännu orörd (arkiveras senare).
-    await db.from("weekly_plans").delete().eq("id", newPlan.id);
+    await database.from("weekly_plans").delete().eq("id", newPlan.id);
     throw daysErr;
   }
 
@@ -207,10 +207,10 @@ async function savePlanToSupabase(weeklyPlan, householdId) {
 // Tar en färdigskriven (inaktiv) plan i bruk allra sist: stäng av alla andra
 // aktiva planer och slå på den nya i ett svep. Eftersom dagarna redan sitter har
 // en aktiv plan alltid sitt innehåll.
-async function activatePlan(planId, householdId) {
-  await db.from("weekly_plans").update({ is_active: false })
+export async function activatePlan(planId, householdId, database = db) {
+  await database.from("weekly_plans").update({ is_active: false })
     .eq("household_id", householdId).eq("is_active", true);
-  const { error } = await db.from("weekly_plans").update({ is_active: true }).eq("id", planId);
+  const { error } = await database.from("weekly_plans").update({ is_active: true }).eq("id", planId);
   if (error) throw error;
 }
 
