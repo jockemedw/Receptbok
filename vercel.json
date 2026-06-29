@@ -5,6 +5,9 @@
     },
     "api/dispatch-to-willys.js": {
       "maxDuration": 60
+    },
+    "api/import-recipe.js": {
+      "maxDuration": 30
     }
   }
 }
