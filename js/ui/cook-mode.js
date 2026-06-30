@@ -3,10 +3,13 @@
 // inte släcks medan man lagar. Ren presentationsvy — muterar ingen data.
 
 import { escapeHtml } from '../utils.js';
+import { scaleIngredient, fmtNum } from './portion-scale.js';
 
 let _wakeLock = null;
 let _overlay  = null;
 let _scrollY  = 0;
+let _ings     = [];   // ingredienser i originalform (för omräkning)
+let _servings = null; // receptets bas-portioner (om angivet)
 
 async function acquireWakeLock() {
   try {
@@ -51,6 +54,39 @@ function updateProgress() {
   if (next && done > 0) next.classList.add('current');
 }
 
+// Portioner som faktorn ger (om bas-portioner finns), annars faktor-text.
+function scaleSummary(factor) {
+  if (_servings) return `${fmtNum(_servings * factor)} portioner`;
+  return factor === 1 ? '4 portioner' : `×${fmtNum(factor)}`;
+}
+
+const SCALE_STEPS = [0.5, 1, 2];
+
+function scaleControlsHtml() {
+  if (!_ings.length) return '';
+  const chips = SCALE_STEPS.map((f) =>
+    `<button type="button" class="cook-scale-btn${f === 1 ? ' active' : ''}"
+       onclick="window._cookScale(${f})">×${fmtNum(f)}</button>`
+  ).join('');
+  return `<div class="cook-scale">
+      <span class="cook-scale-label">${escapeHtml(scaleSummary(1))}</span>
+      <div class="cook-scale-btns">${chips}</div>
+    </div>`;
+}
+
+// Räkna om ingredienstexten live; bock-state (.done) bevaras per rad.
+function applyScale(factor) {
+  if (!_overlay) return;
+  _overlay.querySelectorAll('.cook-ing').forEach((li, idx) => {
+    const span = li.querySelector('.cook-ing-text');
+    if (span) span.textContent = scaleIngredient(_ings[idx] || '', factor);
+  });
+  _overlay.querySelectorAll('.cook-scale-btn').forEach((btn, i) =>
+    btn.classList.toggle('active', SCALE_STEPS[i] === factor));
+  const lbl = _overlay.querySelector('.cook-scale-label');
+  if (lbl) lbl.textContent = scaleSummary(factor);
+}
+
 export function closeCookMode() {
   if (!_overlay) return;
   releaseWakeLock();
@@ -71,8 +107,10 @@ export function openCookMode(recipeId) {
   if (!r) { window.showToast?.('Receptet kunde inte öppnas — prova igen.', { type: 'error' }); return; }
   if (_overlay) closeCookMode();
 
-  const ings = (r.ingredients || []).map((i) =>
-    `<li class="cook-ing" onclick="this.classList.toggle('done')"><span class="cook-ing-box"></span><span>${escapeHtml(i)}</span></li>`
+  _ings     = r.ingredients || [];
+  _servings = r.servings || null;
+  const ings = _ings.map((i) =>
+    `<li class="cook-ing" onclick="this.classList.toggle('done')"><span class="cook-ing-box"></span><span class="cook-ing-text">${escapeHtml(i)}</span></li>`
   ).join('');
   const steps = (r.instructions || []).map((s, i) =>
     `<li class="cook-step" onclick="this.classList.toggle('done');window._cookProgress()">
@@ -106,6 +144,7 @@ export function openCookMode(recipeId) {
     <div class="cook-body">
       <details class="cook-ings-wrap" open>
         <summary>Ingredienser</summary>
+        ${scaleControlsHtml()}
         <ul class="cook-ings">${ings}</ul>
       </details>
       <ol class="cook-steps">${steps}</ol>
@@ -121,5 +160,6 @@ export function openCookMode(recipeId) {
 }
 
 window._cookProgress = updateProgress;
+window._cookScale    = applyScale;
 window.openCookMode  = openCookMode;
 window.closeCookMode = closeCookMode;
