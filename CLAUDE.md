@@ -60,6 +60,7 @@ node tests/match-corpus.test.js     # 35  — accept/reject-korpus
 node tests/shopping.test.js         # 81  — inköpslista (clean→parse→merge→categorize)
 node tests/select-recipes.test.js   # 432 — deterministiskt receptval
 node tests/data-mapper.test.js      # 27  — recipeFromRow/recipeToRow
+node tests/portion-scale.test.js    # 27  — portionsskalning (matlagningsläget)
 node tests/dispatch-to-willys.test.js  # 93 — kräver node_modules
 node tests/cookies-endpoint.test.js    # 29 — kräver node_modules
 
