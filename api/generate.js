@@ -215,6 +215,48 @@ export async function activatePlan(planId, householdId, database = db) {
   if (error) throw error;
 }
 
+// True om felet betyder "funktionen finns inte i Postgres ännu" — dvs SQL-filen
+// i db/migrations/001_activate_plan_atomic.sql inte har körts av Joakim än.
+// PostgREST svarar med code PGRST202 (eller en 404/"Could not find the function"-
+// text beroende på klientversion) i det läget.
+export function isMissingRpcError(error) {
+  if (!error) return false;
+  if (error.code === "PGRST202") return true;
+  const msg = `${error.message || ""} ${error.details || ""} ${error.hint || ""}`.toLowerCase();
+  return msg.includes("could not find the function") || msg.includes("404");
+}
+
+// Atomär plan-aktivering (backlog-punkt #3, CLAUDE.md hård regel "Befintlig
+// veckoplan får aldrig förstöras"): archiveOldPlan + activatePlan i EN
+// Postgres-transaktion via RPC:n activate_plan_atomic (db/migrations/001_*.sql)
+// — dör processen mitt i går hela bytet tillbaka i stället för att lämna
+// hushållet med noll aktiva planer.
+//
+// Rollout-säkerhet: RPC:n finns bara i Postgres när Joakim manuellt har kört
+// SQL-filen i Supabase SQL Editor (inget migrationsverktyg i det här projektet).
+// Push till main deployas direkt (CLAUDE.md), så koden måste fungera BÅDE före
+// och efter att SQL:en är körd. Vi försöker RPC:n först; om PostgREST svarar att
+// funktionen saknas (isMissingRpcError) faller vi tillbaka till den gamla
+// tvåstegs-JS-vägen (archiveOldPlan + activatePlan var för sig) — exakt samma
+// beteende som innan den här ändringen. Atomiciteten slår på automatiskt så
+// fort SQL:en är körd, utan kodändring.
+export async function activatePlanAtomic(newPlanId, startDate, householdId, database = db) {
+  const { error } = await database.rpc("activate_plan_atomic", {
+    p_household_id: householdId,
+    p_new_plan_id: newPlanId,
+    p_new_start_date: startDate,
+  });
+  if (!error) return { usedRpc: true };
+
+  if (!isMissingRpcError(error)) throw error;
+
+  // Fallback: RPC:n är inte upplagd i Supabase än — kör den gamla,
+  // icke-atomära tvåstegsvägen så produktionen aldrig går sönder.
+  try { await archiveOldPlan(startDate, householdId, database); } catch (e) { console.error("archive error:", e); }
+  await activatePlan(newPlanId, householdId, database);
+  return { usedRpc: false };
+}
+
 async function saveHistoryToSupabase(days, householdId) {
   const today = new Date().toISOString().slice(0, 10);
   const rows = days
@@ -423,9 +465,9 @@ export default createSupabaseHandler(async (req, res) => {
   // här och den gamla aktiva planen är fortfarande orörd — användaren behåller
   // sin matsedel i stället för att få en tom.
   const newPlanId = await savePlanToSupabase(weeklyPlan, householdId);
-  // Först nu, när dagarna sitter: arkivera gamla planen och aktivera den nya.
-  try { await archiveOldPlan(start_date, householdId); } catch (e) { console.error("archive error:", e); }
-  await activatePlan(newPlanId, householdId);
+  // Först nu, när dagarna sitter: byt aktiv plan atomärt (RPC, med JS-fallback
+  // — se activatePlanAtomic ovan).
+  await activatePlanAtomic(newPlanId, start_date, householdId);
   await saveHistoryToSupabase(days, householdId);
 
   let shoppingList = null;
