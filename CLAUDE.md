@@ -45,6 +45,11 @@ ligger **inte** här längre — den bor i `docs/status.md` så att den här fil
 och inte belastar varje session. SessionStart-hooken visar en kort **digest** (mellan `<!-- DIGEST:START/END -->`
 i `docs/status.md`) + git-status överst. Läs hela `docs/status.md` när du behöver detaljerna; arkiv i `docs/session-log-archive.md`.
 
+## Arbetsarkitektur (modellval + orkestrering)
+Hur Claude Code körs på projektet — vilken modell gör vad (Opus 4.8 default, Sonnet 5 arbetshäst,
+Haiku 4.5 fan-out, Fable 5 för det svåraste), när vi orkestrerar (subagenter/workflows), och en
+månatlig omvärdering när nya modeller släpps — bor i `docs/claude-orchestration.md`.
+
 ## Kommandon (tester & skript)
 Inga npm-scripts — allt körs direkt med `node` (inga externa deps utom de tester som kräver `node_modules`).
 
