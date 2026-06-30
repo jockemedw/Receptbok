@@ -1,6 +1,21 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–101. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–101. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Arkiverade verifieringspunkter (flyttade Session 103)
+Dessa punkter har legat i live-verifieringskön i veckor och antas fungera. Flyttade hit
+från den aktiva kön (`docs/status.md`) för att hålla den scanbar. Återaktivera om något visar sig fela.
+
+- **Lösvikts-enum vid Willys-export** (PR #65): `pickUnitForCode()` skickar `"kilograms"` för `_KG`-koder (lös färskvara, t.ex. potatis). Enum-värdet är *inferred* — bara `"pieces"` är PoC-bekräftat. Bekräfta att lös potatis landar i korgen i skarp körning.
+- **Helhetsomtaget Session 86 (PR #73):** snabbkoll mot produktion: (1) PWA "Lägg till på hemskärmen" ger egen ikon + öppnar offline (skalet), (2) matlagningslägets Wake Lock på riktig mobil, (3) Ångra på borttagen inköpsvara + progress-synk från annan enhet.
+- **Premiumvy för matsedeln** (Session 84–85, PR #69/#70): testsvit grön men ej verifierad på mobil mot produktion. Bekräfta att vyn renderar, att alla åtgärder fungerar (slumpa/välj/byt dag/fri dag/besparing/egen planering) och att växeln Premium↔Klassisk håller båda i synk. Kolla även: helgkort lika höga som vardagskort (helg = prick på färgryggen), och "Vecka N"-avdelare på planer som spänner två veckor.
+- **Willys Plus-erbjudanden** (Session 88): `normalizeOffers()` märker nu LOYALTY-erbjudanden med "Willys Plus"-badge i besparings-popoveren + släpper in `SubtotalOrderPromotion`-klubbpriser (kött/frukt som föll bort förut). Bekräfta mot produktion att badgen syns och att de nya fynden räknas in. Detaljer: `docs/research-willys-plus-2026-06-16.md`.
+- **"Veckans fynd"-popup** (Session 89, brusrensad Session 90): efter prisoptimerad generering öppnas en popup med (1) fynden planen redan fångar och (2) rea-recept att byta in (rankade efter besparing, "Byt in" → välj dag). Hero-besparingen i premiumvyn öppnar den igen. Bekräfta på mobil: popupen renderar, "Byt in" landar receptet rätt + behåller besparingen, inköpslistan följer med. Session 90 tog bort matcher-bruset (skafferi/fett räknas ej, rökt lax/marinerad vitlök/barnmat avvisas) — bekräfta att besparingarna nu är rimliga och fria från skräpprodukter. Session 91 (P2): recept-korten är nu kollapsbara (rubrik + besparing, tryck för att fälla ut varorna) + antal i sektionsrubrikerna, så "Fler fynd" inte begravs — bekräfta att layouten känns scanbar på mobil. Session 92: fler korpus-fixar (grillspett→grönsak, småbarnsmat "Från X År", smaksatt bärvatten avvisas). Session 93: storpack (≥1 kg/1 l) flaggas med "storpack"-tag och nedviktas 50 % i "Fler fynd"-rankningen (visad besparing oförändrad) — bekräfta att taggen syns och att rankningen känns vettig.
+- **Värdeviktad prisprio** (Session 94, PR): `weightedSaving()` viktar varje sparad krona efter erbjudandets ordinarie pris (golv 0.2 / tak 2.2 runt pivot 40 kr) + 1.5× protein-boost (substring `färs|kyckling|fläsk|kött|…|lax|torsk|fisk|räk|…`). Används som tröskel i `bucketBySaving()` (matsedeln) och sortering i `buildDealCandidates()` (Veckans fynd). Visad kr-besparing oförändrad. Bekräfta mot produktion: prisoptimerad generering ger färre vitlöks-/lök-drivna förslag och lyfter dyra protein-/färskvarureor i både menyn och fynd-popupen.
+- **Atomär plan-skrivning** (Session 95, PR): `savePlanToSupabase()` skapar nu plan-raden **inaktiv**, skriver dagarna, och `activatePlan()` slår på den allra sist (handlern: skriv → `archiveOldPlan` → aktivera). Misslyckas dag-skrivningen städas plan-raden bort och den gamla planen är orörd. Förebygger "tom aktiv plan utan åtgärdsknappar" (Joakim, premiumvyn: 0 planerade + inga byt/växla-knappar). Bekräfta mot produktion att generering fungerar normalt och att en avbruten körning inte längre lämnar tom matsedel.
+- **Protein-sortering + variation i Veckans fynd** (Session 96, PR): `buildDealCandidates()` rankar nu topplistan på huvudproteinets besparing och väger in variation (decay 0.55) så ingen proteintyp dominerar. Bekräfta mot produktion: efter prisoptimerad generering toppar "Fler fynd" med recept där det dyra proteinet är på rea, och listan är blandad (inte 25 kyckling i rad). Tunbart: `diversityDecay` (lägre = hårdare variation) och `mainProteinSaving`-kategorierna i `canonProteinCategory()`.
 
 ---
 
