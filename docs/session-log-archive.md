@@ -1,6 +1,17 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–100. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–101. Senaste sessionen ligger i `CLAUDE.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 101 — Full nedmontering av klassiska veckovyn
+Joakim: "Fortsätt att nedmontera klassiska vyn — gör det genomtänkt och felsäkert." Genomfört i fyra oberoende commits på branch `claude/remove-classic-view`, mergad till `main`. Netto −842/+91 rader. Nyckelinsikt: nedmonteringen är **rent presentationell** — plan-datan flödar genom `window._lastPlan`/`window._timelineByDate` orört, så befintlig veckoplan kan aldrig skadas; risken var trasigt UI, inte dataförlust. **(1) Premium alltid på:** tog bort `dlx-switch` + `setMode`/`applyMode`/`currentMode`/`STORAGE_KEY`; `body.week-deluxe` sätts ovillkorligt. **(2) Slutade rendera klassiska tidslinjen:** `renderWeeklyPlanData` bygger fortfarande timeline + sätter `window._timelineByDate` men renderar inte grid/nav-chips/scroll/bulk-banner; markup borttagen; premiumvyns scaffold ankrar på `#confirmPlanWrap`; `centerTodayCard`-anropet borttaget ur `navigation.js`. **(3) Migrerade delade editorer inline:** delade `#weekRecipeDetail`-bottenpanelen borttagen; fri dag → `blockedDayEditorHtml` inline; egen planering med recept → `dlxEditCustom`/`customDayEditorHtml` inline; alla nåbara delade funktioner gjordes panel-säkra. **(4) Städade död kod:** ~493 rader ur `plan-viewer.js`. Bumpat `app.js?v=112`, SW-cache v23.
+
+**Hotfix efter deploy (löst):** matsedeln visade "Ingen matsedel ännu" på mobilen. Orsak: SW:n serverade undermoduler stale-while-revalidate med bar sökväg → ny `index.html` (utan `#weekGrid`) mötte gammal cachad `plan-viewer.js` → null-krasch. Fix: versionerade de tre ändrade importerna (`?v=112`) + SW serverar nu JS nätet-först, CSS/ikoner kvar SWR, cache v23. Lärdom: [[project_pwa_cache_strategy]].
+
+**Mjukare hero-snap (Joakim):** `snapToHero` → mjuk `smoothScrollTo` (460 ms) + hoppar över om vyn ≈rätt. Uppföljning: CSS `scroll-snap-type` på `html` borttagen helt → fri native-rullning. `styles.css?v=116`, SW-cache v25.
+
+**Rationaliserade dagkorten (Joakim):** egen-planering-etiketten → liten markör-ikon inline; noteringar samma serif-titelstil som recept; tomma dagar → lugn plus-ikon. Differentierade markörer: recept-ur-boken = grön gryt-ikon, egen notering = penna. `app.js?v=115`, `styles.css?v=117`, SW-cache v26. **Topp-omstrukturering + pull-to-reveal historik:** "Matsedeln"→"Matsedel"; `snapToHero` borttagen; tidigare recept fälls ut som dragspel nedåt via armad pill-knapp (`armHistory`/`dlxToggleHistory`). `app.js?v=116`, `styles.css?v=118`, SW-cache v27.
 
 ---
 
