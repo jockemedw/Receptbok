@@ -1,6 +1,11 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–102. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–103. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 103 — Atomär plan-aktivering (#3), bygd & granskad via Sonnet 5
+Joakim ville testa nyss släppta **Sonnet 5** effektivt och med högt värde. Valde backlog-#3 (atomär `activatePlan`) som testfall — bra reasoning-test (rollout-säkerhet utan lokal DB) + hög tillförlitlighetsvinst. **Flöde:** Opus delegerade implementationen till en Sonnet 5-subagent (`model: sonnet`), granskade sedan diffen adversariellt och körde hela testsviten på riktigt innan något landade. **Resultat (PR #103, mergat till main):** ny Postgres-RPC `activate_plan_atomic` (`db/migrations/001_activate_plan_atomic.sql`) slår ihop archive→radera gamla meal_days→deaktivera→aktivera i en transaktion; `activatePlanAtomic()` i `api/generate.js` anropar RPC:n med automatisk fallback till den gamla tvåstegsvägen om funktionen saknas (`isMissingRpcError`/PGRST202) → `main` säker både före och efter att SQL:en körts. Test 4–7 i `tests/plan-orchestration.test.js` (RPC-success, fallback, krasch→full rollback, enheter); 12 testfiler gröna. **Sonnet 5-utvärdering:** stark på arkitektonisk reasoning + scope-disciplin, men missade en konkret schema-detalj (deklarerade plan-id som `bigint` — schemat säger `uuid`) som hade brutit menygenereringen i produktion; **Opus-granskningen fångade och fixade det.** Lärdom: dela arbetet — Sonnet 5 bygger, Opus granskar + kör testerna på riktigt (lita inte på subagentens egen rapport). **Kvar:** (a) **kör SQL:en** i Supabase SQL Editor för att aktivera atomiciteten, (b) skarp verifiering att plan-byte + arkivering funkar live efter att SQL:en körts.
 
 ---
 
