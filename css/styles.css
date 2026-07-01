@@ -4639,6 +4639,38 @@ body.cook-open { overflow: hidden; }
   cursor: pointer;
   user-select: none;
 }
+.cook-scale {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 0.7rem;
+  padding-top: 0.7rem;
+  border-top: 1px solid #f0ebe2;
+}
+.cook-scale-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--moss-muted);
+}
+.cook-scale-btns { display: flex; gap: 0.4rem; }
+.cook-scale-btn {
+  background: var(--stone);
+  border: 1px solid var(--birch-soft);
+  color: var(--forest);
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  cursor: pointer;
+  min-width: 2.8rem;
+}
+.cook-scale-btn.active {
+  background: var(--lichen-deep);
+  border-color: var(--lichen-deep);
+  color: #fff;
+}
 .cook-ings { list-style: none; margin-top: 0.6rem; }
 .cook-ing {
   display: flex;
