@@ -3,6 +3,7 @@
 // Feature-toggled via GET /api/dispatch-to-willys vid tab-load.
 
 import { initPreferences } from './dispatch-preferences.js';
+import { escapeHtml } from '../utils.js';
 
 // Startsidan istället för /cart (som 404:ar). willys.se kommer ihåg
 // användarens valda butik (Ekholmen 2160) via session-cookie.
@@ -118,12 +119,6 @@ export function closeDispatchModal() {
 
 export function handleDispatchOverlayClick(event) {
   if (event.target.id === "dispatchModal") closeDispatchModal();
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
-  }[c]));
 }
 
 // Exponera på window för inline onclick

@@ -11,11 +11,18 @@ P0 = störst riskreduktion per timme, sedan nedåt. Naturliga beroenden noteras 
 
 > Spegel av sessionens todo-lista (#1–#27). Uppdatera båda om något ändras.
 
+**Status (uppdaterad Session 104):**
+- ✅ **Klara:** #1, #3, #4, #8, #9, #26, #27 (Session 102–103). #2 kod klar — väntar bara på att Joakim sätter `ALERT_WEBHOOK`.
+- 🟡 **Delvis:** #24 (död state borta, `?v=N`-linjeval kvar), #25 (escapers → utils klart; `fmtKr`/spegelkod medvetet kvar — se punkten).
+- ⬜ **Öppna:** hela P1-tenancy-spåret (#5–#7, #10, #11), produktspåret (#12–#18) och resterande UX/städning (#19–#23).
+- **Slutsats:** P0 är i praktiken avklarad. Nästa substantiella hävstång ligger i P1-tenancy (#5–#7) inför Fas 5, och produktspåret (#12 portionsskalning, #15 Ikväll-redigerare).
+
 ---
 
 ## 🔴 P0 — Risk / Must (de "tre kvällarna" + drift-säkerhet)
 
 ### #1 — Radera legacy `weekly-plan.yml` + lägg CI som kör testsviten
+> ✅ **KLAR (Session 102, PR #100).** `weekly-plan.yml` borttagen; `.github/workflows/test.yml` kör hela sviten + `node --check` vid push/PR.
 **Varför:** Enda workflow idag (`.github/workflows/weekly-plan.yml`) kör en *retirerad*
 Python/Anthropic-generator mot frikopplade JSON-filer — en oavsiktlig `workflow_dispatch`
 skriver skräp till repo-roten. Ingen CI kör Node-testsviten; allt skydd ligger i lokala
@@ -28,6 +35,7 @@ skriver skräp till repo-roten. Ingen CI kör Node-testsviten; allt skydd ligger
 **Insats:** Liten. **Högst ROI.**
 
 ### #2 — Larm vid tyst Willys-/prisdegradering
+> 🟡 **KOD KLAR (Session 102), väntar på env.** `pricingDegraded`-flagga + `notifyAlert()` (`api/_shared/alert.js`, `alert.test.js` grön) finns. Kvar: Joakim sätter `ALERT_WEBHOOK` i Vercel + diskret svensk toast för `pricingDegraded`.
 **Varför:** Prisoptimering + Veckans fynd vilar på oofficiella Willys-endpoints. Vid
 API-ändring returnerar feeden tyst `[]` → ser ut som "inga reor", inte "trasigt".
 `generate.js:~516` sväljer felet i tom catch (`savingsById=null`). Ingen larmar.
@@ -39,6 +47,7 @@ API-ändring returnerar feeden tyst `[]` → ser ut som "inga reor", inte "trasi
 **Insats:** Liten. *Kräver att Joakim levererar en webhook-URL.*
 
 ### #3 — Gör `activatePlan` atomär + test på plan-orkestreringen
+> ✅ **KLAR (Session 103, PR #103).** `activate_plan_atomic`-RPC + `activatePlanAtomic()` med fallback + rollback-test. Kvar (Joakim): kör `db/migrations/001_activate_plan_atomic.sql` i Supabase → aktiverar atomiciteten (main säker även utan).
 **Varför:** Hårda regeln "befintlig veckoplan får aldrig förstöras" är OTESTAD, och
 `activatePlan` (generate.js:~356–361) är TVÅ separata UPDATE utan transaktion. Dör
 processen mellan dem (kall lambda, free-tier-paus, nätfel) → hushållet får NOLL aktiva
@@ -50,6 +59,7 @@ planer (gammal avstängd, ny ej påslagen, gamla `meal_days` redan arkiverade) =
 **Insats:** Medel.
 
 ### #4 — Exportera `selectRecipes`/`bucketBySaving` till testet (ta bort drift-kopia)
+> ✅ **KLAR (Session 102, PR #100).** Utbrutet till `api/_shared/select-recipes.js`; `select-recipes.test.js` importerar från källan (ingen inline-kopia kvar).
 **Varför:** `select-recipes.test.js` (432 assertions) testar en INLINE-KOPIA, inte den
 faktiska koden i `generate.js`. Filen varnar själv. Reell drift-risk.
 **Väg framåt:**
@@ -84,12 +94,14 @@ bort dubblett-URL) → nyckla secrets/butik per household (bygger på #5) → fe
 **Insats:** Medel. Kan delas i steg.
 
 ### #8 — Sätt `maxDuration` på `import-recipe.js`
+> ✅ **KLAR (Session 102, PR #100).** `vercel.json` sätter `maxDuration: 30` för `api/import-recipe.js`.
 **Varför:** Gemini (upp till 2×25s) utan förhöjd `maxDuration` → slår i Hobby-default (10s),
 timeoutar tyst vid fotoimport.
 **Väg framåt:** Lägg `functions`-entry i `vercel.json` (~30s). Verifiera mot live.
 **Insats:** Trivial.
 
 ### #9 — SSRF-test (`isPrivateIp`) + konstant-tids-jämförelse på `X-Refresh-Secret`
+> ✅ **KLAR (Session 102, PR #100).** `isPrivateIp` exporterad + testad (`import-recipe.test.js`); `secretsMatch()` använder `crypto.timingSafeEqual` med längd-guard i `dispatch-to-willys.js`.
 **Varför:** `isPrivateIp` (SSRF-skydd) OTESTAT; `X-Refresh-Secret`-koll använder vanlig `!==`.
 **Väg framåt:** Enhetstest för `isPrivateIp` → byt mot `crypto.timingSafeEqual` (med längd-guard).
 **Insats:** Liten.
@@ -188,19 +200,23 @@ Bekräfta+Flytta där säkert. Behåll `day-ops sameRecipes`-invarianten. **Insa
 **Insats:** Liten–medel (CSS i granskat steg).
 
 ### #24 — Synka/ta bort `?v=N` på JS-importer + död state/stubbar
+> 🟡 **DELVIS (Session 102).** Död state `_freshShopContent` + `initFilters`/`applyFilters`-stubbarna borttagna. Kvar: linjeval för `?v=N`-cache-busting på JS-importerna.
 **Väg framåt:** Välj en linje (synka alla modulversioner ELLER ta bort `?v` på JS, förlita nät-först-SW) →
 ta bort död state `_freshShopContent` → ta bort stubbar `initFilters`/`applyFilters` (Grep först). **Insats:** Liten.
 
 ### #25 — Slå ihop spegelkod + lokala `escapeHtml` → utils
+> 🟡 **DELVIS (Session 104).** De 4 duplicerade HTML-escaparna (`esc`×2, `escapeHtml`×2 i dispatch) använder nu `utils.escapeHtml` (en enda implementation). **Medvetet kvar:** (a) `fmtKr` har olika avrundning per vy (plan-viewer/deals visar en decimal `12,5 kr`, deluxe heltal `13 kr`) — att ena ändrar **synlig** kr i premiumvyn → kräver Joakims display-beslut; (b) `updateLastPlanDay`/`patchPlanDay` ligger i plan-mutations-vägen (hård regel "veckoplan får aldrig förstöras") → slås ihop i ett separat granskat steg, inte i en autonom runda.
 **Väg framåt:** Slå ihop `updateLastPlanDay`/`patchPlanDay`; ersätt lokala `escapeHtml`/`esc`/`fmtKr`
 med `utils.*`. **Insats:** Liten.
 
 ### #26 — Tysta catch → svenska felmeddelanden
+> ✅ **KLAR (Session 102, PR #100).** Svenska toasts i `convertBlockedToCustom`, `clearCustomDay`, `copyShoppingList` (`.catch`) och `scheduleCheckedSave`.
 **Varför:** Bryter mot CLAUDE.md-regeln. `convertBlockedToCustom`, `clearCustomDay`,
 `copyShoppingList` (saknar .catch), `scheduleCheckedSave` (bockningar tappas tyst).
 **Väg framåt:** Svensk toast/feedback i de tysta blocken. **Insats:** Liten.
 
 ### #27 — Skriv riktig README
+> ✅ **KLAR (Session 102, PR #100).** README beskriver appen, arkitektur, testkörning och nyckelkataloger.
 **Varför:** README är 36 byte → bus-factor 1.
 **Väg framåt:** Vad appen är, arkitektur-översikt, hur testsviten körs, nyckelkataloger, länk till CLAUDE.md. **Insats:** Liten.
 
