@@ -101,6 +101,77 @@ function buildShopState(list, items) {
 }
 
 const ICON_NOTE = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h11l3 3v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><path d="M8 11h8 M8 14h8 M8 17h5"/></svg>';
+const ICON_HOME = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5h4v5"/></svg>';
+
+// ── Skafferi/"har hemma" (backlog #13) ───────────────────────────────────────
+// Markerade varor visas dämpade (inte borttagna), räknas inte i "X av Y" och
+// följer inte med i kopierad text. Minnet ligger i Supabase-tabellen
+// pantry_items per NORMALISERAT varunamn ("grädde (2 dl)" → "grädde") så
+// markeringen överlever veckans nya lista. Tabellen skapas av
+// db/migrations/002_pantry_items.sql — saknas den göms funktionen helt.
+
+// Varunamn → skafferi-nyckel: stryk mängdparentesen ("(2 dl)") och normalisera.
+function pantryKey(name) {
+  return String(name || '').replace(/\s*\([^)]*\)\s*$/, '').trim().toLowerCase();
+}
+
+function isPantryName(name) {
+  return window._pantrySupported && window._pantryItems?.has(pantryKey(name));
+}
+
+async function loadPantry(householdId) {
+  try {
+    const { data, error } = await window.db
+      .from('pantry_items')
+      .select('name')
+      .eq('household_id', householdId);
+    if (error) throw error;
+    window._pantrySupported = true;
+    window._pantryItems = new Set((data || []).map((r) => r.name));
+  } catch {
+    // Tabellen saknas (migration 002 ej körd) eller nätfel → göm funktionen
+    // den här laddningen. Ingen regression mot dagens beteende.
+    window._pantrySupported = false;
+    window._pantryItems = new Set();
+  }
+}
+
+export async function togglePantryItem(name) {
+  if (!window._pantrySupported) return;
+  const key = pantryKey(name);
+  if (!key) return;
+  const had = window._pantryItems.has(key);
+  // Optimistiskt: uppdatera vyn direkt, återställ vid fel.
+  if (had) window._pantryItems.delete(key); else window._pantryItems.add(key);
+  renderFullShoppingList(window._shopRecipeItems || null, window._shopManualItems || []);
+  try {
+    const householdId = await window.getHouseholdId();
+    if (had) {
+      const { error } = await window.db.from('pantry_items')
+        .delete().eq('household_id', householdId).eq('name', key);
+      if (error) throw error;
+    } else {
+      const { error } = await window.db.from('pantry_items')
+        .upsert({ household_id: householdId, name: key });
+      if (error) throw error;
+    }
+  } catch {
+    if (had) window._pantryItems.add(key); else window._pantryItems.delete(key);
+    renderFullShoppingList(window._shopRecipeItems || null, window._shopManualItems || []);
+    window.showToast?.('Kunde inte spara "har hemma"-markeringen — prova igen.', { type: 'error' });
+  }
+}
+
+// Knappen på varje rad (bara när tabellen finns). data-name undviker
+// escaping-fällor i inline-onclick.
+function pantryBtnHtml(name) {
+  if (!window._pantrySupported) return '';
+  const active = isPantryName(name);
+  return `<button class="pantry-btn${active ? ' active' : ''}" data-name="${escapeHtml(name)}"
+            title="${active ? 'Har hemma — tryck för att lägga tillbaka i listan' : 'Har hemma — behöver inte köpas'}"
+            aria-label="${active ? 'Ta bort har hemma-markering' : 'Markera som har hemma'}" aria-pressed="${active}"
+            onclick="event.stopPropagation();togglePantryItem(this.dataset.name)">${ICON_HOME}</button>`;
+}
 
 export function setShopMode(mode) {
   const isHandla = mode === 'handla';
@@ -246,6 +317,7 @@ export function scheduleCheckedSave() {
 
 export function toggleShopItem(el, key) {
   if (window._editMode) return;   // i redigera-läget gör radklick inget — bara × tar bort
+  if (el.classList.contains('pantry')) return;   // "har hemma"-vara bockas inte — den handlas inte
   const nowChecked = !window._checkedItems[key];
   window._checkedItems[key] = nowChecked;
   el.classList.toggle('checked', nowChecked);
@@ -258,18 +330,27 @@ export function toggleShopItem(el, key) {
 // ── Progress: "X av Y klara" + räknare per kategori ──────────────────────────
 // Räknar från in-memory-state och uppdaterar DOM på plats (ingen re-render).
 function shopCounts() {
+  // "Har hemma"-varor står utanför räkningen — de ska inte handlas.
   let total = 0, done = 0;
   const perCat = {};
   for (const [cat, items] of Object.entries(window._shopRecipeItems || {})) {
-    const c = { total: items.length, done: 0 };
-    items.forEach((_, idx) => { if (window._checkedItems[`recipe::${cat}::${idx}`]) c.done++; });
+    const c = { total: 0, done: 0 };
+    items.forEach((item, idx) => {
+      if (isPantryName(item)) return;
+      c.total++;
+      if (window._checkedItems[`recipe::${cat}::${idx}`]) c.done++;
+    });
     perCat[cat] = c;
     total += c.total; done += c.done;
   }
   const manual = window._shopManualItems || [];
   if (manual.length) {
-    const c = { total: manual.length, done: 0 };
-    manual.forEach((item) => { if (window._checkedItems[`manual::${item}`]) c.done++; });
+    const c = { total: 0, done: 0 };
+    manual.forEach((item) => {
+      if (isPantryName(item)) return;
+      c.total++;
+      if (window._checkedItems[`manual::${item}`]) c.done++;
+    });
     perCat['__manual'] = c;
     total += c.total; done += c.done;
   }
@@ -378,7 +459,7 @@ export function rebuildShopText() {
     const recipeText = Object.entries(window._shopRecipeItems)
       .filter(([, items]) => items.length > 0)
       .map(([cat, items]) => {
-        const unchecked = items.filter((_, idx) => !window._checkedItems[`recipe::${cat}::${idx}`]);
+        const unchecked = items.filter((item, idx) => !window._checkedItems[`recipe::${cat}::${idx}`] && !isPantryName(item));
         return unchecked.length ? `${cat}:\n${unchecked.map(i => '• ' + i).join('\n')}` : null;
       }).filter(Boolean).join('\n\n');
     if (recipeText) textParts.push(recipeText);
@@ -386,7 +467,7 @@ export function rebuildShopText() {
     textBlocksHtml += Object.entries(window._shopRecipeItems)
       .filter(([, items]) => items.length > 0)
       .map(([cat, items]) => {
-        const unchecked = items.filter((_, idx) => !window._checkedItems[`recipe::${cat}::${idx}`]);
+        const unchecked = items.filter((item, idx) => !window._checkedItems[`recipe::${cat}::${idx}`] && !isPantryName(item));
         if (!unchecked.length) return '';
         return `<div class="shop-text-category">
           <div class="shop-text-cat-name">${CAT_ICONS[cat] || '•'} ${cat}</div>
@@ -395,7 +476,7 @@ export function rebuildShopText() {
       }).join('');
   }
 
-  const uncheckedManual = window._shopManualItems.filter((item) => !window._checkedItems[`manual::${item}`]);
+  const uncheckedManual = window._shopManualItems.filter((item) => !window._checkedItems[`manual::${item}`] && !isPantryName(item));
   if (uncheckedManual.length) {
     textParts.push(`Egna tillägg:\n${uncheckedManual.map(i => '• ' + i).join('\n')}`);
     textBlocksHtml += `<div class="shop-text-category">
@@ -424,21 +505,25 @@ export function renderFullShoppingList(recipeItems, manualItems) {
         const icon = CAT_ICONS[cat] || '•';
         const itemsHtml = items.map((item, idx) => {
           const key     = `recipe::${cat}::${idx}`;
-          const checked = window._checkedItems[key] || false;
+          const pantry  = isPantryName(item);
+          const checked = !pantry && (window._checkedItems[key] || false);
           const rowId   = window._shopItemIds?.[key];
-          return `<li class="shopping-item${checked ? ' checked' : ''}"
+          return `<li class="shopping-item${checked ? ' checked' : ''}${pantry ? ' pantry' : ''}"
                       onclick="toggleShopItem(this,'${key}')">
             <span class="item-checkbox">${checked ? '✓' : ''}</span>
             ${itemTextCell(item, rowId)}
+            ${pantry ? '<span class="pantry-tag">har hemma</span>' : ''}
+            ${pantryBtnHtml(item)}
             <button class="remove-item-btn" data-key="${key}" title="Ta bort varan"
                     onclick="event.stopPropagation();removeShopItem(this.dataset.key)">×</button>
           </li>`;
         }).join('');
-        const catDone = items.filter((_, idx) => window._checkedItems[`recipe::${cat}::${idx}`]).length;
+        const catTotal = items.filter((item) => !isPantryName(item)).length;
+        const catDone = items.filter((item, idx) => !isPantryName(item) && window._checkedItems[`recipe::${cat}::${idx}`]).length;
         return `<div class="shopping-category">
           <div class="shopping-cat-header">
             <span class="shopping-cat-name">${icon} ${cat}</span>
-            <span class="shopping-cat-count" data-cat="${cat}">${catDone} av ${items.length}</span>
+            <span class="shopping-cat-count" data-cat="${cat}">${catDone} av ${catTotal}</span>
           </div>
           <ul class="shopping-items">${itemsHtml}</ul>
         </div>`;
@@ -447,7 +532,7 @@ export function renderFullShoppingList(recipeItems, manualItems) {
     const recipeText = Object.entries(recipeItems)
       .filter(([, items]) => items.length > 0)
       .map(([cat, items]) => {
-        const unchecked = items.filter((_, idx) => !window._checkedItems[`recipe::${cat}::${idx}`]);
+        const unchecked = items.filter((item, idx) => !window._checkedItems[`recipe::${cat}::${idx}`] && !isPantryName(item));
         return unchecked.length ? `${cat}:\n${unchecked.map(i => '• ' + i).join('\n')}` : null;
       }).filter(Boolean).join('\n\n');
     if (recipeText) textParts.push(recipeText);
@@ -455,7 +540,7 @@ export function renderFullShoppingList(recipeItems, manualItems) {
     textBlocksHtml += Object.entries(recipeItems)
       .filter(([, items]) => items.length > 0)
       .map(([cat, items]) => {
-        const unchecked = items.filter((_, idx) => !window._checkedItems[`recipe::${cat}::${idx}`]);
+        const unchecked = items.filter((item, idx) => !window._checkedItems[`recipe::${cat}::${idx}`] && !isPantryName(item));
         if (!unchecked.length) return '';
         return `<div class="shop-text-category">
           <div class="shop-text-cat-name">${CAT_ICONS[cat] || '•'} ${cat}</div>
@@ -467,26 +552,30 @@ export function renderFullShoppingList(recipeItems, manualItems) {
   if (manualItems.length > 0) {
     const manualHtml = manualItems.map((item, idx) => {
       const key     = `manual::${item}`;
-      const checked = window._checkedItems[key] || false;
+      const pantry  = isPantryName(item);
+      const checked = !pantry && (window._checkedItems[key] || false);
       const rowId   = window._shopItemIds?.[`manual::${idx}`];
-      return `<li class="shopping-item${checked ? ' checked' : ''}"
+      return `<li class="shopping-item${checked ? ' checked' : ''}${pantry ? ' pantry' : ''}"
                   data-key="${escapeHtml(key)}"
                   onclick="toggleShopItem(this,this.dataset.key)">
         <span class="item-checkbox">${checked ? '✓' : ''}</span>
         ${itemTextCell(item, rowId)}
+        ${pantry ? '<span class="pantry-tag">har hemma</span>' : ''}
+        ${pantryBtnHtml(item)}
         <button class="remove-item-btn" data-item="${escapeHtml(item)}" title="Ta bort varan" onclick="event.stopPropagation();removeManualItem(this.dataset.item)">×</button>
       </li>`;
     }).join('');
-    const manualDone = manualItems.filter((item) => window._checkedItems[`manual::${item}`]).length;
+    const manualTotal = manualItems.filter((item) => !isPantryName(item)).length;
+    const manualDone = manualItems.filter((item) => !isPantryName(item) && window._checkedItems[`manual::${item}`]).length;
     checkHtml += `<div class="shopping-category">
       <div class="shopping-cat-header">
         <span class="shopping-cat-name">${ICON_NOTE} Egna tillägg</span>
-        <span class="shopping-cat-count" data-cat="__manual">${manualDone} av ${manualItems.length}</span>
+        <span class="shopping-cat-count" data-cat="__manual">${manualDone} av ${manualTotal}</span>
       </div>
       <ul class="shopping-items">${manualHtml}</ul>
     </div>`;
 
-    const uncheckedManual = manualItems.filter((item) => !window._checkedItems[`manual::${item}`]);
+    const uncheckedManual = manualItems.filter((item) => !window._checkedItems[`manual::${item}`] && !isPantryName(item));
     if (uncheckedManual.length) {
       textParts.push(`Egna tillägg:\n${uncheckedManual.map(i => '• ' + i).join('\n')}`);
       textBlocksHtml += `<div class="shop-text-category">
@@ -509,12 +598,15 @@ export async function loadShoppingTab() {
   document.getElementById('shopNoData').style.display   = 'none';
   try {
     const householdId = await window.getHouseholdId();
-    const { data: lists, error: listErr } = await window.db
-      .from('shopping_lists')
-      .select('*')
-      .eq('household_id', householdId)
-      .eq('is_active', true)
-      .limit(1);
+    const [{ data: lists, error: listErr }] = await Promise.all([
+      window.db
+        .from('shopping_lists')
+        .select('*')
+        .eq('household_id', householdId)
+        .eq('is_active', true)
+        .limit(1),
+      loadPantry(householdId),   // "har hemma"-minnet (göms tyst om tabellen saknas)
+    ]);
     if (listErr) throw listErr;
 
     const list = lists?.[0] ?? null;
@@ -656,6 +748,7 @@ export function renderShoppingData(shop) {
 // Exponera på window för inline onclick-attribut
 window.setShopMode        = setShopMode;
 window.toggleShopItem     = toggleShopItem;
+window.togglePantryItem   = togglePantryItem;
 window.toggleEditMode     = toggleEditMode;
 window.renameShopItem     = renameShopItem;
 window.removeShopItem     = removeShopItem;

@@ -9,9 +9,13 @@ window.recipeFilters      = {           // multi-val checkbox-filter per grupp
   season:         new Set(),
 };
 window.replaceMode        = null;    // { date, dayName } under receptbyte
+window._opBusy            = false;   // spärr: en plan-/custom-day-mutation i taget
+                                     // (delas av plan-viewer-deluxe och plan-viewer)
 window.editingId          = null;    // ID vid redigering, null = nytt recept
 window.planConfirmed      = false;
 window._checkedItems      = {};      // { key: bool } — bockar i inköpslistan
+window._pantryItems       = new Set(); // normaliserade varunamn markerade "har hemma"
+window._pantrySupported   = false;   // true när pantry_items-tabellen finns (migration 002)
 window._checkedSaveTimer  = null;
 window._shopRecipeItems   = null;    // sparat för textvy-rebuild
 window._shopManualItems   = [];

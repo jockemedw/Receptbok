@@ -1,6 +1,11 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–104. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–105. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 105 — Nattjobb: lågrisk-städning (#23 delvis, #22 delvis, #11 delvis)
+Joakim bad om ett paketerat nattjobb som städar av lågrisk-punkter som inte kräver hans input eller mobil-verifiering. **Tre punkter, alla verifierade statiskt:** (1) **#23** — tog bort 5 döda `#weekRecipeDetail`-no-op-block i `plan-viewer.js` (397/597/644/850/877; elementet borta ur `index.html` sedan Session 101 → blocken var redan no-ops) + sanerade en vilseledande kommentar. (2) **#22** — tog bort `maximum-scale=1.0, user-scalable=no` ur viewporten i `index.html` → nyp-zoom tillåts nu (a11y). (3) **#11** — dokumenterade Supabase free-tier-pausen + de två luckorna (keep-alive, graceful degradation) i CLAUDE.md. **Metod-fynd (viktigt):** backloggen påstod att `.week-day-card` var död klassisk-kod att ta bort — jag verifierade och det stämmer att klassen renderas *ingenstans* (premium använder `.dlx-day`/`.dlx-tonight`), men de två JS-queries som pekar på den (`plan-viewer.js:29`/`:281`) sitter i den *levande* realtids- resp. swap-vägen → flyttade till samma granskade CSS-städsteg, inte autonomt. (Jag hann påstå fel först — att klassen var *levande* — men verifierade innan jag skrev något skarpt.) **Medvetet ute ur nattjobbet:** #24 (`?v`-cachelinje — syns bara på mobil), #25 `fmtKr` (display-beslut) + plan-mutations-spegelkod, #2 `ALERT_WEBHOOK`/#11 keep-alive-cron (env/extern setup), #5–7/#10 (tenancy/plan-risk). **Verifiering:** `node --check` på `plan-viewer.js` grön + core-testsviten (match/corpus/shopping/select/data-mapper) grön. Ändringarna är frontend/docs — inga api/-tester berörda. **Kvar (mobil):** snabbkoll att veckovyn/premiumvyn renderar normalt och att pinch-zoom nu funkar.
 
 ---
 

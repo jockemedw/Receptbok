@@ -327,6 +327,51 @@ assertEq(normalizeName("citroner"), "citron", "normalize: citroner → citron (p
   }
 }
 
+// ─── Portionsskalning (backlog #12) ──────────────────────────────────────────
+{
+  // Utan opts → exakt samma som idag (ingen skalning, ingen extra avrundning)
+  const recipes = makeRecipes({ 20: ["2 dl grädde", "½ citron"] });
+  const utan = buildShoppingList([20], recipes);
+  assertTrue(utan.Mejeri.includes("grädde (2 dl)"), "skalning: utan targetServings → 2 dl grädde orörd");
+  assertTrue(utan.Frukt.includes("citron (½)"), "skalning: utan targetServings → ½ citron orörd");
+
+  // target = recipe.servings → faktor 1 → orört
+  const rec4 = [{ id: 21, title: "R", servings: 4, ingredients: ["2 dl grädde", "½ citron"] }];
+  const lika = buildShoppingList([21], rec4, { targetServings: 4 });
+  assertTrue(lika.Mejeri.includes("grädde (2 dl)"), "skalning: target 4 av 4 → 2 dl grädde orörd");
+  assertTrue(lika.Frukt.includes("citron (½)"), "skalning: target 4 av 4 → ½ citron orörd");
+
+  // Dubbla portioner: 4-portionsrecept → 8: volymer dubblas, styck dubblas
+  const dubbel = buildShoppingList([21], rec4, { targetServings: 8 });
+  assertTrue(dubbel.Mejeri.includes("grädde (4 dl)"), "skalning: 4→8 portioner dubblar 2 dl → 4 dl");
+  assertTrue(dubbel.Frukt.includes("citron (1)"), "skalning: 4→8 portioner: ½ citron → 1 (heltal)");
+
+  // Nedskalning 4 → 2,5: g avrundas till heltal, styckevara ceilas, dl kvarts-avrundas
+  const rec = [{ id: 22, title: "R", servings: 4, ingredients: ["600 g torsk", "3 st morötter", "2 dl grädde"] }];
+  const halv = buildShoppingList([22], rec, { targetServings: 2.5 });
+  assertTrue(halv["Fisk & kött"].includes("torsk (375 g)"), "skalning: 600 g × 2,5/4 = 375 g");
+  assertTrue(halv.Grönsaker.includes("morot (2 st)"), "skalning: 3 st × 0,625 = 1,875 → ceil 2 st");
+  assertTrue(halv.Mejeri.includes("grädde (1,25 dl)"), "skalning: 2 dl × 0,625 = 1,25 dl (kvarts-precision)");
+
+  // Recept utan servings-fält antas vara 4 (DEFAULT_SERVINGS)
+  const recNoServ = makeRecipes({ 23: ["2 dl grädde"] });
+  const noServ = buildShoppingList([23], recNoServ, { targetServings: 8 });
+  assertTrue(noServ.Mejeri.includes("grädde (4 dl)"), "skalning: servings saknas → antas 4 → dubblas till 8");
+
+  // Rader utan definierbar mängd skalas inte (kanoniska namnet kvar oskalat)
+  const recNoAmt = [{ id: 24, title: "R", servings: 4, ingredients: ["färsk basilika"] }];
+  const noAmt = buildShoppingList([24], recNoAmt, { targetServings: 8 });
+  assertTrue(noAmt.Grönsaker.includes("basilika"), "skalning: mängdlös rad lämnas orörd");
+
+  // Merge över recept med olika servings: 2 dl (4-port ×2) + 1 dl (2-port ×4) = 8 dl
+  const mix = [
+    { id: 25, title: "A", servings: 4, ingredients: ["2 dl grädde"] },
+    { id: 26, title: "B", servings: 2, ingredients: ["1 dl grädde"] },
+  ];
+  const mixRes = buildShoppingList([25, 26], mix, { targetServings: 8 });
+  assertTrue(mixRes.Mejeri.includes("grädde (8 dl)"), "skalning: merge med olika servings-bas skalar per recept");
+}
+
 // ─── Slutrapport ──────────────────────────────────────────────────────────────
 const total = passed + failed;
 console.log(`\nPASS ${passed}/${total}${failed ? ` — ${failed} FAIL` : ""}`);

@@ -1,12 +1,10 @@
 import { buildShoppingList } from "./_shared/shopping-builder.js";
 import { createSupabaseHandler } from "./_shared/handler.js";
-import { db, getHouseholdId } from "./_shared/supabase.js";
-import { normalizeOffers } from "./willys-offers.js";
+import { db, getHouseholdId, fetchTargetServings } from "./_shared/supabase.js";
+import { fetchOffersFromWillys } from "./willys-offers.js";
 import { matchRecipe, buildDealCandidates } from "./_shared/willys-matcher.js";
 import { selectRecipes, bucketBySaving, hasTure } from "./_shared/select-recipes.js";
 import { notifyAlert } from "./_shared/alert.js";
-
-const WILLYS_URL = "https://www.willys.se/search/campaigns/online?q=2160&type=PERSONAL_GENERAL&page=0&size=500";
 
 function getCurrentSeason(dateStr) {
   const month = new Date(dateStr).getMonth() + 1;
@@ -49,7 +47,7 @@ function filterRecipes(recipes, constraints) {
 async function fetchRecipes(householdId) {
   const { data, error } = await db
     .from("recipes")
-    .select("id, title, time, tags, protein, tested, ingredients, seasons")
+    .select("id, title, time, tags, protein, tested, ingredients, seasons, servings")
     .eq("household_id", householdId);
   if (error) throw error;
   return (data || []).map((r) => ({
@@ -61,6 +59,7 @@ async function fetchRecipes(householdId) {
     tested: r.tested || false,
     ingredients: r.ingredients || [],
     seasons: r.seasons || [],
+    servings: r.servings ?? null,
   }));
 }
 
@@ -387,40 +386,35 @@ export default createSupabaseHandler(async (req, res) => {
   let pricingDegraded = false;
   if (optimize_prices) {
     try {
-      const upstream = await fetch(WILLYS_URL, {
-        headers: { "Accept": "application/json", "User-Agent": "Receptbok/1.0 (familjematplanering)" },
-        signal: AbortSignal.timeout(5000),
-      });
-      if (upstream.ok) {
-        const raw = await upstream.json();
-        const offers = normalizeOffers(raw.results || []);
-        if (offers.length === 0) pricingDegraded = true; // 200 men inget parsebart = trolig API-ändring
-        savingsById = {};
-        for (const r of filtered) {
-          const m = matchRecipe(r, offers);
-          if (m.totalSaving > 0) {
-            const byCanon = new Map();
-            for (const { canon, offer } of m.matches) {
-              const cur = byCanon.get(canon);
-              if (!cur || (offer.savingPerUnit || 0) > (cur.savingPerUnit || 0)) {
-                byCanon.set(canon, {
-                  canon, name: offer.name, brandLine: offer.brandLine || null,
-                  loyalty: offer.loyalty || false,
-                  bulk: offer.bulk || false,
-                  regularPrice: offer.regularPrice, promoPrice: offer.promoPrice,
-                  savingPerUnit: offer.savingPerUnit, validUntil: offer.validUntil,
-                });
-              }
+      // Samma feed-klient som /api/willys-offers och dispatchen (ingen egen
+      // URL-literal); butik styrs av WILLYS_STORE_ID precis som i dispatchen.
+      const store = process.env.WILLYS_STORE_ID || "2160";
+      const offers = await fetchOffersFromWillys(store, (url, opts) =>
+        fetch(url, { ...opts, signal: AbortSignal.timeout(5000) }));
+      if (offers.length === 0) pricingDegraded = true; // 200 men inget parsebart = trolig API-ändring
+      savingsById = {};
+      for (const r of filtered) {
+        const m = matchRecipe(r, offers);
+        if (m.totalSaving > 0) {
+          const byCanon = new Map();
+          for (const { canon, offer } of m.matches) {
+            const cur = byCanon.get(canon);
+            if (!cur || (offer.savingPerUnit || 0) > (cur.savingPerUnit || 0)) {
+              byCanon.set(canon, {
+                canon, name: offer.name, brandLine: offer.brandLine || null,
+                loyalty: offer.loyalty || false,
+                bulk: offer.bulk || false,
+                regularPrice: offer.regularPrice, promoPrice: offer.promoPrice,
+                savingPerUnit: offer.savingPerUnit, validUntil: offer.validUntil,
+              });
             }
-            savingsById[r.id] = { total: m.totalSaving, matches: [...byCanon.values()] };
           }
+          savingsById[r.id] = { total: m.totalSaving, matches: [...byCanon.values()] };
         }
-      } else {
-        pricingDegraded = true; // icke-ok HTTP-svar från feeden
       }
     } catch {
       savingsById = null;
-      pricingDegraded = true; // timeout/nätfel/parsefel
+      pricingDegraded = true; // icke-ok HTTP/timeout/nätfel/parsefel
     }
     if (pricingDegraded) {
       await notifyAlert(`Receptboken: prisoptimering gav inga erbjudanden (${start_date}). Willys-feeden kan vara bruten.`);
@@ -459,7 +453,8 @@ export default createSupabaseHandler(async (req, res) => {
   }
 
   const selectedIds = days.map((d) => d.recipeId).filter(Boolean);
-  const shoppingCategories = skip_shopping ? null : buildShoppingList(selectedIds, allRecipes);
+  const targetServings = skip_shopping ? null : await fetchTargetServings(householdId);
+  const shoppingCategories = skip_shopping ? null : buildShoppingList(selectedIds, allRecipes, { targetServings });
 
   // Skriv nya planen + alla dagar (inaktiv). Glappar dag-skrivningen kastas det
   // här och den gamla aktiva planen är fortfarande orörd — användaren behåller

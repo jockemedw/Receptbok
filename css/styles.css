@@ -3063,6 +3063,37 @@
     border-top: none;
     text-align: left;
   }
+  /* Skafferi/"har hemma" (backlog #13): dämpad rad + hus-knapp på varje vara */
+  .pantry-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--birch, #c9bfa8);
+    cursor: pointer;
+    padding: 0.3rem 0.35rem;
+    line-height: 1;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+  }
+  .pantry-btn svg { width: 17px; height: 17px; }
+  .pantry-btn.active { color: var(--lichen-deep); }
+  .pantry-btn:hover { color: var(--forest); }
+  #shoppingList.editing .pantry-btn { display: none; }   /* redigera-läget: bara × */
+
+  .shopping-item.pantry { opacity: 0.45; cursor: default; }
+  .shopping-item.pantry .item-text { font-style: italic; }
+  .shopping-item.pantry .item-checkbox { border-style: dashed; background: transparent; }
+  .pantry-tag {
+    flex-shrink: 0;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--lichen-deep);
+    white-space: nowrap;
+  }
+
   /* Ta-bort-knapp (× på varje vara) — visas bara i redigera-läget */
   .remove-item-btn {
     margin-left: auto;
@@ -3841,6 +3872,24 @@ html.auth-required body {
   cursor: default;
 }
 
+.auth-forgot {
+  display: block;
+  margin: 14px auto 0;
+  padding: 4px 8px;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.88rem;
+  color: var(--lichen-deep);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.auth-forgot:disabled {
+  color: var(--birch);
+  cursor: default;
+}
+
 .auth-status {
   margin: 16px 0 0 0;
   font-size: 0.9rem;
@@ -4006,6 +4055,26 @@ html.auth-required body {
 .dlx-history-btn:focus-visible { background: var(--linen-card, var(--stone)); color: var(--forest-deep); }
 .dlx-history-btn svg { width: 16px; height: 16px; }
 .dlx-history-btn.open { color: var(--moss-muted); }
+/* Diskret alltid-synligt alternativ till pull-gesten (a11y, backlog #22) */
+.dlx-history-peek {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: fit-content;
+  margin: 0.15rem auto 0;
+  padding: 0.3rem 0.75rem;
+  background: none;
+  border: none;
+  color: var(--moss-muted);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.dlx-history-peek:hover,
+.dlx-history-peek:focus-visible { color: var(--forest); text-decoration: underline; }
+.dlx-history-peek svg { width: 14px; height: 14px; }
+
 .dlx-history-flow {
   display: flex;
   flex-direction: column;

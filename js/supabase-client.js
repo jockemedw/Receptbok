@@ -19,6 +19,25 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
 export const db = supabase;
 export const auth = supabase.auth;
 
+// Supabase free-tier pausar databasen efter ~1 veckas inaktivitet (se
+// CLAUDE.md → Arkitektur). Då failar anropen på nätverksnivå (fetch kastar)
+// eller gatewayen svarar 5xx — det är inte användarens fel och går över av
+// sig självt när projektet vaknar (~30 sek). De här hjälparna låter UI:t
+// skilja "databasen vilar" från riktiga fel och säga det på svenska.
+export const DB_RESTING_MESSAGE =
+  'Appen har vilat en stund och databasen håller på att vakna. Vänta en halv minut och prova sedan igen.';
+
+export function isDbUnreachable(err) {
+  if (!err) return false;
+  const msg = String(err.message || err).toLowerCase();
+  if (/failed to fetch|load failed|networkerror|network request failed|fetch failed|timed out|timeout/.test(msg)) return true;
+  const status = typeof err.status === 'number' ? err.status : null;
+  return status !== null && status >= 500;
+}
+
+let _lastDbError = null;
+export function getLastDbError() { return _lastDbError; }
+
 let _householdIdCache = null;
 let _householdIdPromise = null;
 
@@ -42,6 +61,7 @@ export async function getHouseholdId() {
     let q = supabase.from('household_members').select('household_id').limit(1).maybeSingle();
     if (user) q = q.eq('user_id', user.id);
     const { data, error } = await q;
+    _lastDbError = error || null;
     if (error || !data) return null;
     _householdIdCache = data.household_id;
     if (lsKey) localStorage.setItem(lsKey, data.household_id);
@@ -66,3 +86,4 @@ window.supabase = supabase;
 window.db = db;
 window.auth = auth;
 window.getHouseholdId = getHouseholdId;
+window.isDbUnreachable = isDbUnreachable;

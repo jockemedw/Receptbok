@@ -1,6 +1,6 @@
 import { buildShoppingList } from "./_shared/shopping-builder.js";
 import { createSupabaseHandler } from "./_shared/handler.js";
-import { db, getHouseholdId } from "./_shared/supabase.js";
+import { db, getHouseholdId, fetchTargetServings } from "./_shared/supabase.js";
 import { shuffle } from "./_shared/history.js";
 
 export default createSupabaseHandler(async (req, res) => {
@@ -12,7 +12,7 @@ export default createSupabaseHandler(async (req, res) => {
   const [{ data: plans }, { data: recipes }] = await Promise.all([
     db.from("weekly_plans").select("id, start_date, end_date, confirmed_at")
       .eq("household_id", householdId).eq("is_active", true).limit(1),
-    db.from("recipes").select("id, title, tags, protein, tested, ingredients")
+    db.from("recipes").select("id, title, tags, protein, tested, ingredients, servings")
       .eq("household_id", householdId),
   ]);
 
@@ -128,7 +128,8 @@ export default createSupabaseHandler(async (req, res) => {
 
     const selectedIds = (allMealDays || []).map((d) => d.recipe_id);
 
-    const shoppingCategories = buildShoppingList(selectedIds.filter(Boolean), allRecipes);
+    const targetServings = await fetchTargetServings(householdId);
+    const shoppingCategories = buildShoppingList(selectedIds.filter(Boolean), allRecipes, { targetServings });
 
     const { data: existingLists } = await db
       .from("shopping_lists").select("id, recipe_items_moved_at")

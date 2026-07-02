@@ -99,7 +99,10 @@ function buildTonight(timeline) {
     mkind = 'recipe';
     if (expanded) detail = recipeDetail(d, r, { active: d.planId === 'active' });
   } else if (d.isCustom && d.customRecipeId) {
+    const r = recipeById(d.customRecipeId);
     label = d.customRecipeTitle || '';
+    // Text-komplement till proteinfärgen (a11y — färg får inte bära ensam)
+    sub = [r?.time ? `${r.time} min` : null, r ? PROTEIN_LABEL[r.protein] : null].filter(Boolean).join(' · ');
     mark = recipeMark;
     if (expanded) detail = customDetailHtml(d);
   } else if (d.isCustom && (d.customRecipeTitle || d.customNote)) {
@@ -365,6 +368,10 @@ function emptyDayCard(d) {
       const r = recipeById(d.customRecipeId);
       const color = r ? (PROTEIN_COLOR[r.protein] || 'var(--lichen)') : 'var(--lichen)';
       const expanded = window._dlxExpanded === d.date;
+      // Text-komplement till proteinfärgen (a11y) — samma chips som recipeDayCard
+      const metaParts = [];
+      if (r) metaParts.push(`<span class="dlx-chip" style="--chip:${color}">${esc(PROTEIN_LABEL[r.protein] || r.protein)}</span>`);
+      if (r?.time) metaParts.push(`<span class="dlx-meta-time">${I.clock}${r.time} min</span>`);
       return `
         <article class="dlx-day custom${expanded ? ' expanded' : ''}${modeCls(d, 'custom')}" data-date="${d.date}" style="--rail:${color}"
                  onclick="dlxToggleDay('${d.date}')">
@@ -375,6 +382,7 @@ function emptyDayCard(d) {
               <span class="dlx-day-flags">${dayBadges(d)}</span></div>
             <div class="dlx-day-main">
               <h3 class="dlx-day-recipe"><span class="dlx-own dlx-own-recipe" title="Recept ur receptboken" aria-label="Recept ur receptboken">${I.pot}</span>${esc(d.customRecipeTitle || '')}</h3>
+              ${metaParts.length ? `<div class="dlx-day-meta">${metaParts.join('')}</div>` : ''}
             </div>
             <span class="dlx-day-chev" aria-hidden="true">›</span>
           </div>
@@ -543,6 +551,8 @@ export function renderDeluxe() {
   if (!history.length) { window._dlxHistoryArmed = false; window._dlxHistoryOpen = false; }
   const showZone = history.length && (window._dlxHistoryArmed || window._dlxHistoryOpen);
   const open = !!window._dlxHistoryOpen;
+  // A11y (backlog #22): gesten (pull/hjul i toppen) kräver touch/mus — en diskret
+  // alltid-synlig knapp ger tangentbord och alla andra samma väg in.
   const historyHtml = showZone
     ? `<div class="dlx-history-zone">
          <button type="button" class="dlx-history-btn${open ? ' open' : ''}" onclick="dlxToggleHistory()">
@@ -550,7 +560,9 @@ export function renderDeluxe() {
          </button>
          ${open ? `<div class="dlx-history-flow">${renderDayList(history)}</div>` : ''}
        </div>`
-    : '';
+    : (history.length
+        ? `<button type="button" class="dlx-history-peek" onclick="dlxOpenHistory()">${I.history}<span>Tidigare recept</span></button>`
+        : '');
 
   // Släppzon för "kläm in före ikväll" — Ikväll-kortet ligger utanför dagslistan
   const tonightZone = (tonight && moveZoneCtx()?.set.has(todayIso)) ? dropZone(todayIso) : '';
@@ -568,6 +580,13 @@ export function renderDeluxe() {
 window.dlxToggleHistory = function () {
   window._dlxHistoryOpen = !window._dlxHistoryOpen;
   if (!window._dlxHistoryOpen) window._dlxHistoryArmed = false;   // stäng → göm knappen
+  renderDeluxe();
+};
+
+// Synligt alternativ till gesten (a11y, backlog #22): öppna historiken direkt.
+window.dlxOpenHistory = function () {
+  window._dlxHistoryArmed = true;
+  window._dlxHistoryOpen = true;
   renderDeluxe();
 };
 
@@ -657,8 +676,8 @@ function rerender(plan, shop) {
 }
 
 window.dlxShuffle = async function (date, btn) {
-  if (_opBusy) return;
-  _opBusy = true;
+  if (window._opBusy) return;
+  window._opBusy = true;
   if (btn) { btn.disabled = true; btn.classList.add('loading'); }
   const day = window._lastPlan?.days?.find(d => d.date === date);
   suppressEcho();
@@ -682,13 +701,13 @@ window.dlxShuffle = async function (date, btn) {
     if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
     dlxFlashError(date, 'Kunde inte byta recept — prova igen.');
   } finally {
-    _opBusy = false;
+    window._opBusy = false;
   }
 };
 
 window.dlxFreeDay = async function (date, btn) {
-  if (_opBusy) return;
-  _opBusy = true;
+  if (window._opBusy) return;
+  window._opBusy = true;
   if (btn) { btn.disabled = true; btn.classList.add('loading'); }
   suppressEcho();
   try {
@@ -706,7 +725,7 @@ window.dlxFreeDay = async function (date, btn) {
     if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
     dlxFlashError(date, 'Kunde inte göra dagen fri — prova igen.');
   } finally {
-    _opBusy = false;
+    window._opBusy = false;
   }
 };
 
@@ -721,9 +740,10 @@ function dlxFlashError(date, msg) {
 // ── Byt dag (swap) ────────────────────────────────────────────────────────────
 // State-driven: _dlxSwap = { from, pending } styr banner, mål-markeringar och
 // nedtonade kort via renderDeluxe/modeCls — inga imperativa DOM-patchar som
-// kan tappas vid re-render. _opBusy spärrar parallella åtgärder (dubbel-tryck
+// kan tappas vid re-render. window._opBusy spärrar parallella åtgärder (dubbel-tryck
 // eller två ändringar samtidigt = klassisk källa till trasiga planer).
-let _opBusy = false;
+// Bor på window (state.js) så custom-days-vägen i plan-viewer.js delar
+// samma spärr (backlog #10) — inte två oberoende guards som kan korsa varandra.
 
 // Eko-dämpning: våra egna skrivningar triggar realtime-events som annars
 // orsakar en onödig full omhämtning sekunden efter (blinket). Svaret från
@@ -745,7 +765,7 @@ function dlxFlashDates(dates) {
 }
 
 window.dlxStartSwap = function (fromDate) {
-  if (_opBusy) return;
+  if (window._opBusy) return;
   window._dlxMove = null;
   window._dlxSwap = { from: fromDate, pending: null };
   window._dlxExpanded = null;
@@ -822,7 +842,7 @@ function dropZone(before) {
 }
 
 window.dlxStartMove = function (fromDate) {
-  if (_opBusy) return;
+  if (window._opBusy) return;
   window._dlxSwap = null;
   window._dlxMove = { from: fromDate, pending: null };
   window._dlxExpanded = null;
@@ -837,11 +857,11 @@ window.dlxCancelMove = function () {
 
 window.dlxPickMoveTarget = async function (before) {
   const move = window._dlxMove;
-  if (!move || move.pending || _opBusy) return;
+  if (!move || move.pending || window._opBusy) return;
   const from = move.from;
 
   // Omedelbar feedback: banner växlar till "Flyttar dag…", källan får spinner
-  _opBusy = true;
+  window._opBusy = true;
   move.pending = before || '__end__';
   renderDeluxe();
   suppressEcho();
@@ -868,13 +888,13 @@ window.dlxPickMoveTarget = async function (before) {
     renderDeluxe();   // läget kvar — användaren kan välja en annan plats eller avbryta
     window.showToast?.(e.message?.length > 4 ? e.message : 'Kunde inte flytta dagen — prova igen.', { type: 'error' });
   } finally {
-    _opBusy = false;
+    window._opBusy = false;
   }
 };
 
 async function dlxPickSwapTarget(toDate) {
   const swap = window._dlxSwap;
-  if (!swap || swap.pending || _opBusy) return;
+  if (!swap || swap.pending || window._opBusy) return;
   if (toDate === swap.from) return;
 
   // Förvalidera mot tidslinjen — begripligt besked direkt, ingen server-tur
@@ -886,7 +906,7 @@ async function dlxPickSwapTarget(toDate) {
   }
 
   // Omedelbar feedback: banner växlar till "Byter dag…", båda korten markeras
-  _opBusy = true;
+  window._opBusy = true;
   swap.pending = toDate;
   renderDeluxe();
   suppressEcho();
@@ -909,7 +929,7 @@ async function dlxPickSwapTarget(toDate) {
     renderDeluxe();   // läget kvar — användaren kan välja ett annat mål eller avbryta
     window.showToast?.(e.message?.length > 4 ? e.message : 'Kunde inte byta dagarna — prova igen.', { type: 'error' });
   } finally {
-    _opBusy = false;
+    window._opBusy = false;
   }
 }
 

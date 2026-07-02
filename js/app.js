@@ -3,7 +3,7 @@
 
 import './state.js';
 import './utils.js';
-import './supabase-client.js';
+import { isDbUnreachable, getLastDbError, DB_RESTING_MESSAGE } from './supabase-client.js';
 import { requireAuth } from './auth-gate.js';
 import { recipeFromRow } from './data-mapper.js';
 import './ui/scroll.js';
@@ -17,20 +17,26 @@ import './recipes/recipe-browser.js';
 import './recipes/recipe-editor.js';
 import './recipes/recipe-import.js';
 import './weekly-plan/plan-generator.js';
-import './weekly-plan/plan-viewer.js?v=112';
-import './weekly-plan/plan-viewer-deluxe.js?v=116';
+import './weekly-plan/plan-viewer.js?v=113';
+import './weekly-plan/plan-viewer-deluxe.js?v=117';
 import './weekly-plan/deals-popup.js';
 
 async function init() {
   try {
     const householdId = await window.getHouseholdId();
-    if (!householdId) throw new Error('Kunde inte hitta hushållsinformation.');
+    if (!householdId) {
+      // Pausad free-tier-databas ser ut som "hushåll saknas" — skilj på dem
+      // så familjen får veta att det bara är att vänta, inte att något är trasigt.
+      throw new Error(isDbUnreachable(getLastDbError())
+        ? DB_RESTING_MESSAGE
+        : 'Kunde inte hitta hushållsinformation.');
+    }
     const { data: rows, error } = await window.db
       .from('recipes')
       .select('*')
       .eq('household_id', householdId)
       .order('id');
-    if (error) throw new Error('Kunde inte ladda recepten.');
+    if (error) throw new Error(isDbUnreachable(error) ? DB_RESTING_MESSAGE : 'Kunde inte ladda recepten.');
     window.RECIPES     = rows.map(recipeFromRow);
     window._allRecipes = window.RECIPES;
     document.getElementById('loadingState').style.display = 'none';
@@ -40,9 +46,12 @@ async function init() {
     window.renderRecipeBrowser();
     window.initDatePickers();
   } catch (err) {
-    document.getElementById('loadingState').innerHTML = `
+    const loading = document.getElementById('loadingState');
+    loading.innerHTML = `
       <div style="font-size:2rem;margin-bottom:1rem">⚠️</div>
-      <p style="color:var(--rust)">${err.message}</p>`;
+      <p style="color:var(--rust)"></p>
+      <button type="button" class="empty-reset-btn" onclick="location.reload()">Prova igen</button>`;
+    loading.querySelector('p').textContent = err.message;
   }
 }
 

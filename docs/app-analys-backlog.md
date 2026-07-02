@@ -11,11 +11,11 @@ P0 = störst riskreduktion per timme, sedan nedåt. Naturliga beroenden noteras 
 
 > Spegel av sessionens todo-lista (#1–#27). Uppdatera båda om något ändras.
 
-**Status (uppdaterad Session 105):**
-- ✅ **Klara:** #1, #3, #4, #8, #9, #26, #27 (Session 102–103). #2 kod klar — väntar bara på att Joakim sätter `ALERT_WEBHOOK`.
-- 🟡 **Delvis:** #11 (dokumenterad; keep-alive/graceful-fel kvar), #22 (zoom tillåten; knapp/textkomplement kvar), #23 (döda `#weekRecipeDetail`-block borta; `.week-day-card` var *inte* död — korrigerat), #24 (död state borta, `?v=N`-linjeval kvar), #25 (escapers → utils klart; `fmtKr`/spegelkod medvetet kvar — se punkten).
-- ⬜ **Öppna:** P1-tenancy-spåret (#5–#7, #10), produktspåret (#12–#18) och resterande UX (#19–#21).
-- **Slutsats:** P0 är i praktiken avklarad. Nästa substantiella hävstång ligger i P1-tenancy (#5–#7) inför Fas 5, och produktspåret (#12 portionsskalning, #15 Ikväll-redigerare).
+**Status (uppdaterad Session 106):**
+- ✅ **Klara:** #1, #3, #4, #8, #9, #26, #27 (Session 102–103) · **#10, #12, #13, #22** (Session 106 — #12/#13 aktiveras när Joakim kört migration 003 resp. 002 i Supabase SQL Editor). #2 kod helt klar (inkl. UI-toast) — väntar bara på att Joakim sätter `ALERT_WEBHOOK`.
+- 🟡 **Delvis:** #7 (dubblett-URL borta + butik via `WILLYS_STORE_ID`-env; multi-user-delen bygger på #5), #11 (dokumenterad + graceful svenskt fel vid pausad DB; keep-alive-cron kvar), #21 (lösenordsåterställning klar; onboarding-guide kvar), #23 (döda `#weekRecipeDetail`-block borta; `.week-day-card`-JS/CSS kvar för granskat steg), #24 (död state borta, versioner synkbumpade Session 106; `?v=N`-linjeval kvar), #25 (escapers → utils klart; `fmtKr`/spegelkod medvetet kvar — se punkten).
+- ⬜ **Öppna:** #5–#6 (tenancy), #14–#18 (produkt), #19–#20 (UX).
+- **Slutsats:** P0 avklarad + produktspårets #1-prioritet (#12) och #13 byggda. Nästa hävstång: #15 Ikväll-redigeraren (kräver UX-snack med Joakim) och tenancy-spåret #5–#6 inför Fas 5.
 
 ---
 
@@ -35,7 +35,7 @@ skriver skräp till repo-roten. Ingen CI kör Node-testsviten; allt skydd ligger
 **Insats:** Liten. **Högst ROI.**
 
 ### #2 — Larm vid tyst Willys-/prisdegradering
-> 🟡 **KOD KLAR (Session 102), väntar på env.** `pricingDegraded`-flagga + `notifyAlert()` (`api/_shared/alert.js`, `alert.test.js` grön) finns. Kvar: Joakim sätter `ALERT_WEBHOOK` i Vercel + diskret svensk toast för `pricingDegraded`.
+> 🟡 **KOD HELT KLAR (Session 102 + 106), väntar på env.** `pricingDegraded`-flagga + `notifyAlert()` (`api/_shared/alert.js`) + diskret svensk toast i frontend (Session 106). Kvar: Joakim sätter `ALERT_WEBHOOK` i Vercel.
 **Varför:** Prisoptimering + Veckans fynd vilar på oofficiella Willys-endpoints. Vid
 API-ändring returnerar feeden tyst `[]` → ser ut som "inga reor", inte "trasigt".
 `generate.js:~516` sväljer felet i tom catch (`savingsById=null`). Ingen larmar.
@@ -89,7 +89,7 @@ faktiska koden i `generate.js`. Filen varnar själv. Reell drift-risk.
 **Insats:** Medel–stor. Största tenancy-blockeraren inför Fas 5.
 
 ### #7 — Multi-user dispatch: ta bort hårdkodad `userId`/butik + dedupe URL
-> ⬜ **ÖPPEN.** `userId="joakim"` + butik `2160` hårdkodat på flera ställen; dubblett-offers-URL kvar i `generate.js`. Bygger på #5.
+> 🟡 **DELVIS (Session 106).** Dubblett-offers-URL:en i `generate.js` borta — delade `fetchOffersFromWillys` + butik via `WILLYS_STORE_ID`-env (fallback 2160). Kvar: `userId="joakim"` + per-household-nyckling (bygger på #5).
 **Varför:** `userId="joakim"` + butik `2160` hårdkodat på flera ställen. `generate.js:8`
 har en DUPLICERAD offers-URL-literal med inbakat 2160 → prisoptimeringen frågar alltid Ekholmen.
 **Väg framåt:** Parametrisera butik (importera `WILLYS_BASE` i stället för re-stringify; ta
@@ -110,7 +110,7 @@ timeoutar tyst vid fotoimport.
 **Insats:** Liten.
 
 ### #10 — Custom-days race: bakom API eller delad `_opBusy`-spärr
-> ⬜ **ÖPPEN.** `_opBusy` finns bara i `plan-viewer-deluxe.js`, delas inte med custom-days-vägen i `plan-viewer.js`.
+> ✅ **KLAR (Session 106, minimala vägen).** `_opBusy` bor nu på `window` (state.js) och delas mellan premiumvyn och custom-days-mutationerna i `plan-viewer.js` (`saveCustomDay`/`clearCustomDay`/`convertBlockedToCustom`/`selectRecipeForCustomDay`/`modifyDay`). API-routning kvarstår som ev. framtida hårdare variant.
 **Varför:** Custom-days skrivs DIREKT från browsern (read-then-write) medan resten av planen
 är atomär via API. Race mot realtime-eko/annan enhet. (Klobbrar dock ej plan-rader — `plan_id==null`-guard.)
 **Väg framåt:** Route via API likt övriga plan-mutationer, ELLER minst dela `_opBusy`-spärren
@@ -118,7 +118,7 @@ mellan `plan-viewer.js` och `plan-viewer-deluxe.js`.
 **Insats:** Medel / Liten.
 
 ### #11 — Supabase free-tier-paus: dokumentera + keep-alive
-> 🟡 **DELVIS (Session 105, nattjobb).** Pausbeteendet + de två luckorna dokumenterade i CLAUDE.md (Arkitektur). Kvar: gratis liveness-ping (extern cron GET:ar hälsosida) + begripligt svenskt fel vid pausad DB.
+> 🟡 **DELVIS (Session 105 + 106).** Dokumenterat (CLAUDE.md) + begripligt svenskt fel vid pausad DB klart: `isDbUnreachable`/`DB_RESTING_MESSAGE` i `supabase-client.js` → "Appen har vilat en stund…" + Prova igen-knapp vid boot och login. Kvar: gratis liveness-ping (extern cron GET:ar hälsosida — Joakim-setup).
 **Varför:** Free-tier PAUSAR efter ~1 v inaktivitet → hela appen nere utan graceful degradation.
 **Väg framåt:** Dokumentera i CLAUDE.md → gratis liveness-ping (extern cron GET:ar hälsosida;
 bryter EJ "ingen automatisk generering") → begripligt svenskt fel om DB pausad.
@@ -129,7 +129,7 @@ bryter EJ "ingen automatisk generering") → begripligt svenskt fel om DB pausad
 ## 🟢 P2 — Produktfunktioner (familjevärde)
 
 ### #12 — Portionsskalning (hushållsmål) i parsad pipe  ⭐ agenternas #1 "bygg näst"
-> ⬜ **ÖPPEN.** Produktspår — kräver datamodell (`target_servings` på household) + pipe-ändring + UI. Diskutera scope med Joakim.
+> ✅ **KLAR (Session 106) — aktiveras av migration `003_target_servings.sql`.** Byggd exakt enligt vägen nedan (steg 1–3 + 5; enhetskanonisering (4) kvar som bonus): `target_servings` på households (default 4 = ingen regression), skalning i parsade tal före merge, vänlig avrundning, "Vi är X portioner"-stepper (dold tills migrationen körts). 12 nya testfall i `shopping.test.js`.
 **Varför:** Recept = 4 port, familjen = 2,5 → ~60 % överköp. Träffar matsvinn + budget varje
 måltid och gör dispatchen meningsfull.
 **Väg framåt (datamodell/pipe, INTE bara UI):**
@@ -141,7 +141,7 @@ måltid och gör dispatchen meningsfull.
 **Insats:** Medel. `shopping.test.js` täcker pipen → regression fångas.
 
 ### #13 — Skafferi/"har hemma"-läge
-> ⬜ **ÖPPEN.** Produktspår.
+> ✅ **KLAR (Session 106) — aktiveras av migration `002_pantry_items.sql`.** Hus-knapp per vara; markerad vara dämpas (inte borttagen), räknas inte i "X av Y", exkluderas ur kopierad text + Willys-dispatch. Minne per normaliserat varunamn i `pantry_items` (delad per household). Funktionen dold tills migrationen körts.
 **Varför:** Allt handlas som om skafferiet är tomt. Krymper lista + svinn.
 **Väg framåt:** Kryss per vara "finns hemma → skippa", minne per kanon-namn (bygg på befintlig
 avbocknings-/kanon-infra). Skippat visas dämpat, inte borttaget.
@@ -194,13 +194,13 @@ Bekräfta+Flytta där säkert. Behåll `day-ops sameRecipes`-invarianten. **Insa
 **Insats:** Medel.
 
 ### #21 — Onboarding-guide + självbetjäning för auth
-> ⬜ **ÖPPEN.** UX — ingen förstagångsguide; auth saknar lösenordsåterställning.
+> 🟡 **DELVIS (Session 106).** Lösenordsåterställning klar: "Glömt lösenord?" i login-gaten (`resetPasswordForEmail`) + recovery-formulär vid `PASSWORD_RECOVERY` + svenska auth-felmeddelanden. Kvar: onboarding-guide. *(Obs: kontrollera Site URL/Redirect URLs i Supabase Auth om mejllänken inte landar rätt.)*
 **Varför:** Ingen förstagångsguide; auth saknar lösenordsåterställning (glömt lösenord = Supabase-dashboard).
 **Väg framåt:** Lättviktig guide (tooltips/kort) + `resetPasswordForEmail` i `auth-gate.js`
 (registrering förblir avstängd enligt princip). **Insats:** Medel.
 
 ### #22 — Tillgänglighet: tillåt zoom + tangentbordsväg för gester
-> 🟡 **DELVIS (Session 105, nattjobb).** `maximum-scale=1.0, user-scalable=no` borttaget ur viewporten i `index.html` → nyp-zoom tillåts nu. Kvar: synlig knapp som alternativ till pull-to-reveal-gesten + textkomplement till proteinfärgen.
+> ✅ **KLAR (Session 105 + 106).** Zoom tillåten (105). Session 106: diskret alltid-synlig "Tidigare recept"-knapp (`.dlx-history-peek`, tangentbordsnåbar) som alternativ till pull-gesten + protein/tid i text på custom-dagar-med-recept och Ikväll-kortets custom-recept (färg bär inte längre ensam).
 **Varför:** `maximum-scale=1.0, user-scalable=no` blockerar zoom; pull-to-reveal saknar tangentbordsväg.
 **Väg framåt:** Ta bort `user-scalable=no` → synlig knapp som alternativ till gesten → textkomplement till proteinfärg.
 **Insats:** Liten.

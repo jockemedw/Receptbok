@@ -36,3 +36,22 @@ export async function getHouseholdId() {
   if (error || !data) throw new Error("Hittade ingen household — kör migrationen först.");
   return data.id;
 }
+
+// Hushållets portionsmål för inköpslistan (backlog #12). Kolumnen skapas av
+// db/migrations/003_target_servings.sql — saknas den (migration ej körd) eller
+// är värdet orimligt returneras null, vilket betyder "ingen skalning" (exakt
+// samma inköpslista som före Fas #12).
+export async function fetchTargetServings(householdId) {
+  try {
+    const { data, error } = await db
+      .from("households")
+      .select("target_servings")
+      .eq("id", householdId)
+      .maybeSingle();
+    if (error || !data) return null;
+    const n = parseInt(data.target_servings, 10);
+    return Number.isFinite(n) && n >= 1 && n <= 12 ? n : null;
+  } catch {
+    return null;
+  }
+}

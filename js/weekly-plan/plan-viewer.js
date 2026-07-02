@@ -328,6 +328,8 @@ export function exitCustomPickMode() {
 export async function selectRecipeForCustomDay(event, recipeId, title) {
   event.stopPropagation();
   if (!window.customPickMode) return;
+  if (window._opBusy) return;   // delad spärr med premiumvyn (backlog #10)
+  window._opBusy = true;
   const { date } = window.customPickMode;
 
   const btn = event.currentTarget;
@@ -372,6 +374,8 @@ export async function selectRecipeForCustomDay(event, recipeId, title) {
       err.textContent = 'Kunde inte spara — prova igen.';
       banner.insertBefore(err, banner.querySelector('.replace-banner-cancel'));
     }
+  } finally {
+    window._opBusy = false;
   }
 }
 
@@ -420,6 +424,8 @@ function updateLastPlanDay(date, recipeId, recipe) {
 // ── Fri dag (gör fri / ångra fri) ────────────────────────────────────────────
 
 async function modifyDay(date, action) {
+  if (window._opBusy) return;   // delad spärr med premiumvyn (backlog #10)
+  window._opBusy = true;
   try {
     const res = await fetch('/api/skip-day', {
       method: 'POST',
@@ -446,6 +452,8 @@ async function modifyDay(date, action) {
     const actionMsg = { free: 'göra fri', unfree: 'ångra fri dag på' };
     const fallback = `Kunde inte ${actionMsg[action] || 'ändra'} dagen — prova igen.`;
     window.showToast?.((e.message && e.message !== 'Okänt fel') ? e.message : fallback, { type: 'error' });
+  } finally {
+    window._opBusy = false;
   }
 }
 
@@ -495,12 +503,16 @@ window.blockedDayEditorHtml = blockedDayEditorHtml;
 export async function convertBlockedToCustom(dateIso) {
   const note = document.getElementById('blockedDayNote')?.value?.trim();
   if (!note) return;
+  if (window._opBusy) return;   // delad spärr med premiumvyn (backlog #10)
+  window._opBusy = true;
   try {
     await postCustomDays('set', [dateIso], note);
     window._dlxExpanded = null;
     window.loadWeeklyPlan();
   } catch {
     window.showToast?.('Kunde inte spara noteringen — prova igen.', { type: 'error' });
+  } finally {
+    window._opBusy = false;
   }
 }
 
@@ -832,6 +844,8 @@ async function postCustomDays(action, dates, note) {
 }
 
 export async function saveCustomDay(dateIso) {
+  if (window._opBusy) return;   // delad spärr med premiumvyn (backlog #10)
+  window._opBusy = true;
   const input = document.getElementById('customDayNote');
   const note = input ? input.value : '';
   const btn = document.querySelector('.custom-note-save');
@@ -857,10 +871,14 @@ export async function saveCustomDay(dateIso) {
       err.textContent = 'Kunde inte spara — prova igen.';
       editor.appendChild(err);
     }
+  } finally {
+    window._opBusy = false;
   }
 }
 
 export async function clearCustomDay(dateIso) {
+  if (window._opBusy) return;   // delad spärr med premiumvyn (backlog #10)
+  window._opBusy = true;
   try {
     await postCustomDays('clear', [dateIso]);
     window._dlxExpanded = null;
@@ -874,6 +892,8 @@ export async function clearCustomDay(dateIso) {
     );
   } catch {
     window.showToast?.('Kunde inte ta bort markeringen — prova igen.', { type: 'error' });
+  } finally {
+    window._opBusy = false;
   }
 }
 
