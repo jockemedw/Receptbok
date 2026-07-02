@@ -1,6 +1,11 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–103. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–104. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 104 — Självgående runda: backlog-sanering + #25 escaper-konsolidering
+Joakim bad om en självgående runda som paketerar så många backlog-punkter som möjligt. **Fynd:** de flesta P0/P1-punkter jag valt (#1, #4, #8, #9, #26, #27) var **redan gjorda** i Session 102-nattjobbet — men `docs/app-analys-backlog.md` uppdaterades aldrig efter det, så filen listade dem felaktigt som öppna (stale-doc-fälla för framtida sessioner). **Åtgärd 1 — kod (#25 delvis):** de 4 duplicerade HTML-escaparna (`esc`×2 i plan-viewer/-deluxe, `escapeHtml`×2 i dispatch-ui/-preferences) pekar nu på en enda `utils.escapeHtml` (import + `const esc = escapeHtml`). Medvetet **inte** rört: `fmtKr` (olika avrundning per vy → att ena ändrar synlig kr i premiumvyn, kräver Joakims display-beslut) och `updateLastPlanDay`/`patchPlanDay` (ligger i plan-mutations-vägen, hård regel — slås ihop i separat granskat steg). **Åtgärd 2 — dokument:** backlogfilen fick statusbanner + ✅/🟡-markörer per punkt (#1–#4, #8, #9, #24–#27) så ingen framtida session dubbelarbetar; status.md:s backlog-rad rättad. **Verifiering:** alla 12 testfiler gröna (körde `npm install` för de deps-beroende dispatch-/cookies-/plan-testerna) + `node --check` på de 4 editerade modulerna. Ingen synlig UI-ändring (escaparna är semantiskt identiska). **Kvar:** mobil-verifieringskön oförändrad; #25:s `fmtKr`/spegelkod väntar på beslut.
 
 ---
 

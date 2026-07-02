@@ -394,8 +394,6 @@ export function startPlanFromDate(dateIso) {
   if (window.toggleTrigger) window.toggleTrigger();
 
   window._dlxExpanded = null;
-  const panel = document.getElementById('weekRecipeDetail');
-  if (panel) { panel.classList.remove('open'); panel.innerHTML = ''; }
 
   const trigger = document.getElementById('triggerSection');
   if (trigger) {
@@ -594,8 +592,6 @@ export async function discardPlan() {
 
     window.planConfirmed = false;
     window._dlxExpanded = null;
-    const panel = document.getElementById('weekRecipeDetail');
-    if (panel) { panel.classList.remove('open'); panel.innerHTML = ''; }
 
     // Använd returnerad tomma planen direkt — Vercels statiska weekly-plan.json
     // har inte hunnit re-deploya efter API-commiten (~30 sek), så fetch skulle
@@ -640,9 +636,6 @@ export async function confirmPlan() {
     document.getElementById('confirmPlanWrap').style.display = 'none';
     // Bekräftad plan → ta bort snabbåtgärderna (slumpa/byt dag) från korten
     document.querySelectorAll('.day-card-actions').forEach(b => b.remove());
-
-    const panel = document.getElementById('weekRecipeDetail');
-    if (panel) { panel.classList.remove('open'); panel.innerHTML = ''; }
 
     window.renderIngredientPreview(
       data.shoppingList?.recipeItems || null,
@@ -751,10 +744,8 @@ export async function loadWeeklyPlan() {
 // ── Egen planering (custom days) ──────────────────────────────────────────────
 
 // Bygger editor-HTML:n för en egen-planering-dag. Bryts ut så premiumvyn kan
-// rendera SAMMA editor inline i det utfällda kortet (annars hamnade den i den
-// delade #weekRecipeDetail-panelen längst ner — såg ut som att fel kort fälldes
-// ut). Knapparna kallar globala window-funktioner och bryr sig inte om var
-// HTML:n sitter.
+// rendera SAMMA editor inline i det utfällda kortet. Knapparna kallar globala
+// window-funktioner och bryr sig inte om var HTML:n sitter.
 export function customDayEditorHtml(dateIso, dayName) {
   const existing = (window._customDays?.entries || {})[dateIso];
   const note = existing?.note || '';
@@ -847,8 +838,6 @@ export async function saveCustomDay(dateIso) {
   if (btn) { btn.disabled = true; btn.textContent = 'Sparar…'; }
   try {
     await postCustomDays('set', [dateIso], note);
-    const panel = document.getElementById('weekRecipeDetail');
-    if (panel) { panel.classList.remove('open'); panel.innerHTML = ''; }
     window._dlxExpanded = null;
     window._dlxEditCustom = null;
     renderWeeklyPlanData(
@@ -874,8 +863,6 @@ export async function saveCustomDay(dateIso) {
 export async function clearCustomDay(dateIso) {
   try {
     await postCustomDays('clear', [dateIso]);
-    const panel = document.getElementById('weekRecipeDetail');
-    if (panel) { panel.classList.remove('open'); panel.innerHTML = ''; }
     window._dlxExpanded = null;
     window._dlxEditCustom = null;
     renderWeeklyPlanData(
