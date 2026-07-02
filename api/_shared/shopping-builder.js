@@ -589,7 +589,31 @@ function formatIngredient(amount, unit, name) {
   return `${name} (${qty})`;
 }
 
-export function buildShoppingList(selectedIds, allRecipes) {
+// ─── Portionsskalning (backlog #12) ─────────────────────────────────────────
+// Recepten antas vara 4 portioner om servings saknas (appens standard).
+export const DEFAULT_SERVINGS = 4;
+
+// Vikts-/volymenheter som tål decimaler. Allt annat (st, burk, påse, klyftor,
+// skivor, förpackningar …) är styckevaror som avrundas UPPÅT till heltal —
+// man kan inte köpa 1,88 klyftor vitlök.
+const INTEGER_MEASURE_UNITS = new Set(["g", "ml", "krm"]);
+const DECIMAL_MEASURE_UNITS = new Set(["dl", "cl", "l", "liter", "kg", "msk", "tsk", "cm"]);
+
+// Vänlig avrundning EFTER skalning+merge. Tillämpas bara på skalade mängder —
+// oskalade rader (faktor 1) lämnas exakt som idag, så default = noll regression.
+function friendlyRound(amount, unit) {
+  if (INTEGER_MEASURE_UNITS.has(unit)) return Math.max(1, Math.round(amount));
+  if (DECIMAL_MEASURE_UNITS.has(unit)) return Math.round(amount * 4) / 4;   // kvarts-precision: 1,75 dl
+  return Math.ceil(amount - 1e-9);   // styckevaror uppåt till heltal
+}
+
+// opts.targetServings: hushållets portionsmål (null/undefined = ingen skalning,
+// exakt samma beteende som före Fas #12). Skalning sker i PARSADE tal FÖRE
+// merge (amount × target/servings) — receptens råtext rörs aldrig, och rader
+// utan definierbar mängd (noAmount) skalas inte.
+export function buildShoppingList(selectedIds, allRecipes, opts = {}) {
+  const targetRaw = opts?.targetServings;
+  const target = Number.isFinite(targetRaw) && targetRaw > 0 ? targetRaw : null;
   const recipeMap = Object.fromEntries(allRecipes.map((r) => [r.id, r]));
   const categories = { Mejeri: [], Grönsaker: [], "Fisk & kött": [], Frukt: [], Skafferi: [], Övrigt: [] };
 
@@ -599,6 +623,8 @@ export function buildShoppingList(selectedIds, allRecipes) {
   for (const rid of selectedIds) {
     const recipe = recipeMap[rid];
     if (!recipe) continue;
+    const baseServings = parseInt(recipe.servings, 10) || DEFAULT_SERVINGS;
+    const factor = target ? target / baseServings : 1;
     for (const rawIng of recipe.ingredients || []) {
       const { amount, unit, name } = parseIngredient(rawIng);
       const normalized = normalizeName(name);
@@ -607,9 +633,11 @@ export function buildShoppingList(selectedIds, allRecipes) {
       } else {
         const key = `${normalized}||${unit ?? ""}`;
         if (merged.has(key)) {
-          merged.get(key).amount += amount;
+          const entry = merged.get(key);
+          entry.amount += amount * factor;
+          entry.scaled = entry.scaled || factor !== 1;
         } else {
-          merged.set(key, { name: normalized, unit: unit ?? null, amount });
+          merged.set(key, { name: normalized, unit: unit ?? null, amount: amount * factor, scaled: factor !== 1 });
         }
       }
     }
@@ -642,8 +670,9 @@ export function buildShoppingList(selectedIds, allRecipes) {
     }
   }
 
-  for (const { name, unit, amount } of merged.values()) {
-    categories[categorize(name)].push(formatIngredient(amount, unit, name));
+  for (const { name, unit, amount, scaled } of merged.values()) {
+    const displayAmount = scaled ? friendlyRound(amount, unit) : amount;
+    categories[categorize(name)].push(formatIngredient(displayAmount, unit, name));
   }
   for (const [normalized] of noAmount.entries()) {
     const alreadyCovered = [...merged.keys()].some((k) => k.startsWith(normalized + "||"));

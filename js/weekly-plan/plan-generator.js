@@ -13,6 +13,54 @@ export function initDatePickers() {
   document.getElementById('endDate').addEventListener('change',   () => { updateDateHint(); updateSettingsPreview(); });
   updateDateHint();
   updateSettingsPreview();
+  initServingsSetting();
+}
+
+// ── Portionsskalning (backlog #12): "Vi är X portioner" ──────────────────────
+// Hushållets portionsmål bor i households.target_servings (migration 003).
+// Går kolumnen inte att läsa (migration ej körd) förblir raden dold — appen
+// beter sig då exakt som före funktionen.
+async function initServingsSetting() {
+  try {
+    const householdId = await window.getHouseholdId();
+    const { data, error } = await window.db
+      .from('households').select('target_servings').eq('id', householdId).maybeSingle();
+    if (error || data?.target_servings == null) return;
+    const input = document.getElementById('targetServings');
+    if (input) input.value = data.target_servings;
+    document.getElementById('servingsRow')?.style.setProperty('display', '');
+    document.getElementById('servingsDivider')?.style.setProperty('display', '');
+  } catch { /* raden förblir dold */ }
+}
+
+export function stepServings(delta) {
+  const input = document.getElementById('targetServings');
+  if (!input) return;
+  const min = parseInt(input.min) || 1;
+  const max = parseInt(input.max) || 12;
+  input.value = Math.min(max, Math.max(min, (parseInt(input.value) || 4) + delta));
+  saveTargetServings();
+}
+
+let _servingsSaveTimer = null;
+export function saveTargetServings() {
+  const input = document.getElementById('targetServings');
+  if (!input) return;
+  const v = Math.min(12, Math.max(1, parseInt(input.value) || 4));
+  input.value = v;
+  // Debounce: flera snabba +/− blir en enda skrivning.
+  clearTimeout(_servingsSaveTimer);
+  _servingsSaveTimer = setTimeout(async () => {
+    try {
+      const householdId = await window.getHouseholdId();
+      const { error } = await window.db
+        .from('households').update({ target_servings: v }).eq('id', householdId);
+      if (error) throw error;
+      window.showToast?.(`Sparat — nästa inköpslista skalas till ${v} portioner.`, { type: 'success' });
+    } catch {
+      window.showToast?.('Kunde inte spara portionsantalet — prova igen.', { type: 'error' });
+    }
+  }, 600);
 }
 
 // Samma säsongsindelning som backend (api/generate.js → getCurrentSeason).
@@ -247,6 +295,11 @@ export async function generatePlan() {
     status.textContent = `✓ Klar! ${data.days} dagar planerade. Bekräfta matsedeln för att bygga inköpslistan.`;
     status.className   = 'trigger-status success';
     btn.disabled       = false;
+    // Tyst prisdegradering: Willys-feeden svarade inte/gav inget parsebart.
+    // Matsedeln är ändå komplett — berätta diskret att reapriserna saknas.
+    if (wantsOptimize && data.pricingDegraded) {
+      window.showToast?.('Reapriserna kunde inte hämtas just nu — matsedeln skapades utan prisoptimering.', { type: 'info', duration: 6000 });
+    }
     if (data.weeklyPlan) {
       // Hämta arkiv + custom-dagar från Supabase efter generering
       let archive = { plans: [] };
@@ -324,3 +377,5 @@ window.generatePlan         = generatePlan;
 window.toggleTrigger        = toggleTrigger;
 window.openNewPlan          = openNewPlan;
 window.stepNum              = stepNum;
+window.stepServings         = stepServings;
+window.saveTargetServings   = saveTargetServings;

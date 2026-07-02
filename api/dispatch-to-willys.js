@@ -307,13 +307,29 @@ async function addProductsInBatches(cartClient, codes, { batchSize = 8, concurre
 
 // Läser aktiv inköpslista från Supabase och returnerar { recipeItems, manualItems }
 // i samma format som shopping-list-endpointen brukade returnera.
+// "Har hemma"-markerade varor (pantry_items, backlog #13) filtreras bort —
+// familjen har dem redan, de ska inte läggas i Willys-korgen. Saknas tabellen
+// (migration 002 ej körd) skickas listan ofiltrerad, precis som innan.
+function pantryKeyFromName(name) {
+  return String(name || "").replace(/\s*\([^)]*\)\s*$/, "").trim().toLowerCase();
+}
+
 async function fetchShoppingListFromSupabase() {
   const { data: lists } = await db
     .from("shopping_lists")
-    .select("id")
+    .select("id, household_id")
     .eq("is_active", true)
     .limit(1);
   if (!lists?.length) return { recipeItems: {}, manualItems: [] };
+
+  let pantry = new Set();
+  try {
+    const { data: pantryRows, error } = await db
+      .from("pantry_items")
+      .select("name")
+      .eq("household_id", lists[0].household_id);
+    if (!error) pantry = new Set((pantryRows || []).map((r) => r.name));
+  } catch { /* tabellen saknas → ingen filtrering */ }
 
   const { data: items } = await db
     .from("shopping_items")
@@ -324,6 +340,7 @@ async function fetchShoppingListFromSupabase() {
   const recipeItems = {};
   const manualItems = [];
   for (const item of (items || [])) {
+    if (pantry.has(pantryKeyFromName(item.name))) continue;
     if (item.source === "recipe") {
       if (!recipeItems[item.category]) recipeItems[item.category] = [];
       recipeItems[item.category].push(item.name);

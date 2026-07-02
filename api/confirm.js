@@ -1,6 +1,6 @@
 import { buildShoppingList } from "./_shared/shopping-builder.js";
 import { createSupabaseHandler } from "./_shared/handler.js";
-import { db, getHouseholdId } from "./_shared/supabase.js";
+import { db, getHouseholdId, fetchTargetServings } from "./_shared/supabase.js";
 
 export default createSupabaseHandler(async (req, res) => {
   const householdId = await getHouseholdId();
@@ -27,12 +27,14 @@ export default createSupabaseHandler(async (req, res) => {
   if (!selectedIds.length) return res.status(400).json({ error: "Planen har inga recept." });
 
   // Hämta recept för att bygga inköpslistan
-  const { data: recipes } = await db
-    .from("recipes")
-    .select("id, title, ingredients, tags, protein, tested")
-    .eq("household_id", householdId);
+  const [{ data: recipes }, targetServings] = await Promise.all([
+    db.from("recipes")
+      .select("id, title, ingredients, tags, protein, tested, servings")
+      .eq("household_id", householdId),
+    fetchTargetServings(householdId),
+  ]);
 
-  const shoppingCategories = buildShoppingList(selectedIds, recipes || []);
+  const shoppingCategories = buildShoppingList(selectedIds, recipes || [], { targetServings });
 
   // Bevara manuella varor och bockningar från befintlig aktiv lista
   let manualItems = [];

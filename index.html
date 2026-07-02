@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=118">
+<link rel="stylesheet" href="css/styles.css?v=119">
 <style>/* tömd — CSS flyttad till css/styles.css */
 
 </style>
@@ -149,6 +149,25 @@
 
     <div class="settings-panel" id="settingsPanel">
       <div class="settings-inner">
+
+        <!-- Portionsskalning (backlog #12) — visas när migration 003 är körd -->
+        <div class="setting-row" id="servingsRow" style="display:none">
+          <label class="setting-label">
+            Vi är … portioner
+            <span class="setting-sublabel">Inköpslistans mängder skalas hit (recepten är 4 port.)</span>
+          </label>
+          <div class="setting-control">
+            <div class="stepper">
+              <button type="button" class="step-btn" aria-label="Minska" onclick="stepServings(-1)">−</button>
+              <input type="number" id="targetServings" class="setting-num"
+                     min="1" max="12" value="4" onchange="saveTargetServings()">
+              <button type="button" class="step-btn" aria-label="Öka" onclick="stepServings(1)">+</button>
+            </div>
+            <span class="setting-unit">port.</span>
+          </div>
+        </div>
+
+        <hr class="setting-divider" id="servingsDivider" style="display:none">
 
         <div class="setting-row">
           <label class="setting-label">
@@ -547,6 +566,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=116"></script>
+<script type="module" src="js/app.js?v=117"></script>
 </body>
 </html>
