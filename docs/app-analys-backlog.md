@@ -11,10 +11,10 @@ P0 = störst riskreduktion per timme, sedan nedåt. Naturliga beroenden noteras 
 
 > Spegel av sessionens todo-lista (#1–#27). Uppdatera båda om något ändras.
 
-**Status (uppdaterad Session 104):**
+**Status (uppdaterad Session 105):**
 - ✅ **Klara:** #1, #3, #4, #8, #9, #26, #27 (Session 102–103). #2 kod klar — väntar bara på att Joakim sätter `ALERT_WEBHOOK`.
-- 🟡 **Delvis:** #24 (död state borta, `?v=N`-linjeval kvar), #25 (escapers → utils klart; `fmtKr`/spegelkod medvetet kvar — se punkten).
-- ⬜ **Öppna:** hela P1-tenancy-spåret (#5–#7, #10, #11), produktspåret (#12–#18) och resterande UX/städning (#19–#23).
+- 🟡 **Delvis:** #11 (dokumenterad; keep-alive/graceful-fel kvar), #22 (zoom tillåten; knapp/textkomplement kvar), #23 (döda `#weekRecipeDetail`-block borta; `.week-day-card` var *inte* död — korrigerat), #24 (död state borta, `?v=N`-linjeval kvar), #25 (escapers → utils klart; `fmtKr`/spegelkod medvetet kvar — se punkten).
+- ⬜ **Öppna:** P1-tenancy-spåret (#5–#7, #10), produktspåret (#12–#18) och resterande UX (#19–#21).
 - **Slutsats:** P0 är i praktiken avklarad. Nästa substantiella hävstång ligger i P1-tenancy (#5–#7) inför Fas 5, och produktspåret (#12 portionsskalning, #15 Ikväll-redigerare).
 
 ---
@@ -118,7 +118,7 @@ mellan `plan-viewer.js` och `plan-viewer-deluxe.js`.
 **Insats:** Medel / Liten.
 
 ### #11 — Supabase free-tier-paus: dokumentera + keep-alive
-> ⬜ **ÖPPEN.** Ingen dokumentation/keep-alive/graceful degradation vid pausad DB.
+> 🟡 **DELVIS (Session 105, nattjobb).** Pausbeteendet + de två luckorna dokumenterade i CLAUDE.md (Arkitektur). Kvar: gratis liveness-ping (extern cron GET:ar hälsosida) + begripligt svenskt fel vid pausad DB.
 **Varför:** Free-tier PAUSAR efter ~1 v inaktivitet → hela appen nere utan graceful degradation.
 **Väg framåt:** Dokumentera i CLAUDE.md → gratis liveness-ping (extern cron GET:ar hälsosida;
 bryter EJ "ingen automatisk generering") → begripligt svenskt fel om DB pausad.
@@ -200,7 +200,7 @@ Bekräfta+Flytta där säkert. Behåll `day-ops sameRecipes`-invarianten. **Insa
 (registrering förblir avstängd enligt princip). **Insats:** Medel.
 
 ### #22 — Tillgänglighet: tillåt zoom + tangentbordsväg för gester
-> ⬜ **ÖPPEN.** `user-scalable=no` blockerar fortfarande zoom; gester saknar tangentbordsväg.
+> 🟡 **DELVIS (Session 105, nattjobb).** `maximum-scale=1.0, user-scalable=no` borttaget ur viewporten i `index.html` → nyp-zoom tillåts nu. Kvar: synlig knapp som alternativ till pull-to-reveal-gesten + textkomplement till proteinfärgen.
 **Varför:** `maximum-scale=1.0, user-scalable=no` blockerar zoom; pull-to-reveal saknar tangentbordsväg.
 **Väg framåt:** Ta bort `user-scalable=no` → synlig knapp som alternativ till gesten → textkomplement till proteinfärg.
 **Insats:** Liten.
@@ -210,7 +210,7 @@ Bekräfta+Flytta där säkert. Behåll `day-ops sameRecipes`-invarianten. **Insa
 ## ⚪ P4 — Städning (låg risk)
 
 ### #23 — Ta bort död JS + CSS efter Session 101
-> ⬜ **ÖPPEN.** 8 döda `#weekRecipeDetail`/`.week-day-card`-referenser kvar i `plan-viewer.js` (vaktade, ofarliga men vilseledande) + död klassisk-CSS. Städas per-selektor i granskat steg (behåll `.holiday-dot`).
+> 🟡 **DELVIS (Session 105, nattjobb).** 5 döda `#weekRecipeDetail`-no-op-block borttagna ur `plan-viewer.js` (397/597/644/850/877) + vilseledande kommentar sanerad. **Kvar (granskat steg, EJ autonomt):** de två `.week-day-card`-referenserna (`plan-viewer.js:29`/`:281`) är inerta — premiumvyn renderar `.dlx-day`/`.dlx-tonight`, aldrig `.week-day-card`, så queries matchar aldrig — MEN de sitter i den *levande* realtidshanteraren resp. swap-vägen, så de tas bort i samma granskade steg som den döda `.week-day-card`-CSS:en (1268–2099), inte i en autonom runda. Behåll `.holiday-dot` (används av `plan-generator.js`).
 **Varför:** Teardownen ej klar på JS-sidan. Vakter räddar från krasch men koden är vilseledande död.
 **Väg framåt:** Ta bort 6 `#weekRecipeDetail`-referenser (plan-viewer.js ~397/597/644/850/877) +
 `.week-day-card`-koden (:29/:281). Städa död klassisk-CSS per-selektor (behåll `.holiday-dot`).

@@ -13,6 +13,7 @@ Browser → Vercel /api/generate → Deterministisk receptväljare (JS) → GitH
 - **Secrets:** `GITHUB_PAT` (contents:write) i Vercel env vars
 - **Autentisering:** Lösenordsbaserad via Supabase Auth. Ny registrering avstängd — nya familjemedlemmar läggs till manuellt i `household_members` + Supabase-dashboarden
 - **AI-kostnad vid import** — receptimport via foto och URL-fallback använder Google Gemini API (gratistier). Receptval är fortfarande kostnadsfritt och deterministiskt.
+- **Supabase free-tier pausar efter ~1 v inaktivitet** — hela appen (auth + receptdata + planer) ligger på Supabase gratistier. Efter ca en veckas total inaktivitet pausas databasen automatiskt; alla anrop failar tills någon väcker projektet (öppna appen/Supabase-dashboarden). Med daglig familjeanvändning inträffar detta i praktiken aldrig. Två kända luckor (backlog #11, öppen): (1) ingen keep-alive-ping, (2) ingen graceful degradation — ett pausat DB ger idag ett generiskt fel istället för ett begripligt svenskt "appen vilar, prova igen om en stund". Keep-alive via extern cron är OK enligt principerna (den *läser* bara en hälsosida, triggar ingen matsedel-generering).
 
 ## Designprinciper (följ alltid)
 - **Gratis** — betallösningar kräver stark motivering
