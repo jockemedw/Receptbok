@@ -4823,6 +4823,39 @@ body.cook-open { overflow: hidden; }
 }
 .cook-done-btn:active { filter: brightness(1.08); }
 
+/* Portionsskalning i matlagningsläget (#28, designförslag 2026-07 steg 6) */
+.cook-servings {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0 0 0.9rem;
+}
+.cook-serv-btn {
+  width: 42px;
+  height: 42px;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--forest);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.cook-serv-btn:active { background: var(--stone); }
+.cook-serv-val {
+  min-width: 4.2em;
+  text-align: center;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.cook-serv-note {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+.cook-qty { font-weight: 700; }
+.cook-qty.scaled { color: var(--rust); }
+
+
 /* "Börja laga"-knappar i receptdetaljerna */
 .cook-mode-btn {
   display: flex;
