@@ -10,7 +10,7 @@ import './ui/scroll.js';
 import './ui/navigation.js?v=112';
 import './ui/feedback.js';
 import './ui/cook-mode.js?v=101';
-import './shopping/shopping-list.js';
+import './shopping/shopping-list.js?v=101';
 import './shopping/dispatch-ui.js';
 import './weekly-plan/ingredient-preview.js';
 import './recipes/recipe-browser.js';

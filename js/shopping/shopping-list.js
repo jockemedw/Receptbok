@@ -357,13 +357,21 @@ function shopCounts() {
   return { total, done, perCat };
 }
 
+const RING_C = 2 * Math.PI * 26; // omkrets för r=26 i 60×60-viewBoxen
+
 export function updateShopProgress() {
   const { total, done, perCat } = shopCounts();
-  const bar = document.querySelector('#shopProgress .shop-progress-fill');
-  const lbl = document.querySelector('#shopProgress .shop-progress-label');
-  if (bar) bar.style.width = total ? `${(done / total) * 100}%` : '0%';
+  const ring  = document.querySelector('#shopProgress .shop-ring-fill');
+  const count = document.querySelector('#shopProgress .shop-ring-count');
+  const lbl   = document.querySelector('#shopProgress .shop-progress-label');
+  const sub   = document.querySelector('#shopProgress .shop-progress-sub');
+  if (ring)  ring.style.strokeDashoffset = (total ? RING_C * (1 - done / total) : RING_C).toFixed(1);
+  if (count) count.textContent = done;
   if (lbl) lbl.textContent = total
     ? (done >= total ? 'Allt klart! 🎉' : `${done} av ${total} klara`)
+    : '';
+  if (sub) sub.textContent = total
+    ? (done >= total ? 'hela listan är i korgen' : `${total - done} kvar att plocka`)
     : '';
   document.querySelectorAll('#shopProgress, .shop-progress').forEach(el =>
     el.classList.toggle('complete', total > 0 && done >= total));
@@ -376,10 +384,20 @@ export function updateShopProgress() {
 function shopProgressHtml() {
   const { total, done } = shopCounts();
   if (!total) return '';
-  const pct = (done / total) * 100;
+  const off = (RING_C * (1 - done / total)).toFixed(1);
   return `<div id="shopProgress" class="shop-progress${done >= total ? ' complete' : ''}">
-    <div class="shop-progress-track"><div class="shop-progress-fill" style="width:${pct}%"></div></div>
-    <span class="shop-progress-label">${done >= total ? 'Allt klart! 🎉' : `${done} av ${total} klara`}</span>
+    <span class="shop-ring" aria-hidden="true">
+      <svg viewBox="0 0 60 60">
+        <circle class="shop-ring-track" cx="30" cy="30" r="26"/>
+        <circle class="shop-ring-fill" cx="30" cy="30" r="26"
+                stroke-dasharray="${RING_C.toFixed(1)}" stroke-dashoffset="${off}"/>
+      </svg>
+      <span class="shop-ring-count">${done}</span>
+    </span>
+    <span class="shop-progress-txt">
+      <span class="shop-progress-label">${done >= total ? 'Allt klart! 🎉' : `${done} av ${total} klara`}</span>
+      <span class="shop-progress-sub">${done >= total ? 'hela listan är i korgen' : `${total - done} kvar att plocka`}</span>
+    </span>
   </div>`;
 }
 

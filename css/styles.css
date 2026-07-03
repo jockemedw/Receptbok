@@ -4913,6 +4913,53 @@ body.cook-open { overflow: hidden; }
 }
 .shop-progress.complete .shop-progress-label { color: var(--lichen-deep); }
 
+/* Progressring (designförslag 2026-07 steg 5) */
+.shop-ring {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  flex: none;
+}
+.shop-ring svg {
+  width: 52px;
+  height: 52px;
+  transform: rotate(-90deg);
+}
+.shop-ring-track {
+  fill: none;
+  stroke: var(--stone);
+  stroke-width: 6;
+}
+.shop-ring-fill {
+  fill: none;
+  stroke: var(--lichen);
+  stroke-width: 6;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.35s ease;
+}
+.shop-progress.complete .shop-ring-fill { stroke: var(--lichen-deep); }
+.shop-ring-count {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+.shop-progress-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.shop-progress-sub {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+
 /* ── Steppers i inställningarna ── */
 .stepper {
   display: flex;
