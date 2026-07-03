@@ -81,11 +81,11 @@ statiska filer). Dag-sheeten (Session 107) behålls som universellt interaktions
 prototypens dag-sheet är samma mentala modell med ny kostym. Deterministiskt receptval,
 manuell generering, delad data — allt orört.
 
-## Införandeplan — status 2026-07-03: godkänd av Joakim, 5 av 6 steg införda
+## Införandeplan — status 2026-07-03: godkänd av Joakim, HELT INFÖRD
 Steg 1 ✅ (`2e4f0d4`) · steg 2 ✅ (`4408f60`) · steg 3 ✅ (`808f101`, som "Ikväll överst
-i Matsedel" — ingen separat flik, se commit) · steg 5 ✅ progressring (`0e2c1a9`, "I korgen"
-uppskjuten) · steg 6 ✅ (`4aee3cd`). **Kvar:** steg 4 (wizard) efter mobil-verifiering,
-mörkt tema som eget avslutande steg (tokengrunden lagd i steg 1).
+i Matsedel" — ingen separat flik, se commit) · steg 4 ✅ wizard-sheet (`663d0f9`) ·
+steg 5 ✅ progressring (`0e2c1a9`, "I korgen" uppskjuten) · steg 6 ✅ (`4aee3cd`) ·
+**mörkt tema ✅** (`3026401` — token-nivå, följer OS-läget). Väntar mobil-verifiering.
 
 ## Införandeplan (förslag, inkrementell — appen funkar efter varje steg)
 1. **Tokens + typografi** — ny palett/typsnitt i `styles.css`, Fraunces self-hostas
