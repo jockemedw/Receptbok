@@ -178,6 +178,14 @@ avbocknings-/kanon-infra). Skippat visas dämpat, inte borttaget.
 **Väg framåt:** "Äter ute"-dagtyp (hoppas över) + "Gäster"-läge med per-dag portions-override (hakar i #12).
 **Insats:** Liten / Medel.
 
+### #28 — Portionsväljare i receptvyn/matlagningsläget (UPPSKJUTEN på Joakims begäran)
+> ⬜ **ÖPPEN — medvetet uppskjuten (2026-07-03).** Tillkom när Joakim såg #12 och väntade sig detta i stället — de är TVÅ olika funktioner och ska inte blandas ihop:
+> **#12 (byggd)** = hushållsinställning som skalar *inköpslistan* vid generering. **#28 (denna)** = välj antal portioner *i receptkortet/matlagningsläget* → ingredienslistan på skärmen räknas om direkt.
+**Varför:** Man står vid spisen och lagar för 2 eller 6 — receptet visar alltid 4-portionsmängder.
+**Väg framåt:** Ren frontend (ingen DB/migration): parsa mängderna i receptets ingredienrader (återanvänd parser-logiken), räkna om med vald faktor, rader utan mängd (salt etc.) lämnas orörda. Rimlig default = hushållets `target_servings`.
+**Öppet UX-val (ej avgjort):** portions-stepper (exakt antal, mest flexibel) eller snabbknappar (×½ / ×1 / ×2). Fråga Joakim vid bygge.
+**Insats:** Liten–medel.
+
 ---
 
 ## 🔵 P3 — UX-förbättringar
