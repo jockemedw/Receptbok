@@ -559,7 +559,7 @@ export function normalizeName(name) {
   return name;
 }
 
-function categorize(name) {
+export function categorize(name) {
   const low = name.toLowerCase()
     .replace(/^(rostad|rostade|stekt|stekta|tinad|tinade|nykokt|nykokta|kokt|kokta)\s+/, "");
   if (SKAFFERI_OVERRIDE.has(low)) return "Skafferi";

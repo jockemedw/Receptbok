@@ -11,11 +11,11 @@ P0 = störst riskreduktion per timme, sedan nedåt. Naturliga beroenden noteras 
 
 > Spegel av sessionens todo-lista (#1–#27). Uppdatera båda om något ändras.
 
-**Status (uppdaterad Session 106):**
-- ✅ **Klara:** #1, #3, #4, #8, #9, #26, #27 (Session 102–103) · **#10, #12, #13, #22** (Session 106 — #12/#13 aktiveras när Joakim kört migration 003 resp. 002 i Supabase SQL Editor). #2 kod helt klar (inkl. UI-toast) — väntar bara på att Joakim sätter `ALERT_WEBHOOK`.
-- 🟡 **Delvis:** #7 (dubblett-URL borta + butik via `WILLYS_STORE_ID`-env; multi-user-delen bygger på #5), #11 (dokumenterad + graceful svenskt fel vid pausad DB; keep-alive-cron kvar), #21 (lösenordsåterställning klar; onboarding-guide kvar), #23 (döda `#weekRecipeDetail`-block borta; `.week-day-card`-JS/CSS kvar för granskat steg), #24 (död state borta, versioner synkbumpade Session 106; `?v=N`-linjeval kvar), #25 (escapers → utils klart; `fmtKr`/spegelkod medvetet kvar — se punkten).
-- ⬜ **Öppna:** #5–#6 (tenancy), #14–#18 (produkt), #19–#20 (UX).
-- **Slutsats:** P0 avklarad + produktspårets #1-prioritet (#12) och #13 byggda. Nästa hävstång: #15 Ikväll-redigeraren (kräver UX-snack med Joakim) och tenancy-spåret #5–#6 inför Fas 5.
+**Status (uppdaterad Session 106, runda 2):**
+- ✅ **Klara:** #1, #3, #4, #8, #9, #26, #27 (Session 102–103) · **#10, #12, #13, #20, #22** (Session 106 — #12/#13 aktiveras när Joakim kört migration 003 resp. 002 i Supabase SQL Editor). #2 kod helt klar (inkl. UI-toast) — väntar bara på att Joakim sätter `ALERT_WEBHOOK`.
+- 🟡 **Delvis:** #7 (dubblett-URL borta + butik via `WILLYS_STORE_ID`-env; multi-user-delen bygger på #5), #11 (dokumenterad + graceful svenskt fel vid pausad DB; keep-alive-cron kvar), #14 (rester-markör i rendering; riktig dagtyp kvar om önskat), #21 (lösenordsåterställning klar; onboarding-guide kvar), #23 (döda `#weekRecipeDetail`-block borta; `.week-day-card`-JS/CSS kvar för granskat steg), #24 (död state borta, versioner synkbumpade Session 106; `?v=N`-linjeval kvar), #25 (escapers → utils klart; `fmtKr`/spegelkod medvetet kvar — se punkten).
+- ⬜ **Öppna:** #5–#6 (tenancy), #15–#18 (produkt), #19 (UX).
+- **Slutsats:** P0 avklarad + produktspårets #1-prioritet (#12), #13 och #20 byggda. Nästa hävstång: #15 Ikväll-redigeraren (kräver UX-snack med Joakim) och tenancy-spåret #5–#6 inför Fas 5.
 
 ---
 
@@ -148,7 +148,7 @@ avbocknings-/kanon-infra). Skippat visas dämpat, inte borttaget.
 **Insats:** Liten.
 
 ### #14 — "Rester/Använd upp"-dagtyp
-> ⬜ **ÖPPEN.** Produktspår.
+> 🟡 **DELVIS (Session 106, runda 2 — lätta varianten).** Egna anteckningar vars text matchar rester-mönstret (`rester|kylskåpstömning|använd upp|tömma kylen`) får egen skål-markör i ockra i premiumvyn (`customNoteMark()` i plan-viewer-deluxe) — ren rendering på befintlig custom-day-data, generering hoppar redan över dem, ingen inköpspåverkan. Kvar (om önskat): en riktig dagtyp med snabbval i editorn i stället för igenkänning på fritext.
 **Varför:** Datan bevisar behovet (`custom-days.json`: 7 dagar "Kylskåpstömning", "Rester").
 **Väg framåt:** Ny dagtyp som generering hoppar över, ren rendering, egen markör, ingen inköpspåverkan.
 **Insats:** Liten.
@@ -188,7 +188,7 @@ avbocknings-/kanon-infra). Skippat visas dämpat, inte borttaget.
 Bekräfta+Flytta där säkert. Behåll `day-ops sameRecipes`-invarianten. **Insats:** Liten–medel.
 
 ### #20 — Dispatch-preferenser (eko/svenskt) ska styra faktisk dispatch
-> ⬜ **ÖPPEN.** Preferenserna påverkar idag bara AI-prompten, inte automatdispatchen.
+> ✅ **KLAR (Session 106, runda 2).** `preferOrganic`/`preferSwedish` (per kategori, via `categorize(canon)`) viktar nu produktvalet i både rea-steget (`findReaMatch`) och sök-stegen (`willys-search`): bland giltiga kandidater i samma matchnings-tier föredras den som matchar `ORGANIC_RE`/`SWEDISH_RE` — preferensen blockerar aldrig en match. Ouppfyllda önskemål returneras som `prefMisses` och visas i dispatch-resultatmodalen ("Kunde inte fås som eko/svenskt: … — vanlig variant ligger i korgen"). +10 testfall i `dispatch-to-willys.test.js` (103 tot).
 **Varför:** Preferenserna påverkar idag bara AI-prompten, inte automatdispatchen (tyst ignorerad).
 **Väg framåt:** Låt `dispatch-matcher.js` väga in eko/svenskt vid produktval; visa om det inte kan uppfyllas.
 **Insats:** Medel.
