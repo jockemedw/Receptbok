@@ -419,6 +419,13 @@ export default createSupabaseHandler(async (req, res) => {
     if (pricingDegraded) {
       await notifyAlert(`Receptboken: prisoptimering gav inga erbjudanden (${start_date}). Willys-feeden kan vara bruten.`);
     }
+    // Sparar utfallet så appen kan visa en banner nästa gång NÅGON öppnar den,
+    // oavsett om just den personen genererar en ny matsedel (backlog #2,
+    // reaktiv in-app-variant vald 2026-07-03 i stället för webhook-larm).
+    // Saknas tabellen (migration 004 ej körd) sväljs felet — ingen regression.
+    const statusRow = { household_id: householdId, last_checked_at: new Date().toISOString(), degraded: pricingDegraded };
+    if (!pricingDegraded) statusRow.last_success_at = statusRow.last_checked_at;
+    await db.from("pricing_status").upsert(statusRow); // tabellen saknas → svaret innehåller bara ett fel, ingen krasch
   }
 
   const currentSeason = season_weight ? getCurrentSeason(start_date) : null;

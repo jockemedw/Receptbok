@@ -5190,6 +5190,18 @@ body.cook-open { overflow: hidden; }
 .today-date { margin: 14px 4px; }
 .today-date .today-eyebrow { display: block; }
 
+/* Reaktiv larmbanner för tyst Willys-degradering (backlog #2) */
+.today-alert-banner {
+  margin: 10px 4px 0;
+  padding: 0.65rem 0.9rem;
+  background: color-mix(in srgb, var(--ochre) 14%, var(--paper));
+  border: 1px solid color-mix(in srgb, var(--ochre) 40%, var(--paper));
+  border-left: 3px solid var(--ochre);
+  border-radius: 8px;
+  font-size: 0.82rem;
+  color: var(--ochre-deep);
+}
+
 /* Delade knappar */
 .today-btn {
   min-height: 48px;

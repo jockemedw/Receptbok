@@ -35,7 +35,7 @@ skriver skräp till repo-roten. Ingen CI kör Node-testsviten; allt skydd ligger
 **Insats:** Liten. **Högst ROI.**
 
 ### #2 — Larm vid tyst Willys-/prisdegradering
-> 🟡 **KOD HELT KLAR (Session 102 + 106), väntar på env.** `pricingDegraded`-flagga + `notifyAlert()` (`api/_shared/alert.js`) + diskret svensk toast i frontend (Session 106). Kvar: Joakim sätter `ALERT_WEBHOOK` i Vercel.
+> 🟡 **KOD KLAR (Session 102 + 106 + 110).** `pricingDegraded`-flagga + `notifyAlert()` (`api/_shared/alert.js`) + diskret svensk toast i frontend (Session 106). **Session 110:** Joakim ville inte vara beroende av en mobilapp/notistjänst för webhook-larmet → valde i stället en **reaktiv in-app-banner**. Ny tabell `pricing_status` (migration `db/migrations/004_pricing_status.sql`, väntar på att köras) sparar utfallet av varje riktig prisoptimerings-körning; `generate.js` upsertar raden efter varje `optimize_prices=true`-anrop. Idag-fliken (`today-view.js`) läser statusen en gång per sidladdning och visar en ochre-banner ("Reapriserna har inte kunnat hämtas på N dagar") om läget är degraderat och minst 1 dag gammalt (döljer en enstaka engångsmiss). Rollout-säker: saknas tabellen visas ingen banner, ingen kodändring krävs efter migrationen. **Webhook-vägen (`ALERT_WEBHOOK`) finns kvar som komplement** om Joakim ändå vill ha en extern notis senare — helt frivillig, oberoende av in-app-bannern.
 **Varför:** Prisoptimering + Veckans fynd vilar på oofficiella Willys-endpoints. Vid
 API-ändring returnerar feeden tyst `[]` → ser ut som "inga reor", inte "trasigt".
 `generate.js:~516` sväljer felet i tom catch (`savingsById=null`). Ingen larmar.

@@ -201,6 +201,36 @@ function quickAddHtml() {
     </div>`;
 }
 
+// ── Willys-larmbanner (backlog #2, reaktiv in-app-variant) ───────────────────
+// Läser pricing_status en gång per sidladdning. Saknas tabellen (migration 004
+// ej körd), raden, eller är läget inte degraderat → ingen banner (tyst).
+let _pricingBannerHtml = '';
+let _pricingChecked = false;
+
+async function checkPricingStatus() {
+  if (_pricingChecked) return;
+  _pricingChecked = true;
+  try {
+    const householdId = await window.getHouseholdId();
+    const { data, error } = await window.db
+      .from('pricing_status')
+      .select('degraded, last_success_at')
+      .eq('household_id', householdId)
+      .maybeSingle();
+    if (error || !data?.degraded) return;
+
+    const days = data.last_success_at
+      ? Math.floor((Date.now() - new Date(data.last_success_at).getTime()) / 86400000)
+      : null;
+    if (days !== null && days < 1) return; // en enstaka miss samma dag — vänta och se, inte larma direkt
+
+    _pricingBannerHtml = `<div class="today-alert-banner">${days == null
+      ? 'Reaprisernas hämtning verkar vara trasig — kolla igen om ett tag.'
+      : `Reapriserna har inte kunnat hämtas på ${days} ${days === 1 ? 'dag' : 'dagar'}.`}</div>`;
+    renderTodayView();
+  } catch { /* tabellen saknas → ingen banner */ }
+}
+
 function loadingHtml() {
   return `<div class="today-loading"><span class="today-loading-spin">⟳</span><p>Laddar…</p></div>`;
 }
@@ -275,6 +305,7 @@ export function renderTodayView() {
 
   host.innerHTML =
     `<div class="today-date"><span class="today-eyebrow">${esc(dateLine)}</span></div>` +
+    _pricingBannerHtml +
     heroHtml(todayEntry, todayInfo) +
     tomorrowHtml(tomorrowEntry, tomorrowInfo) +
     weekHtml(weekDays, sumLeft, sumRight) +
@@ -303,7 +334,7 @@ window.todayAddItem = async function () {
 };
 
 // ── Håll Idag-vyn i synk med datat ────────────────────────────────────────────
-function wrap(name, { async = false } = {}) {
+function wrap(name, { async = false, onAfter } = {}) {
   const orig = window[name];
   if (typeof orig !== 'function' || orig.__todayWrapped) return;
   const wrapped = async
@@ -311,12 +342,14 @@ function wrap(name, { async = false } = {}) {
         const r = await orig.apply(this, args);
         window._todayReady = true;
         try { renderTodayView(); } catch (e) { console.error('renderTodayView', e); }
+        onAfter?.();
         return r;
       }
     : function (...args) {
         const r = orig.apply(this, args);
         window._todayReady = true;
         try { renderTodayView(); } catch (e) { console.error('renderTodayView', e); }
+        onAfter?.();
         return r;
       };
   wrapped.__todayWrapped = true;
@@ -325,7 +358,9 @@ function wrap(name, { async = false } = {}) {
 
 function installHooks() {
   wrap('renderWeeklyPlanData');
-  wrap('loadWeeklyPlan', { async: true });
+  // Kollar prisstatusen först när loadWeeklyPlan (och därmed auth+household) är
+  // klar — pricing_status är hushållsskopad data och kräver en inloggad session.
+  wrap('loadWeeklyPlan', { async: true, onAfter: checkPricingStatus });
   const origSwitch = window.switchTab;
   if (typeof origSwitch === 'function' && !origSwitch.__todayWrapped) {
     const wrappedSwitch = function (tab) {
