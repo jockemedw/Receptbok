@@ -13,11 +13,15 @@
 //     "färs" → "Nötfärs", "banan" → "Banan", "toalettpapper" → "Toalettpapper".
 
 import { extractOfferCanon, rejectsMatch, relevantToCanon, brandBlocked } from "./willys-matcher.js";
+import { ORGANIC_RE, SWEDISH_RE } from "./dispatch-matcher.js";
 
 const SEARCH_URL = "https://www.willys.se/search";
 
 export function createSearchClient({ fetchImpl = fetch, blockedBrands = [] } = {}) {
-  async function findProductByCanon(canon) {
+  // wanted (valfri, backlog #20): { organic, swedish } — bland lika giltiga
+  // kandidater i samma matchnings-steg föredras den som uppfyller preferensen.
+  // Utan wanted är beteendet exakt som förut (första träffen i steget vinner).
+  async function findProductByCanon(canon, wanted = null) {
     const url = `${SEARCH_URL}?q=${encodeURIComponent(canon)}&size=20`;
     const res = await fetchImpl(url, {
       headers: {
@@ -49,15 +53,27 @@ export function createSearchClient({ fetchImpl = fetch, blockedBrands = [] } = {
       source: "search",
     });
 
+    // Preferens-poäng: utan wanted är poängen alltid 0 → reduce behåller
+    // första kandidaten (strikt >), dvs. exakt gamla beteendet.
+    const prefScore = ({ offerShape }) => {
+      if (!wanted) return 0;
+      const text = `${offerShape.name} ${offerShape.brandLine}`;
+      let s = 0;
+      if (wanted.organic && ORGANIC_RE.test(text)) s++;
+      if (wanted.swedish && SWEDISH_RE.test(text)) s++;
+      return s;
+    };
+    const pickBest = (arr) => arr.reduce((best, c) => (prefScore(c) > prefScore(best) ? c : best), arr[0]);
+
     // Steg 1: exakt canon-likhet.
-    const exact = candidates.find(({ offerShape }) => extractOfferCanon(offerShape) === canon);
-    if (exact) return toHit(exact);
+    const exacts = candidates.filter(({ offerShape }) => extractOfferCanon(offerShape) === canon);
+    if (exacts.length) return toHit(pickBest(exacts));
 
     // Steg 2: relevans-fallback.
-    const relevant = candidates.find(
+    const relevants = candidates.filter(
       ({ offerShape }) => relevantToCanon(canon, `${offerShape.name} ${offerShape.brandLine}`)
     );
-    if (relevant) return toHit(relevant);
+    if (relevants.length) return toHit(pickBest(relevants));
 
     return null;
   }

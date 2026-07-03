@@ -89,9 +89,17 @@ function renderResult(data) {
     const sourceNote = (sources.rea || sources.search)
       ? `<p class="dispatch-sources">${sources.rea || 0} från rea, ${sources.search || 0} från sök</p>`
       : "";
+    // Eko/svenskt-preferenser som inte kunde uppfyllas (backlog #20) — varan
+    // ligger i korgen men i vanlig variant; byt själv på willys.se om viktigt.
+    const prefHtml = (data.prefMisses || []).length
+      ? `<p class="dispatch-sources">Kunde inte fås som ${
+          [...new Set(data.prefMisses.flatMap(p => p.wanted || []))].join("/")
+        }: ${data.prefMisses.map(p => escapeHtml(p.canon)).join(", ")} — vanlig variant ligger i korgen.</p>`
+      : "";
     showResult(`
       <p>✓ ${data.addedCount} produkter tillagda i din Willys-korg.</p>
       ${sourceNote}
+      ${prefHtml}
       ${missingHtml}
       <div class="dispatch-actions">
         <a class="btn-primary" href="${CART_URL}" target="_blank" rel="noopener">Öppna willys.se →</a>

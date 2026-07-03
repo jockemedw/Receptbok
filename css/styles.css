@@ -4238,6 +4238,8 @@ html.auth-required body {
 /* Recept ur receptboken (gryt-ikon) får en mjuk grön ton — skiljer den från
    den neutrala penn-markören för egna noteringar. */
 .dlx-own-recipe { color: var(--lichen); opacity: 0.95; }
+/* Rester/använd upp-dag (backlog #14) — varm ockra så den skiljer sig från vanlig notering */
+.dlx-own-leftovers { color: var(--ochre, #c89a3e); opacity: 0.95; }
 /* Plus-ikon på tom dag — ersätter "+ Planera dagen". Lugn affordans. */
 .dlx-add { display: inline-flex; color: var(--moss-muted); }
 .dlx-add svg { width: 18px; height: 18px; }

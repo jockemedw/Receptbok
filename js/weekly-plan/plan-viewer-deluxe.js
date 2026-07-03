@@ -29,6 +29,8 @@ const I = {
   leaf: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/><path d="M2 21c0-3 1.85-5.36 5.08-6"/></svg>',
   // Markör för egen planering (ersätter texten "EGEN PLANERING") + plus för tom dag.
   own: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10-10a2 2 0 0 0-2.8-2.8L5 17v3z"/><path d="M13.5 6.5l4 4"/></svg>',
+  // Rester/använd upp-dag (backlog #14): skål med ånga.
+  leftovers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16a8 8 0 0 1-16 0z"/><path d="M9 8c0-1.4 1-1.6 1-3 M14 8c0-1.4 1-1.6 1-3"/></svg>',
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14 M5 12h14"/></svg>',
   // Historik (klocka med bakåtpil) + upp-chevron för att fälla ihop.
   history: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 9a9 9 0 1 1-.6 5"/><path d="M3 4.5V9h4.5"/><path d="M12 8v4.5l3 1.8"/></svg>',
@@ -37,6 +39,18 @@ const I = {
 
 // esc = utils.escapeHtml (samma semantik) — en enda implementation i utils.
 const esc = escapeHtml;
+
+// "Rester/använd upp"-dag (backlog #14, lätta varianten): egna anteckningar vars
+// text handlar om rester känns igen och får en egen markör — ren rendering,
+// samma custom-day-data som förut. (Datan bevisar mönstret: familjen skriver
+// redan "Rester"/"Kylskåpstömning" som noteringar.)
+const RESTER_RE = /rester|kylskåpstömning|kylskåpständning|använd upp|tömma kylen/i;
+function customNoteMark(note) {
+  if (note && RESTER_RE.test(note)) {
+    return `<span class="dlx-own dlx-own-leftovers" title="Rester/använd upp" aria-label="Rester/använd upp">${I.leftovers}</span>`;
+  }
+  return `<span class="dlx-own" title="Egen notering" aria-label="Egen notering">${I.own}</span>`;
+}
 function attr(s) { return String(s == null ? '' : s).replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
 
 function fmtKr(value) {
@@ -89,7 +103,7 @@ function buildTonight(timeline) {
   // Markör-ikon för egen planering (ersätter undertexten): gryta = recept ur
   // receptboken, penna = egen notering.
   const recipeMark = `<span class="dlx-own dlx-own-recipe" title="Recept ur receptboken" aria-label="Recept ur receptboken">${I.pot}</span>`;
-  const noteMark = `<span class="dlx-own" title="Egen notering" aria-label="Egen notering">${I.own}</span>`;
+  const noteMark = customNoteMark(d.customNote);
   let label, sub = '', mark = '', click = `dlxToggleDay('${d.date}')`, kind = '', mkind = 'custom', detail = '';
   if (d.recipeId && !d.isCustom) {
     const r = recipeById(d.recipeId);
@@ -398,7 +412,7 @@ function emptyDayCard(d) {
             <span class="dlx-day-date"><span class="dlx-day-num">${d.dayNum}</span><span class="dlx-day-mon">${MONTH_NAMES_SHORT[d.month]}</span></span>
             <span class="dlx-day-flags">${dayBadges(d)}</span></div>
           <div class="dlx-day-main">
-            <h3 class="dlx-day-recipe"><span class="dlx-own" title="Egen notering" aria-label="Egen notering">${I.own}</span>${d.customNote ? esc(d.customNote) : 'Lägg till en notering'}</h3>
+            <h3 class="dlx-day-recipe">${customNoteMark(d.customNote)}${d.customNote ? esc(d.customNote) : 'Lägg till en notering'}</h3>
           </div>
           <span class="dlx-day-chev" aria-hidden="true">›</span>
         </div>

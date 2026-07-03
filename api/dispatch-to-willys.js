@@ -19,7 +19,7 @@ import { fetchOffersFromWillys } from "./willys-offers.js";
 import { createSearchClient } from "./_shared/willys-search.js";
 import { createCartClient } from "./_shared/willys-cart-client.js";
 import { matchCanons } from "./_shared/dispatch-matcher.js";
-import { parseIngredient, normalizeName } from "./_shared/shopping-builder.js";
+import { parseIngredient, normalizeName, categorize } from "./_shared/shopping-builder.js";
 import { createSecretsStore } from "./_shared/secrets-store.js";
 import { readFileRaw } from "./_shared/github.js";
 import { db } from "./_shared/supabase.js";
@@ -71,11 +71,12 @@ export default async function handler(req, res) {
   try {
     console.log(`dispatch source=${secrets.source}`);
     const shoppingList = await fetchShoppingListFromSupabase();
-    const blockedBrands = await fetchBlockedBrands();
+    const preferences = await fetchDispatchPreferences();
+    const blockedBrands = preferences.blockedBrands;
     const offers = await fetchOffersFromWillys(secrets.storeId);
     const searchClient = createSearchClient({ blockedBrands });
     const cartClient = createCartClient({ cookies: secrets.cookies, csrf: secrets.csrf });
-    const result = await runDispatch({ shoppingList, offers, searchClient, cartClient, blockedBrands });
+    const result = await runDispatch({ shoppingList, offers, searchClient, cartClient, blockedBrands, preferences });
 
     if (!result.ok && result.error === "auth_expired") {
       await notifyAlert("Receptboken: Willys-cookies har gått ut — varukorgsexport fungerar inte förrän de förnyas.");
@@ -105,6 +106,7 @@ export default async function handler(req, res) {
       missing: result.missing,
       cartUrl: CART_URL,
       sources: result.sources,
+      prefMisses: result.prefMisses || [],
     });
   } catch (err) {
     console.error("dispatch-to-willys error:", err?.message || err);
@@ -202,8 +204,24 @@ export async function resolveWillysSecrets({ store, env, userId = "joakim" }) {
   return null;
 }
 
+// Inköpspreferenser (eko/svenskt, backlog #20) → per-canon-önskemål via varans
+// kategori (samma kategorisering som inköpslistan). Preferensen styr VALET
+// bland giltiga kandidater — den blockerar aldrig en match; kan den inte
+// uppfyllas rapporteras det i prefMisses så UI:t kan visa det.
+export function makeWantedForCanon(preferences) {
+  const organic = preferences?.preferOrganic || {};
+  const swedish = preferences?.preferSwedish || {};
+  const anyOn = Object.values(organic).some(Boolean) || Object.values(swedish).some(Boolean);
+  if (!anyOn) return null;
+  return (canon) => {
+    const cat = categorize(canon);
+    const wanted = { organic: !!organic[cat], swedish: !!swedish[cat] };
+    return (wanted.organic || wanted.swedish) ? wanted : null;
+  };
+}
+
 // Exporterad för testbarhet. Ren funktion — inga globala sidoeffekter.
-export async function runDispatch({ shoppingList, offers, searchClient, cartClient, blockedBrands = [] }) {
+export async function runDispatch({ shoppingList, offers, searchClient, cartClient, blockedBrands = [], preferences = null }) {
   const canons = extractCanonsFromShoppingList(shoppingList);
   if (canons.length === 0) {
     return { ok: false, error: "no_matches" };
@@ -216,7 +234,8 @@ export async function runDispatch({ shoppingList, offers, searchClient, cartClie
 
   // Sök-anropen är publika läsningar → tål högre parallellism. Håller dispatchen
   // under Vercels 60s-tak även när många varor matchas via sök.
-  const { matched, unmatched } = await matchCanons(canons, offers, searchClient, { blockedBrands, concurrency: 10 });
+  const wantedForCanon = makeWantedForCanon(preferences);
+  const { matched, unmatched, preferenceMisses = [] } = await matchCanons(canons, offers, searchClient, { blockedBrands, concurrency: 10, wantedForCanon });
   if (matched.length === 0) {
     return { ok: false, error: "no_matches" };
   }
@@ -247,12 +266,17 @@ export async function runDispatch({ shoppingList, offers, searchClient, cartClie
   const addedMatched = matched.filter(m => !failedSet.has(m.code));
   const failedCanons = matched.filter(m => failedSet.has(m.code)).map(m => m.canon);
   const missing = unmatched.concat(failedCanons);
+
+  // Preferens-missar rapporteras bara för varor som faktiskt hamnade i korgen —
+  // varor som inte matchades/nekades listas redan under "missing".
+  const addedCanonSet = new Set(addedMatched.map(m => m.canon));
+  const prefMisses = preferenceMisses.filter(p => addedCanonSet.has(p.canon));
   console.log(`dispatch missing=${missing.length} [${missing.join(", ")}]`);
   const sources = {
     rea: addedMatched.filter(m => m.source === "rea").length,
     search: addedMatched.filter(m => m.source === "search").length,
   };
-  return { ok: true, addedCount: add.added.length, missing, sources, failedCount: add.failed.length };
+  return { ok: true, addedCount: add.added.length, missing, sources, failedCount: add.failed.length, prefMisses };
 }
 
 // Lägger produkter i batchar (bounded concurrency) och faller tillbaka till
@@ -351,16 +375,21 @@ async function fetchShoppingListFromSupabase() {
   return { recipeItems, manualItems };
 }
 
-// Läser användarens inköpspreferenser (samma fil som AI-prompten + UI:t använder)
-// och returnerar listan blockerade varumärken. Saknad fil / fel → tom lista
-// (ingen filtrering), så dispatchen aldrig faller på en preferens-läsning.
-async function fetchBlockedBrands() {
+// Läser användarens inköpspreferenser (samma fil som AI-prompten + UI:t
+// använder): blockerade varumärken + eko/svenskt-toggles per kategori
+// (backlog #20). Saknad fil / fel → tomma defaults (ingen filtrering, ingen
+// viktning), så dispatchen aldrig faller på en preferens-läsning.
+async function fetchDispatchPreferences() {
   try {
     const prefs = await readFileRaw("dispatch-preferences.json");
     const brands = Array.isArray(prefs?.blockedBrands) ? prefs.blockedBrands : [];
-    return brands.map((b) => String(b).toLowerCase().trim()).filter(Boolean);
+    return {
+      blockedBrands: brands.map((b) => String(b).toLowerCase().trim()).filter(Boolean),
+      preferOrganic: (prefs?.preferOrganic && typeof prefs.preferOrganic === "object") ? prefs.preferOrganic : {},
+      preferSwedish: (prefs?.preferSwedish && typeof prefs.preferSwedish === "object") ? prefs.preferSwedish : {},
+    };
   } catch {
-    return [];
+    return { blockedBrands: [], preferOrganic: {}, preferSwedish: {} };
   }
 }
 

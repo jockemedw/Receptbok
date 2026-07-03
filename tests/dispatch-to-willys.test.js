@@ -273,6 +273,65 @@ function fakeSearch(map) {
   assertEq(result.matched[0].source, "search", "source=search efter blockerad rea");
 }
 
+// ─── Preferensviktning eko/svenskt (backlog #20) ──────────────────
+
+// G. Rea-steget: preferens väljer eko-varianten när båda matchar samma canon
+{
+  const offers = [
+    { code: "vanlig_ST", name: "Mellanmjölk 1,5%", brandLine: "", savingPerUnit: 3 },
+    { code: "eko_ST", name: "Mellanmjölk Eko 1,5%", brandLine: "Garant", savingPerUnit: 2 },
+  ];
+  const search = fakeSearch({});
+  const wantedForCanon = () => ({ organic: true, swedish: false });
+  const result = await matchCanons(["mjölk"], offers, search, { wantedForCanon });
+  assertEq(result.matched[0]?.code, "eko_ST", "pref eko: eko-rea väljs framför vanlig rea");
+  assertEq(result.preferenceMisses.length, 0, "pref uppfylld → inga misses");
+}
+
+// H. Utan wantedForCanon: exakt gamla beteendet (första giltiga rea-träffen)
+{
+  const offers = [
+    { code: "vanlig_ST", name: "Mellanmjölk 1,5%", brandLine: "", savingPerUnit: 3 },
+    { code: "eko_ST", name: "Mellanmjölk Eko 1,5%", brandLine: "Garant", savingPerUnit: 2 },
+  ];
+  const search = fakeSearch({});
+  const result = await matchCanons(["mjölk"], offers, search);
+  assertEq(result.matched[0]?.code, "vanlig_ST", "utan pref: första rea-träffen som förut");
+  assertEq((result.preferenceMisses || []).length, 0, "utan pref: inga misses");
+}
+
+// I. Preferens kan inte uppfyllas → matchen behålls men rapporteras i preferenceMisses
+{
+  const offers = [
+    { code: "vanlig_ST", name: "Mellanmjölk 1,5%", brandLine: "", savingPerUnit: 3 },
+  ];
+  const search = fakeSearch({});
+  const wantedForCanon = () => ({ organic: true, swedish: true });
+  const result = await matchCanons(["mjölk"], offers, search, { wantedForCanon });
+  assertEq(result.matched[0]?.code, "vanlig_ST", "pref blockerar aldrig: vanlig vara matchas ändå");
+  assertEq(result.preferenceMisses.length, 1, "ouppfylld pref rapporteras");
+  assertEq(result.preferenceMisses[0].canon, "mjölk", "miss pekar på rätt canon");
+  assertEq(result.preferenceMisses[0].wanted.join(","), "eko,svenskt", "miss listar båda önskemålen");
+}
+
+// J. Sök-steget: preferens väljer svensk variant inom samma matchnings-tier
+{
+  const client = createSearchClient({
+    fetchImpl: makeFakeFetch({
+      "q=kycklingfil%C3%A9": {
+        results: [
+          { code: "import_ST", name: "Kycklingfilé", productLine2: "", online: true, outOfStock: false, priceValue: 89 },
+          { code: "svensk_ST", name: "Kycklingfilé Svensk", productLine2: "Kronfågel", online: true, outOfStock: false, priceValue: 109 },
+        ],
+      },
+    }),
+  });
+  const hit = await client.findProductByCanon("kycklingfilé", { organic: false, swedish: true });
+  assertEq(hit?.code, "svensk_ST", "sök med pref svenskt: svensk variant väljs");
+  const hitUtan = await client.findProductByCanon("kycklingfilé");
+  assertEq(hitUtan?.code, "import_ST", "sök utan pref: första träffen som förut");
+}
+
 // ─── Task 5: willys-cart-client ───────────────────────────────────
 
 // Fake fetch som spelar in requests och returnerar canned responses
