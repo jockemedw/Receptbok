@@ -154,7 +154,7 @@ avbocknings-/kanon-infra). Skippat visas dämpat, inte borttaget.
 **Insats:** Liten.
 
 ### #15 — Ikväll-kortet som friktionsfri snabb-redigerare (gör Maggan jämbördig)  ⭐
-> ⬜ **ÖPPEN.** Produktspår — största hävstången mot "app hela familjen använder". Diskutera UX med Joakim.
+> ⬜ **ÖPPEN — interaktiv preview publicerad (2026-07-03)** för UX-beslutet: <https://claude.ai/code/artifact/0537fb79-6c74-4ff1-baf1-2382792c9055> — båda varianterna körbara (A = snabbrad i kortet, B = bottensheet), fyra åtgärder: byt middag / vi äter ute / rester ikväll / lägg till på listan. Joakim väljer variant → sedan byggs den skarpt. Produktspår — största hävstången mot "app hela familjen använder".
 **Varför:** 2 av 3 användare är passiva läsare. Partnern kan inte forma planen utan power-user-UI.
 **Väg framåt:** Utöka Ikväll-kortet: "byt middag / vi äter ute / rester ikväll / lägg till på listan"
 — ett tryck vardera, inga grindar. Återanvänd custom-day/skip-day/manuell vara — inramningen saknas, inte logiken.
