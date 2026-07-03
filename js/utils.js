@@ -10,9 +10,12 @@ export const CAT_ICONS = {
   'Skafferi': '🫙', 'Frukt': '🍎', 'Övrigt': '🛍️',
 };
 
+// CSS-variabler (definierade i styles.css :root) i stället för hex — mörka ytor
+// som hero-kortet ljusar upp dem lokalt, och mörkt tema kan justera centralt.
+// Kött och fläsk har numera egna färger (roströd resp. lera).
 export const PROTEIN_COLOR = {
-  fisk: '#5b9bd5', kyckling: '#e8a735', vegetarisk: '#5e7a68',
-  kött: '#b05040', fläsk: '#b05040',
+  fisk: 'var(--p-fisk)', kyckling: 'var(--p-kyckling)', vegetarisk: 'var(--p-veg)',
+  kött: 'var(--p-kott)', fläsk: 'var(--p-flask)',
 };
 
 export function escapeHtml(s) {

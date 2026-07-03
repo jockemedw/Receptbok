@@ -26,6 +26,14 @@
     --ochre: #c89a3e;
     --ochre-deep: #8a6818;
 
+    /* Proteinfärger (Steg 2, designförslag 2026-07) — konsumeras via
+       PROTEIN_COLOR i js/utils.js. Mörka ytor (hero) ljusar upp dem lokalt. */
+    --p-fisk: #4d7fa8;
+    --p-kyckling: #c8862a;
+    --p-kott: #a34d3d;
+    --p-flask: #c07a5a;
+    --p-veg: #5e7a68;
+
     /* Typografi (Steg 1, designförslag 2026-07): Fraunces ersätter Playfair */
     --font-display: 'Fraunces', 'Playfair Display', serif;
     --font-body: 'DM Sans', sans-serif;
@@ -3926,6 +3934,12 @@ html.auth-required body {
 
 /* ── Hero ── */
 .dlx-hero {
+  /* Ljusade proteinfärger — legenden/stapeln ligger på mörk skogsgradient */
+  --p-fisk: #7ba7c9;
+  --p-kyckling: #d9a54f;
+  --p-kott: #c67563;
+  --p-flask: #cf9678;
+  --p-veg: #8fac97;
   position: relative;
   overflow: hidden;
   margin: 0 1rem 1.1rem;
