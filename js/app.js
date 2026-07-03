@@ -16,7 +16,7 @@ import './weekly-plan/ingredient-preview.js';
 import './recipes/recipe-browser.js';
 import './recipes/recipe-editor.js';
 import './recipes/recipe-import.js';
-import './weekly-plan/plan-generator.js';
+import './weekly-plan/plan-generator.js?v=101';
 import './weekly-plan/plan-viewer.js?v=114';
 import './weekly-plan/plan-viewer-deluxe.js?v=121';
 import './weekly-plan/deals-popup.js';
@@ -118,6 +118,9 @@ function closeSheet(id) {
   setTimeout(() => { sheet.hidden = true; }, 280);
 }
 
+window.openBottomSheet  = openSheet;   // delas med wizard-sheeten (plan-generator.js)
+window.closeBottomSheet = closeSheet;
+
 document.getElementById('openSortBtn').addEventListener('click', () => openSheet('sortSheet'));
 document.getElementById('openFilterBtn').addEventListener('click', () => openSheet('filterSheet'));
 
@@ -128,7 +131,7 @@ document.body.addEventListener('click', e => {
 
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
-  ['sortSheet', 'filterSheet'].forEach(id => {
+  ['sortSheet', 'filterSheet', 'planSheet'].forEach(id => {
     const s = document.getElementById(id);
     if (s && !s.hidden) closeSheet(id);
   });

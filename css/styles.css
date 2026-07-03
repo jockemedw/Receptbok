@@ -2392,10 +2392,6 @@
     margin-bottom: 0.5rem;
   }
 
-  .trigger-section:not(.collapsed) .trigger-toggle-row {
-    display: none;
-  }
-
   .trigger-toggle-btn {
     background: transparent;
     border: 1.5px solid var(--birch);
@@ -2419,6 +2415,50 @@
     max-height: 2000px;
     transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1);
     overflow: hidden;
+  }
+
+  /* ── Wizard-sheeten (designförslag 2026-07, steg 4) ── */
+  .plan-sheet-panel {
+    max-height: 88dvh;
+    overflow-y: auto;
+  }
+  .plan-sheet-panel .settings-panel {
+    max-height: none;
+    overflow: visible;
+  }
+  .wiz-steps {
+    display: flex;
+    gap: 6px;
+    margin: 0 0 0.9rem;
+  }
+  .wiz-dot {
+    flex: 1;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--stone);
+    transition: background 0.2s ease;
+  }
+  .wiz-dot.on { background: var(--rust); }
+  .wiz-sub {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin: -0.4rem 0 0.9rem;
+  }
+  .wiz-foot {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+  .wiz-next { width: 100%; justify-content: center; }
+  .wiz-back {
+    background: none;
+    border: none;
+    color: var(--lichen-deep);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.6rem 1rem;
+    cursor: pointer;
   }
 
   .trigger-btn {

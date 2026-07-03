@@ -333,6 +333,9 @@ export async function generatePlan() {
     // Veckans fynd: spara rea-förslagen och öppna popupen en gång.
     window._weeklyDeals = data.deals || null;
     window.switchTab('vecka');
+    // Stäng wizard-sheeten — förslaget + bekräfta-raden är nu det viktiga.
+    window.closeBottomSheet?.('planSheet');
+    window.showToast?.(`Förslag klart — ${data.days} dagar planerade. Bekräfta för att bygga inköpslistan.`, { type: 'success', duration: 5000 });
     if (window._weeklyDeals?.candidates?.length && window.openDealsPopup) {
       setTimeout(() => window.openDealsPopup(), 400);
     }
@@ -343,15 +346,31 @@ export async function generatePlan() {
   }
 }
 
-export function toggleTrigger() {
-  document.getElementById('triggerSection').classList.remove('collapsed');
+// ── Wizard-sheeten (designförslag 2026-07, steg 4) ──────────────────────────
+// Genereringen bor i en fokuserad bottensheet i två steg. Fält-ID:na är
+// oförändrade — all läsning ovan fungerar oavsett var markupen bor.
+export function wizGo(step) {
+  const p1 = document.getElementById('wizPage1');
+  const p2 = document.getElementById('wizPage2');
+  if (!p1 || !p2) return;
+  p1.style.display = step === 1 ? '' : 'none';
+  p2.style.display = step === 2 ? '' : 'none';
+  document.getElementById('wizDot1')?.classList.toggle('on', step >= 1);
+  document.getElementById('wizDot2')?.classList.toggle('on', step >= 2);
+  document.querySelector('#planSheet .bottom-sheet-panel')?.scrollTo({ top: 0 });
+  if (step === 2) updateSettingsPreview();
 }
 
-// CTA från tomma matsedelsvyn: öppna genereringspanelen och scrolla dit.
+export function toggleTrigger() {
+  wizGo(1);
+  const status = document.getElementById('triggerStatus');
+  if (status) { status.textContent = ''; status.className = 'trigger-status'; }
+  window.openBottomSheet?.('planSheet');
+}
+
+// CTA från tomma matsedelsvyn: samma sheet.
 export function openNewPlan() {
   toggleTrigger();
-  const section = document.getElementById('triggerSection');
-  requestAnimationFrame(() => section?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
 }
 
 // Touch-vänliga −/+-knappar runt sifferfälten i inställningarna.
@@ -376,6 +395,7 @@ window.getBlockedDates      = getBlockedDates;
 window.generatePlan         = generatePlan;
 window.toggleTrigger        = toggleTrigger;
 window.openNewPlan          = openNewPlan;
+window.wizGo                = wizGo;
 window.stepNum              = stepNum;
 window.stepServings         = stepServings;
 window.saveTargetServings   = saveTargetServings;

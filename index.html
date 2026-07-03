@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..700;1,9..144,400..600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=126">
+<link rel="stylesheet" href="css/styles.css?v=127">
 <style>/* tömd — CSS flyttad till css/styles.css */
 
 </style>
@@ -123,10 +123,23 @@
 
   <div class="trigger-section" id="triggerSection">
     <div class="trigger-toggle-row">
-      <button class="trigger-toggle-btn" onclick="toggleTrigger()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Ny plan</button>
+      <button class="trigger-toggle-btn" onclick="toggleTrigger()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg> Ny matsedel</button>
     </div>
-    <div class="trigger-body">
-    <h3 class="trigger-title">Generera ny plan</h3>
+  </div>
+</div>
+
+<!-- Wizard: generera ny matsedel (designförslag 2026-07, steg 4).
+     Två steg: Vilka dagar? -> Familjens vecka + Generera. Alla fält-ID:n är
+     desamma som i gamla trigger-formuläret — plan-generator.js läser per ID. -->
+<div class="bottom-sheet" id="planSheet" role="dialog" aria-modal="true" aria-labelledby="planSheetTitle" hidden>
+  <div class="bottom-sheet-backdrop" data-sheet-close="planSheet"></div>
+  <div class="bottom-sheet-panel plan-sheet-panel">
+    <div class="bottom-sheet-handle"></div>
+    <div class="wiz-steps" aria-hidden="true"><span class="wiz-dot on" id="wizDot1"></span><span class="wiz-dot" id="wizDot2"></span></div>
+
+    <div class="wiz-page" id="wizPage1">
+      <h3 class="bottom-sheet-title" id="planSheetTitle">Vilka dagar ska planeras?</h3>
+      <p class="wiz-sub">Matsedeln byggs bara när du ber om det.</p>
     <div class="date-range">
       <div class="date-field">
         <label class="date-label" for="startDate">Från</label>
@@ -141,13 +154,16 @@
     <p class="date-hint" id="dateHint"></p>
     <div class="day-toggles" id="dayToggles" style="display:none"></div>
 
-    <div class="settings-toggle-wrap">
-      <button class="settings-toggle" id="settingsToggle" onclick="toggleSettings()">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Inställningar <span id="settingsArrow" class="settings-chevron"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></span>
-      </button>
+
+      <div class="wiz-foot">
+        <button type="button" class="generate-btn wiz-next" onclick="wizGo(2)">Fortsätt <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>
+      </div>
     </div>
 
-    <div class="settings-panel" id="settingsPanel">
+    <div class="wiz-page" id="wizPage2" style="display:none">
+      <h3 class="bottom-sheet-title">Familjens vecka</h3>
+      <p class="wiz-sub">Sparas till nästa gång — oftast trycker du bara Generera.</p>
+    <div class="settings-panel open" id="settingsPanel">
       <div class="settings-inner">
 
         <!-- Portionsskalning (backlog #12) — visas när migration 003 är körd -->
@@ -292,10 +308,15 @@
       </div>
     </div>
 
+
     <button class="generate-btn" id="generateBtn" onclick="generatePlan()">
       <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 13.2 10.8 19 12 13.2 13.2 12 20 10.8 13.2 5 12 10.8 10.8z"/><path d="M19 5l.5 2 M5 19l-.5-2" opacity=".7"/></svg> Generera ny plan
     </button>
     <div class="trigger-status" id="triggerStatus"></div>
+
+      <div class="wiz-foot">
+        <button type="button" class="wiz-back" onclick="wizGo(1)">‹ Ändra dagarna</button>
+      </div>
     </div>
   </div>
 </div>
@@ -566,6 +587,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=124"></script>
+<script type="module" src="js/app.js?v=125"></script>
 </body>
 </html>
