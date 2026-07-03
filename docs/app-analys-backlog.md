@@ -154,7 +154,7 @@ avbocknings-/kanon-infra). Skippat visas dämpat, inte borttaget.
 **Insats:** Liten.
 
 ### #15 — Ikväll-kortet som friktionsfri snabb-redigerare (gör Maggan jämbördig)  ⭐
-> ✅ **KLAR (Session 107) — väntar mobil-verifiering.** UX-beslutet togs via interaktiv preview (<https://claude.ai/code/artifact/0537fb79-6c74-4ff1-baf1-2382792c9055>); Joakim valde **variant B (bottensheet)**. Byggd som ren inramning av befintliga flöden: Ikväll-kortet (aktiva plan-dagar) öppnar en bottensheet — Öppna receptet / Byt middag (`swap-days`, + Slumpa/Välj själv via `replace-recipe` på obekräftad plan) / Vi äter ute / Rester ikväll (`skip-day free` + Ångra-toast) / Lägg till på listan (`addManualItem`). Ingen ny mutationslogik.
+> ✅ **KLAR + UTÖKAD (Session 107) — väntar mobil-verifiering.** UX-beslutet togs via interaktiv preview (<https://claude.ai/code/artifact/0537fb79-6c74-4ff1-baf1-2382792c9055>); Joakim valde **variant B (bottensheet)** och höjde sedan ambitionen: sheeten är nu det **universella interaktionsmönstret för alla dagkort** — inline-utfällningen är helt borttagen ur premiumvyn. Vyer: meny (Visa receptet/Byt middag/Byt dag/Flytta dag/Fri dag + Ikväll-extran Vi äter ute/Rester/Lägg till på listan), recept (detalj + Börja laga; arkiv = läsläge), byt (`swap-days`; + Slumpa/Välj själv via `replace-recipe` på obekräftad plan), editor (custom-/blocked-editorerna i sheeten), lista (`addManualItem`). Ingen ny mutationslogik.
 **Varför:** 2 av 3 användare är passiva läsare. Partnern kan inte forma planen utan power-user-UI.
 **Väg framåt:** Utöka Ikväll-kortet: "byt middag / vi äter ute / rester ikväll / lägg till på listan"
 — ett tryck vardera, inga grindar. Återanvänd custom-day/skip-day/manuell vara — inramningen saknas, inte logiken.

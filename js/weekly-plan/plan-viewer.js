@@ -246,6 +246,7 @@ async function loadShopSummaryFromSupabase(householdId) {
 // ── Replace-läge ─────────────────────────────────────────────────────────────
 
 export function enterReplaceMode(date, dayName) {
+  window.dlxCloseSheet?.();   // lämna dag-sheeten när vi navigerar till receptboken
   window.replaceMode = { date, dayName };
   document.getElementById('replaceBannerDay').textContent = dayName;
   document.getElementById('receptView').classList.add('replace-mode');
@@ -311,6 +312,7 @@ export async function selectRecipeForDay(event, recipeId, title) {
 // ── Custom-pick-läge (välj enstaka recept till egen-planering-dag) ──────────
 
 export function enterCustomPickMode(dateIso, dayName) {
+  window.dlxCloseSheet?.();   // lämna dag-sheeten när vi navigerar till receptboken
   window.customPickMode = { date: dateIso, dayName };
   window.replaceMode = null;
   const label = document.getElementById('customPickBannerDay');
@@ -353,7 +355,6 @@ export async function selectRecipeForCustomDay(event, recipeId, title) {
     if (dbErr) throw dbErr;
     const updatedEntries = { ...(window._customDays?.entries || {}), [date]: { note: existing.note || '', recipeId, recipeTitle: title } };
     window._customDays = { entries: updatedEntries };
-    window._dlxEditCustom = null;
     exitCustomPickMode();
     renderWeeklyPlanData(
       window._lastPlan || null,
@@ -397,7 +398,7 @@ export function startPlanFromDate(dateIso) {
   if (window.updateSettingsPreview) window.updateSettingsPreview();
   if (window.toggleTrigger) window.toggleTrigger();
 
-  window._dlxExpanded = null;
+  window.dlxCloseSheet?.();   // dag-sheeten ska inte ligga kvar över generatorn
 
   const trigger = document.getElementById('triggerSection');
   if (trigger) {
@@ -435,8 +436,8 @@ async function modifyDay(date, action) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Okänt fel');
 
-    // Premiumvyn fäller ut fri-dag-editorn inline → kollapsa kortet efteråt.
-    window._dlxExpanded = null;
+    // Fri dag-editorn bor i dag-sheeten → stäng den vid lyckat resultat.
+    window.dlxCloseSheet?.();
 
     // Re-rendera planen. Fri dag/ångra ändrar inte receptmängden → ingen ny
     // inköpslista skickas; återanvänd senaste shop-summering så ingrediens-
@@ -507,7 +508,7 @@ export async function convertBlockedToCustom(dateIso) {
   window._opBusy = true;
   try {
     await postCustomDays('set', [dateIso], note);
-    window._dlxExpanded = null;
+    window.dlxCloseSheet?.();   // editorn bor i dag-sheeten
     window.loadWeeklyPlan();
   } catch {
     window.showToast?.('Kunde inte spara noteringen — prova igen.', { type: 'error' });
@@ -603,7 +604,7 @@ export async function discardPlan() {
     if (!res.ok) throw new Error(data.error || `Serverfel ${res.status}`);
 
     window.planConfirmed = false;
-    window._dlxExpanded = null;
+    window.dlxCloseSheet?.();
 
     // Använd returnerad tomma planen direkt — Vercels statiska weekly-plan.json
     // har inte hunnit re-deploya efter API-commiten (~30 sek), så fetch skulle
@@ -852,8 +853,7 @@ export async function saveCustomDay(dateIso) {
   if (btn) { btn.disabled = true; btn.textContent = 'Sparar…'; }
   try {
     await postCustomDays('set', [dateIso], note);
-    window._dlxExpanded = null;
-    window._dlxEditCustom = null;
+    window.dlxCloseSheet?.();   // editorn bor i dag-sheeten
     renderWeeklyPlanData(
       window._lastPlan || null,
       window._lastShop || null,
@@ -881,8 +881,7 @@ export async function clearCustomDay(dateIso) {
   window._opBusy = true;
   try {
     await postCustomDays('clear', [dateIso]);
-    window._dlxExpanded = null;
-    window._dlxEditCustom = null;
+    window.dlxCloseSheet?.();   // editorn bor i dag-sheeten
     renderWeeklyPlanData(
       window._lastPlan || null,
       window._lastShop || null,

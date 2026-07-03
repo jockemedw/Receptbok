@@ -5200,3 +5200,10 @@ body.cook-open { overflow: hidden; }
   padding: 0.18rem 0.6rem;
 }
 .dlx-sheet-added span::before { content: "✓ "; color: var(--lichen-deep); }
+/* Editorer (egen planering/fri dag) i sheeten — sheeten är redan en ljus panel,
+   nollställ editorns egen panel-bakgrund/ram precis som .dlx-detail-custom gör. */
+.dlx-sheet-editor .detail-inner { background: transparent; border-top: none; padding: 0.2rem 0.1rem 0; }
+/* Receptvyn i sheeten återanvänder .dlx-detail-*-klasserna — ge blocken luft. */
+.dlx-sheet .dlx-detail-head { margin: 0.5rem 0.1rem 0.8rem; }
+.dlx-sheet .dlx-detail-cols { margin: 0 0.1rem; }
+.dlx-sheet .dlx-notes { margin: 0.8rem 0.1rem 0; }
