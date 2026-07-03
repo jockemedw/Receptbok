@@ -42,6 +42,7 @@
     --on-accent: #fff;   /* text/ikon ovanpå rust/lichen-ytor */
     --on-deep: #f5f1e8;  /* text på ytor som är mörka i BÅDA teman (hero-gradienten) */
     --hairline: #eee8db; /* tunnaste avdelare */
+    --shadow-card: 0 1px 2px rgba(47,65,54,.05), 0 4px 16px rgba(47,65,54,.06); /* mjuk kort-skugga (Idag-fliken m.fl.) */
     --btn-forest: #3d5544;        /* mörkgröna CTA-knappar (ljusas i mörkt tema) */
     --btn-forest-strong: #2c3f33;
 
@@ -79,6 +80,7 @@
       --p-fisk: #7ba7c9; --p-kyckling: #d9a54f; --p-kott: #c67563; --p-flask: #cf9678; --p-veg: #8fac97;
       --on-accent: #1c2620;
       --hairline: #33402f;
+      --shadow-card: 0 1px 2px rgba(0,0,0,.2), 0 4px 16px rgba(0,0,0,.22);
       --btn-forest: #44604f; --btn-forest-strong: #557262;
     }
   }
@@ -96,6 +98,7 @@
       --p-fisk: #7ba7c9; --p-kyckling: #d9a54f; --p-kott: #c67563; --p-flask: #cf9678; --p-veg: #8fac97;
       --on-accent: #1c2620;
       --hairline: #33402f;
+      --shadow-card: 0 1px 2px rgba(0,0,0,.2), 0 4px 16px rgba(0,0,0,.22);
       --btn-forest: #44604f; --btn-forest-strong: #557262;
   }
 
@@ -5145,77 +5148,137 @@ body.cook-open { overflow: hidden; }
 }
 
 /* ── IDAG-FLIKEN ──────────────────────────────────────────────────────────────
-   Startfliken: svaret på "vad blir det ikväll?" direkt vid öppning. Alla ytor
-   använder tokens → mörkt tema följer med automatiskt. */
+   Startfliken enligt designprototypen (facit: artifact ddad7251). Alla ytor
+   använder appens tokens → mörkt tema följer med automatiskt. Proteinfärgen
+   sätts per element via inline --p (samma trick som prototypens .t-<protein>). */
 #todayView { display: none; }
 #todayView.visible {
   display: block;
   max-width: 680px;
   margin: 0 auto;
-  padding: 1.35rem 0 5rem;
+  padding: 0 16px calc(4rem + env(safe-area-inset-bottom, 0px));
 }
 
 .today-loading { text-align: center; padding: 4rem 1rem; color: var(--moss-muted); }
 .today-loading-spin { display: inline-block; font-size: 1.8rem; animation: todaySpin 1s linear infinite; }
 @keyframes todaySpin { to { transform: rotate(360deg); } }
 
+/* Gemensam eyebrow + rubrik + länk */
 .today-eyebrow {
-  margin: 0 1rem 0.65rem;
-  font-size: 0.74rem;
+  font-size: 0.7rem;
   font-weight: 600;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.13em;
   text-transform: uppercase;
   color: var(--moss-muted);
 }
+.today-h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.3rem;
+  letter-spacing: -0.01em;
+  color: var(--forest-deep);
+  margin: 0;
+}
+.today-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 26px 4px 12px;
+}
+.today-link { font-size: 0.85rem; font-weight: 500; color: var(--lichen-deep); cursor: pointer; }
 
-/* Ikväll-hero — ljust kort med vänsterband i proteinfärg (samma språk som dagkorten) */
-.today-hero {
+.today-date { margin: 14px 4px; }
+.today-date .today-eyebrow { display: block; }
+
+/* Delade knappar */
+.today-btn {
+  min-height: 48px;
+  border-radius: 14px;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 18px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.today-btn:active { transform: scale(0.98); }
+.today-btn svg { width: 1.05em; height: 1.05em; }
+.today-btn-primary { background: var(--rust); color: var(--on-accent); flex: 1; box-shadow: 0 3px 12px color-mix(in srgb, var(--rust) 35%, transparent); }
+.today-btn-quiet { background: var(--stone); color: var(--forest); }
+
+/* Ikväll-hero */
+.today-tonight {
   position: relative;
   display: block;
   width: 100%;
-  overflow: hidden;
   text-align: left;
-  margin: 0 1rem 1.15rem;
-  padding: 1.25rem 1.4rem 1.3rem 1.55rem;
   background: var(--linen-card);
-  border: 1px solid var(--birch-soft);
-  border-radius: 22px;
-  box-shadow: 0 12px 30px -22px rgba(44, 63, 51, 0.5);
-  cursor: pointer;
-  font-family: inherit;
-  transition: box-shadow 0.22s, border-color 0.22s, transform 0.12s;
+  border: 1px solid var(--hairline);
+  border-left: 6px solid var(--p, var(--lichen));
+  border-radius: 24px;
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
 }
-.today-hero:active { transform: scale(0.995); }
-.today-hero:hover { box-shadow: 0 16px 34px -20px rgba(44, 63, 51, 0.55); border-color: var(--birch); }
-.today-hero-rail {
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 5px;
-  background: var(--rail, var(--lichen));
+.today-tonight-body { padding: 20px 22px 22px; }
+.today-tonight-eyebrow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
 }
-.today-hero-eyebrow {
+.today-tonight-eyebrow .today-eyebrow { color: var(--rust); }
+.today-deal-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.72rem;
+  gap: 5px;
+  font-size: 0.74rem;
   font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--rust);
+  color: var(--lichen-deep);
+  background: var(--moss-soft);
+  padding: 4px 10px;
+  border-radius: 99px;
+  white-space: nowrap;
 }
-.today-hero-eyebrow svg { width: 1.1em; height: 1.1em; }
-.today-hero-title {
+.today-deal-chip svg { width: 13px; height: 13px; }
+.today-tonight-title {
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 2rem;
-  line-height: 1.12;
-  margin: 0.4rem 0 0.7rem;
+  font-size: clamp(1.7rem, 7.5vw, 2.1rem);
+  line-height: 1.14;
+  letter-spacing: -0.015em;
   color: var(--forest-deep);
+  margin: 0 0 10px;
 }
+.today-tonight-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  color: var(--moss-muted);
+  font-size: 0.88rem;
+  font-weight: 500;
+  margin-bottom: 18px;
+}
+.today-tonight-meta span { display: inline-flex; align-items: center; }
+.today-tonight-meta svg { width: 15px; height: 15px; margin-right: 5px; }
+.today-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
+  background: var(--p, var(--lichen));
+  margin-right: 6px;
+}
+.today-tonight-actions { display: flex; gap: 10px; }
 
-/* Tomt/välkomst-läge — centrerat, inget färgband */
-.today-hero-empty { text-align: center; cursor: default; padding: 1.7rem 1.4rem; }
-.today-hero-empty:hover { box-shadow: 0 12px 30px -22px rgba(44, 63, 51, 0.5); border-color: var(--birch-soft); }
+/* Tomt/välkomst-läge — samma kort, centrerat innehåll */
+.today-tonight-empty { text-align: center; }
+.today-tonight-empty .today-tonight-body { padding: 26px 22px; }
 .today-hero-icon {
   display: inline-flex;
   align-items: center;
@@ -5227,207 +5290,125 @@ body.cook-open { overflow: hidden; }
   background: color-mix(in srgb, var(--lichen) 14%, transparent);
 }
 .today-hero-icon svg { width: 1.5rem; height: 1.5rem; }
-.today-hero-empty .today-hero-title { font-size: 1.6rem; margin: 0 0 0.4rem; }
-.today-hero-note { margin: 0 0 1rem; font-size: 0.9rem; color: var(--moss-muted); }
-.today-hero-empty .today-actions { justify-content: center; }
+.today-tonight-empty .today-tonight-title { font-size: 1.55rem; margin-bottom: 0.4rem; }
+.today-hero-note { margin: 0 0 1.1rem; font-size: 0.9rem; color: var(--moss-muted); }
+.today-tonight-empty .today-tonight-actions { justify-content: center; }
 
-.today-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.5rem 0.7rem;
-  margin-bottom: 1rem;
-}
-.today-chip {
-  font-size: 0.72rem;
-  font-weight: 600;
-  padding: 0.2rem 0.6rem;
-  border-radius: 6px;
-  color: var(--chip, var(--lichen));
-  background: color-mix(in srgb, var(--chip, var(--lichen)) 14%, transparent);
-}
-.today-meta-time,
-.today-meta-saving {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-size: 0.82rem;
-  color: var(--moss-muted);
-}
-.today-meta-saving { color: var(--lichen-deep); font-weight: 600; }
-.today-meta-time svg, .today-meta-saving svg { width: 14px; height: 14px; }
-
-.today-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
-.today-cook-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  background: var(--rust);
-  color: var(--on-accent);
-  border: none;
-  border-radius: 999px;
-  padding: 0.65rem 1.25rem;
-  font-family: inherit;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 3px 12px -2px rgba(181, 106, 76, 0.4);
-}
-.today-cook-btn svg { width: 1.05em; height: 1.05em; }
-.today-cook-btn:active { background: var(--rust-deep); }
-.today-more-btn {
-  display: inline-flex;
-  align-items: center;
-  background: transparent;
-  color: var(--forest);
-  border: 1px solid var(--birch-soft);
-  border-radius: 999px;
-  padding: 0.65rem 1.2rem;
-  font-family: inherit;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-.today-more-btn:active { background: var(--stone); }
-
-/* I morgon-rad — kompakt kort */
+/* I morgon-rad */
 .today-tomorrow {
-  position: relative;
   display: flex;
   align-items: center;
-  gap: 0.85rem;
+  gap: 14px;
   width: 100%;
-  overflow: hidden;
   text-align: left;
-  margin: 0 1rem 1.4rem;
-  padding: 0.75rem 2.2rem 0.75rem 1.1rem;
   background: var(--linen-card);
-  border: 1px solid var(--birch-soft);
-  border-radius: 16px;
+  border: 1px solid var(--hairline);
+  border-radius: 18px;
+  padding: 14px 16px;
+  margin-top: 12px;
+  box-shadow: var(--shadow-card);
   cursor: pointer;
   font-family: inherit;
-  transition: border-color 0.2s, box-shadow 0.2s;
 }
-.today-tomorrow:hover { border-color: var(--birch); box-shadow: 0 8px 20px -18px rgba(44, 63, 51, 0.5); }
-.today-tomorrow-rail {
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 4px;
-  background: var(--rail, var(--lichen));
+.today-tomorrow-thread {
+  flex: none;
+  width: 6px;
+  align-self: stretch;
+  border-radius: 4px;
+  background: var(--p, var(--lichen));
 }
-.today-tomorrow-main { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
-.today-tomorrow-eyebrow {
-  font-size: 0.68rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--moss-muted);
-}
+.today-tomorrow-txt { flex: 1; min-width: 0; }
+.today-tomorrow-txt .today-eyebrow { display: block; margin-bottom: 3px; }
 .today-tomorrow-title {
+  display: block;
   font-family: var(--font-display);
-  font-size: 1.05rem;
   font-weight: 700;
+  font-size: 1.02rem;
+  line-height: 1.3;
   color: var(--forest-deep);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.today-tomorrow-chev {
-  position: absolute;
-  right: 0.95rem;
-  color: var(--birch);
-  font-size: 1.15rem;
-  line-height: 1;
-}
+.today-tomorrow-meta { display: block; font-size: 0.8rem; color: var(--moss-muted); margin-top: 3px; }
+.today-tomorrow-chev { flex: none; color: var(--birch); }
+.today-tomorrow-chev svg { width: 20px; height: 20px; }
 
-/* Kommande veckan — färgstaplar */
-.today-week {
-  margin: 0 1rem 1.6rem;
-  padding: 1rem 1.15rem 1.1rem;
+/* Kommande veckan — vävt band av trådstaplar */
+.today-weave-card {
+  display: block;
+  width: 100%;
+  text-align: left;
   background: var(--linen-card);
-  border: 1px solid var(--birch-soft);
-  border-radius: 18px;
+  border: 1px solid var(--hairline);
+  border-radius: 20px;
+  padding: 16px 18px 14px;
+  box-shadow: var(--shadow-card);
   cursor: pointer;
+  font-family: inherit;
 }
-.today-week:hover { border-color: var(--birch); }
-.today-week-head {
+.today-weave-row {
   display: flex;
-  align-items: baseline;
   justify-content: space-between;
-  gap: 0.5rem;
-  margin-bottom: 0.85rem;
-}
-.today-section-title {
-  font-family: var(--font-display);
-  font-size: 1.15rem;
-  font-weight: 400;
-  color: var(--lichen);
-  margin: 0;
-}
-.today-week-link { font-size: 0.78rem; font-weight: 600; color: var(--rust); white-space: nowrap; }
-.today-bars {
-  display: flex;
   align-items: flex-end;
-  gap: 0.4rem;
-  height: 68px;
+  gap: 6px;
+  margin: 4px 2px 6px;
 }
-.today-bar {
-  flex: 1 1 0;
+.today-thread {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.35rem;
-  min-width: 0;
-  height: 100%;
-  justify-content: flex-end;
+  gap: 7px;
+  flex: 1;
 }
-.today-bar-fill {
-  display: block;
-  width: 100%;
-  height: 100%;
-  border-radius: 6px;
-  min-height: 8px;
+.today-thread-bar {
+  width: 12px;
+  height: 38px;
+  border-radius: 7px;
+  background: var(--p, var(--lichen));
 }
-.today-bar.is-empty .today-bar-fill { height: 30%; opacity: 0.5; }
-.today-bar.is-past { opacity: 0.4; }
-.today-bar.is-today .today-bar-fill { box-shadow: 0 0 0 2px var(--rust); }
-.today-bar.is-today .today-bar-lbl { color: var(--rust); font-weight: 700; }
-.today-bar-lbl {
+.today-thread.past .today-thread-bar { opacity: 0.38; }
+.today-thread.free .today-thread-bar { background: transparent; border: 1.5px dashed var(--birch-soft); }
+.today-thread.today .today-thread-bar {
+  height: 48px;
+  box-shadow: 0 0 0 2.5px var(--linen-card), 0 0 0 4.5px var(--p, var(--rust));
+}
+.today-thread-day {
   font-size: 0.68rem;
   font-weight: 600;
+  letter-spacing: 0.06em;
   color: var(--moss-muted);
   text-transform: uppercase;
 }
+.today-thread.today .today-thread-day { color: var(--rust); font-weight: 700; }
+.today-weave-sum {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: var(--moss-muted);
+  margin-top: 10px;
+}
+.today-weave-sum strong { color: var(--lichen-deep); font-weight: 600; white-space: nowrap; }
 
 /* Snabbt till listan */
-.today-quickadd { margin: 0 1rem; }
-.today-quickadd .today-section-title { margin-bottom: 0.65rem; }
-.today-add-row { display: flex; gap: 0.55rem; }
-.today-add-input {
-  flex: 1 1 auto;
+.today-quick-add { display: flex; gap: 10px; }
+.today-quick-add input {
+  flex: 1;
   min-width: 0;
-  padding: 0.7rem 0.9rem;
+  min-height: 48px;
+  border-radius: 14px;
   border: 1px solid var(--birch-soft);
-  border-radius: 12px;
   background: var(--linen-card);
   color: var(--forest);
   font-family: inherit;
   font-size: 0.95rem;
+  padding: 0 16px;
 }
-.today-add-input:focus { outline: none; border-color: var(--lichen); }
-.today-add-btn {
-  flex: 0 0 auto;
-  background: var(--lichen-deep);
-  color: var(--on-accent);
-  border: none;
-  border-radius: 12px;
-  padding: 0.7rem 1.1rem;
-  font-family: inherit;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-}
-.today-add-btn:active { filter: brightness(1.08); }
+.today-quick-add input::placeholder { color: var(--moss-muted); }
+.today-quick-add input:focus { outline: none; border-color: var(--lichen); }
+.today-quick-add .today-btn { flex: none; }
 
 /* ── Flytta dag: släppzoner mellan korten ── */
 .dlx-drop-zone {
