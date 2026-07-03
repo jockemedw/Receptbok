@@ -21,18 +21,18 @@
 
 </style>
 </head>
-<body data-active-tab="recept">
+<body data-active-tab="vecka">
 
 <header>
   <div class="header-bar">
     <h1>Recept<em>boken</em></h1>
   </div>
   <nav class="header-nav">
-    <button class="header-tab active" id="tabRecept" data-tab="recept" onclick="switchTab('recept')">
+    <button class="header-tab" id="tabRecept" data-tab="recept" onclick="switchTab('recept')">
       <span class="header-tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
       <span class="header-tab-label">Recept</span>
     </button>
-    <button class="header-tab" id="tabVecka" data-tab="vecka" onclick="switchTab('vecka')">
+    <button class="header-tab active" id="tabVecka" data-tab="vecka" onclick="switchTab('vecka')">
       <span class="header-tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg></span>
       <span class="header-tab-label">Matsedel</span>
     </button>
@@ -56,7 +56,7 @@
   </div>
 </header>
 
-<main id="receptView">
+<main id="receptView" style="display:none">
   <div class="replace-banner" id="replaceBanner">
     Väljer recept till <strong id="replaceBannerDay"></strong> — tryck på ett recept nedan
     <button class="replace-banner-cancel" onclick="exitReplaceMode()">Avbryt</button>
@@ -84,7 +84,7 @@
   </div>
 </main>
 
-<div id="weekView">
+<div id="weekView" class="visible">
   <div class="content-heading">
     <h2 class="content-heading-title">Matsedel</h2>
   </div>
@@ -381,10 +381,10 @@
   </button>
 </div>
 
-<button class="fab-import" id="fabImport" onclick="openImportModal()" title="Importera recept" aria-label="Importera recept"><svg class="icon icon-em-1-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
+<button class="fab-import" id="fabImport" style="display:none" onclick="openImportModal()" title="Importera recept" aria-label="Importera recept"><svg class="icon icon-em-1-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
 
 <nav class="bottom-nav" aria-label="Huvudnavigering">
-  <button class="bottom-nav-tab active" data-tab="recept" onclick="switchTab('recept')" aria-label="Recept">
+  <button class="bottom-nav-tab" data-tab="recept" onclick="switchTab('recept')" aria-label="Recept">
     <span class="bottom-nav-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
@@ -393,7 +393,7 @@
     </span>
     <span class="bottom-nav-label">Recept</span>
   </button>
-  <button class="bottom-nav-tab" data-tab="vecka" onclick="switchTab('vecka')" aria-label="Matsedel">
+  <button class="bottom-nav-tab active" data-tab="vecka" onclick="switchTab('vecka')" aria-label="Matsedel">
     <span class="bottom-nav-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <rect x="3" y="4" width="18" height="18" rx="2"/>
@@ -566,6 +566,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=121"></script>
+<script type="module" src="js/app.js?v=122"></script>
 </body>
 </html>

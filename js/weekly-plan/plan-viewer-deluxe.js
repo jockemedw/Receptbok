@@ -499,6 +499,18 @@ export function renderDeluxe() {
   setSec(host, 'banner', modeBannerHtml());
   setSec(host, 'today', `${tonightZone}${tonight}`);
   setSec(host, 'days', `<div class="dlx-days">${upcomingHtml}</div>`);
+
+  // "Idag först" (designförslag 2026-07, steg 3): appen öppnar på svaret — Ikväll-
+  // kortet ligger överst. Undantag: obekräftat förslag, då bekräfta-flödet i heron
+  // är det viktigaste och behåller toppen. appendChild flyttar befintliga noder,
+  // så ordningen är idempotent över re-renders.
+  const order = pending
+    ? ['history', 'hero', 'banner', 'today', 'days']
+    : ['history', 'today', 'hero', 'banner', 'days'];
+  for (const name of order) {
+    const el = host.querySelector(`:scope > .dlx-sec[data-sec="${name}"]`);
+    if (el) host.appendChild(el);
+  }
 }
 
 // ── Tidigare recept: pull-to-reveal-knapp + dragspel ──────────────────────────
