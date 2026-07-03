@@ -37,7 +37,7 @@
     --p-veg: #5e7a68;
 
     /* Typografi (Steg 1, designförslag 2026-07): Fraunces ersätter Playfair */
-    --font-display: 'Fraunces', 'Playfair Display', serif;
+    --font-display: 'Playfair Display', serif;  /* Fraunces provades Session 108 — Joakim föredrog Playfair */
     --font-body: 'DM Sans', sans-serif;
     --on-accent: #fff;   /* text/ikon ovanpå rust/lichen-ytor */
     --on-deep: #f5f1e8;  /* text på ytor som är mörka i BÅDA teman (hero-gradienten) */
