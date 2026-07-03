@@ -1,4 +1,6 @@
   :root {
+    color-scheme: light;
+
     /* Surfaces */
     --linen: #f5f1e8;
     --linen-card: #fdfcf8;
@@ -38,6 +40,10 @@
     --font-display: 'Fraunces', 'Playfair Display', serif;
     --font-body: 'DM Sans', sans-serif;
     --on-accent: #fff;   /* text/ikon ovanpå rust/lichen-ytor */
+    --on-deep: #f5f1e8;  /* text på ytor som är mörka i BÅDA teman (hero-gradienten) */
+    --hairline: #eee8db; /* tunnaste avdelare */
+    --btn-forest: #3d5544;        /* mörkgröna CTA-knappar (ljusas i mörkt tema) */
+    --btn-forest-strong: #2c3f33;
 
     /* Semantic aliases (för bakåtkompatibilitet under migrationen) */
     --border: var(--birch-soft);
@@ -53,6 +59,44 @@
     :root {
       --bottom-nav-h: calc(84px + env(safe-area-inset-bottom, 0px));
     }
+  }
+
+  /* ── Mörkt tema (designförslag 2026-07, avslutande steg) ──────────────────
+     Token-nivå: komponenterna läser samma variabler i båda teman. Följer
+     OS-inställningen; <html data-theme="light|dark"> kan tvinga läget. */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      /* Ytor */
+      --linen: #1d2721; --linen-card: #263229; --paper: #2b3830; --stone: #303e34;
+      /* Text (forest är brödtext — ljusas; forest-deep rubriker/strong) */
+      --forest: #e6e0d2; --forest-deep: #f0ebe0;
+      /* Brand/accent (lichen som YTA behålls — mellanmörk funkar i båda) */
+      --lichen-deep: #9dbca6; --moss-soft: #33422f;
+      --rust: #cd825e; --rust-deep: #dd9a77; --clay: #3a322c;
+      --birch: #75816e; --birch-soft: #3d4c41; --moss-muted: #9aa78f;
+      --ochre: #d4a851; --ochre-deep: #cfa242;
+      --p-fisk: #7ba7c9; --p-kyckling: #d9a54f; --p-kott: #c67563; --p-flask: #cf9678; --p-veg: #8fac97;
+      --on-accent: #1c2620;
+      --hairline: #33402f;
+      --btn-forest: #44604f; --btn-forest-strong: #557262;
+    }
+  }
+  :root[data-theme="dark"] {
+      color-scheme: dark;
+      /* Ytor */
+      --linen: #1d2721; --linen-card: #263229; --paper: #2b3830; --stone: #303e34;
+      /* Text (forest är brödtext — ljusas; forest-deep rubriker/strong) */
+      --forest: #e6e0d2; --forest-deep: #f0ebe0;
+      /* Brand/accent (lichen som YTA behålls — mellanmörk funkar i båda) */
+      --lichen-deep: #9dbca6; --moss-soft: #33422f;
+      --rust: #cd825e; --rust-deep: #dd9a77; --clay: #3a322c;
+      --birch: #75816e; --birch-soft: #3d4c41; --moss-muted: #9aa78f;
+      --ochre: #d4a851; --ochre-deep: #cfa242;
+      --p-fisk: #7ba7c9; --p-kyckling: #d9a54f; --p-kott: #c67563; --p-flask: #cf9678; --p-veg: #8fac97;
+      --on-accent: #1c2620;
+      --hairline: #33402f;
+      --btn-forest: #44604f; --btn-forest-strong: #557262;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -608,7 +652,7 @@
   /* ── WEEKLY PLAN BANNER ── */
   .plan-banner {
     background: var(--clay);
-    border: 1px solid #f0d5c8;
+    border: 1px solid color-mix(in srgb, var(--rust) 20%, var(--linen-card));
     border-radius: 12px;
     padding: 1rem 1.1rem;
     margin-bottom: 1.2rem;
@@ -633,7 +677,7 @@
   }
 
   .plan-day {
-    background: white;
+    background: var(--paper);
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 0.5rem 0.7rem;
@@ -745,7 +789,7 @@
   }
 
   .recipe-card {
-    background: white;
+    background: var(--paper);
     border: 1px solid var(--border);
     border-radius: 12px;
     overflow: hidden;
@@ -754,7 +798,7 @@
 
   .recipe-card:hover {
     box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-    border-color: #d4c4b4;
+    border-color: var(--birch-soft);
   }
 
   .recipe-card.open {
@@ -817,9 +861,9 @@
   }
 
   .pill-protein  { background: var(--clay); color: var(--rust); }
-  .pill-time     { background: #f2ede8; color: var(--text-muted); }
+  .pill-time     { background: var(--stone); color: var(--text-muted); }
   .pill-tested   { background: var(--moss-soft); color: var(--color-success-dark); }
-  .pill-untested { background: #f4f2ef; color: #857a64; } /* mörkare — läsbar kontrast */
+  .pill-untested { background: var(--stone); color: var(--text-muted); } /* mörkare — läsbar kontrast */
   .pill-toggle   { cursor: pointer; position: relative; }
   .pill-toggle:active { opacity: 0.6; }
   /* Osynligt utökad träffyta — pillen är visuellt liten men touch-målet blir ~44px */
@@ -897,7 +941,7 @@
   .ingredients-list li {
     font-size: 0.9rem;
     padding: 0.35rem 0;
-    border-bottom: 1px solid #f0ece6;
+    border-bottom: 1px solid var(--hairline);
     line-height: 1.45;
     display: flex;
     gap: 0.5rem;
@@ -954,7 +998,7 @@
   }
   .steps-list li.done::before {
     content: '✓';
-    background: #6aaa3e;
+    background: var(--color-success);
   }
   .steps-list li.done span {
     text-decoration: line-through;
@@ -979,8 +1023,8 @@
 
   /* ── NOTES ── */
   .notes-box {
-    background: var(--paper)bf0;
-    border: 1px solid #f0dfa0;
+    background: color-mix(in srgb, var(--ochre) 8%, var(--paper));
+    border: 1px solid color-mix(in srgb, var(--ochre) 35%, var(--paper));
     border-left: 3px solid var(--ochre);
     border-radius: 6px;
     padding: 0.75rem 0.9rem;
@@ -1079,7 +1123,7 @@
     flex-wrap: wrap;
   }
   .timeline-chip {
-    background: white;
+    background: var(--paper);
     border: 1.5px solid var(--border);
     color: var(--lichen);
     border-radius: 999px;
@@ -1376,13 +1420,13 @@
 
   /* Egen planering (custom day) */
   .week-day-card.custom {
-    background: #fbf5e9;
-    border: 1.5px dashed #c9b894;
+    background: color-mix(in srgb, var(--ochre) 10%, var(--paper));
+    border: 1.5px dashed color-mix(in srgb, var(--ochre) 40%, var(--border));
     cursor: pointer;
   }
   .week-day-card.custom:hover {
     border-color: var(--lichen);
-    background: #f7eed4;
+    background: color-mix(in srgb, var(--ochre) 18%, var(--paper));
   }
   .week-day-card.custom .custom-note {
     font-style: italic;
@@ -1454,7 +1498,7 @@
     gap: 0.85rem;
     width: 100%;
     padding: 0.9rem 1rem;
-    background: white;
+    background: var(--paper);
     border: 1.5px solid var(--border);
     border-radius: 12px;
     font-family: inherit;
@@ -1511,13 +1555,13 @@
     font-family: inherit;
     font-size: 0.9rem;
     color: var(--lichen);
-    background: #fdfaf5;
+    background: var(--linen-card);
     box-sizing: border-box;
   }
   .custom-note-input:focus {
     outline: none;
     border-color: var(--rust);
-    background: white;
+    background: var(--paper);
   }
   .custom-note-save {
     align-self: flex-end;
@@ -1561,8 +1605,8 @@
   }
 
   .week-day-card.weekend:not(.plan-active):not(.plan-color-0):not(.plan-color-1):not(.plan-color-2):not(.plan-color-3):not(.gap):not(.today):not(.selected) {
-    background: #f3e8d4;
-    border-color: #e5d3ae;
+    background: color-mix(in srgb, var(--ochre) 16%, var(--paper));
+    border-color: color-mix(in srgb, var(--ochre) 40%, var(--paper));
   }
 
   .holiday-dot {
@@ -1607,7 +1651,7 @@
     width: 150px;
     height: 148px;
     flex-shrink: 0;
-    background: white;
+    background: var(--paper);
     border: 1.5px solid var(--border);
     border-radius: 12px;
     padding: 0.75rem 0.85rem;
@@ -1878,7 +1922,7 @@
   }
 
   .week-recipe-detail .detail-inner {
-    background: white;
+    background: var(--paper);
     border: 1.5px solid var(--border);
     border-radius: 12px;
     padding: 1rem 1.1rem 1.25rem;
@@ -2009,7 +2053,7 @@
     display: flex;
     align-items: center;
   }
-  .card-icon-btn:hover { border-color: var(--rust); background: white; }
+  .card-icon-btn:hover { border-color: var(--rust); background: var(--paper); }
   .card-icon-btn .icon { width: 14px; height: 14px; }
   .card-icon-btn svg { display: block; }
   .card-icon-btn:disabled { cursor: default; }
@@ -2079,8 +2123,8 @@
   }
 
   .week-day-card.swap-target {
-    border-color: #7aaa7a;
-    background: #f0f7f0;
+    border-color: var(--lichen);
+    background: var(--moss-soft);
     cursor: pointer;
   }
 
@@ -2201,7 +2245,7 @@
     flex-direction: column;
     align-items: center;
     gap: 0.1rem;
-    background: white;
+    background: var(--paper);
     border: 1.5px solid var(--border);
     border-radius: 10px;
     padding: 0.35rem 0.5rem;
@@ -2288,7 +2332,7 @@
 
   /* ── SHOPPING LIST ── */
   .shopping-category {
-    background: white;
+    background: var(--paper);
     border: 1px solid var(--border);
     border-radius: 14px;
     overflow: hidden;
@@ -2301,7 +2345,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.8rem 1rem;
-    background: #f9f6f1;
+    background: var(--linen-card);
     border-bottom: 1px solid var(--border);
     cursor: pointer;
     user-select: none;
@@ -2331,14 +2375,14 @@
     gap: 0.85rem;
     padding: 0.7rem 1rem;       /* touch-vänlig radhöjd (~48px) */
     min-height: 2.9rem;
-    border-bottom: 1px solid #f5f0ea;
+    border-bottom: 1px solid var(--hairline);
     cursor: pointer;
     transition: background 0.15s;
   }
 
   .shopping-item:last-child { border-bottom: none; }
 
-  .shopping-item:hover { background: #fdf9f5; }
+  .shopping-item:hover { background: color-mix(in srgb, var(--stone) 40%, var(--linen-card)); }
 
   .shopping-item.checked {
     opacity: 0.4;
@@ -2358,7 +2402,7 @@
     align-items: center;
     justify-content: center;
     font-size: 0.78rem;
-    background: white;
+    background: var(--paper);
     transition: background 0.15s, border-color 0.15s;
   }
 
@@ -2529,7 +2573,7 @@
     font-family: var(--font-body);
     font-size: 0.9rem;
     color: var(--forest);
-    background: white;
+    background: var(--paper);
     cursor: pointer;
     outline: none;
     transition: border-color 0.2s;
@@ -2555,7 +2599,7 @@
   .trigger-dates {
     display: none;
     margin-top: 0.85rem;
-    background: #f2ede8;
+    background: var(--stone);
     border-radius: 8px;
     padding: 0.7rem 1rem;
     font-size: 0.82rem;
@@ -2612,7 +2656,7 @@
   }
 
   .settings-inner {
-    background: white;
+    background: var(--paper);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1rem 1.1rem;
@@ -2690,7 +2734,7 @@
   }
 
   .prot-btn {
-    background: #f4f2ef;
+    background: var(--stone);
     border: 1.5px solid var(--border);
     color: var(--text-muted);
     padding: 0.55rem 0.95rem;   /* touch-vänligt: ≥40px höjd */
@@ -2721,7 +2765,7 @@
   .toggle-slider {
     position: absolute;
     inset: 0;
-    background: #d8d4cd;
+    background: var(--birch-soft);
     border-radius: 22px;
     cursor: pointer;
     transition: background 0.2s;
@@ -2868,9 +2912,9 @@
   /* ── GENERATE BUTTON & STATUS ── */
   .generate-btn {
     width: 100%;
-    background: var(--forest);
+    background: var(--btn-forest);
     color: white;
-    border: 1.5px solid var(--forest);
+    border: 1.5px solid var(--btn-forest);
     border-radius: 14px;
     padding: 1rem 1.5rem;
     font-family: var(--font-body);
@@ -2921,7 +2965,7 @@
     transition: all 0.18s;
   }
   .shop-mode-btn.active {
-    background: white;
+    background: var(--paper);
     color: var(--lichen);
     box-shadow: 0 1px 4px rgba(0,0,0,0.1);
   }
@@ -3016,7 +3060,7 @@
   .ingredient-section-open .ingredient-section-body { max-height: 4000px; }
   .ingredient-preview { padding: 0 1rem; }
   .ingredient-preview-category {
-    background: white;
+    background: var(--paper);
     border: 1px solid var(--border);
     border-radius: 12px;
     overflow: hidden;
@@ -3027,7 +3071,7 @@
     align-items: center;
     justify-content: space-between;
     padding: 0.8rem 1rem;
-    background: #f9f6f1;
+    background: var(--linen-card);
     border-bottom: 1px solid var(--border);
     font-size: 0.8rem;
     font-weight: 600;
@@ -3094,7 +3138,7 @@
     border-radius: 8px;
     font-size: 0.9rem;
     font-family: var(--font-body);
-    background: white;
+    background: var(--paper);
   }
   .manual-add-btn {
     padding: 0.6rem 1rem;
@@ -3108,7 +3152,7 @@
     font-family: var(--font-body);
     cursor: pointer;
   }
-  .manual-add-btn:hover { background: var(--forest-deep); }
+  .manual-add-btn:hover { background: var(--btn-forest-strong); }
   .manual-add-btn:disabled { opacity: 0.6; }
   .manual-add-empty {
     max-width: 380px;
@@ -3173,7 +3217,7 @@
     font-family: inherit;
     font-size: 0.9rem;
     color: var(--forest);
-    background: white;
+    background: var(--paper);
     border: 1.5px solid var(--border);
     border-radius: 6px;
     padding: 0.3rem 0.5rem;
@@ -3348,7 +3392,7 @@
   .import-handle {
     width: 32px;
     height: 4px;
-    background: #d5cdc3;
+    background: var(--birch-soft);
     border-radius: 2px;
     margin: 10px auto 0;
   }
@@ -3611,10 +3655,10 @@
 }
 .dispatch-actions .btn-primary:hover { background: var(--rust-deep); }
 .dispatch-actions .btn-secondary {
-  background: #e8dfd0;
+  background: var(--stone);
   color: var(--lichen);
 }
-.dispatch-actions .btn-secondary:hover { background: #d9ccb8; }
+.dispatch-actions .btn-secondary:hover { background: var(--birch-soft); }
 
 @media (max-width: 600px) {
   .dispatch-actions { flex-direction: column; }
@@ -3985,8 +4029,8 @@ html.auth-required body {
   margin: 0 1rem 1.1rem;
   padding: 1.3rem 1.35rem 1.4rem;
   border-radius: 22px;
-  background: linear-gradient(150deg, var(--forest) 0%, var(--forest-deep) 60%, #243429 100%);
-  color: var(--linen);
+  background: linear-gradient(150deg, #3d5544 0%, #2c3f33 60%, #243429 100%); /* fast mörk i båda teman */
+  color: var(--on-deep);
   box-shadow: 0 18px 40px -22px rgba(44,63,51,0.7);
 }
 .dlx-hero-glow {
@@ -4032,7 +4076,7 @@ html.auth-required body {
   font-size: 1.7rem;
   line-height: 1.1;
   margin: 0 0 1rem;
-  color: var(--linen);
+  color: var(--on-deep);
 }
 .dlx-stats {
   position: relative;
@@ -4187,7 +4231,7 @@ html.auth-required body {
 }
 /* Helg-markör: en dovare, varmare kort-bakgrund (markerar helgdagar lugnt utan att
    påverka korthöjden). Tydligt skild från både kortet (#fdfcf8) och sidan (#f5f1e8). */
-.dlx-day.is-weekend { background: #efe8db; border-color: var(--birch-soft); }
+.dlx-day.is-weekend { background: color-mix(in srgb, var(--stone) 55%, var(--linen)); border-color: var(--birch-soft); }
 /* Utfällt helgkort: BEHÅLL den dovare helg-tonen (markören) men lägg tillbaka
    utfällningens lichen-accent — annars vinner is-weekend:s birch-ram pga
    källordning och kortet ser avvikande ut mot vardagskortens utfällning. */
@@ -4778,7 +4822,7 @@ body.cook-open { overflow: hidden; }
   font-size: 0.95rem;
   color: var(--forest);
   cursor: pointer;
-  border-bottom: 1px solid #f0ebe2;
+  border-bottom: 1px solid var(--hairline);
 }
 .cook-ing:last-child { border-bottom: none; }
 .cook-ing-box {
@@ -5287,7 +5331,7 @@ body.cook-open { overflow: hidden; }
 }
 .dlx-sheet-ic svg { width: 18px; height: 18px; }
 .dlx-sheet-ic.rust { background: var(--clay); color: var(--rust-deep); }
-.dlx-sheet-ic.ochre { background: #f3e8cf; color: var(--ochre-deep); }
+.dlx-sheet-ic.ochre { background: color-mix(in srgb, var(--ochre) 20%, var(--paper)); color: var(--ochre-deep); }
 .dlx-sheet-txt { display: flex; flex-direction: column; min-width: 0; }
 .dlx-sheet-t { font-weight: 600; font-size: 0.92rem; color: var(--forest-deep); }
 .dlx-sheet-d { font-size: 0.75rem; color: var(--moss-muted); margin-top: 0.1rem; }
