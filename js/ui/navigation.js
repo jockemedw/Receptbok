@@ -2,6 +2,7 @@
 
 export function switchTab(tab) {
   document.body.dataset.activeTab = tab;
+  document.getElementById('todayView').classList.toggle('visible',    tab === 'idag');
   document.getElementById('receptView').style.display              = tab === 'recept' ? '' : 'none';
   document.getElementById('weekView').classList.toggle('visible',     tab === 'vecka');
   document.getElementById('shopView').classList.toggle('visible',     tab === 'shop');

@@ -18,7 +18,8 @@ import './recipes/recipe-editor.js';
 import './recipes/recipe-import.js';
 import './weekly-plan/plan-generator.js?v=101';
 import './weekly-plan/plan-viewer.js?v=114';
-import './weekly-plan/plan-viewer-deluxe.js?v=121';
+import './weekly-plan/plan-viewer-deluxe.js?v=122';
+import './today/today-view.js?v=100';
 import './weekly-plan/deals-popup.js';
 
 async function init() {
