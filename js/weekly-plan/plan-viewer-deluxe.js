@@ -565,12 +565,6 @@ window.addEventListener('scroll', () => {
 // All daginteraktion går via snabbåtgärds-sheeten (dlxDayClick, definierad i
 // sheet-sektionen nedan) — inga inline-utfällningar som knuffar layouten.
 
-// Lokalt minne av aktiv plan-dag (spegel av plan-viewer.updateLastPlanDay)
-function patchPlanDay(date, recipeId, recipe) {
-  const day = window._lastPlan?.days?.find(d => d.date === date);
-  if (day) { day.recipe = recipe; day.recipeId = recipeId; day.saving = 0; day.savingMatches = []; }
-}
-
 function weekRecipeIds() {
   return (window._lastPlan?.days || []).map(d => d.recipeId).filter(id => id != null);
 }
@@ -597,7 +591,7 @@ window.dlxShuffle = async function (date, btn) {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'fel');
-    patchPlanDay(date, data.recipeId, data.recipe);
+    window.updateLastPlanDay(date, data.recipeId, data.recipe);
     suppressEcho();
     rerender(window._lastPlan, data.shoppingList || window._lastShop);
     dlxFlashDates([date]);

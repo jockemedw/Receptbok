@@ -1,6 +1,11 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–107. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–108. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 109 — Idag-fliken byggd (ny startflik, två rundor)
+Byggde den fjärde fliken **Idag** som ny startvy enligt byggspecen `docs/superpowers/specs/2026-07-03-idag-flik-spec.md`. **Ny slice** `js/today/today-view.js` (VSA — bara rendering + anrop av befintliga `window.*`): datumrad, **Ikväll-hero** (Börja laga/Mer), **I morgon**-rad, **Kommande veckan** (färgstaplar), **Snabbt till listan**. **Runda 2** (Joakims feedback "det ser inte alls ut som prototyp-bilderna"): byggde om pixelnära mot artifact-prototypen (ddad7251) — rea-pill, protein som färgad prick, `.dlx-tonight`-vänsterband i proteinfärg, vävt trådband för veckan, nav omordnad Idag·Matsedel·Inköpslista·Recept, ny token `--shadow-card`. Cache-bust styles v131/app v127/today v101/SW v41. Verifierat mot prototypens egen render i Playwright (ljust + mörkt).
 
 ---
 

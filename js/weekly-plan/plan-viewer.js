@@ -26,7 +26,6 @@ function subscribeMealDays(householdId) {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'meal_days', filter: `household_id=eq.${householdId}` }, () => {
       // Ladda inte om om användaren är mitt i en interaktion
       if (window.replaceMode || window.customPickMode) return;
-      if (document.querySelector('.week-day-card.swap-source')) return;
       if (window._dlxSwap || window._dlxMove) return;   // premiumvyns byt/flytta-läge
       // Eko-dämpning: våra egna skrivningar har redan uppdaterat vyn från
       // API-svaret — hoppa över omhämtningen som annars orsakar ett blink.
@@ -279,11 +278,6 @@ export async function selectRecipeForDay(event, recipeId, title) {
     if (!res.ok) throw new Error();
 
     const data = await res.json();
-    const card = document.querySelector(`.week-day-card[data-date="${date}"]`);
-    if (card) {
-      card.dataset.recipeid = recipeId;
-      card.querySelector('.week-day-recipe').textContent = title;
-    }
     updateLastPlanDay(date, recipeId, title);
     if (data.shoppingList) {
       window.renderIngredientPreview(
@@ -899,6 +893,7 @@ export async function clearCustomDay(dateIso) {
 window.enterReplaceMode    = enterReplaceMode;
 window.exitReplaceMode     = exitReplaceMode;
 window.selectRecipeForDay  = selectRecipeForDay;
+window.updateLastPlanDay   = updateLastPlanDay;
 window.freeDay             = freeDay;
 window.openSavingPopover   = openSavingPopover;
 window.closeSavingPopover  = closeSavingPopover;
