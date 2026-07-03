@@ -123,18 +123,19 @@ function heroHtml(todayEntry, info) {
     </article>`;
 }
 
-function tomorrowHtml(entry, info) {
+function tomorrowHtml(entry, info, isTomorrow) {
   if (!entry || !info) return '';
   const meta = [
     info.time ? `${info.time} min` : null,
     info.protein ? PROTEIN_LABEL[info.protein] || info.protein : null,
     info.typeLabel,
   ].filter(Boolean).join(' · ');
+  const eyebrow = isTomorrow ? `I morgon · ${entry.day.toLowerCase()}` : `Nästa middag · ${entry.day}`;
   return `
     <button type="button" class="today-tomorrow" style="--p:${info.color}" onclick="dlxDayClick('${entry.date}', '${attr(entry.day)}')">
       <span class="today-tomorrow-thread"></span>
       <span class="today-tomorrow-txt">
-        <span class="today-eyebrow">I morgon · ${esc(entry.day.toLowerCase())}</span>
+        <span class="today-eyebrow">${esc(eyebrow)}</span>
         <span class="today-tomorrow-title">${esc(info.title)}</span>
         ${meta ? `<span class="today-tomorrow-meta">${esc(meta)}</span>` : ''}
       </span>
@@ -224,10 +225,21 @@ export function renderTodayView() {
   const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowIso = fmtIso(tomorrow);
 
+  const all = Object.values(timeline).filter(d => !d.isArchive).sort((a, b) => a.date.localeCompare(b.date));
+
   const todayEntry = timeline[todayIso] || null;
   const todayInfo = dayInfo(todayEntry);
-  const tomorrowEntry = timeline[tomorrowIso] || null;
-  const tomorrowInfo = dayInfo(tomorrowEntry);
+
+  // I morgon: morgondagens middag. Är morgondagen en tom lucka (ingen planerad
+  // middag) visar vi i stället nästa dag med en middag — så "det kommande" alltid
+  // syns när det finns mat kvar i planen. Etiketten anpassas ("I morgon" vs veckodag).
+  let tomorrowEntry = timeline[tomorrowIso] || null;
+  let tomorrowInfo = dayInfo(tomorrowEntry);
+  if (!tomorrowInfo) {
+    const next = all.find(d => d.date > todayIso && dayInfo(d)?.kind === 'recipe');
+    if (next) { tomorrowEntry = next; tomorrowInfo = dayInfo(next); }
+  }
+  const tomorrowIsNext = !!(tomorrowEntry && tomorrowEntry.date === tomorrowIso);
 
   const wk = isoWeekNumber(todayIso);
   const dateLine = todayEntry
@@ -236,7 +248,6 @@ export function renderTodayView() {
 
   // Veckans trådband: planens dagar i datumordning (annars nästa 7 dagar).
   const plan = window._lastPlan || null;
-  const all = Object.values(timeline).filter(d => !d.isArchive).sort((a, b) => a.date.localeCompare(b.date));
   let weekDays = (plan?.startDate && plan?.endDate)
     ? all.filter(d => d.date >= plan.startDate && d.date <= plan.endDate)
     : all.filter(d => d.date >= todayIso).slice(0, 7);
@@ -255,7 +266,7 @@ export function renderTodayView() {
   host.innerHTML =
     `<div class="today-date"><span class="today-eyebrow">${esc(dateLine)}</span></div>` +
     heroHtml(todayEntry, todayInfo) +
-    tomorrowHtml(tomorrowEntry, tomorrowInfo) +
+    tomorrowHtml(tomorrowEntry, tomorrowInfo, tomorrowIsNext) +
     weekHtml(weekDays, sumLeft, sumRight) +
     quickAddHtml();
 
