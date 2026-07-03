@@ -5331,6 +5331,7 @@ body.cook-open { overflow: hidden; }
   text-overflow: ellipsis;
 }
 .today-tomorrow-meta { display: block; font-size: 0.8rem; color: var(--moss-muted); margin-top: 3px; }
+.today-tomorrow-empty-title { color: var(--moss-muted); font-weight: 600; }
 .today-tomorrow-chev { flex: none; color: var(--birch); }
 .today-tomorrow-chev svg { width: 20px; height: 20px; }
 

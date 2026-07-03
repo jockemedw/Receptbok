@@ -123,19 +123,35 @@ function heroHtml(todayEntry, info) {
     </article>`;
 }
 
-function tomorrowHtml(entry, info, isTomorrow) {
-  if (!entry || !info) return '';
+function tomorrowHtml(entry, info) {
+  if (!entry) return '';
+  const eyebrow = `I morgon · ${esc(entry.day.toLowerCase())}`;
+  const click = `onclick="dlxDayClick('${entry.date}', '${attr(entry.day)}')"`;
+
+  // Tom lucka (ingen planerad middag) → "Inget planerat", tryck för att planera.
+  if (!info) {
+    if (entry.isPast) return '';   // säkerhetsnät — morgondagen är aldrig förfluten
+    return `
+      <button type="button" class="today-tomorrow today-tomorrow-empty" style="--p:var(--birch)" ${click}>
+        <span class="today-tomorrow-thread"></span>
+        <span class="today-tomorrow-txt">
+          <span class="today-eyebrow">${eyebrow}</span>
+          <span class="today-tomorrow-title today-tomorrow-empty-title">Inget planerat</span>
+        </span>
+        <span class="today-tomorrow-chev" aria-hidden="true">${I.chev}</span>
+      </button>`;
+  }
+
   const meta = [
     info.time ? `${info.time} min` : null,
     info.protein ? PROTEIN_LABEL[info.protein] || info.protein : null,
     info.typeLabel,
   ].filter(Boolean).join(' · ');
-  const eyebrow = isTomorrow ? `I morgon · ${entry.day.toLowerCase()}` : `Nästa middag · ${entry.day}`;
   return `
-    <button type="button" class="today-tomorrow" style="--p:${info.color}" onclick="dlxDayClick('${entry.date}', '${attr(entry.day)}')">
+    <button type="button" class="today-tomorrow" style="--p:${info.color}" ${click}>
       <span class="today-tomorrow-thread"></span>
       <span class="today-tomorrow-txt">
-        <span class="today-eyebrow">${esc(eyebrow)}</span>
+        <span class="today-eyebrow">${eyebrow}</span>
         <span class="today-tomorrow-title">${esc(info.title)}</span>
         ${meta ? `<span class="today-tomorrow-meta">${esc(meta)}</span>` : ''}
       </span>
@@ -230,16 +246,10 @@ export function renderTodayView() {
   const todayEntry = timeline[todayIso] || null;
   const todayInfo = dayInfo(todayEntry);
 
-  // I morgon: morgondagens middag. Är morgondagen en tom lucka (ingen planerad
-  // middag) visar vi i stället nästa dag med en middag — så "det kommande" alltid
-  // syns när det finns mat kvar i planen. Etiketten anpassas ("I morgon" vs veckodag).
-  let tomorrowEntry = timeline[tomorrowIso] || null;
-  let tomorrowInfo = dayInfo(tomorrowEntry);
-  if (!tomorrowInfo) {
-    const next = all.find(d => d.date > todayIso && dayInfo(d)?.kind === 'recipe');
-    if (next) { tomorrowEntry = next; tomorrowInfo = dayInfo(next); }
-  }
-  const tomorrowIsNext = !!(tomorrowEntry && tomorrowEntry.date === tomorrowIso);
+  // I morgon: morgondagens middag. Saknas den (tom lucka) visar kortet
+  // "Inget planerat" och går att trycka på för att planera dagen.
+  const tomorrowEntry = timeline[tomorrowIso] || null;
+  const tomorrowInfo = dayInfo(tomorrowEntry);
 
   const wk = isoWeekNumber(todayIso);
   const dateLine = todayEntry
@@ -266,7 +276,7 @@ export function renderTodayView() {
   host.innerHTML =
     `<div class="today-date"><span class="today-eyebrow">${esc(dateLine)}</span></div>` +
     heroHtml(todayEntry, todayInfo) +
-    tomorrowHtml(tomorrowEntry, tomorrowInfo, tomorrowIsNext) +
+    tomorrowHtml(tomorrowEntry, tomorrowInfo) +
     weekHtml(weekDays, sumLeft, sumRight) +
     quickAddHtml();
 
