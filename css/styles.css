@@ -5064,3 +5064,139 @@ body.cook-open { overflow: hidden; }
   60%  { box-shadow: 0 0 0 3px rgba(122,148,130,0.35); }
   100% { box-shadow: 0 0 0 0 rgba(122,148,130,0); }
 }
+
+/* ═══ Session 107 — Ikväll-sheeten: kvällens snabbåtgärder (backlog #15, variant B) ═══ */
+.dlx-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(44, 63, 51, 0.42);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+  z-index: 950;
+}
+.dlx-sheet-backdrop.open { opacity: 1; pointer-events: auto; }
+.dlx-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 960;
+  margin: 0 auto;
+  max-width: 520px;
+  background: var(--linen-card);
+  border-radius: 22px 22px 0 0;
+  box-shadow: 0 -10px 40px rgba(44, 63, 51, 0.25);
+  padding: 0.5rem 1rem calc(1.1rem + env(safe-area-inset-bottom, 0px));
+  max-height: 78vh;
+  overflow-y: auto;
+  transform: translateY(105%);
+  transition: transform 0.26s cubic-bezier(0.2, 0.8, 0.25, 1);
+}
+.dlx-sheet.open { transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  .dlx-sheet, .dlx-sheet-backdrop { transition: none; }
+}
+.dlx-sheet-grip {
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--birch-soft);
+  margin: 0.35rem auto 0.75rem;
+}
+.dlx-sheet-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--forest-deep);
+  margin: 0 0.2rem 0.15rem;
+}
+.dlx-sheet-title svg { width: 17px; height: 17px; color: var(--rust); flex: none; }
+.dlx-sheet-sub {
+  font-size: 0.78rem;
+  color: var(--moss-muted);
+  margin: 0 0.2rem 0.6rem;
+}
+.dlx-sheet-row {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  border-radius: 14px;
+  padding: 0.7rem 0.6rem;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+}
+.dlx-sheet-row:hover, .dlx-sheet-row:active { background: var(--linen); }
+.dlx-sheet-row + .dlx-sheet-row { border-top: 1px solid var(--stone); }
+.dlx-sheet-ic {
+  width: 38px;
+  height: 38px;
+  flex: none;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--moss-soft);
+  color: var(--lichen-deep);
+}
+.dlx-sheet-ic svg { width: 18px; height: 18px; }
+.dlx-sheet-ic.rust { background: var(--clay); color: var(--rust-deep); }
+.dlx-sheet-ic.ochre { background: #f3e8cf; color: var(--ochre-deep); }
+.dlx-sheet-txt { display: flex; flex-direction: column; min-width: 0; }
+.dlx-sheet-t { font-weight: 600; font-size: 0.92rem; color: var(--forest-deep); }
+.dlx-sheet-d { font-size: 0.75rem; color: var(--moss-muted); margin-top: 0.1rem; }
+.dlx-sheet-back {
+  border: 0;
+  background: none;
+  color: var(--lichen-deep);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.15rem 0.2rem 0.45rem;
+}
+.dlx-sheet-cap {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--moss-muted);
+  margin: 0.8rem 0.2rem 0.25rem;
+}
+.dlx-sheet-empty {
+  font-size: 0.85rem;
+  color: var(--moss-muted);
+  margin: 0.4rem 0.2rem 0.6rem;
+}
+.dlx-sheet-addrow { display: flex; gap: 0.5rem; margin: 0.4rem 0 0.2rem; }
+.dlx-sheet-addrow .custom-note-input { flex: 1; min-width: 0; width: auto; }
+.dlx-sheet-addbtn {
+  border: 0;
+  background: var(--rust);
+  color: #fff;
+  border-radius: 8px;
+  padding: 0.55rem 0.95rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex: none;
+}
+.dlx-sheet-addbtn:hover { background: var(--rust-deep); }
+.dlx-sheet-addbtn:disabled { opacity: 0.6; }
+.dlx-sheet-added { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.55rem; }
+.dlx-sheet-added span {
+  font-size: 0.75rem;
+  background: var(--moss-soft);
+  color: var(--forest);
+  border-radius: 999px;
+  padding: 0.18rem 0.6rem;
+}
+.dlx-sheet-added span::before { content: "✓ "; color: var(--lichen-deep); }

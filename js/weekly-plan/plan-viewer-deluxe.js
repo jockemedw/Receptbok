@@ -31,6 +31,8 @@ const I = {
   own: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10-10a2 2 0 0 0-2.8-2.8L5 17v3z"/><path d="M13.5 6.5l4 4"/></svg>',
   // Rester/använd upp-dag (backlog #14): skål med ånga.
   leftovers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16a8 8 0 0 1-16 0z"/><path d="M9 8c0-1.4 1-1.6 1-3 M14 8c0-1.4 1-1.6 1-3"/></svg>',
+  // Gaffel + kniv — "vi äter ute" i Ikväll-sheeten (backlog #15).
+  fork: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v7c0 1 .7 2 2 2s2-1 2-2V3"/><path d="M7 3v18"/><path d="M17 3c-1.5 1-2.5 3.5-2.5 6 0 2 .8 3 2.5 3v9"/></svg>',
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14 M5 12h14"/></svg>',
   // Historik (klocka med bakåtpil) + upp-chevron för att fälla ihop.
   history: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 9a9 9 0 1 1-.6 5"/><path d="M3 4.5V9h4.5"/><path d="M12 8v4.5l3 1.8"/></svg>',
@@ -111,6 +113,10 @@ function buildTonight(timeline) {
     sub = [r?.time ? `${r.time} min` : null, r ? PROTEIN_LABEL[r.protein] : null].filter(Boolean).join(' · ');
     kind = 'recipe';
     mkind = 'recipe';
+    // Aktiva plan-dagar öppnar snabbåtgärds-sheeten (#15) i stället för att
+    // fällas ut direkt — "Öppna receptet" i sheeten ger utfällningen. Arkiv-
+    // dagar behåller den gamla direkta utfällningen (läsläge).
+    if (d.planId === 'active' && !d.isArchive) click = `dlxTonightClick('${d.date}', '${attr(d.day)}')`;
     if (expanded) detail = recipeDetail(d, r, { active: d.planId === 'active' });
   } else if (d.isCustom && d.customRecipeId) {
     const r = recipeById(d.customRecipeId);
@@ -735,17 +741,21 @@ window.dlxFreeDay = async function (date, btn) {
     suppressEcho();
     rerender(data.weeklyPlan, data.shoppingList || window._lastShop);
     dlxFlashDates([date]);
+    return true;   // Ikväll-sheeten (#15) toastar sitt eget kvitto vid lyckat resultat
   } catch {
     if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
     dlxFlashError(date, 'Kunde inte göra dagen fri — prova igen.');
+    return false;
   } finally {
     window._opBusy = false;
   }
 };
 
 function dlxFlashError(date, msg) {
-  const detail = document.querySelector(`#weekDeluxe .dlx-day[data-date="${date}"] .dlx-detail`);
-  if (!detail) return;
+  // [data-date] (inte .dlx-day) så även Ikväll-kortet träffas; utan utfälld
+  // detalj (t.ex. åtgärd från sheeten) faller felet tillbaka på en toast.
+  const detail = document.querySelector(`#weekDeluxe [data-date="${date}"] .dlx-detail`);
+  if (!detail) { window.showToast?.(msg, { type: 'error' }); return; }
   let el = detail.querySelector('.dlx-err');
   if (!el) { el = document.createElement('p'); el.className = 'dlx-err'; detail.appendChild(el); }
   el.textContent = msg;
@@ -816,6 +826,7 @@ window.dlxFreeClick = function (date, dayName) {
 // Avbryt pågående läge med Escape (mobil har Avbryt-knappen i bannern)
 document.addEventListener('keydown', (e) => {
   if (e.key !== 'Escape') return;
+  if (window._dlxSheet) { window.dlxCloseSheet(); return; }
   if (window._dlxSwap && !window._dlxSwap.pending) window.dlxCancelSwap();
   if (window._dlxMove && !window._dlxMove.pending) window.dlxCancelMove();
 });
@@ -946,6 +957,210 @@ async function dlxPickSwapTarget(toDate) {
     window._opBusy = false;
   }
 }
+
+// ── Ikväll-sheeten (backlog #15, variant B) ───────────────────────────────────
+// Bottensheet med kvällens snabbåtgärder — gör Ikväll-kortet till hela familjens
+// fjärrkontroll: byt middag / vi äter ute / rester ikväll / lägg till på listan,
+// ett tryck var. Ren INRAMNING — all mutationslogik återanvänds från befintliga,
+// säkra flöden:
+//   Byt middag      → swap-days (byt plats, ok även på bekräftad plan) eller
+//                     replace-recipe (slumpa/välj själv, bara obekräftad plan)
+//   Äter ute/rester → skip-day 'free' ("skjut planen →", receptet sparas,
+//                     inköpslistan rörs aldrig) + Ångra via unfreeDay
+//   Lägg till       → addManualItem (delade inköpslistan, kategori Övrigt)
+// Sheeten öppnas bara för AKTIVA plan-dagar (arkiv behåller läslägeutfällning).
+
+let _sheetAdded = [];   // varor tillagda i denna sheet-session (kvitto-chips)
+
+function ensureSheetHost() {
+  if (document.getElementById('dlxSheet')) return;
+  const back = document.createElement('div');
+  back.id = 'dlxSheetBackdrop';
+  back.className = 'dlx-sheet-backdrop';
+  back.addEventListener('click', () => window.dlxCloseSheet());
+  const sheet = document.createElement('div');
+  sheet.id = 'dlxSheet';
+  sheet.className = 'dlx-sheet';
+  sheet.setAttribute('role', 'dialog');
+  sheet.setAttribute('aria-modal', 'true');
+  sheet.setAttribute('aria-label', 'Snabbåtgärder för ikväll');
+  document.body.appendChild(back);
+  document.body.appendChild(sheet);
+}
+
+// Ikväll-kortets klick: i byt/flytta-läge beter det sig som förut (mål/inert),
+// utfällt kort fälls ihop — annars öppnas sheeten.
+window.dlxTonightClick = function (date, dayName) {
+  if (window._dlxSwap) { dlxPickSwapTarget(date); return; }
+  if (window._dlxMove) return;
+  if (window._dlxExpanded === date) { window.dlxToggleDay(date); return; }
+  ensureSheetHost();
+  _sheetAdded = [];
+  window._dlxSheet = { date, day: dayName, view: 'meny' };
+  renderSheet();
+  requestAnimationFrame(() => {
+    document.getElementById('dlxSheetBackdrop')?.classList.add('open');
+    document.getElementById('dlxSheet')?.classList.add('open');
+  });
+};
+
+window.dlxCloseSheet = function () {
+  window._dlxSheet = null;
+  document.getElementById('dlxSheetBackdrop')?.classList.remove('open');
+  document.getElementById('dlxSheet')?.classList.remove('open');
+};
+
+function sheetRow(onclick, iconCls, icon, title, subText) {
+  return `<button type="button" class="dlx-sheet-row" onclick="${onclick}">
+      <span class="dlx-sheet-ic${iconCls ? ' ' + iconCls : ''}">${icon}</span>
+      <span class="dlx-sheet-txt"><span class="dlx-sheet-t">${title}</span><span class="dlx-sheet-d">${subText}</span></span>
+    </button>`;
+}
+
+function renderSheet() {
+  const s = window._dlxSheet;
+  const el = document.getElementById('dlxSheet');
+  if (!s || !el) return;
+  const d = (window._timelineByDate || {})[s.date] || {};
+  let body = '';
+
+  if (s.view === 'meny') {
+    const r = recipeById(d.recipeId);
+    const sub = [r?.time ? `${r.time} min` : null, r ? PROTEIN_LABEL[r.protein] : null].filter(Boolean).join(' · ');
+    body = `
+      <p class="dlx-sheet-title">${I.pot}<span>Ikväll · ${esc(d.recipe || '')}</span></p>
+      <p class="dlx-sheet-sub">${sub ? `${esc(sub)} · ` : ''}Vad vill du göra?</p>
+      ${sheetRow('dlxSheetOpenRecipe()', '', I.pot, 'Öppna receptet', 'Ingredienser och steg — börja laga')}
+      ${sheetRow("dlxSheetView('byt')", 'rust', I.shuffle, 'Byt middag', 'Ta en annan dag i veckan — eller ett nytt recept')}
+      ${sheetRow("dlxSheetFree('ute')", '', I.fork, 'Vi äter ute', 'Ingen matlagning — receptet sparas till senare')}
+      ${sheetRow("dlxSheetFree('rester')", 'ochre', I.leftovers, 'Rester ikväll', 'Töm kylskåpet — receptet sparas till senare')}
+      ${sheetRow("dlxSheetView('lista')", '', I.plus, 'Lägg till på listan', 'Något som saknas hemma?')}`;
+  } else if (s.view === 'byt') {
+    const confirmed = !!window.planConfirmed;
+    const targets = (window._lastPlan?.days || []).filter(x => x.recipeId && !x.blocked && x.date > s.date);
+    let rows = '';
+    if (!confirmed) {
+      rows += sheetRow('dlxSheetShuffle()', 'rust', I.shuffle, 'Slumpa nytt recept', 'Appen väljer — de senaste veckornas rätter undviks');
+      rows += sheetRow('dlxSheetPick()', '', I.pencil, 'Välj själv i receptboken', 'Bläddra bland alla recept');
+    }
+    if (targets.length) {
+      rows += `<p class="dlx-sheet-cap">${confirmed ? 'Ta en annan dag i veckan — inköpslistan påverkas inte' : 'Eller ta en annan dag i veckan'}</p>`;
+      rows += targets.map(t => {
+        const tl = (window._timelineByDate || {})[t.date];
+        const when = tl ? `${tl.day} ${tl.dayNum} ${MONTH_NAMES_SHORT[tl.month]}` : t.date;
+        return sheetRow(`dlxSheetSwap('${t.date}')`, '', I.swap, esc(t.recipe || ''), `${esc(when)} · byter plats med ikväll`);
+      }).join('');
+    }
+    if (!rows) rows = `<p class="dlx-sheet-empty">Matsedeln är bekräftad och har inga fler receptdagar att byta med — prova "Vi äter ute" eller "Rester ikväll" i stället.</p>`;
+    body = `
+      <button type="button" class="dlx-sheet-back" onclick="dlxSheetView('meny')">‹ Tillbaka</button>
+      <p class="dlx-sheet-title">Byt middag</p>
+      ${rows}`;
+  } else if (s.view === 'lista') {
+    const chips = _sheetAdded.length
+      ? `<div class="dlx-sheet-added">${_sheetAdded.map(x => `<span>${esc(x)}</span>`).join('')}</div>`
+      : '';
+    body = `
+      <button type="button" class="dlx-sheet-back" onclick="dlxSheetView('meny')">‹ Tillbaka</button>
+      <p class="dlx-sheet-title">Lägg till på listan</p>
+      <p class="dlx-sheet-sub">Varan hamnar under Övrigt i den delade inköpslistan.</p>
+      <div class="dlx-sheet-addrow">
+        <input type="text" id="dlxSheetItemInput" class="custom-note-input" maxlength="80"
+               placeholder="T.ex. mjölk, bananer…"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();dlxSheetAdd()}">
+        <button type="button" id="dlxSheetItemBtn" class="dlx-sheet-addbtn" onclick="dlxSheetAdd()">Lägg till</button>
+      </div>
+      ${chips}`;
+  }
+
+  el.innerHTML = `<div class="dlx-sheet-grip" aria-hidden="true"></div>${body}`;
+}
+
+window.dlxSheetView = function (view) {
+  if (!window._dlxSheet) return;
+  window._dlxSheet.view = view;
+  renderSheet();
+  if (view === 'lista') document.getElementById('dlxSheetItemInput')?.focus();
+};
+
+// "Öppna receptet" — sheeten stängs, kortet fälls ut (som gamla beteendet).
+window.dlxSheetOpenRecipe = function () {
+  const s = window._dlxSheet;
+  if (!s) return;
+  window.dlxCloseSheet();
+  if (window._dlxExpanded !== s.date) window.dlxToggleDay(s.date);
+};
+
+window.dlxSheetShuffle = function () {
+  const s = window._dlxSheet;
+  if (!s) return;
+  window.dlxCloseSheet();
+  window.dlxShuffle(s.date, null);
+};
+
+window.dlxSheetPick = function () {
+  const s = window._dlxSheet;
+  if (!s) return;
+  window.dlxCloseSheet();
+  window.enterReplaceMode(s.date, s.day);
+};
+
+// Byt plats med en annan receptdag — samma väg som "Byt dag"-flödet, men målet
+// är redan valt så swap-läget aldrig syns. Vid fel städas läget (toast visas
+// av dlxPickSwapTarget) så användaren inte lämnas i ett oväntat byt dag-läge.
+window.dlxSheetSwap = async function (toDate) {
+  const s = window._dlxSheet;
+  if (!s || window._opBusy) return;
+  window.dlxCloseSheet();
+  window._dlxMove = null;
+  window._dlxSwap = { from: s.date, pending: null };
+  await dlxPickSwapTarget(toDate);
+  if (!window._dlxSwap) {
+    window.showToast?.('Middagarna har bytt plats.', { type: 'success' });
+  } else if (!window._dlxSwap.pending) {
+    window._dlxSwap = null;
+    renderDeluxe();
+  }
+};
+
+// Vi äter ute / Rester ikväll → fri dag ("skjut planen →"): receptet flyttas
+// till slutet av matsedeln, inköpslistan rörs inte. Ångra-knapp i toasten.
+window.dlxSheetFree = async function (kind) {
+  const s = window._dlxSheet;
+  if (!s || window._opBusy) return;
+  const recipeTitle = (window._lastPlan?.days || []).find(x => x.date === s.date)?.recipe || 'Receptet';
+  window.dlxCloseSheet();
+  const ok = await window.dlxFreeDay(s.date, null);
+  if (ok) {
+    const msg = kind === 'rester'
+      ? `Rester ikväll — ${recipeTitle} flyttas till slutet av matsedeln.`
+      : `Ni äter ute ikväll — ${recipeTitle} flyttas till slutet av matsedeln.`;
+    window.showToast?.(msg, { type: 'success', action: { label: 'Ångra', onClick: () => window.unfreeDay(s.date) } });
+  }
+};
+
+// Lägg till på listan — återanvänder addManualItem (som toastar sina egna fel
+// och tömmer fältet BARA vid lyckad skrivning → tomt fält = kvitto).
+window.dlxSheetAdd = async function () {
+  if (!window._dlxSheet) return;
+  const input = document.getElementById('dlxSheetItemInput');
+  const item = input?.value.trim();
+  if (!item) { input?.focus(); return; }
+  // Inköpsfliken kanske aldrig öppnats denna session → ladda listan först
+  // så addManualItem har ett list-id att skriva mot.
+  try {
+    if (!window._shopListId && window.loadShoppingTab) await window.loadShoppingTab();
+  } catch { /* addManualItem ger begripligt fel nedan */ }
+  await window.addManualItem('dlxSheetItemInput', 'dlxSheetItemBtn');
+  if (input && input.value === '') {
+    _sheetAdded.push(item);
+    window.showToast?.(`${item} ligger nu på inköpslistan.`, { type: 'success' });
+    if (window._dlxSheet) {
+      renderSheet();
+      document.getElementById('dlxSheetItemInput')?.focus();
+    }
+  }
+};
 
 // ── Håll båda vyerna i synk ───────────────────────────────────────────────────
 // Vi wrappar flera ingångar eftersom plan-viewer.js internt anropar sin LOKALA

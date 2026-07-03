@@ -11,11 +11,11 @@ P0 = störst riskreduktion per timme, sedan nedåt. Naturliga beroenden noteras 
 
 > Spegel av sessionens todo-lista (#1–#27). Uppdatera båda om något ändras.
 
-**Status (uppdaterad Session 106, runda 2):**
-- ✅ **Klara:** #1, #3, #4, #8, #9, #26, #27 (Session 102–103) · **#10, #12, #13, #20, #22** (Session 106 — #12/#13 aktiveras när Joakim kört migration 003 resp. 002 i Supabase SQL Editor). #2 kod helt klar (inkl. UI-toast) — väntar bara på att Joakim sätter `ALERT_WEBHOOK`.
+**Status (uppdaterad Session 107):**
+- ✅ **Klara:** #1, #3, #4, #8, #9, #26, #27 (Session 102–103) · **#10, #12, #13, #20, #22** (Session 106 — migrationerna 002/003 kördes 2026-07-03, aktiva i produktion) · **#15 Ikväll-sheeten** (Session 107 — variant B vald via interaktiv preview, väntar mobil-verifiering). #2 kod helt klar (inkl. UI-toast) — väntar bara på att Joakim sätter `ALERT_WEBHOOK`.
 - 🟡 **Delvis:** #7 (dubblett-URL borta + butik via `WILLYS_STORE_ID`-env; multi-user-delen bygger på #5), #11 (dokumenterad + graceful svenskt fel vid pausad DB; keep-alive-cron kvar), #14 (rester-markör i rendering; riktig dagtyp kvar om önskat), #21 (lösenordsåterställning klar; onboarding-guide kvar), #23 (döda `#weekRecipeDetail`-block borta; `.week-day-card`-JS/CSS kvar för granskat steg), #24 (död state borta, versioner synkbumpade Session 106; `?v=N`-linjeval kvar), #25 (escapers → utils klart; `fmtKr`/spegelkod medvetet kvar — se punkten).
-- ⬜ **Öppna:** #5–#6 (tenancy), #15–#18 (produkt), #19 (UX).
-- **Slutsats:** P0 avklarad + produktspårets #1-prioritet (#12), #13 och #20 byggda. Nästa hävstång: #15 Ikväll-redigeraren (kräver UX-snack med Joakim) och tenancy-spåret #5–#6 inför Fas 5.
+- ⬜ **Öppna:** #5–#6 (tenancy), #16–#18 (produkt), #19 (UX).
+- **Slutsats:** P0 avklarad + produktspårets topp (#12, #13, #15, #20) byggd. Nästa hävstång: tenancy-spåret #5–#6 inför Fas 5, därefter #16 favoriter (Fas 2).
 
 ---
 
@@ -154,7 +154,7 @@ avbocknings-/kanon-infra). Skippat visas dämpat, inte borttaget.
 **Insats:** Liten.
 
 ### #15 — Ikväll-kortet som friktionsfri snabb-redigerare (gör Maggan jämbördig)  ⭐
-> ⬜ **ÖPPEN — interaktiv preview publicerad (2026-07-03)** för UX-beslutet: <https://claude.ai/code/artifact/0537fb79-6c74-4ff1-baf1-2382792c9055> — båda varianterna körbara (A = snabbrad i kortet, B = bottensheet), fyra åtgärder: byt middag / vi äter ute / rester ikväll / lägg till på listan. Joakim väljer variant → sedan byggs den skarpt. Produktspår — största hävstången mot "app hela familjen använder".
+> ✅ **KLAR (Session 107) — väntar mobil-verifiering.** UX-beslutet togs via interaktiv preview (<https://claude.ai/code/artifact/0537fb79-6c74-4ff1-baf1-2382792c9055>); Joakim valde **variant B (bottensheet)**. Byggd som ren inramning av befintliga flöden: Ikväll-kortet (aktiva plan-dagar) öppnar en bottensheet — Öppna receptet / Byt middag (`swap-days`, + Slumpa/Välj själv via `replace-recipe` på obekräftad plan) / Vi äter ute / Rester ikväll (`skip-day free` + Ångra-toast) / Lägg till på listan (`addManualItem`). Ingen ny mutationslogik.
 **Varför:** 2 av 3 användare är passiva läsare. Partnern kan inte forma planen utan power-user-UI.
 **Väg framåt:** Utöka Ikväll-kortet: "byt middag / vi äter ute / rester ikväll / lägg till på listan"
 — ett tryck vardera, inga grindar. Återanvänd custom-day/skip-day/manuell vara — inramningen saknas, inte logiken.
