@@ -5978,3 +5978,140 @@ body.cook-open { overflow: hidden; }
   font-size: 0.78rem;
   color: var(--text-muted);
 }
+
+/* ── Listkort med förhandsvisning (L1) + snabbtillägg (L2) ── */
+.fl-list-card {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.fl-list-card:active { transform: none; }   /* overridar .fl-card:active */
+.fl-card-open {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0.9rem 1.1rem 0.7rem;
+  -webkit-tap-highlight-color: transparent;
+}
+.fl-card-open:active { transform: scale(0.995); }
+.fl-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.85rem;
+}
+.fl-card-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+.fl-prev-line {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fl-prev-line::before { content: "· "; color: var(--birch); }
+.fl-prev-more { font-size: 0.8rem; color: var(--birch); }
+
+.fl-quickadd-trigger {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--hairline);
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--lichen-deep);
+  cursor: pointer;
+  padding: 0.6rem 1.1rem;
+}
+.fl-quickadd-form {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.7rem 0.7rem;
+  border-top: 1px solid var(--hairline);
+}
+.fl-quickadd-input { font-size: 0.95rem; padding: 0.5rem 0.75rem; }
+.fl-quickadd-close {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0 0.45rem;
+}
+
+/* ── "Ny lista" + importlänk-rad ── */
+.fl-create-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.fl-import-link {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.88rem;
+  color: var(--lichen-deep);
+  cursor: pointer;
+  padding: 0.4rem 0.25rem;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ── Excel-import-vyn ── */
+.fl-import-hjalp {
+  padding: 0 1.25rem 0.4rem;
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+.fl-import-text {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.85rem;
+  white-space: pre;
+  overflow-x: auto;
+}
+.fl-import-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.2rem 1rem 0.4rem;
+}
+.fl-import-file { cursor: pointer; }
+.fl-import-preview {
+  margin: 0.4rem 1rem;
+  background: var(--linen-card);
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  padding: 0.7rem 0.9rem;
+}
+.fl-import-preview-head {
+  font-weight: 600;
+  color: var(--forest);
+  margin-bottom: 0.4rem;
+  font-size: 0.92rem;
+}
+.fl-import-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.85rem;
+  padding: 0.25rem 0;
+  border-top: 1px solid var(--hairline);
+}
+.fl-import-name { font-weight: 500; color: var(--forest); overflow-wrap: anywhere; }
+.fl-import-count { flex-shrink: 0; font-size: 0.82rem; color: var(--text-muted); }

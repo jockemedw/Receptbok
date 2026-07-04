@@ -27,6 +27,10 @@ let _renaming = false;
 let _showArchived = false;
 let _showCreateForm = false;
 let _showCreateNote = false;
+let _quickAddListId = null;   // vilken lista har snabbtillägg (L2) öppet på översikten
+let _importing = false;       // Excel-import-vyn öppen
+let _importText = '';         // inklistrad/inläst text (i state så den överlever re-render)
+let _importParsed = [];       // [{title, items[]}] efter förhandsgranskning
 let _refreshTimer = null;
 let _saveTimer = null;
 let _noteSaveTimer = null;
@@ -184,7 +188,7 @@ function headingHtml(title) {
 
 // Re-render utan att tappa fokus/halvskriven text i "lägg till"-fältet —
 // viktigt när partnern ändrar samtidigt eller vid snabb inmatning av rader.
-const KEEP_FIELDS = ['flAddInput', 'flNewListInput', 'flNewNoteInput', 'flNoteTitle', 'flNoteBody'];
+const KEEP_FIELDS = ['flAddInput', 'flNewListInput', 'flNewNoteInput', 'flNoteTitle', 'flNoteBody', 'flQuickAddInput', 'flImportText'];
 
 function render(opts = {}) {
   const host = document.getElementById('listsContent');
@@ -209,7 +213,8 @@ function render(opts = {}) {
 
   const openList = _openListId ? _lists.find((l) => l.id === _openListId) : null;
   const openNote = _openNoteId ? _notes.find((n) => n.id === _openNoteId) : null;
-  host.innerHTML = openNote ? noteDetailHtml(openNote)
+  host.innerHTML = _importing ? importHtml()
+    : openNote ? noteDetailHtml(openNote)
     : openList ? detailHtml(openList)
     : overviewHtml();
 
@@ -240,6 +245,43 @@ function notePreview(note) {
   return `<span class="fl-note-preview">${escapeHtml(body)}</span>`;
 }
 
+// L1 — förhandsvisning av vad som står på listan (de första oavbockade raderna).
+function listPreviewHtml(list) {
+  const pending = itemsOf(list.id).filter((i) => !i.checked);
+  if (!pending.length) return '';
+  const shown = pending.slice(0, 3);
+  const more = pending.length - shown.length;
+  const lines = shown.map((i) => `<span class="fl-prev-line">${escapeHtml(i.text)}</span>`).join('');
+  return `<span class="fl-card-preview">${lines}${more ? `<span class="fl-prev-more">+${more} till</span>` : ''}</span>`;
+}
+
+// L2 — snabbtillägg av rad direkt från översikten (utan att öppna listan).
+function quickAddRowHtml(list) {
+  if (_quickAddListId === list.id) {
+    return `<form class="fl-quickadd-form" onsubmit="flQuickAddItem(event)">
+      <input id="flQuickAddInput" class="fl-input fl-quickadd-input" maxlength="200" autocomplete="off"
+             placeholder="Lägg till rad…" aria-label="Ny rad i ${escapeHtml(list.title)}">
+      <button type="submit" class="today-btn today-btn-quiet fl-add-btn" aria-label="Lägg till">+</button>
+      <button type="button" class="fl-quickadd-close" onclick="flCloseQuickAdd()" aria-label="Stäng">✕</button>
+    </form>`;
+  }
+  return `<button type="button" class="fl-quickadd-trigger" onclick="flShowQuickAdd('${list.id}')">＋ Lägg till rad</button>`;
+}
+
+function listCardHtml(list) {
+  return `
+    <div class="fl-card fl-list-card">
+      <button type="button" class="fl-card-open" onclick="flOpenList('${list.id}')">
+        <span class="fl-card-head">
+          <span class="fl-card-title">${escapeHtml(list.title)}</span>
+          ${listMetaHtml(list)}
+        </span>
+        ${listPreviewHtml(list)}
+      </button>
+      ${quickAddRowHtml(list)}
+    </div>`;
+}
+
 function overviewHtml() {
   const activeLists = _lists.filter((l) => !l.archived);
   const activeNotes = _notes.filter((n) => !n.archived);
@@ -251,11 +293,7 @@ function overviewHtml() {
     listCards = `<div class="no-data no-data-slim">
       Inga listor ännu — skapa en, till exempel en packlista.</div>`;
   } else {
-    listCards = activeLists.map((l) => `
-      <button type="button" class="fl-card" onclick="flOpenList('${l.id}')">
-        <span class="fl-card-title">${escapeHtml(l.title)}</span>
-        ${listMetaHtml(l)}
-      </button>`).join('');
+    listCards = activeLists.map(listCardHtml).join('');
   }
 
   const createListHtml = _showCreateForm
@@ -264,7 +302,10 @@ function overviewHtml() {
                 placeholder="Namn, t.ex. Packning fjällen" aria-label="Namn på nya listan">
          <button type="submit" class="today-btn today-btn-primary">Skapa</button>
        </form>`
-    : `<button type="button" class="today-btn today-btn-primary fl-create-btn" onclick="flShowCreate()">+ Ny lista</button>`;
+    : `<div class="fl-create-row">
+         <button type="button" class="today-btn today-btn-primary fl-create-btn" onclick="flShowCreate()">+ Ny lista</button>
+         <button type="button" class="fl-import-link" onclick="flShowImport()">Importera från Excel</button>
+       </div>`;
 
   // ── Anteckningar (P2) — eget segment under listorna ──
   let noteCards;
@@ -500,6 +541,198 @@ export async function flAddItem(ev) {
     _allItems = _allItems.filter((i) => i.id !== temp.id);
     render();
     window.showToast?.('Kunde inte lägga till raden — prova igen.', { type: 'error' });
+  }
+}
+
+// L2 — snabbtillägg från översikten (samma insert som flAddItem, men mot en
+// namngiven lista i stället för den öppna; håller fältet öppet för snabb inmatning).
+export function flShowQuickAdd(id) {
+  _quickAddListId = id;
+  render();
+  document.getElementById('flQuickAddInput')?.focus();
+}
+
+export function flCloseQuickAdd() {
+  _quickAddListId = null;
+  render();
+}
+
+export async function flQuickAddItem(ev) {
+  ev.preventDefault();
+  const listId = _quickAddListId;
+  const inp = document.getElementById('flQuickAddInput');
+  const text = (inp?.value || '').trim();
+  if (!text || !listId) return;
+  if (inp) inp.value = '';
+
+  const sortOrder = Math.max(0, ...itemsOf(listId).map((i) => i.sort_order || 0)) + 1;
+  const temp = {
+    id: `tmp-${++_tmpSeq}`, list_id: listId, household_id: _householdId,
+    text, checked: false, sort_order: sortOrder,
+  };
+  _allItems.push(temp);
+  render();   // aktiv-elementbevarandet håller kvar fokus i flQuickAddInput
+
+  try {
+    const { data, error } = await window.db.from('family_list_items')
+      .insert({ list_id: listId, household_id: _householdId, text, sort_order: sortOrder })
+      .select().single();
+    if (error) throw error;
+    const t = _allItems.find((i) => i.id === temp.id);
+    if (t) t.id = data.id;
+    render();
+  } catch {
+    _allItems = _allItems.filter((i) => i.id !== temp.id);
+    render();
+    window.showToast?.('Kunde inte lägga till raden — prova igen.', { type: 'error' });
+  }
+}
+
+// ── Excel-import (klistra in tabell / CSV-fil) ───────────────────────────────
+// Tabbar = kolumner (Excel-copy ger TSV): varje kolumn blir en lista, översta
+// raden = listnamn. Utan tabbar: en rad per sak, första raden blir listnamnet.
+function parseImport(text) {
+  const rows = text.split(/\r?\n/);
+  const hasTab = rows.some((l) => l.includes('\t'));
+  const out = [];
+  if (hasTab) {
+    const grid = rows.map((l) => l.split('\t'));
+    const cols = grid.reduce((m, r) => Math.max(m, r.length), 0);
+    for (let c = 0; c < cols; c++) {
+      const title = (grid[0][c] || '').trim().slice(0, 80);
+      if (!title) continue;
+      const items = [];
+      for (let r = 1; r < grid.length; r++) {
+        const cell = (grid[r][c] || '').trim();
+        if (cell) items.push(cell.slice(0, 200));
+      }
+      out.push({ title, items });
+    }
+  } else {
+    const lines = rows.map((l) => l.trim()).filter(Boolean);
+    if (lines.length) out.push({ title: lines[0].slice(0, 80), items: lines.slice(1).map((s) => s.slice(0, 200)) });
+  }
+  return out;
+}
+
+// CSV-fil: normalisera avgränsare till tabb (svensk Excel-export använder ofta ';').
+// Görs BARA för filer — inte för inklistrad text, där kommatecken kan ingå i raden.
+function normalizeToTabs(text) {
+  if (text.includes('\t')) return text;
+  const first = text.split(/\r?\n/)[0] || '';
+  if (first.includes(';')) return text.replace(/;/g, '\t');
+  if (first.includes(',')) return text.replace(/,/g, '\t');
+  return text;
+}
+
+function importHtml() {
+  const preview = _importParsed.length
+    ? `<div class="fl-import-preview">
+         <div class="fl-import-preview-head">Skapar ${_importParsed.length} ${_importParsed.length === 1 ? 'lista' : 'listor'}:</div>
+         ${_importParsed.map((l) => `<div class="fl-import-row">
+            <span class="fl-import-name">${escapeHtml(l.title)}</span>
+            <span class="fl-import-count">${l.items.length} ${l.items.length === 1 ? 'rad' : 'rader'}</span>
+          </div>`).join('')}
+       </div>`
+    : '';
+  const n = _importParsed.length;
+  return `
+    <div class="fl-detail-top">
+      <button type="button" class="fl-back" onclick="flCloseImport()">‹ Listor</button>
+    </div>
+    <div class="content-heading fl-detail-heading"><h1 class="content-heading-title">Importera</h1></div>
+    <p class="fl-import-hjalp">Klistra in celler från Excel: <strong>varje kolumn blir en lista</strong> (översta raden = listnamn). Eller en rad per sak för en enda lista — då blir första raden namnet.</p>
+    <textarea id="flImportText" class="fl-note-body fl-import-text" rows="8" autocomplete="off"
+              placeholder="Klistra in här…" oninput="flImportInput(this.value)">${escapeHtml(_importText)}</textarea>
+    <div class="fl-import-actions">
+      <label class="today-btn today-btn-quiet fl-import-file">
+        Välj CSV-fil<input type="file" accept=".csv,.tsv,.txt" onchange="flImportFile(event)" hidden>
+      </label>
+      <button type="button" class="today-btn today-btn-quiet" onclick="flImportPreview()">Förhandsgranska</button>
+    </div>
+    ${preview}
+    <div class="fl-actions">
+      <button type="button" class="today-btn today-btn-primary" onclick="flDoImport()"${n ? '' : ' disabled'}>
+        ${n ? `Skapa ${n} ${n === 1 ? 'lista' : 'listor'}` : 'Skapa listor'}
+      </button>
+    </div>`;
+}
+
+export function flShowImport() {
+  _importing = true;
+  _openListId = null;
+  _openNoteId = null;
+  _quickAddListId = null;
+  render();
+  window.scrollTo({ top: 0 });
+}
+
+export function flCloseImport() {
+  _importing = false;
+  _importText = '';
+  _importParsed = [];
+  render();
+}
+
+export function flImportInput(val) {
+  _importText = val;   // ingen re-render medan man skriver (fokus/caret bevaras)
+}
+
+export function flImportPreview() {
+  _importParsed = parseImport(_importText);
+  if (!_importParsed.length) {
+    window.showToast?.('Hittade inga listor i texten — klistra in celler från Excel.', { type: 'info' });
+  }
+  render();
+}
+
+export function flImportFile(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    _importText = normalizeToTabs(String(reader.result || ''));
+    _importParsed = parseImport(_importText);
+    render();
+  };
+  reader.onerror = () => window.showToast?.('Kunde inte läsa filen — prova att klistra in i stället.', { type: 'error' });
+  reader.readAsText(file);
+}
+
+export async function flDoImport() {
+  const parsed = _importParsed.filter((l) => l.title);
+  if (!parsed.length) {
+    window.showToast?.('Inget att importera — klistra in och förhandsgranska först.', { type: 'info' });
+    return;
+  }
+  let created = 0;
+  try {
+    for (const l of parsed) {
+      const { data: listRow, error } = await window.db.from('family_lists')
+        .insert({ household_id: _householdId, title: l.title, kind: 'list' })
+        .select().single();
+      if (error) throw error;
+      if (l.items.length) {
+        const rowsToInsert = l.items.map((text, idx) => ({
+          list_id: listRow.id, household_id: _householdId, text, sort_order: idx + 1,
+        }));
+        const { error: itemsErr } = await window.db.from('family_list_items').insert(rowsToInsert);
+        if (itemsErr) throw itemsErr;
+      }
+      created++;
+    }
+    _importing = false;
+    _importText = '';
+    _importParsed = [];
+    await refreshData();
+    render();
+    window.showToast?.(`Importerade ${created} ${created === 1 ? 'lista' : 'listor'}.`, { type: 'success' });
+  } catch {
+    await refreshData();
+    render();
+    window.showToast?.(created
+      ? `Importerade ${created} listor, men något gick fel sen — kolla resultatet.`
+      : 'Kunde inte importera — prova igen.', { type: 'error' });
   }
 }
 
@@ -861,6 +1094,15 @@ window.flRenameList     = flRenameList;
 window.flArchiveList    = flArchiveList;
 window.flUnarchiveList  = flUnarchiveList;
 window.flDeleteList     = flDeleteList;
+window.flShowQuickAdd   = flShowQuickAdd;
+window.flCloseQuickAdd  = flCloseQuickAdd;
+window.flQuickAddItem   = flQuickAddItem;
+window.flShowImport     = flShowImport;
+window.flCloseImport    = flCloseImport;
+window.flImportInput    = flImportInput;
+window.flImportPreview  = flImportPreview;
+window.flImportFile     = flImportFile;
+window.flDoImport       = flDoImport;
 window.flShowCreateNote = flShowCreateNote;
 window.flCreateNote     = flCreateNote;
 window.flOpenNote       = flOpenNote;
