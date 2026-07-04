@@ -1,6 +1,6 @@
 // Idag-fliken — appens startflik och svaret på "vad blir det ikväll?".
 // Byggd enligt designprototypen (facit: artifact ddad7251), med appens tokens
-// (Playfair + mörkt tema följer med). Proteinfärgen sätts per element via inline
+// (titelfonten via --font-display + mörkt tema följer med). Proteinfärgen sätts per element via inline
 // --p (samma trick som prototypens .t-<protein>).
 //
 // Läser: window._timelineByDate (byggs av renderWeeklyPlanData i plan-viewer.js),

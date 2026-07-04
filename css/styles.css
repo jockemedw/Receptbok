@@ -36,8 +36,10 @@
     --p-flask: #c07a5a;
     --p-veg: #5e7a68;
 
-    /* Typografi (Steg 1, designförslag 2026-07): Fraunces ersätter Playfair */
-    --font-display: 'Playfair Display', serif;  /* Fraunces provades Session 108 — Joakim föredrog Playfair */
+    /* Typografi: Newsreader (varm redaktionell serif) på alla rubriker sedan
+       Session 111. Historik: Playfair Display → Fraunces provades Session 108
+       (valdes bort) → Newsreader vald via mobil-jämförelse. */
+    --font-display: 'Newsreader', serif;
     --font-body: 'DM Sans', sans-serif;
     --on-accent: #fff;   /* text/ikon ovanpå rust/lichen-ytor */
     --on-deep: #f5f1e8;  /* text på ytor som är mörka i BÅDA teman (hero-gradienten) */
