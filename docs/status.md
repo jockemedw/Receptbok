@@ -94,6 +94,8 @@ Aktiv kö — de senaste sessionernas ännu ej mobil-verifierade arbete. Äldre 
 
 **Uppföljning samma dag (2): migration 005 KÖRD** — Joakim gav klartecken ("Kör migration 005"); Claude körde hela filen via Management-API:t (HTTP 201) från moln-miljön och verifierade direkt med läsfrågor: `family_lists` + `family_list_items` finns med RLS aktivt, 4+4 household-policies, `kind`/`body`/`pinned`/`archived`-kolumnerna på plats, båda `updated_at`-triggrarna, båda tabellerna i `supabase_realtime`-publikationen. **Listor-fliken är därmed skarp i produktion.** Miljönotering: molnsessionerna HAR `SUPABASE_ACCESS_TOKEN`/`SUPABASE_PROJECT_REF` (004-avvikelsen gällde Joakims lokala dator); python-urllib blockeras av Cloudflare mot api.supabase.com — använd `curl`.
 
+**Uppföljning samma dag (3): P3 utökad på Joakims beslut ("kopiera Cozi", val a).** Plattformsdokumentet uppdaterat: (1) P2-designen bekräftad — anteckningarna blir ett tydligt separerat segment i Listor-fliken (egen rubrik + fritext-kortstil, aldrig förväxlingsbara med bocklistor); (2) **P3 utökas** — kalenderhändelserna visas även i **veckovyn** (middag + dagens aktiviteter per dag, Cozis kärnidé) och som avslutande steg byter fliken namn: **Matsedel → Kalender**. Namnbytet görs medvetet sist — etiketten ska inte lova kalenderinnehåll innan det finns.
+
 **Kvar:** mobilverifiera Listor-fliken (se *Väntar på live-verifiering*). Nästa byggsteg enligt roadmapen: P2 anteckningar.
 
 Session 8–112 i `docs/session-log-archive.md`. Full git-historik: `git log --oneline`.
