@@ -123,6 +123,11 @@
     left: 0;
     right: 0;
     z-index: 100;
+    /* Reservera statusfältet/Dynamic Island (black-translucent + viewport-fit=cover):
+       den gröna ytan går upp under pannan, ordmärket hamnar under den. På enheter
+       utan panna är env() = 0 → oförändrat. Body-offseten följer med automatiskt
+       (scroll.js mäter header.offsetHeight). */
+    padding-top: env(safe-area-inset-top, 0);
     box-shadow: 0 1px 0 rgba(255,255,255,0.06), 0 4px 28px rgba(0,0,0,0.2);
     transition: transform 0.3s ease;
   }
