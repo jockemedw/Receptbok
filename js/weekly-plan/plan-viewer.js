@@ -279,6 +279,7 @@ export async function selectRecipeForDay(event, recipeId, title) {
 
     const data = await res.json();
     updateLastPlanDay(date, recipeId, title);
+    window._planMutateUntil = Date.now() + 4000;   // dämpa realtids-ekot, se suppressEcho() i plan-viewer-deluxe.js
     if (data.shoppingList) {
       window.renderIngredientPreview(
         data.shoppingList.recipeItems || null,
@@ -288,6 +289,7 @@ export async function selectRecipeForDay(event, recipeId, title) {
       if (window.renderShoppingData) window.renderShoppingData(data.shoppingList);
     }
     exitReplaceMode();
+    renderWeeklyPlanData(window._lastPlan || null, window._lastShop || null, false, window._planArchive, window._customDays);
     window.switchTab('vecka');
   } catch {
     btn.disabled    = false;
