@@ -1,6 +1,6 @@
 // Ingrediensförhandsgranskning i veckovyn + "Flytta till inköpslista"-knapp.
 
-import { CAT_ICONS } from '../utils.js';
+import { CAT_ICONS, escapeHtml } from '../utils.js';
 
 export function toggleIngredientSection() {
   document.getElementById('ingredientSection').classList.toggle('ingredient-section-open');
@@ -23,10 +23,10 @@ export function renderIngredientPreview(recipeItems, movedAt, expand = false) {
     .filter(([, items]) => items.length > 0)
     .map(([cat, items]) => `<div class="ingredient-preview-category">
       <div class="ingredient-preview-cat-name">
-        <span>${CAT_ICONS[cat] || '•'} ${cat}</span>
+        <span>${CAT_ICONS[cat] || '•'} ${escapeHtml(cat)}</span>
         <span class="ingredient-preview-cat-count">${items.length} varor</span>
       </div>
-      <ul class="ingredient-preview-list">${items.map(i => `<li>${i}</li>`).join('')}</ul>
+      <ul class="ingredient-preview-list">${items.map(i => `<li>${escapeHtml(i)}</li>`).join('')}</ul>
     </div>`).join('');
 
   document.getElementById('ingredientPreview').innerHTML = html;

@@ -4,8 +4,13 @@ import { db, getHouseholdId, fetchTargetServings } from "./_shared/supabase.js";
 import { shuffle } from "./_shared/history.js";
 
 export default createSupabaseHandler(async (req, res) => {
-  const { date, currentRecipeId, weekRecipeIds = [], newRecipeId, saving, savingMatches } = req.body || {};
+  const { date, currentRecipeId: rawCurrentId, weekRecipeIds: rawWeekIds = [], newRecipeId, saving, savingMatches } = req.body || {};
   if (!date) return res.status(400).json({ error: "date saknas" });
+
+  // Recept-id från DB är heltal — tvinga inkommande id till heltal så exkluderingen
+  // (nuvarande recept + veckans övriga) håller även om klienten skickar strängar.
+  const currentRecipeId = rawCurrentId == null ? null : parseInt(rawCurrentId, 10);
+  const weekRecipeIds = (rawWeekIds || []).map((id) => parseInt(id, 10)).filter((id) => !Number.isNaN(id));
 
   const householdId = await getHouseholdId();
 
@@ -149,9 +154,9 @@ export default createSupabaseHandler(async (req, res) => {
       });
     }
 
-    await db.from("shopping_lists").update({ is_active: false })
-      .eq("household_id", householdId).eq("is_active", true);
-
+    // Skapa listan INAKTIV, skriv varorna, aktivera SIST — så en misslyckad
+    // vary-insert aldrig lämnar familjen med en aktiv men tom lista. Den gamla
+    // listan är kvar aktiv tills den nya är komplett.
     const { data: newList, error: listErr } = await db
       .from("shopping_lists")
       .insert({
@@ -160,7 +165,7 @@ export default createSupabaseHandler(async (req, res) => {
         end_date: plan.end_date,
         generated_at: today,
         recipe_items_moved_at: recipeItemsMovedAt,
-        is_active: true,
+        is_active: false,
       })
       .select()
       .single();
@@ -178,7 +183,17 @@ export default createSupabaseHandler(async (req, res) => {
         checked: !!(checkedItems[`manual::${name}`]), position: idx,
       });
     });
-    if (itemRows.length > 0) await db.from("shopping_items").insert(itemRows);
+    if (itemRows.length > 0) {
+      const { error: itemsErr } = await db.from("shopping_items").insert(itemRows);
+      if (itemsErr) throw itemsErr;
+    }
+
+    // Ta den färdiga listan i bruk allra sist: stäng av gamla, slå på nya.
+    await db.from("shopping_lists").update({ is_active: false })
+      .eq("household_id", householdId).eq("is_active", true);
+    const { error: actErr } = await db.from("shopping_lists")
+      .update({ is_active: true }).eq("id", newList.id);
+    if (actErr) throw actErr;
 
     const shoppingList = {
       generated: today, startDate: plan.start_date, endDate: plan.end_date,

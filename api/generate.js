@@ -266,10 +266,10 @@ async function saveHistoryToSupabase(days, householdId) {
 }
 
 async function saveShoppingListToSupabase(shoppingCategories, existingShop, startDate, endDate, householdId) {
-  await db.from("shopping_lists").update({ is_active: false })
-    .eq("household_id", householdId).eq("is_active", true);
-
   const today = new Date().toISOString().slice(0, 10);
+  // Skapa listan INAKTIV, skriv varorna, aktivera SIST (speglar activatePlan) — så
+  // en misslyckad vary-insert aldrig lämnar familjen med en aktiv men tom lista.
+  // Den gamla listan är kvar aktiv tills den nya är komplett.
   const { data: newList, error: listErr } = await db
     .from("shopping_lists")
     .insert({
@@ -278,7 +278,7 @@ async function saveShoppingListToSupabase(shoppingCategories, existingShop, star
       end_date: endDate,
       generated_at: today,
       recipe_items_moved_at: null,
-      is_active: true,
+      is_active: false,
     })
     .select()
     .single();
@@ -305,6 +305,13 @@ async function saveShoppingListToSupabase(shoppingCategories, existingShop, star
     const { error: itemsErr } = await db.from("shopping_items").insert(itemRows);
     if (itemsErr) throw itemsErr;
   }
+
+  // Ta den färdiga listan i bruk allra sist: stäng av gamla, slå på nya.
+  await db.from("shopping_lists").update({ is_active: false })
+    .eq("household_id", householdId).eq("is_active", true);
+  const { error: actErr } = await db.from("shopping_lists")
+    .update({ is_active: true }).eq("id", newList.id);
+  if (actErr) throw actErr;
 
   return newList.id;
 }

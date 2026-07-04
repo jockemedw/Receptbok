@@ -2,7 +2,7 @@
 // Läser state: RECIPES, groupBy, isSnapping, scrollUpAccum
 // Skriver state: isSnapping, scrollUpAccum
 
-import { proteinLabel, timeStr, renderDetailInner, escapeHtml, PROTEIN_COLOR } from '../utils.js';
+import { proteinLabel, timeStr, renderDetailInner, escapeHtml, jsStringAttr, PROTEIN_COLOR } from '../utils.js';
 
 // ── Grupperingsdefinitioner ───────────────────────────────────────────────────
 // Varje grupp är en lista av sektioner. Sektionerna utvärderas i ordning;
@@ -94,8 +94,8 @@ export function renderCard(r) {
      style="--rail:${PROTEIN_COLOR[r.protein] || 'var(--birch-soft)'}"
      data-id="${r.id}"
      data-title="${escapeHtml(r.title).toLowerCase()}"
-     data-protein="${r.protein}"
-     data-tags="${r.tags.join(' ')}"
+     data-protein="${escapeHtml(r.protein || '')}"
+     data-tags="${escapeHtml((r.tags || []).join(' '))}"
      data-tested="${r.tested}"
      data-time="${r.time || 999}">
   <div class="card-header" onclick="toggleCard(this.closest('.recipe-card'))">
@@ -110,7 +110,7 @@ export function renderCard(r) {
       </div>
     </div>
     <button class="select-btn"
-            onclick="selectRecipeForDay(event,${r.id},'${escapeHtml(r.title).replace(/'/g, "\\'")}')">Välj</button>
+            onclick="selectRecipeForDay(event,${r.id},'${jsStringAttr(r.title)}')">Välj</button>
     <span class="card-chevron">›</span>
   </div>
   <div class="recipe-detail">
@@ -151,7 +151,7 @@ export function toggleCard(card) {
 function matchesSearch(r, q) {
   if (!q) return true;
   if (r.title.toLowerCase().includes(q))                               return true;
-  if (r.protein.toLowerCase().includes(q))                             return true;
+  if ((r.protein || '').toLowerCase().includes(q))                     return true;
   if (r.tags.some(t => t.toLowerCase().includes(q)))                   return true;
   if (r.ingredients.some(i => i.toLowerCase().includes(q)))            return true;
   if (r.instructions.some(s => s.toLowerCase().includes(q)))           return true;

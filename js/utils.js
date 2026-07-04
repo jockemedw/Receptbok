@@ -24,6 +24,20 @@ export function escapeHtml(s) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+// Säker inbäddning av en sträng som JS-strängliteral inuti ett dubbelciterat
+// HTML-attribut (t.ex. onclick="fn('...')"). JS-escapa först, HTML-escapa sedan
+// &<>" — men INTE ' (som annars blir &#39;, avkodas tillbaka av webbläsaren och
+// bryter ut ur JS-strängen). Utan detta gör en apostrof i en titel knappen trasig
+// och en riggad titel kör godtycklig JS.
+export function jsStringAttr(s) {
+  return String(s == null ? '' : s)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\r/g, '\\r').replace(/\n/g, '\\n')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 export function timeStr(r) {
   if (!r.time) return null;
   const base = r.time < 60 ? r.time + ' min' : (r.time / 60).toFixed(1).replace('.0', '') + ' h';
@@ -40,7 +54,12 @@ export function renderIngredient(i) {
 }
 
 export function fmtIso(date) {
-  return date.toISOString().split('T')[0];
+  // Lokala datumkomponenter, inte UTC — annars visar "Idag"/"Ikväll" gårdagens
+  // middag mellan lokal midnatt och 01:00/02:00 (svensk offset UTC+1/+2).
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 export function fmtShort(isoStr) {
@@ -75,7 +94,7 @@ export function renderDetailInner(r) {
     ? `<div class="detail-section"><h3>Noteringar</h3><div class="notes-box">💡 ${escapeHtml(r.notes)}</div></div>` : '';
   return `
     <div class="detail-section">
-      <h3>Ingredienser · ${r.servings} portioner</h3>
+      <h3>Ingredienser · ${r.servings || 4} portioner</h3>
       <ul class="ingredients-list">${ingHtml}</ul>
     </div>
     <div class="detail-section">
@@ -175,6 +194,7 @@ export function getHolidayName(dateIso) {
 
 // Exponera på window för inline onclick-attribut och icke-modul-kod
 window.escapeHtml       = escapeHtml;
+window.jsStringAttr     = jsStringAttr;
 window.timeStr          = timeStr;
 window.renderIngredient = renderIngredient;
 window.fmtIso           = fmtIso;
