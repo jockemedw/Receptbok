@@ -180,7 +180,7 @@ export async function dealConfirmDay(recipeId, date, btnEl) {
   btnEl.classList.add('is-loading');
 
   try {
-    const res = await fetch('/api/replace-recipe', {
+    const res = await window.apiFetch('/api/replace-recipe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

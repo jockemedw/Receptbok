@@ -105,27 +105,44 @@ async function handleUrl(url, res) {
     return res.status(400).json({ error: "Ange en giltig webbadress." });
   }
 
-  try {
-    const { address } = await lookup(parsed.hostname);
-    if (isPrivateIp(address)) {
-      return res.status(400).json({ error: "Den här adressen stöds inte — prova en annan receptsajt." });
-    }
-  } catch {
-    return res.status(400).json({ error: "Kunde inte nå sidan — kontrollera adressen." });
-  }
-
   const apiKey = process.env.GOOGLE_API_KEY;
 
+  // Följ omdirigeringar manuellt och IP-validera VARJE hopp. Med default
+  // redirect:"follow" kontrolleras bara den första värden — en publik sida kan då
+  // 302:a till t.ex. http://169.254.169.254/ (molnets metadata) och läcka internt
+  // innehåll tillbaka som "recept" (SSRF).
+  const MAX_REDIRECTS = 5;
+  let current = parsed;
   let html;
   try {
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        Accept: "text/html,application/xhtml+xml",
-      },
-      signal: AbortSignal.timeout(10000),
-    });
+    let response;
+    for (let hop = 0; ; hop++) {
+      const { address } = await lookup(current.hostname);
+      if (isPrivateIp(address)) {
+        return res.status(400).json({ error: "Den här adressen stöds inte — prova en annan receptsajt." });
+      }
+      response = await fetch(current.href, {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+          Accept: "text/html,application/xhtml+xml",
+        },
+        redirect: "manual",
+        signal: AbortSignal.timeout(10000),
+      });
+
+      const location = response.status >= 300 && response.status < 400
+        ? response.headers.get("location")
+        : null;
+      if (!location) break;
+
+      if (hop >= MAX_REDIRECTS) throw new Error("too many redirects");
+      const next = new URL(location, current);
+      if (next.protocol !== "http:" && next.protocol !== "https:") {
+        return res.status(400).json({ error: "Den här adressen stöds inte — prova en annan receptsajt." });
+      }
+      current = next;
+    }
     if (!response.ok) throw new Error();
     html = await response.text();
   } catch {

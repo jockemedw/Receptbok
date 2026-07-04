@@ -1,6 +1,11 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–108. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–110. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 110 — Städjobb (#23/#24/#25) + larmbanner #2 (migration 004)
+**Städjobb: körde P4-backlogens småfix (#23/#24/#25).** **#23 (delvis):** tog bort de 2 sista inerta `.week-day-card`-JS-referenserna i `plan-viewer.js` (no-op-guard rad 29 + död DOM-patch i `selectRecipeForDay` rad 282). Den döda `.week-day-card`-CSS:en (~1000 rader) lämnades — kräver eget granskat steg. **#24 (klar):** tog bort `?v=N` helt från alla 19 JS-imports i `app.js` (i linje med SW:ns nät-först-design; att bara versionera vissa hade skapat dubbla modul-instanser). `index.html`: `app.js?v=129→130`. **#25 (delvis):** `updateLastPlanDay`/`patchPlanDay` var identisk spegelkod — deluxe återanvänder nu `window.updateLastPlanDay`. `fmtKr`-avrundningen lämnad (kräver display-beslut). Oberoende `code-reviewer`-agent (Opus) mot `97c7a20`: alla ändringar säkra. **Larmbanner #2:** ny tabell `pricing_status` (`db/migrations/004_pricing_status.sql`, körd av Joakim 2026-07-04), `api/generate.js` upsertar status efter varje `optimize_prices`-körning, `today-view.js` renderar en ochre in-app-banner om reapriserna varit onåbara ≥1 dag. Testsvit grön, Playwright-verifierad banner (ljust+mörkt).
 
 ---
 

@@ -171,7 +171,7 @@ function buildTagFilterUI() {
 
   const container = document.getElementById('tagFilterChecks');
   container.innerHTML = sorted.map(([tag, count]) =>
-    `<label class="bs-check"><input type="checkbox" data-fgroup="tags" value="${tag}"><span>${tag} (${count})</span></label>`
+    `<label class="bs-check"><input type="checkbox" data-fgroup="tags" value="${window.escapeHtml(tag)}"><span>${window.escapeHtml(tag)} (${count})</span></label>`
   ).join('');
 
   document.getElementById('tagFilterGroup').style.display = '';

@@ -14,8 +14,13 @@ export const SAVING_THRESHOLD = 10;
 // Prioriterar in rea-recept i matsedeln. Tröskeln mäts på VÄRDEVIKTAD besparing
 // (weightedSaving) i stället för rå kr — så att ett recept vars besparing bara är
 // billig vitlök/lök inte trycks in, medan dyra protein-/färskvarureor lyfts.
-export function bucketBySaving(pool, savingsById) {
-  if (!savingsById) return shuffle(pool);
+export function bucketBySaving(pool, savingsById, currentSeason = null) {
+  // Säsongsvikta INOM varje besparings-bucket i stället för att omsortera hela
+  // poolen efteråt — annars kastar säsongsviktningen bort rea-först-ordningen när
+  // både optimize_prices och säsongsvikt är på. Rea-recept ligger fortfarande
+  // först (buckets konkateneras high→low); säsongen styr bara ordningen inom.
+  const order = (arr) => (currentSeason ? applySeasonWeight(arr, currentSeason) : shuffle(arr));
+  if (!savingsById) return order(pool);
   const high = [], low = [];
   for (const r of pool) {
     const e = savingsById[r.id];
@@ -23,7 +28,7 @@ export function bucketBySaving(pool, savingsById) {
     if (score >= SAVING_THRESHOLD) high.push(r);
     else low.push(r);
   }
-  return [...shuffle(high), ...shuffle(low)];
+  return [...order(high), ...order(low)];
 }
 
 function applySeasonWeight(pool, currentSeason) {
@@ -59,8 +64,8 @@ export function selectRecipes(recipes, dayList, constraints, recentIds = new Set
   }
   if (pool.length === 0) pool = recipes;
 
-  const weekdayPool = applySeasonWeight(bucketBySaving(pool.filter((r) => r.tags.includes("vardag30")), savingsById), currentSeason);
-  const weekendPool = applySeasonWeight(bucketBySaving(pool.filter((r) => r.tags.includes("helg60")), savingsById), currentSeason);
+  const weekdayPool = bucketBySaving(pool.filter((r) => r.tags.includes("vardag30")), savingsById, currentSeason);
+  const weekendPool = bucketBySaving(pool.filter((r) => r.tags.includes("helg60")), savingsById, currentSeason);
 
   const tureCount = constraints.ture_days;
   const shuffledIndices = shuffle(dayList.map((_, i) => i));

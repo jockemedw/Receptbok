@@ -59,10 +59,9 @@ export default createSupabaseHandler(async (req, res) => {
 
   const today = new Date().toISOString().slice(0, 10);
 
-  // Deaktivera befintliga listor, skapa ny
-  await db.from("shopping_lists").update({ is_active: false })
-    .eq("household_id", householdId).eq("is_active", true);
-
+  // Skapa listan INAKTIV, skriv varorna, aktivera SIST — så en misslyckad
+  // vary-insert aldrig lämnar familjen med en aktiv men tom lista. Den gamla
+  // listan är kvar aktiv tills den nya är komplett.
   const { data: newList, error: listErr } = await db
     .from("shopping_lists")
     .insert({
@@ -71,7 +70,7 @@ export default createSupabaseHandler(async (req, res) => {
       end_date: plan.end_date,
       generated_at: today,
       recipe_items_moved_at: today,
-      is_active: true,
+      is_active: false,
     })
     .select()
     .single();
@@ -98,6 +97,13 @@ export default createSupabaseHandler(async (req, res) => {
     const { error: itemsErr } = await db.from("shopping_items").insert(itemRows);
     if (itemsErr) throw itemsErr;
   }
+
+  // Ta den färdiga listan i bruk allra sist: stäng av gamla, slå på nya.
+  await db.from("shopping_lists").update({ is_active: false })
+    .eq("household_id", householdId).eq("is_active", true);
+  const { error: actErr } = await db.from("shopping_lists")
+    .update({ is_active: true }).eq("id", newList.id);
+  if (actErr) throw actErr;
 
   // Sätt confirmed_at på planen
   await db.from("weekly_plans").update({ confirmed_at: new Date().toISOString() }).eq("id", plan.id);

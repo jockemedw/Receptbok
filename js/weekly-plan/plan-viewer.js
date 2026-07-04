@@ -270,7 +270,7 @@ export async function selectRecipeForDay(event, recipeId, title) {
   btn.textContent = 'Sparar…';
 
   try {
-    const res = await fetch('/api/replace-recipe', {
+    const res = await window.apiFetch('/api/replace-recipe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ date, newRecipeId: recipeId }),
@@ -424,7 +424,7 @@ async function modifyDay(date, action) {
   if (window._opBusy) return;   // delad spärr med premiumvyn (backlog #10)
   window._opBusy = true;
   try {
-    const res = await fetch('/api/skip-day', {
+    const res = await window.apiFetch('/api/skip-day', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ date, action }),
@@ -594,7 +594,7 @@ export async function discardPlan() {
   statusEl.textContent = '';
 
   try {
-    const res = await fetch('/api/discard-plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    const res = await window.apiFetch('/api/discard-plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
     let data = {};
     try { data = await res.json(); } catch { /* ingen JSON */ }
     if (!res.ok) throw new Error(data.error || `Serverfel ${res.status}`);
@@ -637,7 +637,7 @@ export async function confirmPlan() {
   statusEl.textContent = '';
 
   try {
-    const res  = await fetch('/api/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    const res  = await window.apiFetch('/api/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Okänt fel');
 
