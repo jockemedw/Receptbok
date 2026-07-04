@@ -58,6 +58,12 @@ Skapa lista → lägg rader → bocka av → allt synkas live mellan telefonerna
 (samma Realtime-mönster som inköpslistan). Cozi-flytten är manuell — familjen har
 en handfull listor, ingen importör behövs.
 
+**Krav från Joakim (2026-07-04):** listorna är *gemensamma kom-ihåg-listor som ofta
+är återkommande* (packlistor). M1 ska därför stödja **återanvändning**, inte bara
+engångslistor: en "Nollställ bockarna"-åtgärd gör packlistan redo inför nästa resa
+utan att raderna skrivs om. (Tekniskt trivialt — en update `checked=false` på listans
+rader — men det ska vara en synlig knapp, inte ett hack.)
+
 Schema-skiss (körs INTE nu — blir `db/migrations/005_family_lists.sql` när bygget startar):
 
 ```sql
@@ -100,17 +106,35 @@ ingen egen tabell och nästan ingen egen kod. Bor i Listor-fliken under en egen 
 
 ### M3 — Familjekalender/agenda · *läs, bygg inte*
 
-Rekommendation: **bygg ingen egen kalender.** Familjen har redan en (Google Kalender) —
-att bygga en till skapar exakt det dubbelbokförings-problem en hubb ska lösa.
-I stället läser appen familjens befintliga kalender via dess **privata iCal-adress**
-(ICS-prenumerationslänk från Google Kalender-inställningarna — gratis, read-only,
+Rekommendation: **bygg ingen egen kalender.** Familjen har redan kalendrar — att bygga
+en till skapar exakt det dubbelbokförings-problem en hubb ska lösa. I stället läser
+appen befintliga kalendrar via **iCal-prenumerationslänkar** (ICS — gratis, read-only,
 ingen OAuth-dans).
 
-- En liten serverless-endpoint `api/calendar.js` hämtar och tolkar ICS-flödet
-  (webbläsaren får inte hämta den direkt — Googles kalenderserver tillåter inte
-  anrop från andra sajter, s.k. CORS — så vår backend agerar bud). Cachea ~15 min.
-- ICS-länken lagras som hemlighet i Vercel env (`FAMILY_CALENDAR_ICS`) — den ger
-  läsaccess till kalendern och ska inte ligga i databasen eller repot.
+**Verklighetsläget (Joakim, 2026-07-04): huvudkalendern är Outlook** (jobbkontot,
+används även privat) och den är delvis skyddad. Det ändrar inte tekniken — Outlook
+kan också publicera ICS — men det ändrar vägen dit:
+
+- **Spår A (prova först):** Outlook → Inställningar → Kalender → *Delade kalendrar* →
+  *Publicera en kalender* → välj kalender + "Kan visa alla detaljer" → kopiera
+  **ICS-länken**. Om arbetsgivarens admin tillåter publicering är detta hela jobbet.
+  Jobbmöten följer dock med — överväg att publicera med "Kan visa när jag är upptagen"
+  eller filtrera i proxyn (visa bara händelser utanför arbetstid/med viss kategori).
+- **Spår B (om publicering är admin-spärrad, vilket är vanligt på jobbkonton):**
+  skapa en **separat privat familjekalender** (gratis Outlook.com- eller Google-konto)
+  dit privata aktiviteter läggs (går att bjuda in/visa i jobb-Outlook så Joakim ser
+  allt på ett ställe). Familjekalendern publicerar ICS fritt — appen läser den.
+  Detta är sannolikt rätt ändläge oavsett: familjens aktiviteter hör hemma i en
+  kalender båda vuxna äger, inte i ena partens jobbkonto.
+- **Automatisering av länk-uttaget är inte möjlig** — länken ligger bakom Joakims
+  inloggning (och ev. admin-policy), så det momentet är manuellt en gång. Claude
+  guidar klick-för-klick när P3 byggs; därefter är allt automatiskt (proxyn läser
+  flödet löpande).
+- Tekniken i övrigt oförändrad: serverless-endpoint `api/calendar.js` hämtar och
+  tolkar ICS-flödet (webbläsaren får inte hämta det direkt — kalenderservrarna
+  tillåter inte anrop från andra sajter, s.k. CORS — så vår backend agerar bud),
+  cache ~15 min; länken som hemlighet i Vercel env (`FAMILY_CALENDAR_ICS`) — aldrig
+  i databasen eller repot.
 - Idag-fliken får en **"Idag"-agendarad** (2–3 närmaste händelser); ev. "denna vecka"
   i dag-sheeten senare.
 - Egen event-tabell (skapa händelser i appen) är medvetet **fas 2** — börja med att
@@ -172,12 +196,17 @@ som vanligt. Varje införandesteg lämnar appen fullt fungerande.
 Varje P-steg är en egen session med egen mobil-verifiering, samma arbetssätt som
 designinförandet (Session 108–109).
 
-## Öppna frågor till Joakim (inför P1/P3)
+## Frågorna — besvarade av Joakim (2026-07-04)
 
-1. **Fliketikett:** känns "Listor" rätt för femte fliken (med "Inköp" som kortnamn på
-   inköpslistan)? Alternativ: "Familj", "Mer".
-2. **P3:** hämta ut den privata iCal-adressen från familjens Google Kalender
-   (Inställningar → [kalendern] → Integrera kalender → *Hemlig adress i iCal-format*)
-   och lägg som `FAMILY_CALENDAR_ICS` i Vercel — eller be Claude guida när det är dags.
-3. **Första listorna:** vilka Cozi-listor är i bruk idag? (Styr vilka listtyper som
-   testas först i P1.)
+1. **Fliketikett:** ✅ "Listor" är OK. Listorna är egna kom-ihåg-listor som är
+   gemensamma eller **återkommande** (packlistor) → M1 fick kravet "Nollställ
+   bockarna" (se M1).
+2. **Kalenderlänken:** "automatisera om det går, annars OK" → går inte att automatisera
+   (länken ligger bakom inloggning/admin-policy), men det är ett engångsmoment med
+   klick-guide när P3 byggs. Allt därefter är automatiskt.
+3. **Kalendern är Outlook** (jobbkonto, används även privat, delvis skyddad) →
+   M3 omskriven med spår A (publicera ICS från Outlook om admin tillåter) och
+   spår B (separat privat familjekalender — trolig rätt lösning för privata
+   aktiviteter oavsett).
+
+**Startprompt för P1** finns i `docs/status.md` (Session 112) — klistras in i nästa session.
