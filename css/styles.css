@@ -6115,3 +6115,60 @@ body.cook-open { overflow: hidden; }
 }
 .fl-import-name { font-weight: 500; color: var(--forest); overflow-wrap: anywhere; }
 .fl-import-count { flex-shrink: 0; font-size: 0.82rem; color: var(--text-muted); }
+
+/* ── L3: ikon + färgband per lista + utseende-väljare ── */
+.fl-has-accent { border-left: 4px solid var(--fl-accent); }
+.fl-card-icon { margin-right: 0.4rem; }
+
+.fl-decor {
+  margin: 0 1rem 0.4rem;
+  padding: 0.7rem 0.9rem;
+  background: var(--linen-card);
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.fl-decor-row { display: flex; align-items: center; gap: 0.7rem; }
+.fl-decor-label {
+  flex-shrink: 0;
+  width: 3rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+.fl-swatches, .fl-icon-opts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.fl-swatch {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: var(--fl-accent, var(--stone));
+  cursor: pointer;
+  padding: 0;
+}
+.fl-swatch.active { border-color: var(--forest); box-shadow: 0 0 0 2px var(--linen-card) inset; }
+.fl-swatch-none {
+  background: none;
+  color: var(--text-muted);
+  border: 1px solid var(--hairline);
+  font-size: 0.85rem;
+  line-height: 1;
+}
+.fl-icon-opt {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 10px;
+  border: 1px solid var(--hairline);
+  background: var(--paper);
+  font-size: 1.05rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+.fl-icon-opt.active { border-color: var(--lichen); background: var(--moss-soft); }
+.fl-icon-none { color: var(--text-muted); font-size: 0.85rem; }
