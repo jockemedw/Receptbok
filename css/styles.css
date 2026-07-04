@@ -5189,6 +5189,44 @@ body.cook-open { overflow: hidden; }
 }
 .today-link { font-size: 0.85rem; font-weight: 500; color: var(--lichen-deep); cursor: pointer; }
 
+/* Fästa lappar (P2) — diskreta kort på Idag */
+.today-notes { display: flex; flex-direction: column; gap: 10px; }
+.today-note-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  background: var(--linen-card);
+  border: 1px solid var(--hairline);
+  border-left: 3px solid var(--ochre);
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  -webkit-tap-highlight-color: transparent;
+}
+.today-note-card:active { transform: scale(0.99); }
+.today-note-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 0.98rem;
+  color: var(--forest);
+}
+.today-note-pin { font-size: 0.8rem; flex-shrink: 0; }
+.today-note-body {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 .today-date { margin: 14px 4px; }
 .today-date .today-eyebrow { display: block; }
 
@@ -5826,4 +5864,112 @@ body.cook-open { overflow: hidden; }
   flex-wrap: wrap;
   gap: 0.5rem;
   padding: 0 1rem;
+}
+
+/* ── Anteckningar (P2 Familjehubben — segment i Listor-fliken) ── */
+/* Segmentavdelare mellan listor och anteckningar */
+.fl-section-label {
+  margin: 1.4rem 0.25rem 0.1rem;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--forest);
+  letter-spacing: -0.01em;
+}
+/* Slimmad tom-text inne i segmenten (mindre luft än .no-data) */
+.no-data-slim {
+  text-align: left;
+  padding: 0.4rem 0.35rem 0.2rem;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+/* Anteckningskort: rubrik + fritext-förhandsvisning, staplade (skiljer sig
+   visuellt från listkortens rad-med-meta) */
+.fl-note-card {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.3rem;
+}
+.fl-note-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.fl-pin-flag { flex-shrink: 0; font-size: 0.85rem; }
+.fl-note-preview {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.fl-note-empty { font-style: italic; }
+.fl-archived-kind {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  padding: 0.05rem 0.4rem;
+  margin-left: 0.35rem;
+  vertical-align: middle;
+}
+
+/* Anteckningsdetalj: rubrik-input + fritext-textarea + fäst-knapp + status */
+.fl-pin-btn {
+  background: none;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.35rem 0.85rem;
+  flex-shrink: 0;
+}
+.fl-pin-btn.active {
+  color: var(--forest);
+  border-color: var(--ochre);
+  background: color-mix(in srgb, var(--ochre) 16%, transparent);
+}
+.fl-note-title {
+  display: block;
+  width: calc(100% - 2rem);
+  margin: 0.4rem 1rem 0.2rem;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--forest);
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--hairline);
+  padding: 0.2rem 0 0.4rem;
+  letter-spacing: -0.01em;
+}
+.fl-note-title:focus { outline: none; border-bottom-color: var(--lichen); }
+.fl-note-body {
+  display: block;
+  width: calc(100% - 2rem);
+  margin: 0.6rem 1rem 0.3rem;
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--forest);
+  background: var(--linen-card);
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  padding: 0.8rem 0.9rem;
+  resize: vertical;
+  min-height: 8rem;
+}
+.fl-note-body:focus { outline: 2px solid var(--lichen); outline-offset: -1px; }
+.fl-note-status {
+  min-height: 1.1rem;
+  padding: 0 1.35rem 0.4rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
 }

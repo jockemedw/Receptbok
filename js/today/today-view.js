@@ -231,6 +231,41 @@ async function checkPricingStatus() {
   } catch { /* tabellen saknas → ingen banner */ }
 }
 
+// ── Pinnade lappar (P2 anteckningar) ─────────────────────────────────────────
+// Diskreta kort för anteckningar som fästs i Listor-fliken. Hämtas via
+// lists-slicen (loadPinnedNotes) så Idag inte beror på att fliken öppnats.
+let _pinnedNotes = [];
+
+async function checkPinnedNotes() {
+  try {
+    if (typeof window.loadPinnedNotes !== 'function') return;
+    _pinnedNotes = await window.loadPinnedNotes();
+    renderTodayView();
+  } catch { _pinnedNotes = []; }
+}
+
+function pinnedNotesHtml() {
+  if (!_pinnedNotes.length) return '';
+  const cards = _pinnedNotes.slice(0, 3).map(n => {
+    const body = (n.body || '').replace(/\s+/g, ' ').trim();
+    return `<button type="button" class="today-note-card" onclick="openPinnedNote('${attr(n.id)}')">
+      <span class="today-note-title"><span class="today-note-pin">📌</span>${esc(n.title)}</span>
+      ${body ? `<span class="today-note-body">${esc(body)}</span>` : ''}
+    </button>`;
+  }).join('');
+  return `
+    <div class="today-section-head">
+      <h2 class="today-h2">Fästa lappar</h2>
+      <span class="today-link" onclick="switchTab('listor')">Alla anteckningar</span>
+    </div>
+    <div class="today-notes">${cards}</div>`;
+}
+
+window.openPinnedNote = function (id) {
+  window.switchTab('listor');
+  if (typeof window.flOpenNote === 'function') window.flOpenNote(id);
+};
+
 function loadingHtml() {
   return `<div class="today-loading"><span class="today-loading-spin">⟳</span><p>Laddar…</p></div>`;
 }
@@ -309,6 +344,7 @@ export function renderTodayView() {
     heroHtml(todayEntry, todayInfo) +
     tomorrowHtml(tomorrowEntry, tomorrowInfo) +
     weekHtml(weekDays, sumLeft, sumRight) +
+    pinnedNotesHtml() +
     quickAddHtml();
 
   if (prevVal != null) {
@@ -358,15 +394,18 @@ function wrap(name, { async = false, onAfter } = {}) {
 
 function installHooks() {
   wrap('renderWeeklyPlanData');
-  // Kollar prisstatusen först när loadWeeklyPlan (och därmed auth+household) är
-  // klar — pricing_status är hushållsskopad data och kräver en inloggad session.
-  wrap('loadWeeklyPlan', { async: true, onAfter: checkPricingStatus });
+  // Kollar prisstatus + pinnade lappar först när loadWeeklyPlan (och därmed
+  // auth+household) är klar — bådadera är hushållsskopad data som kräver en
+  // inloggad session.
+  wrap('loadWeeklyPlan', { async: true, onAfter: () => { checkPricingStatus(); checkPinnedNotes(); } });
   const origSwitch = window.switchTab;
   if (typeof origSwitch === 'function' && !origSwitch.__todayWrapped) {
     const wrappedSwitch = function (tab) {
       const r = origSwitch.apply(this, arguments);
       if (tab === 'idag') {
         try { renderTodayView(); } catch (e) { console.error('renderTodayView', e); }
+        // Uppdatera fästa lappar (kan ha ändrats i Listor-fliken sedan sist).
+        checkPinnedNotes();
       }
       return r;
     };

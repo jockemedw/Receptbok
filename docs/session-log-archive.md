@@ -1,6 +1,11 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–112. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–113. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 113 — P1 Familjehubben: Listor-fliken (M1) byggd, migration 005 körd
+Byggde första steget i plattformsplanen (`docs/plattform-familjehub-2026-07.md`). **Ny slice `js/lists/lists-view.js`** (~500 rader): översikt med listkort (titel + "X kvar av Y"/"Allt avbockat ✓"), detaljvy med optimistisk bockning (debouncad batch 600 ms, som inköpslistan), **"Nollställ bockarna"** med bekräftelsedialog (för återkommande packlistor), skapa/byt namn/arkivera/ta fram/ta bort, Ångra-toast, Realtime-synk med eko-dämpning, fokus-bevarande re-render. **Femte fliken "Listor"** i header- + bottom-nav (ny checklista-ikon), "Inköpslista"→"Inköp", `?tab=listor`-deep-link. `db/migrations/005_family_lists.sql`: `family_lists` + `family_list_items`, RLS-mall från 002, `kind`-kolumn (`'list'`|`'note'`) förberedd för M2, pinned/archived, `updated_at`-triggrar, realtime-publikation. Graciös degradering före migration ("nästan klara"-besked). **Uppföljningar samma dag:** (1) interaktiv preview-artifact på Joakims begäran (https://claude.ai/code/artifact/d6301537-375e-498f-a48a-e0d0cc11f933, PR #117); (2) **migration 005 KÖRD** av Claude via Management-API:t (HTTP 201) på Joakims klartecken, verifierad med läsfrågor (tabeller/RLS/4+4 policies/triggrar/realtime) — fliken skarp i produktion; miljönotering: molnsessionerna HAR Supabase-access (004-avvikelsen gällde lokala datorn), curl krävs (Cloudflare blockerar python-urllib); (3) **P3 utökad** på Joakims "kopiera Cozi"-beslut — kalenderhändelser även i veckovyn + namnbyte Matsedel→Kalender som avslutande steg; P2-designen bekräftad (anteckningar som separat segment). Verifiering: hela testsviten grön + E2E-rök-test (headless Chromium, Supabase-stub, båda lägena). PR #112–#119 mergade.
 
 ---
 

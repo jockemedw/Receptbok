@@ -14,9 +14,11 @@
 import { escapeHtml } from '../utils.js';
 
 // ── State (modul-scopat — inget delas med andra slices) ─────────────────────
-let _lists = [];          // family_lists-rader (kind='list', även arkiverade)
+let _lists = [];          // family_lists-rader med kind='list' (även arkiverade)
+let _notes = [];          // family_lists-rader med kind='note' (P2 anteckningar)
 let _allItems = [];       // ALLA family_list_items i hushållet (familjeskala — litet)
-let _openListId = null;   // öppen lista (detaljvy) eller null (översikt)
+let _openListId = null;   // öppen lista (detaljvy) eller null
+let _openNoteId = null;   // öppen anteckning (detaljvy) eller null — högst en av dem
 let _householdId = null;
 let _supported = null;    // null = okänt ännu, false = migration 005 ej körd
 let _channel = null;
@@ -24,10 +26,16 @@ let _editMode = false;    // ✎ Ändra i detaljvyn: ✕ per rad + list-åtgärd
 let _renaming = false;
 let _showArchived = false;
 let _showCreateForm = false;
+let _showCreateNote = false;
 let _refreshTimer = null;
 let _saveTimer = null;
+let _noteSaveTimer = null;
 let _tmpSeq = 0;
 const _pendingChecks = new Map(); // id → önskat checked-värde (debouncad batch)
+
+// Alla family_lists-rader oavsett kind — för realtime-ekodämpning + arkiv.
+function allRows() { return _lists.concat(_notes); }
+function rowById(id) { return allRows().find((r) => r.id === id); }
 
 function itemsOf(listId) {
   // Sortera alltid på sort_order (inte arrayordning) så en Ångrad rad hamnar
@@ -51,11 +59,12 @@ function isMissingTable(error) {
 
 // ── Dataladdning ─────────────────────────────────────────────────────────────
 async function refreshData() {
-  const { data: lists, error } = await window.db
+  // En query för både listor och anteckningar (samma tabell, kind skiljer dem);
+  // splittas lokalt. Sorterad så pinnade + senast använda kommer först.
+  const { data: rows, error } = await window.db
     .from('family_lists')
     .select('*')
     .eq('household_id', _householdId)
-    .eq('kind', 'list')
     .order('pinned', { ascending: false })
     .order('updated_at', { ascending: false });
   if (error) {
@@ -63,7 +72,8 @@ async function refreshData() {
     throw error;
   }
   _supported = true;
-  _lists = lists || [];
+  _lists = (rows || []).filter((r) => r.kind !== 'note');
+  _notes = (rows || []).filter((r) => r.kind === 'note');
 
   const { data: items, error: itemsErr } = await window.db
     .from('family_list_items')
@@ -132,16 +142,16 @@ function onRealtime(payload) {
     if (eventType === 'DELETE' && oldRow && !_allItems.some((i) => i.id === oldRow.id)) return;
   } else if (table === 'family_lists') {
     if (eventType === 'UPDATE' && newRow) {
-      const local = _lists.find((l) => l.id === newRow.id);
+      const local = allRows().find((l) => l.id === newRow.id);
       if (local && local.title === newRow.title && local.archived === newRow.archived
-          && local.pinned === newRow.pinned) {
+          && local.pinned === newRow.pinned && local.body === newRow.body) {
         // Bara updated_at ändrad (parent-touch-triggern) — uppdatera tyst.
         local.updated_at = newRow.updated_at;
         return;
       }
     }
-    if (eventType === 'INSERT' && newRow && _lists.some((l) => l.id === newRow.id)) return;
-    if (eventType === 'DELETE' && oldRow && !_lists.some((l) => l.id === oldRow.id)) return;
+    if (eventType === 'INSERT' && newRow && allRows().some((l) => l.id === newRow.id)) return;
+    if (eventType === 'DELETE' && oldRow && !allRows().some((l) => l.id === oldRow.id)) return;
   }
   scheduleRefresh();
 }
@@ -158,6 +168,10 @@ function scheduleRefresh() {
         _openListId = null;
         window.showToast?.('Listan togs bort på en annan enhet.', { type: 'info' });
       }
+      if (_openNoteId && !_notes.some((n) => n.id === _openNoteId)) {
+        _openNoteId = null;
+        window.showToast?.('Anteckningen togs bort på en annan enhet.', { type: 'info' });
+      }
       render({ keepAddFocus: true });
     } catch { /* tyst — nästa event eller fliköppning försöker igen */ }
   }, 350);
@@ -170,13 +184,19 @@ function headingHtml(title) {
 
 // Re-render utan att tappa fokus/halvskriven text i "lägg till"-fältet —
 // viktigt när partnern ändrar samtidigt eller vid snabb inmatning av rader.
+const KEEP_FIELDS = ['flAddInput', 'flNewListInput', 'flNewNoteInput', 'flNoteTitle', 'flNoteBody'];
+
 function render(opts = {}) {
   const host = document.getElementById('listsContent');
   if (!host) return;
 
+  // Bevara fokus + text + markörläge över en re-render (partnern ändrar
+  // samtidigt, snabb inmatning). Gäller list- OCH anteckningsfälten.
   const active = document.activeElement;
-  const keepId = (active && (active.id === 'flAddInput' || active.id === 'flNewListInput')) ? active.id : null;
+  const keepId = (active && KEEP_FIELDS.includes(active.id)) ? active.id : null;
   const keepVal = keepId ? active.value : '';
+  const keepStart = keepId && active.selectionStart != null ? active.selectionStart : null;
+  const keepEnd = keepId && active.selectionEnd != null ? active.selectionEnd : null;
 
   if (_supported === false) {
     host.innerHTML = `${headingHtml('Listor')}
@@ -188,7 +208,10 @@ function render(opts = {}) {
   }
 
   const openList = _openListId ? _lists.find((l) => l.id === _openListId) : null;
-  host.innerHTML = openList ? detailHtml(openList) : overviewHtml();
+  const openNote = _openNoteId ? _notes.find((n) => n.id === _openNoteId) : null;
+  host.innerHTML = openNote ? noteDetailHtml(openNote)
+    : openList ? detailHtml(openList)
+    : overviewHtml();
 
   const restoreId = keepId || (opts.keepAddFocus && openList ? 'flAddInput' : null);
   if (restoreId) {
@@ -196,6 +219,9 @@ function render(opts = {}) {
     if (inp) {
       inp.value = keepVal;
       inp.focus();
+      if (keepStart != null && inp.setSelectionRange) {
+        try { inp.setSelectionRange(keepStart, keepEnd); } catch { /* type stödjer ej — strunt */ }
+      }
     }
   }
 }
@@ -208,25 +234,31 @@ function listMetaHtml(list) {
   return `<span class="fl-card-meta">${left} kvar av ${items.length}</span>`;
 }
 
+function notePreview(note) {
+  const body = (note.body || '').replace(/\s+/g, ' ').trim();
+  if (!body) return '<span class="fl-note-preview fl-note-empty">Tom anteckning</span>';
+  return `<span class="fl-note-preview">${escapeHtml(body)}</span>`;
+}
+
 function overviewHtml() {
   const activeLists = _lists.filter((l) => !l.archived);
-  const archivedLists = _lists.filter((l) => l.archived);
+  const activeNotes = _notes.filter((n) => !n.archived);
+  const archivedRows = allRows().filter((r) => r.archived);
 
-  let cards;
-  if (!activeLists.length && !archivedLists.length) {
-    cards = `<div class="no-data"><div class="no-data-icon">📋</div>
-      Inga listor ännu.<br>Skapa familjens första — till exempel en packlista.</div>`;
-  } else if (!activeLists.length) {
-    cards = '<div class="no-data">Inga aktiva listor — ta fram en arkiverad eller skapa en ny.</div>';
+  // ── Listor ──
+  let listCards;
+  if (!activeLists.length) {
+    listCards = `<div class="no-data no-data-slim">
+      Inga listor ännu — skapa en, till exempel en packlista.</div>`;
   } else {
-    cards = activeLists.map((l) => `
+    listCards = activeLists.map((l) => `
       <button type="button" class="fl-card" onclick="flOpenList('${l.id}')">
         <span class="fl-card-title">${escapeHtml(l.title)}</span>
         ${listMetaHtml(l)}
       </button>`).join('');
   }
 
-  const createHtml = _showCreateForm
+  const createListHtml = _showCreateForm
     ? `<form class="fl-add-form" onsubmit="flCreateList(event)">
          <input id="flNewListInput" class="fl-input" maxlength="80" autocomplete="off"
                 placeholder="Namn, t.ex. Packning fjällen" aria-label="Namn på nya listan">
@@ -234,27 +266,55 @@ function overviewHtml() {
        </form>`
     : `<button type="button" class="today-btn today-btn-primary fl-create-btn" onclick="flShowCreate()">+ Ny lista</button>`;
 
+  // ── Anteckningar (P2) — eget segment under listorna ──
+  let noteCards;
+  if (!activeNotes.length) {
+    noteCards = `<div class="no-data no-data-slim">
+      Delade lappar för familjen — wifi-lösenord, skostorlekar, telefonnummer.</div>`;
+  } else {
+    noteCards = activeNotes.map((n) => `
+      <button type="button" class="fl-card fl-note-card" onclick="flOpenNote('${n.id}')">
+        <span class="fl-note-head">
+          <span class="fl-card-title">${escapeHtml(n.title)}</span>
+          ${n.pinned ? '<span class="fl-pin-flag" aria-label="Fäst på Idag">📌</span>' : ''}
+        </span>
+        ${notePreview(n)}
+      </button>`).join('');
+  }
+
+  const createNoteHtml = _showCreateNote
+    ? `<form class="fl-add-form" onsubmit="flCreateNote(event)">
+         <input id="flNewNoteInput" class="fl-input" maxlength="80" autocomplete="off"
+                placeholder="Rubrik, t.ex. Wifi stugan" aria-label="Rubrik på nya anteckningen">
+         <button type="submit" class="today-btn today-btn-primary">Skapa</button>
+       </form>`
+    : `<button type="button" class="today-btn today-btn-quiet fl-create-btn" onclick="flShowCreateNote()">+ Ny anteckning</button>`;
+
+  // ── Arkiverade (listor + anteckningar) ──
   let archivedHtml = '';
-  if (archivedLists.length) {
-    const rows = _showArchived ? archivedLists.map((l) => `
+  if (archivedRows.length) {
+    const rows = _showArchived ? archivedRows.map((r) => `
       <div class="fl-card fl-card-archived">
-        <span class="fl-card-title">${escapeHtml(l.title)}</span>
+        <span class="fl-card-title">${escapeHtml(r.title)}${r.kind === 'note' ? ' <span class="fl-archived-kind">anteckning</span>' : ''}</span>
         <span class="fl-archived-actions">
-          <button type="button" class="today-btn today-btn-quiet" onclick="flUnarchiveList('${l.id}')">Ta fram</button>
-          <button type="button" class="today-btn today-btn-quiet fl-btn-danger" onclick="flDeleteList('${l.id}')">Ta bort</button>
+          <button type="button" class="today-btn today-btn-quiet" onclick="flUnarchiveList('${r.id}')">Ta fram</button>
+          <button type="button" class="today-btn today-btn-quiet fl-btn-danger" onclick="flDeleteList('${r.id}')">Ta bort</button>
         </span>
       </div>`).join('') : '';
     archivedHtml = `
       <button type="button" class="fl-archived-toggle" onclick="flToggleArchived()"
               aria-expanded="${_showArchived}">
-        ${_showArchived ? '▾' : '▸'} Arkiverade (${archivedLists.length})
+        ${_showArchived ? '▾' : '▸'} Arkiverade (${archivedRows.length})
       </button>${rows}`;
   }
 
   return `${headingHtml('Listor')}
     <div class="fl-wrap">
-      ${cards}
-      ${createHtml}
+      ${listCards}
+      ${createListHtml}
+      <div class="fl-section-label">Anteckningar</div>
+      ${noteCards}
+      ${createNoteHtml}
       ${archivedHtml}
     </div>`;
 }
@@ -317,9 +377,38 @@ function updateDetailProgress() {
   el.textContent = `${items.filter((i) => i.checked).length} av ${items.length} avbockade`;
 }
 
+// ── Anteckningsdetaljen (P2) ─────────────────────────────────────────────────
+function noteDetailHtml(note) {
+  return `
+    <div class="fl-detail-top">
+      <button type="button" class="fl-back" onclick="flBack()">‹ Listor</button>
+      <button type="button" class="fl-pin-btn${note.pinned ? ' active' : ''}"
+              onclick="flTogglePin()" aria-pressed="${note.pinned ? 'true' : 'false'}">
+        📌 ${note.pinned ? 'Fäst' : 'Fäst på Idag'}
+      </button>
+    </div>
+    <input id="flNoteTitle" class="fl-note-title" maxlength="80" autocomplete="off"
+           value="${escapeHtml(note.title)}" placeholder="Rubrik" aria-label="Rubrik"
+           oninput="flNoteInput()" onblur="flSaveNote()">
+    <textarea id="flNoteBody" class="fl-note-body" maxlength="4000" rows="10"
+              placeholder="Skriv här — syns för hela familjen." aria-label="Anteckningens text"
+              oninput="flNoteInput()" onblur="flSaveNote()">${escapeHtml(note.body || '')}</textarea>
+    <div class="fl-note-status" id="flNoteStatus" aria-live="polite"></div>
+    <div class="fl-actions">
+      <button type="button" class="today-btn today-btn-quiet" onclick="flArchiveNote()">Arkivera</button>
+      <button type="button" class="today-btn today-btn-quiet fl-btn-danger" onclick="flDeleteNote()">Ta bort</button>
+    </div>`;
+}
+
+function setNoteStatus(text) {
+  const el = document.getElementById('flNoteStatus');
+  if (el) el.textContent = text;
+}
+
 // ── Navigering inom fliken ───────────────────────────────────────────────────
 export function flOpenList(id) {
   _openListId = id;
+  _openNoteId = null;
   _editMode = false;
   _renaming = false;
   render();
@@ -327,7 +416,9 @@ export function flOpenList(id) {
 }
 
 export function flBack() {
+  flushNoteSave();       // spara ev. pågående anteckningsredigering innan vi lämnar
   _openListId = null;
+  _openNoteId = null;
   _editMode = false;
   _renaming = false;
   render();
@@ -555,30 +646,31 @@ export async function flArchiveList() {
 }
 
 export async function flUnarchiveList(id) {
-  const list = _lists.find((l) => l.id === id);
-  if (!list) return;
-  list.archived = false;
+  const row = rowById(id);            // fungerar för både listor och anteckningar
+  if (!row) return;
+  row.archived = false;
   render();
   try {
     const { error } = await window.db.from('family_lists')
       .update({ archived: false }).eq('id', id);
     if (error) throw error;
   } catch {
-    list.archived = true;
+    row.archived = true;
     render();
-    window.showToast?.('Kunde inte ta fram listan — prova igen.', { type: 'error' });
+    window.showToast?.('Kunde inte ta fram den — prova igen.', { type: 'error' });
   }
 }
 
 export async function flDeleteList(id) {
-  const list = _lists.find((l) => l.id === id);
-  if (!list) return;
+  const row = rowById(id);
+  if (!row) return;
+  const isNote = row.kind === 'note';
   const count = itemsOf(id).length;
   const ok = await window.confirmDialog({
-    title: 'Ta bort listan?',
+    title: isNote ? 'Ta bort anteckningen?' : 'Ta bort listan?',
     message: count
-      ? `"${list.title}" och dess ${count} rader tas bort permanent.`
-      : `"${list.title}" tas bort permanent.`,
+      ? `"${row.title}" och dess ${count} rader tas bort permanent.`
+      : `"${row.title}" tas bort permanent.`,
     confirmLabel: 'Ta bort',
     danger: true,
   });
@@ -587,12 +679,167 @@ export async function flDeleteList(id) {
     const { error } = await window.db.from('family_lists').delete().eq('id', id);
     if (error) throw error;
     _lists = _lists.filter((l) => l.id !== id);
+    _notes = _notes.filter((n) => n.id !== id);
     _allItems = _allItems.filter((i) => i.list_id !== id);
     if (_openListId === id) _openListId = null;
+    if (_openNoteId === id) _openNoteId = null;
     render();
-    window.showToast?.(`${list.title} borttagen`, { type: 'success' });
+    window.showToast?.(`${row.title} borttagen`, { type: 'success' });
   } catch {
-    window.showToast?.('Kunde inte ta bort listan — prova igen.', { type: 'error' });
+    window.showToast?.('Kunde inte ta bort — prova igen.', { type: 'error' });
+  }
+}
+
+// ── Anteckningar (P2): skapa / öppna / redigera / fästa / arkivera / ta bort ─
+export function flShowCreateNote() {
+  _showCreateNote = true;
+  render();
+  document.getElementById('flNewNoteInput')?.focus();
+}
+
+export async function flCreateNote(ev) {
+  ev.preventDefault();
+  const inp = document.getElementById('flNewNoteInput');
+  const title = (inp?.value || '').trim();
+  if (!title) return;
+  try {
+    const { data, error } = await window.db.from('family_lists')
+      .insert({ household_id: _householdId, title, kind: 'note' })
+      .select().single();
+    if (error) throw error;
+    _notes.unshift(data);
+    _showCreateNote = false;
+    flOpenNote(data.id);
+    document.getElementById('flNoteBody')?.focus();
+  } catch {
+    window.showToast?.('Kunde inte skapa anteckningen — prova igen.', { type: 'error' });
+  }
+}
+
+export function flOpenNote(id) {
+  _openNoteId = id;
+  _openListId = null;
+  _editMode = false;
+  _renaming = false;
+  render();
+  window.scrollTo({ top: 0 });
+}
+
+// Fritext sparas debouncat medan man skriver (som bock-batchen) — ingen re-render
+// under skrivandet, bara en diskret statusrad uppdateras direkt i DOM.
+export function flNoteInput() {
+  setNoteStatus('Sparar…');
+  clearTimeout(_noteSaveTimer);
+  _noteSaveTimer = setTimeout(() => { flSaveNote(); }, 900);
+}
+
+export async function flSaveNote() {
+  clearTimeout(_noteSaveTimer);
+  const note = _openNoteId ? _notes.find((n) => n.id === _openNoteId) : null;
+  const titleEl = document.getElementById('flNoteTitle');
+  const bodyEl = document.getElementById('flNoteBody');
+  if (!note || !titleEl || !bodyEl) return;
+  const title = titleEl.value.trim() || 'Utan rubrik';
+  const body = bodyEl.value;
+  if (note.title === title && note.body === body) { setNoteStatus('Sparad'); return; }
+  note.title = title;
+  note.body = body;
+  try {
+    const { error } = await window.db.from('family_lists')
+      .update({ title, body }).eq('id', note.id);
+    if (error) throw error;
+    setNoteStatus('Sparad');
+  } catch {
+    setNoteStatus('Kunde inte spara');
+    window.showToast?.('Kunde inte spara anteckningen — prova igen.', { type: 'error' });
+  }
+}
+
+// Anropas av flBack: spara direkt om en debouncad skrivning väntar.
+function flushNoteSave() {
+  if (_noteSaveTimer) { clearTimeout(_noteSaveTimer); _noteSaveTimer = null; flSaveNote(); }
+}
+
+export async function flTogglePin() {
+  await flSaveNote();       // säkra ev. text först
+  const note = _openNoteId ? _notes.find((n) => n.id === _openNoteId) : null;
+  if (!note) return;
+  const next = !note.pinned;
+  note.pinned = next;
+  render();
+  try {
+    const { error } = await window.db.from('family_lists')
+      .update({ pinned: next }).eq('id', note.id);
+    if (error) throw error;
+    window.showToast?.(next ? 'Fäst på Idag.' : 'Borttagen från Idag.', { type: 'success' });
+  } catch {
+    note.pinned = !next;
+    render();
+    window.showToast?.('Kunde inte ändra — prova igen.', { type: 'error' });
+  }
+}
+
+export async function flArchiveNote() {
+  flushNoteSave();
+  const note = _openNoteId ? _notes.find((n) => n.id === _openNoteId) : null;
+  if (!note) return;
+  note.archived = true;
+  flBack();
+  try {
+    const { error } = await window.db.from('family_lists')
+      .update({ archived: true }).eq('id', note.id);
+    if (error) throw error;
+    window.showToast?.(`${note.title} arkiverad`, {
+      type: 'success',
+      action: { label: 'Ångra', onClick: () => flUnarchiveList(note.id) },
+    });
+  } catch {
+    note.archived = false;
+    render();
+    window.showToast?.('Kunde inte arkivera — prova igen.', { type: 'error' });
+  }
+}
+
+export async function flDeleteNote() {
+  const note = _openNoteId ? _notes.find((n) => n.id === _openNoteId) : null;
+  if (!note) return;
+  clearTimeout(_noteSaveTimer);
+  const ok = await window.confirmDialog({
+    title: 'Ta bort anteckningen?',
+    message: `"${note.title}" tas bort permanent.`,
+    confirmLabel: 'Ta bort',
+    danger: true,
+  });
+  if (!ok) return;
+  try {
+    const { error } = await window.db.from('family_lists').delete().eq('id', note.id);
+    if (error) throw error;
+    _notes = _notes.filter((n) => n.id !== note.id);
+    _openNoteId = null;
+    render();
+    window.showToast?.(`${note.title} borttagen`, { type: 'success' });
+  } catch {
+    window.showToast?.('Kunde inte ta bort — prova igen.', { type: 'error' });
+  }
+}
+
+// Pinnade anteckningar för Idag-fliken (P2). Egen lättviktsquery så Idag inte
+// beror på att Listor-fliken öppnats. Tyst [] om tabellen saknas/fel.
+export async function loadPinnedNotes() {
+  try {
+    const householdId = await window.getHouseholdId();
+    const { data, error } = await window.db
+      .from('family_lists')
+      .select('id, title, body')
+      .eq('household_id', householdId)
+      .eq('kind', 'note')
+      .eq('pinned', true)
+      .eq('archived', false)
+      .order('updated_at', { ascending: false });
+    if (error) return [];
+    return data || [];
+  } catch {
+    return [];
   }
 }
 
@@ -614,3 +861,12 @@ window.flRenameList     = flRenameList;
 window.flArchiveList    = flArchiveList;
 window.flUnarchiveList  = flUnarchiveList;
 window.flDeleteList     = flDeleteList;
+window.flShowCreateNote = flShowCreateNote;
+window.flCreateNote     = flCreateNote;
+window.flOpenNote       = flOpenNote;
+window.flNoteInput      = flNoteInput;
+window.flSaveNote       = flSaveNote;
+window.flTogglePin      = flTogglePin;
+window.flArchiveNote    = flArchiveNote;
+window.flDeleteNote     = flDeleteNote;
+window.loadPinnedNotes  = loadPinnedNotes;
