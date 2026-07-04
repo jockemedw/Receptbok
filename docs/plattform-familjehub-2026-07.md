@@ -101,8 +101,10 @@ API-endpoint behövs. Bockning, "lägg till rad"-fält och eko-dämpning lånas 
 
 Delade lappar: barnets skostorlek, wifi-lösenordet till stugan, "bra barnvakt-nummer".
 Tekniskt är en anteckning en lista utan rader (`kind:'note'`, text i `body`) — därför
-ingen egen tabell och nästan ingen egen kod. Bor i Listor-fliken under en egen rubrik;
-**pinnade** anteckningar visas som diskreta kort på Idag.
+ingen egen tabell och nästan ingen egen kod. Bor i Listor-fliken som ett **tydligt
+separerat segment** (bekräftat av Joakim 2026-07-04): egen rubrik "Anteckningar" under
+listorna och en egen kortstil (fritext, inga bockrader) så lapp och lista aldrig
+förväxlas. **Pinnade** anteckningar visas som diskreta kort på Idag.
 
 ### M3 — Familjekalender/agenda · *läs, bygg inte*
 
@@ -137,6 +139,12 @@ kan också publicera ICS — men det ändrar vägen dit:
   i databasen eller repot.
 - Idag-fliken får en **"Idag"-agendarad** (2–3 närmaste händelser); ev. "denna vecka"
   i dag-sheeten senare.
+- **Utökning (Joakims beslut 2026-07-04, "kopiera Cozi"):** händelserna visas även i
+  **veckovyn** — varje dag i Matsedel-fliken visar middagen *plus* dagens aktiviteter,
+  så mat och liv bor i samma vy (Cozis kärnidé). Som **avslutande steg i P3**, när
+  fliken faktiskt innehåller kalenderinnehåll, **byter den namn: Matsedel → Kalender**.
+  Namnbytet görs medvetet sist — en etikett är ett löfte, och fliken ska inte heta
+  Kalender medan den bara innehåller middagar.
 - Egen event-tabell (skapa händelser i appen) är medvetet **fas 2** — börja med att
   spegla, utvärdera behovet sedan.
 
@@ -188,8 +196,10 @@ som vanligt. Varje införandesteg lämnar appen fullt fungerande.
    femte fliken, Realtime-synk, bockning. *Klart = Cozi kan avinstalleras.*
 2. **P2 — M2 anteckningar.** `kind:'note'` + rubrik i Listor-fliken + pinnade kort
    på Idag. Litet steg ovanpå P1.
-3. **P3 — M3 kalenderagenda.** `api/calendar.js` (ICS-proxy) + agendarad på Idag.
-   Kräver ICS-länken av Joakim.
+3. **P3 — M3 kalender.** `api/calendar.js` (ICS-proxy) + agendarad på Idag +
+   **händelser i veckovyn** (middag + dagens aktiviteter per dag) och som avslutande
+   steg **namnbytet Matsedel → Kalender** (beslutat 2026-07-04). Kräver ICS-länken
+   av Joakim (spår A/B ovan).
 4. **P4 — M5 viktiga datum** och/eller **M6 middagsbetyg** (öppnar Fas 2-spåret).
 5. **P5 — M4 rutiner & sysslor**, om behovet kvarstår när P1–P3 använts ett tag.
 
@@ -208,5 +218,8 @@ designinförandet (Session 108–109).
    M3 omskriven med spår A (publicera ICS från Outlook om admin tillåter) och
    spår B (separat privat familjekalender — trolig rätt lösning för privata
    aktiviteter oavsett).
+4. **Tilläggsbeslut (2026-07-04):** anteckningarna ska vara ett tydligt separerat
+   segment i Listor-fliken (= P2-designen, bekräftad) — och P3 utökas med händelser
+   i veckovyn + namnbytet **Matsedel → Kalender** som avslutande steg ("kopiera Cozi").
 
 **Startprompt för P1** finns i `docs/status.md` (Session 112) — klistras in i nästa session.
