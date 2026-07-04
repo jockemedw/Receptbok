@@ -1,6 +1,11 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–110. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–111. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 111 — Bugghunt (`/ultraplan hitta alla buggar`) + två fixomgångar + typografibyte
+**Fem parallella granskningsagenter** gick igenom hela kodbasen (~10 300 rader, 5 slices: backend-val/shopping, backend-endpoints/infra, Willys/import, frontend plan/today/shopping, frontend recipes/ui/core). Baslinje: hela beroendefria testsviten grön. **Omgång 1 (branch `claude/ultraplan-bug-hunt-f8xhub`):** SSRF via redirect vid receptimport (`api/import-recipe.js` — `redirect:"manual"` + IP-validering per hopp, tak 5); stored XSS + trasig "Välj"-knapp vid apostrof i titel (`jsStringAttr()` i `utils.js` — JS-escapa → HTML-escapa `&<>"` men inte `'`, round-trip-verifierad); oescapad `innerHTML` (`ingredient-preview.js`, `buildTagFilterUI`, `recipe-browser.js`); inköpslista skrevs i osäker ordning (`generate.js`/`confirm.js`/`replace-recipe.js` — skapa inaktiv → skriv varor → aktivera sist); "Idag"/"Ikväll" i UTC (`fmtIso` → lokala datumkomponenter); latenta null-guards (`matchesSearch`, `renderDetailInner`, `replace-recipe` int-cast). **Omgång 2 (Joakim: "kör #2/#6/#7"):** **#2 auth på skrivande API-endpoints** — `requireUser()` i `handler.js` validerar Supabase-JWT (`Authorization: Bearer`, 401 fail-closed) på alla mutations-endpoints; `supabase.js` importeras dynamiskt så testsviten förblir importerbar utan node_modules; frontend fick `apiFetch()`-wrapper i `supabase-client.js`, alla 14 anropsställen bytta; CORS `Allow-Headers` + `Authorization`. **#6 säsong-vs-pris** — `bucketBySaving` säsongsviktar inom varje besparings-bucket i stället för att omsortera hela poolen. **#7 "X eller Y" utan mängd** — ` eller `-splitten gäller även mängdlösa rader, väljer första alternativet (shopping 93→98). **Medvetet lämnade latenta fynd** dokumenterade under *Kända buggar*. **Verifiering:** `node --check` rent; hela beroendefria sviten grön (select-recipes 432, shopping 98, match 136, m.fl.). **PR #112 mergad till main** av Joakim efter mobil-bekräftelse att auth funkar normalt. **Fortsättning — typografi:** font-jämförelse-artifact (5 kandidater, woff2 som data-URI:er pga artifact-CSP) → Joakim valde **Newsreader** på alla rubriker; `--font-display` bytt globalt (PR #113, mergad), styles v133→134, SW v44→45. Väntar mobil-verifiering.
 
 ---
 
