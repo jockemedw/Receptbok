@@ -5671,3 +5671,159 @@ body.cook-open { overflow: hidden; }
 .dlx-sheet .dlx-detail-head { margin: 0.5rem 0.1rem 0.8rem; }
 .dlx-sheet .dlx-detail-cols { margin: 0 0.1rem; }
 .dlx-sheet .dlx-notes { margin: 0.8rem 0.1rem 0; }
+
+/* ── LISTOR-FLIKEN (P1 Familjehubben — gemensamma listor, js/lists/) ── */
+#listsView {
+  display: none;
+  padding: 0 0 4rem; /* top 0 så rubriken hamnar i nivå med övriga flikar */
+  max-width: 680px;
+  margin: 0 auto;
+}
+#listsView.visible { display: block; }
+#listsView .content-heading {
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+.fl-wrap {
+  padding: 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+/* Listkort i översikten */
+.fl-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  width: 100%;
+  min-height: 3.4rem;
+  padding: 0.9rem 1.1rem;
+  background: var(--linen-card);
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.fl-card:active { transform: scale(0.99); }
+.fl-card-title {
+  font-weight: 600;
+  font-size: 1.02rem;
+  color: var(--forest);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.fl-card-meta {
+  flex-shrink: 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+.fl-meta-done { color: var(--color-success); }
+.fl-create-btn { align-self: flex-start; }
+
+/* Arkiverade listor */
+.fl-archived-toggle {
+  align-self: flex-start;
+  margin-top: 0.6rem;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.4rem 0.25rem;
+}
+.fl-card-archived { opacity: 0.75; cursor: default; flex-wrap: wrap; }
+.fl-archived-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+.fl-archived-actions .today-btn { min-height: 38px; font-size: 0.85rem; padding: 0 0.8rem; }
+.fl-btn-danger { color: var(--color-danger); }
+
+/* Detaljvyn */
+.fl-detail-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.9rem 1rem 0;
+}
+.fl-back {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--lichen-deep);
+  cursor: pointer;
+  padding: 0.4rem 0.5rem 0.4rem 0;
+}
+.fl-edit-toggle {
+  background: none;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.35rem 0.85rem;
+}
+.fl-edit-toggle.active {
+  color: var(--forest);
+  border-color: var(--lichen);
+  background: var(--moss-soft);
+}
+.fl-detail-heading { padding-top: 0.35rem; }
+.fl-progress {
+  padding: 0 1.25rem 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.fl-items {
+  list-style: none;
+  margin: 0 1rem 0.9rem;
+  padding: 0.2rem 0;
+  background: var(--linen-card);
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+}
+.fl-items .shopping-item { cursor: pointer; }
+.fl-remove {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  font-size: 1rem;
+  color: var(--color-danger);
+  cursor: pointer;
+}
+
+/* Lägg till-rad + formulär (delas med "ny lista" i översikten) */
+.fl-add-form {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0 1rem;
+  margin-bottom: 0.9rem;
+}
+.fl-rename-form { padding-top: 0.9rem; }
+.fl-input {
+  flex: 1;
+  min-width: 0;
+  font-family: inherit;
+  font-size: 1rem;
+  color: var(--forest);
+  background: var(--linen-card);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  padding: 0.65rem 0.9rem;
+}
+.fl-input:focus { outline: 2px solid var(--lichen); outline-offset: -1px; }
+.fl-add-btn { min-width: 48px; font-size: 1.3rem; flex: none; }
+.fl-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0 1rem;
+}

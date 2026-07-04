@@ -12,6 +12,7 @@ import './ui/feedback.js';
 import './ui/cook-mode.js';
 import './shopping/shopping-list.js';
 import './shopping/dispatch-ui.js';
+import './lists/lists-view.js';
 import './weekly-plan/ingredient-preview.js';
 import './recipes/recipe-browser.js';
 import './recipes/recipe-editor.js';
@@ -223,9 +224,9 @@ async function boot() {
   await init();
   window.loadWeeklyPlan();
 
-  // Deep-link via query param: ?tab=recept|vecka|shop
+  // Deep-link via query param: ?tab=recept|vecka|shop|listor
   const tabParam = new URLSearchParams(window.location.search).get('tab');
-  if (tabParam && ['recept', 'vecka', 'shop'].includes(tabParam)) {
+  if (tabParam && ['recept', 'vecka', 'shop', 'listor'].includes(tabParam)) {
     window.switchTab(tabParam);
   }
 

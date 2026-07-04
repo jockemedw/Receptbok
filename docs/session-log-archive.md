@@ -1,6 +1,32 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–111. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–112. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 112 — Plattformsbeslut: Receptboken blir "Familjehubben" (strategidokument + roadmap)
+Joakim beskrev visionen om en familjedashboard (egna gemensamma listor à la Cozi + fler vardagsfunktioner, i denna app eller parallella appar). Efter avstämning via frågor valdes: **(a) arkitektur — bygg ut befintlig app till plattform** (samma repo/Vercel/Supabase/inloggning; inte separata appar + portal), **(b) moduler — gemensamma listor, kalender/agenda, anteckningar + öppet för fler förslag**, **(c) leverans — strategidokument, inget bygge ännu.**
+
+**Leverans: `docs/plattform-familjehub-2026-07.md`** (samma formatprecedens som designförslaget). Kärnpunkter:
+- **Alla byggstenar finns redan i drift:** Realtime-synk (`shopping-list.js`), household-RLS-mallen (`002_pantry_items.sql`), VSA-slices, `switchTab`-navigering, migrationsdisciplinen. Kostnad 0 kr; bonus: mer daglig användning håller Supabase vaken (dämpar #11).
+- **Navigering:** 5:e flik **Listor** (Inköpslista kortas "Inköp") — rymmer både fria listor (M1) och anteckningar (M2, `kind:'note'` i samma tabell). Kalendern får ingen flik — agendarad på Idag.
+- **M3 kalender: läs, bygg inte** — spegla familjens Google Kalender via privat iCal-länk (ICS) genom en liten `api/calendar.js`-proxy (CORS kräver backend-bud), länken som Vercel-env `FAMILY_CALENDAR_ICS`. Egen event-tabell medvetet uppskjuten.
+- **Fler modulförslag** (insats/värde-bedömda): M4 rutiner & sysslor, M5 viktiga datum, M6 middagsbetyg (ger Fas 2 familjelärande riktig data). Medvetet INTE föreslaget: budget, fotodelning, platsdelning.
+- **Idag-fliken som hubb:** nya sektioner (agenda, betygsrad, aktiva listor, pinnade lappar) adderas i `today-view.js` — inget befintligt flyttas, tomma sektioner renderas inte.
+- **Roadmap P1–P5:** P1 Listor-fliken (migration `005_family_lists.sql` + `js/lists/`) → P2 anteckningar → P3 kalenderagenda → P4 viktiga datum/middagsbetyg → P5 rutiner. Varje steg egen session + mobil-verifiering.
+- **3 öppna frågor till Joakim** i dokumentets slut: fliketikett ("Listor"?), iCal-länken (inför P3), vilka Cozi-listor som är i bruk (styr P1).
+
+**Städat i samma veva:** git-läget rätats ut (branchen `claude/ultraplan-bug-hunt-f8xhub` återskapad från main — allt gammalt innehåll var redan squash-mergat via PR #112/#113, tom diff verifierad); status.md-digestens inaktuella "väntar review"-rader om bugghunten uppdaterade (PR #112 är mergad, auth mobil-bekräftad); Newsreader-fonten inlagd i verifieringskön; Session 111-rutan arkiverad. Ingen kodändring — docs-only. PR #114 mergad.
+
+**Uppföljning samma dag — Joakims svar på de tre frågorna** infört i plattformsdokumentet (fliknamn "Listor" ✅; listorna är gemensamma/återkommande kom-ihåg-listor → M1 fick kravet **"Nollställ bockarna"** för packlistor; kalendern är **Outlook**, jobbkonto/delvis skyddad → M3 omskriven med **spår A** publicera ICS från Outlook / **spår B** separat privat familjekalender; länk-uttaget kan inte automatiseras — engångsmoment med klick-guide i P3). **Startprompt för P1** (klistrades in som första meddelande i Session 113):
+
+> Bygg P1 i plattformsplanen: nya **Listor-fliken** med gemensamma listor (Cozi-ersättaren). Hela strategin finns i `docs/plattform-familjehub-2026-07.md` — läs den först och följ den, inklusive Joakims besvarade frågor i slutet.
+>
+> Redan beslutat: fliknamn "Listor" (Inköpslista kortas "Inköp" i navigeringen). Våra listor är gemensamma kom-ihåg-listor som ofta är återkommande (packlistor) — bygg stöd för att återanvända en lista via "Nollställ bockarna", inte bara engångslistor. Anteckningar (M2) byggs INTE nu, men tabellen ska förberedas med `kind`-kolumnen enligt skissen.
+>
+> Arbetsgång: skriv `db/migrations/005_family_lists.sql` (idempotent, RLS-mallen från 002) och invänta mitt klartecken innan den körs; bygg `js/lists/` + femte fliken; återanvänd Realtime- och bocknings-mönstren från inköpslistan; klientskrivningar direkt mot Supabase (RLS skyddar, ingen ny API-endpoint). Testsvit + push + PR som vanligt, mobil-verifieringspunkter i status.md. Hård regel: befintlig veckoplan och inköpslista får inte påverkas.
+
+(Prompten är nu förbrukad — P1 byggd i Session 113, se `docs/status.md`.)
 
 ---
 
