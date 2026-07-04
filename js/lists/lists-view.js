@@ -73,6 +73,13 @@ async function refreshData() {
     .order('created_at', { ascending: true });
   if (itemsErr) throw itemsErr;
   _allItems = items || [];
+
+  // Egna bockar som väntar på debouncad skrivning får inte "hoppa tillbaka"
+  // om en omhämtning (t.ex. partnerns ändring) hinner före flushen.
+  for (const [id, checked] of _pendingChecks) {
+    const it = _allItems.find((i) => i.id === id);
+    if (it) it.checked = checked;
+  }
 }
 
 export async function loadListsTab() {
