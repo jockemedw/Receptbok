@@ -41,13 +41,13 @@
       <span class="header-tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg></span>
       <span class="header-tab-label">Inköp</span>
     </button>
-    <button class="header-tab" id="tabListor" data-tab="listor" onclick="switchTab('listor')">
-      <span class="header-tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3.5 5.5 1.5 1.5L8 4"/><path d="m3.5 11.5 1.5 1.5L8 10"/><path d="m3.5 17.5 1.5 1.5L8 16"/><path d="M11 6h9"/><path d="M11 12h9"/><path d="M11 18h9"/></svg></span>
-      <span class="header-tab-label">Listor</span>
-    </button>
     <button class="header-tab" id="tabRecept" data-tab="recept" onclick="switchTab('recept')">
       <span class="header-tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
       <span class="header-tab-label">Recept</span>
+    </button>
+    <button class="header-tab" id="tabListor" data-tab="listor" onclick="switchTab('listor')">
+      <span class="header-tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3.5 5.5 1.5 1.5L8 4"/><path d="m3.5 11.5 1.5 1.5L8 10"/><path d="m3.5 17.5 1.5 1.5L8 16"/><path d="M11 6h9"/><path d="M11 12h9"/><path d="M11 18h9"/></svg></span>
+      <span class="header-tab-label">Listor</span>
     </button>
     <button class="header-tab header-search-btn" id="headerSearchBtn" onclick="toggleHeaderSearch()" aria-label="Sök recept">
       <span class="header-tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
@@ -453,6 +453,15 @@
     </span>
     <span class="bottom-nav-label">Inköp</span>
   </button>
+  <button class="bottom-nav-tab" data-tab="recept" onclick="switchTab('recept')" aria-label="Recept">
+    <span class="bottom-nav-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+      </svg>
+    </span>
+    <span class="bottom-nav-label">Recept</span>
+  </button>
   <button class="bottom-nav-tab" data-tab="listor" onclick="switchTab('listor')" aria-label="Listor">
     <span class="bottom-nav-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -465,15 +474,6 @@
       </svg>
     </span>
     <span class="bottom-nav-label">Listor</span>
-  </button>
-  <button class="bottom-nav-tab" data-tab="recept" onclick="switchTab('recept')" aria-label="Recept">
-    <span class="bottom-nav-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-      </svg>
-    </span>
-    <span class="bottom-nav-label">Recept</span>
   </button>
 </nav>
 
