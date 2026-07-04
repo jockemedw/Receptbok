@@ -1,6 +1,11 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–114. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–115. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 115 — Cozi-paritet för Listor (L1+L2+Excel-import) + nav-swap + header-fix
+Utifrån Joakims skärmbilder av familjens skarpa Cozi. **L1 item-förhandsvisning + L2 snabbtillägg** (`js/lists/lists-view.js`): listkortet omstrukturerat till öppna-yta (`fl-card-open`) + snabbtillägg — kortet visar första oavbockade raderna ("· Stege…" + "+N till"); "＋ Lägg till rad" (`_quickAddListId`) lägger rader utan att öppna listan. **Excel-import** (`flShowImport`/`parseImport`/`flDoImport`): klistra in celler → tabbar = kolumner (varje kolumn en lista, översta raden = namn), utan tabbar = en rad per sak; CSV-filval (`normalizeToTabs`). Förhandsgranskning före skapande. Ingen migration. **Nav-swap:** Recept ↔ Listor (ordning Idag · Matsedel · Inköp · Recept · Listor). **Header safe-area-fix:** `padding-top: env(safe-area-inset-top)` på headern (ordmärket trycktes upp i statusfältet på iPhone med panna). **Cozi-förslag** `docs/listor-cozi-forslag-2026-07.md` (L1–L5). Verifiering: E2E-rök-test mot riktig modulkod (18 assertioner, 0 JS-fel) + stylad screenshot ljust/mörkt. Mobilverifierat OK av Joakim: L1+L2+import, header, Newsreader. Cache-bust styles v138, SW v50. PR #121–#124 mergade.
 
 ---
 
