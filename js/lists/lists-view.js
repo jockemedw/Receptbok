@@ -31,6 +31,14 @@ let _quickAddListId = null;   // vilken lista har snabbtillägg (L2) öppet på 
 let _importing = false;       // Excel-import-vyn öppen
 let _importText = '';         // inklistrad/inläst text (i state så den överlever re-render)
 let _importParsed = [];       // [{title, items[]}] efter förhandsgranskning
+let _decorSupported = null;    // L3: null=okänt, false=migration 006 ej körd (ikon/färg-kolumner saknas)
+
+// L3 — färgnycklar → temavariabler (adapterar till ljust/mörkt) + ikonuppsättning.
+const LIST_COLORS = {
+  lichen: 'var(--lichen)', rust: 'var(--rust)', ochre: 'var(--ochre)',
+  fisk: 'var(--p-fisk)', kott: 'var(--p-kott)', veg: 'var(--p-veg)',
+};
+const LIST_ICONS = ['🛒', '🏠', '🧳', '💊', '🎁', '🍎', '🔧', '🧺', '🎒', '🌱', '📋', '🐾'];
 let _refreshTimer = null;
 let _saveTimer = null;
 let _noteSaveTimer = null;
@@ -78,6 +86,12 @@ async function refreshData() {
   _supported = true;
   _lists = (rows || []).filter((r) => r.kind !== 'note');
   _notes = (rows || []).filter((r) => r.kind === 'note');
+
+  // L3-feature-detect: finns ikon/färg-kolumnerna (migration 006)? Avgörs av om
+  // en laddad rad har nyckeln — PostgREST tar med null-kolumner men utelämnar
+  // kolumner som inte finns. Kan bara avgöras när minst en rad finns.
+  const probe = rows && rows[0];
+  if (probe) _decorSupported = 'color' in probe;
 
   const { data: items, error: itemsErr } = await window.db
     .from('family_list_items')
@@ -269,11 +283,16 @@ function quickAddRowHtml(list) {
 }
 
 function listCardHtml(list) {
+  // L3 — färgband i vänsterkant + ikon före titeln (om satta, migration 006).
+  const accent = list.color && LIST_COLORS[list.color] ? LIST_COLORS[list.color] : '';
+  const style = accent ? ` style="--fl-accent:${accent}"` : '';
+  const cls = accent ? 'fl-card fl-list-card fl-has-accent' : 'fl-card fl-list-card';
+  const icon = list.icon ? `<span class="fl-card-icon" aria-hidden="true">${escapeHtml(list.icon)}</span>` : '';
   return `
-    <div class="fl-card fl-list-card">
+    <div class="${cls}"${style}>
       <button type="button" class="fl-card-open" onclick="flOpenList('${list.id}')">
         <span class="fl-card-head">
-          <span class="fl-card-title">${escapeHtml(list.title)}</span>
+          <span class="fl-card-title">${icon}${escapeHtml(list.title)}</span>
           ${listMetaHtml(list)}
         </span>
         ${listPreviewHtml(list)}
@@ -402,6 +421,7 @@ function detailHtml(list) {
       </button>
     </div>
     ${titleHtml}
+    ${_editMode && _decorSupported ? decorPickerHtml(list) : ''}
     ${listHtml}
     <form class="fl-add-form" onsubmit="flAddItem(event)">
       <input id="flAddInput" class="fl-input" maxlength="200" autocomplete="off"
@@ -416,6 +436,37 @@ function updateDetailProgress() {
   if (!el || !_openListId) return;
   const items = itemsOf(_openListId);
   el.textContent = `${items.filter((i) => i.checked).length} av ${items.length} avbockade`;
+}
+
+// L3 — utseende-väljare (färg + ikon) i Ändra-läget. Visas bara när migration 006
+// är körd (_decorSupported). Val sparas direkt (optimistiskt), "Ingen" nollar.
+function decorPickerHtml(list) {
+  const colors = Object.keys(LIST_COLORS).map((key) => `
+    <button type="button" class="fl-swatch${list.color === key ? ' active' : ''}"
+            style="--fl-accent:${LIST_COLORS[key]}" aria-label="Färg ${key}"
+            aria-pressed="${list.color === key ? 'true' : 'false'}"
+            onclick="flSetColor('${key}')"></button>`).join('');
+  const icons = LIST_ICONS.map((emoji) => `
+    <button type="button" class="fl-icon-opt${list.icon === emoji ? ' active' : ''}"
+            aria-pressed="${list.icon === emoji ? 'true' : 'false'}"
+            onclick="flSetIcon('${emoji}')">${emoji}</button>`).join('');
+  return `
+    <div class="fl-decor">
+      <div class="fl-decor-row">
+        <span class="fl-decor-label">Färg</span>
+        <div class="fl-swatches">${colors}
+          <button type="button" class="fl-swatch fl-swatch-none${list.color ? '' : ' active'}"
+                  aria-label="Ingen färg" onclick="flSetColor('')">✕</button>
+        </div>
+      </div>
+      <div class="fl-decor-row">
+        <span class="fl-decor-label">Ikon</span>
+        <div class="fl-icon-opts">${icons}
+          <button type="button" class="fl-icon-opt fl-icon-none${list.icon ? '' : ' active'}"
+                  aria-label="Ingen ikon" onclick="flSetIcon('')">✕</button>
+        </div>
+      </div>
+    </div>`;
 }
 
 // ── Anteckningsdetaljen (P2) ─────────────────────────────────────────────────
@@ -858,6 +909,29 @@ export async function flRenameList(ev) {
   }
 }
 
+// L3 — sätt färg/ikon (optimistiskt, tomt värde = nolla). Guardad av _decorSupported.
+async function setDecor(field, value) {
+  const list = _lists.find((l) => l.id === _openListId);
+  if (!list || !_decorSupported) return;
+  const prev = list[field] || null;
+  const next = value || null;
+  if (prev === next) return;
+  list[field] = next;
+  render();
+  try {
+    const { error } = await window.db.from('family_lists')
+      .update({ [field]: next }).eq('id', list.id);
+    if (error) throw error;
+  } catch {
+    list[field] = prev;
+    render();
+    window.showToast?.('Kunde inte spara utseendet — prova igen.', { type: 'error' });
+  }
+}
+
+export function flSetColor(key) { setDecor('color', key); }
+export function flSetIcon(emoji) { setDecor('icon', emoji); }
+
 export async function flArchiveList() {
   const list = _lists.find((l) => l.id === _openListId);
   if (!list) return;
@@ -1094,6 +1168,8 @@ window.flRenameList     = flRenameList;
 window.flArchiveList    = flArchiveList;
 window.flUnarchiveList  = flUnarchiveList;
 window.flDeleteList     = flDeleteList;
+window.flSetColor       = flSetColor;
+window.flSetIcon        = flSetIcon;
 window.flShowQuickAdd   = flShowQuickAdd;
 window.flCloseQuickAdd  = flCloseQuickAdd;
 window.flQuickAddItem   = flQuickAddItem;
