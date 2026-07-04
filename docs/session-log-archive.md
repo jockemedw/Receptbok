@@ -1,6 +1,11 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–113. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–114. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 114 — P2 Familjehubben: anteckningar i Listor-fliken + pinnade lappar på Idag
+Andra steget i plattformsplanen. Ingen ny migration (`kind='note'`/`body`/`pinned` fanns i migration 005). **Anteckningar som eget segment i `js/lists/lists-view.js`:** `refreshData` laddar hela `family_lists` och splittar lokalt i `_lists`/`_notes`. Översikten fick segmentavdelare "Anteckningar" med egna kort (rubrik + 2-raders fritext-preview + 📌) och "+ Ny anteckning". Detaljvy: rubrik + fritext-textarea med **debouncat autospar** (900 ms, ingen re-render under skrivandet, "Sparar…/Sparad"-status direkt i DOM), **📌 Fäst på Idag**-toggle, Arkivera/Ta bort. Arkivet delas med listorna (`allRows()`/`rowById()`). **Pinnade lappar på Idag** (`js/today/today-view.js`): sektion "Fästa lappar" (max 3 kort) via `window.loadPinnedNotes()`, laddas efter `loadWeeklyPlan` + vid byte till Idag. Verifiering: E2E-rök-test mot riktig modulkod (15 assertioner, 0 JS-fel) + stylad screenshot ljust/mörkt. Cache-bust styles v136, SW v47. PR #120 mergad.
 
 ---
 
