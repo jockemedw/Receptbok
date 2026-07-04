@@ -78,6 +78,22 @@ export function clearHouseholdCache() {
   _householdIdPromise = null;
 }
 
+// Delad wrapper för /api/*-anrop: bifogar Supabase-access-token som Bearer så
+// backend (som kör med service-role och kringgår RLS) kan verifiera att
+// anroparen är inloggad. Utan detta kan vem som helst som känner URL:en anropa
+// mutations-endpoints (t.ex. radera matsedeln). Appen är alltid inloggad när de
+// här anropen sker (auth-gate gatar init), så token finns i praktiken alltid.
+export async function apiFetch(path, options = {}) {
+  let token = null;
+  try {
+    const { data: { session } } = await auth.getSession();
+    token = session?.access_token || null;
+  } catch { /* ingen session → backend svarar 401, hanteras av anroparen */ }
+  const headers = { ...(options.headers || {}) };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return fetch(path, { ...options, headers });
+}
+
 auth.onAuthStateChange((event) => {
   if (event === 'SIGNED_OUT') clearHouseholdCache();
 });
@@ -85,5 +101,6 @@ auth.onAuthStateChange((event) => {
 window.supabase = supabase;
 window.db = db;
 window.auth = auth;
+window.apiFetch = apiFetch;
 window.getHouseholdId = getHouseholdId;
 window.isDbUnreachable = isDbUnreachable;

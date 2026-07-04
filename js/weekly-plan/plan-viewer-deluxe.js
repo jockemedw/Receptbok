@@ -581,7 +581,7 @@ window.dlxShuffle = async function (date, btn) {
   const day = window._lastPlan?.days?.find(d => d.date === date);
   suppressEcho();
   try {
-    const res = await fetch('/api/replace-recipe', {
+    const res = await window.apiFetch('/api/replace-recipe', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         date,
@@ -609,7 +609,7 @@ window.dlxFreeDay = async function (date, btn) {
   if (btn) { btn.disabled = true; btn.classList.add('loading'); }
   suppressEcho();
   try {
-    const res = await fetch('/api/skip-day', {
+    const res = await window.apiFetch('/api/skip-day', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ date, action: 'free' }),
     });
@@ -749,7 +749,7 @@ window.dlxPickMoveTarget = async function (before) {
   const movedId = (window._lastPlan?.days || []).find(x => x.date === from)?.recipeId ?? null;
 
   try {
-    const res = await fetch('/api/move-day', {
+    const res = await window.apiFetch('/api/move-day', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ date: from, before: before || null }),
     });
@@ -791,7 +791,7 @@ async function dlxPickSwapTarget(toDate) {
   suppressEcho();
 
   try {
-    const res = await fetch('/api/swap-days', {
+    const res = await window.apiFetch('/api/swap-days', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ date1: swap.from, date2: toDate }),
     });

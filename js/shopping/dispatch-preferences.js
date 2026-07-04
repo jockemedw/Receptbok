@@ -15,7 +15,7 @@ let _savePrefTimer = null;
 async function loadPrefs() {
   if (prefsLoaded) return prefs;
   try {
-    const res = await fetch("/api/shopping", {
+    const res = await window.apiFetch("/api/shopping", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "get_preferences" }),
@@ -29,7 +29,7 @@ function savePrefs() {
   clearTimeout(_savePrefTimer);
   _savePrefTimer = setTimeout(async () => {
     try {
-      await fetch("/api/shopping", {
+      await window.apiFetch("/api/shopping", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "set_preferences", preferences: prefs }),

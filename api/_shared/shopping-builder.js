@@ -399,7 +399,10 @@ function cleanIngredient(raw) {
   s = s.replace(/\s+à\s+.*$/i, "");
   // Strippa "efter smak"-suffix (förberedelseanvisning, inte en ingrediens)
   s = s.replace(/\s+efter\s+smak$/i, "");
-  if (/^\d/.test(s) && s.includes(" eller ")) {
+  // Gäller både med och utan mängd: "X eller Y" → första alternativet. Utan detta
+  // föll no-amount-fallet ("kyckling eller tofu") vidare till normalizeName som
+  // godtyckligt valde SISTA canon-ordet (tofu) — inkonsekvent med mängd-vägen.
+  if (s.includes(" eller ")) {
     const ADJEKTIV = new Set(["färsk", "tinad", "fryst", "varm", "kall", "riven", "hackad", "malen"]);
     const beforeEller = s.split(" eller ")[0].trim();
     const lastBeforeWord = beforeEller.split(/\s+/).pop().toLowerCase();

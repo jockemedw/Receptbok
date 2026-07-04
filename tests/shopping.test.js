@@ -249,12 +249,23 @@ assertEq(normalizeName("citroner"), "citron", "normalize: citroner → citron (p
   assertFalse(all.some((s) => s.includes("valfria grönsaker")), "PANTRY_SKIP: 'valfria grönsaker' filtreras bort");
 }
 
-// ─── "eller"-filtrering (noAmount-mängdlös post med " eller ") ─────────────────
+// ─── "eller"-hantering (mängdlös post med " eller " → FÖRSTA alternativet) ─────
 {
   const recipes = makeRecipes({ 8: ["oregano eller basilika", "timjan eller rosmarin"] });
   const result = buildShoppingList([8], recipes);
   const all = Object.values(result).flat();
-  assertFalse(all.some((s) => s.includes(" eller ")), "eller-filtrering: 'X eller Y' filtreras från noAmount");
+  assertFalse(all.some((s) => s.includes(" eller ")), "eller-hantering: 'X eller Y' kollapsas i noAmount");
+  // Ska välja FÖRSTA alternativet (konsekvent med mängd-vägen), inte sista canon.
+  assertTrue(all.some((s) => s === "oregano"), "eller-hantering: väljer första alternativet (oregano, ej basilika)");
+  assertTrue(all.some((s) => s === "timjan"), "eller-hantering: väljer första alternativet (timjan, ej rosmarin)");
+  assertFalse(all.some((s) => s === "basilika" || s === "rosmarin"), "eller-hantering: sista alternativet läggs inte till");
+}
+{
+  // No-amount protein-alternativ: "kyckling eller tofu" → kyckling (inte tofu).
+  const recipes = makeRecipes({ 8: ["kyckling eller tofu"] });
+  const all = Object.values(buildShoppingList([8], recipes)).flat();
+  assertTrue(all.some((s) => s === "kyckling"), "eller-hantering: 'kyckling eller tofu' → kyckling");
+  assertFalse(all.some((s) => s === "tofu"), "eller-hantering: 'kyckling eller tofu' lägger inte till tofu");
 }
 
 // ─── Merge: summering av samma ingrediens+enhet ───────────────────────────────

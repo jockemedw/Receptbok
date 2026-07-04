@@ -284,7 +284,7 @@ export async function generatePlan() {
       optimize_prices:  wantsOptimize,
       season_weight:    wantsSeason,
     };
-    const res  = await fetch('/api/generate', {
+    const res  = await window.apiFetch('/api/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

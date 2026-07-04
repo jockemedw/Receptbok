@@ -56,7 +56,7 @@ export async function importFromUrl() {
   fb.style.color   = 'var(--text-muted)';
   fb.innerHTML     = '<span class="import-spinner"></span>Hämtar recept…';
   try {
-    const res  = await fetch('/api/import-recipe', {
+    const res  = await window.apiFetch('/api/import-recipe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'url', url }),
@@ -89,7 +89,7 @@ export async function importFromPhoto() {
 
   try {
     const imageBase64 = await resizeAndEncodeImage(selectedPhotoFile, 1200);
-    const res  = await fetch('/api/import-recipe', {
+    const res  = await window.apiFetch('/api/import-recipe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'photo', imageBase64, mimeType: 'image/jpeg' }),
