@@ -854,7 +854,10 @@ export async function saveCustomDay(dateIso) {
   try {
     await postCustomDays('set', [dateIso], note);
     window.dlxCloseSheet?.();   // editorn bor i dag-sheeten
-    renderWeeklyPlanData(
+    // Via window.* så BÅDE deluxe- och Idag-vyns re-render-hookar kör (den lokala
+    // funktionen uppdaterar bara timeline-kartan + klassisk DOM, inte vyerna).
+    // postCustomDays har redan uppdaterat window._customDays → instant, ingen omladdning.
+    window.renderWeeklyPlanData(
       window._lastPlan || null,
       window._lastShop || null,
       false,
@@ -882,7 +885,8 @@ export async function clearCustomDay(dateIso) {
   try {
     await postCustomDays('clear', [dateIso]);
     window.dlxCloseSheet?.();   // editorn bor i dag-sheeten
-    renderWeeklyPlanData(
+    // Via window.* så både deluxe- och Idag-vyn re-renderas (se saveCustomDay).
+    window.renderWeeklyPlanData(
       window._lastPlan || null,
       window._lastShop || null,
       false,
