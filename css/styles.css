@@ -4036,9 +4036,10 @@ html.auth-required body {
   --p-veg: #8fac97;
   position: relative;
   overflow: hidden;
-  margin: 0 1rem 1.1rem;
-  padding: 1.3rem 1.35rem 1.4rem;
-  border-radius: 22px;
+  margin: 0 1rem 0.6rem;
+  /* Kompakt hero (Session 118) — hela veckan ska rymmas utan scroll */
+  padding: 0.8rem 1.15rem 0.85rem;
+  border-radius: 20px;
   background: linear-gradient(150deg, #3d5544 0%, #2c3f33 60%, #243429 100%); /* fast mörk i båda teman */
   color: var(--on-deep);
   box-shadow: 0 18px 40px -22px rgba(44,63,51,0.7);
@@ -4059,7 +4060,7 @@ html.auth-required body {
   align-items: center;
   justify-content: space-between;
   gap: 0.4rem;
-  margin: -0.35rem -0.5rem 0.25rem;
+  margin: -0.2rem -0.4rem 0.1rem;
 }
 .dlx-week-nav-mid {
   display: flex;
@@ -4071,8 +4072,8 @@ html.auth-required body {
 }
 .dlx-week-btn {
   flex: 0 0 auto;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4081,7 +4082,7 @@ html.auth-required body {
   border-radius: 50%;
   color: var(--on-deep);
   font-family: inherit;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   line-height: 1;
   cursor: pointer;
   transition: background 0.15s, opacity 0.15s;
@@ -4129,30 +4130,30 @@ html.auth-required body {
   position: relative;
   font-family: var(--font-display);
   font-weight: 400;
-  font-size: 1.7rem;
+  font-size: 1.3rem;
   line-height: 1.1;
-  margin: 0 0 1rem;
+  margin: 0 0 0.45rem;
   color: var(--on-deep);
 }
 .dlx-stats {
   position: relative;
   display: flex;
-  gap: 1.4rem;
+  gap: 1.1rem;
   flex-wrap: wrap;
 }
 .dlx-stat-num {
   display: flex;
   align-items: center;
   gap: 0.34rem;
-  font-size: 1.45rem;
+  font-size: 1.15rem;
   font-weight: 500;
   line-height: 1;
 }
-.dlx-stat-num svg { width: 17px; height: 17px; opacity: 0.85; }
+.dlx-stat-num svg { width: 16px; height: 16px; opacity: 0.85; }
 .dlx-stat-saving .dlx-stat-num { color: #ecd9a4; }
 .dlx-stat-lbl {
-  margin-top: 0.3rem;
-  font-size: 0.72rem;
+  margin-top: 0.18rem;
+  font-size: 0.68rem;
   letter-spacing: 0.02em;
   color: rgba(245,241,232,0.66);
 }
@@ -4160,8 +4161,8 @@ html.auth-required body {
   position: relative;
   display: flex;
   gap: 3px;
-  height: 8px;
-  margin: 1.15rem 0 0.7rem;
+  height: 7px;
+  margin: 0.55rem 0 0.4rem;
   border-radius: 999px;
   overflow: hidden;
 }
@@ -4170,7 +4171,7 @@ html.auth-required body {
   position: relative;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem 0.9rem;
+  gap: 0.3rem 0.75rem;
 }
 .dlx-legend-item {
   display: inline-flex;
@@ -4182,7 +4183,7 @@ html.auth-required body {
 .dlx-legend-dot { width: 8px; height: 8px; border-radius: 50%; }
 
 /* ── Dagslista ── */
-.dlx-days { display: flex; flex-direction: column; gap: 0.6rem; padding: 0 1rem; }
+.dlx-days { display: flex; flex-direction: column; gap: 0.35rem; padding: 0 1rem; }
 
 /* ── Notis: obekräftat förslag utanför visad vecka — tapp → hoppa dit ── */
 .dlx-plan-notice {
@@ -4224,16 +4225,24 @@ html.auth-required body {
   overflow: hidden;
   background: var(--linen-card);
   border: 1px solid var(--birch-soft);
-  border-radius: 18px;
+  border-radius: 15px;
   cursor: pointer;
-  transition: box-shadow 0.22s, border-color 0.22s, transform 0.12s;
+  transition: box-shadow 0.22s, border-color 0.22s, transform 0.12s, opacity 0.22s;
   animation: dlxFadeIn 0.4s ease both;
 }
 @keyframes dlxFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+/* Passerade dagar (denna vecka) + hela arkivveckor tonas ned så det syns direkt
+   vilka som passerat — men förblir läsbara och klickbara. Dämpningen måste ligga
+   i animationens SLUTruta, annars skriver kortets fadeIn (fill:both) över en
+   statisk opacity-regel och kortet återgår till full opacitet. */
+@keyframes dlxFadeInDim { from { opacity: 0; transform: translateY(6px); } to { opacity: 0.55; transform: none; } }
 .dlx-day:active { transform: scale(0.992); }
 .dlx-day:hover { box-shadow: 0 10px 26px -18px rgba(44,63,51,0.5); border-color: var(--birch); }
 .dlx-day.expanded { box-shadow: 0 16px 38px -20px rgba(44,63,51,0.55); border-color: var(--lichen); }
 .dlx-day.is-today { border-color: var(--rust); box-shadow: 0 0 0 1px var(--rust) inset; }
+.dlx-day.is-past,
+.dlx-day.is-archive,
+.dlx-day.inert { animation-name: dlxFadeInDim; }
 
 .dlx-rail {
   position: absolute;
@@ -4253,9 +4262,9 @@ html.auth-required body {
   display: flex;
   align-items: center;
   gap: 0.85rem;
-  padding: 0.85rem 1rem 0.85rem 1.15rem;
+  padding: 0.55rem 0.9rem 0.55rem 1.05rem;
 }
-.dlx-day.slim .dlx-day-head { padding-top: 0.6rem; padding-bottom: 0.6rem; }
+.dlx-day.slim .dlx-day-head { padding-top: 0.45rem; padding-bottom: 0.45rem; }
 
 .dlx-day-when {
   flex: 0 0 3.1rem;
@@ -4274,7 +4283,7 @@ html.auth-required body {
 /* Kalender-stil datum: dag-nummer stort, månad litet versalt under — jämn
    vertikal rytm på alla kort (annars radbröt "20 juni" ojämnt i den smala kolumnen). */
 .dlx-day-date { display: flex; flex-direction: column; line-height: 1; }
-.dlx-day-num { font-size: 1.3rem; font-weight: 700; color: var(--forest); }
+.dlx-day-num { font-size: 1.15rem; font-weight: 700; color: var(--forest); }
 .dlx-day-mon {
   font-size: 0.6rem;
   font-weight: 600;
@@ -4333,7 +4342,7 @@ html.auth-required body {
 .dlx-day-recipe {
   font-family: var(--font-display);
   font-weight: 400;
-  font-size: 1.08rem;
+  font-size: 1rem;
   line-height: 1.2;
   color: var(--forest-deep);
   margin: 0;
@@ -4361,7 +4370,7 @@ html.auth-required body {
 .dlx-day.inert { cursor: default; opacity: 0.55; }
 .dlx-day.inert:hover { box-shadow: none; border-color: var(--birch-soft); }
 
-.dlx-day-meta { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.4rem; }
+.dlx-day-meta { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.28rem; }
 .dlx-chip {
   font-size: 0.68rem;
   font-weight: 600;
@@ -5089,10 +5098,9 @@ body.cook-open { overflow: hidden; }
   border: 1px solid var(--birch-soft);
   border-left: 4px solid var(--rust);
   border-radius: 14px;
-  padding: 0.85rem 2.2rem 0.85rem 1.1rem;
-  /* 0.9rem ner till första dagkortet — något mer än kortens inbördes 0.6rem,
-     så sektionsbytet ikväll → kommande dagar får luft */
-  margin: 0.85rem 0 0.9rem;
+  padding: 0.58rem 2rem 0.58rem 1.05rem;
+  /* Något mer luft än kortens inbördes 0.35rem så sektionsbytet syns */
+  margin: 0.4rem 0 0.45rem;
   cursor: pointer;
   font-family: inherit;
   box-shadow: 0 1px 4px rgba(45,52,40,0.05);
@@ -5100,7 +5108,7 @@ body.cook-open { overflow: hidden; }
 .dlx-tonight:active:not(.expanded) { background: var(--stone); }
 .dlx-tonight-chev {
   position: absolute;
-  top: 0.85rem;
+  top: 0.7rem;
   right: 0.95rem;
   color: var(--birch);
   font-size: 1.15rem;
@@ -5114,7 +5122,7 @@ body.cook-open { overflow: hidden; }
   align-items: center;
   gap: 0.85rem;
   width: 100%;
-  margin-top: 0.35rem;
+  margin-top: 0.2rem;
 }
 .dlx-tonight-main {
   display: flex;
@@ -5137,10 +5145,10 @@ body.cook-open { overflow: hidden; }
 .dlx-tonight-eyebrow svg { width: 1.1em; height: 1.1em; }
 .dlx-tonight-title {
   font-family: var(--font-display);
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--forest-deep);
-  line-height: 1.25;
+  line-height: 1.2;
 }
 .dlx-tonight-sub {
   font-size: 0.82rem;
