@@ -74,6 +74,20 @@ export function daysBetween(startIso, endIso) {
   ) + 1;
 }
 
+// ISO-veckans måndag för ett datum. T12:00 + lokal fmtIso = DST-säkert
+// (samma mönster som diffDaysIso i plan-viewer.js).
+export function weekStartOf(dateIso) {
+  const d = new Date(dateIso + 'T12:00:00');
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return fmtIso(d);
+}
+
+export function addDaysIso(dateIso, n) {
+  const d = new Date(dateIso + 'T12:00:00');
+  d.setDate(d.getDate() + n);
+  return fmtIso(d);
+}
+
 // ISO 8601 veckonummer — måndag som första veckodag, v.1 innehåller 4 jan.
 export function isoWeekNumber(dateIso) {
   if (!dateIso) return null;

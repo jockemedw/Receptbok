@@ -698,6 +698,10 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
   // avvecklad — bara datapreppen lever kvar här.
   window._timelineByDate = Object.fromEntries(timeline.map((d) => [d.date, d]));
 
+  // Färsk generering → hoppa till förslagets startvecka så användaren ser det
+  // hen just skapade (veckovyn visar annars alltid innevarande vecka).
+  if (freshlyGenerated && plan?.startDate) window.dlxWeekGoto?.(plan.startDate);
+
   const confirmWrap   = document.getElementById('confirmPlanWrap');
   const confirmStatus = document.getElementById('confirmStatus');
   const confirmBtn    = document.getElementById('confirmPlanBtn');

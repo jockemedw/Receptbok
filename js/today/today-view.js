@@ -10,7 +10,7 @@
 // Re-render: vi wrappar renderWeeklyPlanData + loadWeeklyPlan + switchTab (samma
 // synk-mönster som deluxe). Importeras EFTER deluxe → wrappningen ligger ytterst.
 
-import { fmtIso, PROTEIN_COLOR, isoWeekNumber, escapeHtml } from '../utils.js';
+import { fmtIso, PROTEIN_COLOR, isoWeekNumber, escapeHtml, weekStartOf, addDaysIso } from '../utils.js';
 
 const MONTH_NAMES_LONG = ['januari', 'februari', 'mars', 'april', 'maj', 'juni', 'juli', 'augusti', 'september', 'oktober', 'november', 'december'];
 const PROTEIN_LABEL = { fisk: 'Fisk', kyckling: 'Kyckling', kött: 'Kött', fläsk: 'Fläsk', vegetarisk: 'Vegetariskt' };
@@ -165,20 +165,26 @@ function weekHtml(weekDays, sumLeft, sumRight) {
   const threads = weekDays.map(d => {
     const info = dayInfo(d);
     const hasMeal = info && info.kind === 'recipe';
+    // "Handlat för": ingredienserna ligger på en bekräftad inköpslista —
+    // samma härledning som kundvagnschipet i Matsedel-vyn.
+    const shopped = d.planId === 'active' && !d.isCustom && !!d.recipeId
+      && !!(window._lastPlan?.confirmedAt || window.planConfirmed);
     const cls = [
       'today-thread',
       d.date < todayIso ? 'past' : '',
       d.date === todayIso ? 'today' : '',
       hasMeal ? '' : 'free',
+      shopped ? 'shopped' : '',
     ].filter(Boolean).join(' ');
     const color = hasMeal ? info.color : 'var(--birch)';
-    return `<span class="${cls}" style="--p:${color}" title="${esc(d.day)}${info ? ' · ' + esc(info.title) : ''}">
-        <span class="today-thread-bar"></span><span class="today-thread-day">${esc(d.day.charAt(0))}</span>
+    const title = `${d.day}${info ? ' · ' + info.title : ''}${shopped ? ' · handlat' : ''}`;
+    return `<span class="${cls}" style="--p:${color}" title="${esc(title)}">
+        <span class="today-thread-bar"></span><span class="today-thread-day">${esc(d.day.charAt(0))}</span>${shopped ? '<span class="today-thread-dot" aria-hidden="true"></span>' : ''}
       </span>`;
   }).join('');
   return `
     <div class="today-section-head">
-      <h2 class="today-h2">Kommande veckan</h2>
+      <h2 class="today-h2">Vecka ${isoWeekNumber(todayIso)}</h2>
       <span class="today-link" onclick="switchTab('vecka')">Hela matsedeln</span>
     </div>
     <button type="button" class="today-weave-card" onclick="switchTab('vecka')" aria-label="Öppna matsedeln">
@@ -306,8 +312,6 @@ export function renderTodayView() {
   const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowIso = fmtIso(tomorrow);
 
-  const all = Object.values(timeline).filter(d => !d.isArchive).sort((a, b) => a.date.localeCompare(b.date));
-
   const todayEntry = timeline[todayIso] || null;
   const todayInfo = dayInfo(todayEntry);
 
@@ -321,20 +325,17 @@ export function renderTodayView() {
     ? `${todayEntry.day} ${todayEntry.dayNum} ${MONTH_NAMES_LONG[todayEntry.month]} · vecka ${wk}`
     : `${capitalize(now.toLocaleDateString('sv-SE', { weekday: 'long' }))} ${now.getDate()} ${MONTH_NAMES_LONG[now.getMonth()]} · vecka ${wk}`;
 
-  // Veckans trådband: planens dagar i datumordning (annars nästa 7 dagar).
-  const plan = window._lastPlan || null;
-  let weekDays = (plan?.startDate && plan?.endDate)
-    ? all.filter(d => d.date >= plan.startDate && d.date <= plan.endDate)
-    : all.filter(d => d.date >= todayIso).slice(0, 7);
-  if (!weekDays.length) weekDays = all.filter(d => d.date >= todayIso).slice(0, 7);
+  // Veckans trådband: innevarande kalendervecka (mån–sön) — samma veckotänk
+  // som Matsedel-flikens veckovy. Innevarande vecka ligger alltid inom
+  // tidslinjens horisont; filter(Boolean) är bara ett skyddsnät.
+  const ws = weekStartOf(todayIso);
+  const weekDays = Array.from({ length: 7 }, (_, i) => timeline[addDaysIso(ws, i)]).filter(Boolean);
 
-  // Sammanfattning: middagar kvar · veg + veckans besparing.
-  const meals = (plan?.days || []).filter(d => d.recipeId);
-  const kvar = meals.filter(d => d.date >= todayIso).length
-    || weekDays.filter(d => dayInfo(d)?.kind === 'recipe' && d.date >= todayIso).length;
-  const veg = meals.filter(d => recipeById(d.recipeId)?.protein === 'vegetarisk').length
-    || weekDays.filter(d => dayInfo(d)?.protein === 'vegetarisk').length;
-  const saving = (plan?.days || []).reduce((s, d) => s + (d.saving || 0), 0);
+  // Sammanfattning räknas på veckan: middagar kvar · veg + veckans besparing
+  // ("−X kr denna vecka" blir bokstavligt sant).
+  const kvar = weekDays.filter(d => dayInfo(d)?.kind === 'recipe' && d.date >= todayIso).length;
+  const veg = weekDays.filter(d => dayInfo(d)?.protein === 'vegetarisk').length;
+  const saving = weekDays.reduce((s, d) => s + (d.saving || 0), 0);
   const sumLeft = `${kvar} ${kvar === 1 ? 'middag' : 'middagar'} kvar · ${veg} veg`;
   const sumRight = saving >= 1 ? `−${Math.round(saving)} kr denna vecka` : '';
 

@@ -9,7 +9,7 @@
 // Re-render: vi wrappar window.renderWeeklyPlanData så båda vyerna alltid hålls
 // i synk efter generering/byte/bekräftelse.
 
-import { fmtIso, fmtShort, PROTEIN_COLOR, isoWeekNumber, escapeHtml } from '../utils.js';
+import { fmtIso, fmtShort, PROTEIN_COLOR, isoWeekNumber, escapeHtml, weekStartOf, addDaysIso, getHolidayName } from '../utils.js';
 
 const DAY_NAMES_LONG = ['Söndag', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag'];
 const MONTH_NAMES_SHORT = ['jan', 'feb', 'mars', 'apr', 'maj', 'juni', 'juli', 'aug', 'sep', 'okt', 'nov', 'dec'];
@@ -34,9 +34,9 @@ const I = {
   // Gaffel + kniv — "vi äter ute" i Ikväll-sheeten (backlog #15).
   fork: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v7c0 1 .7 2 2 2s2-1 2-2V3"/><path d="M7 3v18"/><path d="M17 3c-1.5 1-2.5 3.5-2.5 6 0 2 .8 3 2.5 3v9"/></svg>',
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14 M5 12h14"/></svg>',
-  // Historik (klocka med bakåtpil) + upp-chevron för att fälla ihop.
-  history: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 9a9 9 0 1 1-.6 5"/><path d="M3 4.5V9h4.5"/><path d="M12 8v4.5l3 1.8"/></svg>',
-  chevUp: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>',
+  // Kundvagn med bock — "handlat för"-markering på dagar vars ingredienser
+  // ligger på en bekräftad inköpslista.
+  cart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.6 11.2A1.5 1.5 0 0 0 9.06 16.4H18a1.5 1.5 0 0 0 1.46-1.14L21 8H6"/><circle cx="10" cy="20" r="1.4"/><circle cx="17.5" cy="20" r="1.4"/><path d="m11.5 11 2 2 3.5-3.5"/></svg>',
 };
 
 // esc = utils.escapeHtml (samma semantik) — en enda implementation i utils.
@@ -92,6 +92,85 @@ function recipeById(id) {
   return id ? (window.RECIPES || []).find(r => r.id === id) : null;
 }
 
+// ── Veckostate — vyn visar EN kalendervecka (ISO, mån–sön) i taget ───────────
+// null = innevarande vecka (default). Sätts bara av stepparen/Idag/Goto och
+// nollställs vid flikbyte (wrappedSwitch) — re-renders behåller visad vecka.
+let _dlxWeekStart = null;
+
+function currentWeekStart() { return weekStartOf(fmtIso(new Date())); }
+function shownWeekStart()   { return _dlxWeekStart || currentWeekStart(); }
+
+// Stepparens klampgränser: veckorna som tidslinjen (plan + arkiv + egna dagar)
+// faktiskt täcker — utanför finns inget att visa.
+function timelineBounds() {
+  const t = sortedTimeline();
+  if (!t.length) return null;
+  return { min: weekStartOf(t[0].date), max: weekStartOf(t[t.length - 1].date) };
+}
+
+window.dlxWeekStep = function (dir) {
+  const b = timelineBounds();
+  const next = addDaysIso(shownWeekStart(), dir * 7);
+  if (b && (next < b.min || next > b.max)) return;   // pilen är disabled ändå
+  _dlxWeekStart = next === currentWeekStart() ? null : next;
+  renderDeluxe();
+};
+
+window.dlxWeekToday = function () {
+  _dlxWeekStart = null;
+  renderDeluxe();
+};
+
+window.dlxWeekGoto = function (dateIso) {
+  const ws = weekStartOf(dateIso);
+  _dlxWeekStart = ws === currentWeekStart() ? null : ws;
+  renderDeluxe();
+};
+
+// Nollställ visad vecka (anropas från wrappedSwitch — modulintern state).
+function resetShownWeek() { _dlxWeekStart = null; }
+
+// Blank dag utanför tidslinjens horisont — samma fält som buildTimeline-rader
+// (plan-viewer.js) så kort och sheet kan behandla den som vilken dag som helst.
+function synthDay(iso) {
+  const d = new Date(iso + 'T12:00:00');
+  const dow = d.getDay();
+  const todayIso = fmtIso(new Date());
+  return {
+    date: iso, day: DAY_NAMES_LONG[dow], dayShort: DAY_NAMES_LONG[dow].slice(0, 3),
+    dayNum: d.getDate(), month: d.getMonth(), weekNumber: isoWeekNumber(iso),
+    isPast: iso < todayIso, isToday: iso === todayIso,
+    isWeekend: dow === 0 || dow === 6, holiday: getHolidayName(iso),
+    recipe: null, recipeId: null, saving: null, savingMatches: null, blocked: false,
+    planId: null, planLabel: null, planColorIndex: null, isArchive: false,
+    isCustom: false, customNote: '', customRecipeId: null, customRecipeTitle: '',
+  };
+}
+
+// Den visade veckans 7 dagar (mån–sön) — luckor utanför horisonten syntetiseras.
+function shownWeekDays() {
+  const map = window._timelineByDate || {};
+  const start = shownWeekStart();
+  return Array.from({ length: 7 }, (_, i) => {
+    const iso = addDaysIso(start, i);
+    return map[iso] || synthDay(iso);
+  });
+}
+
+// "Handlat för": dagens ingredienser ligger på en bekräftad inköpslista.
+// Bara aktiva planens receptdagar — arkivet kan innehålla aldrig bekräftade
+// förslag (archiveOldPlan kollar inte confirmed_at) och egna dagar ingår
+// aldrig i listan.
+function isShoppedDay(d) {
+  return d.planId === 'active' && !d.isCustom && !!d.recipeId
+      && !!(window._lastPlan?.confirmedAt || window.planConfirmed);
+}
+
+function shoppedChip() {
+  return `<span class="dlx-shopped" role="img" title="Handlat för — ingredienserna finns på inköpslistan"
+    aria-label="Ingredienser på inköpslistan">${I.cart}</span>`;
+}
+
 // ── "Ikväll"-kort — svarar på familjens vanligaste fråga direkt i heron ──────
 // ERSÄTTER dagens kort i listan (ingen dubblering): visar datum, öppnar
 // snabbåtgärds-sheeten vid tryck och deltar i byt dag-flödet som vanliga kort.
@@ -140,23 +219,32 @@ function buildTonight(timeline) {
         </div>
         <div class="dlx-tonight-main">
           <span class="dlx-tonight-title">${mark}${esc(label)}</span>
-          ${sub ? `<span class="dlx-tonight-sub">${esc(sub)}</span>` : ''}
+          ${sub ? `<span class="dlx-tonight-sub">${esc(sub)}${isShoppedDay(d) ? ' ' + shoppedChip() : ''}</span>`
+                : (isShoppedDay(d) ? `<span class="dlx-tonight-sub">${shoppedChip()}</span>` : '')}
         </div>
       </div>
       <span class="dlx-tonight-chev" aria-hidden="true">›</span>
     </article>`;
 }
 
-// ── Hero-statistik ────────────────────────────────────────────────────────────
-function buildHero(plan, pending) {
-  const days = plan?.days || [];
-  const planned = days.filter(d => d.recipeId).length;
-  const totalSaving = days.reduce((s, d) => s + (d.saving || 0), 0);
+// ── Hero-statistik — räknas på den VISADE veckan, inte planens spann ─────────
+// En måltid = genererad receptdag eller egen dag med recept ur receptboken.
+function heroMealId(d) {
+  if (d.recipeId && !d.isCustom) return d.recipeId;
+  if (d.isCustom && d.customRecipeId) return d.customRecipeId;
+  return null;
+}
+
+function buildHero(weekDays, weekStart, plan, pending) {
+  const planned = weekDays.filter(d => heroMealId(d)).length;
+  const totalSaving = weekDays.reduce((s, d) => s + (d.saving || 0), 0);
+  const hasActiveDays = weekDays.some(d => d.planId === 'active');
+  const isCurrentWeek = weekStart === currentWeekStart();
 
   // Proteinfördelning
   const counts = {};
-  for (const d of days) {
-    const r = recipeById(d.recipeId);
+  for (const d of weekDays) {
+    const r = recipeById(heroMealId(d));
     if (!r) continue;
     counts[r.protein] = (counts[r.protein] || 0) + 1;
   }
@@ -172,18 +260,16 @@ function buildHero(plan, pending) {
 
   const vegCount = counts['vegetarisk'] || 0;
 
-  let title, eyebrow;
-  if (plan?.startDate && plan?.endDate) {
-    const wk = isoWeekNumber(plan.startDate);
-    const wk2 = isoWeekNumber(plan.endDate);
-    eyebrow = wk === wk2 ? `Vecka ${wk}` : `Vecka ${wk}–${wk2}`;
-    title = `${fmtShort(plan.startDate)} – ${fmtShort(plan.endDate)}`;
-  } else {
-    eyebrow = 'Matsedel';
-    title = 'Veckans måltider';
-  }
+  // Rubrik: alltid den visade veckan (mån–sön). Året behövs inte — datum-
+  // intervallet disambiguerar vid årsskifte.
+  const weekEnd = addDaysIso(weekStart, 6);
+  const eyebrow = `Vecka ${isoWeekNumber(weekStart)}`;
+  const title = `${fmtShort(weekStart)} – ${fmtShort(weekEnd)}`;
 
-  const hasDeals = !!(window._weeklyDeals?.candidates?.length);
+  // "Veckans fynd" är plan-scopat — visa knappen bara när veckan faktiskt
+  // innehåller aktiva planens dagar — en arkivvecka ska inte göra reklam för
+  // dagens erbjudanden.
+  const hasDeals = hasActiveDays && !!(window._weeklyDeals?.candidates?.length);
   const savingStat = totalSaving >= 1 ? (
     hasDeals
       ? `<button type="button" class="dlx-stat dlx-stat-saving has-deals" onclick="openDealsPopup()" title="Se veckans fynd">
@@ -201,20 +287,37 @@ function buildHero(plan, pending) {
         </button>`
       : '');
 
-  const pendingTag = pending
+  // Badges gäller den visade veckan: pending-badgen bara när förslagets dagar
+  // faktiskt syns här (annars bär notis-bannern budskapet), "Bekräftad" bara
+  // för veckor som innehåller den bekräftade planens dagar.
+  const pendingTag = (pending && hasActiveDays)
     ? `<span class="dlx-hero-badge">Förslag — ej bekräftat</span>`
-    : (plan?.confirmedAt ? `<span class="dlx-hero-badge confirmed">Bekräftad</span>` : '');
+    : ((hasActiveDays && plan?.confirmedAt) ? `<span class="dlx-hero-badge confirmed">Bekräftad</span>` : '');
 
   const barBlock = planned ? `
       <div class="dlx-bar">${segs}</div>
       <div class="dlx-legend">${legend}</div>` : '';
 
+  // Veckoväxlaren: ‹ / › bläddrar, "Idag"-pillen syns bara utanför innevarande
+  // vecka. Pilarna disablas vid tidslinjens kanter (klamp i dlxWeekStep).
+  const b = timelineBounds();
+  const atMin = b ? weekStart <= b.min : true;
+  const atMax = b ? weekStart >= b.max : true;
+  const todayBtn = !isCurrentWeek
+    ? `<button type="button" class="dlx-week-today" onclick="dlxWeekToday()">Idag</button>` : '';
+
   return `
     <div class="dlx-hero">
       <div class="dlx-hero-glow"></div>
-      <div class="dlx-hero-top">
-        <span class="dlx-hero-eyebrow">${esc(eyebrow)}</span>
-        ${pendingTag}
+      <div class="dlx-week-nav">
+        <button type="button" class="dlx-week-btn" onclick="dlxWeekStep(-1)"
+                aria-label="Föregående vecka"${atMin ? ' disabled' : ''}>‹</button>
+        <div class="dlx-week-nav-mid">
+          <span class="dlx-hero-eyebrow">${esc(eyebrow)}</span>
+          ${pendingTag}${todayBtn}
+        </div>
+        <button type="button" class="dlx-week-btn" onclick="dlxWeekStep(1)"
+                aria-label="Nästa vecka"${atMax ? ' disabled' : ''}>›</button>
       </div>
       <h2 class="dlx-hero-title">${esc(title)}</h2>
       <div class="dlx-stats">
@@ -289,7 +392,7 @@ function recipeDayCard(d, opts) {
         </div>
         <div class="dlx-day-main">
           <h3 class="dlx-day-recipe">${esc(d.recipe || '')}</h3>
-          <div class="dlx-day-meta">${metaParts.join('')}${savingPill}</div>
+          <div class="dlx-day-meta">${metaParts.join('')}${savingPill}${isShoppedDay(d) ? shoppedChip() : ''}</div>
         </div>
         <span class="dlx-day-chev" aria-hidden="true">›</span>
       </div>
@@ -392,20 +495,16 @@ function renderDayCard(d) {
   return html;
 }
 
-// Renderar en lista dagskort med en tunn "Vecka N"-avdelare där ISO-veckan byter.
-// Ingen avdelare före första kortet — hero-rutan visar redan startveckan.
-function renderDayList(days) {
+// Renderar veckans dagskort i kronologisk ordning. Ikväll-kortet ersätter
+// dagens vanliga kort inline (ingen dubblering) — så att t.ex. en torsdag
+// hamnar efter mån–ons, inte överst. Inga veckoavdelare behövs längre:
+// en mån–sön-vecka korsar aldrig en ISO-veckogräns.
+function renderDayList(days, { tonightHtml = '', tonightDate = null } = {}) {
   const zones = moveZoneCtx();   // släppzoner i flytta dag-läge (annars null)
   let html = '';
-  let lastWeek = null;
   for (const d of days) {
-    const wk = isoWeekNumber(d.date);
-    if (lastWeek !== null && wk !== lastWeek) {
-      html += `<div class="dlx-week-sep"><span>Vecka ${wk}</span></div>`;
-    }
-    lastWeek = wk;
     if (zones?.set.has(d.date)) html += dropZone(d.date);
-    html += renderDayCard(d);
+    html += (tonightHtml && d.date === tonightDate) ? tonightHtml : renderDayCard(d);
     if (zones?.endAfter === d.date) html += dropZone(null);
   }
   return html;
@@ -445,6 +544,19 @@ function modeBannerHtml() {
   return '';
 }
 
+// Notis när ett obekräftat förslag ligger helt utanför den visade veckan —
+// wayfinding till förslagets dagar. Själva bekräfta-knapparna (#confirmPlanWrap)
+// ligger utanför #weekDeluxe och syns oavsett visad vecka.
+function weekNoticeHtml(plan, pending, weekStart) {
+  if (!pending || !plan?.startDate || !plan?.endDate) return '';
+  const weekEnd = addDaysIso(weekStart, 6);
+  const overlaps = plan.startDate <= weekEnd && plan.endDate >= weekStart;
+  if (overlaps) return '';
+  return `<button type="button" class="dlx-plan-notice" onclick="dlxWeekGoto('${plan.startDate}')">
+    ${I.free}<span>Förslag väntar ${fmtShort(plan.startDate)} – ${fmtShort(plan.endDate)} — visa veckan</span><span class="dlx-plan-notice-chev" aria-hidden="true">›</span>
+  </button>`;
+}
+
 export function renderDeluxe() {
   if (!ensureScaffold()) return;
   const host = document.getElementById('weekDeluxe');
@@ -457,109 +569,26 @@ export function renderDeluxe() {
   const pending = !!(plan?.days?.length) && !plan?.confirmedAt && !window.planConfirmed;
   const todayIso = fmtIso(new Date());
 
-  // Dela upp: historik (förflutet, ej idag) vs aktuellt/framtid.
-  // Ikväll-kortet ersätter dagens kort i listan — ingen dubblering. Bara om
-  // dagen är helt oplanerad (gap) ligger den kvar i listan ("+ Planera dagen").
-  const hero = buildHero(plan, pending);
-  const tonight = buildTonight(timeline);
-  const history = timeline.filter(d => d.date < todayIso);
-  const upcoming = timeline.filter(d => (tonight ? d.date > todayIso : d.date >= todayIso));
+  // EN kalendervecka i taget (mån–sön), default innevarande. Passerade veckor
+  // är ett ‹-tryck bort (ersätter det gamla historik-dragspelet). Ikväll-kortet
+  // ersätter dagens kort inline i listan när innevarande vecka visas — bara om
+  // dagen är helt oplanerad (gap) ligger vanliga kortet kvar ("+ Planera dagen").
+  const weekStart = shownWeekStart();
+  const weekDays = shownWeekDays();
+  const isCurrentWeek = weekStart === currentWeekStart();
 
-  const upcomingHtml = upcoming.length
-    ? renderDayList(upcoming)
-    : `<div class="dlx-empty-future">Inga kommande dagar planerade ännu.</div>`;
+  const hero = buildHero(weekDays, weekStart, plan, pending);
+  const tonight = isCurrentWeek ? buildTonight(weekDays) : '';
+  const daysHtml = renderDayList(weekDays, { tonightHtml: tonight, tonightDate: todayIso });
 
-  // Tidigare recept ligger INTE i flödet by default — sidan vilar på rubriken +
-  // heron. En "forcerad uppåtscroll" (pull i toppen, se touch/wheel-lyssnarna)
-  // armar en knapp (_dlxHistoryArmed); knappen fäller ut historiken som ett
-  // dragspel NEDÅT (_dlxHistoryOpen) ovanför heron — utfällning nedåt vid toppen
-  // ger ingen scroll-ryckning.
-  window._dlxHasHistory = history.length > 0;
-  if (!history.length) { window._dlxHistoryArmed = false; window._dlxHistoryOpen = false; }
-  const showZone = history.length && (window._dlxHistoryArmed || window._dlxHistoryOpen);
-  const open = !!window._dlxHistoryOpen;
-  // A11y (backlog #22): gesten (pull/hjul i toppen) kräver touch/mus — en diskret
-  // alltid-synlig knapp ger tangentbord och alla andra samma väg in.
-  const historyHtml = showZone
-    ? `<div class="dlx-history-zone">
-         <button type="button" class="dlx-history-btn${open ? ' open' : ''}" onclick="dlxToggleHistory()">
-           ${open ? I.chevUp : I.history}<span>${open ? 'Dölj tidigare recept' : 'Visa tidigare recept'}</span>
-         </button>
-         ${open ? `<div class="dlx-history-flow">${renderDayList(history)}</div>` : ''}
-       </div>`
-    : (history.length
-        ? `<button type="button" class="dlx-history-peek" onclick="dlxOpenHistory()">${I.history}<span>Tidigare recept</span></button>`
-        : '');
-
-  // Släppzon för "kläm in före ikväll" — Ikväll-kortet ligger utanför dagslistan
-  const tonightZone = (tonight && moveZoneCtx()?.set.has(todayIso)) ? dropZone(todayIso) : '';
-
-  // Ordningen i Matsedeln är åter history/hero/banner/today/days — svaret "vad
-  // blir det ikväll?" bor numera i egna Idag-fliken (today-view.js), så Matsedeln
-  // behåller sin veckoöversikt med heron överst. Ikväll-kortet är kvar (egen
-  // presentation, ingen dubblering).
-  setSec(host, 'history', historyHtml);
+  // Tömda sektioner (history/today) behålls så sektionsordningen är stabil och
+  // gammal DOM från tidigare renderingar rensas — setSec tar aldrig bort element.
+  setSec(host, 'history', '');
   setSec(host, 'hero', hero);
-  setSec(host, 'banner', modeBannerHtml());
-  setSec(host, 'today', `${tonightZone}${tonight}`);
-  setSec(host, 'days', `<div class="dlx-days">${upcomingHtml}</div>`);
+  setSec(host, 'banner', weekNoticeHtml(plan, pending, weekStart) + modeBannerHtml());
+  setSec(host, 'today', '');
+  setSec(host, 'days', `<div class="dlx-days">${daysHtml}</div>`);
 }
-
-// ── Tidigare recept: pull-to-reveal-knapp + dragspel ──────────────────────────
-// Sidan vilar på rubrik + hero. Forcerad uppåtscroll i toppen (rubber-band på
-// touch, hjul-upp på desktop) "armar" knappen; knappen fäller ut historiken.
-window.dlxToggleHistory = function () {
-  window._dlxHistoryOpen = !window._dlxHistoryOpen;
-  if (!window._dlxHistoryOpen) window._dlxHistoryArmed = false;   // stäng → göm knappen
-  renderDeluxe();
-};
-
-// Synligt alternativ till gesten (a11y, backlog #22): öppna historiken direkt.
-window.dlxOpenHistory = function () {
-  window._dlxHistoryArmed = true;
-  window._dlxHistoryOpen = true;
-  renderDeluxe();
-};
-
-function armHistory() {
-  if (!window._dlxHasHistory || window._dlxHistoryArmed || window._dlxHistoryOpen) return;
-  if (document.body.dataset.activeTab !== 'vecka') return;
-  window._dlxHistoryArmed = true;
-  renderDeluxe();
-}
-
-// Touch: pull nedåt (~64 px) medan man redan är i toppen → arma på touchend
-// (committas vid släpp så layouten inte rycker mitt i gesten).
-let _pullStartY = null, _pullMax = 0;
-document.addEventListener('touchstart', (e) => {
-  _pullStartY = (window.scrollY <= 2 && document.body.dataset.activeTab === 'vecka')
-    ? e.touches[0].clientY : null;
-  _pullMax = 0;
-}, { passive: true });
-document.addEventListener('touchmove', (e) => {
-  if (_pullStartY != null) _pullMax = Math.max(_pullMax, e.touches[0].clientY - _pullStartY);
-}, { passive: true });
-document.addEventListener('touchend', () => {
-  if (_pullStartY != null && _pullMax > 64 && window.scrollY <= 2) armHistory();
-  _pullStartY = null; _pullMax = 0;
-}, { passive: true });
-
-// Desktop: hjul-upp medan man är i toppen.
-let _wheelAccum = 0;
-document.addEventListener('wheel', (e) => {
-  if (window.scrollY <= 2 && e.deltaY < 0) {
-    _wheelAccum += -e.deltaY;
-    if (_wheelAccum > 120) { _wheelAccum = 0; armHistory(); }
-  } else _wheelAccum = 0;
-}, { passive: true });
-
-// Armad men ej öppnad: scrollar man ner igen göms knappen.
-window.addEventListener('scroll', () => {
-  if (window._dlxHistoryArmed && !window._dlxHistoryOpen && window.scrollY > 40) {
-    window._dlxHistoryArmed = false;
-    renderDeluxe();
-  }
-}, { passive: true });
 
 // ── Interaktion ───────────────────────────────────────────────────────────────
 // All daginteraktion går via snabbåtgärds-sheeten (dlxDayClick, definierad i
@@ -854,8 +883,9 @@ window.dlxDayClick = function (date, dayName) {
 };
 
 function openDaySheet(date, day) {
-  const d = (window._timelineByDate || {})[date];
-  if (!d) return;
+  // Syntetiska dagar (kantvecka utanför horisonten) får samma sheet — en
+  // sparad egen planering utökar horisonten vid nästa laddning.
+  const d = (window._timelineByDate || {})[date] || synthDay(date);
   ensureSheetHost();
   _sheetAdded = [];
   // Startvy per dagtyp: receptdagar → meny (arkiv direkt till läsläget),
@@ -973,7 +1003,7 @@ function sheetMenuHtml(d, s) {
   }
 
   return `
-    <p class="dlx-sheet-sub">${sheetWhen(d)}${sub ? ` · ${esc(sub)}` : ''}</p>
+    <p class="dlx-sheet-sub">${sheetWhen(d)}${sub ? ` · ${esc(sub)}` : ''}${isShoppedDay(d) ? ` ${shoppedChip()}` : ''}</p>
     <p class="dlx-sheet-title">${d.isToday ? `${I.pot}<span>` : '<span>'}${esc(title || '')}</span></p>
     ${rows}`;
 }
@@ -988,8 +1018,7 @@ function renderSheet() {
   const s = window._dlxSheet;
   const el = document.getElementById('dlxSheet');
   if (!s || !el) return;
-  const d = (window._timelineByDate || {})[s.date];
-  if (!d) { window.dlxCloseSheet(); return; }
+  const d = (window._timelineByDate || {})[s.date] || synthDay(s.date);
   let body = '';
 
   if (s.view === 'meny') {
@@ -1185,10 +1214,9 @@ function installHooks() {
   const origSwitch = window.switchTab;
   if (typeof origSwitch === 'function' && !origSwitch.__dlxWrapped) {
     const wrappedSwitch = function (tab) {
-      // Lämna alltid historik-läget när man byter flik → fliken öppnas på
-      // rubrik + hero (switchTab scrollar redan till toppen i navigation.js).
-      window._dlxHistoryArmed = false;
-      window._dlxHistoryOpen = false;
+      // Nollställ visad vecka vid flikbyte → Matsedeln öppnas alltid på
+      // innevarande vecka (switchTab scrollar redan till toppen i navigation.js).
+      resetShownWeek();
       const r = origSwitch.apply(this, arguments);
       if (tab === 'vecka') {
         try { renderDeluxe(); } catch (e) { console.error('renderDeluxe', e); }
