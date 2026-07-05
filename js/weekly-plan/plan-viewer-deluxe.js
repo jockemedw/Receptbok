@@ -303,8 +303,10 @@ function buildHero(weekDays, weekStart, plan, pending) {
   const b = timelineBounds();
   const atMin = b ? weekStart <= b.min : true;
   const atMax = b ? weekStart >= b.max : true;
+  // "‹ Till idag" — chevron + verbfras så knappen läses som en åtgärd, inte som
+  // dag-kortens "Idag"-statusflagga (rust-pillen är reserverad för status).
   const todayBtn = !isCurrentWeek
-    ? `<button type="button" class="dlx-week-today" onclick="dlxWeekToday()">Idag</button>` : '';
+    ? `<button type="button" class="dlx-week-today" onclick="dlxWeekToday()">‹ Till idag</button>` : '';
 
   return `
     <div class="dlx-hero">

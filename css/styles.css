@@ -4089,22 +4089,23 @@ html.auth-required body {
 .dlx-week-btn:hover,
 .dlx-week-btn:focus-visible { background: rgba(245,241,232,0.12); }
 .dlx-week-btn:disabled { opacity: 0.25; pointer-events: none; }
+/* Ghost/outline — ska läsas som knapp (åtgärd), INTE som dag-kortens rust-fyllda
+   "Idag"-statusflagga. Rust reserveras för status + protein. */
 .dlx-week-today {
-  padding: 0.22rem 0.65rem;
-  background: rgba(181,106,76,0.92);
-  border: none;
+  padding: 0.24rem 0.7rem;
+  background: transparent;
+  border: 1px solid rgba(245,241,232,0.35);
   border-radius: 999px;
-  color: var(--on-accent);
+  color: var(--on-deep);
   font-family: inherit;
-  font-size: 0.7rem;
+  font-size: 0.74rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
   cursor: pointer;
   white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
 }
 .dlx-week-today:hover,
-.dlx-week-today:focus-visible { background: rgba(181,106,76,1); }
+.dlx-week-today:focus-visible { background: rgba(245,241,232,0.12); border-color: rgba(245,241,232,0.55); }
 .dlx-hero-eyebrow {
   font-size: 0.72rem;
   font-weight: 600;
