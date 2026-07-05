@@ -34,9 +34,11 @@ const I = {
   // Gaffel + kniv — "vi äter ute" i Ikväll-sheeten (backlog #15).
   fork: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v7c0 1 .7 2 2 2s2-1 2-2V3"/><path d="M7 3v18"/><path d="M17 3c-1.5 1-2.5 3.5-2.5 6 0 2 .8 3 2.5 3v9"/></svg>',
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14 M5 12h14"/></svg>',
-  // Kundvagn med bock — "handlat för"-markering på dagar vars ingredienser
-  // ligger på en bekräftad inköpslista.
-  cart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.6 11.2A1.5 1.5 0 0 0 9.06 16.4H18a1.5 1.5 0 0 0 1.46-1.14L21 8H6"/><circle cx="10" cy="20" r="1.4"/><circle cx="17.5" cy="20" r="1.4"/><path d="m11.5 11 2 2 3.5-3.5"/></svg>',
+  // Ren kundvagn (utan intern bock) — "handlat för"-markören sätter en separat
+  // grön bock BREDVID (I.tick) så den läses som en tydlig "klar"-status.
+  cart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.6 11.2A1.5 1.5 0 0 0 9.06 16.4H18a1.5 1.5 0 0 0 1.46-1.14L21 8H6"/><circle cx="10" cy="20" r="1.4"/><circle cx="17.5" cy="20" r="1.4"/></svg>',
+  // Bock — grön "klar"-markör bredvid kundvagnen.
+  tick: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4 4L19 6.5"/></svg>',
 };
 
 // esc = utils.escapeHtml (samma semantik) — en enda implementation i utils.
@@ -168,7 +170,7 @@ function isShoppedDay(d) {
 
 function shoppedChip() {
   return `<span class="dlx-shopped" role="img" title="Handlat för — ingredienserna finns på inköpslistan"
-    aria-label="Ingredienser på inköpslistan">${I.cart}</span>`;
+    aria-label="Ingredienser på inköpslistan"><span class="dlx-shopped-cart">${I.cart}</span><span class="dlx-shopped-tick">${I.tick}</span></span>`;
 }
 
 // ── "Ikväll"-kort — svarar på familjens vanligaste fråga direkt i heron ──────

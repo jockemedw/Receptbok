@@ -4210,15 +4210,22 @@ html.auth-required body {
 .dlx-plan-notice span { flex: 1; }
 .dlx-plan-notice .dlx-plan-notice-chev { flex: 0 0 auto; font-size: 1.1rem; color: var(--moss-muted); }
 
-/* ── "Handlat för"-chip — ingredienserna ligger på en bekräftad inköpslista ── */
+/* ── "Handlat för"-markör — kundvagn + grön bock bredvid ──────────────────────
+   Ingredienserna ligger på en bekräftad inköpslista. Kundvagnen i lugn grön,
+   bocken i tydlig djupgrön så statusen ("klar/på listan") läses direkt. */
 .dlx-shopped {
   display: inline-flex;
   align-items: center;
-  color: var(--lichen-deep, #5e7a68);
+  gap: 1px;
 }
-.dlx-shopped svg { width: 15px; height: 15px; }
-.dlx-tonight-sub .dlx-shopped svg,
-.dlx-sheet-sub .dlx-shopped svg { width: 14px; height: 14px; vertical-align: -2px; }
+.dlx-shopped-cart { display: inline-flex; color: var(--lichen, #7a9482); }
+.dlx-shopped-tick { display: inline-flex; color: var(--lichen-deep, #5e7a68); }
+.dlx-shopped-cart svg { width: 16px; height: 16px; }
+.dlx-shopped-tick svg { width: 12px; height: 12px; }
+.dlx-tonight-sub .dlx-shopped-cart svg,
+.dlx-sheet-sub .dlx-shopped-cart svg { width: 15px; height: 15px; vertical-align: -2px; }
+.dlx-tonight-sub .dlx-shopped-tick svg,
+.dlx-sheet-sub .dlx-shopped-tick svg { width: 11px; height: 11px; vertical-align: -1px; }
 
 .dlx-day {
   position: relative;
