@@ -583,11 +583,13 @@ function emptyDayCard(d) {
 }
 
 function renderDayCard(d) {
-  const opts = {
-    active: d.planId === 'active',
-    cls: (d.isToday ? ' is-today' : '') + (d.isPast ? ' is-past' : '') + (d.isArchive ? ' is-archive' : ''),
-  };
-  let html = (d.recipeId && !d.isCustom) ? recipeDayCard(d, opts) : emptyDayCard(d);
+  const isRecipe = d.recipeId && !d.isCustom;
+  const cls = (d.isToday ? ' is-today' : '') + (d.isPast ? ' is-past' : '') + (d.isArchive ? ' is-archive' : '');
+  let html = isRecipe ? recipeDayCard(d, { active: d.planId === 'active', cls }) : emptyDayCard(d);
+  // recipeDayCard får is-today/is-past/is-archive via opts; emptyDayCard (egen dag,
+  // fri dag, tom dag) gör inte det — injicera samma tillståndsklasser här så att
+  // dämpningen av passerade dagar gäller ALLA korttyper, inte bara receptdagar.
+  if (!isRecipe && cls) html = html.replace('class="dlx-day', 'class="dlx-day' + cls);
   // Helg → dovare kort-bakgrund. Klassen injiceras på ett ställe så att alla
   // korttyper täcks utan att röra varje mall. Suppr. på "idag" (rust-ramen räcker).
   if (d.isWeekend && !d.isToday) html = html.replace('class="dlx-day', 'class="dlx-day is-weekend');
