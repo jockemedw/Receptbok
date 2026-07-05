@@ -1,6 +1,11 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–116. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–117. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 117 — Matsedeln omstöpt till veckoscopad vy ("Veckans mat")
+Joakims omstöpning: matsedeln som *paket* var pedagogiskt rörig (kan spänna >1 vecka, inte alltid hel vecka) → Matsedel-fliken visar nu **exakt en kalendervecka (ISO, mån–sön) i taget**, default innevarande. Tre designfrågor ställda, alla rekommenderade val valda (veckoväxlare med pilar · markering = bekräftad plan · hero följer visad vecka). **Allt render-only** — inga writes/API/schema-ändringar; bekräfta-rutan ligger utanför veckovyn och nås oavsett visad vecka. **Veckoväxlare** (`plan-viewer-deluxe.js`): `‹ Vecka N ›` + datumintervall i heron, "‹ Till idag"-knapp utanför innevarande vecka, pilar klampas till tidslinjens spann; modulstate `_dlxWeekStart` (null = innevarande; nollställs vid flikbyte, överlever realtime-re-renders); kantveckodagar syntetiseras (`synthDay`). **Hero per visad vecka:** statistik räknas på veckans dagar (egna receptdagar med, `heroMealId`); badges + "se fynd" veckoscopat. **"Handlat för"-markering:** kundvagnschip (`I.cart`/`isShoppedDay()`: aktiv plandag + `confirmedAt`) på dagkort/Ikväll/dag-sheet + prick i Idag-flikens trådband; ingen DB-ändring, arkivdagar markeras ej. **Ikväll-kortet inline** på dagens position; **"Tidigare recept"-dragspelet + peek-knappen BORTTAGNA** (historik = bläddra ‹); veckoavdelare + `.dlx-empty-future` borta. **Notis-banner** (`.dlx-plan-notice`) när obekräftat förslag ligger utanför visad vecka → tapp hoppar dit; färsk generering autohoppar (`renderWeeklyPlanData` → `dlxWeekGoto`). **Idag-fliken:** trådbandet = innevarande ISO-vecka. **Nya utils:** `weekStartOf`/`addDaysIso` (DST-säkra). Verifiering: `node --check` rent + testsvit grön (select-recipes 432 · day-ops 34 · plan-orchestration 37 · shopping 98 · match 136 · data-mapper 27). Cache-bust styles v140, SW v52. PR #128 mergad. **Uppföljning samma dag (PR #129):** Joakims mobilfynd "både v28 och v29 visar ikonen 'idag'" var tillbaka-knappen — stylad som dag-kortens rust-fyllda "Idag"-flagga → lästes som status (5 juli = vecka 27, beräkningen korrekt). Fix: knappen heter nu **"‹ Till idag"** i ghost/outline-stil. Cache-bust styles v141, SW v53.
 
 ---
 
