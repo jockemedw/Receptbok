@@ -1,6 +1,11 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–117. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–118. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 118 — Veckovyn: kompaktare hero + hela veckan utan scroll + passerade dagar nedtonade
+Joakims uppföljning på Session 117. Rena CSS-ändringar. **Densitetspass så hela ISO-veckan ryms utan scroll:** hero komprimerad (titel 1.7→1.3rem, statistiksiffror 1.45→1.15rem, tunnare bar-marginaler, `‹/›`-knappar 44→40px), dagkort tätare (head-padding 0.85→0.55rem, dag-nummer 1.3→1.15rem, rättnamn 1.08→1rem, gap 0.6→0.35rem), Ikväll-kortet tätare. Uppmätt i headless Chromium (390×844): `#weekDeluxe` 748→720px. **Passerade dagar tonas ned (opacity 0.55):** fanns ingen dämpning i deluxe-vyn (låg i historik-dragspelet som togs bort i S117). Fälla: kortens `dlxFadeIn` (`fill:both`) höll `opacity:1` och skrev över statisk `.is-past{opacity}` → dämpning i egen animations-slutruta (`@keyframes dlxFadeInDim`→0.55), gäller `.is-past`/`.is-archive`/`.inert`. Cache-bust styles v142, SW v54. **Uppföljning samma dag (PR #131):** "handlat för"-markören tydligare på Joakims fynd "jag ser ingen indikation" — markören renderades korrekt (bara bekräftade planer, `confirmedAt` verifierat plumbad) men den tunna kundvagnen var för lätt att missa → **ren kundvagn (lugn grön) + distinkt djupgrön bock bredvid** (`I.cart`+`I.tick`, `.dlx-shopped-cart`/`-tick`). Cache-bust styles v143, SW v55.
 
 ---
 

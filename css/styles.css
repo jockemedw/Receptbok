@@ -4037,8 +4037,9 @@ html.auth-required body {
   position: relative;
   overflow: hidden;
   margin: 0 1rem 0.6rem;
-  /* Kompakt hero (Session 118) — hela veckan ska rymmas utan scroll */
-  padding: 0.8rem 1.15rem 0.85rem;
+  /* Kompakt hero v2 (Session 119) — lugnare hierarki; veckoväxlaren bor i railen
+     i botten så toppen kan andas. Botten-padding liten (railen bär höjden). */
+  padding: 1rem 1.15rem 0.15rem;
   border-radius: 20px;
   background: linear-gradient(150deg, #3d5544 0%, #2c3f33 60%, #243429 100%); /* fast mörk i båda teman */
   color: var(--on-deep);
@@ -4053,116 +4054,56 @@ html.auth-required body {
   background: radial-gradient(circle, rgba(200,154,62,0.32) 0%, rgba(122,148,130,0.12) 45%, transparent 70%);
   pointer-events: none;
 }
-/* ── Veckoväxlare — ‹ Vecka N › + Idag-pill, överst i heron ── */
-.dlx-week-nav {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.4rem;
-  margin: -0.2rem -0.4rem 0.1rem;
-}
-.dlx-week-nav-mid {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  min-width: 0;
-}
-.dlx-week-btn {
-  flex: 0 0 auto;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: none;
-  border: none;
-  border-radius: 50%;
-  color: var(--on-deep);
-  font-family: inherit;
-  font-size: 1.4rem;
-  line-height: 1;
-  cursor: pointer;
-  transition: background 0.15s, opacity 0.15s;
-}
-.dlx-week-btn:hover,
-.dlx-week-btn:focus-visible { background: rgba(245,241,232,0.12); }
-.dlx-week-btn:disabled { opacity: 0.25; pointer-events: none; }
-/* Ghost/outline — ska läsas som knapp (åtgärd), INTE som dag-kortens rust-fyllda
-   "Idag"-statusflagga. Rust reserveras för status + protein. */
-.dlx-week-today {
-  padding: 0.24rem 0.7rem;
-  background: transparent;
-  border: 1px solid rgba(245,241,232,0.35);
-  border-radius: 999px;
-  color: var(--on-deep);
-  font-family: inherit;
-  font-size: 0.74rem;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.15s, border-color 0.15s;
-}
-.dlx-week-today:hover,
-.dlx-week-today:focus-visible { background: rgba(245,241,232,0.12); border-color: rgba(245,241,232,0.55); }
-.dlx-hero-eyebrow {
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--ochre);
-}
-.dlx-hero-badge {
-  font-size: 0.66rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding: 0.25rem 0.6rem;
-  border-radius: 999px;
-  background: rgba(181,106,76,0.92);
-  color: var(--on-accent);
-  white-space: nowrap;
-}
-.dlx-hero-badge.confirmed { background: rgba(94,122,104,0.95); }
+/* ── Pager: hela veckovyn (hero + dagslista) är svepytan för veckoväxlingen ── */
+.dlx-pager { overflow: hidden; touch-action: pan-y; overscroll-behavior-x: contain; }
+.dlx-pane  { will-change: transform; }
+
 .dlx-hero-title {
   position: relative;
   font-family: var(--font-display);
   font-weight: 400;
-  font-size: 1.3rem;
+  font-size: 1.62rem;
   line-height: 1.1;
-  margin: 0 0 0.45rem;
+  letter-spacing: 0.01em;
+  margin: 0 0 0.6rem;
   color: var(--on-deep);
 }
+/* Stats — redaktionella serif-siffror med hårfina avdelare */
 .dlx-stats {
   position: relative;
   display: flex;
-  gap: 1.1rem;
-  flex-wrap: wrap;
+  gap: 0;
+  flex-wrap: nowrap;
+}
+.dlx-stat { flex: 0 1 auto; min-width: 0; }
+.dlx-stat + .dlx-stat {
+  margin-left: 1rem;
+  padding-left: 1rem;
+  border-left: 1px solid rgba(245,241,232,0.16);
 }
 .dlx-stat-num {
-  display: flex;
-  align-items: center;
-  gap: 0.34rem;
-  font-size: 1.15rem;
+  font-family: var(--font-display);
+  font-size: 1.42rem;
   font-weight: 500;
   line-height: 1;
 }
 .dlx-stat-num svg { width: 16px; height: 16px; opacity: 0.85; }
 .dlx-stat-saving .dlx-stat-num { color: #ecd9a4; }
 .dlx-stat-lbl {
-  margin-top: 0.18rem;
-  font-size: 0.68rem;
-  letter-spacing: 0.02em;
-  color: rgba(245,241,232,0.66);
+  margin-top: 0.24rem;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgba(245,241,232,0.55);
+  white-space: nowrap;
 }
 .dlx-bar {
   position: relative;
   display: flex;
   gap: 3px;
-  height: 7px;
-  margin: 0.55rem 0 0.4rem;
+  height: 6px;
+  margin: 0.72rem 0 0.42rem;
   border-radius: 999px;
   overflow: hidden;
 }
@@ -4181,6 +4122,100 @@ html.auth-required body {
   color: rgba(245,241,232,0.78);
 }
 .dlx-legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* ── Veckorailen (Session 119) — botten av heron, ersätter ‹ ›-raden ──────────
+   Hårfin överlinje; grann-veckor i kanterna (diskret svep-affordans + tapbara),
+   veckonummer + statusmärke i mitten. Sidan som pekar hem blir en Idag-pill. */
+.dlx-week-rail {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  margin: 0.55rem -0.55rem 0;
+  border-top: 1px solid rgba(245,241,232,0.13);
+}
+.dlx-rail-side {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  min-height: 44px;
+  padding: 0 0.55rem;
+  background: none;
+  border: none;
+  border-radius: 12px;
+  color: rgba(245,241,232,0.45);
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, opacity 0.15s;
+}
+.dlx-rail-side .dlx-rail-chev { font-size: 0.95rem; line-height: 1; opacity: 0.8; }
+.dlx-rail-side:hover,
+.dlx-rail-side:focus-visible { color: rgba(245,241,232,0.85); background: rgba(245,241,232,0.08); }
+.dlx-rail-side:disabled { opacity: 0.25; pointer-events: none; }
+.dlx-rail-mid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: 0.5rem;
+  min-width: 0;
+  min-height: 44px;
+}
+.dlx-rail-week {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ochre);
+  white-space: nowrap;
+}
+/* Statusmärke — dov punkt + ord (lugnare än en fylld pill) */
+.dlx-rail-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.32rem;
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(245,241,232,0.8);
+  background: rgba(245,241,232,0.07);
+  border: 1px solid rgba(245,241,232,0.15);
+  border-radius: 999px;
+  padding: 0.18rem 0.55rem;
+  white-space: nowrap;
+}
+.dlx-rail-badge::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #8fac97;                    /* bekräftad = lichen */
+}
+.dlx-rail-badge.pending::before { background: var(--ochre); }   /* förslag = ockra */
+/* "Idag"-pill — rust-ton (samma familj som dagkortens Idag-flagga). Ersätter
+   grannvecko-etiketten på den sida som pekar hem. ::after ger 44px träffyta. */
+.dlx-week-today {
+  position: relative;
+  padding: 0.24rem 0.66rem;
+  background: rgba(205,130,94,0.12);
+  border: 1px solid rgba(230,183,155,0.45);
+  border-radius: 999px;
+  color: #ecc9b0;
+  font-family: inherit;
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+.dlx-week-today::after { content: ''; position: absolute; inset: -9px; }
+.dlx-week-today:hover,
+.dlx-week-today:focus-visible { background: rgba(205,130,94,0.25); border-color: rgba(230,183,155,0.7); }
 
 /* ── Dagslista ── */
 .dlx-days { display: flex; flex-direction: column; gap: 0.35rem; padding: 0 1rem; }
