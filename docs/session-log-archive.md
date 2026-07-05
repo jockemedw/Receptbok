@@ -1,6 +1,11 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–115. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–116. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 116 — Listor L3: ikon + färg per lista ("Kör 2")
+Cozi-scanning enligt `docs/listor-cozi-forslag-2026-07.md`. **L3 (`js/lists/lists-view.js` + `css/styles.css`):** varje lista kan få en **emoji-ikon** (före titeln) och ett **färgband i vänsterkanten** på listkortet — snabb visuell scanning som Cozi. Väljs i detaljvyns **✎ Ändra-läge** (`decorPickerHtml`): 6 palettfärger + 12 ikoner + "nolla". Färg lagras som **semantisk nyckel** (`lichen`/`rust`/`ochre`/`fisk`/`kott`/`veg` → temavariabel) så den adapterar till mörkt/ljust tema; ikon som emoji. Val sparas optimistiskt (`flSetColor`/`flSetIcon`). **Migration 006 (`db/migrations/006_list_decor.sql`) — KÖRD & VERIFIERAD (2026-07-04)** via Management-API:t på Joakims klartecken ("Ja"). Nullbara `icon`+`color` på `family_lists` finns (kollat via `information_schema`). **L3 därmed skarp.** Rollout-säkerhet (feature-detect `_decorSupported`) höll appen oförändrad innan körningen. Verifiering: `node --check` rent; E2E-rök-test mot riktig modulkod, BÅDA lägena (11 assertioner, 0 JS-fel) + stylad screenshot ljust/mörkt. Veckoplan + inköpslista orörda. Cache-bust styles v139, SW v51.
 
 ---
 
