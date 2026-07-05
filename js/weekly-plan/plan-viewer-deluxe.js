@@ -70,12 +70,20 @@ function ensureScaffold() {
   const content = document.getElementById('weekContent');
   if (!content) return false;
 
-  // Premiumvyns container — placeras före bekräfta-rutan i weekContent.
+  // Premiumvyns container — panelen (#weekDeluxe) bor i en pager-wrapper som är
+  // svepytan för veckoväxlingen. Bekräfta-rutan (#confirmPlanWrap) ligger UTANFÖR
+  // pagern så den aldrig sveps och alltid är nåbar.
+  const pager = document.createElement('div');
+  pager.className = 'dlx-pager';
+  pager.id = 'dlxPager';
   const host = document.createElement('div');
   host.id = 'weekDeluxe';
+  host.className = 'dlx-pane';
+  pager.appendChild(host);
   const confirmWrap = document.getElementById('confirmPlanWrap');
-  if (confirmWrap) confirmWrap.before(host);
-  else content.appendChild(host);
+  if (confirmWrap) confirmWrap.before(pager);
+  else content.appendChild(pager);
+  installSwipe(pager, host);
 
   _injected = true;
   // Premium är enda vyn — klassiska tidslinjen avvecklad. body.week-deluxe styr
@@ -110,19 +118,55 @@ function timelineBounds() {
   return { min: weekStartOf(t[0].date), max: weekStartOf(t[t.length - 1].date) };
 }
 
-window.dlxWeekStep = function (dir) {
+// Går det att kliva `dir` veckor från visad vecka utan att lämna tidslinjen?
+function dlxCanStep(dir) {
   const b = timelineBounds();
+  if (!b) return false;
   const next = addDaysIso(shownWeekStart(), dir * 7);
-  if (b && (next < b.min || next > b.max)) return;   // pilen är disabled ändå
-  _dlxWeekStart = next === currentWeekStart() ? null : next;
-  renderDeluxe();
+  return next >= b.min && next <= b.max;
+}
+
+// "Slide-through": panelen (#weekDeluxe) glider ut i svep-riktningen, veckan
+// byts + renderas om, panelen glider in från andra hållet. Transformen bor på
+// panel-elementet som överlever setSec-omrenderingen, så innehållet byts inuti.
+let _dlxAnimBusy = false;
+function prefersReducedMotion() {
+  return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+function animateWeekChange(dir, apply) {
+  const pane = document.getElementById('weekDeluxe');
+  if (!pane || prefersReducedMotion()) { apply(); renderDeluxe(); return; }
+  if (_dlxAnimBusy) return;
+  _dlxAnimBusy = true;
+  pane.style.transition = 'transform 0.14s ease-in, opacity 0.14s ease-in';
+  pane.style.transform = `translateX(${dir * -56}px)`;
+  pane.style.opacity = '0';
+  setTimeout(() => {
+    apply();
+    renderDeluxe();
+    pane.style.transition = 'none';
+    pane.style.transform = `translateX(${dir * 56}px)`;
+    void pane.offsetWidth;                                  // force reflow
+    pane.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
+    pane.style.transform = 'translateX(0)';
+    pane.style.opacity = '1';
+    setTimeout(() => { _dlxAnimBusy = false; }, 210);
+  }, 145);
+}
+
+window.dlxWeekStep = function (dir) {
+  if (_dlxAnimBusy || !dlxCanStep(dir)) return;
+  const next = addDaysIso(shownWeekStart(), dir * 7);
+  animateWeekChange(dir, () => { _dlxWeekStart = next === currentWeekStart() ? null : next; });
 };
 
 window.dlxWeekToday = function () {
-  _dlxWeekStart = null;
-  renderDeluxe();
+  if (_dlxAnimBusy || shownWeekStart() === currentWeekStart()) return;
+  const dir = shownWeekStart() > currentWeekStart() ? -1 : 1;   // glid mot idag
+  animateWeekChange(dir, () => { _dlxWeekStart = null; });
 };
 
+// Direkt hopp (autohopp vid färsk generering + notis-bannern) — ingen svep-anim.
 window.dlxWeekGoto = function (dateIso) {
   const ws = weekStartOf(dateIso);
   _dlxWeekStart = ws === currentWeekStart() ? null : ws;
@@ -131,6 +175,60 @@ window.dlxWeekGoto = function (dateIso) {
 
 // Nollställ visad vecka (anropas från wrappedSwitch — modulintern state).
 function resetShownWeek() { _dlxWeekStart = null; }
+
+// ── Svep-/scroll-växling ─────────────────────────────────────────────────────
+// Hela veckovyn (hero + dagslista) är svepytan. Horisontell avsikt skiljs från
+// vertikal scroll (avsikts-lås) så sidans vertikala scroll aldrig kapas.
+function installSwipe(pager, pane) {
+  let x0 = 0, y0 = 0, t0 = 0, mode = null;   // mode: null | 'h' | 'v'
+
+  pager.addEventListener('touchstart', (e) => {
+    if (_dlxAnimBusy || e.touches.length !== 1) return;
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now(); mode = null;
+  }, { passive: true });
+
+  pager.addEventListener('touchmove', (e) => {
+    if (_dlxAnimBusy || e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - x0, dy = e.touches[0].clientY - y0;
+    if (mode === null) {
+      if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;                 // dödzon
+      mode = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'h' : 'v';             // avsikts-lås
+    }
+    if (mode !== 'h') return;                                            // vertikal scroll får leva
+    e.preventDefault();
+    const resist = dlxCanStep(dx < 0 ? 1 : -1) ? 0.55 : 0.18;           // gummiband vid kant
+    pane.style.transition = 'none';
+    pane.style.transform = `translateX(${dx * resist}px)`;
+    pane.style.opacity = String(1 - Math.min(Math.abs(dx) / 900, 0.25));
+  }, { passive: false });
+
+  pager.addEventListener('touchend', (e) => {
+    if (mode !== 'h') { mode = null; return; }
+    const dx = e.changedTouches[0].clientX - x0;
+    const vx = Math.abs(dx) / Math.max(Date.now() - t0, 1);             // px/ms
+    const dir = dx < 0 ? 1 : -1;
+    mode = null;
+    if ((Math.abs(dx) > 70 || vx > 0.5) && dlxCanStep(dir)) { window.dlxWeekStep(dir); return; }
+    pane.style.transition = 'transform 0.18s ease-out, opacity 0.18s ease-out';   // fjädra tillbaka
+    pane.style.transform = 'translateX(0)';
+    pane.style.opacity = '1';
+  }, { passive: true });
+
+  // Desktop: horisontellt scrollhjul/trackpad.
+  let wheelAcc = 0, wheelLock = 0;
+  pager.addEventListener('wheel', (e) => {
+    if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;               // vertikal scroll orörd
+    e.preventDefault();
+    const now = Date.now();
+    if (now < wheelLock) return;                                        // svälj tröghetssvans
+    wheelAcc += e.deltaX;
+    if (Math.abs(wheelAcc) > 60) {
+      const dir = wheelAcc > 0 ? 1 : -1;
+      wheelAcc = 0; wheelLock = now + 450;
+      window.dlxWeekStep(dir);
+    }
+  }, { passive: false });
+}
 
 // Blank dag utanför tidslinjens horisont — samma fält som buildTimeline-rader
 // (plan-viewer.js) så kort och sheet kan behandla den som vilken dag som helst.
@@ -262,81 +360,89 @@ function buildHero(weekDays, weekStart, plan, pending) {
 
   const vegCount = counts['vegetarisk'] || 0;
 
-  // Rubrik: alltid den visade veckan (mån–sön). Året behövs inte — datum-
-  // intervallet disambiguerar vid årsskifte.
+  // Rubrik: den visade veckan mån–sön, kompakt ("6–12 juli" / "29 juni – 5 juli").
   const weekEnd = addDaysIso(weekStart, 6);
-  const eyebrow = `Vecka ${isoWeekNumber(weekStart)}`;
-  const title = `${fmtShort(weekStart)} – ${fmtShort(weekEnd)}`;
+  const title = heroDateRange(weekStart, weekEnd);
 
-  // "Veckans fynd" är plan-scopat — visa knappen bara när veckan faktiskt
-  // innehåller aktiva planens dagar — en arkivvecka ska inte göra reklam för
-  // dagens erbjudanden.
+  // Sparat-statistiken är plan-scopad och öppnar "Veckans fynd" när sådana finns.
   const hasDeals = hasActiveDays && !!(window._weeklyDeals?.candidates?.length);
   const savingStat = totalSaving >= 1 ? (
     hasDeals
       ? `<button type="button" class="dlx-stat dlx-stat-saving has-deals" onclick="openDealsPopup()" title="Se veckans fynd">
-          <div class="dlx-stat-num">${I.coin}${fmtKr(totalSaving)}</div>
-          <div class="dlx-stat-lbl">sparat · se fynd ›</div>
+          <div class="dlx-stat-num">${fmtKr(totalSaving)}</div>
+          <div class="dlx-stat-lbl">sparat · fynd ›</div>
         </button>`
       : `<div class="dlx-stat dlx-stat-saving">
-          <div class="dlx-stat-num">${I.coin}${fmtKr(totalSaving)}</div>
-          <div class="dlx-stat-lbl">sparat mot normalpris</div>
+          <div class="dlx-stat-num">${fmtKr(totalSaving)}</div>
+          <div class="dlx-stat-lbl">sparat</div>
         </div>`
   ) : (hasDeals
       ? `<button type="button" class="dlx-stat dlx-stat-saving has-deals" onclick="openDealsPopup()" title="Se veckans fynd">
           <div class="dlx-stat-num">${I.coin}</div>
-          <div class="dlx-stat-lbl">se veckans fynd ›</div>
+          <div class="dlx-stat-lbl">se fynd ›</div>
         </button>`
       : '');
-
-  // Badges gäller den visade veckan: pending-badgen bara när förslagets dagar
-  // faktiskt syns här (annars bär notis-bannern budskapet), "Bekräftad" bara
-  // för veckor som innehåller den bekräftade planens dagar.
-  const pendingTag = (pending && hasActiveDays)
-    ? `<span class="dlx-hero-badge">Förslag — ej bekräftat</span>`
-    : ((hasActiveDays && plan?.confirmedAt) ? `<span class="dlx-hero-badge confirmed">Bekräftad</span>` : '');
 
   const barBlock = planned ? `
       <div class="dlx-bar">${segs}</div>
       <div class="dlx-legend">${legend}</div>` : '';
 
-  // Veckoväxlaren: ‹ / › bläddrar, "Idag"-pillen syns bara utanför innevarande
-  // vecka. Pilarna disablas vid tidslinjens kanter (klamp i dlxWeekStep).
+  // ── Veckorail (botten av heron) — ersätter ‹ ›-raden ──────────────────────
+  // Statusmärke gäller den visade veckan: "Förslag" bara när förslagets dagar
+  // syns här, "Bekräftad" bara i veckor med den bekräftade planens dagar.
+  const badge = (pending && hasActiveDays)
+    ? `<span class="dlx-rail-badge pending">Förslag</span>`
+    : ((hasActiveDays && plan?.confirmedAt) ? `<span class="dlx-rail-badge">Bekräftad</span>` : '');
+
+  // Grann-veckor i kanterna (diskret svep-affordans + tapbara). Sidan som pekar
+  // mot idag ersätts av en rust "Idag"-pill när man svept bort från nuvarande vecka.
   const b = timelineBounds();
   const atMin = b ? weekStart <= b.min : true;
   const atMax = b ? weekStart >= b.max : true;
-  // "‹ Till idag" — chevron + verbfras så knappen läses som en åtgärd, inte som
-  // dag-kortens "Idag"-statusflagga (rust-pillen är reserverad för status).
-  const todayBtn = !isCurrentWeek
-    ? `<button type="button" class="dlx-week-today" onclick="dlxWeekToday()">‹ Till idag</button>` : '';
+  const prevNo = isoWeekNumber(addDaysIso(weekStart, -7));
+  const nextNo = isoWeekNumber(addDaysIso(weekStart, 7));
+  const leftSlot = (!isCurrentWeek && weekStart > currentWeekStart())
+    ? `<button type="button" class="dlx-week-today" onclick="dlxWeekToday()">‹ Idag</button>`
+    : `<button type="button" class="dlx-rail-side" onclick="dlxWeekStep(-1)"${atMin ? ' disabled' : ''} aria-label="Föregående vecka"><span class="dlx-rail-chev">‹</span>v.${prevNo}</button>`;
+  const rightSlot = (!isCurrentWeek && weekStart < currentWeekStart())
+    ? `<button type="button" class="dlx-week-today" onclick="dlxWeekToday()">Idag ›</button>`
+    : `<button type="button" class="dlx-rail-side" onclick="dlxWeekStep(1)"${atMax ? ' disabled' : ''} aria-label="Nästa vecka">v.${nextNo}<span class="dlx-rail-chev">›</span></button>`;
 
   return `
     <div class="dlx-hero">
       <div class="dlx-hero-glow"></div>
-      <div class="dlx-week-nav">
-        <button type="button" class="dlx-week-btn" onclick="dlxWeekStep(-1)"
-                aria-label="Föregående vecka"${atMin ? ' disabled' : ''}>‹</button>
-        <div class="dlx-week-nav-mid">
-          <span class="dlx-hero-eyebrow">${esc(eyebrow)}</span>
-          ${pendingTag}${todayBtn}
-        </div>
-        <button type="button" class="dlx-week-btn" onclick="dlxWeekStep(1)"
-                aria-label="Nästa vecka"${atMax ? ' disabled' : ''}>›</button>
-      </div>
       <h2 class="dlx-hero-title">${esc(title)}</h2>
       <div class="dlx-stats">
         <div class="dlx-stat">
-          <div class="dlx-stat-num">${I.chef}${planned}</div>
-          <div class="dlx-stat-lbl">${planned === 1 ? 'måltid' : 'måltider'} planerade</div>
+          <div class="dlx-stat-num">${planned}</div>
+          <div class="dlx-stat-lbl">${planned === 1 ? 'måltid' : 'måltider'}</div>
         </div>
         <div class="dlx-stat">
-          <div class="dlx-stat-num">${I.leaf}${vegCount}</div>
-          <div class="dlx-stat-lbl">${vegCount === 1 ? 'vegetarisk dag' : 'vegetariska dagar'}</div>
+          <div class="dlx-stat-num">${vegCount}</div>
+          <div class="dlx-stat-lbl">${vegCount === 1 ? 'vegetarisk dag' : 'veg. dagar'}</div>
         </div>
         ${savingStat}
       </div>
       ${barBlock}
+      <nav class="dlx-week-rail" aria-label="Byt vecka">
+        ${leftSlot}
+        <div class="dlx-rail-mid">
+          <span class="dlx-rail-week">Vecka ${isoWeekNumber(weekStart)}</span>
+          ${badge}
+        </div>
+        ${rightSlot}
+      </nav>
     </div>`;
+}
+
+// "6–12 juli" (samma månad) / "29 juni – 5 juli" (över månadsskifte).
+function heroDateRange(startIso, endIso) {
+  const s = new Date(startIso + 'T12:00:00'), e = new Date(endIso + 'T12:00:00');
+  const long = (d) => d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'long' });
+  if (s.getMonth() === e.getMonth()) {
+    return `${s.getDate()}–${e.getDate()} ${e.toLocaleDateString('sv-SE', { month: 'long' })}`;
+  }
+  return `${long(s)} – ${long(e)}`;
 }
 
 // ── Dagskort ──────────────────────────────────────────────────────────────────
