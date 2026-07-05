@@ -60,3 +60,12 @@ export function toggleStep(li) {
 
 window.smoothScrollTo = smoothScrollTo;
 window.toggleStep     = toggleStep;
+
+// ── Avaktivera pinch-zoom ────────────────────────────────────────────────────
+// Viewporten (index.html: maximum-scale=1, user-scalable=no) stänger av zoom på
+// Android/Chrome, men iOS Safari ignorerar user-scalable=no → blockera WebKits
+// pinch-gest-event explicit. Bara den 2-fingers-pinch-gesten rörs; enfingers-
+// scroll och veckovyns svep (single-touch) är helt opåverkade.
+['gesturestart', 'gesturechange', 'gestureend'].forEach((ev) =>
+  document.addEventListener(ev, (e) => e.preventDefault(), { passive: false })
+);
