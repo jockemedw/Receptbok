@@ -58,6 +58,26 @@
     --dur-base: 0.2s;      /* de flesta transitions */
     --dur-slow: 0.3s;      /* större rörelser */
     --dur-sheet: 0.28s;    /* bottensheets slide-up */
+
+    /* Z-index-skala (Session 120) — tokeniserad vid EXAKT nuvarande värden, ingen
+       omordning (ren kod-städning, inget syns). Lågt→högt: innehåll < chrome <
+       sheets < overlays < auth. */
+    --z-base: 2;             /* dekorativ bakgrund (timeline-outer::after) */
+    --z-sticky: 5;           /* sticky innehållsrubrik / cook-progress */
+    --z-cook-strip: 6;       /* cook-safe-strip ovanför progress */
+    --z-popover: 10;         /* inställnings-popover */
+    --z-banner: 30;          /* dlx-swap-banner */
+    --z-stack: 99;           /* bottom-right-stack */
+    --z-chrome: 100;         /* header + bottom-nav */
+    --z-sheet: 200;          /* bottom-sheet */
+    --z-fab: 900;            /* fab-import */
+    --z-dlx-backdrop: 950;   /* dlx-sheet-backdrop */
+    --z-dlx-sheet: 960;      /* dlx-sheet */
+    --z-modal: 1000;         /* modal-overlay */
+    --z-cook-overlay: 1100;  /* cook-overlay */
+    --z-toast: 1200;         /* toastHost */
+    --z-confirm: 1300;       /* confirm-overlay (över toasts) */
+    --z-authgate: 9999;      /* auth-gate överst */
     --btn-forest: #3d5544;        /* mörkgröna CTA-knappar (ljusas i mörkt tema) */
     --btn-forest-strong: #2c3f33;
 
@@ -139,7 +159,7 @@
     top: 0;
     left: 0;
     right: 0;
-    z-index: 100;
+    z-index: var(--z-chrome);
     /* Reservera statusfältet/Dynamic Island (black-translucent + viewport-fit=cover):
        den gröna ytan går upp under pannan, ordmärket hamnar under den. På enheter
        utan panna är env() = 0 → oförändrat. Body-offseten följer med automatiskt
@@ -380,7 +400,7 @@
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
-    z-index: 99;
+    z-index: var(--z-stack);
     pointer-events: none;
   }
 
@@ -442,7 +462,7 @@
   .bottom-sheet {
     position: fixed;
     inset: 0;
-    z-index: 200;
+    z-index: var(--z-sheet);
     display: flex;
     align-items: flex-end;
     justify-content: center;
@@ -758,7 +778,7 @@
     color: var(--forest-deep);
     border-bottom: 1px solid var(--birch);
     box-shadow: 0 2px 6px rgba(45,52,40,0.05);
-    z-index: 5;
+    z-index: var(--z-sticky);
     display: flex;
     align-items: baseline;
     gap: 0.55rem;
@@ -1233,7 +1253,7 @@
     top: 0;
     bottom: 0;
     width: 2.5rem;
-    z-index: 2;
+    z-index: var(--z-base);
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.2s;
@@ -2854,7 +2874,7 @@
     visibility: hidden;
     transition: opacity 0.15s, visibility 0.15s;
     pointer-events: none;
-    z-index: 10;
+    z-index: var(--z-popover);
   }
   .setting-info:hover .setting-info-popover,
   .setting-info:focus .setting-info-popover {
@@ -3316,7 +3336,7 @@
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.5);
-    z-index: 1000;
+    z-index: var(--z-modal);
     overflow-y: auto;
     padding: 1rem;
   }
@@ -3613,7 +3633,7 @@
     line-height: 1;
     cursor: pointer;
     box-shadow: 0 3px 10px rgba(0,0,0,0.22);
-    z-index: 900;
+    z-index: var(--z-fab);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
     transition: background 0.15s, transform 0.15s;
@@ -3856,7 +3876,7 @@
   border-top: 1px solid var(--border);
   box-shadow: 0 -2px 16px rgba(0,0,0,0.06);
   padding: 6px 4px env(safe-area-inset-bottom, 0px);
-  z-index: 100;
+  z-index: var(--z-chrome);
 }
 
 @media (max-width: 599px) {
@@ -3912,7 +3932,7 @@ html.auth-required body {
 .auth-gate {
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: var(--z-authgate);
   background: var(--linen);
   display: flex;
   align-items: center;
@@ -4663,7 +4683,7 @@ html.auth-required body {
   left: 50%;
   bottom: calc(var(--bottom-nav-h) + 1rem);
   transform: translateX(-50%);
-  z-index: 1200;
+  z-index: var(--z-toast);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -4713,7 +4733,7 @@ html.auth-required body {
 .confirm-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1300;
+  z-index: var(--z-confirm);
   background: rgba(44,63,51,0.45);
   display: flex;
   align-items: center;
@@ -4783,7 +4803,7 @@ body.cook-open { overflow: hidden; }
 .cook-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1100;
+  z-index: var(--z-cook-overlay);
   background: var(--linen);
   display: flex;
   flex-direction: column;
@@ -4817,7 +4837,7 @@ body.cook-open { overflow: hidden; }
   flex-shrink: 0;
   height: env(safe-area-inset-top, 0px);
   background: var(--linen);
-  z-index: 6;
+  z-index: var(--z-cook-strip);
 }
 .cook-head {
   display: flex;
@@ -4863,7 +4883,7 @@ body.cook-open { overflow: hidden; }
 .cook-progress {
   position: sticky;
   top: env(safe-area-inset-top, 0px);
-  z-index: 5;
+  z-index: var(--z-sticky);
   background: var(--linen);
   display: flex;
   align-items: center;
@@ -5634,7 +5654,7 @@ body.cook-open { overflow: hidden; }
 .dlx-swap-banner {
   position: sticky;
   top: calc(var(--header-h, 56px) + 6px);
-  z-index: 30;
+  z-index: var(--z-banner);
   box-shadow: 0 4px 14px rgba(44,63,51,0.25);
 }
 .dlx-swap-banner.busy span::before {
@@ -5680,7 +5700,7 @@ body.cook-open { overflow: hidden; }
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.22s ease;
-  z-index: 950;
+  z-index: var(--z-dlx-backdrop);
 }
 .dlx-sheet-backdrop.open { opacity: 1; pointer-events: auto; }
 .dlx-sheet {
@@ -5688,7 +5708,7 @@ body.cook-open { overflow: hidden; }
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 960;
+  z-index: var(--z-dlx-sheet);
   margin: 0 auto;
   max-width: 520px;
   background: var(--linen-card);
