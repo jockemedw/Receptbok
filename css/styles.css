@@ -841,6 +841,11 @@
     border-radius: 12px;
     overflow: hidden;
     transition: box-shadow 0.2s, border-color 0.2s;
+    /* Snabbare scroll (Session 121): hoppa över rendering av kort utanför vyn.
+       'auto' i contain-intrinsic-size minns verklig höjd efter första render →
+       minimalt scroll-hopp. Ger stor FPS-vinst i den långa receptlistan. */
+    content-visibility: auto;
+    contain-intrinsic-size: auto 76px;
   }
 
   /* hover-guard (Session 120): bara pekare med hover → fastnar inte highlightad på touch */
@@ -956,13 +961,21 @@
   }
 
   /* ── DETAIL ── */
-  .recipe-detail {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Expandering (Session 121): momentan höjd via display-växling i stället för en
+     max-height:0→4000px-transition (som reflowar varje frame → laggig scroll +
+     "jojo"). Höjden sätts direkt → layouten settlar synkront, så scroll-ankaret
+     blir exakt (ingen konkurrerande rörelse). Premium-känslan kommer av en billig
+     GPU-entré (opacity+transform via @keyframes — en animation triggas vid
+     display-byte, till skillnad från en transition). Global reduced-motion nollar. */
+  .recipe-detail { display: none; overflow: hidden; }
+  .recipe-card.open .recipe-detail {
+    display: block;
+    animation: recipeDetailReveal var(--dur-base) var(--ease-out);
   }
-
-  .recipe-card.open .recipe-detail { max-height: 4000px; }
+  @keyframes recipeDetailReveal {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: none; }
+  }
 
   .detail-inner {
     border-top: 1px solid var(--border);
