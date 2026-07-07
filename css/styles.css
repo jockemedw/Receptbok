@@ -4272,6 +4272,9 @@ html.auth-required body {
 
 /* ── Dagslista ── */
 .dlx-days { display: flex; flex-direction: column; gap: 0.35rem; padding: 0 1rem; }
+/* Per-dag diff-slot (Session 120) — logisk gruppering för keyed diffing; genererar
+   ingen egen box så dagskort + släppzoner förblir .dlx-days egna flex-barn (identisk layout). */
+.dlx-day-slot { display: contents; }
 
 /* ── Notis: obekräftat förslag utanför visad vecka — tapp → hoppa dit ── */
 .dlx-plan-notice {

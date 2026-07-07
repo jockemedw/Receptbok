@@ -607,21 +607,6 @@ function renderDayCard(d) {
   return html;
 }
 
-// Renderar veckans dagskort i kronologisk ordning. Ikväll-kortet ersätter
-// dagens vanliga kort inline (ingen dubblering) — så att t.ex. en torsdag
-// hamnar efter mån–ons, inte överst. Inga veckoavdelare behövs längre:
-// en mån–sön-vecka korsar aldrig en ISO-veckogräns.
-function renderDayList(days, { tonightHtml = '', tonightDate = null } = {}) {
-  const zones = moveZoneCtx();   // släppzoner i flytta dag-läge (annars null)
-  let html = '';
-  for (const d of days) {
-    if (zones?.set.has(d.date)) html += dropZone(d.date);
-    html += (tonightHtml && d.date === tonightDate) ? tonightHtml : renderDayCard(d);
-    if (zones?.endAfter === d.date) html += dropZone(null);
-  }
-  return html;
-}
-
 // ── Huvudrendering ────────────────────────────────────────────────────────────
 // Sektionsvis diff-rendering: varje del (historik/hero/banner/ikväll/dagar)
 // bor i en egen wrapper (display: contents → påverkar inte layouten) och får
@@ -637,6 +622,61 @@ function setSec(host, name, html) {
     host.appendChild(el);
   }
   if (el._dlxHtml !== html) { el.innerHTML = html; el._dlxHtml = html; }
+}
+
+// Per-dag diff-rendering av dagslistan. Varje dag bor i en egen keyed slot
+// (display:contents → påverkar inte flex-layouten i .dlx-days). Bara den dag
+// vars innehåll FAKTISKT ändrats får sin innerHTML utbytt — så ett realtime-eko
+// som rör en enda dag inte längre bygger om hela veckan (mindre fladder, bevarar
+// övriga korts state). Vid veckobyte omordnas slotarna med appendChild (flyttar
+// noden, bygger inte om). Ikväll-kortet ersätter dagens kort inline; släppzoner
+// (flytta-läge) bäddas in i berörd dags slot. Keyas på data-slot (INTE data-date)
+// för att inte krocka med befintliga #weekDeluxe [data-date]-queries.
+function renderDaysDiff(host, days, { tonightHtml = '', tonightDate = null } = {}) {
+  let sec = host.querySelector(':scope > .dlx-sec[data-sec="days"]');
+  if (!sec) {
+    sec = document.createElement('div');
+    sec.className = 'dlx-sec';
+    sec.dataset.sec = 'days';
+    host.appendChild(sec);
+  }
+  let container = sec.querySelector(':scope > .dlx-days');
+  if (!container) {
+    sec.innerHTML = '';                       // rensa ev. gammalt helblock
+    container = document.createElement('div');
+    container.className = 'dlx-days';
+    sec.appendChild(container);
+  }
+
+  const zones = moveZoneCtx();                 // släppzoner i flytta-läge (annars null)
+  const existing = new Map();
+  container.querySelectorAll(':scope > .dlx-day-slot').forEach(el => existing.set(el.dataset.slot, el));
+
+  const keep = new Set();
+  let cursor = container.firstChild;           // markör: förväntad nod i denna position
+  for (const d of days) {
+    let html = '';
+    if (zones?.set.has(d.date)) html += dropZone(d.date);
+    html += (tonightHtml && d.date === tonightDate) ? tonightHtml : renderDayCard(d);
+    if (zones?.endAfter === d.date) html += dropZone(null);
+
+    let slot = existing.get(d.date);
+    if (!slot) {
+      slot = document.createElement('div');
+      slot.className = 'dlx-day-slot';
+      slot.dataset.slot = d.date;
+    }
+    if (slot._dlxHtml !== html) { slot.innerHTML = html; slot._dlxHtml = html; }
+    // Flytta BARA om noden inte redan står på rätt plats → noll DOM-rörelser när
+    // ordningen är oförändrad (samma-vecka-omrender, t.ex. realtime-eko).
+    if (slot === cursor) {
+      cursor = cursor.nextSibling;
+    } else {
+      container.insertBefore(slot, cursor);
+    }
+    keep.add(d.date);
+  }
+  existing.forEach((el, date) => { if (!keep.has(date)) el.remove(); });
 }
 
 // Banner för pågående byt/flytta-läge — state-driven så den överlever re-renders.
@@ -691,7 +731,6 @@ export function renderDeluxe() {
 
   const hero = buildHero(weekDays, weekStart, plan, pending);
   const tonight = isCurrentWeek ? buildTonight(weekDays) : '';
-  const daysHtml = renderDayList(weekDays, { tonightHtml: tonight, tonightDate: todayIso });
 
   // Tömda sektioner (history/today) behålls så sektionsordningen är stabil och
   // gammal DOM från tidigare renderingar rensas — setSec tar aldrig bort element.
@@ -699,7 +738,7 @@ export function renderDeluxe() {
   setSec(host, 'hero', hero);
   setSec(host, 'banner', weekNoticeHtml(plan, pending, weekStart) + modeBannerHtml());
   setSec(host, 'today', '');
-  setSec(host, 'days', `<div class="dlx-days">${daysHtml}</div>`);
+  renderDaysDiff(host, weekDays, { tonightHtml: tonight, tonightDate: todayIso });
 }
 
 // ── Interaktion ───────────────────────────────────────────────────────────────
@@ -830,7 +869,7 @@ document.addEventListener('keydown', (e) => {
 // ── Flytta dag (kläm in mellan två dagar) ─────────────────────────────────────
 // Källdagen lyfts ur och kläms in på vald position; mellanliggande recept
 // roteras (datumen ligger fast). Släppzoner renderas mellan korten av
-// renderDeluxe/renderDayList när _dlxMove är satt.
+// renderDaysDiff när _dlxMove är satt.
 
 // Zon-kontext för pågående flytt: vilka "före"-datum som får en släppzon,
 // och efter vilket kort slutzonen ("sist i planen") ligger.
