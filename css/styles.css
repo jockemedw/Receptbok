@@ -846,9 +846,6 @@
        minimalt scroll-hopp. Ger stor FPS-vinst i den långa receptlistan. */
     content-visibility: auto;
     contain-intrinsic-size: auto 76px;
-    /* Ankare för scrollIntoView vid expandering → kortet landar strax under headern
-       (native smooth-scroll sköts av kompositorn, inte main-tråden). */
-    scroll-margin-top: calc(var(--header-h, 56px) + 12px);
   }
 
   /* hover-guard (Session 120): bara pekare med hover → fastnar inte highlightad på touch */
@@ -968,8 +965,8 @@
      max-height-transition som reflowar varje frame, och ingen opacity-entré på det
      stora detaljträdet som repaintar under scrollen → det var kvarvarande FPS-
      tappet vid expandering). Layouten settlar synkront; själva rörelsen görs av
-     native smooth-scroll (scrollIntoView, kompositor-driven) via scroll-margin-top
-     på kortet — inte en JS-rAF-scroll på main-tråden. */
+     native kompositor-scroll (window.scrollTo behavior:'smooth' i toggleCard, med
+     exakt mål från kortets getBoundingClientRect) — inte en JS-rAF-scroll. */
   .recipe-detail { display: none; overflow: hidden; }
   .recipe-card.open .recipe-detail { display: block; }
 

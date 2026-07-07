@@ -140,12 +140,16 @@ export function toggleCard(card) {
     header.classList.remove('header-hidden');
     window.isSnapping    = true;
     window.scrollUpAccum = 0;
-    // NATIVE smooth-scroll (kompositor-driven) i stället för en JS-rAF-scroll på
-    // main-tråden — det senare fightar med paint när det stora kortet expanderar
-    // (låg FPS "när skärmen flyttas"). scroll-margin-top på .recipe-card ankrar
-    // kortet strax under headern. Respektera reduced-motion.
+    // NATIVE kompositor-scroll (av main-tråden → hög FPS "när skärmen flyttas"),
+    // men med EXAKT mål beräknat från kortets verkliga position. window.scrollTo
+    // med behavior:'smooth' är också kompositor-drivet — till skillnad från
+    // scrollIntoView+scroll-margin-top blir målet rätt ÄVEN med content-visibility
+    // på korten (annars gissas grann-korts höjd → rubriken hamnar bakom headern).
+    // headerhöjden inkluderar safe-area (env i header-padding). Respekterar reduced-motion.
     const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    card.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    const hh  = header.offsetHeight;
+    const top = card.getBoundingClientRect().top + window.scrollY - hh - 12;
+    window.scrollTo({ top, behavior: reduce ? 'auto' : 'smooth' });
     // Släpp header-låset när scrollen landat (så auto-göm-headern funkar igen).
     setTimeout(() => { window.isSnapping = false; window.lastScrollY = window.scrollY; }, 620);
   }
