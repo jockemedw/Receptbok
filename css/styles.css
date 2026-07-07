@@ -45,6 +45,10 @@
     --on-deep: #f5f1e8;  /* text på ytor som är mörka i BÅDA teman (hero-gradienten) */
     --hairline: #eee8db; /* tunnaste avdelare */
     --shadow-card: 0 1px 2px rgba(47,65,54,.05), 0 4px 16px rgba(47,65,54,.06); /* mjuk kort-skugga (Idag-fliken m.fl.) */
+    /* Kort-skugg-skala (Session 120) — ljusa värden ≈ tidigare hårdkodade så
+       ljust tema knappt ändras; mörka värden syns (rgba(0,0,0) försvann förut). */
+    --shadow-sm: 0 1px 4px rgba(47,65,54,.08);
+    --shadow-md: 0 2px 12px rgba(47,65,54,.09);
     /* Rörelse-tokens (Session 120) — EN uppsättning easing + timing för hela
        appen så övergångar känns lika "tunga" oavsett yta. */
     --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);   /* generella transitions */
@@ -92,6 +96,8 @@
       --on-accent: #1c2620;
       --hairline: #33402f;
       --shadow-card: 0 1px 2px rgba(0,0,0,.2), 0 4px 16px rgba(0,0,0,.22);
+      --shadow-sm: 0 1px 5px rgba(0,0,0,.3);
+      --shadow-md: 0 3px 14px rgba(0,0,0,.35);
       --btn-forest: #44604f; --btn-forest-strong: #557262;
     }
   }
@@ -110,6 +116,8 @@
       --on-accent: #1c2620;
       --hairline: #33402f;
       --shadow-card: 0 1px 2px rgba(0,0,0,.2), 0 4px 16px rgba(0,0,0,.22);
+      --shadow-sm: 0 1px 5px rgba(0,0,0,.3);
+      --shadow-md: 0 3px 14px rgba(0,0,0,.35);
       --btn-forest: #44604f; --btn-forest-strong: #557262;
   }
 
@@ -818,7 +826,7 @@
   /* hover-guard (Session 120): bara pekare med hover → fastnar inte highlightad på touch */
   @media (hover: hover) {
     .recipe-card:hover {
-      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      box-shadow: var(--shadow-md);
       border-color: var(--birch-soft);
     }
   }
@@ -1418,7 +1426,7 @@
   }
   .week-day-card.archive:hover {
     opacity: 1;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    box-shadow: var(--shadow-md);
   }
   .week-day-card.archive.past { opacity: 0.72; }
 
@@ -2177,7 +2185,7 @@
   }
   .week-day-card.blocked:hover {
     border-color: var(--lichen);
-    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    box-shadow: var(--shadow-sm);
     opacity: 0.8;
   }
   .blocked-recipe-text {
@@ -3483,7 +3491,7 @@
   .import-tab.active {
     background: var(--paper);
     color: var(--lichen);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    box-shadow: var(--shadow-sm);
     font-weight: 600;
   }
   .import-tab svg { flex-shrink: 0; }
