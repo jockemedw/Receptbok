@@ -45,6 +45,15 @@
     --on-deep: #f5f1e8;  /* text på ytor som är mörka i BÅDA teman (hero-gradienten) */
     --hairline: #eee8db; /* tunnaste avdelare */
     --shadow-card: 0 1px 2px rgba(47,65,54,.05), 0 4px 16px rgba(47,65,54,.06); /* mjuk kort-skugga (Idag-fliken m.fl.) */
+    /* Rörelse-tokens (Session 120) — EN uppsättning easing + timing för hela
+       appen så övergångar känns lika "tunga" oavsett yta. */
+    --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);   /* generella transitions */
+    --ease-out: cubic-bezier(0.16, 1, 0.3, 1);        /* entré/slide-up (sheets, kort) */
+    --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);    /* lekfull snäpp (steppers m.m.) */
+    --dur-fast: 0.15s;     /* hover/press/färg-fade */
+    --dur-base: 0.2s;      /* de flesta transitions */
+    --dur-slow: 0.3s;      /* större rörelser */
+    --dur-sheet: 0.28s;    /* bottensheets slide-up */
     --btn-forest: #3d5544;        /* mörkgröna CTA-knappar (ljusas i mörkt tema) */
     --btn-forest-strong: #2c3f33;
 
@@ -463,7 +472,7 @@
     padding-bottom: max(1.5rem, env(safe-area-inset-bottom, 1.5rem));
     box-shadow: 0 -8px 32px rgba(45,52,40,0.18);
     transform: translateY(100%);
-    transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: transform var(--dur-sheet) var(--ease-out);   /* enhetlig sheet-kurva (Session 120) */
   }
 
   .bottom-sheet.open .bottom-sheet-panel {
@@ -2844,6 +2853,7 @@
 
   .select-btn {
     display: none;
+    position: relative;      /* för osynlig träffyta nedan */
     background: var(--rust);
     color: white;
     border: none;
@@ -2857,6 +2867,8 @@
     align-self: center;
   }
   .select-btn:hover { opacity: 0.88; }
+  /* Osynlig ≥44px träffyta utan att växa layouten (Session 120) */
+  .select-btn::after { content: ''; position: absolute; inset: -11px -8px; }
   #receptView.replace-mode .select-btn,
   #receptView.custom-pick-mode .select-btn { display: inline-block; }
 
@@ -3177,8 +3189,11 @@
     border: none;
     color: var(--birch, #c9bfa8);
     cursor: pointer;
-    padding: 0.3rem 0.35rem;
+    padding: 0;
     line-height: 1;
+    min-width: 44px;    /* ≥44px träffyta (Session 120) */
+    min-height: 44px;
+    justify-content: center;
     flex-shrink: 0;
     display: flex;
     align-items: center;
@@ -3209,8 +3224,14 @@
     color: var(--text-muted);
     font-size: 1.35rem;
     cursor: pointer;
-    padding: 0 0.35rem;
+    padding: 0;
     line-height: 1;
+    /* ≥44px träffyta (Session 120) — destruktiv knapp som tappas ofta */
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
     display: none;
   }
@@ -3445,6 +3466,7 @@
     justify-content: center;
     gap: 0.35rem;
     padding: 0.55rem 0.5rem;
+    min-height: 44px;    /* ≥44px träffyta (Session 120) */
     border-radius: 8px;
     border: none;
     background: transparent;
@@ -4665,7 +4687,10 @@ html.auth-required body {
   font-family: inherit;
   font-size: 0.82rem;
   font-weight: 600;
-  padding: 0.45rem 0.9rem;
+  padding: 0 0.9rem;
+  min-height: 44px;    /* ≥44px träffyta (Session 120) — precision viktig i kort-livad toast */
+  display: inline-flex;
+  align-items: center;
   border-radius: 999px;
   cursor: pointer;
   white-space: nowrap;
@@ -5235,7 +5260,9 @@ body.cook-open { overflow: hidden; }
   justify-content: space-between;
   margin: 26px 4px 12px;
 }
-.today-link { font-size: 0.85rem; font-weight: 500; color: var(--lichen-deep); cursor: pointer; }
+.today-link { position: relative; font-size: 0.85rem; font-weight: 500; color: var(--lichen-deep); cursor: pointer; }
+/* Osynlig ≥44px träffyta (Session 120) — liten textlänk i sektionsrubriken */
+.today-link::after { content: ''; position: absolute; inset: -14px -10px; }
 
 /* Fästa lappar (P2) — diskreta kort på Idag */
 .today-notes { display: flex; flex-direction: column; gap: 10px; }
@@ -5649,11 +5676,39 @@ body.cook-open { overflow: hidden; }
   max-height: 78vh;
   overflow-y: auto;
   transform: translateY(105%);
-  transition: transform 0.26s cubic-bezier(0.2, 0.8, 0.25, 1);
+  transition: transform var(--dur-sheet) var(--ease-out);   /* enhetlig sheet-kurva (Session 120) */
 }
 .dlx-sheet.open { transform: translateY(0); }
+
+/* ── Tryck-feedback (Session 120) — samma "sjunker in"-idiom på kort/knappar som
+   saknade det, så ytorna känns levande under fingret. :active gäller även på
+   touch (till skillnad från :hover). Global reduced-motion nollar transitionen. ── */
+/* Bara HELklickbara kort/knappar — inte containrar med interaktiva barn
+   (t.ex. .fl-card-open med snabbtillägg-fält), där :active propagerar från
+   barnet och skulle skala hela ytan vid varje barn-tryck. */
+.today-tomorrow, .today-weave-card, .today-note-card,
+.fl-card, .edit-recipe-btn {
+  transition: transform var(--dur-fast) var(--ease-standard);
+}
+.today-tomorrow:active, .today-weave-card:active, .today-note-card:active,
+.fl-card:active, .edit-recipe-btn:active {
+  transform: scale(0.99);
+}
+.fl-list-card:active { transform: none; }   /* behåll befintlig override */
+/* Inköpsraden kändes "död" under fingret — subtil tryck-bakgrund (bg animeras
+   redan via radens transition). Gäller shop-fliken + Listor-detaljraderna. */
+.shopping-item:active { background: var(--stone); }
+
+/* Global reduced-motion (Session 120) — respektera OS-inställningen ÖVERALLT:
+   nästan-nolla alla animationer/transitions/smooth-scroll i stället för bara
+   sheets. Svep-/fade-JS läser redan prefersReducedMotion() och hoppar anim. */
 @media (prefers-reduced-motion: reduce) {
-  .dlx-sheet, .dlx-sheet-backdrop { transition: none; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 .dlx-sheet-grip {
   width: 40px;
@@ -5883,6 +5938,7 @@ body.cook-open { overflow: hidden; }
 }
 .fl-items .shopping-item { cursor: pointer; }
 .fl-remove {
+  position: relative;   /* för osynlig ≥44px träffyta (Session 120) */
   flex-shrink: 0;
   width: 2rem;
   height: 2rem;
@@ -5893,6 +5949,7 @@ body.cook-open { overflow: hidden; }
   color: var(--color-danger);
   cursor: pointer;
 }
+.fl-remove::after { content: ''; position: absolute; inset: -6px; }   /* 32→44px hit */
 
 /* Lägg till-rad + formulär (delas med "ny lista" i översikten) */
 .fl-add-form {

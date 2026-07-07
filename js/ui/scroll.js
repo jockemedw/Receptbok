@@ -33,9 +33,21 @@ window.addEventListener('scroll', () => {
 
 scrollBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 
+function prefersReducedMotion() {
+  return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+
 export function smoothScrollTo(target, duration) {
   const start = window.scrollY;
   const dist  = target - start;
+  // Respektera OS-inställningen — den globala CSS-regeln täcker bara
+  // scroll-behavior/transitions, inte den här manuella rAF-scrollen.
+  if (prefersReducedMotion()) {
+    window.scrollTo(0, target);
+    window.isSnapping = false;
+    window.lastScrollY = window.scrollY;
+    return;
+  }
   let startTime = null;
   function step(ts) {
     if (!startTime) startTime = ts;
