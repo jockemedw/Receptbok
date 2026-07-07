@@ -11,12 +11,12 @@
 //
 // CACHE_VERSION bumpas när precache-listan ändras — gamla cachar städas i activate.
 
-const CACHE_VERSION = 'receptbok-v60';
+const CACHE_VERSION = 'receptbok-v61';
 
 const PRECACHE = [
   './',
   './index.html',
-  './css/styles.css?v=147',
+  './css/styles.css?v=148',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
