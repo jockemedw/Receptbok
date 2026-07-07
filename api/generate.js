@@ -193,7 +193,13 @@ export async function savePlanToSupabase(weeklyPlan, householdId, database = db)
     locked: false,
   }));
 
-  const { error: daysErr } = await database.from("meal_days").insert(mealDayRows);
+  // UPSERT på (household_id, date): regenerering av en vecka skriver då rent över
+  // den föregående (generade) planens dagar i stället för att krocka med PK:n.
+  // Custom-dagar (plan_id = null) finns ALDRIG i mealDayRows (de utesluts redan i
+  // handlern), så en upsert kan aldrig råka skriva över familjens egna dagar.
+  const { error: daysErr } = await database
+    .from("meal_days")
+    .upsert(mealDayRows, { onConflict: "household_id,date" });
   if (daysErr) {
     // Städa bort den halv-skrivna plan-raden så den aldrig kan dyka upp som
     // en tom aktiv plan. Den gamla planen är ännu orörd (arkiveras senare).
@@ -358,11 +364,19 @@ export default createSupabaseHandler(async (req, res) => {
   };
 
   const householdId = await getHouseholdId();
-  const [allRecipes, historyData, existingShop] = await Promise.all([
+  const [allRecipes, historyData, existingShop, customRows] = await Promise.all([
     fetchRecipes(householdId),
     fetchHistory(householdId),
     skip_shopping ? Promise.resolve(null) : fetchExistingShoppingList(householdId),
+    // Dagar familjen redan planerat SJÄLVA (custom days, plan_id = null) i
+    // intervallet. De får ALDRIG skrivas över av genereringen (hård regel) — och
+    // deras meal_days-rad ligger redan på (household_id, date), så en insert skulle
+    // dessutom krocka med primärnyckeln. Generatorn hoppar därför över dem helt och
+    // fyller bara de dagar familjen inte redan planerat.
+    db.from("meal_days").select("date").eq("household_id", householdId)
+      .is("plan_id", null).gte("date", start_date).lte("date", end_date),
   ]);
+  const customDates = new Set((customRows?.data || []).map((r) => r.date));
 
   const filtered = filterRecipes(allRecipes, constraints);
 
@@ -383,7 +397,14 @@ export default createSupabaseHandler(async (req, res) => {
   const recentIds = recentlyUsedIds(historyData);
   const allDays = buildDayList(start_date, end_date);
   const blockedSet = new Set(blocked_dates);
-  const activeDays = allDays.filter((d) => !blockedSet.has(d.date));
+  // Blockerade OCH egen-planerade (custom) dagar utesluts ur receptvalet.
+  const activeDays = allDays.filter((d) => !blockedSet.has(d.date) && !customDates.has(d.date));
+
+  // Om varenda dag i intervallet redan är planerad (custom) eller blockerad finns
+  // inget att generera — begripligt fel i stället för en tom plan/krasch.
+  if (activeDays.length === 0) {
+    return res.status(400).json({ error: "Alla dagar i intervallet är redan planerade eller blockerade — inget att generera." });
+  }
 
   let savingsById = null;
   // Tyst degradering: prisoptimeringen vilar på en oofficiell Willys-feed som kan
@@ -438,7 +459,11 @@ export default createSupabaseHandler(async (req, res) => {
   const currentSeason = season_weight ? getCurrentSeason(start_date) : null;
   const selectedDays = selectRecipes(filtered, activeDays, constraints, recentIds, historyData.usedOn || {}, savingsById, currentSeason);
 
-  const days = allDays.map((d) => {
+  const days = allDays
+    // Egen-planerade dagar hoppas över helt — de har redan sin meal_days-rad och
+    // rörs inte av genereringen (bevaras + ingen PK-krock).
+    .filter((d) => !customDates.has(d.date))
+    .map((d) => {
     if (blockedSet.has(d.date)) {
       return { date: d.date, day: d.day, recipe: null, recipeId: null, blocked: true };
     }
