@@ -231,6 +231,7 @@ async function copyAIPrompt() {
       <div class="dispatch-actions"><button onclick="closeDispatchModal()">Stäng</button></div>
     `;
     modal.style.display = "";
+    document.body.style.overflow = "hidden";            // lås bakgrundsscroll (Session 121)
     body.querySelector("textarea").select();
   }
 }
