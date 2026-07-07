@@ -5710,6 +5710,17 @@ body.cook-open { overflow: hidden; }
    redan via radens transition). Gäller shop-fliken + Listor-detaljraderna. */
 .shopping-item:active { background: var(--stone); }
 
+/* Mjuk entré vid flikbyte (Session 120) — vyn tonar in när den blir synlig
+   (klass/`display` växlas av switchTab, ALDRIG vid data-render → ingen
+   per-eko-flimmer). Bara opacity (ingen transform → inget layouthopp och
+   ingen containing-block-effekt på position:fixed). Global reduced-motion
+   nästan-nollar durationen. */
+@keyframes viewFadeIn { from { opacity: 0; } to { opacity: 1; } }
+#todayView.visible, #weekView.visible, #shopView.visible, #listsView.visible,
+main#receptView {
+  animation: viewFadeIn var(--dur-base) var(--ease-out);
+}
+
 /* Global reduced-motion (Session 120) — respektera OS-inställningen ÖVERALLT:
    nästan-nolla alla animationer/transitions/smooth-scroll i stället för bara
    sheets. Svep-/fade-JS läser redan prefersReducedMotion() och hoppar anim. */
