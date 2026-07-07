@@ -136,14 +136,17 @@ export function toggleCard(card) {
   if (!wasOpen) {
     ensureDetail(card);
     card.classList.add('open');
-    window.isSnapping   = true;
+    const header = document.querySelector('header');
+    header.classList.remove('header-hidden');
+    window.isSnapping    = true;
     window.scrollUpAccum = 0;
-    document.querySelector('header').classList.remove('header-hidden');
-    setTimeout(() => {
-      const hh  = document.querySelector('header').offsetHeight;
-      const top = card.getBoundingClientRect().top + window.scrollY - hh - 12;
-      window.smoothScrollTo(top, 420);
-    }, 680);
+    // Rulla in kortet DIREKT i EN mjuk rörelse — inte en 680ms-fördröjd scroll
+    // som rycker sidan efter att kortet redan expanderat (det gav "jojo"-känslan).
+    // Kortet växer nedåt från sin topp, som vi ankrar strax under headern → ingen
+    // konkurrerande rörelse.
+    const hh  = header.offsetHeight;
+    const top = card.getBoundingClientRect().top + window.scrollY - hh - 12;
+    window.smoothScrollTo(top, 360);
   }
 }
 
@@ -264,10 +267,8 @@ export function jumpToRecipe(title) {
   renderRecipeBrowser();
   setTimeout(() => {
     document.querySelectorAll('.recipe-card').forEach(card => {
-      if (card.dataset.title === title.toLowerCase()) {
-        toggleCard(card);
-        setTimeout(() => card.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
-      }
+      // toggleCard rullar nu in kortet självt (header-offset) → ingen extra scroll.
+      if (card.dataset.title === title.toLowerCase()) toggleCard(card);
     });
   }, 50);
 }
