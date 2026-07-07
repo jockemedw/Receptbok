@@ -2,7 +2,7 @@
 // Läser state: _shopListId, _shopItemIds, _checkedItems, _checkedSaveTimer, _shopRecipeItems, _shopManualItems
 // Skriver state: _shopListId, _shopItemIds, _checkedItems, _checkedSaveTimer, _shopRecipeItems, _shopManualItems
 
-import { CAT_ICONS, escapeHtml } from '../utils.js';
+import { CAT_ICONS, escapeHtml, fmtIso } from '../utils.js';
 
 // Kanonisk kategoriordning (samma som inköpslistan byggs i) — håller ordningen
 // stabil oavsett i vilken ordning DB-raderna råkar komma tillbaka.
@@ -668,6 +668,33 @@ export async function loadShoppingTab() {
   }
 }
 
+// Hämtar den aktiva inköpslistan, eller skapar en tom om ingen finns (t.ex. innan
+// någon matsedel genererats). Återanvänder alltid en befintlig aktiv lista så att
+// vi aldrig får två aktiva rader. Rör inte veckoplaner.
+async function ensureActiveShoppingList() {
+  if (window._shopListId) return window._shopListId;
+  const householdId = await window.getHouseholdId();
+  const { data: existing } = await window.db
+    .from('shopping_lists')
+    .select('id')
+    .eq('household_id', householdId)
+    .eq('is_active', true)
+    .limit(1);
+  if (existing?.[0]?.id) {
+    window._shopListId = existing[0].id;
+    return window._shopListId;
+  }
+  const today = fmtIso(new Date());
+  const { data: created, error } = await window.db
+    .from('shopping_lists')
+    .insert({ household_id: householdId, start_date: today, end_date: today, is_active: true })
+    .select('id')
+    .single();
+  if (error) throw error;
+  window._shopListId = created.id;
+  return window._shopListId;
+}
+
 export async function addManualItem(inputId = 'manualItemInput', btnId = 'manualAddBtn') {
   const input = document.getElementById(inputId);
   const item  = input.value.trim();
@@ -675,8 +702,9 @@ export async function addManualItem(inputId = 'manualItemInput', btnId = 'manual
   const btn = document.getElementById(btnId);
   btn.disabled = true;
   try {
-    const listId = window._shopListId;
-    if (!listId) throw new Error('Ingen aktiv inköpslista');
+    // I tomt läge finns ännu ingen aktiv lista — skapa (eller återanvänd) en
+    // så att man kan börja med egna varor utan att först generera en matsedel.
+    const listId = await ensureActiveShoppingList();
     const position = (window._shopManualItems || []).length;
     const { error } = await window.db
       .from('shopping_items')
