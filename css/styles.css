@@ -5732,20 +5732,6 @@ main#receptView {
   animation: viewFadeIn var(--dur-base) var(--ease-out);
 }
 
-/* Kort-entré vid flikbyte (Session 120) — vyns direkta block "reser sig" mjukt
-   i tur och ordning när man byter flik. Klassen `view-enter` sätts BARA av
-   switchTab (aldrig vid data-render/realtids-eko → inget flimmer) och tas bort
-   efter ~700ms. `both` håller starttillståndet under animationen; när klassen
-   är borta gäller basstilen (opacity 1) → inget kort kan fastna osynligt.
-   Global reduced-motion nästan-nollar durationen. */
-@keyframes cardRise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
-.view-enter > * { animation: cardRise var(--dur-slow) var(--ease-out) both; }
-.view-enter > *:nth-child(1) { animation-delay: 0ms; }
-.view-enter > *:nth-child(2) { animation-delay: 45ms; }
-.view-enter > *:nth-child(3) { animation-delay: 90ms; }
-.view-enter > *:nth-child(4) { animation-delay: 135ms; }
-.view-enter > *:nth-child(5) { animation-delay: 180ms; }
-.view-enter > *:nth-child(n+6) { animation-delay: 215ms; }
 
 /* Global reduced-motion (Session 120) — respektera OS-inställningen ÖVERALLT:
    nästan-nolla alla animationer/transitions/smooth-scroll i stället för bara
