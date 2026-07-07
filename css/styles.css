@@ -815,9 +815,12 @@
     transition: box-shadow 0.2s, border-color 0.2s;
   }
 
-  .recipe-card:hover {
-    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
-    border-color: var(--birch-soft);
+  /* hover-guard (Session 120): bara pekare med hover → fastnar inte highlightad på touch */
+  @media (hover: hover) {
+    .recipe-card:hover {
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      border-color: var(--birch-soft);
+    }
   }
 
   .recipe-card.open {
@@ -2401,7 +2404,7 @@
 
   .shopping-item:last-child { border-bottom: none; }
 
-  .shopping-item:hover { background: color-mix(in srgb, var(--stone) 40%, var(--linen-card)); }
+  @media (hover: hover) { .shopping-item:hover { background: color-mix(in srgb, var(--stone) 40%, var(--linen-card)); } }   /* hover-guard (Session 120) */
 
   .shopping-item.checked {
     opacity: 0.4;
@@ -3298,7 +3301,7 @@
     font-family: var(--font-body);
     font-weight: 500;
   }
-  .edit-recipe-btn:hover { background: rgba(92,61,30,0.06); }
+  @media (hover: hover) { .edit-recipe-btn:hover { background: rgba(92,61,30,0.06); } }   /* hover-guard (Session 120) */
 
   /* ── REDIGERINGSMODAL ── */
   .modal-overlay {
@@ -4301,7 +4304,7 @@ html.auth-required body {
    statisk opacity-regel och kortet återgår till full opacitet. */
 @keyframes dlxFadeInDim { from { opacity: 0; transform: translateY(6px); } to { opacity: 0.55; transform: none; } }
 .dlx-day:active { transform: scale(0.992); }
-.dlx-day:hover { box-shadow: 0 10px 26px -18px rgba(44,63,51,0.5); border-color: var(--birch); }
+@media (hover: hover) { .dlx-day:hover { box-shadow: 0 10px 26px -18px rgba(44,63,51,0.5); border-color: var(--birch); } }   /* hover-guard (Session 120) */
 .dlx-day.expanded { box-shadow: 0 16px 38px -20px rgba(44,63,51,0.55); border-color: var(--lichen); }
 .dlx-day.is-today { border-color: var(--rust); box-shadow: 0 0 0 1px var(--rust) inset; }
 .dlx-day.is-past,
