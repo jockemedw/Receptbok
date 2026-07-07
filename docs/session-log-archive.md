@@ -1,6 +1,11 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–118. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–119. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 119 — Veckoheron omstöpt: svep-växling + editorial hero + veckorail
+Joakim ville byta vecka med svep i stället för pilar, flytta veckoindikatorn nedåt, top-notch hero. Fable 5-designagent itererade visuellt (4 varv, ljust+mörkt) → interaktiv Artifact-mockup (godkänd) → wire-in i produktion. Render-only. **Svep-/scrollväxling** (`plan-viewer-deluxe.js`): hela veckovyn i `.dlx-pager`>`.dlx-pane`(=`#weekDeluxe`); touch-svep + desktop `deltaX`; avsikts-lås (|dx|>|dy|·1.2 efter 8px dödzon) skyddar vertikal scroll; commit >70px/>0.5px·ms → slide-through (`animateWeekChange`, transform på panelen som överlever `setSec`); respekterar reduced-motion; bekräfta-rutan utanför pagern. **Pilarna borta** → veckorail i botten av heron (`.dlx-week-rail`: grann-veckor + `VECKA N` + statuspunkt + riktad "Idag"-pill). **Editorial hero** (`heroDateRange` serif-datum leder + serif-siffror med hårfina avdelare; hero 214→185px, veckan 689px). Verifierat genom att rendera mockupen mot produktions-CSS (pixelidentiskt ljust+mörkt @390×844). Styles v144/SW v56. PR #132. **Uppföljningar samma dag:** (a) PR #133 — passerade dagar dämpades bara på receptkort; fix i `renderDayCard` injicerar `is-past`/`is-archive` på alla korttyper (emptyDayCard). (b) PR #135 — egen anteckning från Idag "Planera dagen" uppdaterade inte förrän omladdning; `saveCustomDay`/`clearCustomDay` routade förbi window-wrapparna → routa om till `window.renderWeeklyPlanData` (instant). (c) PR #134 — pinch-zoom avaktiverad på Joakims önskan (återställer S105:s a11y-#22): viewport `maximum-scale=1/user-scalable=no` + iOS `gesturestart`-block i `scroll.js`; SW v57.
 
 ---
 
