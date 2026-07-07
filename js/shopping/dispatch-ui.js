@@ -119,10 +119,12 @@ function showResult(html) {
   const body = document.getElementById("dispatchModalBody");
   body.innerHTML = html;
   modal.style.display = "";
+  document.body.style.overflow = "hidden";              // lås bakgrundsscroll (Session 121)
 }
 
 export function closeDispatchModal() {
   document.getElementById("dispatchModal").style.display = "none";
+  document.body.style.overflow = "";                    // släpp bakgrundsscroll
 }
 
 export function handleDispatchOverlayClick(event) {
