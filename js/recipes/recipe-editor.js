@@ -20,12 +20,16 @@ export function openEditModal(event, id) {
   document.getElementById('edit-notes').value        = r.notes || '';
   document.getElementById('editFeedback').textContent = '';
   document.getElementById('editSaveBtn').disabled    = false;
-  document.getElementById('editModal').style.display = 'block';
+  const m = document.getElementById('editModal');
+  m.style.display = 'block';
+  requestAnimationFrame(() => m.classList.add('open'));   // mjuk fade-in (Session 120)
   document.body.style.overflow = 'hidden';
 }
 
 export function closeEditModal() {
-  document.getElementById('editModal').style.display = 'none';
+  const m = document.getElementById('editModal');
+  m.classList.remove('open');                             // fade-out, sedan display:none
+  setTimeout(() => { if (!m.classList.contains('open')) m.style.display = 'none'; }, 200);
   document.body.style.overflow = '';
   window.editingId = null;
   document.getElementById('editModalTitle').textContent = 'Redigera recept';

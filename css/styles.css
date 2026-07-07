@@ -4708,9 +4708,10 @@ html.auth-required body {
   justify-content: center;
   padding: 1.25rem;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity var(--dur-base) var(--ease-standard);
+  pointer-events: none;   /* äter inte tryck under ut-fade (Session 120) */
 }
-.confirm-overlay.show { opacity: 1; }
+.confirm-overlay.show { opacity: 1; pointer-events: auto; }
 .confirm-box {
   background: var(--linen-card);
   border-radius: 16px;
@@ -4776,12 +4777,21 @@ body.cook-open { overflow: hidden; }
   flex-direction: column;
   opacity: 0;
   transform: translateY(2rem);
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transition: opacity var(--dur-slow) var(--ease-standard), transform var(--dur-slow) var(--ease-standard);
+  pointer-events: none;   /* äter inte tryck under ut-fade innan DOM-borttagning (Session 120) */
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
 }
-.cook-overlay.show { opacity: 1; transform: translateY(0); }
+.cook-overlay.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+/* Recept-editorns modal — mjuk fade/slide i stället för hård pop-in (Session 120).
+   Scopad till #editModal (id-specificitet) så delade .modal-overlay-reglerna för
+   dispatch/Veckans fynd är orörda. JS växlar display + .open-klass. */
+#editModal { opacity: 0; transition: opacity var(--dur-base) var(--ease-standard); }
+#editModal.open { opacity: 1; }
+#editModal .modal-box { transform: translateY(12px); transition: transform var(--dur-base) var(--ease-out); }
+#editModal.open .modal-box { transform: none; }
 /* iPhone-pannan (notch/Dynamic Island): i installerad app ritas innehållet ända
    upp under statusfältet. En linen-remsa ligger i normalt flöde överst (tar
    safe-areans höjd) och fastnar vid scroll — så att scrollande innehåll aldrig
