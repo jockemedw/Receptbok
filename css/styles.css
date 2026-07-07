@@ -4343,6 +4343,7 @@ html.auth-required body {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--moss-muted);
+  white-space: nowrap;   /* "TORSDAG" ska aldrig radbrytas i smala datumkolumnen (Session 120) */
 }
 /* Kalender-stil datum: dag-nummer stort, månad litet versalt under — jämn
    vertikal rytm på alla kort (annars radbröt "20 juni" ojämnt i den smala kolumnen). */
@@ -5319,8 +5320,8 @@ body.cook-open { overflow: hidden; }
 .today-alert-banner {
   margin: 10px 4px 0;
   padding: 0.65rem 0.9rem;
-  background: color-mix(in srgb, var(--ochre) 14%, var(--paper));
-  border: 1px solid color-mix(in srgb, var(--ochre) 40%, var(--paper));
+  background: color-mix(in srgb, var(--ochre) 20%, var(--paper));   /* något starkare för läsbarhet (Session 120) */
+  border: 1px solid color-mix(in srgb, var(--ochre) 45%, var(--paper));
   border-left: 3px solid var(--ochre);
   border-radius: 8px;
   font-size: 0.82rem;
@@ -5379,7 +5380,7 @@ body.cook-open { overflow: hidden; }
   color: var(--lichen-deep);
   background: var(--moss-soft);
   padding: 4px 10px;
-  border-radius: 99px;
+  border-radius: 999px;   /* pill-radie konsekvent med övriga chips (Session 120) */
   white-space: nowrap;
 }
 .today-deal-chip svg { width: 13px; height: 13px; }
@@ -6140,7 +6141,7 @@ body.cook-open { overflow: hidden; }
   text-overflow: ellipsis;
 }
 .fl-prev-line::before { content: "· "; color: var(--birch); }
-.fl-prev-more { font-size: 0.8rem; color: var(--birch); }
+.fl-prev-more { font-size: 0.8rem; color: var(--text-muted); }   /* --birch var för ljus som text (~3.35:1) (Session 120) */
 
 .fl-quickadd-trigger {
   width: 100%;
