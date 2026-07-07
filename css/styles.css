@@ -4311,7 +4311,7 @@ html.auth-required body {
    i animationens SLUTruta, annars skriver kortets fadeIn (fill:both) över en
    statisk opacity-regel och kortet återgår till full opacitet. */
 @keyframes dlxFadeInDim { from { opacity: 0; transform: translateY(6px); } to { opacity: 0.55; transform: none; } }
-.dlx-day:active { transform: scale(0.992); }
+.dlx-day:active { transform: scale(0.98); }
 @media (hover: hover) { .dlx-day:hover { box-shadow: 0 10px 26px -18px rgba(44,63,51,0.5); border-color: var(--birch); } }   /* hover-guard (Session 120) */
 .dlx-day.expanded { box-shadow: 0 16px 38px -20px rgba(44,63,51,0.55); border-color: var(--lichen); }
 .dlx-day.is-today { border-color: var(--rust); box-shadow: 0 0 0 1px var(--rust) inset; }
@@ -5304,7 +5304,7 @@ body.cook-open { overflow: hidden; }
   box-shadow: var(--shadow-card);
   -webkit-tap-highlight-color: transparent;
 }
-.today-note-card:active { transform: scale(0.99); }
+.today-note-card:active { transform: scale(0.97); }
 .today-note-title {
   display: flex;
   align-items: center;
@@ -5710,11 +5710,11 @@ body.cook-open { overflow: hidden; }
    barnet och skulle skala hela ytan vid varje barn-tryck. */
 .today-tomorrow, .today-weave-card, .today-note-card,
 .fl-card, .edit-recipe-btn {
-  transition: transform var(--dur-fast) var(--ease-standard);
+  transition: transform var(--dur-fast) var(--ease-spring);   /* mjuk studs vid släpp (Session 120) */
 }
 .today-tomorrow:active, .today-weave-card:active, .today-note-card:active,
 .fl-card:active, .edit-recipe-btn:active {
-  transform: scale(0.99);
+  transform: scale(0.97);   /* tydligare "sjunk in" — 0.99 kändes inte (Session 120) */
 }
 .fl-list-card:active { transform: none; }   /* behåll befintlig override */
 /* Inköpsraden kändes "död" under fingret — subtil tryck-bakgrund (bg animeras
@@ -5890,7 +5890,7 @@ main#receptView {
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-.fl-card:active { transform: scale(0.99); }
+.fl-card:active { transform: scale(0.97); }
 .fl-card-title {
   font-weight: 600;
   font-size: 1.02rem;
