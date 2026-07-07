@@ -16,22 +16,6 @@ export function switchTab(tab) {
   if (tab === 'listor') window.loadListsTab?.();
   // Veckovyn positioneras av premiumvyns egen switchTab-wrap (snapToHero).
   window.scrollTo({ top: 0 });
-  triggerViewEnter(tab);
-}
-
-// Kort-entré: markera den aktiva vyn så dess block "reser sig" i tur (CSS
-// .view-enter). Sätts BARA här (flikbyte) — aldrig vid data-render → inget eko-
-// flimmer. Reflow-touch (offsetWidth) startar om animationen vid varje byte.
-// Klassen städas bort efter animationen så inget kort fastnar och nästa byte
-// kan spela på nytt.
-const VIEW_BY_TAB = { idag: 'todayView', recept: 'receptView', vecka: 'weekView', shop: 'shopView', listor: 'listsView' };
-function triggerViewEnter(tab) {
-  const el = document.getElementById(VIEW_BY_TAB[tab]);
-  if (!el) return;
-  el.classList.remove('view-enter');
-  void el.offsetWidth;              // tvinga reflow → animationen startar om
-  el.classList.add('view-enter');
-  setTimeout(() => el.classList.remove('view-enter'), 700);
 }
 
 function closeHeaderSearch() {
