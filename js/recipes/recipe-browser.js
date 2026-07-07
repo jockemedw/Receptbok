@@ -140,13 +140,14 @@ export function toggleCard(card) {
     header.classList.remove('header-hidden');
     window.isSnapping    = true;
     window.scrollUpAccum = 0;
-    // Rulla in kortet DIREKT i EN mjuk rörelse — inte en 680ms-fördröjd scroll
-    // som rycker sidan efter att kortet redan expanderat (det gav "jojo"-känslan).
-    // Kortet växer nedåt från sin topp, som vi ankrar strax under headern → ingen
-    // konkurrerande rörelse.
-    const hh  = header.offsetHeight;
-    const top = card.getBoundingClientRect().top + window.scrollY - hh - 12;
-    window.smoothScrollTo(top, 360);
+    // NATIVE smooth-scroll (kompositor-driven) i stället för en JS-rAF-scroll på
+    // main-tråden — det senare fightar med paint när det stora kortet expanderar
+    // (låg FPS "när skärmen flyttas"). scroll-margin-top på .recipe-card ankrar
+    // kortet strax under headern. Respektera reduced-motion.
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    card.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+    // Släpp header-låset när scrollen landat (så auto-göm-headern funkar igen).
+    setTimeout(() => { window.isSnapping = false; window.lastScrollY = window.scrollY; }, 620);
   }
 }
 
