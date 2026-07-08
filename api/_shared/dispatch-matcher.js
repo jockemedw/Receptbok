@@ -92,18 +92,29 @@ export async function matchCanons(canons, offers, searchClient, { concurrency = 
 }
 
 function findReaMatch(canon, offers, blockedBrands = [], wanted = null) {
-  // Utan preferenser: första giltiga träffen (samma beteende som alltid).
-  // Med preferenser: bästa preferens-poängen vinner; lika poäng → först vinner.
+  // Väljer, bland giltiga erbjudanden för denna canon, det som besparingen
+  // FAKTISKT räknades på i planen: störst savingPerUnit — exakt samma regel som
+  // matchRecipe använder för totalSaving (max savingPerUnit per canon). Så hamnar
+  // just den rea-vara familjen ser besparingen för i korgen, inte en godtycklig
+  // första-träff när samma canon har flera reor (t.ex. "lax" med tre erbjudanden).
+  //
+  // Preferens (eko/svenskt, backlog #20) väger tyngst när den är på: bäst
+  // prefScore först, störst besparing som tie-break. Utan preferens har alla
+  // score 0 → ren max-besparing (blockerar aldrig en match).
   let best = null;
   let bestScore = -1;
+  let bestSaving = -Infinity;
   for (const offer of offers) {
-    const offerCanon = extractOfferCanon(offer);
-    if (offerCanon !== canon) continue;
+    if (extractOfferCanon(offer) !== canon) continue;
     if (rejectsMatch(canon, offer)) continue;
     if (brandBlocked(offer, blockedBrands)) continue;
-    if (!wanted) return offer;
-    const score = prefScore(`${offer.name} ${offer.brandLine || ""}`, wanted);
-    if (score > bestScore) { best = offer; bestScore = score; }
+    const score = wanted ? prefScore(`${offer.name} ${offer.brandLine || ""}`, wanted) : 0;
+    const saving = offer.savingPerUnit || 0;
+    if (score > bestScore || (score === bestScore && saving > bestSaving)) {
+      best = offer;
+      bestScore = score;
+      bestSaving = saving;
+    }
   }
   return best;
 }
