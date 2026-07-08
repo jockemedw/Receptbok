@@ -22,6 +22,7 @@ import './weekly-plan/plan-viewer.js';
 import './weekly-plan/plan-viewer-deluxe.js';
 import './today/today-view.js';
 import './weekly-plan/deals-popup.js';
+import './weekly-plan/prisoptimera.js';
 
 async function init() {
   try {
