@@ -298,7 +298,16 @@ export async function poConfirmDay(recipeId, date, btnEl) {
 
 export function poBack() { renderStep1(); }
 
+// Genväg från genereringsguiden: stäng guide-arket först så vi inte staplar två
+// overlays, öppna sedan Prisoptimera. Väntar in guidens stäng-animation (280ms)
+// så body-scroll-låset hinner återställas innan Prisoptimera sätter sitt eget.
+export function wizOpenPrisoptimera() {
+  window.closeBottomSheet?.('planSheet');
+  setTimeout(() => openPrisoptimera(), 300);
+}
+
 window.openPrisoptimera = openPrisoptimera;
+window.wizOpenPrisoptimera = wizOpenPrisoptimera;
 window.closePrisoptimera = closePrisoptimera;
 window.poToggleOpen = poToggleOpen;
 window.poToggleGroup = poToggleGroup;
