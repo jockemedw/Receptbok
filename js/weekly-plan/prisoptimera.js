@@ -6,7 +6,7 @@
 //         (återanvänder /api/replace-recipe, precis som Veckans fynd).
 //
 // Läser: window._lastPlan (måldagar), window.apiFetch, window.showToast.
-// Data: /api/deals-offers (publik GET), /api/deals-recipes (POST, auth).
+// Data: /api/deals — GET (publik) = steg 1 reor, POST (auth) = steg 2 recept.
 
 import { escapeHtml, fmtShort, PROTEIN_COLOR } from '../utils.js';
 
@@ -55,7 +55,7 @@ export async function openPrisoptimera() {
 
   _sel.clear();
   try {
-    const res = await fetch('/api/deals-offers');
+    const res = await fetch('/api/deals');
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Okänt fel');
     _groups = data.groups || [];
@@ -157,7 +157,7 @@ export async function poShowRecipes() {
   body.innerHTML = `<div class="po-loading">${COIN}<p>Letar recept från dina reor…</p></div>`;
 
   try {
-    const res = await window.apiFetch('/api/deals-recipes', {
+    const res = await window.apiFetch('/api/deals', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ canons: [..._sel] }),
