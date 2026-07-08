@@ -6359,6 +6359,31 @@ main#receptView {
 @media (hover: hover) { .prisopt-btn:hover { background: var(--rust-deep, #a15b3f); } }
 .prisopt-btn .icon { width: 1.05em; height: 1.05em; }
 
+/* Sekundär Prisoptimera-genväg i genereringsguiden (steg 2) — tydligt
+   underordnad den primära "Generera"-knappen: ghost-stil, rost-tonad. */
+.wiz-alt {
+  display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+  margin-top: 0.85rem;
+}
+.wiz-alt-or {
+  font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--stone, #9a8f7d);
+}
+.wiz-prisopt {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem;
+  width: 100%; padding: 0.7rem 0.9rem;
+  background: color-mix(in srgb, var(--rust) 10%, var(--linen-card));
+  color: var(--rust);
+  border: 1px solid color-mix(in srgb, var(--rust) 28%, var(--linen-card));
+  border-radius: 14px;
+  font-family: var(--font-body); font-size: 0.9rem; font-weight: 600;
+  cursor: pointer;
+  transition: background var(--dur-fast,.15s) var(--ease-standard), transform var(--dur-fast,.15s);
+}
+.wiz-prisopt:active { transform: scale(0.98); }
+@media (hover: hover) { .wiz-prisopt:hover { background: color-mix(in srgb, var(--rust) 18%, var(--linen-card)); } }
+.wiz-prisopt .icon { width: 1.1em; height: 1.1em; flex-shrink: 0; }
+
 /* Fullskärms-ark */
 .po-overlay {
   position: fixed; inset: 0; z-index: var(--z-modal, 1000);
