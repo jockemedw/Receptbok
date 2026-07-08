@@ -1,6 +1,11 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–119. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–120. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 120 — Poler-svep över hela appen (orkestrerad audit → implementering i omgångar)
+Joakims `/goal`: få appen att kännas märkbart mer polerad utan att röra logik/data. Audit-fan-out (workflow: 7 parallella ytgranskare + syntes, Sonnet) → 83 fynd → 9 teman, 32 quick wins, 3 beteendeändrande. **Batch 1–8 mergade (PR #136–#144):** motion-grund (global reduced-motion + rörelse-tokens + enhetliga sheet-kurvor), touch-targets ≥44px, tryck-feedback (scale 0.99/0.97), pointer-events-vakt på overlays, recept-editor-fade, flikbyte-fade (`viewFadeIn` opacity-only), hover-guards (18 st, `@media (hover:hover)`), `transition:all`→specifik, skugg-skala för mörkt tema (`--shadow-sm/-md`), P2-kosmetik/kontrast, body-scroll-lås på dispatch-modalen. **De 2 beteendeändrande (Joakims ja):** z-index-tokenisering (osynlig, samma värden, #155/v157) + dag-nivå-diff i veckovyn (per-dag keyed rendering — samma-vecka-eko byter bara berörd dags kort, ej alla 7; #156/v158). **Joakim bekräftade "Ser bra ut" på mobil (v156).** Kort-entré-stagger (PR #150) gav flimmer → återtagen (#152). **Lärdom:** synlig "wow"-rörelse på de re-renderande vyerna (Idag/Matsedel) är flimmerkänslig — ta en yta i taget, verifiera mot mobil. Medvetet skippat (risk>vinst): full skugg-tokenisering, keyframe-dedup, dispatch-note-kontrast, sticky recept-rubrik/overflow-x. styles v158/SW v71.
 
 ---
 

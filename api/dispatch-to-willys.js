@@ -248,6 +248,13 @@ export async function runDispatch({ shoppingList, offers, searchClient, cartClie
   const kgMatched = matched.filter(m => /_kg$/i.test(m.code || ""));
   console.log(`dispatch kgMatched=${kgMatched.length} [${kgMatched.map(m => `${m.canon}:${m.code}`).join(", ")}]`);
 
+  // Rea-diagnostik (Kontroll #2): canon:kod:besparing för de varor som matchades
+  // mot ett erbjudande — så en skarp körning kan verifieras från loggarna att
+  // rätt rea-vara (störst savingPerUnit per canon) hamnade i korgen. Inga
+  // hemligheter; capad för att inte spamma loggen.
+  const reaMatched = matched.filter(m => m.source === "rea");
+  console.log(`dispatch reaMatched=${reaMatched.length} [${reaMatched.slice(0, 15).map(m => `${m.canon}:${m.code}:${m.savingPerUnit || 0}`).join(", ")}]`);
+
   // Lägg till i batchar (snabbt) och faller bara tillbaka till en-i-taget för en
   // batch som nekas. Willys addProducts är allt-eller-inget: en ogiltig kod
   // sänker hela batchen med 400 (error.illegal.argument). Att skicka ~40 varor

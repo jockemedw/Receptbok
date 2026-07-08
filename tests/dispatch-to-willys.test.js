@@ -288,7 +288,7 @@ function fakeSearch(map) {
   assertEq(result.preferenceMisses.length, 0, "pref uppfylld → inga misses");
 }
 
-// H. Utan wantedForCanon: exakt gamla beteendet (första giltiga rea-träffen)
+// H. Utan wantedForCanon: störst besparing väljs (samma produkt planen räknade på)
 {
   const offers = [
     { code: "vanlig_ST", name: "Mellanmjölk 1,5%", brandLine: "", savingPerUnit: 3 },
@@ -296,8 +296,38 @@ function fakeSearch(map) {
   ];
   const search = fakeSearch({});
   const result = await matchCanons(["mjölk"], offers, search);
-  assertEq(result.matched[0]?.code, "vanlig_ST", "utan pref: första rea-träffen som förut");
+  assertEq(result.matched[0]?.code, "vanlig_ST", "utan pref: rea med störst besparing väljs");
   assertEq((result.preferenceMisses || []).length, 0, "utan pref: inga misses");
+}
+
+// H2. Rätt rea-vara i korgen (Kontroll #2): när samma canon har flera reor ska
+// den med STÖRST savingPerUnit väljas — den planen räknade besparingen på — även
+// om den inte ligger först i erbjudandelistan. Speglar matchRecipe (max per canon).
+{
+  const offers = [
+    { code: "lax_bit_ST",   name: "Laxfilé i Bit",   brandLine: "", savingPerUnit: 14 },
+    { code: "lax_fryst_ST", name: "Laxfilé Fryst",   brandLine: "", savingPerUnit: 59 },
+    { code: "lax_portion_ST", name: "Laxfilé Portion", brandLine: "", savingPerUnit: 20 },
+  ];
+  const search = fakeSearch({});
+  const result = await matchCanons(["lax"], offers, search);
+  assertEq(result.matched.length, 1, "en lax-match");
+  assertEq(result.matched[0]?.code, "lax_fryst_ST", "störst besparing (59) väljs, ej första (14)");
+  assertEq(result.matched[0]?.savingPerUnit, 59, "savingPerUnit = 59 (rea-varan planen räknade på)");
+}
+
+// H3. Med preferens: bland eko-varianter väljs den med störst besparing (pref
+// primär, besparing tie-break) — och pref väger tyngre än en dyrare icke-eko rea.
+{
+  const offers = [
+    { code: "vanlig_dyr_ST", name: "Mellanmjölk 1,5%",     brandLine: "",       savingPerUnit: 9 },
+    { code: "eko_låg_ST",    name: "Mellanmjölk Eko 1,5%", brandLine: "Garant", savingPerUnit: 2 },
+    { code: "eko_hög_ST",    name: "Mellanmjölk Eko 3%",   brandLine: "Arla",   savingPerUnit: 5 },
+  ];
+  const search = fakeSearch({});
+  const wantedForCanon = () => ({ organic: true, swedish: false });
+  const result = await matchCanons(["mjölk"], offers, search, { wantedForCanon });
+  assertEq(result.matched[0]?.code, "eko_hög_ST", "pref eko + störst besparing bland eko (5), ej dyrare vanlig (9)");
 }
 
 // I. Preferens kan inte uppfyllas → matchen behålls men rapporteras i preferenceMisses
