@@ -41,10 +41,17 @@ function subscribeShoppingItems(listId) {
         const serverChecked = newRow.checked === true;
         if (window._checkedItems[key] === serverChecked) return; // redan rätt
         window._checkedItems[key] = serverChecked;
-        const el = document.querySelector(`.shopping-item[onclick*="${key}"]`);
-        if (el) {
-          el.classList.toggle('checked', serverChecked);
-          el.querySelector('.item-checkbox').textContent = serverChecked ? '✓' : '';
+        if (serverChecked) window._checkSeq[key] = window._checkSeqNext++;
+        else delete window._checkSeq[key];
+        if (window._handlaMode) {
+          // handla-läge: bockade varor byter plats (upp/ner under strecket) → rendera om
+          renderFullShoppingList(window._shopRecipeItems, window._shopManualItems);
+        } else {
+          const el = document.querySelector(`.shopping-item[onclick*="${key}"]`);
+          if (el) {
+            el.classList.toggle('checked', serverChecked);
+            el.querySelector('.item-checkbox').textContent = serverChecked ? '✓' : '';
+          }
         }
         rebuildShopText();
         updateShopProgress();
@@ -102,6 +109,7 @@ function buildShopState(list, items) {
 
 const ICON_NOTE = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h11l3 3v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><path d="M8 11h8 M8 14h8 M8 17h5"/></svg>';
 const ICON_HOME = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5h4v5"/></svg>';
+const ICON_DRAG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>';
 
 // ── Skafferi/"har hemma" (backlog #13) ───────────────────────────────────────
 // Markerade varor visas dämpade (inte borttagna), räknas inte i "X av Y" och
@@ -183,6 +191,19 @@ export function setShopMode(mode) {
   const editBar = document.getElementById('shopEditBar');
   if (editBar) editBar.style.display = isHandla ? '' : 'none';
   if (!isHandla && window._editMode) toggleEditMode();
+}
+
+// Handla-läge: bockade varor sjunker ner under ett streck ("I korgen"),
+// sorterade med senast ibockade överst. En ren vy-preferens (in-memory,
+// nollställs vid omladdning) — själva bock-statusen ligger kvar i Supabase.
+export function toggleHandlaMode() {
+  window._handlaMode = !window._handlaMode;
+  const btn = document.getElementById('handlaModeBtn');
+  if (btn) {
+    btn.classList.toggle('active', window._handlaMode);
+    btn.setAttribute('aria-pressed', window._handlaMode ? 'true' : 'false');
+  }
+  renderFullShoppingList(window._shopRecipeItems || null, window._shopManualItems || []);
 }
 
 // Redigera-läge: visar en ×-knapp på varje vara så att man kan ta bort den helt
@@ -320,9 +341,17 @@ export function toggleShopItem(el, key) {
   if (el.classList.contains('pantry')) return;   // "har hemma"-vara bockas inte — den handlas inte
   const nowChecked = !window._checkedItems[key];
   window._checkedItems[key] = nowChecked;
-  el.classList.toggle('checked', nowChecked);
-  el.querySelector('.item-checkbox').textContent = nowChecked ? '✓' : '';
-  rebuildShopText();
+  if (nowChecked) window._checkSeq[key] = window._checkSeqNext++;
+  else delete window._checkSeq[key];
+  if (window._handlaMode) {
+    // handla-läge: den avbockade varan ska sjunka ner under strecket (eller
+    // dyka upp igen om man avmarkerar) → rendera om hela listan.
+    renderFullShoppingList(window._shopRecipeItems, window._shopManualItems);
+  } else {
+    el.classList.toggle('checked', nowChecked);
+    el.querySelector('.item-checkbox').textContent = nowChecked ? '✓' : '';
+    rebuildShopText();
+  }
   updateShopProgress();
   scheduleCheckedSave();
 }
@@ -509,12 +538,53 @@ export function rebuildShopText() {
   textEl._fullText = textParts.join('\n\n');
 }
 
+// ── Rad-byggare (delas av kategori-vyn och handla-lägets "I korgen"-sektion) ──
+// Receptvara: bock-nyckeln bakas in i onclick (realtime-selektorn matchar på den).
+function recipeItemLi(cat, idx, name) {
+  const key     = `recipe::${cat}::${idx}`;
+  const pantry  = isPantryName(name);
+  const checked = !pantry && (window._checkedItems[key] || false);
+  const rowId   = window._shopItemIds?.[key];
+  return `<li class="shopping-item${checked ? ' checked' : ''}${pantry ? ' pantry' : ''}"
+              onclick="toggleShopItem(this,'${key}')">
+    <span class="item-checkbox">${checked ? '✓' : ''}</span>
+    ${itemTextCell(name, rowId)}
+    ${pantry ? '<span class="pantry-tag">har hemma</span>' : ''}
+    ${pantryBtnHtml(name)}
+    <button class="remove-item-btn" data-key="${key}" title="Ta bort varan"
+            onclick="event.stopPropagation();removeShopItem(this.dataset.key)">×</button>
+  </li>`;
+}
+
+// Egen vara: bock-nyckeln är textbaserad (namnet). Ett permanent draghandtag
+// låter en byta ordning (drag-and-drop) utan att gå in i redigera-läget.
+function manualItemLi(idx, name) {
+  const key     = `manual::${name}`;
+  const pantry  = isPantryName(name);
+  const checked = !pantry && (window._checkedItems[key] || false);
+  const rowId   = window._shopItemIds?.[`manual::${idx}`];
+  const handle  = `<button class="drag-handle" title="Dra för att byta ordning" aria-label="Dra för att byta ordning"
+              onpointerdown="startManualDrag(event, this)" onclick="event.stopPropagation()">${ICON_DRAG}</button>`;
+  return `<li class="shopping-item${checked ? ' checked' : ''}${pantry ? ' pantry' : ''}"
+              data-key="${escapeHtml(key)}" data-manual-idx="${idx}"
+              onclick="toggleShopItem(this,this.dataset.key)">
+    <span class="item-checkbox">${checked ? '✓' : ''}</span>
+    ${itemTextCell(name, rowId)}
+    ${pantry ? '<span class="pantry-tag">har hemma</span>' : ''}
+    ${pantryBtnHtml(name)}
+    ${handle}
+    <button class="remove-item-btn" data-item="${escapeHtml(name)}" title="Ta bort varan" onclick="event.stopPropagation();removeManualItem(this.dataset.item)">×</button>
+  </li>`;
+}
+
 export function renderFullShoppingList(recipeItems, manualItems) {
   window._shopRecipeItems = recipeItems;
   window._shopManualItems = manualItems;
   let checkHtml = '';
   let textParts = [];
   let textBlocksHtml = '';
+  const handla = window._handlaMode === true;
+  const doneItems = [];   // handla-läge: bockade varor samlas här → visas under strecket
 
   if (recipeItems) {
     checkHtml += Object.entries(recipeItems)
@@ -522,20 +592,16 @@ export function renderFullShoppingList(recipeItems, manualItems) {
       .map(([cat, items]) => {
         const icon = CAT_ICONS[cat] || '•';
         const itemsHtml = items.map((item, idx) => {
-          const key     = `recipe::${cat}::${idx}`;
-          const pantry  = isPantryName(item);
-          const checked = !pantry && (window._checkedItems[key] || false);
-          const rowId   = window._shopItemIds?.[key];
-          return `<li class="shopping-item${checked ? ' checked' : ''}${pantry ? ' pantry' : ''}"
-                      onclick="toggleShopItem(this,'${key}')">
-            <span class="item-checkbox">${checked ? '✓' : ''}</span>
-            ${itemTextCell(item, rowId)}
-            ${pantry ? '<span class="pantry-tag">har hemma</span>' : ''}
-            ${pantryBtnHtml(item)}
-            <button class="remove-item-btn" data-key="${key}" title="Ta bort varan"
-                    onclick="event.stopPropagation();removeShopItem(this.dataset.key)">×</button>
-          </li>`;
+          const key = `recipe::${cat}::${idx}`;
+          // handla-läge: bockade (ej pantry) flyttas till "I korgen"-sektionen
+          if (handla && !isPantryName(item) && window._checkedItems[key]) {
+            doneItems.push({ seq: window._checkSeq[key] || 0, html: recipeItemLi(cat, idx, item) });
+            return '';
+          }
+          return recipeItemLi(cat, idx, item);
         }).join('');
+        // handla-läge: dölj kort där allt är bockat (inget kvar att plocka)
+        if (handla && !itemsHtml.trim()) return '';
         const catTotal = items.filter((item) => !isPantryName(item)).length;
         const catDone = items.filter((item, idx) => !isPantryName(item) && window._checkedItems[`recipe::${cat}::${idx}`]).length;
         return `<div class="shopping-category">
@@ -569,29 +635,25 @@ export function renderFullShoppingList(recipeItems, manualItems) {
 
   if (manualItems.length > 0) {
     const manualHtml = manualItems.map((item, idx) => {
-      const key     = `manual::${item}`;
-      const pantry  = isPantryName(item);
-      const checked = !pantry && (window._checkedItems[key] || false);
-      const rowId   = window._shopItemIds?.[`manual::${idx}`];
-      return `<li class="shopping-item${checked ? ' checked' : ''}${pantry ? ' pantry' : ''}"
-                  data-key="${escapeHtml(key)}"
-                  onclick="toggleShopItem(this,this.dataset.key)">
-        <span class="item-checkbox">${checked ? '✓' : ''}</span>
-        ${itemTextCell(item, rowId)}
-        ${pantry ? '<span class="pantry-tag">har hemma</span>' : ''}
-        ${pantryBtnHtml(item)}
-        <button class="remove-item-btn" data-item="${escapeHtml(item)}" title="Ta bort varan" onclick="event.stopPropagation();removeManualItem(this.dataset.item)">×</button>
-      </li>`;
+      // handla-läge: bockade (ej pantry) flyttas till "I korgen"-sektionen
+      if (handla && !isPantryName(item) && window._checkedItems[`manual::${item}`]) {
+        doneItems.push({ seq: window._checkSeq[`manual::${item}`] || 0, html: manualItemLi(idx, item) });
+        return '';
+      }
+      return manualItemLi(idx, item);
     }).join('');
-    const manualTotal = manualItems.filter((item) => !isPantryName(item)).length;
-    const manualDone = manualItems.filter((item) => !isPantryName(item) && window._checkedItems[`manual::${item}`]).length;
-    checkHtml += `<div class="shopping-category">
-      <div class="shopping-cat-header">
-        <span class="shopping-cat-name">${ICON_NOTE} Egna tillägg</span>
-        <span class="shopping-cat-count" data-cat="__manual">${manualDone} av ${manualTotal}</span>
-      </div>
-      <ul class="shopping-items">${manualHtml}</ul>
-    </div>`;
+    // handla-läge: dölj kortet om alla egna varor är bockade
+    if (!(handla && !manualHtml.trim())) {
+      const manualTotal = manualItems.filter((item) => !isPantryName(item)).length;
+      const manualDone = manualItems.filter((item) => !isPantryName(item) && window._checkedItems[`manual::${item}`]).length;
+      checkHtml += `<div class="shopping-category">
+        <div class="shopping-cat-header">
+          <span class="shopping-cat-name">${ICON_NOTE} Egna tillägg</span>
+          <span class="shopping-cat-count" data-cat="__manual">${manualDone} av ${manualTotal}</span>
+        </div>
+        <ul class="shopping-items">${manualHtml}</ul>
+      </div>`;
+    }
 
     const uncheckedManual = manualItems.filter((item) => !window._checkedItems[`manual::${item}`] && !isPantryName(item));
     if (uncheckedManual.length) {
@@ -601,6 +663,17 @@ export function renderFullShoppingList(recipeItems, manualItems) {
         <div class="shop-text-items">${uncheckedManual.map(i => '• ' + escapeHtml(i)).join('\n')}</div>
       </div>`;
     }
+  }
+
+  // handla-läge: strecket + "I korgen"-sektionen, senast ibockade överst
+  if (handla && doneItems.length) {
+    doneItems.sort((a, b) => b.seq - a.seq);
+    checkHtml += `<div class="shop-done-section">
+      <div class="shop-done-divider"><span>I korgen · ${doneItems.length}</span></div>
+      <div class="shopping-category">
+        <ul class="shopping-items">${doneItems.map((d) => d.html).join('')}</ul>
+      </div>
+    </div>`;
   }
 
   document.getElementById('shoppingList').innerHTML = shopProgressHtml() + checkHtml;
@@ -731,6 +804,109 @@ export async function removeManualItem(item) {
   }
 }
 
+// ── Drag-and-drop: byt ordning på egna varor (alltid, utan redigera-läget) ────
+// Finger-följande sortering via Pointer Events (touch-först). Den dragna raden
+// translateras med fingret medan grannarna byter plats i DOM när man korsar
+// deras mittlinje; `baseY` justeras vid varje byte så rörelsen aldrig hoppar.
+// Vid släpp läses den nya DOM-ordningen och en kontiguerlig `position`-ordning
+// (0..n) sparas för de egna varorna (självläker gamla luckor). Receptvarornas
+// ordning rörs aldrig (buckten sorteras per källa var för sig).
+let _manualDrag = null;
+
+export function startManualDrag(e, handle) {
+  if (e.button != null && e.button !== 0) return;   // bara vänster musknapp / touch
+  const li = handle.closest('.shopping-item');
+  const ul = li?.parentElement;
+  if (!li || !ul) return;
+  e.preventDefault();
+  e.stopPropagation();
+  _manualDrag = { li, ul, handle, baseY: e.clientY, pointerId: e.pointerId, moved: false };
+  li.classList.add('dragging');
+  try { handle.setPointerCapture(e.pointerId); } catch { /* capture är bara en optimering */ }
+  handle.addEventListener('pointermove', onManualDragMove);
+  handle.addEventListener('pointerup', endManualDrag);
+  handle.addEventListener('pointercancel', endManualDrag);
+}
+
+function onManualDragMove(e) {
+  const st = _manualDrag;
+  if (!st) return;
+  e.preventDefault();
+  const { li, ul } = st;
+  const y = e.clientY;
+
+  // Max ett byte per event: kolla närmaste granne i rörelseriktningen.
+  const prev = li.previousElementSibling;
+  if (prev && prev.classList.contains('shopping-item')) {
+    const r = prev.getBoundingClientRect();
+    if (y < r.top + r.height / 2) {
+      st.baseY -= prev.offsetHeight;
+      ul.insertBefore(li, prev);
+      st.moved = true;
+      li.style.transform = `translateY(${y - st.baseY}px)`;
+      return;
+    }
+  }
+  const next = li.nextElementSibling;
+  if (next && next.classList.contains('shopping-item')) {
+    const r = next.getBoundingClientRect();
+    if (y > r.top + r.height / 2) {
+      st.baseY += next.offsetHeight;
+      ul.insertBefore(li, next.nextElementSibling);
+      st.moved = true;
+    }
+  }
+  li.style.transform = `translateY(${y - st.baseY}px)`;
+}
+
+function endManualDrag() {
+  const st = _manualDrag;
+  if (!st) return;
+  const { li, ul, handle } = st;
+  handle.removeEventListener('pointermove', onManualDragMove);
+  handle.removeEventListener('pointerup', endManualDrag);
+  handle.removeEventListener('pointercancel', endManualDrag);
+  try { handle.releasePointerCapture(st.pointerId); } catch { /* redan släppt */ }
+  li.style.transform = '';
+  li.classList.remove('dragging');
+  _manualDrag = null;
+  if (!st.moved) return;   // ingen faktisk omflyttning → ingen skrivning
+  const order = Array.from(ul.querySelectorAll('.shopping-item'))
+    .map((n) => n.dataset.manualIdx)
+    .filter((v) => v != null)
+    .map(Number);
+  commitManualOrder(order);
+}
+
+// Skriver den nya ordningen för de VISADE egna varorna (kan vara en delmängd i
+// handla-läget) tillbaka på de slots de upptog, låter bockade/dolda varor ligga
+// kvar, och sparar en kontiguerlig `position`-ordning till Supabase.
+async function commitManualOrder(shownOrderIdx) {
+  const items = (window._shopManualItems || []).slice();
+  if (!shownOrderIdx.length) { renderFullShoppingList(window._shopRecipeItems, items); return; }
+  const ids     = items.map((_, i) => window._shopItemIds?.[`manual::${i}`]);
+  const newItems = items.slice();
+  const newIds   = ids.slice();
+  const slots    = shownOrderIdx.slice().sort((a, b) => a - b);
+  slots.forEach((slot, k) => {
+    const src = shownOrderIdx[k];
+    newItems[slot] = items[src];
+    newIds[slot]   = ids[src];
+  });
+  window._shopManualItems = newItems;
+  if (window._shopItemIds) newItems.forEach((_, k) => { window._shopItemIds[`manual::${k}`] = newIds[k]; });
+  renderFullShoppingList(window._shopRecipeItems, newItems);
+
+  try {
+    const ps = newIds
+      .map((id, k) => id ? window.db.from('shopping_items').update({ position: k }).eq('id', id) : null)
+      .filter(Boolean);
+    await Promise.all(ps);
+  } catch {
+    window.showToast?.('Kunde inte spara ordningen — prova igen.', { type: 'error' });
+  }
+}
+
 export async function clearShoppingList() {
   const ok = await window.confirmDialog({
     title: 'Rensa hela inköpslistan?',
@@ -796,9 +972,11 @@ window.setShopMode        = setShopMode;
 window.toggleShopItem     = toggleShopItem;
 window.togglePantryItem   = togglePantryItem;
 window.toggleEditMode     = toggleEditMode;
+window.toggleHandlaMode   = toggleHandlaMode;
 window.renameShopItem     = renameShopItem;
 window.removeShopItem     = removeShopItem;
 window.removeManualItem   = removeManualItem;
+window.startManualDrag    = startManualDrag;
 window.clearShoppingList  = clearShoppingList;
 window.copyShoppingList   = copyShoppingList;
 window.addManualItem      = addManualItem;

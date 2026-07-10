@@ -1,6 +1,11 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–120. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–121. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 121 — Prisoptimera-flöde + deploy-fix + rätt rea-vara i korgen
+**1. Prisoptimera = reor-först-flöde (PR #168–#171).** Vände dold viktnings-toggle → explicit flöde (behåller namnet). Steg 1: Willys-reor grupperade per ingrediens, störst besparing först, kryssa varor; steg 2: receptförslag störst besparing först → "Lägg in på en dag" (`/api/replace-recipe`). **Deploy-blockare uppdagad & fixad:** två nya API-filer tog `api/` till 13 serverless-functions, över Vercels 12-gräns på gratisplanen → hela deployen failade tyst (produktionen fastnade på v161). Fix: slog ihop till EN function `api/deals.js` (GET=reor, POST=recept). **Följdändring:** Prisoptimera nås nu från Matsedel-rubriken *och* en sekundär genväg i genereringsguidens steg 2 (`.wiz-prisopt` → `wizOpenPrisoptimera()`). styles v163/SW v76. **2. Kontroll #2 — rätt rea-vara i korgen (`dispatch-matcher.js`).** `findReaMatch` tog förut *första giltiga* erbjudandet per canon → fel produkt kunde hamna i korgen. Nu **störst `savingPerUnit` per canon** (samma regel som `matchRecipe`). Eko/svenskt-preferens väger fortfarande tyngst. `dispatch-to-willys.test.js` 107/107. Backend-only.
 
 ---
 
