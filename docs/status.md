@@ -123,4 +123,6 @@ Två efterfrågade funktioner i inköpslistan (`js/shopping/shopping-list.js`, r
 
 Byggare `recipeItemLi`/`manualItemLi` extraherade (delas av kategori-vyn och I korgen-sektionen). `node --check` grön, `shopping.test.js` 98/98. styles **v166**/SW **v79** (app.js?v=134).
 
+**Uppföljning (PR #174):** bytte 🛒-emojin i Handla-läge-knappen mot en egen inline-SVG (Feather-kundvagn) i appens linjestil — `fill:none`/`currentColor`-stroke, blir vit när läget är aktivt. `.shop-edit-btn` → `inline-flex` med gap. styles **v167**/SW **v80**.
+
 Session 8–121 i `docs/session-log-archive.md`. Full git-historik: `git log --oneline`.
