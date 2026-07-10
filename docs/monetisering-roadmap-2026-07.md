@@ -30,10 +30,21 @@ plus en ärlig bedömning av om det överhuvudtaget är värt att göra.**
   annonser + B2B-dataförsäljning.** Svenskar betalar för matkassar (2–4 tkr/mån),
   inte hittills för prisinformation i appform.
 - **Rekommenderad väg:** en **stegvis trappa med kill-kriterier** — M1 (5 vänfamiljer,
-  gratis, mäter retention) → M2 (landningssida + betalningsviljetest, fortfarande
-  ingen betalkod) → M3 (Stripe på webben, freemium) → M4 (App Store) → M5 (Axfood-
-  partnerskap, opportunistiskt). Varje steg är billigt, reversibelt och kan avbrytas
-  utan att familjeappen påverkas. **Familjens instans förblir gratis och orörd — hård regel.**
+  gratis, mäter retention) → M2 (minimal betalningsviljetest) → M3 (Stripe på webben)
+  → M5 (Axfood-partnerskap, opportunistiskt). Varje steg är billigt, reversibelt och
+  kan avbrytas utan att familjeappen påverkas. **Familjens instans förblir gratis och
+  orörd — hård regel.**
+- **"Lättaste vägen"-frågan (Joakim 2026-07-10) besvarad i 4.1:** annonser är
+  lättast att *bygga* men svårast att *nå målet* (kräver 1 500–3 000 hushåll mot
+  prenumerationens 33–50); App Store-engångsköp är plan B (Apple sköter betaladmin
+  men Capacitor-jobb + evigt nykundslöpband). **Webb-prenumerationen är faktiskt
+  lättast räknat i människor per krona — och M4 (App Store) skjuts upp helt tills
+  målet är nått på webben.**
+- **Funktionsgapen mot konkurrenterna** (Joakims fråga 2): inventering + prioriterad
+  integrationslista i **`docs/konkurrens-funktionsanalys-2026-07.md`** — G1–G5 före
+  externa hushåll (allergifilter, onboarding, bilder, magisk länk, butiksgångordning),
+  G6–G11 som premiumvärde/retention (rea-bevakningsnotiser, veckodigest,
+  laga-på-det-du-har, restlogik, pris per portion, middagsbetyg).
 - **✅ BESLUTAT (Joakim 2026-07-10):** ambitionsnivån är **kostnadstäckning inklusive
   Claude Code Max** — appen ska tjäna in sitt eget utvecklingsverktyg. Konkret mål:
   **~1 750–2 750 kr/mån ≈ 50–75 betalande hushåll** (se 5.1b). Det placerar ambitionen
@@ -185,11 +196,16 @@ Tre lärdomar som träffar Receptboken rakt i affärsmodellen:
 (gratis-facit) utan *tjänsten som omsätter dem i färdiga middagar, lista och korg* —
 plus familjehubben. Premium måste säljas som "slipp tänka", inte som "se priser".
 
-### 3.2 Direktkonkurrenter har dykt upp — men ingen tar betalt
-- **Smaklig** (smaklig.app): svensk AI-veckomeny optimerad mot ICA/Coop/Lidl-
+### 3.2 Direktkonkurrenter har dykt upp — och EN tar redan betalt
+- **Smaklig** (smaklig.app): svensk AI-veckomeny optimerad mot ICA/Coop/Lidl/Willys-
   kampanjer, hävdar 150–250 kr sparande/vecka. **Gratis under beta.**
 - **Nomi** (hejnomi.se): AI-veckomeny med ICA-, Coop- **och Willys**-kampanjer.
   **Gratis under beta.**
+- **SmartaMenyn** (smartamenyn.se): AI-veckomeny från erbjudanden (ICA, Coop,
+  Hemköp, Lidl) — **gratis provperiod → två betalplaner via Stripe** *(uppdaterar
+  Session 123-slutsatsen "ingen tar betalt": en aktör vågar — okänt hur det går,
+  men modellen webb-Stripe-prenumeration för rea-baserad matplanering finns skarp
+  i Sverige)*. Funktionsdetaljer i `docs/konkurrens-funktionsanalys-2026-07.md`.
 - **Matspar.se**: prisjämförelse för e-matbutiker, tjänar pengar på affiliation.
 - Konceptet "reor → veckomeny" är alltså inte längre unikt; **korgfyllningen och
   familjehubb-kombinationen är det.** Att två AI-startups valt samma nisch validerar
@@ -229,6 +245,37 @@ och besparingssiffran ("−X kr denna vecka" finns redan i heron) som kvitto i a
 | Affiliate mot butik | ⚠️ Bevakas | Willys saknar program, men **Mat.se (Axfood-ägt) har kört affiliate via Adtraction (7 %/5 %)** — dagligvaru-affiliate existerar alltså i Sverige. Om Willys/Axfood öppnar ett blir dispatch-kedjan plötsligt en intäktsmotor i stället för en risk. |
 | **B2B/partnerskap (Axfood/Willys)** | 🎯 Wildcard | Appen *driver korgar till Willys* — dispatchen ökar deras konvertering. En pitch "vi gör er reklamblads-app till en middagsplanerare" är inte orimlig, men kräver bevisad användarbas först. Rätt läge: efter M3, eller som svar om Axfood hör av sig (B1). |
 | White-label till kommun/region (matsvinn) | 💤 Långskott | Matsvinnsstoryn (16 kg/person/år) kan bära offentliga pengar (Vinnova-spåret), men upphandlingsvärlden är ett eget yrke. Parkeras. |
+
+### 4.1 Joakims följdfråga (2026-07-10): LÄTTASTE vägen till Max-täckning?
+*"Annonser i webapp vs låg kostnad i App Store, t.ex."* — här är den ärliga
+jämförelsen. Två saker är gemensamma för ALLA vägar och går inte att välja bort:
+(a) **multi-tenant-arbetet** (M1: #5–#6 + onboarding G1–G5) — även annonser kräver
+främmande användare; (b) **Vercel Pro (~250 kr/mån)** — all intäktsdrift bryter
+Hobby-villkoren. "Lätt" kan alltså bara handla om det som kommer *efter* M1.
+
+| Väg | Byggjobb utöver M1 | Pappersarbete | Människor som krävs för ~1 200–2 000 kr/mån | Ärlig bedömning |
+|---|---|---|---|---|
+| **Annonser i webappen** (AdSense) | Minst (script + samtyckesbanner) | Minst (ingen betalning; annonsintäkt deklareras ändå) | **~300–500 dagligt aktiva ≈ 1 500–3 000 hushåll** (eCPM Norden ~2–4 USD, ~4 visningar/dag) | **Lättast att bygga, svårast att nå målet** — kräver 20–40× fler hushåll än prenumeration, förstör UX:en som är säljargumentet, och GDPR-samtyckesbanner på en familjeapp skaver. Realistiskt utfall vid 100–500 användare: **50–300 kr/mån**. Yummly-läxan + Matpriskollen (350k användare för att leva på annonser+B2B) säger allt. |
+| **Låg-pris engångsköp i App Store** (29–49 kr) | Störst: Capacitor 3–5 v + Mac + granskningsrisk (4.2) + $99/år | Näst minst — **Apple är merchant of record** (sköter betalning, moms, kvitton; ingen Stripe, ingen momshantering) | **~30–45 NYA köpare varje månad, för alltid** (49 kr − 15 % Apple ≈ 41 kr) | Engångsköp är ett **löpband**: intäkten dör den månad nykundsflödet dör, och svensk nisch-ASO utan marknadsföring ger typiskt 0–2 köp/dag som avtar. Rimlig som *plan B* om Stripe/firma känns för tungt och Mac finns — inte som huvudväg. |
+| **Webb-prenumeration** (Stripe, 39 kr/mån) | Litet–medel: Stripe Checkout + kundportal (~1–2 sessioner) | Störst engångspuckel: enskild firma + F-skatt (en kväll) + integritetspolicy — sedan i princip noll löpande (moms först >120 tkr/år) | **~33–50 betalande hushåll, EN gång** — sedan handlar det om churn, inte nyförsäljning | **Lättast att NÅ målet** — minst antal människor per krona, återkommande intäkt, och SmartaMenyn bevisar att modellen är gångbar i exakt denna nisch. Formalian är en puckel, inte ett löpande jobb. |
+| **Donation/tip jar** (Swish-QR/Ko-fi) | Trivialt | Inget (små gåvor) | Tusentals användare (typiskt <5 % ger något, en gång) | Slå på ändå — kostar inget — men det är inte en väg till 1 000+ kr/mån. |
+
+**Reviderat svar på "lättaste vägen":**
+1. **Skenbart lättast (annonser) är i praktiken svårast** — annonsmatten kräver en
+   användarbas som i sig är hela problemet. Bygg-enkelheten är en fälla.
+2. **Faktiskt lättast är webb-prenumerationen**, därför att målet mäts i människor:
+   33–50 hushåll (nåbart via vänkrets + två Facebookgrupper) mot 1 500–3 000
+   (annonser) eller 30–45 nya köpare/mån i evighet (App Store). Pappersarbetet är
+   en engångskväll — byggjobbet är mindre än Capacitor-spåret.
+3. **App Store-engångsköpet är legitim plan B** (Apple sköter all betaladmin) och
+   kan läggas till *senare* som extra kanal — men som enda väg är löpbandet skörare
+   än 40 prenumeranter.
+4. Roadmapens M-trappa står därmed kvar, med två förenklingar för "lättast möjligt":
+   **hoppa över M4 (App Store) helt tills målet är nått på webben**, och håll M2
+   minimal (en landningssida + vänfamiljernas facit räcker som beslutsunderlag —
+   full fejkdörr-kampanj bara om vänkretsen tvekar).
+5. *(Fotnot för fullständighet: den allra lättaste "vägen" är att sänka kostnaden —
+   Max 5× i stället för 20×, eller Pro — men det är att flytta målet, inte nå det.)*
 
 **Paywall-snittet (förslag):**
 - **Gratis (medvetet basal, inte "generös"):** matsedel + inköpslista + 1 hushåll +
