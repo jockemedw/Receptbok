@@ -109,6 +109,7 @@ function buildShopState(list, items) {
 
 const ICON_NOTE = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h11l3 3v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><path d="M8 11h8 M8 14h8 M8 17h5"/></svg>';
 const ICON_HOME = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5h4v5"/></svg>';
+const ICON_DRAG = '<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>';
 
 // ── Skafferi/"har hemma" (backlog #13) ───────────────────────────────────────
 // Markerade varor visas dämpade (inte borttagna), räknas inte i "X av Y" och
@@ -556,27 +557,22 @@ function recipeItemLi(cat, idx, name) {
 }
 
 // Egen vara: bock-nyckeln är textbaserad (namnet). I redigera-läget får den
-// dessutom upp/ner-pilar för att byta ordning.
+// dessutom ett draghandtag för att byta ordning (drag-and-drop).
 function manualItemLi(idx, name) {
   const key     = `manual::${name}`;
   const pantry  = isPantryName(name);
   const checked = !pantry && (window._checkedItems[key] || false);
   const rowId   = window._shopItemIds?.[`manual::${idx}`];
-  const last    = (window._shopManualItems || []).length - 1;
-  const reorder = `<span class="reorder-btns">
-      <button class="reorder-btn" title="Flytta upp" aria-label="Flytta upp"${idx <= 0 ? ' disabled' : ''}
-              onclick="event.stopPropagation();moveManualItem(${idx},'up')">▲</button>
-      <button class="reorder-btn" title="Flytta ner" aria-label="Flytta ner"${idx >= last ? ' disabled' : ''}
-              onclick="event.stopPropagation();moveManualItem(${idx},'down')">▼</button>
-    </span>`;
+  const handle  = `<button class="drag-handle" title="Dra för att byta ordning" aria-label="Dra för att byta ordning"
+              onpointerdown="startManualDrag(event, this)" onclick="event.stopPropagation()">${ICON_DRAG}</button>`;
   return `<li class="shopping-item${checked ? ' checked' : ''}${pantry ? ' pantry' : ''}"
-              data-key="${escapeHtml(key)}"
+              data-key="${escapeHtml(key)}" data-manual-idx="${idx}"
               onclick="toggleShopItem(this,this.dataset.key)">
     <span class="item-checkbox">${checked ? '✓' : ''}</span>
     ${itemTextCell(name, rowId)}
     ${pantry ? '<span class="pantry-tag">har hemma</span>' : ''}
     ${pantryBtnHtml(name)}
-    ${reorder}
+    ${handle}
     <button class="remove-item-btn" data-item="${escapeHtml(name)}" title="Ta bort varan" onclick="event.stopPropagation();removeManualItem(this.dataset.item)">×</button>
   </li>`;
 }
@@ -808,28 +804,102 @@ export async function removeManualItem(item) {
   }
 }
 
-// Flyttar en egen vara (manuellt tillägg) upp/ner i listan. Byter plats med
-// grannen i minnet och renderar om direkt, sparar sedan en kontiguerlig
-// position-ordning (0..n) för ALLA egna varor till Supabase — det självläker
-// samtidigt eventuella luckor efter tidigare borttagningar. Receptvarornas
-// egen position-ordning rörs inte (buckten sorteras per källa var för sig).
-export async function moveManualItem(idx, dir) {
-  const items = window._shopManualItems || [];
-  const i = Number(idx);
-  const j = dir === 'up' ? i - 1 : i + 1;
-  if (i < 0 || i >= items.length || j < 0 || j >= items.length) return;
+// ── Drag-and-drop: byt ordning på egna varor (bara i redigera-läget) ──────────
+// Finger-följande sortering via Pointer Events (touch-först). Den dragna raden
+// translateras med fingret medan grannarna byter plats i DOM när man korsar
+// deras mittlinje; `baseY` justeras vid varje byte så rörelsen aldrig hoppar.
+// Vid släpp läses den nya DOM-ordningen och en kontiguerlig `position`-ordning
+// (0..n) sparas för de egna varorna (självläker gamla luckor). Receptvarornas
+// ordning rörs aldrig (buckten sorteras per källa var för sig).
+let _manualDrag = null;
 
-  // Fånga rad-ID:n per index innan bytet (bock-nycklar för egna varor är
-  // textbaserade → de följer med namnet av sig själva).
-  const ids = items.map((_, k) => window._shopItemIds?.[`manual::${k}`]);
-  [items[i], items[j]] = [items[j], items[i]];
-  [ids[i], ids[j]]     = [ids[j], ids[i]];
-  if (window._shopItemIds) items.forEach((_, k) => { window._shopItemIds[`manual::${k}`] = ids[k]; });
+export function startManualDrag(e, handle) {
+  if (!window._editMode) return;
+  if (e.button != null && e.button !== 0) return;   // bara vänster musknapp / touch
+  const li = handle.closest('.shopping-item');
+  const ul = li?.parentElement;
+  if (!li || !ul) return;
+  e.preventDefault();
+  e.stopPropagation();
+  _manualDrag = { li, ul, handle, baseY: e.clientY, pointerId: e.pointerId, moved: false };
+  li.classList.add('dragging');
+  try { handle.setPointerCapture(e.pointerId); } catch { /* capture är bara en optimering */ }
+  handle.addEventListener('pointermove', onManualDragMove);
+  handle.addEventListener('pointerup', endManualDrag);
+  handle.addEventListener('pointercancel', endManualDrag);
+}
 
-  renderFullShoppingList(window._shopRecipeItems, items);
+function onManualDragMove(e) {
+  const st = _manualDrag;
+  if (!st) return;
+  e.preventDefault();
+  const { li, ul } = st;
+  const y = e.clientY;
+
+  // Max ett byte per event: kolla närmaste granne i rörelseriktningen.
+  const prev = li.previousElementSibling;
+  if (prev && prev.classList.contains('shopping-item')) {
+    const r = prev.getBoundingClientRect();
+    if (y < r.top + r.height / 2) {
+      st.baseY -= prev.offsetHeight;
+      ul.insertBefore(li, prev);
+      st.moved = true;
+      li.style.transform = `translateY(${y - st.baseY}px)`;
+      return;
+    }
+  }
+  const next = li.nextElementSibling;
+  if (next && next.classList.contains('shopping-item')) {
+    const r = next.getBoundingClientRect();
+    if (y > r.top + r.height / 2) {
+      st.baseY += next.offsetHeight;
+      ul.insertBefore(li, next.nextElementSibling);
+      st.moved = true;
+    }
+  }
+  li.style.transform = `translateY(${y - st.baseY}px)`;
+}
+
+function endManualDrag() {
+  const st = _manualDrag;
+  if (!st) return;
+  const { li, ul, handle } = st;
+  handle.removeEventListener('pointermove', onManualDragMove);
+  handle.removeEventListener('pointerup', endManualDrag);
+  handle.removeEventListener('pointercancel', endManualDrag);
+  try { handle.releasePointerCapture(st.pointerId); } catch { /* redan släppt */ }
+  li.style.transform = '';
+  li.classList.remove('dragging');
+  _manualDrag = null;
+  if (!st.moved) return;   // ingen faktisk omflyttning → ingen skrivning
+  const order = Array.from(ul.querySelectorAll('.shopping-item'))
+    .map((n) => n.dataset.manualIdx)
+    .filter((v) => v != null)
+    .map(Number);
+  commitManualOrder(order);
+}
+
+// Skriver den nya ordningen för de VISADE egna varorna (kan vara en delmängd i
+// handla-läget) tillbaka på de slots de upptog, låter bockade/dolda varor ligga
+// kvar, och sparar en kontiguerlig `position`-ordning till Supabase.
+async function commitManualOrder(shownOrderIdx) {
+  const items = (window._shopManualItems || []).slice();
+  if (!shownOrderIdx.length) { renderFullShoppingList(window._shopRecipeItems, items); return; }
+  const ids     = items.map((_, i) => window._shopItemIds?.[`manual::${i}`]);
+  const newItems = items.slice();
+  const newIds   = ids.slice();
+  const slots    = shownOrderIdx.slice().sort((a, b) => a - b);
+  slots.forEach((slot, k) => {
+    const src = shownOrderIdx[k];
+    newItems[slot] = items[src];
+    newIds[slot]   = ids[src];
+  });
+  window._shopManualItems = newItems;
+  if (window._shopItemIds) newItems.forEach((_, k) => { window._shopItemIds[`manual::${k}`] = newIds[k]; });
+  renderFullShoppingList(window._shopRecipeItems, newItems);
 
   try {
-    const ps = ids
+    const ps = newIds
       .map((id, k) => id ? window.db.from('shopping_items').update({ position: k }).eq('id', id) : null)
       .filter(Boolean);
     await Promise.all(ps);
@@ -907,7 +977,7 @@ window.toggleHandlaMode   = toggleHandlaMode;
 window.renameShopItem     = renameShopItem;
 window.removeShopItem     = removeShopItem;
 window.removeManualItem   = removeManualItem;
-window.moveManualItem     = moveManualItem;
+window.startManualDrag    = startManualDrag;
 window.clearShoppingList  = clearShoppingList;
 window.copyShoppingList   = copyShoppingList;
 window.addManualItem      = addManualItem;

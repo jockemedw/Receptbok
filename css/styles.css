@@ -3322,32 +3322,35 @@
     color: white;
   }
 
-  /* ── Omordning av egna varor (upp/ner-pilar, bara i redigera-läget) ── */
-  .reorder-btns {
+  /* ── Omordning av egna varor (drag-and-drop, bara i redigera-läget) ── */
+  .drag-handle {
     display: none;
-    align-items: center;
-    gap: 0.05rem;
-    flex-shrink: 0;
-  }
-  #shoppingList.editing .reorder-btns { display: inline-flex; }
-  .reorder-btn {
     background: none;
     border: none;
-    color: var(--text-muted);
-    font-size: 0.72rem;
-    line-height: 1;
-    cursor: pointer;
+    color: var(--birch-soft);
     padding: 0;
-    /* kompakt träffyta som ryms bredvid textfält + × i redigera-läget */
-    min-width: 34px;
-    min-height: 40px;
-    display: inline-flex;
+    cursor: grab;
+    touch-action: none;   /* draget styr fingret, inte sidscrollen */
+    flex-shrink: 0;
+    min-width: 44px;
+    min-height: 44px;
     align-items: center;
     justify-content: center;
   }
-  .reorder-btn:disabled { opacity: 0.25; cursor: default; }
-  @media (hover: hover) { .reorder-btn:not(:disabled):hover { color: var(--forest); } }
-  /* Bara egna varor har pilar → recept-varor behåller sitt utseende */
+  #shoppingList.editing .drag-handle { display: inline-flex; }
+  /* Bockade (t.ex. i handla-lägets "I korgen") går inte att dra */
+  #shoppingList.editing .shopping-item.checked .drag-handle { display: none; }
+  .drag-handle:active { cursor: grabbing; }
+  @media (hover: hover) { .drag-handle:hover { color: var(--forest); } }
+  /* Bara egna varor har handtag → recept-varor behåller sitt utseende */
+  .shopping-item.dragging {
+    background: var(--linen-card);
+    box-shadow: 0 6px 18px rgba(45,52,40,0.18);
+    border-radius: 10px;
+    position: relative;
+    z-index: 5;
+    cursor: grabbing;
+  }
 
   /* ── Handla-läge: bockade varor sjunker ner under ett streck ── */
   .shop-done-section { margin-top: 0.4rem; }
