@@ -3304,6 +3304,9 @@
     margin: -0.6rem 0 0.7rem;
   }
   .shop-edit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
     background: transparent;
     border: 1.5px solid var(--border);
     border-radius: 8px;
@@ -3315,6 +3318,7 @@
     cursor: pointer;
     transition: border-color 0.15s, color 0.15s, background 0.15s;
   }
+  .shop-edit-icon { width: 15px; height: 15px; flex-shrink: 0; }
   @media (hover: hover) { .shop-edit-btn:hover { border-color: var(--rust); color: var(--rust); } }
   .shop-edit-btn.active {
     background: var(--rust);
