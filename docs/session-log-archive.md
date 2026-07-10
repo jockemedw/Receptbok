@@ -1,6 +1,11 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–121. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–122. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 122 — Inköpslistan: omordning av egna varor + handla-läge (bockade sjunker under strecket)
+Två efterfrågade funktioner i inköpslistan (`js/shopping/shopping-list.js`, render-only + en position-skrivning). **SKARP, ej mobil-verifierad (se verifieringskön).** **1. Omordning av egna varor — drag-and-drop.** Varje egen vara har ett **permanent draghandtag** (`.drag-handle`) — dra utan att gå in i ✎ Redigera. Finger-följande sortering via Pointer Events (touch-först): dragen rad translateras med fingret, grannar byter plats vid mittlinje-korsning (`baseY` justeras per byte → inget hopp). Vid släpp sparas kontiguerlig `position`-ordning (0..n) för egna varor till Supabase (självläker gamla luckor). Hanterar delmängd (handla-läge visar bara obockade); bockade varor har inget handtag; receptvarornas ordning orörd. *(Bytte pilar → drag-and-drop på Joakims begäran; handtaget permanent synligt.)* **2. Handla-läge (`🛒`-knapp i redigera-baren).** Bockade varor **sjunker under strecket "I korgen · N"**, senast ibockade överst (in-memory `_checkSeq`); helt bockade kategorikort döljs; tryck under strecket avbockar → upp igen. Ren vy-preferens (nollställs vid omladdning); bock-status i Supabase som förr; vanliga ✓ Handla-vyn orörd när läget är av. Byggare `recipeItemLi`/`manualItemLi` extraherade. `shopping.test.js` 98/98. styles v166/SW v79. **Uppföljning (PR #174):** 🛒-emojin → inline-SVG (Feather-kundvagn, `currentColor`), v167/SW v80. **Uppföljning (PR #175):** Idag-vyn fick `padding-top: 1.25rem` (hero låg klistrad mot headern, IMG_3597), v168/SW v81.
 
 ---
 
