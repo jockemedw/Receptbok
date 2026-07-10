@@ -556,8 +556,8 @@ function recipeItemLi(cat, idx, name) {
   </li>`;
 }
 
-// Egen vara: bock-nyckeln är textbaserad (namnet). I redigera-läget får den
-// dessutom ett draghandtag för att byta ordning (drag-and-drop).
+// Egen vara: bock-nyckeln är textbaserad (namnet). Ett permanent draghandtag
+// låter en byta ordning (drag-and-drop) utan att gå in i redigera-läget.
 function manualItemLi(idx, name) {
   const key     = `manual::${name}`;
   const pantry  = isPantryName(name);
@@ -804,7 +804,7 @@ export async function removeManualItem(item) {
   }
 }
 
-// ── Drag-and-drop: byt ordning på egna varor (bara i redigera-läget) ──────────
+// ── Drag-and-drop: byt ordning på egna varor (alltid, utan redigera-läget) ────
 // Finger-följande sortering via Pointer Events (touch-först). Den dragna raden
 // translateras med fingret medan grannarna byter plats i DOM när man korsar
 // deras mittlinje; `baseY` justeras vid varje byte så rörelsen aldrig hoppar.
@@ -814,7 +814,6 @@ export async function removeManualItem(item) {
 let _manualDrag = null;
 
 export function startManualDrag(e, handle) {
-  if (!window._editMode) return;
   if (e.button != null && e.button !== 0) return;   // bara vänster musknapp / touch
   const li = handle.closest('.shopping-item');
   const ul = li?.parentElement;

@@ -3322,9 +3322,9 @@
     color: white;
   }
 
-  /* ── Omordning av egna varor (drag-and-drop, bara i redigera-läget) ── */
+  /* ── Omordning av egna varor (drag-and-drop, alltid tillgängligt) ── */
   .drag-handle {
-    display: none;
+    display: inline-flex;   /* permanent synligt → dra utan att gå in i Redigera */
     background: none;
     border: none;
     color: var(--birch-soft);
@@ -3337,9 +3337,8 @@
     align-items: center;
     justify-content: center;
   }
-  #shoppingList.editing .drag-handle { display: inline-flex; }
   /* Bockade (t.ex. i handla-lägets "I korgen") går inte att dra */
-  #shoppingList.editing .shopping-item.checked .drag-handle { display: none; }
+  .shopping-item.checked .drag-handle { display: none; }
   .drag-handle:active { cursor: grabbing; }
   @media (hover: hover) { .drag-handle:hover { color: var(--forest); } }
   /* Bara egna varor har handtag → recept-varor behåller sitt utseende */
