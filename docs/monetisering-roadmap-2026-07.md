@@ -34,8 +34,11 @@ plus en ärlig bedömning av om det överhuvudtaget är värt att göra.**
   ingen betalkod) → M3 (Stripe på webben, freemium) → M4 (App Store) → M5 (Axfood-
   partnerskap, opportunistiskt). Varje steg är billigt, reversibelt och kan avbrytas
   utan att familjeappen påverkas. **Familjens instans förblir gratis och orörd — hård regel.**
-- **Beslutet som styr allt** (öppen fråga #1): är målet kostnadstäckning, sidoinkomst
-  eller produkt? Roadmapen är byggd så att M1–M2 är rätt oavsett svar.
+- **✅ BESLUTAT (Joakim 2026-07-10):** ambitionsnivån är **kostnadstäckning inklusive
+  Claude Code Max** — appen ska tjäna in sitt eget utvecklingsverktyg. Konkret mål:
+  **~1 750–2 750 kr/mån ≈ 50–75 betalande hushåll** (se 5.1b). Det placerar ambitionen
+  i det realistiska bandet (mellan "täck infran" och "sidoinkomst") och gör hela
+  M0–M3 till rätt väg; M4 (App Store) blir valfri förstärkning, inte nödvändighet.
 
 ---
 
@@ -257,12 +260,34 @@ Kostnadstäckningsmålet (~750 kr/mån infra + 1 100 kr/år Apple) nås redan vi
 **~20–25 betalande hushåll** — det är realistiskt via vänkrets + mun-till-mun +
 en Facebookgrupp ("Matbudget-Sverige"-sfären är stor och aktiv).
 
+### 5.1b Det beslutade målet: täcka Claude Code Max (Joakim 2026-07-10)
+Claude Code Max kostar ~950 kr/mån (5×-planen, 100 USD) eller ~1 900 kr/mån
+(20×-planen, 200 USD). Läggs kommersiell infra (~750 kr/mån, B4) ovanpå blir
+självfinansieringsmålet:
+
+| Post | 5×-planen | 20×-planen |
+|---|---|---|
+| Claude Code Max | ~950 kr/mån | ~1 900 kr/mån |
+| Infra (Vercel Pro + Supabase Pro + domän/Apple) | ~850 kr/mån | ~850 kr/mån |
+| **Att tjäna in** | **~1 800 kr/mån** | **~2 750 kr/mån** |
+| Betalande hushåll à 39 kr/mån (netto ~37 kr) | **~49** | **~75** |
+| — varav vid mix 50 % årsplan (299 kr/år ⇒ ~24 kr/mån netto) | ~59 | ~90 |
+
+**Tolkning:** målet är nåbart utan viralt genombrott — 50–75 hushåll är
+"vänkrets + två aktiva Facebookgrupper + mun-till-mun under ett år", inte en
+marknadsföringsapparat. Men det är 2–3× över rena infra-brytpunkten, så M2:s
+betalningsviljetest är fortfarande obligatoriskt innan betalkod byggs. Viktig
+psykologisk detalj: Max-kostnaden finns redan i dag (hobbyn betalar den oavsett) —
+varje betalande hushåll är alltså ren reduktion av en befintlig utgift, och
+även ett *delmål* (t.ex. 25 hushåll = infra + halva Max) är en riktig vinst.
+
 ### 5.2 Sannolikhetsbedömning (subjektiv men motiverad)
 
 | Utfall inom 18 mån | Sannolikhet | Främsta hinder |
 |---|---|---|
 | Familjen får bättre app av resan (M1-effekten) | ~95 % | — |
-| Kostnadstäckning (~20 betalande) | **40–60 %** om M1–M3 genomförs | Uthållighet i M2-marknadsföringen |
+| Infra-täckning (~20 betalande) | **40–60 %** om M1–M3 genomförs | Uthållighet i M2-marknadsföringen |
+| **🎯 BESLUTAT MÅL: Claude Max + infra (~50–75 betalande)** | **25–40 %** | Samma som ovan + kräver att mun-till-mun faktiskt bär förbi vänkretsen |
 | Sidoinkomst 1–5 tkr/mån | **10–20 %** | Distribution (B5) + Willys-risk (B1) |
 | Försörjning (>25 tkr/mån ≈ 650+ betalande) | **<2 %** | Allt ovan + konkurrens från gratis kedjeappar |
 | Axfood-partnerskap/exit | ~5 % | Kräver bevisad bas + tur med timing |
@@ -335,6 +360,8 @@ Syfte: bevisa betalningsvilja **innan** betalkod byggs ("fejkdörr").
       freemium enligt RevenueCat 2026 — och Matpriskollen-facit säger att "gratis
       light-version av prisdata" aldrig konverterar).
 - **Grind till M4:** ≥20 betalande hushåll inom 3 månader (= infra självfinansierad).
+  **Slutmålet (beslutat 2026-07-10):** 50–75 betalande = Claude Max + infra täckta
+  (kalkyl 5.1b); M4 körs bara om M3-kurvan pekar dit men inte når ända fram organiskt.
 
 ### M4 — Distribution & App Store *(6–10 sessioner + 1 100 kr/år + Mac-tillgång)*
 - [ ] Capacitor enligt Fas 5A-analysen (fortsatt giltig; Mac-frågan öppen — #6 nedan).
@@ -378,8 +405,10 @@ för icke-kod-arbete är noll, eftersom **B5 (distribution) inte kan automatiser
 
 ## 9. Öppna frågor till Joakim (ingen åtgärd tagen — bara planerad)
 
-1. **Ambitionsnivå?** (a) Spår Noll, (b) kostnadstäckning, (c) sidoinkomst, (d) produkt.
-   Roadmapen antar (b)–(c); M1 är rätt även för (a) light (säkerhetshygienen).
+1. ~~**Ambitionsnivå?**~~ ✅ **BESVARAD (2026-07-10): kostnadstäckning inkl. Claude
+   Code Max** — mål ~50–75 betalande hushåll (kalkyl i 5.1b). Följdfråga kvar:
+   vilken Max-plan gäller (5× ≈ 950 kr/mån eller 20× ≈ 1 900 kr/mån)? Styr bara
+   slutmålets exakta siffra, inget vägval.
 2. **Tidsbudget för icke-kod?** Marknadsföring/support är det enda Claude inte kan
    göra åt dig varje vecka. <2 h/v ⇒ Spår Noll är ärligast.
 3. **Willys-riskaptit:** OK att premium delvis vilar på inofficiella endpoints med
