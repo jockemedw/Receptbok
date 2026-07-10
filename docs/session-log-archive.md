@@ -1,6 +1,11 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–122. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–123. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 123 — Monetiseringsanalys & roadmap (Fas 5C), nattjobb
+Joakim bad om omfattande analys + komplett monetiseringsroadmap med realistisk framgångsbedömning (sov — öppna frågor listades i stället för ställdes). Resultat: **`docs/monetisering-roadmap-2026-07.md`** (PR #176, mergad). Ren dokumentation, ingen kod. Underlag: befintliga analyser (S24 marknadsanalys, S28 Capacitor/5A, familjehubb-visionen), kodbas-inventering (tenancy #5–#6, Vercels 12-funktionsgräns, 264 recept/22 testade/1 hushåll) + webbresearch (~30 källor). **Kärnfynd:** reor→recept→korg-kedjan unik men Smaklig/Nomi gör reor→veckomeny gratis i beta; **Matpriskollen-facit** (350k användare, konsument-premium "sålde ingenting" → lever på annonser+B2B) ⇒ premium säljs som "slipp tänka", trial-först (8–9× bättre konvertering än freemium, RevenueCat 2026); Willys-scraping = databasskydd/Ryanair i teorin men praktisk risk är blockering, inte stämning; importerade recept får inte säljas vidare → privata per hushåll i M1; prenumerationsintäkt = näringsverksamhet från start (enskild firma + F-skatt, moms >120 tkr/år). **Framgångsbedömning:** infra-täckning 40–60 % · sidoinkomst 10–20 % · försörjning <2 %. **Roadmap M0–M5 med kill-kriterier** + Spår Noll; hård regel: familjens instans förblir gratis och orörd. 8 öppna frågor till Joakim (avsnitt 9).
 
 ---
 
