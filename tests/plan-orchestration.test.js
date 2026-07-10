@@ -66,6 +66,7 @@ function makeMockDb(initial = {}) {
     const q = {
       table, op: "select", payload: null, filters: [], wantSelect: false,
       insert(payload) { this.op = "insert"; this.payload = payload; return this; },
+      upsert(payload, opts) { this.op = "upsert"; this.payload = payload; this.onConflict = opts && opts.onConflict; return this; },
       update(payload) { this.op = "update"; this.payload = payload; return this; },
       delete() { this.op = "delete"; return this; },
       select() { this.wantSelect = true; return this; },
@@ -92,6 +93,27 @@ function makeMockDb(initial = {}) {
             return row;
           });
           const data = single ? inserted[0] : inserted;
+          return { data, error: null };
+        }
+        if (this.op === "upsert") {
+          // meal_days skrivs numera med UPSERT (onConflict household_id,date) i
+          // stället för INSERT — behåll fel-injektionen för dag-skrivningen.
+          if (this.table === "meal_days" && state.failMealInsert) {
+            return { data: null, error: { message: "simulerat dag-skrivfel" } };
+          }
+          const items = Array.isArray(this.payload) ? this.payload : [this.payload];
+          const conflictCols = (this.onConflict || "").split(",").map((s) => s.trim()).filter(Boolean);
+          const upserted = items.map((it) => {
+            const existing = conflictCols.length
+              ? rows.find((r) => conflictCols.every((c) => r[c] === it[c]))
+              : null;
+            if (existing) { Object.assign(existing, it); return existing; }
+            const row = { ...it };
+            if (this.table === "weekly_plans" && row.id == null) row.id = ++state.seq;
+            rows.push(row);
+            return row;
+          });
+          const data = single ? upserted[0] : upserted;
           return { data, error: null };
         }
         if (this.op === "update") {

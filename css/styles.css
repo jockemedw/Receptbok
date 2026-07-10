@@ -5340,7 +5340,9 @@ body.cook-open { overflow: hidden; }
   display: block;
   max-width: 680px;
   margin: 0 auto;
-  padding: 0 16px calc(4rem + env(safe-area-inset-bottom, 0px));
+  /* Topp-luft under den fasta headern — samma rytm som .content-heading ger de
+     andra vyerna. Utan den låg hero-kortet klistrat mot headern (IMG_3597). */
+  padding: 1.25rem 16px calc(4rem + env(safe-area-inset-bottom, 0px));
 }
 
 .today-loading { text-align: center; padding: 4rem 1rem; color: var(--moss-muted); }
