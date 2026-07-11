@@ -5,8 +5,8 @@
   "rapportfil": "docs/qc-night/repo-audit-2026-07-12.md",
   "vagor": {
     "0-baslinje": "KLAR — testsvit 12/12 filer GRÖN (alert 8, cookies 37, data-mapper 27, day-ops 34, dispatch 107, import-recipe 25, match-corpus 41, match 136, plan-orch 37, select-recipes 432, shopping 98, willys-offers 19). Inga röda tester = inga fynd från baslinjen.",
-    "1-kontraktssvep": "EJ STARTAD",
-    "2-per-slice": "EJ STARTAD",
+    "1-kontraktssvep": "PÅGÅR — workflow wf_71678e06-54a (6 finders)",
+    "2-per-slice": "PÅGÅR — workflow wf_1bfbb8f4-115 (16 slice-finders)",
     "3-ux-linser": "EJ STARTAD",
     "4-sakerhet": "EJ STARTAD",
     "5-adversariell-verifiering": "EJ STARTAD",
@@ -28,6 +28,10 @@
   ],
   "verifieringsko_ej_nya_fynd": "Allt under 'Väntar på live-verifiering' i docs/status.md är känt arbete (ej nya buggar) — rapportera inte dessa som fynd.",
   "rafynd": [],
-  "workflow_run_ids": {},
-  "senast_uppdaterad": "2026-07-11 Våg 0"
+  "workflow_run_ids": {
+    "vag1": { "runId": "wf_71678e06-54a", "scriptPath": "/root/.claude/projects/-home-user-Receptbok/71220b30-48da-592e-9c44-6da4a11c0d99/workflows/scripts/audit-vag1-kontraktssvep-wf_71678e06-54a.js" },
+    "vag2": { "runId": "wf_1bfbb8f4-115", "scriptPath": "/root/.claude/projects/-home-user-Receptbok/71220b30-48da-592e-9c44-6da4a11c0d99/workflows/scripts/audit-vag2-per-slice-wf_1bfbb8f4-115.js" }
+  },
+  "vaktarroutine": "trig_01RehTBn8QvSUj3FGaAbA3UM (audit-natt-vakt, 7 * * * *)",
+  "senast_uppdaterad": "2026-07-11 ~22:25 UTC — Våg 1+2 lanserade parallellt"
 }
