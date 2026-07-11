@@ -48,8 +48,9 @@ plus en ärlig bedömning av om det överhuvudtaget är värt att göra.**
 - **✅ BESLUTAT (Joakim 2026-07-10/11):** ambitionsnivån är **kostnadstäckning
   inklusive Claude Code Max 20×** — appen ska tjäna in sitt eget utvecklingsverktyg.
   Skarpt mål: **~2 750 kr/mån ≈ 75 betalande hushåll** (kalkyl 5.1b). **Alla åtta
-  öppna frågor är besvarade (avsnitt 9)** — roadmapen är fullt beslutad; kvar i M0
-  är bara namnvalet (kandidatlista med ledighetskoll i M0-avsnittet).
+  öppna frågor är besvarade (avsnitt 9) och namnet är valt: "Middagsveckan"
+  (middagsveckan.se)** — roadmapen är fullt beslutad; kvar i M0 är bara Joakims
+  domänköp (~150 kr/år). Därefter: M1-bygget.
 
 ---
 
@@ -372,9 +373,14 @@ mätbart kriterium — nås det inte: stanna, utan skam, med en bättre familjea
       ~2 750 kr/mån ≈ 75 hushåll; 2–5 h/vecka icke-kod** — kill-kriteriet passerat.
 - [x] ~~Besluta Willys-hållning~~ ✅ 2026-07-11: enligt förslaget (reor i premium
       med öppen risk, dispatch familje-exklusiv).
-- [ ] **Namnval (enda kvarvarande M0-punkten):** Joakim väljer ur kandidatlistan
-      nedan (eller eget) + domänköp (~150 kr/år). Blockerar M2 (landningssidan),
-      inte M1-bygget.
+- [x] ~~Namnval~~ ✅ **BESLUTAT (Joakim 2026-07-11): "Middagsveckan" — middagsveckan.se.**
+      Domänen saknar DNS-poster av alla typer (NS/A/MX/TXT) = med största sannolikhet
+      oregistrerad. Medvetet middags-centrerat namn — det matchar produktens kärna nu;
+      hubb-delarna (listor/kalender) lever fint under ett middagsvarumärke.
+- [ ] **Enda kvarvarande M0-punkten: Joakim köper middagsveckan.se** hos valfri
+      registrar (~150 kr/år) — verifiera ledigheten i köpflödet (internetstiftelsen.se).
+      Appen fortsätter heta Receptboken internt tills M2/landningssidan byggs;
+      namnbytet i UI:t är ett eget litet steg då.
 
 **Namnkandidater (2026-07-11, DNS-grovkollade — inga NS-poster = troligen ledig .se;
 verifiera på internetstiftelsen.se före köp):**
@@ -488,9 +494,9 @@ för icke-kod-arbete är noll, eftersom **B5 (distribution) inte kan automatiser
    betalningen.
 6. ✅ **Mac: ingen** — ett framtida M4 kräver moln-Mac (~350 kr/mån under byggperioden).
    Noterat; påverkar inget nu eftersom M4 är uppskjutet tills målet nåtts på webben.
-7. ✅ **Namnet: Claude tar fram förslag** — kandidatlista med ledighetskoll finns i
-   M0-avsnittet (6, M0); Joakim väljer. Ingen brådska — blockerar M2 (landningssida),
-   inte M1.
+7. ✅ **Namnet: "Middagsveckan" valt (2026-07-11)** — middagsveckan.se, DNS-tom och
+   troligen ledig. Kvar: domänköpet (Joakim, ~150 kr/år). Kandidatlistan i M0-avsnittet
+   behålls som reserv om köpet mot förmodan faller.
 8. ✅ **Vänfamiljer: väljs när M1 är byggd** — bygget startar först; minst en
    icke-teknisk familj rekryteras vid utrullning.
 
