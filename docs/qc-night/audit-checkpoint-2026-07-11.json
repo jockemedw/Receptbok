@@ -5,9 +5,9 @@
   "rapportfil": "docs/qc-night/repo-audit-2026-07-12.md",
   "vagor": {
     "0-baslinje": "KLAR — testsvit 12/12 filer GRÖN (alert 8, cookies 37, data-mapper 27, day-ops 34, dispatch 107, import-recipe 25, match-corpus 41, match 136, plan-orch 37, select-recipes 432, shopping 98, willys-offers 19). Inga röda tester = inga fynd från baslinjen.",
-    "1-kontraktssvep": "PÅGÅR — workflow wf_71678e06-54a (6 finders)",
+    "1-kontraktssvep": "KLAR — 23 råfynd (2 P0, 10 P1, 11 P2) i docs/qc-night/audit-raw-vag1.json. window-kontrakt + invarianter-api: 0 fynd (rena). Tyngst: svalda-fel 14 st (ocheckade Supabase-error i api/replace-recipe, api/confirm, discard-plan, shopping-list.js m.fl.)",
     "2-per-slice": "PÅGÅR — workflow wf_1bfbb8f4-115 (16 slice-finders)",
-    "3-ux-linser": "EJ STARTAD",
+    "3-ux-linser": "PÅGÅR — workflow wf_44925e13-708 (6 lins-agenter)",
     "4-sakerhet": "EJ STARTAD",
     "5-adversariell-verifiering": "EJ STARTAD",
     "6-loop-until-dry": "EJ STARTAD",
