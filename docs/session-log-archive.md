@@ -1,6 +1,11 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–123. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–124. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 124 — Ambitionsnivå beslutad (täck Claude Max) + konkurrens-funktionsanalys + "lättaste vägen"
+Uppföljning på S123 efter Joakims besked: (1) målet är att tjäna in Claude Code Max; (2) analysera konkurrensen + funktioner att integrera; (3) följdfråga: lättaste vägen (annonser vs App Store). Ren dokumentation (PR #177). **Roadmapen omkalibrerad:** kalkyl 5.1b — ~50–75 betalande hushåll à 39 kr/mån. **Nytt avsnitt 4.1 "lättaste vägen":** annonser lättast att bygga men kräver 1 500–3 000 hushåll (avfärdad); App Store-engångsköp = plan B (Apple merchant of record men Capacitor + evigt nykundslöpband ~30–45 köp/mån); **webb-prenumeration lättast i människor (33–50 hushåll en gång)** → M4 uppskjuten tills målet nåtts på webben. **NY FIL `docs/konkurrens-funktionsanalys-2026-07.md`:** ~20 appar inventerade (2 agenter, ~60 källor; Jow, Mealime, Plan to Eat, Paprika, AnyList, Samsung Food, Eat This Much, Cozi, BigOven, SuperCook, Flipp, eMeals + ICA, Coop, Arla, Tasteline, Smaklig, Nomi, Matpriskollen, Lifesum, SmartaMenyn, Matlistan, SmakShare, MatVeckan) → gap-lista **G1–G18** sekvenserad mot M-faserna: G1–G5 främlings-beredskap (allergen-hårdfilter, onboarding-wizard, receptbilder, magisk länk, butiksgångordning), G6–G11 retention/premium (rea-bevakningsnotiser, veckodigest, laga-på-det-du-har, restlogik, pris/portion, middagsbetyg), G12–G18 senare + medvetna avstånd. **Korrigering:** SmartaMenyn tar redan betalt (Stripe) för reor→veckomeny.
 
 ---
 

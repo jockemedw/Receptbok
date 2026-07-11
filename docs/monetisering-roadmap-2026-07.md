@@ -45,11 +45,11 @@ plus en ärlig bedömning av om det överhuvudtaget är värt att göra.**
   externa hushåll (allergifilter, onboarding, bilder, magisk länk, butiksgångordning),
   G6–G11 som premiumvärde/retention (rea-bevakningsnotiser, veckodigest,
   laga-på-det-du-har, restlogik, pris per portion, middagsbetyg).
-- **✅ BESLUTAT (Joakim 2026-07-10):** ambitionsnivån är **kostnadstäckning inklusive
-  Claude Code Max** — appen ska tjäna in sitt eget utvecklingsverktyg. Konkret mål:
-  **~1 750–2 750 kr/mån ≈ 50–75 betalande hushåll** (se 5.1b). Det placerar ambitionen
-  i det realistiska bandet (mellan "täck infran" och "sidoinkomst") och gör hela
-  M0–M3 till rätt väg; M4 (App Store) blir valfri förstärkning, inte nödvändighet.
+- **✅ BESLUTAT (Joakim 2026-07-10/11):** ambitionsnivån är **kostnadstäckning
+  inklusive Claude Code Max 20×** — appen ska tjäna in sitt eget utvecklingsverktyg.
+  Skarpt mål: **~2 750 kr/mån ≈ 75 betalande hushåll** (kalkyl 5.1b). **Alla åtta
+  öppna frågor är besvarade (avsnitt 9)** — roadmapen är fullt beslutad; kvar i M0
+  är bara namnvalet (kandidatlista med ledighetskoll i M0-avsnittet).
 
 ---
 
@@ -320,6 +320,9 @@ självfinansieringsmålet:
 | Betalande hushåll à 39 kr/mån (netto ~37 kr) | **~49** | **~75** |
 | — varav vid mix 50 % årsplan (299 kr/år ⇒ ~24 kr/mån netto) | ~59 | ~90 |
 
+**✅ Beslutat 2026-07-11: planen är Max 20×** ⇒ det skarpa målet är höger­kolumnen:
+**~2 750 kr/mån ≈ 75 betalande hushåll** (eller ~90 vid hälften årsplaner).
+
 **Tolkning:** målet är nåbart utan viralt genombrott — 50–75 hushåll är
 "vänkrets + två aktiva Facebookgrupper + mun-till-mun under ett år", inte en
 marknadsföringsapparat. Men det är 2–3× över rena infra-brytpunkten, så M2:s
@@ -365,13 +368,32 @@ reversibelt; (2) inget steg kräver att nästa genomförs; (3) varje grind har e
 mätbart kriterium — nås det inte: stanna, utan skam, med en bättre familjeapp som tröstpris.
 
 ### M0 — Beslut & fundament *(1 session + Joakims beslut)*
-- [ ] Joakim väljer ambitionsnivå (öppen fråga #1) och tidsbudget (#2).
-- [ ] Namnkoll: "Receptboken" är generiskt/upptaget — arbetsnamn + ledig .se-domän
-      (t.ex. i familjehubb-riktningen; domän ~150 kr/år är enda kostnaden i M0).
-- [ ] Besluta Willys-hållning (öppen fråga #3): reor-läsning kvar som premium-feature
-      med öppen risk, dispatch förblir familje-exklusiv.
-- **Kill-kriterium:** vill Joakim inte lägga ≥2 h/vecka på icke-kod (support,
-  marknadsföring) → välj *Spår Noll* (avsnitt 7) i stället.
+- [x] ~~Joakim väljer ambitionsnivå + tidsbudget~~ ✅ 2026-07-11: **Max 20× ⇒ mål
+      ~2 750 kr/mån ≈ 75 hushåll; 2–5 h/vecka icke-kod** — kill-kriteriet passerat.
+- [x] ~~Besluta Willys-hållning~~ ✅ 2026-07-11: enligt förslaget (reor i premium
+      med öppen risk, dispatch familje-exklusiv).
+- [ ] **Namnval (enda kvarvarande M0-punkten):** Joakim väljer ur kandidatlistan
+      nedan (eller eget) + domänköp (~150 kr/år). Blockerar M2 (landningssidan),
+      inte M1-bygget.
+
+**Namnkandidater (2026-07-11, DNS-grovkollade — inga NS-poster = troligen ledig .se;
+verifiera på internetstiftelsen.se före köp):**
+
+| Kandidat | Karaktär |
+|---|---|
+| **veckoro.se** ⭐ | Kort, varumärkesbart, bär hela hubben (mat + listor + kalender = "ro i veckan"). Rimmar med kärnlöftet: slipp tänka. |
+| **hemmaveckan.se** ⭐ | Varmt, familjebrett, beskriver produkten (allt hemma, en vecka i taget) |
+| **veckoklar.se** ⭐ | Aktivt löfte ("veckan är klar"), funkar i marknadsföring ("Bli veckoklar på 2 minuter") |
+| familjeveckan.se | Tydligt familjefokus, något längre |
+| middagsveckan.se | Starkt för matdelen, smalare för hubben |
+| matlugn.se / middagslugn.se | "Ro/lugn"-temat (middagsro.se var upptaget) |
+| husmiddag.se | Mysigt men bara middag |
+| reamiddag.se | Beskriver prisvinkeln exakt — men låser varumärket vid reor (B1-risk) |
+| matrondellen.se | Lekfullt, minnesvärt, säger mindre |
+
+*Upptagna (kollade): matro, middagsro, vardagsro, veckomat, middagsklar,
+familjehubben, vardagshubben, matlyckan, veckovis, middagshjulet, veckotallriken,
+matplaneraren, matveckan (befintlig konkurrent-app!).*
 
 ### M1 — Produktifiering light: 5 vänfamiljer, gratis *(4–8 sessioner, 0 kr)*
 Syfte: bevisa att en familj som inte heter Weimar kan onboardas och **stannar**.
@@ -450,27 +472,31 @@ för icke-kod-arbete är noll, eftersom **B5 (distribution) inte kan automatiser
 
 ---
 
-## 9. Öppna frågor till Joakim (ingen åtgärd tagen — bara planerad)
+## 9. Frågorna — ALLA BESVARADE av Joakim 2026-07-11
 
-1. ~~**Ambitionsnivå?**~~ ✅ **BESVARAD (2026-07-10): kostnadstäckning inkl. Claude
-   Code Max** — mål ~50–75 betalande hushåll (kalkyl i 5.1b). Följdfråga kvar:
-   vilken Max-plan gäller (5× ≈ 950 kr/mån eller 20× ≈ 1 900 kr/mån)? Styr bara
-   slutmålets exakta siffra, inget vägval.
-2. **Tidsbudget för icke-kod?** Marknadsföring/support är det enda Claude inte kan
-   göra åt dig varje vecka. <2 h/v ⇒ Spår Noll är ärligast.
-3. **Willys-riskaptit:** OK att premium delvis vilar på inofficiella endpoints med
-   öppen degraderingsrisk? (Roadmapens antagande: ja för reor-läsning, nej för dispatch.)
-4. **Vilka av de 264 recepten är genuint egna** (får seedas till nya hushåll) vs
-   importerade (måste förbli privata)? Grov märkning räcker (fält finns ej — liten migration).
-5. **Företagsform:** bekväm med enskild firma + F-skatt i M3? *(Researchen avgjorde
-   sakfrågan: prenumerationsintäkter = näringsverksamhet från start, ingen hobbygräns
-   att gömma sig bakom — frågan är alltså bara om du VILL, inte hur.)*
-6. **Mac-tillgång för M4?** (Capacitor/iOS kräver Xcode — egen Mac, lånad, eller
-   moln-Mac ~350 kr/mån.)
-7. **Namnet:** förslag önskas? (Kravet: ledigt .se, funkar för "familjehubb", inte
-   bara recept.)
-8. **Får vänfamiljerna i M1 väljas nu?** 3–5 stycken, gärna en utan teknikintresse
-   (bästa testet av onboardingen).
+1. ✅ **Ambitionsnivå:** kostnadstäckning inkl. Claude Code Max. **Max-plan: 20×
+   (200 USD/mån)** ⇒ skarpt mål **~2 750 kr/mån ≈ 75 betalande hushåll** (5.1b).
+2. ✅ **Tidsbudget icke-kod: 2–5 h/vecka** — räcker för M1–M3-planen i lugn takt
+   (vänfamiljer, landningssida, gruppinlägg, support). Spår Noll är därmed inaktuellt.
+3. ✅ **Willys-riskaptit: ja, enligt förslaget** — reor-läsning ingår i premium med
+   öppen degraderingsrisk; dispatchen/korgfyllningen förblir familje-exklusiv tills
+   ev. partnerskap.
+4. ✅ **Recepten: Claude grovmärker alla 264** (käll-URL, formuleringar, importhistorik)
+   → Joakim godkänner listan (en kvällsgenomgång). Blir en M1-uppgift: `origin`-fält +
+   märkningskörning + granskningslista.
+5. ✅ **Företagsform: ja** — enskild firma + F-skatt registreras i M3, före första
+   betalningen.
+6. ✅ **Mac: ingen** — ett framtida M4 kräver moln-Mac (~350 kr/mån under byggperioden).
+   Noterat; påverkar inget nu eftersom M4 är uppskjutet tills målet nåtts på webben.
+7. ✅ **Namnet: Claude tar fram förslag** — kandidatlista med ledighetskoll finns i
+   M0-avsnittet (6, M0); Joakim väljer. Ingen brådska — blockerar M2 (landningssida),
+   inte M1.
+8. ✅ **Vänfamiljer: väljs när M1 är byggd** — bygget startar först; minst en
+   icke-teknisk familj rekryteras vid utrullning.
+
+**Konsekvens: roadmapen är fullt beslutad.** Nästa konkreta steg är M1-bygget
+(tenancy #5–#6, G1–G5 ur funktionsanalysen, recept-grovmärkningen) — startas när
+Joakim säger till.
 
 ---
 
