@@ -87,20 +87,24 @@ function recentlyUsedIds(history, days = 14) {
 }
 
 async function fetchExistingShoppingList(householdId) {
-  const { data: lists } = await db
+  // Ett läsfel får inte tolkas som "ingen lista finns" — då tappas familjens
+  // manuella varor + bockar tyst vid regenerering. Kasta så genereringen avbryts.
+  const { data: lists, error: listsErr } = await db
     .from("shopping_lists")
     .select("id, recipe_items_moved_at")
     .eq("household_id", householdId)
     .eq("is_active", true)
     .limit(1);
+  if (listsErr) throw listsErr;
   if (!lists?.length) return null;
 
   const list = lists[0];
-  const { data: items } = await db
+  const { data: items, error: itemsErr } = await db
     .from("shopping_items")
     .select("name, checked")
     .eq("list_id", list.id)
     .eq("source", "manual");
+  if (itemsErr) throw itemsErr;
 
   const manualItems = (items || []).map((i) => i.name);
   const checkedItems = {};
@@ -376,6 +380,9 @@ export default createSupabaseHandler(async (req, res) => {
     db.from("meal_days").select("date").eq("household_id", householdId)
       .is("plan_id", null).gte("date", start_date).lte("date", end_date),
   ]);
+  // Ett svalt läsfel här skulle ge tom customDates → guarden tror att inga
+  // custom-dagar finns och UPSERT:en skriver över dem. Avbryt hellre allt.
+  if (customRows?.error) throw customRows.error;
   const customDates = new Set((customRows?.data || []).map((r) => r.date));
 
   const filtered = filterRecipes(allRecipes, constraints);

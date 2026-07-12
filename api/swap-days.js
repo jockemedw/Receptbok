@@ -111,7 +111,9 @@ export default createSupabaseHandler(async (req, res) => {
       const { error: boundsErr } = await db.from("weekly_plans")
         .update({ start_date: newStart, end_date: newEnd })
         .eq("id", plan.id);
-      if (boundsErr) console.error("swap-days: kunde inte uppdatera plan-gränser", boundsErr);
+      // Kasta i stället för att svara med ett spann som aldrig sparades —
+      // annars divergerar klient och DB tills nästa omladdning.
+      if (boundsErr) throw new Error("Bytet sparades, men veckans datumspann kunde inte uppdateras — ladda om sidan.");
     }
 
     weeklyPlan = {

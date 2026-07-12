@@ -4,16 +4,17 @@ Todo för att beta av auditens fynd, i rapportens rekommenderade ordning. Bocka 
 
 **Regler:** Batch 2 (DDL) körs ALDRIG utan Joakims uttryckliga OK i sessionen. Datamuterande batchar (1, 2, 5) testas mot hela sviten. Inga fixar får bryta invariant #1–#5.
 
-## Batch 1 — Error-koll-svepet (P0-1 + Tema A) · backend, ~en förmiddag
+## Batch 1 — Error-koll-svepet (P0-1 + Tema A) · backend — ✅ KLAR 2026-07-12
 Mönster: destrukturera `{ data, error }` och kasta — handler.js översätter till svenskt fel.
-- [ ] **F089 (P0!)** `api/generate.js:372` — custom-day-guardens läsning: kasta vid `error` (invariant #1-skyddet)
-- [ ] F006 `api/confirm.js:30` — receptläsningen vid bekräftelse
-- [ ] F011 `api/confirm.js:42` — överföring av manuella varor + bockar
-- [ ] F012 `api/confirm.js:109` — `confirmed_at`-skrivningen (fire-and-forget)
-- [ ] F013/F221 `api/generate.js:89` — `fetchExistingShoppingList` (fel ≠ "ingen lista")
-- [ ] F005 `api/replace-recipe.js:112` — bytets skrivningar
-- [ ] F007 `api/replace-recipe.js:128` — listombyggnadens läsning
-- [ ] F313 `api/swap-days.js:110` — plan-gränsernas persist-fel (svar ≠ DB)
+- [x] **F089 (P0!)** `api/generate.js:372` — custom-day-guardens läsning: kasta vid `error` (invariant #1-skyddet)
+- [x] F006 `api/confirm.js:30` — receptläsningen vid bekräftelse
+- [x] F011 `api/confirm.js:42` — överföring av manuella varor + bockar
+- [x] F012 `api/confirm.js:109` — `confirmed_at`-skrivningen (fire-and-forget)
+- [x] F013/F221 `api/generate.js:89` — `fetchExistingShoppingList` (fel ≠ "ingen lista")
+- [x] F005 `api/replace-recipe.js:112` — bytets skrivningar
+- [x] F007 `api/replace-recipe.js:128` — listombyggnadens läsning
+- [x] F313 `api/swap-days.js:110` — plan-gränsernas persist-fel (svar ≠ DB)
+- [x] Bonus (samma tema): plans-/mealDays-läsningarna i `confirm.js:9/20` felkollas också (gav tidigare vilseledande 400)
 
 ## Batch 2 — DB-migrationer (P0-2 + F287) · ⚠️ DDL, VÄNTAR JOAKIMS OK
 - [ ] **F215 (P0!)** `recipes_qc_backup_20260607`: DROP (eller ENABLE RLS + revoke). OBS: tabellen är även qc-nattens revert-snapshot (Session 83) — DROP stänger den revert-vägen (bedömd inaktuell efter 5 v).

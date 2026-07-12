@@ -108,8 +108,9 @@ export default createSupabaseHandler(async (req, res) => {
   const keepSaving = newRecipeId && typeof saving === "number" ? saving : null;
   const keepMatches = newRecipeId && Array.isArray(savingMatches) ? savingMatches : null;
 
-  // Uppdatera meal_days + recipe_history parallellt
-  await Promise.all([
+  // Uppdatera meal_days + recipe_history parallellt. Kasta vid fel — annars
+  // svarar endpointen 200 med nya titeln trots att inget persisterades.
+  const [{ error: mdErr }, { error: histErr }] = await Promise.all([
     db.from("meal_days").update({
       recipe_id: picked.id,
       recipe_title_snapshot: picked.title,
@@ -121,15 +122,18 @@ export default createSupabaseHandler(async (req, res) => {
       { onConflict: "household_id,recipe_id" }
     ),
   ]);
+  if (mdErr || histErr) throw mdErr || histErr;
 
   // Bygg om inköpslistan om planen är bekräftad
   if (plan.confirmed_at) {
-    // allMealDays hämtas efter update → innehåller redan picked.id på rätt dag
-    const { data: allMealDays } = await db
+    // allMealDays hämtas efter update → innehåller redan picked.id på rätt dag.
+    // Ett svalt läsfel här skulle ersätta aktiva listan med en TOM — avbryt då.
+    const { data: allMealDays, error: mealErr } = await db
       .from("meal_days")
       .select("recipe_id")
       .eq("plan_id", plan.id)
       .not("recipe_id", "is", null);
+    if (mealErr) throw new Error("Receptet byttes, men inköpslistan kunde inte byggas om — ladda om och prova igen.");
 
     const selectedIds = (allMealDays || []).map((d) => d.recipe_id);
 

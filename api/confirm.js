@@ -6,51 +6,57 @@ export default createSupabaseHandler(async (req, res) => {
   const householdId = await getHouseholdId();
 
   // Hämta aktiv plan + dess dagar
-  const { data: plans } = await db
+  const { data: plans, error: plansErr } = await db
     .from("weekly_plans")
     .select("id, start_date, end_date, confirmed_at")
     .eq("household_id", householdId)
     .eq("is_active", true)
     .limit(1);
+  if (plansErr) throw plansErr;
 
   const plan = plans?.[0];
   if (!plan) return res.status(400).json({ error: "Ingen veckoplan att bekräfta." });
   if (plan.confirmed_at) return res.status(400).json({ error: "Planen är redan bekräftad." });
 
-  const { data: mealDays } = await db
+  const { data: mealDays, error: daysErr } = await db
     .from("meal_days")
     .select("recipe_id")
     .eq("plan_id", plan.id)
     .not("recipe_id", "is", null);
+  if (daysErr) throw daysErr;
 
   const selectedIds = (mealDays || []).map((d) => d.recipe_id);
   if (!selectedIds.length) return res.status(400).json({ error: "Planen har inga recept." });
 
-  // Hämta recept för att bygga inköpslistan
-  const [{ data: recipes }, targetServings] = await Promise.all([
+  // Hämta recept för att bygga inköpslistan. Ett svalt läsfel här skulle
+  // bekräfta planen med en TOM lista — avbryt hellre hela bekräftelsen.
+  const [{ data: recipes, error: recErr }, targetServings] = await Promise.all([
     db.from("recipes")
       .select("id, title, ingredients, tags, protein, tested, servings")
       .eq("household_id", householdId),
     fetchTargetServings(householdId),
   ]);
+  if (recErr) throw recErr;
 
   const shoppingCategories = buildShoppingList(selectedIds, recipes || [], { targetServings });
 
   // Bevara manuella varor och bockningar från befintlig aktiv lista
   let manualItems = [];
   let checkedItems = {};
-  const { data: existingLists } = await db
+  const { data: existingLists, error: elErr } = await db
     .from("shopping_lists")
     .select("id")
     .eq("household_id", householdId)
     .eq("is_active", true)
     .limit(1);
+  if (elErr) throw elErr;
   if (existingLists?.length) {
-    const { data: existingItems } = await db
+    const { data: existingItems, error: eiErr } = await db
       .from("shopping_items")
       .select("name, checked")
       .eq("list_id", existingLists[0].id)
       .eq("source", "manual");
+    if (eiErr) throw eiErr;
     manualItems = (existingItems || []).map((i) => i.name);
     (existingItems || []).filter((i) => i.checked).forEach((i) => {
       checkedItems[`manual::${i.name}`] = true;
@@ -105,8 +111,13 @@ export default createSupabaseHandler(async (req, res) => {
     .update({ is_active: true }).eq("id", newList.id);
   if (actErr) throw actErr;
 
-  // Sätt confirmed_at på planen
-  await db.from("weekly_plans").update({ confirmed_at: new Date().toISOString() }).eq("id", plan.id);
+  // Sätt confirmed_at på planen. Misslyckas skrivningen är listan redan bytt —
+  // säg det, annars tror klienten att planen är bekräftad medan DB säger nej.
+  const { error: confErr } = await db
+    .from("weekly_plans")
+    .update({ confirmed_at: new Date().toISOString() })
+    .eq("id", plan.id);
+  if (confErr) throw new Error("Inköpslistan skapades, men planen kunde inte märkas som bekräftad — prova att bekräfta igen.");
 
   const shoppingList = {
     generated: today,
