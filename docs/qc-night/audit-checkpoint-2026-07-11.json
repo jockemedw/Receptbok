@@ -10,8 +10,8 @@
     "3-ux-linser": "KLAR — 65 råfynd (4 P0, 31 P1, 30 P2) i audit-raw-vag3.json. 6/6 linser inkl. Playwright-smoke (omkörd via resume).",
     "4-sakerhet": "KLAR — 20 råfynd (1 P0, 4 P1, 15 P2) i audit-raw-vag4.json. 4/4 Opus-agenter (auth/CORS/secrets, XSS-djup, RLS-audit live, fundament-felvägar).",
     "5-adversariell-verifiering": "KLAR — 226 domslut (66/66 Opus-batchar): 178 CONFIRMED, 20 PLAUSIBLE, 14 REFUTED, 11 DUPLICATE, 3 KNOWN. Levande: 198 (2 P0, 30 P1, 166 P2) i audit-verified.json. P0: F089 (svald error i custom-day-guard, generate.js) + F215 (backup-tabell utan RLS i live-DB).",
-    "6-loop-until-dry": "DELVIS — 3 rundor körda (wf_76e8fb0a-50a), 48 nya verifierade fynd (10 P1, 38 P2), INTE torr. Förlängning 6b med 2 färska lins-rundor pågår. Totalt levande: 246 (2 P0, 40 P1, 204 P2) i audit-verified.json.",
-    "7-syntes-leverans": "EJ STARTAD"
+    "6-loop-until-dry": "KLAR (praktisk torrhet) — 5 rundor à 4 linser (wf_76e8fb0a-50a + wf_00f3fc5f-fe5), 72 nya verifierade fynd (14 P1, 58 P2), inga nya P0 efter Våg 4. Strikt 2-torra-rundor nåddes ej — linsrymden är obegränsad; täckning säkras i stället av Våg 7:s completeness-critic. Totalt levande: 270 (2 P0, 44 P1, 224 P2).",
+    "7-syntes-leverans": "PÅGÅR — completeness-critic + rapport"
   },
   "kanda_dedup": [
     "SSRF: DNS-rebinding TOCTOU + IPv6-luckor (::ffff:-mappade v4, NAT64, fe80::/10) i import-recipe.js — medvetet lämnade (status.md Kända buggar)",
@@ -59,5 +59,5 @@
     }
   },
   "vaktarroutine": "trig_01RehTBn8QvSUj3FGaAbA3UM (audit-natt-vakt, 7 * * * *)",
-  "senast_uppdaterad": "2026-07-12 ~09:10 UTC — Våg 6b (rundor 4-5) lanserad"
+  "senast_uppdaterad": "2026-07-12 ~10:05 UTC — Våg 6 avslutad, Våg 7 startar"
 }
