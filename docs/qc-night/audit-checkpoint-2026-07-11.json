@@ -6,10 +6,10 @@
   "vagor": {
     "0-baslinje": "KLAR — testsvit 12/12 filer GRÖN (alert 8, cookies 37, data-mapper 27, day-ops 34, dispatch 107, import-recipe 25, match-corpus 41, match 136, plan-orch 37, select-recipes 432, shopping 98, willys-offers 19). Inga röda tester = inga fynd från baslinjen.",
     "1-kontraktssvep": "KLAR — 23 råfynd (2 P0, 10 P1, 11 P2) i docs/qc-night/audit-raw-vag1.json. window-kontrakt + invarianter-api: 0 fynd (rena). Tyngst: svalda-fel 14 st (ocheckade Supabase-error i api/replace-recipe, api/confirm, discard-plan, shopping-list.js m.fl.)",
-    "2-per-slice": "PÅGÅR — workflow wf_1bfbb8f4-115 (16 slice-finders)",
-    "3-ux-linser": "PÅGÅR — workflow wf_44925e13-708 (6 lins-agenter)",
-    "4-sakerhet": "EJ STARTAD",
-    "5-adversariell-verifiering": "EJ STARTAD",
+    "2-per-slice": "KLAR — 118 råfynd (5 P0, 40 P1, 73 P2) i audit-raw-vag2.json. 16/16 slice-finders (3 döda på usage-gränsen omkörda via resume).",
+    "3-ux-linser": "KLAR — 65 råfynd (4 P0, 31 P1, 30 P2) i audit-raw-vag3.json. 6/6 linser inkl. Playwright-smoke (omkörd via resume).",
+    "4-sakerhet": "KLAR — 20 råfynd (1 P0, 4 P1, 15 P2) i audit-raw-vag4.json. 4/4 Opus-agenter (auth/CORS/secrets, XSS-djup, RLS-audit live, fundament-felvägar).",
+    "5-adversariell-verifiering": "PÅGÅR — dedup + Opus-skeptiker i batchar per fil",
     "6-loop-until-dry": "EJ STARTAD",
     "7-syntes-leverans": "EJ STARTAD"
   },
@@ -29,9 +29,23 @@
   "verifieringsko_ej_nya_fynd": "Allt under 'Väntar på live-verifiering' i docs/status.md är känt arbete (ej nya buggar) — rapportera inte dessa som fynd.",
   "rafynd": [],
   "workflow_run_ids": {
-    "vag1": { "runId": "wf_71678e06-54a", "scriptPath": "/root/.claude/projects/-home-user-Receptbok/71220b30-48da-592e-9c44-6da4a11c0d99/workflows/scripts/audit-vag1-kontraktssvep-wf_71678e06-54a.js" },
-    "vag2": { "runId": "wf_1bfbb8f4-115", "scriptPath": "/root/.claude/projects/-home-user-Receptbok/71220b30-48da-592e-9c44-6da4a11c0d99/workflows/scripts/audit-vag2-per-slice-wf_1bfbb8f4-115.js" }
+    "vag1": {
+      "runId": "wf_71678e06-54a",
+      "scriptPath": "/root/.claude/projects/-home-user-Receptbok/71220b30-48da-592e-9c44-6da4a11c0d99/workflows/scripts/audit-vag1-kontraktssvep-wf_71678e06-54a.js"
+    },
+    "vag2": {
+      "runId": "wf_1bfbb8f4-115",
+      "scriptPath": "/root/.claude/projects/-home-user-Receptbok/71220b30-48da-592e-9c44-6da4a11c0d99/workflows/scripts/audit-vag2-per-slice-wf_1bfbb8f4-115.js"
+    },
+    "vag3": {
+      "runId": "wf_44925e13-708",
+      "scriptPath": "/root/.claude/projects/-home-user-Receptbok/71220b30-48da-592e-9c44-6da4a11c0d99/workflows/scripts/audit-vag3-ux-linser-wf_44925e13-708.js"
+    },
+    "vag4": {
+      "runId": "wf_365bed3d-5dc",
+      "scriptPath": "/root/.claude/projects/-home-user-Receptbok/71220b30-48da-592e-9c44-6da4a11c0d99/workflows/scripts/audit-vag4-sakerhet-wf_365bed3d-5dc.js"
+    }
   },
   "vaktarroutine": "trig_01RehTBn8QvSUj3FGaAbA3UM (audit-natt-vakt, 7 * * * *)",
-  "senast_uppdaterad": "2026-07-11 ~22:25 UTC — Våg 1+2 lanserade parallellt"
+  "senast_uppdaterad": "2026-07-12 ~05:15 UTC — Våg 1–4 KLARA, totalt 226 råfynd (12 P0, 85 P1, 129 P2); Våg 5 startar"
 }
