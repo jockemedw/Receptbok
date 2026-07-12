@@ -10,7 +10,7 @@
     "3-ux-linser": "KLAR — 65 råfynd (4 P0, 31 P1, 30 P2) i audit-raw-vag3.json. 6/6 linser inkl. Playwright-smoke (omkörd via resume).",
     "4-sakerhet": "KLAR — 20 råfynd (1 P0, 4 P1, 15 P2) i audit-raw-vag4.json. 4/4 Opus-agenter (auth/CORS/secrets, XSS-djup, RLS-audit live, fundament-felvägar).",
     "5-adversariell-verifiering": "KLAR — 226 domslut (66/66 Opus-batchar): 178 CONFIRMED, 20 PLAUSIBLE, 14 REFUTED, 11 DUPLICATE, 3 KNOWN. Levande: 198 (2 P0, 30 P1, 166 P2) i audit-verified.json. P0: F089 (svald error i custom-day-guard, generate.js) + F215 (backup-tabell utan RLS i live-DB).",
-    "6-loop-until-dry": "PÅGÅR — workflow wf_76e8fb0a-50a (3 rundor à 4 linser: datum/tidszon, samtidighet/realtime, PWA/cache, i18n · prestanda, listeners, offline, validering · state, auth-livscykel, HTML/CSS-struktur, testluckor; Opus-verifiering per kandidat; dry vid 2 tomma rundor)",
+    "6-loop-until-dry": "DELVIS — 3 rundor körda (wf_76e8fb0a-50a), 48 nya verifierade fynd (10 P1, 38 P2), INTE torr. Förlängning 6b med 2 färska lins-rundor pågår. Totalt levande: 246 (2 P0, 40 P1, 204 P2) i audit-verified.json.",
     "7-syntes-leverans": "EJ STARTAD"
   },
   "kanda_dedup": [
@@ -55,5 +55,5 @@
     }
   },
   "vaktarroutine": "trig_01RehTBn8QvSUj3FGaAbA3UM (audit-natt-vakt, 7 * * * *)",
-  "senast_uppdaterad": "2026-07-12 ~06:50 UTC — Våg 6 lanserad"
+  "senast_uppdaterad": "2026-07-12 ~09:05 UTC — Våg 6 gav 48 nya, förlängning 6b lanseras"
 }
