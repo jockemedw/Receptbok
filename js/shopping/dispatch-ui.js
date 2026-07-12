@@ -27,6 +27,7 @@ export async function initDispatchUI() {
 }
 
 export function openDispatchConfirm() {
+  if (window._opBusy) return;   // dispatch pågår redan — hindra ny bekräftelse (F078)
   const items = window._shopRecipeItems || {};
   const recipeCount = Object.values(items).reduce((sum, arr) => sum + (arr?.length || 0), 0);
   const manualCount = (window._shopManualItems || []).length;
@@ -49,6 +50,10 @@ export function openDispatchConfirm() {
 }
 
 export async function runDispatch() {
+  if (window._opBusy) return;   // spärr mot dubbel dispatch (F078)
+  window._opBusy = true;
+  const mainBtn = document.getElementById("dispatchToWillysBtn");
+  if (mainBtn) mainBtn.disabled = true;
   const runBtn = document.getElementById("dispatchRunBtn");
   if (runBtn) { runBtn.disabled = true; runBtn.textContent = "Skickar…"; }
   showResult(`
@@ -76,6 +81,8 @@ export async function runDispatch() {
     `);
   } finally {
     clearTimeout(timeoutId);
+    window._opBusy = false;
+    if (mainBtn) mainBtn.disabled = false;
   }
 }
 
