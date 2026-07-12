@@ -52,6 +52,7 @@ export async function openPrisoptimera() {
     </div>`;
   document.body.appendChild(overlay);
   document.body.style.overflow = 'hidden';
+  window.pushSheetHistory?.();   // F196: Android/PWA-bakåtknapp ska stänga overlayn
 
   _sel.clear();
   try {
@@ -67,8 +68,10 @@ export async function openPrisoptimera() {
 }
 
 export function closePrisoptimera() {
+  const wasOpen = !!document.querySelector('.po-overlay');
   document.querySelectorAll('.po-overlay').forEach((o) => o.remove());
   document.body.style.overflow = '';
+  if (wasOpen) window.popSheetHistory?.();
 }
 
 // ── Steg 1: reor per ingrediens ───────────────────────────────────────────────
@@ -94,8 +97,12 @@ function renderStep1() {
         return `
         <div class="po-grp${selected ? ' sel' : ''}" data-i="${i}">
           <div class="po-grp-head">
-            <div class="po-check" onclick="poToggleGroup(${i}, event)" role="checkbox" aria-checked="${selected}" tabindex="0">${CHECK}</div>
-            <div class="po-grp-main" onclick="poToggleOpen(${i})">
+            <div class="po-check" onclick="poToggleGroup(${i}, event)"
+                 onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();poToggleGroup(${i}, event)}"
+                 role="checkbox" aria-checked="${selected}" tabindex="0">${CHECK}</div>
+            <div class="po-grp-main" onclick="poToggleOpen(${i})"
+                 onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();poToggleOpen(${i})}"
+                 role="button" tabindex="0" aria-expanded="false">
               <div class="po-grp-name">${escapeHtml(cap(g.canon))}</div>
               <div class="po-grp-sub">${g.count} erbjudande${g.count > 1 ? 'n' : ''} · bästa spar ${fmtKr(g.bestSaving)}</div>
             </div>
@@ -124,7 +131,9 @@ function renderStep1() {
 
 export function poToggleOpen(i) {
   const g = document.querySelector(`.po-grp[data-i="${i}"]`);
-  if (g) g.classList.toggle('open');
+  if (!g) return;
+  const open = g.classList.toggle('open');
+  g.querySelector('.po-grp-main')?.setAttribute('aria-expanded', String(open));
 }
 export function poToggleGroup(i, ev) {
   if (ev) ev.stopPropagation();
@@ -266,6 +275,23 @@ export function poPickDay(recipeId) {
 export async function poConfirmDay(recipeId, date, btnEl) {
   const cand = _suggestions.find((c) => c.recipeId === recipeId);
   if (!cand || !date) return;
+
+  // F195: byte på en bekräftad plan bygger om HELA inköpslistan på servern
+  // (api/replace-recipe.js) och nollställer alla redan avbockade
+  // recept-varor. Samma guard som deluxe-vyns direkta receptbyte
+  // (plan-viewer-deluxe.js: `!window.planConfirmed`) — varna innan bytet.
+  const isConfirmed = !!(window._lastPlan?.confirmedAt || window.planConfirmed);
+  if (isConfirmed) {
+    const ok = await window.confirmDialog?.({
+      title: 'Matsedeln är bekräftad',
+      message: 'Matsedeln är bekräftad — byter du recept görs inköpslistan om och redan bockade varor nollställs. Fortsätt?',
+      confirmLabel: 'Byt recept',
+      cancelLabel: 'Avbryt',
+      danger: true,
+    });
+    if (!ok) return;
+  }
+
   btnEl.disabled = true;
   btnEl.classList.add('is-loading');
   try {

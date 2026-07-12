@@ -38,6 +38,16 @@ export function createCartClient({ fetchImpl = fetch, cookies, csrf }) {
     return { ok: res.ok, status: res.status };
   }
 
+  // qty är alltid 1 per produktkod (receptet förbrukar en enhet, oavsett
+  // Willys köpvillkor). F292: för flerköpserbjudanden ("2 för X",
+  // qualifyingCount > 1) uppfylls därför INTE kampanjvillkoret av dispatchen
+  // — reapriset utlöses inte i Willys-kassan även om planen visade en
+  // besparing. Det är därför normalizeOffers (api/willys-offers.js) nu
+  // exponerar en äkta STYCKbesparing (savingsAmount / qualifyingCount) i
+  // stället för hela flerköpsbesparingen, så den siffra vi visar/matchar på
+  // aldrig är större än vad EN enhet (som är vad vi faktiskt lägger i
+  // korgen) ger. Att skala qty till qualifyingCount är ett medvetet
+  // designval som inte är taget här.
   async function addProducts(codes) {
     const body = JSON.stringify({
       products: codes.map(code => ({

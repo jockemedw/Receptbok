@@ -4,6 +4,21 @@ Sessioner 8–126. Senaste sessionen ligger i `docs/status.md`. Full git-histori
 
 ---
 
+**Session 127 — Auditens Batch 1 KLAR: error-koll-svepet (P0-1/F089 + hela Tema A).**
+
+Joakim: "Kör hela batch 0" → tolkat som Batch 1 (listan börjar där; ingen Batch 0 finns). Backend-only, datamuterande endpoints härdats — hela testsviten körd (alla 12 testfiler gröna, inkl. plan-orchestration/day-ops).
+
+**Fixat (mönster: destrukturera `{ data, error }` + kasta → handler.js svarar med begripligt svenskt fel i stället för tyst 200):**
+- **F089 (P0)** `api/generate.js` — custom-day-guardens läsning kastar nu vid fel; ett transient läsfel kan inte längre ge tom `customDates` och låta UPSERT:en skriva över familjens egna dagar (invariant #1-skyddet håller även vid DB-hicka).
+- **F013/F221** `api/generate.js` — `fetchExistingShoppingList` kastar vid läsfel i stället för att returnera null ("ingen lista") → manuella varor + bockar tappas inte tyst vid regenerering.
+- **F006/F011/F012** `api/confirm.js` — receptläsningen (tom lista-scenariot), manuella varor/bockar-överföringen och `confirmed_at`-skrivningen felkollas; confirmed_at-felet får eget besked ("Inköpslistan skapades, men planen kunde inte märkas som bekräftad — prova att bekräfta igen"). Bonus: plans-/mealDays-läsningarna felkollas också (gav förut vilseledande 400).
+- **F005/F007** `api/replace-recipe.js` — bytets skrivningar kastar vid fel (inget falskt 200); listombyggnadens läsning kastar med "Receptet byttes, men inköpslistan kunde inte byggas om…" i stället för att ersätta aktiva listan med en tom.
+- **F313** `api/swap-days.js` — plan-gränsernas persist-fel kastar ("Bytet sparades, men veckans datumspann kunde inte uppdateras — ladda om sidan") i stället för console.error + svar som divergerar från DB.
+
+Avbockat i `docs/qc-night/audit-atgardslista-2026-07.md` (Batch 1 ✅). Ingen frontend-ändring → ingen versionsbump. **Nästa:** Batch 2 är DDL och väntar Joakims OK; annars Batch 3 (bockar & list-id — störst vardagsvinst).
+
+---
+
 **Session 126 — Nattaudit: heltäckande bugg- & UX-granskning av hela repot (rapport-only).**
 
 Joakims beställning: "hitta ALLA buggar och UX-fel, kör hela natten, rapport — inga fixar". Kördes autonomt över natten (usage-pauser hanterade via väktar-routine som återupptog arbetet).

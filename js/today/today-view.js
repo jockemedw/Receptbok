@@ -10,14 +10,17 @@
 // Re-render: vi wrappar renderWeeklyPlanData + loadWeeklyPlan + switchTab (samma
 // synk-mönster som deluxe). Importeras EFTER deluxe → wrappningen ligger ytterst.
 
-import { fmtIso, PROTEIN_COLOR, isoWeekNumber, escapeHtml, weekStartOf, addDaysIso } from '../utils.js';
+import { fmtIso, PROTEIN_COLOR, isoWeekNumber, escapeHtml, weekStartOf, addDaysIso, jsStringAttr } from '../utils.js';
+import { DB_RESTING_MESSAGE } from '../supabase-client.js';
 
 const MONTH_NAMES_LONG = ['januari', 'februari', 'mars', 'april', 'maj', 'juni', 'juli', 'augusti', 'september', 'oktober', 'november', 'december'];
 const PROTEIN_LABEL = { fisk: 'Fisk', kyckling: 'Kyckling', kött: 'Kött', fläsk: 'Fläsk', vegetarisk: 'Vegetariskt' };
 const TYPE_TAGS = { soppa: 'Soppa', pasta: 'Pasta', wok: 'Wok', ugn: 'Ugn', sallad: 'Sallad', gryta: 'Gryta', ramen: 'Ramen' };
 
 const esc = escapeHtml;
-function attr(s) { return String(s == null ? '' : s).replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
+// F212: lokal escaper missade backslash (lagrad XSS via recepttitel) — använd
+// utils.jsStringAttr (escapar backslash FÖRST, sedan ' och &<>").
+const attr = jsStringAttr;
 function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 
 const I = {
@@ -276,6 +279,23 @@ function loadingHtml() {
   return `<div class="today-loading"><span class="today-loading-spin">⟳</span><p>Laddar…</p></div>`;
 }
 
+// F162: pausad free-tier-databas (Session 106) gav bara besked inne i den
+// dolda Recept-fliken — Idag (startfliken) visade i stället vilseledande
+// "Ingen matsedel ännu". window._dbResting sätts av app.js:init() vid boot.
+function dbRestingHtml() {
+  return `
+    <article class="today-tonight today-tonight-empty">
+      <div class="today-tonight-body">
+        <span class="today-hero-icon">⚠️</span>
+        <h1 class="today-tonight-title">Appen har vilat</h1>
+        <p class="today-hero-note">${esc(DB_RESTING_MESSAGE)}</p>
+        <div class="today-tonight-actions">
+          <button type="button" class="today-btn today-btn-primary" onclick="location.reload()">Prova igen</button>
+        </div>
+      </div>
+    </article>`;
+}
+
 function noPlanHtml() {
   return `
     <article class="today-tonight today-tonight-empty">
@@ -302,6 +322,7 @@ export function renderTodayView() {
   const hadFocus = prevInput && document.activeElement === prevInput;
 
   if (!window._todayReady) { host.innerHTML = loadingHtml(); return; }
+  if (window._dbResting) { host.innerHTML = dbRestingHtml(); return; }
 
   const timeline = window._timelineByDate || {};
   const hasPlan = Object.values(timeline).some(d => d.recipeId || d.isCustom || d.blocked);
@@ -354,14 +375,21 @@ export function renderTodayView() {
   }
 }
 
-// Snabbt till listan — återanvänder addManualItem exakt som dag-sheeten
-// (fungerar innan inköpsfliken öppnats: ladda listan först vid behov).
+// Snabbt till listan — återanvänder addManualItem exakt som dag-sheeten.
+// F057: laddar INTE bara för att window._shopListId redan är satt — ett satt
+// värde kan peka på en avaktiverad lista (recept-byte/ny matsedel genererad
+// på en annan enhet utan att Handla-fliken besökts sen dess). Den faktiska
+// färskhetskontrollen sitter numera i ensureActiveShoppingList
+// (js/shopping/shopping-list.js), som addManualItem alltid går via — det är
+// skyddet mot att skriva till fel lista. Laddningen här är bara en
+// UI-bekvämlighet för allra första besöket (fyller window._shopManualItems
+// innan addManualItems positionsräkning).
 window.todayAddItem = async function () {
   const input = document.getElementById('todayAddInput');
   const item = input?.value.trim();
   if (!item) { input?.focus(); return; }
   try {
-    if (!window._shopListId && window.loadShoppingTab) await window.loadShoppingTab();
+    if (!window._shopManualItems && window.loadShoppingTab) await window.loadShoppingTab();
   } catch { /* addManualItem ger begripligt fel nedan */ }
   await window.addManualItem('todayAddInput', 'todayAddBtn');
   if (input && input.value === '') {

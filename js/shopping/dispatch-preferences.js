@@ -26,6 +26,12 @@ async function loadPrefs() {
 }
 
 function savePrefs() {
+  if (!prefsLoaded) {
+    // Preferenser kunde inte läsas in (F077) — spara ALDRIG över okänt innehåll.
+    const err = document.getElementById("prefsError");
+    if (err) { err.textContent = "Kunde inte läsa in sparade preferenser — den här ändringen sparas inte. Ladda om sidan och försök igen."; err.style.display = ""; }
+    return;
+  }
   clearTimeout(_savePrefTimer);
   _savePrefTimer = setTimeout(async () => {
     try {
@@ -46,12 +52,23 @@ function getShoppingCategories() {
   return Object.keys(items).filter((cat) => items[cat]?.length > 0);
 }
 
+// Speglar isPantryName/pantryKey i shopping-list.js (F076) — inte exponerad på
+// window, så logiken hålls i synk lokalt här. "Har hemma"-varor ska aldrig in
+// i AI-inköpsprompten, precis som de aldrig hamnar i "Kopiera hela listan".
+function pantryKey(name) {
+  return String(name || "").replace(/\s*\([^)]*\)\s*$/, "").trim().toLowerCase();
+}
+
+function isPantryName(name) {
+  return window._pantrySupported && window._pantryItems?.has(pantryKey(name));
+}
+
 function getUncheckedItems() {
   const items = window._shopRecipeItems || {};
   const checked = window._checkedItems || {};
   const result = {};
   for (const [cat, list] of Object.entries(items)) {
-    const unchecked = list.filter((_, idx) => !checked[`recipe::${cat}::${idx}`]);
+    const unchecked = list.filter((item, idx) => !checked[`recipe::${cat}::${idx}`] && !isPantryName(item));
     if (unchecked.length) result[cat] = unchecked;
   }
   return result;
@@ -60,7 +77,7 @@ function getUncheckedItems() {
 function getUncheckedManualItems() {
   const manual = window._shopManualItems || [];
   const checked = window._checkedItems || {};
-  return manual.filter((item) => !checked[`manual::${item}`]);
+  return manual.filter((item) => !checked[`manual::${item}`] && !isPantryName(item));
 }
 
 function renderBrandPills() {

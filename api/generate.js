@@ -115,8 +115,20 @@ async function fetchExistingShoppingList(householdId) {
   return { id: list.id, manualItems, checkedItems };
 }
 
-// Arkiverar plan-dagar som ligger före newStartDate i plan_archives,
-// sedan deaktiveras den gamla planen.
+// Arkiverar ALLA kvarvarande dagar på den gamla planen i plan_archives, sedan
+// deaktiveras den gamla planen.
+//
+// F090 (QC-natt): SELECT:en filtrerade tidigare på `date < newStartDate`, men
+// DELETE:en nedan tar bort HELA plan_id oavsett datum → dagar efter nya planens
+// slutdatum (en kortare/närmare regenerering) arkiverades aldrig men raderades
+// ändå, tyst dataförlust. Fix: SELECT:en filtrerar inte längre på datum alls —
+// savePlanToSupabase:s UPSERT (household_id,date) körs FÖRE detta anrop och har
+// redan flyttat över plan_id till den nya planen för varje dag som skrivs över,
+// så alla rader som fortfarande har oldPlan.id här är per definition dagar som
+// INTE täcks av nya planen (vare sig före eller efter dess spann) — exakt de
+// dagar som ska arkiveras innan de raderas.
+// newStartDate-parametern är kvar oanvänd i signaturen (i stället för att tas
+// bort) så anropsställena (activatePlanAtomic, tester) inte behöver ändras.
 export async function archiveOldPlan(newStartDate, householdId, database = db) {
   const { data: plans } = await database
     .from("weekly_plans")
@@ -131,7 +143,6 @@ export async function archiveOldPlan(newStartDate, householdId, database = db) {
     .from("meal_days")
     .select("date, recipe_id, recipe_title_snapshot, saving")
     .eq("plan_id", oldPlan.id)
-    .lt("date", newStartDate)
     .not("recipe_id", "is", null)
     .order("date");
 
@@ -411,6 +422,23 @@ export default createSupabaseHandler(async (req, res) => {
   // inget att generera — begripligt fel i stället för en tom plan/krasch.
   if (activeDays.length === 0) {
     return res.status(400).json({ error: "Alla dagar i intervallet är redan planerade eller blockerade — inget att generera." });
+  }
+
+  // F295: om proteintoggeln lämnar poolen helt vegetarisk (t.ex. "endast
+  // Vegetarisk" ikryssad) kastar select-recipes.js's pick() på varje dag som
+  // varken är en Ture- eller vegetarisk dag — select-recipes.js:89 (vegOk)
+  // kräver protein!=="vegetarisk" på just de dagarna, i ALLA loopar (även
+  // sista utvägen). Räkna fram samma dagfördelning som selectRecipes gör
+  // (ture-dagar först, sedan veg-dagar av det som blir kvar) och stoppa här
+  // med ett begripligt svenskt fel i stället för att låta kraschen nå
+  // användaren som ett vagt 500.
+  const nTureDays = Math.min(constraints.ture_days, activeDays.length);
+  const nVegDays = Math.min(constraints.vegetarian_days, activeDays.length - nTureDays);
+  const plainDaysNeeded = activeDays.length - nTureDays - nVegDays;
+  if (plainDaysNeeded > 0 && !filtered.some((r) => r.protein !== "vegetarisk")) {
+    return res.status(400).json({
+      error: "Bara vegetariska recept är valda, men inte alla dagar är vegetariska eller Ture-dagar. Välj minst ett kött- eller fiskprotein, eller höj antalet vegetariska dagar så det täcker hela intervallet.",
+    });
   }
 
   let savingsById = null;

@@ -364,7 +364,7 @@ async function fetchShoppingListFromSupabase() {
 
   const { data: items } = await db
     .from("shopping_items")
-    .select("category, name, source, position")
+    .select("category, name, source, position, checked")
     .eq("list_id", lists[0].id)
     .order("position");
 
@@ -372,6 +372,7 @@ async function fetchShoppingListFromSupabase() {
   const manualItems = [];
   for (const item of (items || [])) {
     if (pantry.has(pantryKeyFromName(item.name))) continue;
+    if (item.checked === true) continue;
     if (item.source === "recipe") {
       if (!recipeItems[item.category]) recipeItems[item.category] = [];
       recipeItems[item.category].push(item.name);

@@ -179,7 +179,10 @@ assertEq(normalizeName("rostade nötter/frön"), "nötter", "normalize: 'rostade
 assertEq(normalizeName("vispgrädde"), "grädde", "normalize: vispgrädde → grädde");
 assertEq(normalizeName("laxfiléer"), "lax", "normalize: laxfiléer → lax");
 assertEq(normalizeName("tonfisk i vatten"), "tonfisk", "normalize: 'tonfisk i vatten' → tonfisk via n-gram");
-assertEq(normalizeName("krossade tomater"), "tomat", "normalize: krossade tomater → tomat");
+// F307 (audit v7): krossade tomater (konserv) är INTE samma vara som färsk tomat
+// — self-canon förhindrar felaktig merge med färska tomater på inköpslistan.
+assertEq(normalizeName("krossade tomater"), "krossade tomater", "normalize: krossade tomater → egen canon (F307, inte 'tomat')");
+assertEq(normalizeName("passerade tomater"), "passerade tomater", "normalize: passerade tomater → egen canon (F307)");
 assertEq(normalizeName("morötter"), "morot", "normalize: morötter → morot");
 assertEq(normalizeName("citroner"), "citron", "normalize: citroner → citron (plural)");
 

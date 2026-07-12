@@ -2,7 +2,7 @@
 // Läser state: RECIPES, planConfirmed, isSnapping, scrollUpAccum
 // Skriver state: planConfirmed, isSnapping, scrollUpAccum
 
-import { fmtIso, fmtShort, PROTEIN_COLOR, getHolidayName, isoWeekNumber, escapeHtml } from '../utils.js';
+import { fmtIso, fmtShort, PROTEIN_COLOR, getHolidayName, isoWeekNumber, escapeHtml, jsStringAttr } from '../utils.js';
 
 const ICON_COIN = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 7.5v9 M9.5 9.7c.6-.7 1.5-1 2.5-1s2 .3 2.4 1c.5.8 0 1.7-1 2-.7.2-2.7.3-3.4.7-.9.4-1.4 1.3-.9 2.1.5.7 1.6 1 2.5 1s1.9-.3 2.5-1"/></svg>';
 const ICON_POT = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13c0-3.5 3.5-6 8-6s8 2.5 8 6"/><path d="M3 13h18"/><path d="M5.5 13v2c0 1.5 1 2.5 2.5 2.5h8c1.5 0 2.5-1 2.5-2.5v-2"/><path d="M11 4.5c0-.8.5-1.5 1-1.5s1 .7 1 1.5"/></svg>';
@@ -19,17 +19,42 @@ function unsubscribeMealDays() {
   }
 }
 
+// F231: ett meal_days-event som kommer in under en interaktion (byt-läge,
+// deluxe-vyns byt/flytta-läge) eller vårt eget 4s-ekofönster fick tidigare
+// bara kastas — ingen uppskjuten omhämtning schemalades, så vyn blev stale
+// tills en helt orelaterad ändring råkade trigga en ny omladdning. Vi
+// markerar nu planen som "stale" i stället och hämtar om så snart läget
+// avslutas (se exitReplaceMode/exitCustomPickMode och switchTab-städningen
+// nedan) eller ekofönstret löper ut.
+function markPlanStale() {
+  window._planStale = true;
+}
+
+function reloadIfStale() {
+  if (!window._planStale) return;
+  window._planStale = false;
+  window.loadWeeklyPlan();
+}
+
 function subscribeMealDays(householdId) {
   if (_planChannel) return; // redan prenumererar
   _planChannel = window.db
     .channel(`meal_days:${householdId}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'meal_days', filter: `household_id=eq.${householdId}` }, () => {
-      // Ladda inte om om användaren är mitt i en interaktion
-      if (window.replaceMode || window.customPickMode) return;
-      if (window._dlxSwap || window._dlxMove) return;   // premiumvyns byt/flytta-läge
+      // Ladda inte om direkt om användaren är mitt i en interaktion — men
+      // tappa inte eventet: markera planen som stale (F231).
+      if (window.replaceMode || window.customPickMode) { markPlanStale(); return; }
+      if (window._dlxSwap || window._dlxMove) { markPlanStale(); return; }   // premiumvyns byt/flytta-läge
       // Eko-dämpning: våra egna skrivningar har redan uppdaterat vyn från
       // API-svaret — hoppa över omhämtningen som annars orsakar ett blink.
-      if (window._planMutateUntil && Date.now() < window._planMutateUntil) return;
+      // Men fönstret är tidsbaserat och dämpar därför även partnerns
+      // samtidiga skrivningar — schemalägg en uppskjuten omhämtning när
+      // fönstret löper ut ifall eventet faktiskt var partnerns.
+      if (window._planMutateUntil && Date.now() < window._planMutateUntil) {
+        markPlanStale();
+        setTimeout(reloadIfStale, (window._planMutateUntil - Date.now()) + 50);
+        return;
+      }
       window.loadWeeklyPlan();
     })
     .subscribe();
@@ -255,6 +280,7 @@ export function enterReplaceMode(date, dayName) {
 export function exitReplaceMode() {
   window.replaceMode = null;
   document.getElementById('receptView').classList.remove('replace-mode');
+  reloadIfStale();   // F231: hämta om ifall vi missade ett event under läget
 }
 
 export async function selectRecipeForDay(event, recipeId, title) {
@@ -321,6 +347,7 @@ export function enterCustomPickMode(dateIso, dayName) {
 export function exitCustomPickMode() {
   window.customPickMode = null;
   document.getElementById('receptView').classList.remove('custom-pick-mode');
+  reloadIfStale();   // F231: hämta om ifall vi missade ett event under läget
 }
 
 export async function selectRecipeForCustomDay(event, recipeId, title) {
@@ -347,6 +374,11 @@ export async function selectRecipeForCustomDay(event, recipeId, title) {
     } else if (!row) {
       ({ error: dbErr } = await window.db.from('meal_days')
         .insert({ household_id: householdId, date, plan_id: null, recipe_id: recipeId, recipe_title_snapshot: title, custom_note: existing.note || null }));
+    } else {
+      // Dagen tillhör nu en aktiv plan (t.ex. genererad från en annan enhet
+      // medan sheeten var öppen) — skriv aldrig över plan-dagar (invariant #1).
+      // Utan denna gren föll koden tyst igenom till "sparat"-vägen (F042).
+      dbErr = new Error('Dagen ingår nu i en matsedel — kunde inte spara.');
     }
     if (dbErr) throw dbErr;
     const updatedEntries = { ...(window._customDays?.entries || {}), [date]: { note: existing.note || '', recipeId, recipeTitle: title } };
@@ -766,7 +798,9 @@ export function customDayEditorHtml(dateIso, dayName) {
   const todayIso = fmtIso(new Date());
   const isPastDay = dateIso < todayIso;
 
-  const escDayName = (dayName || '').replace(/'/g, "\\'");
+  // F212: gammal escaper missade backslash (lagrad XSS) — jsStringAttr escapar
+  // backslash FÖRST, sedan ' och &<>".
+  const escDayName = jsStringAttr(dayName || '');
   const dateLabel = fmtShort(dateIso);
   const noteValue = note.replace(/"/g, '&quot;');
 
@@ -817,11 +851,12 @@ export function customDayEditorHtml(dateIso, dayName) {
 async function postCustomDays(action, dates, note) {
   const householdId = await window.getHouseholdId();
   const entries = { ...(window._customDays?.entries || {}) };
+  const collided = [];   // F043: datum som kolliderade med en plan-dag — signalera till anroparen
   if (action === 'set') {
     await Promise.all(dates.map(async (date) => {
       const { data: row } = await window.db
         .from('meal_days').select('plan_id').eq('household_id', householdId).eq('date', date).maybeSingle();
-      if (row && row.plan_id != null) return; // aldrig skriv över plan-dagar
+      if (row && row.plan_id != null) { collided.push(date); return; } // aldrig skriv över plan-dagar
       let dbErr;
       if (row) {
         ({ error: dbErr } = await window.db.from('meal_days')
@@ -842,13 +877,25 @@ async function postCustomDays(action, dates, note) {
     }));
   }
   window._customDays = { entries };
+  if (collided.length) {
+    // Övriga (icke-kolliderade) datum i batchen är sparade ovan — men
+    // anroparen (saveCustomDay/convertBlockedToCustom) måste få veta att
+    // minst ett datum tyst hoppades över, så en svensk felruta kan visas
+    // i stället för att låtsas att allt sparades (F043).
+    throw new Error('Dagen ingår i en matsedel — noteringen sparades inte.');
+  }
 }
 
 export async function saveCustomDay(dateIso) {
   if (window._opBusy) return;   // delad spärr med premiumvyn (backlog #10)
-  window._opBusy = true;
   const input = document.getElementById('customDayNote');
-  const note = input ? input.value : '';
+  const note = (input?.value || '').trim();
+  const hasExisting = !!(window._customDays?.entries || {})[dateIso];
+  // Tomt fält på en dag som ännu inte är egen-planering → gör inget (speglar
+  // convertBlockedToCustom). Annars skapades en innehållslös custom-dag som
+  // genereringen sedan permanent hoppar över (F255).
+  if (!note && !hasExisting) return;
+  window._opBusy = true;
   const btn = document.querySelector('.custom-note-save');
   if (btn) { btn.disabled = true; btn.textContent = 'Sparar…'; }
   try {
@@ -899,6 +946,34 @@ export async function clearCustomDay(dateIso) {
     window._opBusy = false;
   }
 }
+
+// ── Städa övergivna interaktionslägen vid flikbyte (F259) ───────────────────
+// enterReplaceMode/enterCustomPickMode och deluxe-vyns byt/flytta-läge
+// (_dlxSwap/_dlxMove) stänger av realtime-plansynken (subscribeMealDays ovan)
+// så länge de hänger kvar. Ett flikbyte utan uttryckligt Avbryt lämnade
+// tidigare läget beväpnat resten av sessionen. Wrappar window.switchTab
+// (samma mönster som today-view.js/plan-viewer-deluxe.js) så städningen sker
+// centralt oavsett vilken flik användaren hoppar till.
+function installSwitchTabCleanup() {
+  const origSwitch = window.switchTab;
+  if (typeof origSwitch !== 'function' || origSwitch.__planViewerWrapped) return;
+  const wrappedSwitch = function (tab) {
+    const r = origSwitch.apply(this, arguments);
+    if (tab !== 'recept') {
+      if (window.replaceMode) exitReplaceMode();
+      if (window.customPickMode) exitCustomPickMode();
+    }
+    if (tab !== 'vecka') {
+      window.dlxCancelSwap?.();
+      window.dlxCancelMove?.();
+    }
+    reloadIfStale();   // F231: fånga upp ev. missat event från städningen ovan
+    return r;
+  };
+  wrappedSwitch.__planViewerWrapped = true;
+  window.switchTab = wrappedSwitch;
+}
+installSwitchTabCleanup();
 
 window.enterReplaceMode    = enterReplaceMode;
 window.exitReplaceMode     = exitReplaceMode;

@@ -202,6 +202,12 @@ function renderDayToggles(days) {
   if (!container) return;
   if (!days.length) { container.innerHTML = ''; container.style.display = 'none'; return; }
 
+  // F051: läs av vilka datum som redan var blockerade INNAN vi bygger om hela
+  // listan — dagobjekten (days) bär aldrig ett 'blocked'-fält, så utan detta
+  // steg tappar varje ombyggnad (t.ex. den som toggleDayBlock() triggar direkt
+  // efter varje klick) all blockerad-markering.
+  const blockedDates = new Set(getBlockedDates());
+
   container.style.display = '';
   container.innerHTML = '<p class="day-toggles-hint">Tryck på en dag för att blockera den</p>' +
     days.map(d => {
@@ -210,7 +216,7 @@ function renderDayToggles(days) {
         ? `<span class="holiday-dot" title="${holiday}" aria-label="${holiday}"></span>`
         : '';
       const isWeekend = d.abbr === 'Lör' || d.abbr === 'Sön';
-      const cls = 'day-toggle-chip' + (isWeekend ? ' weekend' : '') + (holiday ? ' holiday' : '');
+      const cls = 'day-toggle-chip' + (isWeekend ? ' weekend' : '') + (holiday ? ' holiday' : '') + (blockedDates.has(d.date) ? ' blocked' : '');
       return `<button class="${cls}" data-date="${d.date}" onclick="toggleDayBlock(this)"
         ${holiday ? `title="${holiday}"` : ''}>
         <span class="day-toggle-abbr">${d.abbr}</span>
@@ -244,6 +250,21 @@ export async function generatePlan() {
   }
   const diff = daysBetween(startVal, endVal);
   if (diff < 1 || diff > 15) return;
+
+  // F194 (QC-natt): regenerering skriver rakt över den aktiva planens
+  // receptval — utan varning även om planen redan är BEKRÄFTAD (och familjen
+  // kanske redan handlat). Fråga innan vi kör vidare, samma mönster som
+  // discardPlan/prisoptimera redan använder för planConfirmed.
+  const isConfirmed = !!(window._lastPlan?.confirmedAt || window.planConfirmed);
+  if (isConfirmed) {
+    const ok = await window.confirmDialog({
+      title: 'Ersätt bekräftad matsedel?',
+      message: 'Du har en bekräftad matsedel — en ny plan ersätter den. Fortsätt?',
+      confirmLabel: 'Fortsätt',
+      danger: true,
+    });
+    if (!ok) return;
+  }
 
   // Rea-varning: Willys-kampanjer gäller oftast bara innevarande vecka.
   // Slutdatum mer än 7 dagar bort = hög risk att erbjudanden hunnit löpa ut

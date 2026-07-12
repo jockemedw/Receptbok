@@ -125,6 +125,24 @@ export function isBulkVolume(displayVolume) {
   return val * factor >= 1000;
 }
 
+// Tolkar en displayVolume-sträng ("2kg", "500g", "ca: 1.8kg") till kg. Delar
+// samma toleranta parsing som isBulkVolume (ca-prefix, komma-decimal), men
+// bryr sig bara om vikt-enheter (kg/g) — kr/kg-priser hör alltid ihop med en
+// vikt, aldrig volym. Returnerar null om strängen inte går att tolka.
+function parseWeightKg(displayVolume) {
+  if (!displayVolume) return null;
+  const s = String(displayVolume).toLowerCase().replace(/ca[:.]?\s*/g, "").replace(",", ".").trim();
+  const m = s.match(/([\d.]+)\s*(kg|g)\b/);
+  if (!m) return null;
+  const val = parseFloat(m[1]);
+  if (!Number.isFinite(val)) return null;
+  return m[2] === "kg" ? val : val / 1000;
+}
+
+function round2(n) {
+  return Math.round(n * 100) / 100;
+}
+
 export function normalizeOffers(results) {
   const offers = [];
   for (const item of results) {
@@ -132,10 +150,32 @@ export function normalizeOffers(results) {
     const promo = (item.potentialPromotions || []).find(isMatchablePromo);
     if (!promo) continue;
 
-    const regularPrice = typeof item.priceValue === "number" ? item.priceValue : null;
-    const promoPrice = typeof promo.price?.value === "number" ? promo.price.value : null;
-    const savingPerUnit = typeof item.savingsAmount === "number" ? item.savingsAmount : null;
+    let regularPrice = typeof item.priceValue === "number" ? item.priceValue : null;
+    let promoPrice = typeof promo.price?.value === "number" ? promo.price.value : null;
+    let savingPerUnit = typeof item.savingsAmount === "number" ? item.savingsAmount : null;
     if (regularPrice === null || promoPrice === null) continue;
+
+    // F290: Willys anger kr/kg-priser per kilo, inte per förpackning — att
+    // blanda in dem rakt av i en kedja som annars räknar kr/st (matchRecipe,
+    // "Sparat ca X kr") ger dimensionellt meningslösa summor. Räkna om till
+    // förpackningsnivå när vi kan tolka förpackningens vikt ur displayVolume.
+    const weightKg = item.priceUnit === "kr/kg" ? parseWeightKg(item.displayVolume) : null;
+    if (weightKg) {
+      regularPrice = round2(regularPrice * weightKg);
+      promoPrice = round2(promoPrice * weightKg);
+      if (savingPerUnit !== null) savingPerUnit = round2(savingPerUnit * weightKg);
+    }
+
+    // F292: qualifyingCount > 1 ("2 för X") betyder att savingsAmount är HELA
+    // besparingen över köpvillkoret, inte per styck/förpackning. matchRecipe
+    // (willys-matcher.js) tar savingPerUnit rakt av per receptets EN enhet —
+    // dela ned till äkta styckbesparing så visning/matchning inte överdriver
+    // med en faktor qualifyingCount. qualifyingCount/conditionLabel behålls
+    // oförändrade så UI:t fortfarande kan visa köpvillkoret ("2 för 30 kr").
+    const qualifyingCount = promo.qualifyingCount ?? 1;
+    if (qualifyingCount > 1 && savingPerUnit !== null) {
+      savingPerUnit = round2(savingPerUnit / qualifyingCount);
+    }
 
     offers.push({
       code: item.code,
@@ -147,7 +187,7 @@ export function normalizeOffers(results) {
       regularPrice,
       promoPrice,
       savingPerUnit,
-      qualifyingCount: promo.qualifyingCount ?? 1,
+      qualifyingCount,
       realMixAndMatch: !!promo.realMixAndMatch,
       conditionLabel: promo.conditionLabel || null,
       validUntil: promo.validUntil ? new Date(promo.validUntil).toISOString() : null,

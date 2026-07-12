@@ -17,8 +17,21 @@ function sortCategories(cats) {
   });
 }
 
+// Bock-sparning: bara faktiskt togglade rader flushas (F229/F244/F252/F230 —
+// tidigare skrevs HELA listans absoluta bock-status vid varje tryck, vilket
+// skrev över en samtidig bockning från partnern och triggade no-op-UPDATE:ar
+// på orörda rader). Samma _pendingChecks-mönster som js/lists/lists-view.js.
+const _pendingChecks = new Map(); // shopping_items.id → önskat checked-värde (debouncad batch)
+
 // ── Realtime-prenumeration för inköpsvaror ────────────────────────────────────
 let _shopChannel = null;
+// Household-scopad kanal (F038): fångar när AKTIV lista byts ut helt på en
+// annan enhet (nytt recept väljs / ny matsedel genereras) — _shopChannel ovan
+// är bunden till ett enskilt list-id och hör aldrig av sig om den listan
+// avaktiveras. shopping_lists har household_id, så den kan filtreras direkt
+// (till skillnad från shopping_items som saknar den kolumnen).
+let _shopListsChannel = null;
+let _shopListsHouseholdId = null;
 
 function unsubscribeShoppingItems() {
   if (_shopChannel) {
@@ -27,9 +40,51 @@ function unsubscribeShoppingItems() {
   }
 }
 
+function unsubscribeShoppingLists() {
+  if (_shopListsChannel) {
+    window.db.removeChannel(_shopListsChannel);
+    _shopListsChannel = null;
+    _shopListsHouseholdId = null;
+  }
+}
+
+// Håll koll på när hushållets aktiva inköpslista byts ut (t.ex. recept-byte
+// eller ny matsedel på en annan enhet) och ladda om Handla-fliken mot den nya
+// aktiva listan — annars fortsätter den här enheten tyst lyssna på en lista
+// som inte längre är aktiv (F038). Idempotent: prenumererar bara om
+// hushålls-id ändrats, så upprepade loadShoppingTab-anrop inte dubbelprenumererar.
+function subscribeShoppingLists(householdId) {
+  if (!householdId) return;
+  if (_shopListsChannel && _shopListsHouseholdId === householdId) return;
+  unsubscribeShoppingLists();
+  _shopListsHouseholdId = householdId;
+  _shopListsChannel = window.db
+    .channel(`shopping_lists:${householdId}`)
+    .on('postgres_changes',
+      { event: '*', schema: 'public', table: 'shopping_lists', filter: `household_id=eq.${householdId}` },
+      (payload) => {
+        const { new: newRow } = payload;
+        const currentId = window._shopListId;
+        const ownListDeactivated = currentId && newRow?.id === currentId && newRow.is_active === false;
+        const otherListActivated = newRow?.is_active === true && newRow.id !== currentId;
+        if (ownListDeactivated || otherListActivated) {
+          window._preserveChecked = false;
+          loadShoppingTab();
+        }
+      })
+    .subscribe();
+}
+
 function subscribeShoppingItems(listId) {
   unsubscribeShoppingItems();
   if (!listId) return;
+  // F252: en mobil i fickan suspenderas av OS:et och websocketen dör —
+  // supabase-js re-joinar kanalen vid uppvakning men spelar INTE upp missade
+  // events. Utan den här flaggan skulle lokal state kunna vara flera minuter
+  // gammal när nästa bockning flushas, och skriva över partnerns bockar under
+  // tiden. Hämta om hela listan vid en verklig återanslutning (inte vid den
+  // allra första SUBSCRIBED).
+  let sawDisconnect = false;
   _shopChannel = window.db
     .channel(`shopping_items:${listId}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'shopping_items', filter: `list_id=eq.${listId}` }, (payload) => {
@@ -66,13 +121,24 @@ function subscribeShoppingItems(listId) {
         loadShoppingTab();
       }
     })
-    .subscribe();
+    .subscribe((status) => {
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+        sawDisconnect = true;
+      } else if (status === 'SUBSCRIBED' && sawDisconnect) {
+        sawDisconnect = false;
+        window._preserveChecked = false;
+        loadShoppingTab();
+      }
+    });
 }
 
 // Rekonstruerar frontend-state från Supabase-rader.
-// Nycklar baseras på kompakt index (0..n) per kategori — matchar renderingens
-// index och håller bocknings-state rätt även efter att en vara tagits bort
-// (då blir det luckor i `position`-kolumnen i DB).
+// Receptvaror: nycklar baseras på kompakt index (0..n) per kategori — matchar
+// renderingens index och håller bocknings-state rätt även efter att en vara
+// tagits bort (då blir det luckor i `position`-kolumnen i DB).
+// Egna varor: namn-baserad nyckel (F035 — ett tidigare index-baserat schema
+// här matchade inte det namn-baserade schema toggleShopItem/renderingen
+// faktiskt skriver till, så egna varors bockar sparades aldrig).
 function buildShopState(list, items) {
   const recipeRows = {};   // kategori → rader
   const manualRows = [];
@@ -98,11 +164,20 @@ function buildShopState(list, items) {
 
   const manualSorted = manualRows.slice().sort((a, b) => a.position - b.position);
   const manualItems = manualSorted.map((row) => row.name);
-  manualSorted.forEach((row, idx) => {
-    const key = `manual::${idx}`;
+  manualSorted.forEach((row) => {
+    const key = `manual::${row.name}`;
     checkedItems[key] = row.checked === true;
     itemIds[key] = row.id;
   });
+
+  // Egna bockar som väntar på debouncad skrivning får inte "hoppa tillbaka"
+  // om en omladdning (t.ex. DELETE-eko eller flikbyte) hinner före flushen —
+  // samma skydd som lists-view.js:s refreshData.
+  if (_pendingChecks.size) {
+    for (const [key, id] of Object.entries(itemIds)) {
+      if (_pendingChecks.has(id)) checkedItems[key] = _pendingChecks.get(id);
+    }
+  }
 
   return { recipeItems, manualItems, checkedItems, itemIds };
 }
@@ -253,21 +328,21 @@ function applyRemovalById(id) {
     }
   }
 
+  // Egna varor: namn-baserad nyckel (F035) — ordningsoberoende, ingen
+  // omindexering behövs (till skillnad från receptvarorna ovan).
   const manualItems = [];
-  (window._shopManualItems || []).forEach((name, i) => {
-    const rowId = window._shopItemIds?.[`manual::${i}`];
+  (window._shopManualItems || []).forEach((name) => {
+    const key = `manual::${name}`;
+    const rowId = window._shopItemIds?.[key];
     if (rowId === id) { found = true; return; }
-    itemIds[`manual::${manualItems.length}`] = rowId;
     manualItems.push(name);
+    itemIds[key] = rowId;
+    if (window._checkedItems?.[key] !== undefined) checkedItems[key] = window._checkedItems[key];
   });
-  // Manuella bock-nycklar är textbaserade i renderingen — bevara dem
-  for (const name of manualItems) {
-    const tk = `manual::${name}`;
-    if (window._checkedItems?.[tk] !== undefined) checkedItems[tk] = window._checkedItems[tk];
-  }
 
   if (!found) return false;
 
+  _pendingChecks.delete(id);   // ingen väntande skrivning kvar för en borttagen rad
   window._checkedItems = checkedItems;
   window._shopItemIds  = itemIds;
   renderFullShoppingList(Object.keys(recipeItems).length ? recipeItems : null, manualItems);
@@ -313,27 +388,41 @@ export async function removeShopItem(key) {
   }
 }
 
+// Delta-flush (F229/F244/F252/F230): skriver BARA de rader som faktiskt
+// togglats sedan senaste flush (_pendingChecks), inte hela listans absoluta
+// bock-status. Tidigare skrev varje flush om samtliga rader i
+// window._shopItemIds → O(N) skrivningar/realtime-events per tryck, no-op-
+// UPDATE:ar på orörda manuella rader (som i sin tur triggade en full
+// window._preserveChecked=false-omladdning via realtime-handlern) och —
+// värst — skrev checked:false över en partners samtidiga bockning som ännu
+// inte hunnit synas lokalt. Samma mönster som js/lists/lists-view.js:
+// _pendingChecks (rad-id → önskat värde) fylls i toggleShopItem, flushas
+// grupperat true/false och töms här.
 export function scheduleCheckedSave() {
   clearTimeout(window._checkedSaveTimer);
-  window._checkedSaveTimer = setTimeout(async () => {
-    if (!window._shopItemIds) return;
-    const checkedIds   = [];
-    const uncheckedIds = [];
-    for (const [key, id] of Object.entries(window._shopItemIds)) {
-      if (window._checkedItems[key]) checkedIds.push(id);
-      else uncheckedIds.push(id);
+  window._checkedSaveTimer = setTimeout(flushPendingChecks, 600);
+}
+
+async function flushPendingChecks() {
+  if (!_pendingChecks.size) return;
+  const entries = [..._pendingChecks];
+  _pendingChecks.clear();
+  const checkedIds   = entries.filter(([, v]) => v).map(([id]) => id);
+  const uncheckedIds = entries.filter(([, v]) => !v).map(([id]) => id);
+  try {
+    const ps = [];
+    if (checkedIds.length)   ps.push(window.db.from('shopping_items').update({ checked: true  }).in('id', checkedIds));
+    if (uncheckedIds.length) ps.push(window.db.from('shopping_items').update({ checked: false }).in('id', uncheckedIds));
+    await Promise.all(ps);
+  } catch {
+    // Lägg tillbaka de misslyckade skrivningarna så nästa bockning (av
+    // valfri vara) försöker igen — men klobba inte en nyare växling som
+    // hunnit ske under den misslyckade förfrågan.
+    for (const [id, v] of entries) {
+      if (!_pendingChecks.has(id)) _pendingChecks.set(id, v);
     }
-    try {
-      const ps = [];
-      if (checkedIds.length)   ps.push(window.db.from('shopping_items').update({ checked: true  }).in('id', checkedIds));
-      if (uncheckedIds.length) ps.push(window.db.from('shopping_items').update({ checked: false }).in('id', uncheckedIds));
-      await Promise.all(ps);
-    } catch {
-      // Nästa bockning försöker igen, men säg till så en ensam bockning inte
-      // tappas tyst om appen stängs innan dess.
-      window.showToast?.('Kunde inte spara bockningen — kolla nätet och prova igen.', { type: 'error' });
-    }
-  }, 600);
+    window.showToast?.('Kunde inte spara bockningen — kolla nätet och prova igen.', { type: 'error' });
+  }
 }
 
 export function toggleShopItem(el, key) {
@@ -343,6 +432,8 @@ export function toggleShopItem(el, key) {
   window._checkedItems[key] = nowChecked;
   if (nowChecked) window._checkSeq[key] = window._checkSeqNext++;
   else delete window._checkSeq[key];
+  const id = window._shopItemIds?.[key];
+  if (id != null) _pendingChecks.set(id, nowChecked);
   if (window._handlaMode) {
     // handla-läge: den avbockade varan ska sjunka ner under strecket (eller
     // dyka upp igen om man avmarkerar) → rendera om hela listan.
@@ -472,6 +563,9 @@ export async function renameShopItem(inputEl) {
 }
 
 // Uppdaterar varans namn i in-memory-state. Returnerar true om den var manuell.
+// Egna varors nyckel är namn-baserad (F035) — själva namnbytet flyttar alltså
+// nyckeln i BÅDE _shopItemIds och _checkedItems (till skillnad från
+// receptvarornas indexbaserade nyckel, som inte påverkas av namnbyte).
 function updateNameInMemory(id, newName) {
   const key = Object.keys(window._shopItemIds || {}).find(k => window._shopItemIds[k] === id);
   if (!key) return false;
@@ -481,16 +575,19 @@ function updateNameInMemory(id, newName) {
     if (window._shopRecipeItems?.[cat]) window._shopRecipeItems[cat][idx] = newName;
     return false;
   }
-  const mm = key.match(/^manual::(\d+)$/);
-  if (mm) {
-    const idx = parseInt(mm[1], 10);
-    const oldName = window._shopManualItems?.[idx];
-    if (window._shopManualItems) window._shopManualItems[idx] = newName;
-    if (oldName != null && oldName !== newName) {
-      const oldK = `manual::${oldName}`, newK = `manual::${newName}`;
-      if (window._checkedItems?.[oldK] !== undefined) {
-        window._checkedItems[newK] = window._checkedItems[oldK];
-        delete window._checkedItems[oldK];
+  if (key.startsWith('manual::')) {
+    const oldName = key.slice('manual::'.length);
+    const idx = (window._shopManualItems || []).indexOf(oldName);
+    if (idx !== -1 && window._shopManualItems) window._shopManualItems[idx] = newName;
+    const newKey = `manual::${newName}`;
+    if (newKey !== key) {
+      if (window._shopItemIds) {
+        delete window._shopItemIds[key];
+        window._shopItemIds[newKey] = id;
+      }
+      if (window._checkedItems?.[key] !== undefined) {
+        window._checkedItems[newKey] = window._checkedItems[key];
+        delete window._checkedItems[key];
       }
     }
     return true;
@@ -562,7 +659,7 @@ function manualItemLi(idx, name) {
   const key     = `manual::${name}`;
   const pantry  = isPantryName(name);
   const checked = !pantry && (window._checkedItems[key] || false);
-  const rowId   = window._shopItemIds?.[`manual::${idx}`];
+  const rowId   = window._shopItemIds?.[key];   // namn-baserad (F035) — samma nyckel som ovan
   const handle  = `<button class="drag-handle" title="Dra för att byta ordning" aria-label="Dra för att byta ordning"
               onpointerdown="startManualDrag(event, this)" onclick="event.stopPropagation()">${ICON_DRAG}</button>`;
   return `<li class="shopping-item${checked ? ' checked' : ''}${pantry ? ' pantry' : ''}"
@@ -689,6 +786,10 @@ export async function loadShoppingTab() {
   document.getElementById('shopNoData').style.display   = 'none';
   try {
     const householdId = await window.getHouseholdId();
+    // F038: household-scopad kanal som upptäcker när AKTIV lista byts ut helt
+    // på en annan enhet — annars fortsätter shopping_items-kanalen (nedan,
+    // bunden till ett enskilt list-id) tyst lyssna på en avaktiverad lista.
+    subscribeShoppingLists(householdId);
     const [{ data: lists, error: listErr }] = await Promise.all([
       window.db
         .from('shopping_lists')
@@ -744,8 +845,27 @@ export async function loadShoppingTab() {
 // Hämtar den aktiva inköpslistan, eller skapar en tom om ingen finns (t.ex. innan
 // någon matsedel genererats). Återanvänder alltid en befintlig aktiv lista så att
 // vi aldrig får två aktiva rader. Rör inte veckoplaner.
+//
+// F036/F057: litar inte blint på cachat window._shopListId — verifierar att
+// det fortfarande pekar på en is_active-lista. Recept-byte/ny matsedel
+// avaktiverar den gamla listan och skapar en ny aktiv utan att skicka det nya
+// id:t till klienten, så ett gammalt cachat id kan peka på en övergiven lista
+// (nytillagd vara hamnar då osynlig, trots grön "tillagd"-bekräftelse).
 async function ensureActiveShoppingList() {
-  if (window._shopListId) return window._shopListId;
+  if (window._shopListId) {
+    try {
+      const { data: cached, error: checkErr } = await window.db
+        .from('shopping_lists')
+        .select('id, is_active')
+        .eq('id', window._shopListId)
+        .maybeSingle();
+      if (checkErr) return window._shopListId;   // nätfel — lita på cachen som förut
+      if (cached?.is_active) return window._shopListId;
+      window._shopListId = null;   // avaktiverad/borttagen — slå upp aktiv lista på nytt nedan
+    } catch {
+      return window._shopListId;
+    }
+  }
   const householdId = await window.getHouseholdId();
   const { data: existing } = await window.db
     .from('shopping_lists')
@@ -794,8 +914,7 @@ export async function addManualItem(inputId = 'manualItemInput', btnId = 'manual
 }
 
 export async function removeManualItem(item) {
-  const idx = (window._shopManualItems || []).indexOf(item);
-  const id = idx === -1 ? null : window._shopItemIds?.[`manual::${idx}`];
+  const id = window._shopItemIds?.[`manual::${item}`];   // namn-baserad (F035)
   if (!id) { window.showToast('Kunde inte ta bort varan — prova igen.', { type: 'error' }); return; }
   try {
     await deleteWithUndo(id);
@@ -881,25 +1000,24 @@ function endManualDrag() {
 // Skriver den nya ordningen för de VISADE egna varorna (kan vara en delmängd i
 // handla-läget) tillbaka på de slots de upptog, låter bockade/dolda varor ligga
 // kvar, och sparar en kontiguerlig `position`-ordning till Supabase.
+// _shopItemIds nyckel är namn-baserad (F035) och därmed ordningsoberoende —
+// till skillnad från tidigare (index-baserad) behöver mappningen inte
+// omindexeras här, bara läsas upp per nytt namn.
 async function commitManualOrder(shownOrderIdx) {
   const items = (window._shopManualItems || []).slice();
   if (!shownOrderIdx.length) { renderFullShoppingList(window._shopRecipeItems, items); return; }
-  const ids     = items.map((_, i) => window._shopItemIds?.[`manual::${i}`]);
   const newItems = items.slice();
-  const newIds   = ids.slice();
-  const slots    = shownOrderIdx.slice().sort((a, b) => a - b);
-  slots.forEach((slot, k) => {
-    const src = shownOrderIdx[k];
-    newItems[slot] = items[src];
-    newIds[slot]   = ids[src];
-  });
+  const slots = shownOrderIdx.slice().sort((a, b) => a - b);
+  slots.forEach((slot, k) => { newItems[slot] = items[shownOrderIdx[k]]; });
   window._shopManualItems = newItems;
-  if (window._shopItemIds) newItems.forEach((_, k) => { window._shopItemIds[`manual::${k}`] = newIds[k]; });
   renderFullShoppingList(window._shopRecipeItems, newItems);
 
   try {
-    const ps = newIds
-      .map((id, k) => id ? window.db.from('shopping_items').update({ position: k }).eq('id', id) : null)
+    const ps = newItems
+      .map((name, k) => {
+        const id = window._shopItemIds?.[`manual::${name}`];
+        return id ? window.db.from('shopping_items').update({ position: k }).eq('id', id) : null;
+      })
       .filter(Boolean);
     await Promise.all(ps);
   } catch {
@@ -929,6 +1047,7 @@ export async function clearShoppingList() {
       await window.db.from('shopping_lists').update({ is_active: false }).eq('id', listId);
     }
     unsubscribeShoppingItems();
+    _pendingChecks.clear();
     window._checkedItems = {};
     window._shopItemIds  = {};
     window._shopListId   = null;

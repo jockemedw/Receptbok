@@ -46,7 +46,9 @@ assertEq(normalizeName("liten purjolök"), "purjolök", "liten purjolök → pur
 assertEq(normalizeName("stora tortillas"), "tortilla", "stora tortillas → tortilla (plural)");
 assertEq(normalizeName("röda linser"), "linser", "röda linser → linser");
 assertEq(normalizeName("torkade linser"), "linser", "torkade linser → linser");
-assertEq(normalizeName("krossade tomater"), "tomat", "krossade tomater → tomat");
+// F307 (audit v7): krossade tomater (konserv) är en egen self-canon i NORMALIZATION_TABLE
+// numera (direktlookup, inte adjektiv-strip) — får inte mergas med färsk tomat.
+assertEq(normalizeName("krossade tomater"), "krossade tomater", "krossade tomater → egen canon (F307)");
 assertEq(normalizeName("stor morot"), "morot", "stor morot → morot");
 assertEq(normalizeName("sötpotatisar"), "sötpotatis", "sötpotatisar → sötpotatis");
 assertEq(normalizeName("några basilikablad"), "basilika", "några basilikablad → basilika");

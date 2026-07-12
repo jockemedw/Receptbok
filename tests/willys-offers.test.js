@@ -36,8 +36,12 @@ const RAW = [
     }],
   },
   // LOYALTY SubtotalOrderPromotion, threshold 0 — föll bort förut, ska nu med.
+  // F290: displayVolume ("ca: 1.8kg") är fältet normalizeOffers läser för att
+  // räkna om kr/kg-priser till förpackningsnivå (samma fält isBulkVolume redan
+  // konsumerade före F290) — sätts här precis som i det verkliga Willys-svaret.
   {
     code: "100966616_KG", name: "Oxfilé Hel Brasilien", productLine2: "NATURKÖTT, ca: 1.8kg",
+    displayVolume: "ca: 1.8kg",
     priceValue: 369.0, savingsAmount: 100.0, comparePrice: "369,00 kr", priceUnit: "kr/kg",
     potentialPromotions: [{
       promotionType: "SubtotalOrderPromotion", campaignType: "LOYALTY",
@@ -88,9 +92,12 @@ assertEq(byCode["100966616_KG"]?.loyalty, true, "Oxfilé (LOYALTY) → loyalty:t
 assertEq(byCode["200000001_ST"]?.loyalty, false, "Pasta (GENERAL) → loyalty:false");
 
 // 3. SubtotalOrderPromotion med threshold 0 kommer in med rätt priser/saving.
-assertEq(byCode["100966616_KG"]?.regularPrice, 369.0, "Oxfilé regularPrice = 369");
-assertEq(byCode["100966616_KG"]?.promoPrice, 269.0, "Oxfilé promoPrice = 269");
-assertEq(byCode["100966616_KG"]?.savingPerUnit, 100.0, "Oxfilé savingPerUnit = 100");
+// F290: kr/kg-priser räknas om till förpackningsnivå via displayVolume ("ca:
+// 1.8kg") så de inte blandas med kr/st-priser längre ned i kedjan — 369/269/100
+// kr/kg × 1.8 kg = 664.2/484.2/180 kr för hela förpackningen.
+assertEq(byCode["100966616_KG"]?.regularPrice, 664.2, "Oxfilé regularPrice = 369 kr/kg × 1.8kg = 664.2");
+assertEq(byCode["100966616_KG"]?.promoPrice, 484.2, "Oxfilé promoPrice = 269 kr/kg × 1.8kg = 484.2");
+assertEq(byCode["100966616_KG"]?.savingPerUnit, 180.0, "Oxfilé savingPerUnit = 100 kr/kg × 1.8kg = 180 (förpackningens verkliga besparing)");
 
 // 4. SubtotalOrderPromotion med threshold > 0 skippas (villkorad ordersumma).
 assertEq(byCode["300000002_ST"], undefined, "Kaffe (threshold 200) skippas");
