@@ -6,6 +6,7 @@ vid sessionstart eller när du behöver veta vad som är öppet. Arkiv: `docs/se
 
 <!-- DIGEST:START -->
 ## ▶ Nästa session — börja här
+- **NYTT (Session 128): AUDITENS BATCH 3–12 KLARA — 10 batchar fixade + mergade på en session (Sonnet-delegerat, Opus-orkestrerat).** ~45 P1-fynd åtgärdade: bock-delta (raderar inte partnerns bockar), parserfixar (soltorkade/krossade tomater, %-grädde, intervall — korpus-bevisade), plan-livscykel (arkivera alla dagar, blockera Byt-dag mot dåtid, confirmDialog före regenerering), realtime-klient (stale-flagga), Willys kr/kg-fix + flerköp, veg-only-preflight, dispatch-spärrar + skafferi + avbockat, import-förhandsvisning + abort, custom-dag-guards, **XSS-härdning (F212, exploit-verifierad)**, bakåtknapp, re-gate. Hela sviten grön genomgående; frontend styles v169/app v135/SW v82. **DEFERRAT (kräver din OK):** Batch 2 DDL (F287 realtime-publikation + F215 DROP backup-tabell — SQL redo i `db/migrations/`, classifiern blockerade körning mot live-DB) och Batch 5:s RPC-items F219/F232/F312. Kvar: Batch 13 P2-svep (235) + live-verifiering på mobil. Checklista: `docs/qc-night/audit-atgardslista-2026-07.md`.
 - **NYTT (Session 127): AUDITENS BATCH 1 KLAR — error-koll-svepet (P0-1/F089 + Tema A, 9 ställen).** Svalda Supabase-fel i `generate.js`/`confirm.js`/`replace-recipe.js`/`swap-days.js` kastar nu → invariant #1-skyddet håller vid DB-hicka, manuella varor/bockar tappas inte tyst, inga falska 200. Backend-only, hela sviten grön. Avbockat i åtgärdslistan. **Nästa batch:** 2 = DDL (väntar Joakims OK: F215 DROP/RLS:a backup-tabellen + F287 realtime-publikationen) eller 3 = bockar & list-id (frontend, störst vardagsvinst i butiken).
 - **NYTT (Session 126, nattaudit 11–12/7): HELTÄCKANDE REPO-AUDIT KLAR — rapport i `docs/qc-night/repo-audit-2026-07-12.md`.** 7 vågor, ~230 agenter, allt adversariellt Opus-verifierat med fil:rad + repro: **2 P0** (svalt läsfel kan slå ut custom-day-skyddet i `generate.js`; backup-tabell utan RLS läsbar/raderbar med anon-nyckeln), **48 P1** (bl.a. realtime-publikationen saknar `meal_days`/`shopping_items` = synken död i produktion; bock-status skrivs som full-state och raderar partnerns bockar; "endast veg"-toggeln gör generering omöjlig; parserfel bevisade mot verkliga receptkorpusen), **235 P2**. Rekommenderad åtgärdsordning i rapporten (börja med error-koll-svepet, ~9 ställen, en förmiddag). Rapport-only — ingen kod ändrad. **Åtgärderna ligger som batchindelad todo i `docs/qc-night/audit-atgardslista-2026-07.md`** (Batch 1 = error-koll-svepet, Batch 2 = DDL som väntar Joakims OK). Fynddata: `docs/qc-night/audit-verified.json`.
 - **NYTT (Session 125): ALLA roadmap-frågor besvarade — roadmapen är FULLT BESLUTAD (PR #178).** Joakims svar: **Max 20× ⇒ mål ~2 750 kr/mån ≈ 75 betalande hushåll** · 2–5 h/v icke-kod (Spår Noll inaktuellt) · Willys enligt förslaget (reor i premium, dispatch familje-exklusiv) · recept: Claude grovmärker egna vs importerade i M1 · enskild firma ja (M3) · ingen Mac (M4 = moln-Mac om aktuellt) · vänfamiljer väljs när M1 är byggd · **namn: "MIDDAGSVECKAN" VALT** (middagsveckan.se — DNS-tom, troligen ledig; **kvar: Joakim köper domänen**, ~150 kr/år). **Nästa konkreta steg = M1-bygget på Joakims klartecken:** tenancy #5–#6 + G1–G5 (allergen-hårdfilter, onboarding-wizard, receptbilder, magisk länk, butiksgångordning) + recept-grovmärkning.
@@ -59,6 +60,8 @@ Inga öppna obeslutade därutöver. Alla bugghunt-fynd (Session 111) är åtgär
 
 ## Väntar på live-verifiering (kod klar, ej körd skarpt)
 Aktiv kö — de senaste sessionernas ännu ej mobil-verifierade arbete.
+
+- **NYTT (Session 128): Auditens Batch 3–12 (styles v169/app v135/SW v82) — SKARPA, ej mobil-verifierade.** Hårduppdatera. Kritiska: (a) **bockning mellan två telefoner** — bocka olika varor samtidigt → ingen tappar den andras bock (delta-fix); recept-byte på telefon A → B:s Handla laddar om till nya listan; (b) **realtime-plan** mellan enheter medan en är i byt-/välj-läge → vyn hinner ikapp vid lägesavslut/flikbyte; (c) **import-förhandsvisning syns** (F067 — var trasig); (d) **bakåtknappen** stänger sheets/modaler i stället för att lämna appen (F196); (e) generera "endast vegetariskt" ger begripligt fel (F295); (f) soltorkade/krossade tomater rätt på listan (inte rapsolja/färsk tomat); (g) tomt "Spara notering" skapar ingen tom custom-dag (F255).
 
 - **NYTT (Session 126): Nattauditens live-verifieringspunkter** (kan inte avgöras statiskt — se rapportens avsnitt "Kräver live-verifiering"): Willys-JSON-formaten parsas fortfarande (kör en riktig `/api/deals` + dispatch) · extremgenerering (alla-veg + proteintoggle, F295) · import-förhandsvisningen syns på mobil (F067 — troligen trasig!) · skärmläsartest av fel-toasts · efter ev. F287-migration: realtime mellan två enheter.
 
@@ -127,18 +130,17 @@ Aktiv kö — de senaste sessionernas ännu ej mobil-verifierade arbete.
 - ~~Portionsskalning i matlagningsläget~~ → uppgraderad till backlogpunkt **#28** (uppskjuten på Joakims begäran 2026-07-03) — se `docs/app-analys-backlog.md`. OBS: skild från #12 (inköpslistans hushållsskalning, byggd).
 
 ## Senaste session
-**Session 127 — Auditens Batch 1 KLAR: error-koll-svepet (P0-1/F089 + hela Tema A).**
+**Session 128 — Auditens Batch 3–12 fixade & mergade (10 batchar, Sonnet-delegerat).**
 
-Joakim: "Kör hela batch 0" → tolkat som Batch 1 (listan börjar där; ingen Batch 0 finns). Backend-only, datamuterande endpoints härdats — hela testsviten körd (alla 12 testfiler gröna, inkl. plan-orchestration/day-ops).
+Joakim: "Kör allt du föreslår / delegera det du kan till Sonnet". Opus orkestrerade, Sonnet-subagenter implementerade en batch var (strikt filavgränsade, körde relevanta tester), Opus integrerade + committade per batch med full svit grön.
 
-**Fixat (mönster: destrukturera `{ data, error }` + kasta → handler.js svarar med begripligt svenskt fel i stället för tyst 200):**
-- **F089 (P0)** `api/generate.js` — custom-day-guardens läsning kastar nu vid fel; ett transient läsfel kan inte längre ge tom `customDates` och låta UPSERT:en skriva över familjens egna dagar (invariant #1-skyddet håller även vid DB-hicka).
-- **F013/F221** `api/generate.js` — `fetchExistingShoppingList` kastar vid läsfel i stället för att returnera null ("ingen lista") → manuella varor + bockar tappas inte tyst vid regenerering.
-- **F006/F011/F012** `api/confirm.js` — receptläsningen (tom lista-scenariot), manuella varor/bockar-överföringen och `confirmed_at`-skrivningen felkollas; confirmed_at-felet får eget besked ("Inköpslistan skapades, men planen kunde inte märkas som bekräftad — prova att bekräfta igen"). Bonus: plans-/mealDays-läsningarna felkollas också (gav förut vilseledande 400).
-- **F005/F007** `api/replace-recipe.js` — bytets skrivningar kastar vid fel (inget falskt 200); listombyggnadens läsning kastar med "Receptet byttes, men inköpslistan kunde inte byggas om…" i stället för att ersätta aktiva listan med en tom.
-- **F313** `api/swap-days.js` — plan-gränsernas persist-fel kastar ("Bytet sparades, men veckans datumspann kunde inte uppdateras — ladda om sidan") i stället för console.error + svar som divergerar från DB.
+**Klart (mergat till main, ~45 P1 + P2-syskon):** Batch 3 bockar/list-id (delta-flush), 4 parser (korpus-bevisad), 5-safe plan-livscykel (F090/F024/F194), 6+11 realtime/custom-dagar, 7 Willys kr/kg+flerköp, 8 veg-preflight+blockera-dag, 9 dispatch, 10 import, 12 app-skal+**XSS (F212, exploit-verifierad)**. Frontend styles v169/app v135/SW v82.
 
-Avbockat i `docs/qc-night/audit-atgardslista-2026-07.md` (Batch 1 ✅). Ingen frontend-ändring → ingen versionsbump. **Nästa:** Batch 2 är DDL och väntar Joakims OK; annars Batch 3 (bockar & list-id — störst vardagsvinst).
+**Deferrat (kräver Joakims OK):**
+- **Batch 2 DDL:** `db/migrations/007` (F287 realtime-publikation) + `008` (F215 DROP backup-tabell) — SQL committad & idempotent, men körning mot live-Supabase blockerades av harness-classifiern (produktions-DDL). Måste köras utanför auto-läge. F287 är additiv och väcker den döda realtime-synken; F215 kräver JSON-dump före DROP.
+- **Batch 5 RPC-items F219/F232/F312:** kräver nya Postgres-RPC:er (atomär meal_days-skrivning, advisory-lock, swap-transaktion) — designas/granskas separat då de rör invariant #1-kritisk aktiveringslogik.
+
+**Kvar:** Batch 13 (235 P2 områdesvis) + mobil-verifiering (se kön). Checklista med bockar: `docs/qc-night/audit-atgardslista-2026-07.md`.
 
 
-Session 8–126 i `docs/session-log-archive.md`. Full git-historik: `git log --oneline`.
+Session 8–127 i `docs/session-log-archive.md`. Full git-historik: `git log --oneline`.
