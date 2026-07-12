@@ -266,6 +266,23 @@ export function poPickDay(recipeId) {
 export async function poConfirmDay(recipeId, date, btnEl) {
   const cand = _suggestions.find((c) => c.recipeId === recipeId);
   if (!cand || !date) return;
+
+  // F195: byte på en bekräftad plan bygger om HELA inköpslistan på servern
+  // (api/replace-recipe.js) och nollställer alla redan avbockade
+  // recept-varor. Samma guard som deluxe-vyns direkta receptbyte
+  // (plan-viewer-deluxe.js: `!window.planConfirmed`) — varna innan bytet.
+  const isConfirmed = !!(window._lastPlan?.confirmedAt || window.planConfirmed);
+  if (isConfirmed) {
+    const ok = await window.confirmDialog?.({
+      title: 'Matsedeln är bekräftad',
+      message: 'Matsedeln är bekräftad — byter du recept görs inköpslistan om och redan bockade varor nollställs. Fortsätt?',
+      confirmLabel: 'Byt recept',
+      cancelLabel: 'Avbryt',
+      danger: true,
+    });
+    if (!ok) return;
+  }
+
   btnEl.disabled = true;
   btnEl.classList.add('is-loading');
   try {
