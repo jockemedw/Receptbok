@@ -202,7 +202,7 @@ function headingHtml(title) {
 
 // Re-render utan att tappa fokus/halvskriven text i "lägg till"-fältet —
 // viktigt när partnern ändrar samtidigt eller vid snabb inmatning av rader.
-const KEEP_FIELDS = ['flAddInput', 'flNewListInput', 'flNewNoteInput', 'flNoteTitle', 'flNoteBody', 'flQuickAddInput', 'flImportText'];
+const KEEP_FIELDS = ['flAddInput', 'flNewListInput', 'flNewNoteInput', 'flNoteTitle', 'flNoteBody', 'flQuickAddInput', 'flImportText', 'flRenameInput'];
 
 function render(opts = {}) {
   const host = document.getElementById('listsContent');
