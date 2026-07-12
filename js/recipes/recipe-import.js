@@ -1,6 +1,7 @@
 // Receptimport: bottom-sheet modal för URL och fotoimport via Gemini.
 
-let selectedPhotoFile = null;
+let selectedPhotoFile      = null;
+let importAbortController  = null;
 
 export function openImportModal() {
   document.getElementById('importFeedback').textContent  = '';
@@ -23,6 +24,10 @@ export function closeImportModal() {
   modal.classList.remove('open');
   modal.style.display = 'none';
   document.body.style.overflow = '';
+  if (importAbortController) {
+    importAbortController.abort();   // avbryt pågående import (F197) — ingen sen förhandsvisning ska poppa upp
+    importAbortController = null;
+  }
 }
 
 export function switchImportTab(tab) {
@@ -55,20 +60,26 @@ export async function importFromUrl() {
   btn.disabled     = true;
   fb.style.color   = 'var(--text-muted)';
   fb.innerHTML     = '<span class="import-spinner"></span>Hämtar recept…';
+  const controller = new AbortController();
+  importAbortController = controller;
   try {
     const res  = await window.apiFetch('/api/import-recipe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'url', url }),
+      signal: controller.signal,
     });
     const data = await res.json();
     if (!res.ok || data.error) throw new Error(data.error || 'Fel');
     closeImportModal();
     openImportPreview(data.recipe);
   } catch (e) {
+    if (e.name === 'AbortError') return;   // sheeten stängdes av användaren (F197) — visa ingen felruta
     fb.style.color = 'var(--rust)';
     fb.textContent = e.message || 'Kunde inte hämta receptet — kontrollera adressen.';
     btn.disabled   = false;
+  } finally {
+    if (importAbortController === controller) importAbortController = null;
   }
 }
 
@@ -87,23 +98,28 @@ export async function importFromPhoto() {
     fb.innerHTML = `<span class="import-spinner"></span>${messages[msgIdx]}`;
   }, 2500);
 
+  const controller = new AbortController();
+  importAbortController = controller;
   try {
     const imageBase64 = await resizeAndEncodeImage(selectedPhotoFile, 1200);
     const res  = await window.apiFetch('/api/import-recipe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ type: 'photo', imageBase64, mimeType: 'image/jpeg' }),
+      signal: controller.signal,
     });
     const data = await res.json();
     if (!res.ok || data.error) throw new Error(data.error || 'Fel');
     closeImportModal();
     openImportPreview(data.recipe);
   } catch (e) {
+    if (e.name === 'AbortError') return;   // sheeten stängdes av användaren (F197) — visa ingen felruta
     fb.style.color = 'var(--rust)';
     fb.textContent = e.message || 'Kunde inte tolka bilden — prova med klarare ljus eller närmre avstånd.';
     btn.disabled   = false;
   } finally {
     clearInterval(msgTimer);
+    if (importAbortController === controller) importAbortController = null;
   }
 }
 
@@ -147,7 +163,9 @@ export function openImportPreview(recipe) {
   document.getElementById('edit-notes').value                = recipe.notes || '';
   document.getElementById('editFeedback').textContent        = '';
   document.getElementById('editSaveBtn').disabled            = false;
-  document.getElementById('editModal').style.display         = 'block';
+  const m = document.getElementById('editModal');
+  m.style.display = 'block';
+  requestAnimationFrame(() => m.classList.add('open'));   // mjuk fade-in, annars osynlig modal (F067)
   document.body.style.overflow = 'hidden';
 }
 
