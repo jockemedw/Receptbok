@@ -457,7 +457,10 @@ function modeCls(d, kind) {
   if (window._dlxMove) return ' dlx-dim';   // i flytta-läge är bara släppzonerna mål
   const eligible =
     kind === 'recipe' ? (d.planId === 'active' && !d.isArchive) :
-    kind === 'custom' ? !d.isArchive :      // egen planering = bytbar (byter datum)
+    // F024 (QC-natt): egen planering = bytbar (byter datum), men INTE om den
+    // ligger i det förflutna — annars kan ett byte mot en gammal, aldrig
+    // arkiverad anteckning dra tillbaka aktiva planens datumspann i historien.
+    kind === 'custom' ? (!d.isArchive && !d.isPast) :
     kind === 'gap'    ? !d.isPast :
     false;                                  // fri dag kan aldrig bytas
   if (!eligible) return ' dlx-dim';
@@ -961,7 +964,10 @@ async function dlxPickSwapTarget(toDate) {
   if (t) {
     if (t.isArchive) { window.showToast?.('Arkiverade veckor är historik och kan inte ändras — bara dagar i aktuella matsedeln går att byta.', { type: 'info' }); return; }
     if (t.blocked)   { window.showToast?.('Fria dagar kan inte bytas — ångra fri dag först.', { type: 'info' }); return; }
-    if (!t.recipeId && !t.isCustom && t.isPast) { window.showToast?.('Passerade tomma dagar kan inte väljas.', { type: 'info' }); return; }
+    // F024 (QC-natt): blockera passerade dagar oavsett isCustom — tidigare
+    // slapp egen-planering-dagar (t.isCustom=true) igenom kollen helt, vilket
+    // lät ett byte mot en gammal anteckning dra tillbaka planens spann.
+    if (!t.recipeId && t.isPast) { window.showToast?.('Passerade dagar kan inte väljas som mål.', { type: 'info' }); return; }
   }
 
   // Omedelbar feedback: banner växlar till "Byter dag…", båda korten markeras

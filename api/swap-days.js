@@ -38,6 +38,16 @@ export default createSupabaseHandler(async (req, res) => {
   if (!date1 || !date2) return res.status(400).json({ error: "date1 och date2 krävs" });
   if (date1 === date2) return res.status(400).json({ error: "Välj två olika dagar" });
 
+  // F024 (QC-natt): klientvalideringen (plan-viewer-deluxe.js) blockerar redan
+  // passerade dagar i UI:t, men servern måste stå på egna ben — annars kan ett
+  // byte mot en gammal, aldrig arkiverad egen-planering-dag dra tillbaka aktiva
+  // planens datumspann i historien (invariant #1). Avvisa båda hållen: vilket
+  // datum som helst i det förflutna gör bytet ogiltigt.
+  const todayIso = new Date().toISOString().slice(0, 10);
+  if (date1 < todayIso || date2 < todayIso) {
+    return res.status(400).json({ error: "Passerade dagar kan inte bytas — välj dagar från och med idag." });
+  }
+
   const householdId = await getHouseholdId();
 
   const { data: plans, error: planErr } = await db
