@@ -9,7 +9,7 @@
 // Re-render: vi wrappar window.renderWeeklyPlanData så båda vyerna alltid hålls
 // i synk efter generering/byte/bekräftelse.
 
-import { fmtIso, fmtShort, PROTEIN_COLOR, isoWeekNumber, escapeHtml, weekStartOf, addDaysIso, getHolidayName } from '../utils.js';
+import { fmtIso, fmtShort, PROTEIN_COLOR, isoWeekNumber, escapeHtml, weekStartOf, addDaysIso, getHolidayName, jsStringAttr } from '../utils.js';
 
 const DAY_NAMES_LONG = ['Söndag', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag'];
 const MONTH_NAMES_SHORT = ['jan', 'feb', 'mars', 'apr', 'maj', 'juni', 'juli', 'aug', 'sep', 'okt', 'nov', 'dec'];
@@ -55,7 +55,9 @@ function customNoteMark(note) {
   }
   return `<span class="dlx-own" title="Egen notering" aria-label="Egen notering">${I.own}</span>`;
 }
-function attr(s) { return String(s == null ? '' : s).replace(/'/g, "\\'").replace(/"/g, '&quot;'); }
+// F212: lokal escaper missade backslash (lagrad XSS via recepttitel) — använd
+// utils.jsStringAttr (escapar backslash FÖRST, sedan ' och &<>") överallt i filen.
+const attr = jsStringAttr;
 
 function fmtKr(value) {
   if (value == null) return '–';
@@ -1061,12 +1063,15 @@ function openDaySheet(date, day) {
     document.getElementById('dlxSheetBackdrop')?.classList.add('open');
     document.getElementById('dlxSheet')?.classList.add('open');
   });
+  window.pushSheetHistory?.();   // F196: Android/PWA-bakåtknapp ska stänga sheeten
 }
 
 window.dlxCloseSheet = function () {
+  const wasOpen = !!window._dlxSheet;
   window._dlxSheet = null;
   document.getElementById('dlxSheetBackdrop')?.classList.remove('open');
   document.getElementById('dlxSheet')?.classList.remove('open');
+  if (wasOpen) window.popSheetHistory?.();
 };
 
 function sheetRow(onclick, iconCls, icon, title, subText) {

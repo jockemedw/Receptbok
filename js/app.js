@@ -49,6 +49,9 @@ async function init() {
     window.renderRecipeBrowser();
     window.initDatePickers();
   } catch (err) {
+    // F162: dela vilo-läget med Idag-vyn (default-flik) — den här katastrof-UI:n
+    // sitter inuti #receptView, som är dold på startskärmen och aldrig syns.
+    window._dbResting = err.message === DB_RESTING_MESSAGE;
     const loading = document.getElementById('loadingState');
     loading.innerHTML = `
       <div style="font-size:2rem;margin-bottom:1rem">⚠️</div>
@@ -101,10 +104,12 @@ function openSheet(id) {
     document.body.style.width    = '100%';
   }
   openSheetCount++;
+  pushSheetHistory();
 }
 
 function closeSheet(id) {
   const sheet = document.getElementById(id);
+  const wasOpen = sheet.classList.contains('open');
   sheet.classList.remove('open');
 
   openSheetCount = Math.max(0, openSheetCount - 1);
@@ -119,10 +124,53 @@ function closeSheet(id) {
     window.scrollTo(0, scrollY);
   }
   setTimeout(() => { sheet.hidden = true; }, 280);
+  if (wasOpen) popSheetHistory();
 }
 
 window.openBottomSheet  = openSheet;   // delas med wizard-sheeten (plan-generator.js)
 window.closeBottomSheet = closeSheet;
+
+// ── Back-button / history-integration för sheets & modaler (F196) ──────────
+// PWA-fälla: utan detta gjorde Android bakåtknapp/gest ingenting alls medan en
+// sheet var öppen — appen lämnades eller inget synligt hände, mitt i t.ex.
+// genereringsguiden. Vi pushar ett neutralt history-state när en sheet öppnas
+// och en enda popstate-lyssnare stänger vad som än råkar vara öppet, i
+// stället för att navigera bort. DOM-driven (kollar vad som faktiskt syns)
+// snarare än en egen stack — säkrare mot att tappa synk med UI-stängning
+// (X-knapp, backdrop, Escape, spara-flöden). Delas via window.pushSheetHistory
+// /popSheetHistory så dlx-sheeten (plan-viewer-deluxe.js) och Prisoptimera
+// (prisoptimera.js) kan haka på utan att äga sin egen historik-logik.
+let closingFromPopstate = false;
+
+function pushSheetHistory() {
+  history.pushState({ receptbokSheet: true }, '');
+}
+
+// Anropas av stängningskoden (X, backdrop, Escape, spara-flöden) — konsumerar
+// den pushade historik-posten så bakåtknappen inte behöver tryckas två gånger.
+// No-op om stängningen redan orsakades av en back-navigering (se popstate
+// nedan) eller om det inte fanns någon pushad historik-post kvar.
+function popSheetHistory() {
+  if (closingFromPopstate) return;
+  if (history.state?.receptbokSheet) history.back();
+}
+
+function closeAnyOpenSheet() {
+  if (document.getElementById('dlxSheet')?.classList.contains('open')) { window.dlxCloseSheet?.(); return; }
+  if (document.querySelector('.po-overlay')) { window.closePrisoptimera?.(); return; }
+  for (const id of ['sortSheet', 'filterSheet', 'planSheet']) {
+    const s = document.getElementById(id);
+    if (s && s.classList.contains('open')) { closeSheet(id); return; }
+  }
+}
+
+window.addEventListener('popstate', () => {
+  closingFromPopstate = true;
+  try { closeAnyOpenSheet(); } finally { closingFromPopstate = false; }
+});
+
+window.pushSheetHistory = pushSheetHistory;
+window.popSheetHistory  = popSheetHistory;
 
 document.getElementById('openSortBtn').addEventListener('click', () => openSheet('sortSheet'));
 document.getElementById('openFilterBtn').addEventListener('click', () => openSheet('filterSheet'));

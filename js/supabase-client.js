@@ -95,7 +95,15 @@ export async function apiFetch(path, options = {}) {
 }
 
 auth.onAuthStateChange((event) => {
-  if (event === 'SIGNED_OUT') clearHouseholdCache();
+  if (event === 'SIGNED_OUT') {
+    clearHouseholdCache();
+    // F083: SIGNED_OUT kan avfyras långt efter boot (t.ex. återkallad/ogiltig
+    // refresh-token på en platta som stått öppen i flera dygn) — utan detta
+    // ser appen ut att fungera men alla efterföljande Supabase-/apiFetch-anrop
+    // saknar giltig session. window.requireAuth (exponerad av auth-gate.js)
+    // visar inloggningsgaten igen och löser upp när användaren loggar in.
+    window.requireAuth?.();
+  }
 });
 
 window.supabase = supabase;

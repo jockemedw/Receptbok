@@ -2,7 +2,7 @@
 // Läser state: RECIPES, planConfirmed, isSnapping, scrollUpAccum
 // Skriver state: planConfirmed, isSnapping, scrollUpAccum
 
-import { fmtIso, fmtShort, PROTEIN_COLOR, getHolidayName, isoWeekNumber, escapeHtml } from '../utils.js';
+import { fmtIso, fmtShort, PROTEIN_COLOR, getHolidayName, isoWeekNumber, escapeHtml, jsStringAttr } from '../utils.js';
 
 const ICON_COIN = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 7.5v9 M9.5 9.7c.6-.7 1.5-1 2.5-1s2 .3 2.4 1c.5.8 0 1.7-1 2-.7.2-2.7.3-3.4.7-.9.4-1.4 1.3-.9 2.1.5.7 1.6 1 2.5 1s1.9-.3 2.5-1"/></svg>';
 const ICON_POT = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13c0-3.5 3.5-6 8-6s8 2.5 8 6"/><path d="M3 13h18"/><path d="M5.5 13v2c0 1.5 1 2.5 2.5 2.5h8c1.5 0 2.5-1 2.5-2.5v-2"/><path d="M11 4.5c0-.8.5-1.5 1-1.5s1 .7 1 1.5"/></svg>';
@@ -798,7 +798,9 @@ export function customDayEditorHtml(dateIso, dayName) {
   const todayIso = fmtIso(new Date());
   const isPastDay = dateIso < todayIso;
 
-  const escDayName = (dayName || '').replace(/'/g, "\\'");
+  // F212: gammal escaper missade backslash (lagrad XSS) — jsStringAttr escapar
+  // backslash FÖRST, sedan ' och &<>".
+  const escDayName = jsStringAttr(dayName || '');
   const dateLabel = fmtShort(dateIso);
   const noteValue = note.replace(/"/g, '&quot;');
 
