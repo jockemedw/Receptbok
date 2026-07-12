@@ -354,14 +354,21 @@ export function renderTodayView() {
   }
 }
 
-// Snabbt till listan — återanvänder addManualItem exakt som dag-sheeten
-// (fungerar innan inköpsfliken öppnats: ladda listan först vid behov).
+// Snabbt till listan — återanvänder addManualItem exakt som dag-sheeten.
+// F057: laddar INTE bara för att window._shopListId redan är satt — ett satt
+// värde kan peka på en avaktiverad lista (recept-byte/ny matsedel genererad
+// på en annan enhet utan att Handla-fliken besökts sen dess). Den faktiska
+// färskhetskontrollen sitter numera i ensureActiveShoppingList
+// (js/shopping/shopping-list.js), som addManualItem alltid går via — det är
+// skyddet mot att skriva till fel lista. Laddningen här är bara en
+// UI-bekvämlighet för allra första besöket (fyller window._shopManualItems
+// innan addManualItems positionsräkning).
 window.todayAddItem = async function () {
   const input = document.getElementById('todayAddInput');
   const item = input?.value.trim();
   if (!item) { input?.focus(); return; }
   try {
-    if (!window._shopListId && window.loadShoppingTab) await window.loadShoppingTab();
+    if (!window._shopManualItems && window.loadShoppingTab) await window.loadShoppingTab();
   } catch { /* addManualItem ger begripligt fel nedan */ }
   await window.addManualItem('todayAddInput', 'todayAddBtn');
   if (input && input.value === '') {
