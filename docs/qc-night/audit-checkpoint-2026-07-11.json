@@ -9,8 +9,8 @@
     "2-per-slice": "KLAR — 118 råfynd (5 P0, 40 P1, 73 P2) i audit-raw-vag2.json. 16/16 slice-finders (3 döda på usage-gränsen omkörda via resume).",
     "3-ux-linser": "KLAR — 65 råfynd (4 P0, 31 P1, 30 P2) i audit-raw-vag3.json. 6/6 linser inkl. Playwright-smoke (omkörd via resume).",
     "4-sakerhet": "KLAR — 20 råfynd (1 P0, 4 P1, 15 P2) i audit-raw-vag4.json. 4/4 Opus-agenter (auth/CORS/secrets, XSS-djup, RLS-audit live, fundament-felvägar).",
-    "5-adversariell-verifiering": "PÅGÅR — workflow wf_82b40de6-e68 (66 Opus-batchar över 226 fynd i audit-dedup-pre-verify.json)",
-    "6-loop-until-dry": "EJ STARTAD",
+    "5-adversariell-verifiering": "KLAR — 226 domslut (66/66 Opus-batchar): 178 CONFIRMED, 20 PLAUSIBLE, 14 REFUTED, 11 DUPLICATE, 3 KNOWN. Levande: 198 (2 P0, 30 P1, 166 P2) i audit-verified.json. P0: F089 (svald error i custom-day-guard, generate.js) + F215 (backup-tabell utan RLS i live-DB).",
+    "6-loop-until-dry": "PÅGÅR",
     "7-syntes-leverans": "EJ STARTAD"
   },
   "kanda_dedup": [
@@ -51,5 +51,5 @@
     }
   },
   "vaktarroutine": "trig_01RehTBn8QvSUj3FGaAbA3UM (audit-natt-vakt, 7 * * * *)",
-  "senast_uppdaterad": "2026-07-12 ~05:20 UTC — Våg 5 lanserad"
+  "senast_uppdaterad": "2026-07-12 ~06:45 UTC — Våg 5 KLAR, Våg 6 startar"
 }
