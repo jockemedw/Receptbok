@@ -9,7 +9,7 @@
     "2-per-slice": "KLAR — 118 råfynd (5 P0, 40 P1, 73 P2) i audit-raw-vag2.json. 16/16 slice-finders (3 döda på usage-gränsen omkörda via resume).",
     "3-ux-linser": "KLAR — 65 råfynd (4 P0, 31 P1, 30 P2) i audit-raw-vag3.json. 6/6 linser inkl. Playwright-smoke (omkörd via resume).",
     "4-sakerhet": "KLAR — 20 råfynd (1 P0, 4 P1, 15 P2) i audit-raw-vag4.json. 4/4 Opus-agenter (auth/CORS/secrets, XSS-djup, RLS-audit live, fundament-felvägar).",
-    "5-adversariell-verifiering": "PÅGÅR — dedup + Opus-skeptiker i batchar per fil",
+    "5-adversariell-verifiering": "PÅGÅR — workflow wf_82b40de6-e68 (66 Opus-batchar över 226 fynd i audit-dedup-pre-verify.json)",
     "6-loop-until-dry": "EJ STARTAD",
     "7-syntes-leverans": "EJ STARTAD"
   },
@@ -44,8 +44,12 @@
     "vag4": {
       "runId": "wf_365bed3d-5dc",
       "scriptPath": "/root/.claude/projects/-home-user-Receptbok/71220b30-48da-592e-9c44-6da4a11c0d99/workflows/scripts/audit-vag4-sakerhet-wf_365bed3d-5dc.js"
+    },
+    "vag5": {
+      "runId": "wf_82b40de6-e68",
+      "scriptPath": "/root/.claude/projects/-home-user-Receptbok/71220b30-48da-592e-9c44-6da4a11c0d99/workflows/scripts/audit-vag5-verifiering-wf_82b40de6-e68.js"
     }
   },
   "vaktarroutine": "trig_01RehTBn8QvSUj3FGaAbA3UM (audit-natt-vakt, 7 * * * *)",
-  "senast_uppdaterad": "2026-07-12 ~05:15 UTC — Våg 1–4 KLARA, totalt 226 råfynd (12 P0, 85 P1, 129 P2); Våg 5 startar"
+  "senast_uppdaterad": "2026-07-12 ~05:20 UTC — Våg 5 lanserad"
 }
