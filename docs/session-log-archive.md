@@ -4,6 +4,24 @@ Sessioner 8–124. Senaste sessionen ligger i `docs/status.md`. Full git-histori
 
 ---
 
+**Session 125 — Alla åtta roadmap-frågorna besvarade + namnkandidater. Roadmapen är fullt beslutad.**
+
+Joakim svarade på samtliga öppna frågor (AskUserQuestion, två omgångar). Ren dokumentation (PR #178), ingen kod ändrad.
+
+**Besluten (inskrivna i roadmapens avsnitt 9 + M0 + 5.1b):**
+1. **Max-plan: 20×** ⇒ skarpt mål **~2 750 kr/mån ≈ 75 betalande hushåll** à 39 kr/mån.
+2. **Tidsbudget icke-kod: 2–5 h/vecka** — M0-kill-kriteriet passerat, Spår Noll inaktuellt.
+3. **Willys: enligt förslaget** — reor-läsning i premium med öppen degraderingsrisk; dispatch förblir familje-exklusiv.
+4. **Recept-seed: Claude grovmärker alla 264** (egna vs importerade) → Joakim godkänner. Blir M1-uppgift (`origin`-fält + märkningskörning + granskningslista).
+5. **Enskild firma + F-skatt: ja**, registreras i M3 före första betalningen.
+6. **Mac: ingen** — ev. framtida M4 kräver moln-Mac (~350 kr/mån); påverkar inget nu (M4 uppskjuten).
+7. **Namn: "Middagsveckan" VALT av Joakim** (av kandidatlistan i roadmapens M0; middagsveckan.se är DNS-tom på alla posttyper = troligen oregistrerad). **Kvar: Joakim köper domänen** (~150 kr/år, verifiera i köpflödet). Appen heter Receptboken internt tills M2/landningssidan; UI-namnbytet blir ett eget litet steg då.
+8. **Vänfamiljer: väljs när M1 är byggd** (minst en icke-teknisk).
+
+**Läget:** roadmapen är fullt beslutad. **Nästa konkreta steg = M1-bygget** (tenancy #5–#6, G1–G5 ur funktionsanalysen, recept-grovmärkning) — startas på Joakims klartecken. Kvar för Joakim dessförinnan: välj namn (ingen brådska).
+
+---
+
 ## Session 124 — Ambitionsnivå beslutad (täck Claude Max) + konkurrens-funktionsanalys + "lättaste vägen"
 Uppföljning på S123 efter Joakims besked: (1) målet är att tjäna in Claude Code Max; (2) analysera konkurrensen + funktioner att integrera; (3) följdfråga: lättaste vägen (annonser vs App Store). Ren dokumentation (PR #177). **Roadmapen omkalibrerad:** kalkyl 5.1b — ~50–75 betalande hushåll à 39 kr/mån. **Nytt avsnitt 4.1 "lättaste vägen":** annonser lättast att bygga men kräver 1 500–3 000 hushåll (avfärdad); App Store-engångsköp = plan B (Apple merchant of record men Capacitor + evigt nykundslöpband ~30–45 köp/mån); **webb-prenumeration lättast i människor (33–50 hushåll en gång)** → M4 uppskjuten tills målet nåtts på webben. **NY FIL `docs/konkurrens-funktionsanalys-2026-07.md`:** ~20 appar inventerade (2 agenter, ~60 källor; Jow, Mealime, Plan to Eat, Paprika, AnyList, Samsung Food, Eat This Much, Cozi, BigOven, SuperCook, Flipp, eMeals + ICA, Coop, Arla, Tasteline, Smaklig, Nomi, Matpriskollen, Lifesum, SmartaMenyn, Matlistan, SmakShare, MatVeckan) → gap-lista **G1–G18** sekvenserad mot M-faserna: G1–G5 främlings-beredskap (allergen-hårdfilter, onboarding-wizard, receptbilder, magisk länk, butiksgångordning), G6–G11 retention/premium (rea-bevakningsnotiser, veckodigest, laga-på-det-du-har, restlogik, pris/portion, middagsbetyg), G12–G18 senare + medvetna avstånd. **Korrigering:** SmartaMenyn tar redan betalt (Stripe) för reor→veckomeny.
 

@@ -1,0 +1,615 @@
+{
+ "rafynd": [
+  {
+   "file": "js/weekly-plan/plan-viewer-deluxe.js",
+   "line": 1011,
+   "title": "Dagens åtgärder-sheet saknar scroll-lås/touch-action — bakgrunden kan svepas bakom",
+   "description": "`.dlx-sheet-backdrop` (skapas i `ensureSheetHost()`, öppnas av `openDaySheet()`/`dlxDayClick()` varje gång man trycker på ett dagkort i Matsedel-vyn — appens mest använda overlay) saknar `touch-action: none` som den vanliga `.bottom-sheet-backdrop` har (css/styles.css:482), och det finns ingen `document.body.style.overflow`/fixed-position-lås i JS heller (varken i `openDaySheet` eller `dlxCloseSheet`, plan-viewer-deluxe.js:1036-1064). Backdropen är en `position:fixed;inset:0`-yta UTAN egen scroll — vid touchmove på den ytan (som täcker det mesta av skärmen ovanför sheeten) hittar webbläsaren ingen scrollbar förfader i backdropens egen DOM-nod och kedjar scrollen till `body`/`document` bakom. Scenario: förälder trycker på torsdagens dagkort för att se alternativ, sveper sedan av ren reflex på ytan ovanför den utfällda sheeten (som täcker nästan hela skärmen) — veckovyn bakom rullar och hoppar, och när sheeten stängs ligger sidan på fel scrollposition. Jämför med `.cook-overlay` (styles.css:4883) och `.bottom-sheet-panel` (styles.css:498) som båda medvetet har `overscroll-behavior: contain`/`touch-action: none` — samma åtgärd saknas bara här.",
+   "severity": "P1",
+   "evidence": "css/styles.css:5765-5774 `.dlx-sheet-backdrop { position: fixed; inset: 0; ... }` — inget `touch-action`. js/weekly-plan/plan-viewer-deluxe.js:1011-1025 `ensureSheetHost()` bygger backdrop+sheet utan någon scroll-lock-kod (jämför `.bottom-sheet-backdrop { touch-action: none; }` i css/styles.css:482).",
+   "finder": "ux:touch-mobil"
+  },
+  {
+   "file": "css/styles.css",
+   "line": 2027,
+   "title": "Bekräfta/Kassera-knapparna efter genereringen är under 44px",
+   "description": "`.confirm-plan-btn` (\"Bekräfta och bygg inköpslista\") och `.discard-plan-btn` (\"Kassera förslag\") — de två knapparna man trycker på varje gång en ny matsedel genererats, appens kärnflöde — har padding 0.65rem/0.6rem + ~0.85-0.9rem text utan `min-height`, vilket ger en verklig höjd på ca 38px respektive 35px. Scenario: efter att ha genererat matsedeln för veckan trycker föräldern snabbt på \"Bekräfta\" med en hand medan barnet drar i den andra — knappen är smalare än tummen räknar med, missad tryckning känns som att appen inte svarade.",
+   "severity": "P1",
+   "evidence": "css/styles.css:2027-2039 `.confirm-plan-btn { padding: 0.65rem 1rem; font-size: 0.9rem; line-height: 1; }` (ingen min-height); css/styles.css:2045-2058 `.discard-plan-btn { padding: 0.6rem 1rem; font-size: 0.85rem; line-height: 1; }` — index.html:123-124 visar att dessa är de aktiva confirm/discard-knapparna.",
+   "finder": "ux:touch-mobil"
+  },
+  {
+   "file": "css/styles.css",
+   "line": 3399,
+   "title": "`.modal-overlay` saknar overscroll-behavior:contain — scroll kedjas till bakgrunden vid listgränsen",
+   "description": "`.modal-overlay` (används av \"Redigera recept\"-modalen, importsheeten och de dynamiskt skapade `.deals-overlay`/\"Veckans fynd\" och `.saving-overlay`/\"Sparat ca X kr\") har `overflow-y: auto` men ingen `overscroll-behavior: contain`. Appen har redan löst exakt detta för `.cook-overlay` (styles.css:4883) och `.bottom-sheet-panel` (styles.css:498) — men inte här. Scenario: i \"Veckans fynd\" (kan innehålla många reakort) eller i \"Redigera recept\" (långa ingrediens-/instruktionsfält) scrollar man ner till botten av listan och fortsätter dra uppåt av ren vana (t.ex. för att stänga) — på iOS Safari studsar då hela sidan bakom overlayn i stället för att stanna, vilket känns som att appen hackar/tappar sin plats.",
+   "severity": "P1",
+   "evidence": "css/styles.css:3399-3406 `.modal-overlay { position: fixed; inset: 0; overflow-y: auto; padding: 1rem; }` — inget `overscroll-behavior`. js/weekly-plan/deals-popup.js:125-141 och js/weekly-plan/plan-viewer.js:557-571 skapar `.modal-overlay`-instanser dynamiskt utan extra scroll-skydd.",
+   "finder": "ux:touch-mobil"
+  },
+  {
+   "file": "css/styles.css",
+   "line": 369,
+   "title": "Sök-fältets ×-knapp (search-clear) är ~27px, under 44px",
+   "description": "`.search-clear` (rensa-X:et i header-sökfältet, öppnas via förstoringsglaset i både header och FAB-stacken) är satt till `width/height: 1.7rem` (27.2px) med `padding: 0`. Scenario: en familjemedlem söker efter ett recept, ångrar sig och vill rensa sökningen — kryssknappen sitter dessutom inne i ett mörkt, smalt sökfält vilket gör den ännu svårare att träffa exakt på en liten telefon.",
+   "severity": "P1",
+   "evidence": "css/styles.css:369-388 `.search-clear { width: 1.7rem; height: 1.7rem; padding: 0; ... }`",
+   "finder": "ux:touch-mobil"
+  },
+  {
+   "file": "css/styles.css",
+   "line": 2941,
+   "title": "\"Avbryt\" i byt-recept-bannern är bara ~22px hög",
+   "description": "`.replace-banner-cancel` (Avbryt-knappen i `.replace-banner`/`.custom-pick-banner` som visas överst i Recept-fliken när man håller på att byta ut en dags recept) har `padding: 0.2rem 0.65rem` och `font-size: 0.82rem` — total höjd ≈22px, det minsta interaktiva elementet i appen. Scenario: man startar ett receptbyte från en dag, ångrar sig och vill trycka Avbryt i bannern som ligger klistrad överst i receptlistan — den smala knappen ligger dessutom precis ovanför receptkorten, så ett missat tryck råkar öppna/välja fel recept i stället.",
+   "severity": "P1",
+   "evidence": "css/styles.css:2941-2951 `.replace-banner-cancel { padding: 0.2rem 0.65rem; font-size: 0.82rem; ... }` — används i index.html:75,79 (\"Avbryt\"-knapp i replace-/custom-pick-banner).",
+   "finder": "ux:touch-mobil"
+  },
+  {
+   "file": "css/styles.css",
+   "line": 3426,
+   "title": "✕-stängknappen i Redigera recept-modalen är under 44px",
+   "description": "`.modal-header button` (✕ som stänger \"Redigera recept\"-modalen, index.html:473) har `font-size: 1.3rem` och `padding: 0.2rem 0.4rem` utan min-width/min-height — total träffyta ≈31×34px. Modalen kan visserligen stängas med bakgrundstryck, men ✕:et är den förväntade vägen och den enda synliga stängknappen i modal-headern.",
+   "severity": "P2",
+   "evidence": "css/styles.css:3426-3433 `.modal-header button { font-size: 1.3rem; padding: 0.2rem 0.4rem; }` (ingen min-width/min-height) — index.html:473 `<button onclick=\"closeEditModal()\">✕</button>`.",
+   "finder": "ux:touch-mobil"
+  },
+  {
+   "file": "css/styles.css",
+   "line": 2299,
+   "title": "Dag-blockerings-chipsen i genererings-guidens steg 1 är ~36px höga",
+   "description": "`.day-toggle-chip` (\"Tryck på en dag för att blockera den\", steg 1 i \"Ny matsedel\"-guiden — körs varje gång familjen genererar en ny matsedel) har `padding: 0.35rem 0.5rem` runt en tvåradig etikett (dag + datumsiffra), vilket ger en total höjd på ungefär 36px — under 44px-minimum för ett element man ska trycka på upprepade gånger (en gång per dag man vill blockera, ofta 5-7 chips i rad).",
+   "severity": "P1",
+   "evidence": "css/styles.css:2299-2311 `.day-toggle-chip { padding: 0.35rem 0.5rem; min-width: 42px; ... }` (ingen min-height) — genereras i js/weekly-plan/plan-generator.js:206-217 i `#dayToggles`.",
+   "finder": "ux:touch-mobil"
+  },
+  {
+   "file": "css/styles.css",
+   "line": 2813,
+   "title": "Säsongsanpassning-togglen är 40×22px",
+   "description": "`.toggle-switch` (checkboxen för \"Säsongsanpassning\" i genererings-guidens steg 2) är hela sin klickbara yta (en `<label>` som omsluter checkboxen) satt till `width: 40px; height: 22px` — betydligt under 44px i båda led, och det finns ingen osynlig utökad träffyta (till skillnad från t.ex. `.select-btn::after` på css/styles.css:2908 som medvetet löser samma problem för en annan knapp).",
+   "severity": "P2",
+   "evidence": "css/styles.css:2813-2819 `.toggle-switch { position: relative; display: inline-block; width: 40px; height: 22px; }` — index.html:273-276 `<label class=\"toggle-switch\"><input type=\"checkbox\" id=\"seasonWeight\" ...>`.",
+   "finder": "ux:touch-mobil"
+  },
+  {
+   "file": "css/styles.css",
+   "line": 3202,
+   "title": "\"Lägg till\"-knappen för egna varor i inköpslistan är ~36px hög",
+   "description": "`.manual-add-btn` (\"Lägg till\" bredvid textfältet för att lägga till en egen vara, t.ex. hushållspapper, i inköpslistan — en frekvent använd åtgärd) har `padding: 0.6rem 1rem` och `font-size: 0.9rem` med `line-height: 1`, vilket ger en total höjd på ungefär 36.5px.",
+   "severity": "P2",
+   "evidence": "css/styles.css:3202-3213 `.manual-add-btn { padding: 0.6rem 1rem; font-size: 0.9rem; line-height: 1; }` — index.html:342-343,366 (två instanser, tom och full inköpslista).",
+   "finder": "ux:touch-mobil"
+  },
+  {
+   "file": "css/styles.css",
+   "line": 6279,
+   "title": "Stäng-knappen för snabbtillägg i familjelistor saknar vertikal padding (~20px hög)",
+   "description": "`.fl-quickadd-close` (✕ som stänger \"Lägg till rad\"-fältet i en familjelista/Listor-fliken) har `padding: 0 0.45rem` — noll vertikal padding — och `font-size: 1rem`, vilket ger en träffyta på ungefär 20px i höjd, det klart minsta i Listor-fliken.",
+   "severity": "P2",
+   "evidence": "css/styles.css:6279-6287 `.fl-quickadd-close { padding: 0 0.45rem; font-size: 1rem; }` — js/lists/lists-view.js:279 `<button class=\"fl-quickadd-close\" onclick=\"flCloseQuickAdd()\">✕</button>`.",
+   "finder": "ux:touch-mobil"
+  },
+  {
+   "file": "js/ui/scroll.js",
+   "line": 34,
+   "title": "\"Till toppen\"-knappen respekterar inte Minska rörelse",
+   "description": "Scroll-till-toppen-knappen (`#scrolltop`) anropar `window.scrollTo({top:0, behavior:'smooth'})` direkt utan att gå via den egna `prefersReducedMotion()`-kontrollen som `smoothScrollTo()` några rader längre ner uttryckligen infördes för (kommentaren på rad 43-44 säger att den globala CSS-regeln bara täcker `scroll-behavior`/transitions, INTE JS-anrop med explicit `behavior:'smooth'` — vilket är precis vad rad 34 gör). En användare med `prefers-reduced-motion: reduce` (t.ex. pga yrsel/vestibulär känslighet) som trycker på \"till toppen\"-pilen efter att ha skrollat långt ner i receptlistan får ändå en animerad glid-scroll, till skillnad från allt annat rörelse i appen.",
+   "severity": "P2",
+   "evidence": "js/ui/scroll.js:34 `scrollBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));` jämfört med samma fils egen kommentar rad 43-44 och `prefersReducedMotion()`-kontrollen i `smoothScrollTo()` (rad 40-50) som INTE återanvänds här.",
+   "finder": "ux:touch-mobil"
+  },
+  {
+   "file": "css/styles.css",
+   "line": 819,
+   "title": "\"Rensa sökning\"-knappen i tomt sökresultat är ~35px hög",
+   "description": "`.empty-reset-btn` (visas när en sökning i receptfliken inte gav några träffar) har `padding: 0.5rem 1.1rem` och `font-size: 0.85rem` utan min-height, total höjd ≈35px. Dess `:hover`-regel (rad 833-836) är dessutom inte gated bakom `@media (hover: hover)` som de flesta andra knappar i samma fil fått i \"poler-svepet\" — på touch kan knappen se kvarhängande \"hovrad\" ut efter tryck.",
+   "severity": "P2",
+   "evidence": "css/styles.css:819-831 `.empty-reset-btn { padding: 0.5rem 1.1rem; font-size: 0.85rem; ... }` (ingen min-height); css/styles.css:833 `.empty-reset-btn:hover { ... }` utan hover-guard.",
+   "finder": "ux:touch-mobil"
+  },
+  {
+   "file": "css/styles.css",
+   "line": 5241,
+   "title": "Steppar-knapparna (+/−) i inställningarna är 38.4px, strax under 44px",
+   "description": "`.step-btn` (plus/minus-knapparna för Oprövade recept/Vegetariska dagar/Ture-dagar/portioner i genererings-guidens steg 2, en åtgärd man ofta trycker flera gånger i rad för att öka/minska ett tal) är satt till `width/height: 2.4rem` = 38.4px, strax under 44px-riktlinjen. Vid upprepade snabba tryck (t.ex. öka vegetariska dagar från 0 till 4) ökar risken för missade tryck jämfört med en fullstor cirkel.",
+   "severity": "P2",
+   "evidence": "css/styles.css:5241-5257 `.step-btn { width: 2.4rem; height: 2.4rem; border-radius: 50%; ... }`",
+   "finder": "ux:touch-mobil"
+  },
+  {
+   "file": "css/styles.css",
+   "line": 6377,
+   "title": "Färg-/ikonväljarens knappar för familjelistor är 28-32px",
+   "description": "`.fl-swatch` (färgcirklarna) är `1.75rem` (28px) och `.fl-icon-opt` (ikonrutorna) är `2rem` (32px) — båda i \"Ändra utseende\"-panelen för en familjelista. Flera cirklar/rutor ligger tätt (gap 0.4rem), vilket gör det lätt att träffa fel färg/ikon med ett finger på en liten telefon.",
+   "severity": "P2",
+   "evidence": "css/styles.css:6377-6384 `.fl-swatch { width: 1.75rem; height: 1.75rem; ... }`; css/styles.css:6394-6404 `.fl-icon-opt { width: 2rem; height: 2rem; ... }`",
+   "finder": "ux:touch-mobil"
+  },
+  {
+   "file": "css/styles.css",
+   "line": 3537,
+   "title": "✕-knappen i \"Lägg till recept\"-sheeten är ~27px",
+   "description": "`.import-close` (stänger import-sheeten för att lägga till/importera recept) har `padding: 0.3rem` och `font-size: 1.1rem`, `line-height:1` — total träffyta ≈27×27px. Bakgrundstryck stänger också sheeten, men ✕:et är förstahandsvalet visuellt och sitter uppe i hörnet där en tumme lätt hamnar utanför träffytan.",
+   "severity": "P2",
+   "evidence": "css/styles.css:3537-3545 `.import-close { font-size: 1.1rem; padding: 0.3rem; line-height: 1; }`",
+   "finder": "ux:touch-mobil"
+  },
+  {
+   "file": "css/styles.css",
+   "line": 6413,
+   "title": "Prisoptimera-knappen (Matsedel) får nästan olästbar text i mörkt läge — hårdkodad vit text på ljusnad rost-bakgrund",
+   "description": "`.prisopt-btn` (entré-knappen \"Prisoptimera\" högst upp på Matsedel-fliken) sätter `background: var(--rust); color: #fff;`. `--rust` är MEDVETET ljusare i mörkt läge (`#cd825e` mot `#b05f3f` i ljust, se rad 112) — token-kommentaren rad 44 säger uttryckligen att `--on-accent` (`#fff` i ljust, `#1c2620` i mörkt) är avsedd för \"text/ikon ovanpå rust/lichen-ytor\", och nyare komponenter (t.ex. `.dlx-act.primary` rad 4686, `.today-btn-primary` rad 5449, `.dispatch-actions .btn-primary` rad 3722) använder korrekt `var(--on-accent)`. Denna och flera äldre knappar hårdkodar i stället `white`/`#fff`, vilket ger kontrast ≈3.0:1 mot `#cd825e` (WCAG AA kräver 4.5:1 för normal text — knappen är 0.82rem/vikt 600, inte \"stor text\"-undantaget). Samma mönster (background var(--rust) + color white/#fff) finns även i: `.po-cta` (rad 6524, Prisoptimera-arkets stora \"Lägg in\"-knapp), `.po-check svg` (rad 6496, ibockade ingrediens-checkboxar i samma ark), `.confirm-plan-btn` (rad 2029-2030, Matsedel \"Bekräfta och bygg inköpslista\"), `.flytta-btn` (rad 3165-3166, Matsedel \"Flytta till inköpslista →\"), `.custom-note-save` (rad 1624-1625, Matsedel egna dagar \"Spara notering\"), `.select-btn` (rad 2894-2895, Recept-fliken \"Välj\"-knapp i byt-recept-läge) och `.shop-edit-btn.active` (rad 3324-3326, Inköp-fliken \"Handla-läge\"/\"Redigera\"-togglarna).",
+   "severity": "P1",
+   "evidence": "css/styles.css:6413 `background: var(--rust); color: #fff;` — jämför med css/styles.css:1 (light) `--rust: #b05f3f;` vs css/styles.css:112 (dark) `--rust: #cd825e;` och css/styles.css:44 `--on-accent: #fff; /* text/ikon ovanpå rust/lichen-ytor */` vs css/styles.css:116 `--on-accent: #1c2620;`. Beräknad kontrast vit text/#cd825e ≈ 3.0:1 (mörkt läge) mot ≈4.6:1 (ljust läge, redan i nedre gränsen).",
+   "finder": "ux:morkt-tema"
+  },
+  {
+   "file": "css/styles.css",
+   "line": 2465,
+   "title": "Ibockad ruta i inköpslistan och familjelistorna: vit bock nästan osynlig mot ljusnad grön i mörkt läge",
+   "description": "`.shopping-item.checked .item-checkbox` (delad klass för både Inköp-fliken, `js/shopping/shopping-list.js`, och Listor-fliken, `js/lists/lists-view.js`) sätter `background: var(--lichen-deep); color: white;` för ✓-tecknet. `--lichen-deep` ljusas kraftigt i mörkt läge (`#5e7a68` → `#9dbca6`, rad 111) eftersom den där används som TEXTfärg på mörka ytor — men här återanvänds den som BAKGRUND med hårdkodad vit text, vilket ger kontrast ≈2.1:1 (helt under WCAG-gränsen). Bocken blir därmed extremt svår att se när man bockar av varor i mataffären med telefonen i mörkt läge. Jämför med den identiska mönster-implementationen i matlagningsläget: `.cook-ing.done .cook-ing-box::after` (rad 5033) använder korrekt `color: var(--on-accent)` för exakt samma ✓-ikon-mot-lichen-deep-bakgrund och förblir läsbar i mörkt läge — vilket visar att detta är en inkonsekvens/bugg, inte en avsiktlig designskillnad.",
+   "severity": "P1",
+   "evidence": "css/styles.css:2465-2469 `.shopping-item.checked .item-checkbox { background: var(--lichen-deep); border-color: var(--lichen-deep); color: white; }` jämfört med css/styles.css:5033 `.cook-ing.done .cook-ing-box::after { content: '✓'; color: var(--on-accent); }`. Rendering: js/shopping/shopping-list.js:550,571 och js/lists/lists-view.js:397 sätter `${checked ? '✓' : ''}` som textContent i samma `.item-checkbox`-span.",
+   "finder": "ux:morkt-tema"
+  },
+  {
+   "file": "css/styles.css",
+   "line": 4767,
+   "title": "Toast-notiser (bekräftelser efter spara/generera/bocka av) blixtrar upp som en nästan vit bubbla i mörkt läge",
+   "description": "`.toast` sätter `background: var(--forest-deep); color: var(--linen);`. I ljust läge är detta en mörk grön chip med krämig text (`--forest-deep:#2c3f33`, `--linen:#f5f1e8`) — men i mörkt läge har båda tokens medvetet flippat roll (`--forest-deep` blir nästan vit `#f0ebe0`, `--linen` blir nästan svart `#1d2721`, rad 107+109), så toasten blir en påfallande LJUS bubbla mitt i det annars mörka gränssnittet. Eftersom toaster triggas efter nästan varje handling (spara recept, generera matsedel, bocka av vara, spara familjelista-anteckning) syns denna ljusblixt frekvent och bryter mot den mörka temaupplevelsen — texten är visserligen fortfarande läsbar (mörk text på ljus botten), men det är en tydlig, återkommande visuell inkonsekvens som en användare i ett mörkt rum märker direkt.",
+   "severity": "P2",
+   "evidence": "css/styles.css:4761-4768 `.toast { ... background: var(--forest-deep); color: var(--linen); ... }` — dark-override rad 107-109: `--linen: #1d2721; ... --forest: #e6e0d2; --forest-deep: #f0ebe0;` (ljus färg i mörkt läge), och rad 5 `--linen: #f5f1e8` (ljus i ljust läge) betyder att bakgrund/text-paret bokstavligen byter ljushet mellan lägena.",
+   "finder": "ux:morkt-tema"
+  },
+  {
+   "file": "manifest.webmanifest",
+   "line": 9,
+   "title": "PWA-splashskärmen är alltid ljus (kräm/lichen) — ingen mörk variant trots att index.html annars täcker mörkt tema korrekt",
+   "description": "`manifest.webmanifest` har bara ett statiskt `background_color: \"#f5f1e8\"` och `theme_color: \"#7a9482\"` (ljusa temats värden). Web App Manifest-specen saknar en per-schema-variant för dessa fält (till skillnad från `<meta name=\"theme-color\" media=\"...\">` i index.html rad 8-9 som KORREKT grenar på `prefers-color-scheme`). Resultat: en familjemedlem som har telefonen i mörkt läge och startar appen från hemskärmen (installerad PWA) ser en ljus kräm-färgad splash-skärm blinka upp innan appens egna mörka CSS hinner måla om skärmen — en märkbar ljusblixt varje app-start, trots att resten av mörkt-läge-arbetet är omsorgsfullt gjort.",
+   "severity": "P2",
+   "evidence": "manifest.webmanifest:9-10 `\"background_color\": \"#f5f1e8\", \"theme_color\": \"#7a9482\"` (endast en variant) jämfört med index.html:8-9 `<meta name=\"theme-color\" media=\"(prefers-color-scheme: light)\" content=\"#7a9482\"> <meta name=\"theme-color\" media=\"(prefers-color-scheme: dark)\" content=\"#1d2721\">` som visar att appen annars medvetet grenar på färgschema.",
+   "finder": "ux:morkt-tema"
+  },
+  {
+   "file": "css/styles.css",
+   "line": 3450,
+   "title": "Text i recepteditorns fält (titel, protein-val, taggar, noteringar) har svag kontrast mot inputfältets bakgrund — något sämre i mörkt läge",
+   "description": "`.modal-box input, .modal-box select, .modal-box textarea` sätter `color: var(--lichen)` mot `background: var(--paper)`. `--lichen` (#7a9482) ändras INTE mellan teman (medveten \"funkar i båda\"-design för ytor, se kommentar rad 110) men används här som INPUT-TEXT, inte som yta — vilket ger kontrast ≈3.3:1 i ljust läge och ≈3.7:1 i mörkt läge, båda under WCAG AA:s 4.5:1 för brödtext. Drabbar receptredigeraren (`#editModal`, öppnas från Recept-fliken vid \"Redigera recept\"/nytt recept) — titel, protein-dropdown, taggar och noteringar blir alla svårlästa, marginellt värre i mörkt läge eftersom ingen mörk-specifik override kompenserar (till skillnad från t.ex. `--forest` som medvetet ljusas upp för just detta syfte).",
+   "severity": "P2",
+   "evidence": "css/styles.css:3445-3451 `.modal-box input, .modal-box select, .modal-box textarea { ... color: var(--lichen); background: var(--paper); ... }`. `--lichen` odefinierad i både ljus- (rad 11) och mörk-override (rad 103-123) utanför grundvärdet #7a9482 — token ändras aldrig per tema, till skillnad från `--forest`/`--forest-deep` som är just ljusade för läsbarhet i mörkt läge.",
+   "finder": "ux:morkt-tema"
+  },
+  {
+   "file": "js/app.js",
+   "line": 33,
+   "title": "'Appen har vilat'-beskedet visas bara i Recept-fliken, som är dold på startskärmen — Idag-fliken visar i stället falskt 'ingen matsedel'",
+   "description": "När Supabase-projektet är pausat (Session 106-scenariot) fångar bara js/app.js:init() felet och skriver DB_RESTING_MESSAGE ('Appen har vilat en stund...') till #loadingState (rad 53-57). Men #loadingState ligger inuti <main id=\"receptView\" style=\"display:none\"> (index.html rad 72) och Idag är förvald flik (body data-active-tab=\"idag\", index.html rad 25/68). boot() avvaktar init() men kastar aldrig vidare (try/catch utan rethrow), så window.loadWeeklyPlan() körs ändå (js/app.js rad 226). loadWeeklyPlan() (js/weekly-plan/plan-viewer.js rad 737-755) sväljer alla fel i sitt eget catch (rad 751-754) och visar bara weekNoData — den anropar aldrig renderWeeklyPlanData, så window._timelineByDate förblir {}. today-view.js:wrap('loadWeeklyPlan', {async:true,...}) sätter ändå window._todayReady = true och kör renderTodayView() (rad 380-388), som då ser hasPlan=false (rad 307) och visar noPlanHtml(): 'Ingen matsedel ännu — Skapa familjens första matsedel så syns kvällens middag här.' (rad 279-291).",
+   "severity": "P0",
+   "evidence": "js/app.js:33-34 `throw new Error(isDbUnreachable(getLastDbError()) ? DB_RESTING_MESSAGE : ...)` skriver bara till `#loadingState`; index.html:72 `<main id=\"receptView\" style=\"display:none\">` gömmer den div:en tills användaren manuellt trycker på Recept-fliken. Samtidigt: js/weekly-plan/plan-viewer.js:751-754 `catch { document.getElementById('weekLoading').style.display='none'; document.getElementById('weekNoData').style.display=''; }` — sväljer felet tyst. js/today/today-view.js:307-308 `const hasPlan = ...; if (!hasPlan) { host.innerHTML = noPlanHtml(); return; }`.",
+   "finder": "ux:fel-tomt-laddning"
+  },
+  {
+   "file": "js/supabase-client.js",
+   "line": 86,
+   "title": "Ingen timeout på de inledande Supabase-anropen — spinnrarna på Idag/Matsedel/Recept kan hänga för evigt utan felmeddelande",
+   "description": "apiFetch() och alla direkta window.db-anrop (getHouseholdId, receptladdning i app.js, loadActivePlanFromSupabase m.fl.) saknar AbortController/timeout. Om Supabase svarar extremt sent (typiskt scenario när free-tier-projektet vaknar ur paus, eller ett WiFi/mobilnät hänger utan att ge ett omedelbart nätverksfel) hänger 'Laddar…'-spinnern i Idag-fliken (today-loading) och 'Laddar receptbok…'/'Laddar matsedeln…' i respektive flik obegränsat, utan någon 'det tar lång tid'-utväg för familjen.",
+   "severity": "P1",
+   "evidence": "Ingen träff på 'AbortController'/'timeout' i js/supabase-client.js, js/app.js, js/weekly-plan/plan-viewer.js, js/today/today-view.js (endast dispatch-ui.js har en 60s-timeout för /api/dispatch-to-willys). apiFetch (js/supabase-client.js rad 86-95): `return fetch(path, { ...options, headers });` utan signal/timeout.",
+   "finder": "ux:fel-tomt-laddning"
+  },
+  {
+   "file": "js/weekly-plan/plan-generator.js",
+   "line": 343,
+   "title": "Genereringsflödets felruta visar rått, engelskt fetch-fel i stället för svensk text vid nätverksfel",
+   "description": "Om apiFetch('/api/generate', ...) kastar (t.ex. flygplansläge eller avbruten anslutning) fångas felet i catch och `err.message` skrivs rakt in i statusraden, prefixat med 'Fel: '. Webbläsarens fetch-avslag ger typiskt 'Failed to fetch' (Chrome), 'NetworkError when attempting to fetch resource.' (Firefox) eller 'Load failed' (Safari) — inget av detta är svenska eller begripligt för en icke-teknisk familjemedlem som just tryckt 'Generera ny plan'.",
+   "severity": "P1",
+   "evidence": "`status.textContent = \\`Fel: ${err.message}\\`;` (js/weekly-plan/plan-generator.js rad 343) — ingen kontroll av om err.message är begripligt/svenskt innan det visas.",
+   "finder": "ux:fel-tomt-laddning"
+  },
+  {
+   "file": "js/weekly-plan/plan-viewer-deluxe.js",
+   "line": 948,
+   "title": "'Flytta dag'/'Byt dagar' väljer felaktigt att visa RÅTT felmeddelande framför den svenska fallbacken",
+   "description": "Villkoret `e.message?.length > 4 ? e.message : fallback` är bakvänt: det föredrar aktivt att visa e.message så fort meddelandet är längre än 4 tecken — vilket nästan alltid är sant, inklusive för browserns egna engelska nätverksfel ('Failed to fetch' = 16 tecken). Den handlingsorienterade svenska fallbacken ('Kunde inte flytta dagen — prova igen.') visas alltså nästan aldrig i praktiken vid just de fel den är till för (nätverksproblem), i ett av appens vanligaste dagliga interaktionsmönster (dra en dag till annan plats i veckovyn). Samma mönster upprepas för swap-days på rad 989.",
+   "severity": "P1",
+   "evidence": "js/weekly-plan/plan-viewer-deluxe.js:948 `window.showToast?.(e.message?.length > 4 ? e.message : 'Kunde inte flytta dagen — prova igen.', { type: 'error' });` och rad 989 samma mönster för 'Kunde inte byta dagarna — prova igen.'.",
+   "finder": "ux:fel-tomt-laddning"
+  },
+  {
+   "file": "js/weekly-plan/plan-viewer.js",
+   "line": 451,
+   "title": "'Gör fri dag'/'Ångra fri dag' och 'Kassera förslag' visar rått felmeddelande vid annat än exakt 'Okänt fel'",
+   "description": "modifyDay() (fri dag/ångra fri dag) visar `e.message` rakt av så fort det inte exakt matchar strängen 'Okänt fel' — vilket betyder att alla nätverksfel (t.ex. 'Failed to fetch' vid dåligt WiFi) passerar rakt igenom till användaren i stället för den avsedda svenska fallbacken. discardPlan() (rad 626) har samma problem fast med prefix: `Kunde inte kassera: ${e.message || 'okänt fel'} — prova igen.` — 'Kunde inte kassera: Failed to fetch — prova igen.' är fortfarande inte begriplig svenska.",
+   "severity": "P1",
+   "evidence": "js/weekly-plan/plan-viewer.js:451 `window.showToast?.((e.message && e.message !== 'Okänt fel') ? e.message : fallback, { type: 'error' });` och rad 626 `statusEl.textContent = \\`Kunde inte kassera: ${e.message || 'okänt fel'} — prova igen.\\`;`",
+   "finder": "ux:fel-tomt-laddning"
+  },
+  {
+   "file": "js/recipes/recipe-import.js",
+   "line": 70,
+   "title": "Receptimport (URL/foto) visar rått fetch-fel vid nätverksproblem i stället för den skrivna fallback-texten",
+   "description": "`fb.textContent = e.message || 'Kunde inte hämta receptet — kontrollera adressen.'` visar e.message närhelst det finns ett värde. Om apiFetch('/api/import-recipe', ...) kastar innan svar hinner tolkas (offline, timeout, DNS-fel) blir e.message webbläsarens engelska nätverkssträng, inte den handlingsorienterade svenska texten som redan finns skriven som fallback. Samma mönster för fotoimport på rad 103.",
+   "severity": "P1",
+   "evidence": "js/recipes/recipe-import.js:70 `fb.textContent = e.message || 'Kunde inte hämta receptet — kontrollera adressen.';` och rad 103 `fb.textContent = e.message || 'Kunde inte tolka bilden — prova med klarare ljus eller närmre avstånd.';`",
+   "finder": "ux:fel-tomt-laddning"
+  },
+  {
+   "file": "api/dispatch-to-willys.js",
+   "line": 86,
+   "title": "Willys-utskicksfelet exponerar tekniska termer ('cookies', 'Vercel') till familjemedlemmen som handlar",
+   "description": "När Willys-sessionscookien gått ut visas meddelandet ordagrant i dispatchmodalen (via js/shopping/dispatch-ui.js:112 som renderar data.message rakt av). 'Cookies' och 'Vercel' är tekniska termer som CLAUDE.md uttryckligen förbjuder i felmeddelanden ('alltid på begriplig svenska utan tekniska termer'). Meddelandet riktar sig också specifikt till Joakim även när det är en annan familjemedlem (t.ex. partnern) som står i telefonen på väg att skicka inköpslistan till Willys — den personen kan varken agera själv eller veta vem 'Joakim' är om appen någon gång delas utanför den nuvarande familjen.",
+   "severity": "P2",
+   "evidence": "api/dispatch-to-willys.js:86 `message: \"Dina Willys-cookies har gått ut. Be Joakim uppdatera dem i Vercel.\"` — visas oförändrad av js/shopping/dispatch-ui.js:111-113 `<p>${escapeHtml(data.message || \"Något gick fel — prova igen om en stund.\")}</p>`.",
+   "finder": "ux:fel-tomt-laddning"
+  },
+  {
+   "file": "js/shopping/shopping-list.js",
+   "line": 737,
+   "title": "Inköpsfliken visar samma 'ingen lista ännu'-tomläge vid genuina hämtningsfel som vid faktiskt tom lista",
+   "description": "loadShoppingTab()'s catch-block (utan felobjekt, tyst) sätter samma #shopNoData-tomläge ('Ingen inköpslista ännu — generera en matsedel och flytta ingredienserna hit.') oavsett om listan verkligen är tom eller om hämtningen från Supabase misslyckades (nätverksfel, pausad databas). En familjemedlem som öppnar Inköp-fliken med dålig uppkoppling ser samma vilseledande 'ingen lista'-text som om inköpslistan aldrig skapats, utan möjlighet att skilja på 'inget att handla' och 'kunde inte hämta listan'.",
+   "severity": "P2",
+   "evidence": "js/shopping/shopping-list.js:737-740 `} catch { document.getElementById('shopLoading').style.display = 'none'; document.getElementById('shopNoData').style.display  = ''; unsubscribeShoppingItems(); ...`",
+   "finder": "ux:fel-tomt-laddning"
+  },
+  {
+   "file": "css/styles.css",
+   "line": 5241,
+   "title": "Steppknapparna (+/−) i genereringsguidens inställningar är 38.4px — under 44px-regeln för touch-targets",
+   "description": ".step-btn (används för 'Oprövade recept', 'Vegetariska dagar' och 'Ture-dagar' i wizard-sheeten steg 2, den vy familjen öppnar varje gång de genererar en ny matsedel) är satt till 2.4rem × 2.4rem = 38.4×38.4px vid standard-rootstorlek. CLAUDE.md kräver touch-targets ≥44px eftersom appen är touch-first för en familj utan teknikintresse.",
+   "severity": "P2",
+   "evidence": "css/styles.css:5241-5244 `.step-btn { width: 2.4rem; height: 2.4rem; border-radius: 50%; ... }` — 2.4rem = 38.4px vid 16px root, under 44px-minimum.",
+   "finder": "ux:fel-tomt-laddning"
+  },
+  {
+   "file": "css/styles.css",
+   "line": 2816,
+   "title": "Säsongsanpassnings-toggeln (.toggle-switch) är bara 40×22px tap-yta",
+   "description": "Toggle-switchen för 'Säsongsanpassning' i genereringsguiden är 40px bred och bara 22px hög — långt under 44px-regeln för touch-targets, särskilt på höjden. Label-elementet wrappar hela switchen så hela tap-ytan är begränsad till dessa mått.",
+   "severity": "P2",
+   "evidence": "css/styles.css:2813-2819 `.toggle-switch { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }`",
+   "finder": "ux:fel-tomt-laddning"
+  },
+  {
+   "file": "js/weekly-plan/deals-popup.js",
+   "line": 66,
+   "title": "'Byt in i matsedeln' i Veckans fynd kan öppna en tom dagväljare utan förklaring om alla dagar är fria/egna/blockerade",
+   "description": "dayPicker byggs från targetDays(), som filtrerar bort blockerade, egna och fria dagar (rad 54-55). Finns inga vanliga receptdagar kvar i planen (t.ex. en semestervecka med bara egna anteckningar/fridagar) blir dayPicker en tom sträng. dealBytIn() (rad 161-172) fäller ändå ut '.deal-day-picker' oavsett innehåll — användaren trycker 'Byt in i matsedeln', ser rubriken 'Vilken dag ska bytas till X?' men inga dagkort att trycka på, och har ingen väg vidare eller förklaring till varför.",
+   "severity": "P2",
+   "evidence": "js/weekly-plan/deals-popup.js:54-55 `function targetDays() { const days = window._lastPlan?.days || []; return days.filter((d) => d.recipeId && !d.blocked && !d.custom && !d.free); }` kombinerat med rad 161-172 `export function dealBytIn(...) { ... picker.hidden = open; ... }` som saknar tomt-kontroll innan den fälls ut.",
+   "finder": "ux:fel-tomt-laddning"
+  },
+  {
+   "file": "js/ui/cook-mode.js",
+   "line": 187,
+   "title": "Matlagningsläget visar en tom stegsektion utan förklaring om receptet saknar instruktioner",
+   "description": "`<ol class=\"cook-steps\">${steps}</ol>` renderas rakt av från r.instructions. Har ett recept (t.ex. ett halvfärdigt importerat recept utan tolkade steg) en tom instructions-array blir det en helt tom <ol> — ingredienslistan visas men inga steg, och progressLabel(0,0) returnerar tom sträng (rad 35-38) så inte ens progressraden ger en ledtråd. Familjemedlemmen står vid spisen i fullskärmsläget utan vägledning och utan förklaring till varför steg saknas.",
+   "severity": "P2",
+   "evidence": "js/ui/cook-mode.js:147-151 bygger `steps` direkt från `r.instructions`; rad 187 `<ol class=\"cook-steps\">${steps}</ol>` utan tomt-fallback; rad 35-38 `function progressLabel(done, total) { if (!total) return ''; ... }` ger ingen text vid total=0.",
+   "finder": "ux:fel-tomt-laddning"
+  },
+  {
+   "file": "js/recipes/recipe-browser.js",
+   "line": 101,
+   "title": "Recipe detail (ingredients/instructions) is completely unreachable via keyboard",
+   "description": "The only way to open a recipe card's detail (ingredients, instructions) is `<div class=\"card-header\" onclick=\"toggleCard(this.closest('.recipe-card'))\">`. It is a plain div with no `tabindex`, no `role=\"button\"`, and no `keydown` handler anywhere in `toggleCard()` (js/recipes/recipe-browser.js:133-156). A family member browsing recipes on a laptop with only a keyboard (or a screen-reader user tabbing through) can reach the 'Välj' button inside the header via Tab, but can never open/expand a single recipe to read its ingredients or steps — the entire Recept tab's core browsing flow is unusable without a mouse/touch.",
+   "severity": "P0",
+   "evidence": "index.html/recipe-browser.js:101  `<div class=\"card-header\" onclick=\"toggleCard(this.closest('.recipe-card'))\">` — no tabindex, no role, no keydown.",
+   "finder": "ux:a11y"
+  },
+  {
+   "file": "js/shopping/shopping-list.js",
+   "line": 548,
+   "title": "Shopping-list item checkbox (the entire 'handla' flow) cannot be operated via keyboard",
+   "description": "Every grocery item row is `<li class=\"shopping-item\" onclick=\"toggleShopItem(this,'${key}')\">` (recipe items, line 548-549) and `onclick=\"toggleShopItem(this,this.dataset.key)\"` (manual items, line 568-570). It's a plain `<li>` — no button/checkbox role, no tabindex, no keydown handler. The codebase already knows the correct pattern (`.po-check` in prisoptimera.js uses `role=\"checkbox\" tabindex=\"0\"`) but it wasn't applied here. A keyboard-only user standing in the kitchen with a laptop instead of a phone cannot check off a single item while shopping.",
+   "severity": "P0",
+   "evidence": "js/shopping/shopping-list.js:548-549: `<li class=\"shopping-item${checked?' checked':''}${pantry?' pantry':''}\" onclick=\"toggleShopItem(this,'${key}')\">` and :568-570 identical pattern for manual items.",
+   "finder": "ux:a11y"
+  },
+  {
+   "file": "index.html",
+   "line": 5,
+   "title": "Pinch-zoom is disabled app-wide (viewport maximum-scale=1.0, user-scalable=no)",
+   "description": "`<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover\">` blocks pinch-to-zoom everywhere in the app. Per the project's own history this was fixed for accessibility in Session 105/backlog #22, then deliberately reverted in PR #134 (session-log-archive.md) by re-adding `maximum-scale=1/user-scalable=no` plus an iOS `gesturestart` block in js/ui/scroll.js. A family member with low vision (e.g. a grandparent helping with shopping) cannot pinch-zoom any text or the small ingredient lists/receipt text — a straight WCAG 1.4.4/1.4.10 (Reflow/Resize Text) failure. Flagging because the audit brief explicitly asked to re-verify this specific regression point.",
+   "severity": "P1",
+   "evidence": "index.html:5 `maximum-scale=1.0, user-scalable=no`; confirmed intentional revert in docs/session-log-archive.md: 'pinch-zoom avaktiverad på Joakims önskan (återställer S105:s a11y-#22)'.",
+   "finder": "ux:a11y"
+  },
+  {
+   "file": "index.html",
+   "line": 387,
+   "title": "Modal close '✕' buttons have no accessible name and a touch target far under 44px",
+   "description": "Two of the app's core modal close buttons — 'Skicka till Willys' (dispatchModal, index.html:387) and 'Redigera recept' (editModal, index.html:473) — are `<button onclick=\"closeDispatchModal()\">✕</button>` / `<button onclick=\"closeEditModal()\">✕</button>` with no `aria-label`. Their only accessible name is the glyph '✕' itself, so a screen reader announces something like 'cross mark, button' instead of 'Stäng'. By contrast the importModal's close button (index.html:504) correctly has `aria-label=\"Stäng\"`, proving the pattern is known elsewhere. Additionally the shared style `.modal-header button` (css/styles.css:3426-3433) sets only `font-size:1.3rem; padding:0.2rem 0.4rem` with no min-width/min-height — real hit area is roughly 27×34px, well under the 44px touch-target rule. A user trying to close the recipe editor or the Willys dispatch dialog on a phone has a small, hard-to-name target to hit.",
+   "severity": "P1",
+   "evidence": "index.html:387 `<button onclick=\"closeDispatchModal()\">✕</button>`; index.html:473 `<button onclick=\"closeEditModal()\">✕</button>`; css/styles.css:3426-3433 `.modal-header button { font-size:1.3rem; padding:0.2rem 0.4rem; }` — no min-size.",
+   "finder": "ux:a11y"
+  },
+  {
+   "file": "index.html",
+   "line": 469,
+   "title": "editModal / dispatchModal / importModal lack role=\"dialog\", aria-modal and aria-labelledby (inconsistent with bottom-sheets)",
+   "description": "The three `.modal-overlay` dialogs — `#editModal` (469), `#dispatchModal` (383) and `#importModal` (499) — have no `role=\"dialog\"`, `aria-modal=\"true\"` or `aria-labelledby`, even though each has a titled `<h2>` (`editModalTitle`, `dispatchModalTitle`) that could be wired up. Compare this to the app's own `.bottom-sheet` elements (`planSheet`, `sortSheet`, `filterSheet` — index.html:151,546,562) which all correctly declare `role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"...\"`, and to the JS-built deals-popup/prisoptimera overlays (js/weekly-plan/deals-popup.js:129, js/weekly-plan/prisoptimera.js:38) which also do it right. A screen-reader user opening 'Redigera recept' or 'Skicka till Willys' isn't told they've entered a dialog, and the app content behind isn't excluded from the accessibility tree.",
+   "severity": "P1",
+   "evidence": "index.html:469 `<div id=\"editModal\" class=\"modal-overlay\" style=\"display:none\" onclick=\"handleModalOverlayClick(event)\">` — no role/aria-modal, vs index.html:151 `<div class=\"bottom-sheet\" id=\"planSheet\" role=\"dialog\" aria-modal=\"true\" aria-labelledby=\"planSheetTitle\" hidden>`.",
+   "finder": "ux:a11y"
+  },
+  {
+   "file": "js/app.js",
+   "line": 88,
+   "title": "No focus management on any sheet/modal: focus never moves in, no focus trap, no return-focus on close",
+   "description": "`openSheet(id)` (js/app.js:88-104) unhides the sheet and locks body scroll, but never calls `.focus()` on any element inside it, and `closeSheet(id)` (106-122) never restores focus to the button that opened it. There is also no focus trap anywhere — Tab can move from the open sheet straight into background page controls (the body is only visually pinned via `position:fixed`, not made `inert`/`aria-hidden`). The same gap exists in `openCookMode()` (js/ui/cook-mode.js:134-197) — no `.focus()` call at all. This affects every bottom-sheet (Ny matsedel wizard, Sortera, Filter) and the cooking-mode overlay: a keyboard user who opens 'Ny matsedel' has to manually Tab from wherever focus happened to be, and after closing, focus is left nowhere predictable — disorienting for keyboard and screen-reader users alike.",
+   "severity": "P1",
+   "evidence": "js/app.js:88-104 openSheet() has no `.focus()`/trap; :106-122 closeSheet() has no focus restore; js/ui/cook-mode.js has zero `.focus()` calls (grep confirmed).",
+   "finder": "ux:a11y"
+  },
+  {
+   "file": "js/recipes/recipe-browser.js",
+   "line": 108,
+   "title": "'Provat / Ej provat' status pill is a non-focusable <span> — cannot be toggled via keyboard",
+   "description": "`<span class=\"pill ${r.tested?'pill-tested':'pill-untested'} pill-toggle\" onclick=\"toggleTested(event, ${r.id})\">${r.tested?'✓ Provat':'Ej provat'}</span>` (also duplicated in js/recipes/recipe-editor.js:151-152 for the edit modal) is a `<span>`, not a button — no tabindex, no keydown, no role. A keyboard user can never mark a recipe as tested/untested; the only affordance for this common action is a mouse/touch click.",
+   "severity": "P1",
+   "evidence": "js/recipes/recipe-browser.js:108-109: `<span class=\"pill ${...} pill-toggle\" onclick=\"toggleTested(event, ${r.id})\">...`; identical pattern at js/recipes/recipe-editor.js:151-152.",
+   "finder": "ux:a11y"
+  },
+  {
+   "file": "index.html",
+   "line": 130,
+   "title": "'Veckans ingredienser' collapsible section header has no keyboard access or aria-expanded",
+   "description": "`<div class=\"ingredient-section-header\" onclick=\"toggleIngredientSection()\">` on the Matsedel tab toggles the ingredient preview section open/closed via CSS class (js/weekly-plan/ingredient-preview.js:5-8), but the div has no `tabindex`, no keydown handler, and no `aria-expanded` to announce state to assistive tech. A keyboard user cannot expand this section at all.",
+   "severity": "P1",
+   "evidence": "index.html:130 `<div class=\"ingredient-section-header\" onclick=\"toggleIngredientSection()\">` — plain div, no tabindex/aria-expanded; js/weekly-plan/ingredient-preview.js:5-8 confirms toggle only flips a CSS class.",
+   "finder": "ux:a11y"
+  },
+  {
+   "file": "js/weekly-plan/prisoptimera.js",
+   "line": 98,
+   "title": "Prisoptimera deal-group expand controls are keyboard-inaccessible divs, and the selection checkbox is a 24px touch target",
+   "description": "Inside the Prisoptimera flow (weekly-plan/prisoptimera.js), expanding a deal group to see its individual products is done via three sibling divs — `.po-grp-main` (98), `.po-grp-save` (102), `.po-grp-chev` (103) — all `onclick=\"poToggleOpen(${i})\"` with no tabindex/keydown/aria-expanded, unlike the adjacent `.po-check` selection control which correctly uses `role=\"checkbox\" tabindex=\"0\"` (line 97). Separately, `.po-check` itself (css/styles.css:6490-6494) is only `width:24px; height:24px` — a touch target barely half the 44px minimum, for the primary 'select which deals to cook from' interaction of the whole feature.",
+   "severity": "P1",
+   "evidence": "js/weekly-plan/prisoptimera.js:98 `<div class=\"po-grp-main\" onclick=\"poToggleOpen(${i})\">` (no tabindex); css/styles.css:6490-6494 `.po-check { width: 24px; height: 24px; ... }`.",
+   "finder": "ux:a11y"
+  },
+  {
+   "file": "js/shopping/shopping-list.js",
+   "line": 399,
+   "title": "'X av Y klara' shopping progress has no aria-live — screen-reader users get no spoken feedback when checking items",
+   "description": "`updateShopProgress()` writes the running count directly into `.shop-progress-label`/`.shop-progress-sub` text nodes (lines 399-404, markup at 427-429) with no `aria-live` region anywhere on `#shopProgress`. Every other status readout in the app that updates live text does use `aria-live` (e.g. js/auth-gate.js:22/120 `role=\"status\" aria-live=\"polite\"`, js/lists/lists-view.js:488 `aria-live=\"polite\"`), so this is a specific gap. A screen-reader user ticking off groceries never hears 'X av Y klara' update.",
+   "severity": "P1",
+   "evidence": "js/shopping/shopping-list.js:399-404 sets `lbl.textContent`/`sub.textContent` with no aria-live host; markup at :417-430 (`shopProgressHtml`) has no `aria-live` attribute on `#shopProgress`.",
+   "finder": "ux:a11y"
+  },
+  {
+   "file": "css/styles.css",
+   "line": 4533,
+   "title": "Passed-day cards on Matsedel drop to ~2.7:1 text contrast (fails WCAG AA 4.5:1)",
+   "description": "`.dlx-day.inert { opacity: 0.55; }` dims the whole passed-day card (title text color `--forest` #3d5544, card bg `--linen-card` #fdfcf8) against the page background `--linen` #f5f1e8. Compositing 55% opacity onto the page background yields an effective text color of roughly #909b8e on a background of roughly #f9f7f1 — a computed contrast ratio of ≈2.7:1, well under WCAG AA's 4.5:1 minimum for normal-size text (the recipe title in these cards is not large text). Passed days in the current week are meant to stay 'readable and clickable' per the code comment (css/styles.css:4396-4399), but for a low-vision user they're barely legible.",
+   "severity": "P1",
+   "evidence": "css/styles.css:4533 `.dlx-day.inert { cursor: default; opacity: 0.55; }`; base colors css/styles.css:5-14 `--linen:#f5f1e8; --linen-card:#fdfcf8; --forest:#3d5544`. Computed WCAG contrast of blended result ≈2.7:1 (manual sRGB relative-luminance calculation).",
+   "finder": "ux:a11y"
+  },
+  {
+   "file": "css/styles.css",
+   "line": 86,
+   "title": "--text-muted (#7d8579 on #f5f1e8) is ≈3.4:1 — fails WCAG AA 4.5:1, used for small secondary text throughout the app",
+   "description": "`--text-muted: var(--moss-muted)` resolves to `#7d8579` and is used as `color` in dozens of places in light mode against the `--linen` #f5f1e8 background (grep found 60+ usages). Computed contrast ratio is ≈3.39:1 — passes the 3:1 'large text/UI component' threshold but fails the 4.5:1 threshold required for normal-size text. Concrete small-text instances: `.setting-sublabel` (css/styles.css:2740-2746, font-size 0.72rem ≈11.5px) — the explanatory text under every setting in the 'Ny matsedel' wizard ('Max antal nya recept i planen', 'Antal dagar utan kött/fisk', etc.) — and `.results-info` (css/styles.css:690-694, 0.78rem) — the recipe-count line on the Recept tab. A family member with reduced contrast sensitivity will struggle to read these labels.",
+   "severity": "P1",
+   "evidence": "css/styles.css:86 `--text-muted: var(--moss-muted);` → `--moss-muted:#7d8579` (line 25); css/styles.css:2740-2746 `.setting-sublabel { font-size:0.72rem; color:var(--text-muted); }`. Computed contrast #7d8579 on #f5f1e8 ≈ 3.39:1 (manual WCAG relative-luminance calculation).",
+   "finder": "ux:a11y"
+  },
+  {
+   "file": "css/styles.css",
+   "line": 4291,
+   "title": "'Vecka N' week-rail label uses ochre-on-linen text at ≈2.3:1 contrast",
+   "description": "`.dlx-rail-week { color: var(--ochre); font-size: 0.72rem; font-weight:600; text-transform:uppercase; }` renders the 'VECKA 28' label in the Matsedel week-navigation rail (js/weekly-plan/plan-viewer-deluxe.js:430 `<span class=\"dlx-rail-week\">Vecka ${isoWeekNumber(weekStart)}</span>`) using `--ochre` (#c89a3e) directly as small uppercase text on the `--linen` (#f5f1e8) page background. Computed contrast is ≈2.29:1 — badly fails WCAG AA (needs 4.5:1 for this size). Unlike the alert-banner text which deliberately uses the darker `--ochre-deep` (#8a6818, css:5428) 'för läsbarhet', this label uses the lighter `--ochre` straight, so the week number is genuinely hard to read for low-vision users in light mode.",
+   "severity": "P1",
+   "evidence": "css/styles.css:4286-4293 `.dlx-rail-week { font-size:0.72rem; ... color: var(--ochre); }`; js/weekly-plan/plan-viewer-deluxe.js:430 usage. Computed contrast #c89a3e on #f5f1e8 ≈2.29:1 (manual WCAG relative-luminance calculation), vs. the deliberately-darker `--ochre-deep` (#8a6818) used elsewhere for readability (css:5423-5428).",
+   "finder": "ux:a11y"
+  },
+  {
+   "file": "css/styles.css",
+   "line": 5241,
+   "title": "Stepper +/- buttons (Ny matsedel wizard) are 38.4px — below the 44px touch-target rule",
+   "description": "`.step-btn { width: 2.4rem; height: 2.4rem; ... }` = 38.4×38.4px at the default 16px root font-size. These are the −/+ buttons for 'Oprövade recept', 'Vegetariska dagar', 'Ture-dagar' and the (soon-to-launch) portions stepper in the 'Ny matsedel' wizard — one of the most frequently used controls in the app (every plan generation touches it). They fall short of the project's own ≥44px touch-target rule and of the 44px fix already applied to `.remove-item-btn` (css/styles.css:3257-3267, which even has a code comment '≥44px träffyta (Session 120)').",
+   "severity": "P1",
+   "evidence": "css/styles.css:5241-5257 `.step-btn { width: 2.4rem; height: 2.4rem; ... }` (38.4×38.4px); contrast with css/styles.css:3257-3267 `.remove-item-btn { ... min-width: 44px; /* ≥44px träffyta (Session 120) */ }`.",
+   "finder": "ux:a11y"
+  },
+  {
+   "file": "css/styles.css",
+   "line": 3871,
+   "title": "Brand-pill remove '×' button has no defined touch target and no accessible name",
+   "description": "`.pref-pill-x { background:none; border:none; font-size:1rem; padding:0 0.15rem; }` (used for removing blocked brands in the Inköpspreferenser panel, js/shopping/dispatch-preferences.js:70/103: `<button class=\"pref-pill-x\" onclick=\"removeBrand('${...}')\">&times;</button>`) has no min-width/min-height at all — the rendered hit area is only the glyph's own box, well under 44px — and it also has no `aria-label` or `title`, so its accessible name is just the '×' character. A user with several blocked brands has to precisely tap a tiny, unlabeled × to remove one.",
+   "severity": "P2",
+   "evidence": "css/styles.css:3871-3879 `.pref-pill-x { ...padding:0 0.15rem; }` — no min-size; js/shopping/dispatch-preferences.js:70 `<button class=\"pref-pill-x\" onclick=\"removeBrand('${jsStringAttr(b)}')\">&times;</button>` — no aria-label.",
+   "finder": "ux:a11y"
+  },
+  {
+   "file": "index.html",
+   "line": 60,
+   "title": "Several text inputs rely solely on a placeholder with no <label> or aria-label",
+   "description": "The header recipe search (`#search`, index.html:60), the two manual shopping-add inputs (`#manualItemInputEmpty` line 339, `#manualItemInput` line 363) and the import URL field (`#importUrlInput`, line 520) all have only a `placeholder` attribute and no associated `<label for>`, `aria-label`, or `aria-labelledby`. Placeholder text disappears the moment a value is typed and is not reliably exposed as an accessible name by all assistive technology. Compare with the login form (js/auth-gate.js:8-17) which correctly pairs every input with a real `<label>`.",
+   "severity": "P2",
+   "evidence": "index.html:60 `<input id=\"search\" type=\"text\" placeholder=\"Sök på namn, ingrediens, tagg…\" autocomplete=\"off\">` — no label/aria-label; index.html:339-341 and :520 same pattern.",
+   "finder": "ux:a11y"
+  },
+  {
+   "file": "js/ui/cook-mode.js",
+   "line": 145,
+   "title": "Cook-mode ingredient/step checklist items are non-focusable <li> elements",
+   "description": "In matlagningsläget (cooking mode), each ingredient (`<li class=\"cook-ing\" onclick=\"this.classList.toggle('done')\">`, line 145) and each instruction step (`<li class=\"cook-step\" onclick=\"this.classList.toggle('done');window._cookProgress()\">`, line 148) is a plain `<li>` with no tabindex/keydown/role. A keyboard user following a recipe on a laptop screen next to the stove cannot check off ingredients or steps. The overlay itself also has no `role=\"dialog\"`/`aria-modal` (unlike the app's other overlays) — only an Escape-key close handler (line 131) is present.",
+   "severity": "P2",
+   "evidence": "js/ui/cook-mode.js:145 `<li class=\"cook-ing\" onclick=\"this.classList.toggle('done')\">...`; :148 `<li class=\"cook-step\" onclick=\"this.classList.toggle('done');window._cookProgress()\">`; `_overlay.className='cook-overlay'` (line 161) has no role/aria-modal set anywhere in the file.",
+   "finder": "ux:a11y"
+  },
+  {
+   "file": "js/today/today-view.js",
+   "line": 188,
+   "title": "'Hela matsedeln' / 'Alla anteckningar' navigation links are non-focusable <span> elements",
+   "description": "On the Idag (start) tab, the links that jump to the Matsedel and Listor tabs are `<span class=\"today-link\" onclick=\"switchTab('vecka')\">Hela matsedeln</span>` (line 188) and `<span class=\"today-link\" onclick=\"switchTab('listor')\">Alla anteckningar</span>` (line 265) — spans, not `<a>`/`<button>`, with no tabindex. A keyboard user landing on the start tab (the app's default landing view) cannot reach the full weekly plan or the notes list through these links.",
+   "severity": "P2",
+   "evidence": "js/today/today-view.js:188 `<span class=\"today-link\" onclick=\"switchTab('vecka')\">Hela matsedeln</span>`; :265 identical pattern for 'Alla anteckningar'.",
+   "finder": "ux:a11y"
+  },
+  {
+   "file": "js/lists/lists-view.js",
+   "line": 396,
+   "title": "Family-list checklist items (Listor tab) are non-focusable <li> elements",
+   "description": "`<li class=\"shopping-item${i.checked?' checked':''}\" onclick=\"flToggleItem(this,'${i.id}')\">` (line 396) is the checkbox row for every item in a shared family list (e.g. packing lists). Same pattern as the grocery list — plain `<li>`, no tabindex/keydown/role — so a keyboard user cannot check off items in shared lists either.",
+   "severity": "P2",
+   "evidence": "js/lists/lists-view.js:396 `<li class=\"shopping-item${i.checked ? ' checked' : ''}\" onclick=\"flToggleItem(this,'${i.id}')\">`.",
+   "finder": "ux:a11y"
+  },
+  {
+   "file": "js/shopping/dispatch-preferences.js",
+   "line": 117,
+   "title": "'Inköpspreferenser' collapsible panel button has no aria-expanded",
+   "description": "`<button class=\"prefs-header\" onclick=\"togglePrefsPanel()\">` is a real, keyboard-focusable `<button>` (good), but never gets `aria-expanded` set to reflect whether `#prefsBody` is shown or hidden, so screen-reader users aren't told the current state of the panel before or after activating it.",
+   "severity": "P2",
+   "evidence": "js/shopping/dispatch-preferences.js:117-120 `<button class=\"prefs-header\" onclick=\"togglePrefsPanel()\">...<span class=\"prefs-chevron\" id=\"prefsChevron\">›</span></button>` — no aria-expanded attribute set here or in `togglePrefsPanel()`.",
+   "finder": "ux:a11y"
+  },
+  {
+   "file": "api/generate.js",
+   "line": 116,
+   "title": "Regenerating a matsedel silently destroys the current plan — even an already-confirmed, shopped-for one — with zero warning",
+   "description": "The 'Ny matsedel' wizard (always reachable from the Matsedel tab, regardless of whether the current plan is confirmed) has no confirmation step before calling /api/generate. Server-side, archiveOldPlan() only archives days strictly BEFORE the new start date (`.lt(\"date\", newStartDate)`) — every other meal_days row for the old plan, including future days that were never reached, is unconditionally deleted (`await database.from(\"meal_days\").delete().eq(\"plan_id\", oldPlan.id);`) with no check on `confirmed_at`. Since the wizard defaults start date to today, hitting 'Generera ny plan' on a normal Tuesday after already confirming and starting to shop the week's plan wipes the whole remaining week (including all recipe-item checkmarks on the built shopping list, which gets fully rebuilt) and replaces it with a brand-new random plan. Scenario: family confirmed Monday's plan, went shopping, checked off half the items in handla-läge; on Wednesday one parent reopens the wizard just to look at settings and taps 'Generera ny plan' out of habit — the confirmed plan, the day-by-day recipes they already bought ingredients for, and all shopping progress are gone instantly, replaced silently with no undo and no prior warning that this would happen.",
+   "severity": "P0",
+   "evidence": "archiveOldPlan(): `.not(\"recipe_id\", \"is\", null)... .lt(\"date\", newStartDate)` builds daysToArchive, but then unconditionally: `await database.from(\"meal_days\").delete().eq(\"plan_id\", oldPlan.id);` — no confirmed_at check anywhere in generate.js; js/weekly-plan/plan-generator.js generatePlan() (lines 234-347) calls POST /api/generate with no confirmDialog() guard except an unrelated >7-day rea-pricing warning.",
+   "finder": "ux:flodes-ux"
+  },
+  {
+   "file": "js/weekly-plan/prisoptimera.js",
+   "line": 266,
+   "title": "Prisoptimera and 'Veckans fynd' can replace a recipe on an already-confirmed plan without warning, silently resetting all shopping-list checkmarks",
+   "description": "The deluxe week view explicitly blocks direct recipe replacement once a plan is confirmed (`const canReplace = active && !window.planConfirmed;` in plan-viewer-deluxe.js, used at lines 1133 and 1181, with the row hidden once confirmed). Prisoptimera's targetDays()/poConfirmDay() and deals-popup.js's targetDays()/dealConfirmDay() never check window.planConfirmed — both remain reachable at all times (the Prisoptimera button in the Matsedel header, and the 'se fynd ›' hero stat which stays visible via `hasDeals = hasActiveDays && !!(window._weeklyDeals?.candidates?.length)` with no confirmed check). On the server, api/replace-recipe.js rebuilds the ENTIRE shopping list from scratch whenever the plan is confirmed (creates a new shopping_lists row, all recipe items inserted with `checked: false`; only manual items' checked state is carried over). Scenario: mid-week, after confirming and partially checking off the shopping list, someone opens Prisoptimera, sees a good rea, taps 'Lägg in på en dag' for Thursday — the toast just says '<recipe> inlagt — sparar ca X kr', with no mention that this just regenerated the shopping list and unchecked every recipe ingredient they had already picked up.",
+   "severity": "P1",
+   "evidence": "prisoptimera.js targetDays(): `return (window._lastPlan?.days || []).filter((d) => d.recipeId && !d.blocked);` — no planConfirmed check; api/replace-recipe.js: `if (plan.confirmed_at) { ... itemRows.push({..., checked: false, ...}) ... }` for recipe items, manual items' checked state restored separately.",
+   "finder": "ux:flodes-ux"
+  },
+  {
+   "file": "js/app.js",
+   "line": 88,
+   "title": "No browser/Android back-button handling anywhere in the app — a classic PWA trap for every sheet and modal",
+   "description": "A repo-wide search found zero uses of `popstate`, `pushState`, or `history.` in js/. Every sheet/modal (generation wizard, sort/filter sheets, recipe editor, import sheet, dispatch confirm modal, day-actions sheet in the deluxe week view, Prisoptimera, Veckans fynd, saving popover, confirm dialogs) is opened/closed purely via DOM class toggles (openSheet/closeSheet in app.js, dlxCloseSheet in plan-viewer-deluxe.js, etc.) with no history entry pushed. On Android, pressing the hardware/gesture back button while any of these is open does not close it — it instead acts on the browser/PWA's navigation history, which for a single-document SPA typically exits the app entirely (or does nothing visible), abandoning whatever the user was doing (e.g. mid-way through the generation wizard, mid-edit of a recipe, mid photo-import).",
+   "severity": "P1",
+   "evidence": "Grep for `popstate|pushState|history\\.` across js/ returns no matches; js/app.js openSheet/closeSheet (lines 88-125) only toggle `hidden`/`open` classes and lock body scroll — no `history.pushState`/`popstate` listener is registered anywhere in the codebase.",
+   "finder": "ux:flodes-ux"
+  },
+  {
+   "file": "js/recipes/recipe-import.js",
+   "line": 137,
+   "title": "Closing the import sheet mid-request doesn't cancel it — the recipe editor can pop open over whatever the user is doing next, unannounced",
+   "description": "importFromUrl()/importFromPhoto() kick off a fetch to /api/import-recipe with no AbortController, and closeImportModal() (triggered by tapping the backdrop or ✕ while the request is in flight) only hides the sheet — it does not cancel the request. When the promise later resolves, the success path unconditionally calls openImportPreview(data.recipe), which force-opens the full-screen recipe editor modal (`display:block`, `document.body.style.overflow='hidden'`) regardless of what screen the user has navigated to by then. Scenario: user starts a photo import, decides midway (10+ seconds of 'Analyserar bild…' feels slow) to cancel by tapping outside the sheet, and switches to the Recept tab to browse instead; a few seconds later the edit-recipe modal suddenly appears over their current screen with an unreviewed AI-parsed recipe and locks scrolling — if they don't notice and tap something reflexively, an unwanted or unedited recipe can get saved.",
+   "severity": "P1",
+   "evidence": "closeImportModal() (lines 21-26) only does `modal.classList.remove('open'); modal.style.display='none';` with no fetch abort; importFromUrl() (lines 50-73) and importFromPhoto() (75-108) both call `closeImportModal(); openImportPreview(data.recipe);` unconditionally on success, and openImportPreview() (line 137) sets `document.getElementById('editModal').style.display = 'block'` + `document.body.style.overflow = 'hidden'`.",
+   "finder": "ux:flodes-ux"
+  },
+  {
+   "file": "js/recipes/recipe-editor.js",
+   "line": 29,
+   "title": "Recipe editor has no unsaved-changes warning — a stray tap outside the modal silently discards all edits",
+   "description": "closeEditModal() and handleModalOverlayClick() close the edit modal on any backdrop tap or ✕ press with no check for unsaved changes and no confirmation dialog (unlike deleteRecipe()/clearShoppingList() elsewhere in the app, which do use confirmDialog()). Scenario: a family member spends a couple of minutes retyping a recipe's instructions or fixing ingredient amounts, then accidentally taps just outside the modal card (a very easy mis-tap on a phone) — everything typed is gone instantly with no toast, no undo, and no 'discard changes?' prompt.",
+   "severity": "P1",
+   "evidence": "closeEditModal(): `m.classList.remove('open'); ... window.editingId = null;` — no dirty-check; handleModalOverlayClick(): `if (event.target === document.getElementById('editModal')) closeEditModal();` fires on any backdrop click.",
+   "finder": "ux:flodes-ux"
+  },
+  {
+   "file": "js/shopping/shopping-list.js",
+   "line": 561,
+   "title": "Manual shopping-list items are keyed by name, not id — duplicate item names cross-wire their checkboxes and the remove button",
+   "description": "manualItemLi() builds the checked-state key as `manual::${name}` (text-based) instead of using the row id, and removeManualItem(item) resolves which row to delete via `(window._shopManualItems || []).indexOf(item)` — always the FIRST array entry with that name. If two manual items end up with the same name (e.g. one parent adds 'kaffe' from their phone and, before seeing the realtime update, the other parent adds 'kaffe' too), the two rows share one checked-state key (checking either one visually checks both), and tapping × on whichever row visually looks like the second one actually deletes the first row in the underlying array — not necessarily the one the user tapped.",
+   "severity": "P2",
+   "evidence": "manualItemLi(idx, name): `const key = 'manual::' + name;` ... `onclick=\"toggleShopItem(this,this.dataset.key)\"`; removeManualItem(item) (lines 796-799): `const idx = (window._shopManualItems || []).indexOf(item); const id = idx === -1 ? null : window._shopItemIds?.['manual::'+idx];`",
+   "finder": "ux:flodes-ux"
+  },
+  {
+   "file": "js/shopping/dispatch-ui.js",
+   "line": 29,
+   "title": "Dispatch confirmation count includes 'har hemma' items that the backend silently excludes, so the number shown never matches what's actually sent",
+   "description": "openDispatchConfirm() sums every recipe-item and manual-item currently in window._shopRecipeItems/_shopManualItems to show 'Skicka X ingredienser till din Willys-korg?' — this count includes items the family has marked 'har hemma' (pantry). The backend (fetchShoppingListFromSupabase in api/dispatch-to-willys.js) filters those out before building the cart. So if 5 of 20 items are marked 'har hemma', the confirm dialog says 'Skicka 20 ingredienser' but only 15 are actually sent — and the result screen's 'X produkter tillagda' doesn't reconcile back to the number the user just agreed to, with no copy explaining the gap.",
+   "severity": "P2",
+   "evidence": "openDispatchConfirm(): `const items = window._shopRecipeItems || {}; const recipeCount = Object.values(items).reduce((sum, arr) => sum + (arr?.length || 0), 0); ... const totalCount = recipeCount + manualCount;` — no pantry filtering; api/dispatch-to-willys.js fetchShoppingListFromSupabase(): `if (pantry.has(pantryKeyFromName(item.name))) continue;` filters pantry items server-side only.",
+   "finder": "ux:flodes-ux"
+  },
+  {
+   "file": "css/styles.css",
+   "line": 6467,
+   "title": "Prisoptimera's close/back buttons and rea-item checkbox are below the project's own 44px touch-target rule",
+   "description": "`.po-back`/`.po-close` (the header buttons that navigate/close the whole Prisoptimera sheet) are 34×34px, and `.po-check` (the checkbox used to select which rea ingredients to build recipe suggestions from — the core interaction of step 1) is 24×24px with no extra hit-area padding beyond the box itself. Both fall well short of the ≥44px touch-target rule the project otherwise follows carefully elsewhere (e.g. .pantry-btn and .remove-item-btn in the shopping list explicitly comment '≥44px träffyta'). On a touch-first phone this makes the reor checklist — a screen with potentially a dozen+ rows to tap through — fiddly to use accurately.",
+   "severity": "P2",
+   "evidence": "`.po-back, .po-close { ... width: 34px; height: 34px; ... }`; `.po-check { width: 24px; height: 24px; border-radius: 7px; ... }` with `.po-grp-head` padding only applying to the row, not extending the checkbox's own hit area.",
+   "finder": "ux:flodes-ux"
+  },
+  {
+   "file": "js/weekly-plan/plan-generator.js",
+   "line": 234,
+   "title": "Closing the generation wizard mid-request doesn't cancel generation — it completes and force-navigates the user back anyway",
+   "description": "Tapping the wizard sheet's backdrop at any time (bound globally via `data-sheet-close=\"planSheet\"` in index.html, handled in js/app.js's global click listener) closes the sheet immediately, including while generatePlan()'s fetch to /api/generate is still in flight — the generate button being disabled only prevents a second submit, it doesn't stop the request. When the request resolves, generatePlan() proceeds regardless: it force-switches to the Matsedel tab, shows the new plan, and pops a success toast (and possibly the deals popup). A user who dismissed the sheet believing they'd cancelled generation is instead unexpectedly dropped into a newly generated plan a moment later.",
+   "severity": "P2",
+   "evidence": "generatePlan() has no AbortController and no check for whether the sheet is still open before `window.switchTab('vecka'); window.closeBottomSheet?.('planSheet'); window.showToast?.(...)`; index.html line 152 `<div class=\"bottom-sheet-backdrop\" data-sheet-close=\"planSheet\"></div>` is wired to an unconditional `closeSheet(id)` in js/app.js (lines 130-133).",
+   "finder": "ux:flodes-ux"
+  },
+  {
+   "file": "index.html",
+   "line": 619,
+   "title": "Ingen fallback om app.js (ES-modul) inte kan laddas — appen fastnar tyst på \"Laddar…\"",
+   "description": "<script type=\"module\" src=\"js/app.js?v=134\"> har ingen onerror-hantering, inget globalt window.onerror/unhandledrejection-nät och inget <noscript>. js/supabase-client.js importerar Supabase-SDK:t direkt från https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm (index.html rad 18, modulepreload). Om den importen fallerar (CDN nere, adblocker, brandvägg som blockerar jsdelivr, eller ett syntaxfel i valfri importerad modul) exekveras aldrig boot() i app.js — då körs varken requireAuth() (auth-gate.js) eller de Supabase-nedkopplade-hjälparna i app.js/init() som annars ger ett vänligt svenskt fel. Resultatet: familjemedlemmen ser bara den statiska \"Laddar…\"-spinnern (index.html rad 68-70, #todayView) i all evighet, utan text, utan knapp, utan förklaring — bara ett fel i webbläsarkonsolen som familjen aldrig ser. Detta är precis den situation CLAUDE.md:s regel om begripliga svenska felmeddelanden ska förhindra, men skyddet finns bara EFTER att modulen redan laddats — inte för själva laddningsfelet. Scenario: en familjemedlem öppnar appen på mobilen med en adblocker eller ett nätverk som blockerar cdn.jsdelivr.net (t.ex. skolans/jobbets wifi) — appen visar bara en snurrande \"Laddar…\"-text för evigt, ingen indikation om vad som är fel eller vad man ska göra.",
+   "severity": "P1",
+   "evidence": "index.html:619 `<script type=\"module\" src=\"js/app.js?v=134\"></script>` (ingen onerror/noscript); index.html:68-70 `<div id=\"todayView\" class=\"visible\"><div class=\"today-loading\">...<p>Laddar…</p></div></div>` visas permanent om skriptet aldrig kör; js/supabase-client.js:5 `import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';`",
+   "finder": "ux:smoke-headless"
+  },
+  {
+   "file": "css/styles.css",
+   "line": 4099,
+   "title": "\"Glömt lösenord?\"-knappen på inloggningsskärmen har för liten träffyta för touch",
+   "description": ".auth-forgot har padding: 4px 8px och font-size: 0.88rem utan min-height/min-width. Det ger en verklig träffyta på ungefär 24-25px hög — långt under den 44px-regel som CLAUDE.md kräver och som resten av kodbasen konsekvent tillämpar (se t.ex. css/styles.css rad 3231-3232, 3564, 4790, uttryckligen kommenterade \"≥44px träffyta (Session 120)\"). Detta är den enda vägen till lösenordsåterställning för en icke-teknisk familjemedlem som glömt lösenordet på mobilen, och just den knappen missade 44px-konventionen som applicerats överallt annars. Scenario: en förälder med lite större fingrar eller på en mobil med skärmskydd försöker trycka på \"Glömt lösenord?\" under inloggningen och missar upprepade gånger eftersom träffytan är mindre än hälften av rekommenderad minsta storlek.",
+   "severity": "P1",
+   "evidence": "css/styles.css:4099-4110 `.auth-forgot { display: block; margin: 14px auto 0; padding: 4px 8px; background: none; border: none; font-family: inherit; font-size: 0.88rem; color: var(--lichen-deep); text-decoration: underline; cursor: pointer; }` — ingen min-height/min-width, jfr. mönstret på t.ex. rad 3231-3232 `min-width: 44px; min-height: 44px; /* ≥44px träffyta (Session 120) */`",
+   "finder": "ux:smoke-headless"
+  },
+  {
+   "file": "index.html",
+   "line": 5,
+   "title": "Pinch-zoom avstängd på hela appen (user-scalable=no) — försvårar för familjemedlemmar som behöver zooma",
+   "description": "Viewport-metataggen sätter user-scalable=no och maximum-scale=1.0, vilket helt blockerar pinch-to-zoom i webbläsaren på hela appen, inklusive inloggningsskärmen. Detta är ett klassiskt tillgänglighetsproblem (motsvarar WCAG 1.4.4 Resize Text) och slår särskilt hårt mot en familjeapp där \"snart: främmande familjer utan teknikintresse\" (CLAUDE.md) och där äldre släktingar/mor- och farföräldrar med sämre syn kan tänkas använda appen. Om text eller knappar råkar bli för smått renderade på en viss enhet finns ingen möjlighet att kompensera genom att zooma in, till skillnad från de flesta väl fungerande mobilwebbappar. Scenario: en användare med nedsatt syn försöker läsa e-postfältets etikett eller ett litet felmeddelande på inloggningsskärmen, försöker nypa för att zooma in — inget händer, texten går inte att förstora.",
+   "severity": "P2",
+   "evidence": "index.html:5 `<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover\">`",
+   "finder": "ux:smoke-headless"
+  },
+  {
+   "file": "index.html",
+   "line": 68,
+   "title": "Kort flimmer av irrelevant \"Idag\"-laddningsskärm hinner synas innan inloggningsrutan täcker skärmen",
+   "description": "#todayView har class=\"visible\" som statisk markup och visar en \"Laddar…\"-spinner direkt vid HTML-parsning. Eftersom js/app.js laddas som type=\"module\" (deferred by default) exekveras boot()→requireAuth() (som infogar den täckande .auth-gate-overlayen, z-index 9999) först efter att webbläsaren redan har målat upp den initiala HTML:en. På en långsam enhet/anslutning kan det uppstå ett kort, förvirrande flimmer där \"Idag\"-vyns laddningsspinner (som inte alls hör till inloggning) syns innan inloggningskortet täcker den. Litet men äkta polish-problem för en app vars första intryck är inloggningsskärmen.",
+   "severity": "P2",
+   "evidence": "index.html:68-70 `<div id=\"todayView\" class=\"visible\"><div class=\"today-loading\"><span class=\"today-loading-spin\">⟳</span><p>Laddar…</p></div></div>` renderas ovillkorligt innan JS kör; js/app.js:223-225 `async function boot() { await requireAuth(); await init(); ... }` — requireAuth() (som visar auth-gate) körs bara efter att modulskriptet faktiskt exekverat, dvs efter initial HTML-paint.",
+   "finder": "ux:smoke-headless"
+  }
+ ],
+ "coverage": [
+  {
+   "finder": "touch-mobil",
+   "notes": ""
+  },
+  {
+   "finder": "morkt-tema",
+   "notes": "Täckt: hela css/styles.css (6567 rader) grep:ad för alla hex-/rgb-färger utanför variabeldefinitioner, samtliga `color: white`/`color: #fff`/`stroke: #fff`-förekomster och deras bakgrundspar, hela mörkt-tema-blocket (rad 100-142, både @media- och [data-theme]-varianterna), theme-color-metataggar i index.html samt manifest.webmanifest. Alla `style=`-attribut i js/*.js och js/*/*.js grep:ade — samtliga inline-färger går via CSS-variabler (PROTEIN_COLOR/LIST_COLORS i js/utils.js resp. js/lists/lists-view.js), inga hårdkodade hex hittades i JS-templates. Alla SVG-ikoner grep:ade för hårdkodad stroke/fill — samtliga använder currentColor utom de två #fff-fallen som redan rapporterats (delar av samma rust-knapp-bugg). Genomgånget yta för yta: Idag (today-view.js — today-btn-primary/quiet, alert-banner, deal-chip — alla korrekt tokeniserade), Matsedel (dlx-hero är avsiktligt fast mörk i båda teman och konsekvent däri; hittade knappbuggarna ovan), Inköp (item-checkbox-buggen, pill-untested/pantry-tag OK), Recept (select-btn-bugg, pill-protein gränsfall ~4.16:1 ej rapporterat pga låg allvarlighetsgrad), Listor (samma item-checkbox-bugg som Inköp), sheets/modaler (editModal input-kontrast, po-sheet/prisoptimera-bugg, confirm-overlay/cook-overlay OK, auth-gate/auth-submit granskad — nära-miss ~4.06:1 men EJ rapporterad separat då den ligger nära gränsen och bedömdes svagare bevisad än huvudfynden), toast (rapporterad), auth-skärm (i övrigt korrekt tokeniserad). Native <select> kontrollerat: `color-scheme: light/dark` sätts korrekt på :root så webbläsarens egen dropdown-lista följer OS-tema. Ej täckt/ej relevant: appen har inga bilder/receptfoton ännu (funktionen är planerad till M1 enligt CLAUDE.md) så lins-punkt 5 (ljusa bilder som lyser i mörkt läge) går inte att granska. Rörde inte death-CSS (.week-day-card/.timeline-*) eller stale \"Välj\"-titel per instruktion, även om .timeline-chip-plan.pending (rad 1199-1201) har samma rust/white-mönster som huvudfyndet — utelämnad då den tillhör den uteslutna klassiska vyn. .pending-badge, .trigger-btn och .day-replace-btn-primary har identiskt rust/white-mönster men är inte refererade från någon js/-fil eller index.html (grep gav inga träffar) — bedömda som död kod utan användarscenario och därför uteslutna."
+  },
+  {
+   "finder": "fel-tomt-laddning",
+   "notes": ""
+  },
+  {
+   "finder": "a11y",
+   "notes": ""
+  },
+  {
+   "finder": "flodes-ux",
+   "notes": ""
+  },
+  {
+   "finder": "smoke-headless",
+   "notes": ""
+  }
+ ]
+}

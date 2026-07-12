@@ -1,0 +1,241 @@
+{
+ "rafynd": [
+  {
+   "file": "js/weekly-plan/plan-generator.js",
+   "title": "toggleSettings() references #settingsArrow which no longer exists in the DOM (orphaned handler, latent null-deref)",
+   "description": "toggleSettings() does `const arrow = document.getElementById('settingsArrow'); ... arrow.classList.toggle('open', open);` with no null-check. index.html's settings panel (line 183, `<div class=\"settings-panel open\" id=\"settingsPanel\">`) has no element with id=\"settingsArrow\" anywhere in the static markup, and grep confirms no JS module ever creates an element with that id (only the two getElementById reads in this function). The function is exposed as `window.toggleSettings` (line 390) but nothing in index.html or any JS-generated template literal calls `toggleSettings()` — the settings panel is now always rendered with the `open` class baked in statically, so the collapse/expand arrow UI it was written for has been removed from the markup while the handler function (and its global export) was left behind. Today this is unreachable dead code (no caller), so it doesn't crash in normal use. But it is live, exported globally, and will throw `Cannot read properties of null (reading 'classList')` and abort silently the moment anything invokes `window.toggleSettings()` again (e.g. a reintroduced collapse button, a future refactor that adds an onclick pointing at the still-exported function, or manual invocation from devtools) since `arrow` is null.",
+   "severity": "P2",
+   "evidence": "js/weekly-plan/plan-generator.js:92-97: `export function toggleSettings() {\\n  const panel = document.getElementById('settingsPanel');\\n  const arrow = document.getElementById('settingsArrow');\\n  const open  = panel.classList.toggle('open');\\n  arrow.classList.toggle('open', open);\\n}` — grep -rn \"settingsArrow\" index.html js/ returns only this function's own getElementById call; grep -rn \"toggleSettings\" index.html js/ returns only the function definition and its `window.toggleSettings = toggleSettings;` export (line 390), no caller anywhere.",
+   "finder": "selektor-kontrakt"
+  },
+  {
+   "file": "/home/user/Receptbok/docs/status.md",
+   "line": 12,
+   "title": "Frontend version-dokumentation inkomplett (app.js-versionen saknas)",
+   "description": "Status.md dokumenterar CSS-version (v168) och Service Worker-version (v81) men nämner INTE app.js-versionen (v134). Enligt CLAUDE.md konvention (rad ~225) ska alla tre versioner ('css/styles.css?v=N', 'js/app.js?v=N', 'CACHE_VERSION vN') dokumenteras tillsammans vid frontend-ändringar för att undvika version-mismatch. Status.md säger 'styles v168/SW v81' — app.js?v=134 är helt frånvarande.",
+   "severity": "P2",
+   "evidence": "CLAUDE.md: 'Vid varje frontend-ändring som ska nå mobilen: bumpa versionerna. CSS: css/styles.css?v=N... JS-entry: js/app.js?v=N... Service worker: CACHE_VERSION = receptbok-vN'. status.md Digest rad 60: 'styles v168/SW v81' (missing app.js). index.html rad 619: 'js/app.js?v=134'. Konvention bruten — app.js-versionen dokumenteras aldrig i status.md.",
+   "finder": "versioner-sw"
+  },
+  {
+   "file": "/home/user/Receptbok/service-worker.js",
+   "line": 16,
+   "title": "PWA maskable-icon saknas från PRECACHE — offline-display risk",
+   "description": "manifest.webmanifest refererar icons/icon-maskable-512.png för adaptiv PWA-ikon på moderna Android-enheter (adaptive icon display). Denna fil är INTE inkluderad i service-worker.js PRECACHE-lista (rader 16–23). Om appen installeras som PWA offline, kan SW inte servera maskable-ikonen från cache — enheten faller tillbaka till default system-ikon istället för den adaptiva formen som manifest specificerar. Filen finns fysiskt i repot (4.8 KB).",
+   "severity": "P2",
+   "evidence": "manifest.webmanifest rad 14: {'src': 'icons/icon-maskable-512.png', 'purpose': 'maskable'}. service-worker.js rad 16–23 PRECACHE: innehåller './icons/icon-192.png' och './icons/icon-512.png' men INTE 'icon-maskable-512.png'. Filen existerar: /home/user/Receptbok/icons/icon-maskable-512.png (20165 bytes). Gap: manifest refererar fil som inte är i offline-cache.",
+   "finder": "versioner-sw"
+  },
+  {
+   "file": "/home/user/Receptbok/index.html",
+   "line": 619,
+   "title": "app.js version hoppar 3 steg (v131→v134) utan dokumentation",
+   "description": "app.js versionen höjdes från v131 till v134 (3-stegs hopp) i commit 0a29477 tillsammans med CSS v167→v168. Medan CSS och SW-versioner följer en tydlig incrementell konvention, dokumenteras app.js-versionen aldrig och kan hoppa flera steg på en gång. Detta kan förvirra vid framtida maintenance när utvecklare förväntar sig 1-stegs inkrementell stigning för alla versioner.",
+   "severity": "P2",
+   "evidence": "git log 0a29477 visar: app.js v131→v134 (hopp 3), styles v167→v168 (+1), SW v80→v81 (+1). Commit message: 'Idag-vyn: topp-luft under headern + CI-fix (#175)'. index.html rad 619: 'js/app.js?v=134'. Inget git-meddelande eller status.md-notering förklarar 3-stegs hoppet — potentiell underdokumentation av version-bump-protokoll.",
+   "finder": "versioner-sw"
+  },
+  {
+   "file": "api/replace-recipe.js",
+   "line": 112,
+   "title": "\"Byt recept\" writes meal_days/recipe_history with no error check — API returns 200 success even when the DB write failed",
+   "description": "In the core 'swap recipe on a day' mutation, both writes run inside a bare Promise.all with no destructured error and no throw: `await Promise.all([db.from(\"meal_days\").update({...}).eq(...).eq(...), db.from(\"recipe_history\").upsert(...)])`. If the meal_days update fails (RLS hiccup, network blip, conflict), execution continues straight through to `return res.status(200).json({ recipe: picked.title, recipeId: picked.id, ... })` — a 200 'success' response describing a change that was never persisted. The frontend (`selectRecipeForDay` in js/weekly-plan/plan-viewer.js and the Prisoptimera/Veckans-fynd flows that call the same endpoint) treats `res.ok` as success, updates its in-memory plan, and shows the new recipe — but a reload/realtime resync will silently revert to the old recipe with no error ever surfaced to the user.",
+   "severity": "P0",
+   "evidence": "await Promise.all([\n    db.from(\"meal_days\").update({\n      recipe_id: picked.id,\n      recipe_title_snapshot: picked.title,\n      saving: keepSaving,\n      saving_matches: keepMatches,\n    }).eq(\"household_id\", householdId).eq(\"date\", date),\n    db.from(\"recipe_history\").upsert(\n      { household_id: householdId, recipe_id: picked.id, used_on: today },\n      { onConflict: \"household_id,recipe_id\" }\n    ),\n  ]);\n  // no error checked; falls straight through to res.status(200)",
+   "finder": "svalda-fel"
+  },
+  {
+   "file": "api/confirm.js",
+   "line": 30,
+   "title": "Recipe fetch during plan confirmation is not error-checked — a transient failure silently confirms the plan with an EMPTY shopping list",
+   "description": "`const [{ data: recipes }, targetServings] = await Promise.all([db.from(\"recipes\").select(...)..., fetchTargetServings(...)])` never checks `error`. If the recipes query fails, `recipes` is undefined/null, `buildShoppingList(selectedIds, recipes || [], ...)` silently produces zero categories, that empty list is inserted and activated (both writes ARE error-checked, but they succeed trivially because there's nothing to insert), and `weekly_plans.confirmed_at` is set. The endpoint returns 200 `{ok:true, shoppingList: {...empty...}}` — the family's plan is marked confirmed while the actual shopping list they need is empty, with no error shown anywhere.",
+   "severity": "P0",
+   "evidence": "const [{ data: recipes }, targetServings] = await Promise.all([\n    db.from(\"recipes\")\n      .select(\"id, title, ingredients, tags, protein, tested, servings\")\n      .eq(\"household_id\", householdId),\n    fetchTargetServings(householdId),\n  ]);\n\n  const shoppingCategories = buildShoppingList(selectedIds, recipes || [], { targetServings });",
+   "finder": "svalda-fel"
+  },
+  {
+   "file": "api/replace-recipe.js",
+   "line": 128,
+   "title": "Rebuilding the confirmed shopping list after a recipe swap reads meal_days without checking the error — a transient failure silently wipes the shopping list content",
+   "description": "After swapping a recipe on a confirmed plan, `const { data: allMealDays } = await db.from(\"meal_days\").select(\"recipe_id\")...` has no error check. If this read fails, `allMealDays` is undefined, `selectedIds` becomes `[]`, and `buildShoppingList([], allRecipes, ...)` returns an empty set of categories. The new (empty) shopping_lists row is then inserted and activated via error-checked writes further down (which succeed because there's nothing to fail on) — so the family's active shopping list is silently replaced by an empty one, and the endpoint still returns 200 with a 'shoppingList' payload that looks legitimate but is empty.",
+   "severity": "P1",
+   "evidence": "const { data: allMealDays } = await db\n      .from(\"meal_days\")\n      .select(\"recipe_id\")\n      .eq(\"plan_id\", plan.id)\n      .not(\"recipe_id\", \"is\", null);\n\n    const selectedIds = (allMealDays || []).map((d) => d.recipe_id);\n\n    const targetServings = await fetchTargetServings(householdId);\n    const shoppingCategories = buildShoppingList(selectedIds.filter(Boolean), allRecipes, { targetServings });",
+   "finder": "svalda-fel"
+  },
+  {
+   "file": "js/weekly-plan/ingredient-preview.js",
+   "line": 43,
+   "title": "moveToShoppingList reports success to the user even when the underlying read (and therefore the write) never happened",
+   "description": "`const { data: lists } = await window.db.from('shopping_lists').select('id').eq('is_active', true).limit(1);` on line 43-47 does not check `error`. The only actual database write (`update({recipe_items_moved_at: today})`, which IS error-checked) is gated behind `if (lists?.length)`. If the SELECT fails transiently, `lists` is undefined/null, the write is skipped entirely — yet the function falls through unconditionally to `btn.dataset.movedAt = today; btn.textContent = 'Flytta till inköpslista →'; ... window.switchTab('shop'); window.loadShoppingTab();`, presenting a full success state (button flips, tab switches, list reloads) to the user even though nothing was persisted.",
+   "severity": "P1",
+   "evidence": "const { data: lists } = await window.db\n      .from('shopping_lists')\n      .select('id')\n      .eq('is_active', true)\n      .limit(1);\n    if (lists?.length) {\n      const { error } = await window.db\n        .from('shopping_lists')\n        .update({ recipe_items_moved_at: today })\n        .eq('id', lists[0].id);\n      if (error) throw error;\n    }\n    btn.dataset.movedAt = today;\n    btn.textContent     = 'Flytta till inköpslista →';\n    btn.disabled        = false;\n    window.switchTab('shop');",
+   "finder": "svalda-fel"
+  },
+  {
+   "file": "js/shopping/shopping-list.js",
+   "line": 750,
+   "title": "ensureActiveShoppingList's existing-list check is unchecked for errors — a transient failure can create a second, ambiguous active shopping list",
+   "description": "The function's own comment states its purpose is to 'always reuse an existing active list so we never get two active rows' ('Återanvänder alltid en befintlig aktiv lista så att vi aldrig får två aktiva rader'). `const { data: existing } = await window.db.from('shopping_lists').select('id').eq('household_id', householdId).eq('is_active', true).limit(1);` never checks `error`. If this SELECT transiently fails while an active list already exists, `existing` is undefined, `existing?.[0]?.id` is falsy, and the code falls through to INSERT a brand-new shopping_lists row with `is_active: true` — creating two simultaneously active lists for the household. Every other query in the codebase (loadShoppingTab, generate.js, confirm.js, replace-recipe.js) picks 'the' active list via `.eq('is_active', true).limit(1)` with no deterministic ordering, so which list/items a user sees becomes nondeterministic from that point on (items/checked-state can appear to vanish or duplicate).",
+   "severity": "P1",
+   "evidence": "async function ensureActiveShoppingList() {\n  if (window._shopListId) return window._shopListId;\n  const householdId = await window.getHouseholdId();\n  const { data: existing } = await window.db\n    .from('shopping_lists')\n    .select('id')\n    .eq('household_id', householdId)\n    .eq('is_active', true)\n    .limit(1);\n  if (existing?.[0]?.id) {\n    window._shopListId = existing[0].id;\n    return window._shopListId;\n  }\n  const today = fmtIso(new Date());\n  const { data: created, error } = await window.db\n    .from('shopping_lists')\n    .insert({ household_id: householdId, start_date: today, end_date: today, is_active: true })",
+   "finder": "svalda-fel"
+  },
+  {
+   "file": "api/discard-plan.js",
+   "line": 32,
+   "title": "discard-plan's meal_days delete and weekly_plans deactivate are unchecked and uncoordinated — a partial failure leaves an active plan with zero days, or a discarded plan whose rows linger",
+   "description": "`await db.from(\"meal_days\").delete().eq(\"plan_id\", plan.id);` and `await db.from(\"weekly_plans\").update({ is_active: false }).eq(\"id\", plan.id);` run back-to-back with no error destructured/checked and no dependency between them. If the delete succeeds but the update fails, the plan row stays `is_active: true` while it now has zero meal_days rows — the next load renders a blank/broken 'Matsedel' for an allegedly active plan. If the update succeeds but the delete fails, the plan is marked inactive but its meal_days rows (and their recipe_history entries, deleted next) linger orphaned. Either way the endpoint still returns `res.status(200).json({ ok: true, weeklyPlan: emptyPlan })`, so the client has no way to detect the inconsistency.",
+   "severity": "P1",
+   "evidence": "// Radera meal_days och deaktivera planen\n  await db.from(\"meal_days\").delete().eq(\"plan_id\", plan.id);\n  await db.from(\"weekly_plans\").update({ is_active: false }).eq(\"id\", plan.id);",
+   "finder": "svalda-fel"
+  },
+  {
+   "file": "api/confirm.js",
+   "line": 42,
+   "title": "Carrying over manual items + checked state during plan confirmation reads shopping_lists/shopping_items without checking errors — a transient failure silently drops the family's manual items and bocked state",
+   "description": "`const { data: existingLists } = await db.from(\"shopping_lists\").select(\"id\")...` and the nested `const { data: existingItems } = await db.from(\"shopping_items\").select(\"name, checked\")...` (lines 42-53) never check `error`. On a transient failure, `manualItems`/`checkedItems` silently stay `[]`/`{}` instead of carrying over the family's own added items and their checked boxes, and the new (error-checked) shopping list is created without them — with no indication to the user that anything was lost.",
+   "severity": "P1",
+   "evidence": "let manualItems = [];\n  let checkedItems = {};\n  const { data: existingLists } = await db\n    .from(\"shopping_lists\")\n    .select(\"id\")\n    .eq(\"household_id\", householdId)\n    .eq(\"is_active\", true)\n    .limit(1);\n  if (existingLists?.length) {\n    const { data: existingItems } = await db\n      .from(\"shopping_items\")\n      .select(\"name, checked\")\n      .eq(\"list_id\", existingLists[0].id)\n      .eq(\"source\", \"manual\");",
+   "finder": "svalda-fel"
+  },
+  {
+   "file": "api/confirm.js",
+   "line": 109,
+   "title": "Setting confirmed_at on the plan is fire-and-forget — result and error completely discarded, so a failed write is reported to the client as a successful confirmation",
+   "description": "`await db.from(\"weekly_plans\").update({ confirmed_at: new Date().toISOString() }).eq(\"id\", plan.id);` — the return value isn't even destructured, let alone checked for `error`. The handler proceeds to return `res.status(200).json({ ok: true, weeklyPlan: confirmedPlan, shoppingList })` regardless of whether this write succeeded. If it fails, the shopping list WAS built and activated (those writes are checked), but `weekly_plans.confirmed_at` stays null in the DB — so the plan silently reverts to 'unconfirmed' server-side while the client believes it's confirmed, and later reads of `plan.confirmed_at` (e.g. in replace-recipe.js) will disagree with what the UI shows.",
+   "severity": "P1",
+   "evidence": "// Sätt confirmed_at på planen\n  await db.from(\"weekly_plans\").update({ confirmed_at: new Date().toISOString() }).eq(\"id\", plan.id);\n\n  const shoppingList = { ... };\n  const confirmedPlan = { ... };\n\n  return res.status(200).json({ ok: true, weeklyPlan: confirmedPlan, shoppingList });",
+   "finder": "svalda-fel"
+  },
+  {
+   "file": "api/generate.js",
+   "line": 89,
+   "title": "fetchExistingShoppingList's reads are unchecked — a transient failure silently drops the family's manual shopping items and checked state during regeneration",
+   "description": "Both `const { data: lists } = await db.from(\"shopping_lists\")...` and `const { data: items } = await db.from(\"shopping_items\")...` (lines 90-103) never check `error`. On failure, the function returns `null` (via `!lists?.length` short-circuit) exactly as if there simply were no existing list, so `saveShoppingListToSupabase` proceeds without `existingShop.manualItems`/`checkedItems` — the family's manually-added items and their checked boxes are silently dropped from the newly generated shopping list, with no error surfaced (the generate endpoint still returns 200 ok).",
+   "severity": "P1",
+   "evidence": "async function fetchExistingShoppingList(householdId) {\n  const { data: lists } = await db\n    .from(\"shopping_lists\")\n    .select(\"id, recipe_items_moved_at\")\n    .eq(\"household_id\", householdId)\n    .eq(\"is_active\", true)\n    .limit(1);\n  if (!lists?.length) return null;\n\n  const list = lists[0];\n  const { data: items } = await db\n    .from(\"shopping_items\")\n    .select(\"name, checked\")\n    .eq(\"list_id\", list.id)\n    .eq(\"source\", \"manual\");",
+   "finder": "svalda-fel"
+  },
+  {
+   "file": "api/generate.js",
+   "line": 66,
+   "title": "fetchHistory ignores the Supabase error, silently degrading the 14-day repeat-avoidance filter",
+   "description": "`const { data } = await db.from(\"recipe_history\").select(\"recipe_id, used_on\").eq(\"household_id\", householdId);` never destructures or checks `error`. On a transient failure, `data` is null, `usedOn` becomes `{}`, and `recentlyUsedIds`/`selectRecipes` treat every recipe as never-used — the family can get repeated meals from the last 14 days generated back-to-back with no signal that history couldn't be read.",
+   "severity": "P2",
+   "evidence": "async function fetchHistory(householdId) {\n  const { data } = await db\n    .from(\"recipe_history\")\n    .select(\"recipe_id, used_on\")\n    .eq(\"household_id\", householdId);\n  const usedOn = {};\n  for (const row of (data || [])) {\n    usedOn[String(row.recipe_id)] = row.used_on;\n  }\n  return { usedOn };\n}",
+   "finder": "svalda-fel"
+  },
+  {
+   "file": "api/generate.js",
+   "line": 271,
+   "title": "saveHistoryToSupabase's upsert result is completely discarded — recipe-history writes can fail with zero observability",
+   "description": "`await db.from(\"recipe_history\").upsert(rows, { onConflict: \"household_id,recipe_id\" });` — not even destructured. Any failure here is invisible: the generate endpoint still returns 200 ok, and the next generation's `fetchHistory`/`recentlyUsedIds` won't know this batch of recipes was actually used, silently increasing the odds of near-term repeats.",
+   "severity": "P2",
+   "evidence": "async function saveHistoryToSupabase(days, householdId) {\n  const today = new Date().toISOString().slice(0, 10);\n  const rows = days\n    .filter((d) => d.recipeId)\n    .map((d) => ({ household_id: householdId, recipe_id: d.recipeId, used_on: today }));\n  if (!rows.length) return;\n  await db.from(\"recipe_history\").upsert(rows, { onConflict: \"household_id,recipe_id\" });\n}",
+   "finder": "svalda-fel"
+  },
+  {
+   "file": "api/deals.js",
+   "line": 106,
+   "title": "Prisoptimera step-2 recipe fetch is unchecked — a DB failure is indistinguishable from 'no recipes use this rea item'",
+   "description": "`db.from(\"recipes\").select(...).eq(\"household_id\", householdId)` result is used as `recipeRes.data || []` without ever checking `recipeRes.error`. If the query fails, the endpoint still returns 200 `{suggestions: []}`, which the frontend (prisoptimera.js renderStep2) renders as 'Inga av dina recept använder X just nu' — a real backend error is presented to the family as 'none of your recipes match', with no retry path pointing at the actual cause.",
+   "severity": "P2",
+   "evidence": "const [offers, recipeRes] = await Promise.all([\n    fetchOffersFromWillys(store),\n    db.from(\"recipes\")\n      .select(\"id, title, time, tags, protein, tested, ingredients\")\n      .eq(\"household_id\", householdId),\n  ]);\n  ...\n  const recipes = (recipeRes.data || []).map((r) => ({",
+   "finder": "svalda-fel"
+  },
+  {
+   "file": "api/dispatch-to-willys.js",
+   "line": 349,
+   "title": "fetchShoppingListFromSupabase's reads are unchecked — a DB read failure is reported to the family as 'no matching products' instead of a real error",
+   "description": "Both `const { data: lists } = await db.from(\"shopping_lists\")...` (line 349-353) and `const { data: items } = await db.from(\"shopping_items\")...` (line 365-369) never check `error`. On failure, the function returns an empty shopping list exactly as if the family had no active list; `extractCanonsFromShoppingList` then returns `[]`, `runDispatch` short-circuits to `{ok:false, error:\"no_matches\"}`, and the UI (dispatch-ui.js) shows 'Hittade ingen matchning för veckans inköpslista. Prova en annan vecka eller lägg till manuellt.' — actively misleading the user about what actually went wrong (a DB read failure, not an absence of matches) right before real money would have been spent filling their Willys cart.",
+   "severity": "P2",
+   "evidence": "async function fetchShoppingListFromSupabase() {\n  const { data: lists } = await db\n    .from(\"shopping_lists\")\n    .select(\"id, household_id\")\n    .eq(\"is_active\", true)\n    .limit(1);\n  if (!lists?.length) return { recipeItems: {}, manualItems: [] };\n  ...\n  const { data: items } = await db\n    .from(\"shopping_items\")\n    .select(\"category, name, source, position\")\n    .eq(\"list_id\", lists[0].id)\n    .order(\"position\");",
+   "finder": "svalda-fel"
+  },
+  {
+   "file": "js/shopping/shopping-list.js",
+   "line": 929,
+   "title": "clearShoppingList's is_active deactivation is unchecked, unlike the delete right above it — a partial failure can leave a permanently empty 'active' list",
+   "description": "In `clearShoppingList`, the item delete on lines 924-928 correctly checks `delErr` and throws, but the very next statement, `await window.db.from('shopping_lists').update({ is_active: false }).eq('id', listId);`, discards the result entirely. If the items were deleted but this update fails, the list row stays `is_active: true` with zero items — and because `ensureActiveShoppingList` (same file, line 750) blindly reuses whatever it finds as 'the' active list, this stale empty-but-active row can persist and interact badly with the next `addManualItem`/generation cycle.",
+   "severity": "P2",
+   "evidence": "const { error: delErr } = await window.db\n        .from('shopping_items')\n        .delete()\n        .eq('list_id', listId);\n      if (delErr) throw delErr;\n      await window.db.from('shopping_lists').update({ is_active: false }).eq('id', listId);",
+   "finder": "svalda-fel"
+  },
+  {
+   "file": "js/shopping/shopping-list.js",
+   "line": 549,
+   "title": "Unescaped category in onclick attribute allows injection",
+   "description": "The 'key' variable containing user-controlled category data from the database is interpolated directly into an onclick attribute without proper JavaScript string escaping. If a category contains special characters like apostrophes, it will break the JavaScript string syntax.",
+   "severity": "P1",
+   "evidence": "onclick=\"toggleShopItem(this,'${key}')\" where key = `recipe::${cat}::${idx}` and cat comes from database shopping_items.category",
+   "failure_scenario": "Category named \"Frukt's\" (with apostrophe) → key becomes 'recipe::Frukt's::0' → onclick=\"toggleShopItem(this,'recipe::Frukt's::0')\" → JavaScript syntax error and potential injection point",
+   "finder": "innerhtml-kandidater"
+  },
+  {
+   "file": "js/shopping/shopping-list.js",
+   "line": 609,
+   "title": "Unescaped category in HTML content",
+   "description": "User-controlled category name from database is interpolated directly into HTML content without escapeHtml. While not in an event attribute, categories could potentially contain HTML/script content if not validated at DB level.",
+   "severity": "P2",
+   "evidence": "<span class=\"shopping-cat-name\">${icon} ${cat}</span> - cat is unescaped",
+   "failure_scenario": "Category with HTML content like \"<img src=x onerror=alert(1)>\" would render as executable code",
+   "finder": "innerhtml-kandidater"
+  },
+  {
+   "file": "js/shopping/shopping-list.js",
+   "line": 610,
+   "title": "Unescaped category in data-attribute",
+   "description": "User-controlled category name is placed in data-cat attribute without escaping. While data attributes are less immediately dangerous, they could be exploited if read back into sensitive contexts.",
+   "severity": "P2",
+   "evidence": "<span class=\"shopping-cat-count\" data-cat=\"${cat}\"> - cat is unescaped",
+   "failure_scenario": "If this data-cat is later read and used in eval() or innerHTML without sanitization",
+   "finder": "innerhtml-kandidater"
+  },
+  {
+   "file": "js/shopping/dispatch-preferences.js",
+   "line": 108,
+   "title": "Insufficient escaping in onchange attribute - uses escapeHtml instead of jsStringAttr",
+   "description": "Shopping category is escaped with escapeHtml() instead of jsStringAttr() in a JavaScript string context within an onchange attribute. This allows apostrophes to break out of the string.",
+   "severity": "P1",
+   "evidence": "onchange=\"togglePref('organic','${escapeHtml(cat)}')\" - should use jsStringAttr instead",
+   "failure_scenario": "Category with apostrophe like \"Frukt's\" → escapeHtml produces \"Frukt&#39;s\" → browser decodes to \"Frukt's\" → breaks JS string: togglePref('organic','Frukt's')",
+   "finder": "innerhtml-kandidater"
+  },
+  {
+   "file": "js/shopping/dispatch-preferences.js",
+   "line": 113,
+   "title": "Insufficient escaping in onchange attribute - uses escapeHtml instead of jsStringAttr",
+   "description": "Same issue as line 108 - shopping category is escaped with escapeHtml() instead of jsStringAttr() in a JavaScript string context within onchange attribute.",
+   "severity": "P1",
+   "evidence": "onchange=\"togglePref('swedish','${escapeHtml(cat)}')\" - should use jsStringAttr instead",
+   "failure_scenario": "Category with apostrophe breaks JS string syntax in the onchange handler",
+   "finder": "innerhtml-kandidater"
+  }
+ ],
+ "coverage": [
+  {
+   "finder": "window-kontrakt",
+   "notes": ""
+  },
+  {
+   "finder": "selektor-kontrakt",
+   "notes": "Metod: extraherade programmatiskt ALLA getElementById(...)-anrop (141 träffar, 90 unika id:n) i hela js/ (samtliga moduler inkl. undermappar lists/recipes/shopping/today/ui/weekly-plan) och diffade mot samtliga id=\"...\" i index.html (118 unika). De ~39 id:n som saknades statiskt verifierades ett i taget mot dynamisk skapelse (`el.id = '...'` eller `id=\"...\"` i template-literals) i js/ — samtliga utom settingsArrow (och de redan kända optimizePrices, som CLAUDE.md själv dokumenterar som en avsiktligt kvarlämnad, null-säker rest efter borttagen prisoptimeringstoggle) visade sig skapas dynamiskt (t.ex. dlxSheet/dlxSheetBackdrop/weekDeluxe via `.id =`, flXxx/poXxx/prefsXxx/authXxx/recoveryXxx via innerHTML-mallar). Alla querySelector('#...')-anrop (7 st) och querySelector(`#...`)/querySelectorAll med template-literals (10 st, data-id/data-sec/data-date/data-i/data-recipe/data-key-attribut) verifierades mot motsvarande attribut i genererad markup — alla OK. Alla querySelector('.klass')-anrop (58 unika) grep:ades mot class=\"...\"-attribut i index.html/js/; sju föreföll först sakna träff (deals-overlay, dlx-err, replace-err, saving-overlay, day-card-actions, custom-save-err, po-overlay) men samtliga utom day-card-actions visade sig skapas via `el.className = '...'` (missas av class=\"-regex); day-card-actions är en tom querySelectorAll().forEach-rensning kopplad till den redan kända döda .week-day-card-klassiska CSS:en (dedup) och orsakar ingen krasch (tom NodeList). Samtliga .closest('.klass')-anrop (9 st) verifierade mot motsvarande klasser i statisk/dynamisk markup — alla OK. Alla onclick=/onchange=/oninput=-handlers i index.html (37 unika funktionsnamn) och i JS-genererade template-literals (79 unika, plus onchange/oninput separat: 5 unika) korsverifierade mot window.*-exports (222 unika exports) — samtliga fanns definierade (två falska positiva: \\\"if\\\" från `onclick=\\\"if(event.target===this)...\\\"` och \\\"fn\\\" från en kommentarsrad i utils.js). Täckte INTE: api/-endpoints (server-side, ej DOM), css/styles.css-selektorer bortom det som redan är känt dött, event-lyssnare registrerade via addEventListener med klass-baserad delegation utanför de mönster som redan skannades, och SVG/inline-attribut i tredjeparts-libs. Har inte kört appen i browser/Playwright — ren statisk grep-analys, vilket är tillräckligt robust för DOM-kontraktsfrågan men kan missa körtidsordningsproblem (element som finns i DOM men inte hunnit renderas när koden körs)."
+  },
+  {
+   "finder": "versioner-sw",
+   "notes": "Granskning täckte: (1) ALLA ?v=N-referenser i index.html (CSS v168, JS v134), (2) service-worker.js CACHE_VERSION (v81) och PRECACHE-lista, (3) manifest.webmanifest icon-referenser vs SW precache, (4) alle ikonfilerna i /icons/-mappen (4 filer, 3 refererade), (5) JS-modul-importstruktur (24 moduler importerade utan ?v=, nätet-först strategi OK), (6) versions-konsekvens mellan index.html, service-worker.js och docs/status.md enligt CLAUDE.md-konvention, (7) git-historik för version-bumpar (senaste 30 commits). INTE täckt: (a) dead CSS-klasser (411 CSS-klasser definierade — skulle kräva full regexmatchning mot rendererad HTML), (b) live-testnig av cache-strategi offline, (c) DNS-rebinding/IPv6-luckor (känd bugg, redan i KÄNDA BUGGAR-listan), (d) node_modules-innehål (ligger utanför scope), (e) API-endpoints versions och JWT-auth (känd domain), (f) GitHub Pages backup-spårning (potentiell men låg-risk).\""
+  },
+  {
+   "finder": "svalda-fel",
+   "notes": ""
+  },
+  {
+   "finder": "innerhtml-kandidater",
+   "notes": ""
+  },
+  {
+   "finder": "invarianter-api",
+   "notes": ""
+  }
+ ]
+}

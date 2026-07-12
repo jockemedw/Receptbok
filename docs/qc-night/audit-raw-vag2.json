@@ -1,0 +1,1141 @@
+{
+ "rafynd": [
+  {
+   "file": "js/weekly-plan/plan-viewer-deluxe.js",
+   "line": 460,
+   "title": "\"Byt dag\" tillåter byte mot en gammal (icke-arkiverad) egen-planering-dag i det förflutna, vilket kan dra tillbaka aktiva planens datumspann in i historien",
+   "description": "I modeCls() är kind==='custom' alltid bytbar så länge dagen inte är arkiverad — det finns ingen !d.isPast-koll (jämför med kind==='gap' som HAR den kollen på rad 462). Klientens förvalidering i dlxPickSwapTarget (rad 960-965) blockerar bara \"tomma\" förflutna dagar (`!t.recipeId && !t.isCustom && t.isPast`) — eftersom en egen-planering-dag har t.isCustom=true kommer villkoret aldrig slå till, så valideringen släpper igenom. Servern (api/swap-days.js) har ingen egen isPast-koll alls. Eftersom fullContent() i swap-days.js flyttar med plan_id, och egna anteckningar (plan_id NULL) aldrig arkiveras eller rensas (bevaras permanent enligt hård invariant), finns alltid gamla anteckningar kvar som giltiga bytesmål långt tillbaka i tiden. Byt dag-läget (bannern) överlever dessutom veckobyte (state-drivet, ingen guard i dlxWeekStep/installSwipe), så ett svep bakåt i tiden medan läget är aktivt + en tryckning på ett gammalt kort exekverar bytet direkt utan bekräftelse.",
+   "severity": "P1",
+   "evidence": "Rad 458-464: `kind === 'custom' ? !d.isArchive : ...` (ingen isPast-koll) kontra rad 964: `if (!t.recipeId && !t.isCustom && t.isPast) { ...toast...; return; }` — kollen kringgås helt när t.isCustom är sant. Scenario: familjemedlem trycker \"Byt dag\" på morgondagens middag, sveper av misstag några veckor bakåt, trycker på en gammal notering (\"Rester\", skriven för en månad sedan) → /api/swap-days körs, den gamla dagens plan_id sätts till aktiva planens id, och swap-days.js räknar om weekly_plans.start_date till det gamla datumet (`newStart = planRows[0].date`). Aktiva planens synliga spann sträcker sig nu flera veckor bakåt, buildTimeline() i plan-viewer.js expanderar horisonten baserat på plan.startDate, och morgondagens middag har försvunnit in i en passerad dag.",
+   "finder": "slice:plan-viewer-deluxe"
+  },
+  {
+   "file": "js/weekly-plan/plan-viewer-deluxe.js",
+   "line": 58,
+   "title": "attr() escapar inte bakstreck innan citattecken — kan trasa sönder onclick-strängen för receptets titel i dag-sheeten",
+   "description": "attr() escapar ' och \" men inte \\ (jämför med den korrekta implementationen jsStringAttr i js/utils.js som uttryckligen escapar bakstreck FÖRST och kommenterar varför: \"Utan detta gör en apostrof i en titel knappen trasig\"). Den enda platsen i filen där attr() används på riktig användardata (inte de hårdkodade dagnamnen) är rad 1090, där en receptets titel (d.recipe / d.customRecipeTitle — fritext utan teckenbegränsning i recipe-editor.js) sätts in i en onclick-sträng.",
+   "severity": "P2",
+   "evidence": "Rad 58: `function attr(s) { return String(s == null ? '' : s).replace(/'/g, \"\\\\'\").replace(/\"/g, '&quot;'); }` — ingen `.replace(/\\\\/g, '\\\\\\\\')`. Rad 1090: `onclick=\"dlxCloseSheet();jumpToRecipe('${attr(title)}')\"`. Scenario: ett recept har titeln \"Kyckling \\\\ curry\" (bakstreck går att skriva in via recipe-editor.js, ingen validering av title). Receptet raderas senare men en dags meal_days-rad pekar fortfarande på det gamla recipe_id/snapshot-titeln. Familjemedlemmen öppnar dagens sheet → \"Receptet finns inte längre\" visas → trycker \"Sök i receptboken\": onclick-strängen blir `jumpToRecipe('Kyckling \\\\ curry')` där bakstrecket escapar den avslutande `'`, JS-strängen termineras aldrig korrekt och webbläsaren kastar ett syntaxfel — knappen gör ingenting, ingen felindikation ges.",
+   "finder": "slice:plan-viewer-deluxe"
+  },
+  {
+   "file": "js/weekly-plan/plan-viewer-deluxe.js",
+   "line": 1228,
+   "title": "\"Lägg till på listan\" i dag-sheeten saknar egen busy-spärr — snabb dubbel-Enter kan skapa dubblettvaror på den delade listan",
+   "description": "Fältets onkeydown anropar dlxSheetAdd() direkt vid Enter, utan att kontrollera om en tidigare dlxSheetAdd()-anrop redan är i gång. dlxSheetAdd() själv har ingen _opBusy-spärr eller lokal \"redan skickar\"-flagga. Den enda spärren är btn.disabled i addManualItem() (shopping-list.js) — men den sätts först inuti addManualItem, EFTER att dlxSheetAdd() eventuellt redan hunnit köra `await window.loadShoppingTab()` (om _shopListId saknas) eller läst samma input.value en andra gång innan input.value hinner tömmas (tömning sker först efter lyckad DB-insert). Enter-tangenten är dessutom inte kopplad till knappens disabled-state alls.",
+   "severity": "P2",
+   "evidence": "Rad 1228: `onkeydown=\"if(event.key==='Enter'){event.preventDefault();dlxSheetAdd()}\"` utan disabled-koll. Rad 1313-1332 (dlxSheetAdd): ingen egen busy-flagga; `await window.addManualItem('dlxSheetItemInput','dlxSheetItemBtn')` är den enda spärrpunkten och den ligger i en annan modul. Scenario: familjemedlem skriver \"mjölk\" i sheetens fält och trycker Enter två gånger snabbt (eller Enter direkt följt av tryck på Lägg till-knappen) innan nätverkssvaret hunnit komma tillbaka och tömma fältet → två separata shopping_items-rader med samma vara skapas på den delade inköpslistan.",
+   "finder": "slice:plan-viewer-deluxe"
+  },
+  {
+   "file": "js/weekly-plan/plan-viewer-deluxe.js",
+   "line": 1347,
+   "title": "Renderingsfel i renderDeluxe() tystas till console.error — ingen svensk användarfeedback vid trasig premiumvy",
+   "description": "wrapSync() fångar alla undantag från renderDeluxe() (körs efter varenda plan-/custom-day-mutation samt vid initial laddning och flikbyte) och loggar dem bara till webbläsarkonsolen. Om renderDeluxe() kastar (t.ex. oväntat null-fält i en meal_days-rad, en trasig plan-.days-post utan date, eller ett fel i en av de många template-funktionerna) ser familjemedlemmen bara den gamla, potentiellt inaktuella vyn — ingen toast, ingen felbanner, inget som säger att något gick fel eller att sidan behöver laddas om.",
+   "severity": "P2",
+   "evidence": "Rad 1347, 1353, 1373: `try { renderDeluxe(); } catch (e) { console.error('renderDeluxe', e); }` — tre identiska mönster, alla utan window.showToast eller motsvarande. Scenario: en API-mutation (t.ex. move-day) lyckas och skriver till Supabase, men det returnerade weeklyPlan-objektet saknar en dagsrad av något skäl → renderDeluxe() kraschar internt på en null-referens. Ändringen är redan sparad i databasen, men användaren ser en ofräsch vy och tror att ingenting hände — inget felmeddelande visas, i strid med kommunikationsreglen om begriplig svensk användartext vid fel.",
+   "finder": "slice:plan-viewer-deluxe"
+  },
+  {
+   "file": "js/weekly-plan/plan-viewer-deluxe.js",
+   "line": 51,
+   "title": "Stavfel i RESTER_RE (\"kylskåpständning\") gör att en rimlig anteckningstext missar rester-ikonen",
+   "description": "Regexen som känner igen \"rester/använd upp\"-anteckningar och ger dem en särskild ikon innehåller ordet \"kylskåpständning\", vilket inte är ett vedertaget svenskt ord (troligen tänkt \"kylskåpstömning\" som redan finns separat, eller \"kylskåpsstädning\"). Ingen praktisk konsekvens utöver fel ikon — dagen fungerar i övrigt normalt.",
+   "severity": "P2",
+   "evidence": "Rad 51: `const RESTER_RE = /rester|kylskåpstömning|kylskåpständning|använd upp|tömma kylen/i;` — \"kylskåpständning\" matchar inget verkligt ord familjen sannolikt skulle skriva, så den grenen av regexen är i praktiken död kod utan att skada något, men avslöjar att avsikten (matcha fler varianter av \"rester\") inte helt uppnås.",
+   "finder": "slice:plan-viewer-deluxe"
+  },
+  {
+   "file": "js/lists/lists-view.js",
+   "line": 205,
+   "title": "flRenameInput saknas i KEEP_FIELDS — realtime-refresh kapar pågående namnbyte",
+   "description": "KEEP_FIELDS (raden 205) räknar upp de fältID:n som render() ska bevara fokus/text för vid en re-render, men 'flRenameInput' (skapas i detailHtml, rad 388, öppnas av flStartRename rad 879-884) saknas i listan. Scenario: Förälder A trycker 'Byt namn' på en lista och börjar skriva ett nytt namn. Medan hen skriver checkar Förälder B av en rad i samma (eller vilken lista som helst i hushållet) på sin telefon → onRealtime (rad 149) triggar scheduleRefresh (rad 179) → efter 350 ms körs refreshData()+render({keepAddFocus:true}) (rad 193). I render() (rad 213-217) är document.activeElement fältet 'flRenameInput', men eftersom det inte finns i KEEP_FIELDS sätts keepId=null, keepVal kastas. detailHtml byggs om med formuläret men value=list.title (det GAMLA namnet, ej det Förälder A hann skriva), och inget focus()-anrop görs (restoreId blir null eftersom _renaming inte är öppet-listläge-fältet 'flAddInput'). Resultat: den halvskrivna nya listnamnstexten försvinner tyst och tangentbordet (mobil) stängs, mitt i inmatningen.",
+   "severity": "P1",
+   "evidence": "const KEEP_FIELDS = ['flAddInput', 'flNewListInput', 'flNewNoteInput', 'flNoteTitle', 'flNoteBody', 'flQuickAddInput', 'flImportText']; (rad 205) — 'flRenameInput' finns inte med, jfr <input id=\"flRenameInput\" ... value=\"${escapeHtml(list.title)}\"> rad 388-389.",
+   "finder": "slice:lists-view"
+  },
+  {
+   "file": "js/lists/lists-view.js",
+   "line": 161,
+   "title": "Realtime-ekodämpning för family_lists jämför inte color/icon — L3-utseendeändringar från andra enheter tappas tyst",
+   "description": "onRealtime:s dämpningslogik för tabellen family_lists (rad 161-173) jämför bara title, archived, pinned och body för att avgöra om en UPDATE bara är 'parent-touch-triggern' (och då hoppar över refresh, rad 164-169). Fälten color och icon (migration 006, satta via flSetColor/flSetIcon, rad 913-933) ingår INTE i jämförelsen. Scenario: Förälder A sätter en färg (t.ex. rust) på packlistan via 'Ändra' → färgen sparas i DB. Förälder B har appen öppen på sin telefon (samma lista redan laddad, med gammal title/archived/pinned/body — dessa ändras ju inte av en färgändring). När UPDATE-eventet kommer in på B:s enhet matchar title/archived/pinned/body fortfarande (bara color ändrades) → grenen på rad 164 slår till, 'local.updated_at = newRow.updated_at; return;' körs och scheduleRefresh() (som skulle hämtat den nya färgen) hoppas helt över. B:s lista behåller den gamla/ingen färg tills något ANNAT fält på listan råkar ändras eller fliken laddas om helt (loadListsTab). Utseende-synken mellan familjemedlemmar är därmed trasig i det vanliga fallet.",
+   "severity": "P1",
+   "evidence": "if (local && local.title === newRow.title && local.archived === newRow.archived && local.pinned === newRow.pinned && local.body === newRow.body) { local.updated_at = newRow.updated_at; return; } (rad 164-169) — color/icon saknas i jämförelsen trots att de är muterbara fält (rad 913-933).",
+   "finder": "slice:lists-view"
+  },
+  {
+   "file": "js/lists/lists-view.js",
+   "line": 827,
+   "title": "flResetChecks avbryter inte pågående debouncad bock-skrivning — en nyss satt bock kan 'återuppstå' efter Nollställ",
+   "description": "flToggleItem (rad 531-542) lägger ändringar i modul-globala _pendingChecks (Map) och sätter en enda delad timer _saveTimer (600 ms, rad 540-541) som flushar via flushPendingChecks (rad 544-564). flResetChecks (rad 827-851) rör varken _pendingChecks eller _saveTimer. Scenario: Förälder bockar av en rad på packlistan (flToggleItem sätter it.checked=true och _pendingChecks.set(id,true), timer startar). Inom 600 ms ångrar sig föräldern och trycker 'Nollställ bockarna' (rad 410), bekräftar dialogen — flResetChecks sätter DIREKT alla checkade rader (inklusive den nyss bockade) till checked=false lokalt och skriver `.update({checked:false}).in('id',...)` till DB (rad 842-843), vilket normalt lyckas snabbt. Men den ORÖRDA gamla timern från flToggleItem fortsätter köra och flushar ~600 ms efter den ursprungliga bockningen (dvs. EFTER reset-skrivningen): flushPendingChecks skickar `.update({checked:true}).in('id',[det id:t])` (rad 552-554), vilket skriver tillbaka raden som bockad i DB — trots att UI:t precis visade 'Bockarna nollställda'. Den återbockade raden dyker sedan upp igen via nästa realtime-refresh, vilket ser ut som att appen slumpmässigt återinför bockar strax efter en nollställning.",
+   "severity": "P1",
+   "evidence": "flResetChecks (rad 827-851) innehåller inget clearTimeout(_saveTimer) eller _pendingChecks.clear()/delete, trots att flToggleItem (rad 539-541) kan ha en oflushad skrivning i farten: _pendingChecks.set(id, it.checked); clearTimeout(_saveTimer); _saveTimer = setTimeout(flushPendingChecks, 600);",
+   "finder": "slice:lists-view"
+  },
+  {
+   "file": "js/lists/lists-view.js",
+   "line": 753,
+   "title": "flDoImport saknar dubbelklicksspärr — kan skapa dubbla listor+rader vid snabb dubbeltryckning",
+   "description": "'Skapa N listor'-knappen (rad 706) anropar flDoImport() utan någon _opBusy-liknande spärr, och knappen inaktiveras aldrig under själva importen (bara om _importParsed är tom, rad 706 `${n ? '' : ' disabled'}`). _importParsed rensas först i slutet av try-blocket (rad 777), efter att FÖR-loopen (rad 761-774) hunnit skapa alla listor och rader. Scenario: En förälder klistrar in en stor Excel-tabell med flera kolumner (flera listor), trycker 'Förhandsgranska' och sedan 'Skapa X listor'. Importen tar en stund (flera sekventiella insert-anrop, rad 762 och 770 i en for-loop). Om föräldern (otåligt, appen känns långsam) trycker på samma knapp igen innan den första körningen är klar, körs en andra parallell flDoImport()-instans på samma _importParsed-data — samtliga listor och deras rader skapas EN GÅNG TILL i databasen (dubbletter), eftersom inget flaggar 'import pågår redan'.",
+   "severity": "P1",
+   "evidence": "export async function flDoImport() { const parsed = _importParsed.filter((l) => l.title); ... for (const l of parsed) { ... insert ... } ... _importing = false; _importText = ''; _importParsed = []; ... } — ingen busy-flagga sätts vid start eller kontrolleras i början av funktionen (rad 753-788); knappen (rad 706) blir inte disabled under körningen.",
+   "finder": "slice:lists-view"
+  },
+  {
+   "file": "js/lists/lists-view.js",
+   "line": 860,
+   "title": "flCreateList/flCreateNote rensar inte inputfältet före await och saknar dubbelklicksspärr — dubblettlistor/anteckningar vid snabb dubbelsubmit",
+   "description": "Till skillnad från flAddItem (som tömmer #flAddInput direkt, rad 572, INNAN nätverksanropet — vilket gör att en andra snabb submit får text='' och avbryts av guard-satsen) tömmer flCreateList (rad 860-877) och flCreateNote (rad 1007-1024) INTE #flNewListInput/#flNewNoteInput förrän efter en lyckad insert (_showCreateForm=false sker i success-grenen, rad 871/1018). Scenario: Förälder skriver 'Packning fjällen' i nya-lista-fältet och trycker Enter/'Skapa' snabbt två gånger (eller dubbeltrycker på touch-skärmen) innan den första insert-förfrågan hunnit svara — båda anropen läser samma icke-tömda fältvärde, båda passerar `if (!title) return;`-guarden, och två separata listor med exakt samma namn skapas i databasen.",
+   "severity": "P2",
+   "evidence": "export async function flCreateList(ev) { ... const title = (inp?.value || '').trim(); if (!title) return; try { const { data, error } = await window.db.from('family_lists').insert({ household_id: _householdId, title }).select().single(); ... } — inp.value nollställs aldrig och ingen busy-flagga finns (rad 860-877); samma mönster i flCreateNote (rad 1007-1024).",
+   "finder": "slice:lists-view"
+  },
+  {
+   "file": "js/lists/lists-view.js",
+   "line": 90,
+   "title": "_decorSupported förblir null (inte true) för ett nyskapat/tomt hushåll — färg/ikon-väljaren visas inte trots körd migration",
+   "description": "_decorSupported avgörs bara via en 'probe' av den FÖRSTA raden i refreshData (rad 93-94): `const probe = rows && rows[0]; if (probe) _decorSupported = 'color' in probe;`. Om hushållet ännu inte har några listor/anteckningar alls (rows är en tom array) körs aldrig denna gren, och _decorSupported förblir sitt initiala `null`. detailHtml visar färg/ikon-väljaren bara när `_editMode && _decorSupported` (rad 424) — null är falsy, så väljaren döljs. Scenario: Ett helt nytt hushåll (migration 006 redan körd) skapar sin FÖRSTA lista via 'Ny lista'. Föräldern öppnar den, trycker 'Ändra' för att sätta en ikon/färg — inget färg/ikon-avsnitt visas, trots att funktionen finns, eftersom refreshData() aldrig sett en rad med 'color'-nyckeln (den nyskapade listan lades bara till lokalt via `_lists.unshift(data)`, rad 870, utan att _decorSupported omprövas). Väljaren dyker först upp efter nästa fullständiga refreshData() (t.ex. fliken laddas om).",
+   "severity": "P2",
+   "evidence": "const probe = rows && rows[0]; if (probe) _decorSupported = 'color' in probe; (rad 93-94) — sätts aldrig om rows är tomt; flCreateList (rad 870) lägger till listan lokalt utan att trigga om detta test.",
+   "finder": "slice:lists-view"
+  },
+  {
+   "file": "js/shopping/shopping-list.js",
+   "line": 322,
+   "title": "Manuella varors bock-status sparas aldrig till Supabase (nyckel-mismatch index vs. namn)",
+   "description": "`scheduleCheckedSave` (rad 316-337) itererar `Object.entries(window._shopItemIds)` och läser `window._checkedItems[key]` med SAMMA nyckel. För egna varor är `_shopItemIds`-nycklarna index-baserade (`manual::${idx}`, satta i `buildShopState` rad 99-105, `applyRemovalById` rad 258, `removeManualItem` rad 798, `commitManualOrder` rad 887/897). Men `toggleShopItem` (rad 339-357) skriver bock-status till `window._checkedItems[key]` där `key` för egna varor kommer från `data-key` i `manualItemLi` (rad 562, 569) — och DEN nyckeln är NAMN-baserad (`manual::${name}`), inte index-baserad. Samma namn-baserade schema används konsekvent i `shopCounts` (rad 381), `rebuildShopText` (rad 526), `renderFullShoppingList` (rad 639/648/658) och matchar även backend (`api/generate.js`, `api/replace-recipe.js`, `api/confirm.js` skriver alla `checkedItems['manual::'+name]`). Bara `buildShopState` och `scheduleCheckedSave` avviker och använder index-baserade nycklar. Resultatet: `scheduleCheckedSave` läser alltid en nyckel (`manual::0`, `manual::1`, …) som `toggleShopItem` aldrig skrivit till — bock-statusen som visas i UI:t (namn-baserad) speglas aldrig i det som faktiskt sparas till DB (index-baserad, orörd sedan `buildShopState` initierade den från senaste DB-läsning).",
+   "severity": "P0",
+   "evidence": "scheduleCheckedSave (rad 322-324): `for (const [key, id] of Object.entries(window._shopItemIds)) { if (window._checkedItems[key]) checkedIds.push(id); ... }` — vs. manualItemLi (rad 562): `const key = \\`manual::${name}\\`;` som är den nyckel toggleShopItem (rad 339-357) faktiskt skriver till. buildShopState (rad 102-104): `const key = \\`manual::${idx}\\`; checkedItems[key] = row.checked === true; itemIds[key] = row.id;` — index-baserad, matchar itemIds men inte det toggleShopItem skriver.",
+   "finder": "slice:shopping-list"
+  },
+  {
+   "file": "js/shopping/shopping-list.js",
+   "line": 747,
+   "title": "ensureActiveShoppingList litar på cachad (kan vara inaktiv) list-id efter recept-byte/ny matsedel → nytillagd vara hamnar osynlig i en avaktiverad lista",
+   "description": "`ensureActiveShoppingList` returnerar direkt `window._shopListId` om den redan är satt (rad 748), utan att verifiera att den fortfarande är `is_active`. När en familjemedlem byter recept på en dag (`selectRecipeForDay` i plan-viewer.js → `/api/replace-recipe`) eller genererar/bekräftar en ny matsedel, skapar backend en HELT NY `shopping_lists`-rad, avaktiverar den gamla (se `api/replace-recipe.js` rad 160-196, `api/generate.js` rad 280-320) och skickar bara receptdata tillbaka — inget nytt list-id till frontend. Frontend kör `renderShoppingData(data.shoppingList)` (t.ex. plan-viewer.js rad 289/446) som ritar om innehållet men aldrig uppdaterar `window._shopListId`. Om användaren därefter, UTAN att besöka 'Handla'-fliken (som skulle ha kört `loadShoppingTab()` och fräschat upp id:t via `js/ui/navigation.js` rad 15), lägger till en vara via 'Idag'-flikens snabb-tillägg (`js/today/today-view.js` rad 359-371, `todayAddItem`), så hoppar den över omladdning eftersom `window._shopListId` redan är satt (rad 364: `if (!window._shopListId && ...)`), och `addManualItem` → `ensureActiveShoppingList` returnerar det gamla, nu INAKTIVA list-id:t. Varan skrivs in på den avaktiverade listan och visas ALDRIG i appen (loadShoppingTab filtrerar alltid på `is_active=true`), samtidigt som en grön 'X ligger nu på inköpslistan'-toast visas — falsk bekräftelse på en vara som permanent försvunnit.",
+   "severity": "P0",
+   "evidence": "ensureActiveShoppingList (rad 747-748): `async function ensureActiveShoppingList() { if (window._shopListId) return window._shopListId; ... }` — inget kontroll att listan fortfarande är aktiv. today-view.js rad 364: `if (!window._shopListId && window.loadShoppingTab) await window.loadShoppingTab();` — hoppar över reload så fort id:t redan finns, oavsett om det pekar på en avaktiverad lista.",
+   "finder": "slice:shopping-list"
+  },
+  {
+   "file": "js/shopping/shopping-list.js",
+   "line": 957,
+   "title": "renderShoppingData uppdaterar aldrig window._shopItemIds — bockningar efter recept-byte/dagsändring sparas mot spökrader",
+   "description": "`renderShoppingData` (rad 957-968) sätter om `window._checkedItems` från API-svaret men rör aldrig `window._shopItemIds`. Den anropas efter `/api/replace-recipe` och `/api/skip-day` (se `js/weekly-plan/plan-viewer.js` rad 289 och 445-446) — operationer som (för replace-recipe, bekräftat i `api/replace-recipe.js` rad 160-189) skapar en helt ny `shopping_lists`-rad med nya `shopping_items`-UUID:n. Efter ett sådant anrop pekar `window._shopItemIds` fortfarande på raderna i den GAMLA, nu inaktiva listan. Om användaren direkt därefter bockar av en vara i den nyss omritade listan (utan att först ha besökt Handla-fliken på nytt, vilket skulle kört `loadShoppingTab()`), skickar `scheduleCheckedSave` en UPDATE mot ett `id` som tillhör den övergivna listan — skrivningen 'lyckas' (ingen träff-kontroll på antal rader) men träffar ingenting som visas, och nästa riktiga omladdning visar varan som obockad igen.",
+   "severity": "P1",
+   "evidence": "renderShoppingData (rad 957-964): `export function renderShoppingData(shop) { ... if (shop.checkedItems) window._checkedItems = shop.checkedItems; renderFullShoppingList(hasRecipe ? recipeItemsData : null, shop.manualItems || []); ... }` — ingen rad sätter `window._shopItemIds` eller `window._shopListId`, trots att API-svaren (`api/replace-recipe.js` rad 198-202) inte ens innehåller ett nytt list-id eller nya item-id:n att synka mot.",
+   "finder": "slice:shopping-list"
+  },
+  {
+   "file": "js/shopping/shopping-list.js",
+   "line": 30,
+   "title": "Realtime-prenumerationen är bunden till ett specifikt list-id — migreras aldrig när aktiv lista byts ut under en öppen enhet",
+   "description": "`subscribeShoppingItems(listId)` (rad 30-70) filtrerar på `list_id=eq.${listId}` för EN specifik lista. När `/api/replace-recipe`, `/api/generate` eller `/api/skip-day` (som bygger om listan) skapar en NY `shopping_lists`-rad och avaktiverar den gamla, tar den gamla listans rader aldrig bort (bara `is_active:false`) — så ingen DELETE/INSERT-händelse för den nya aktiva listan når en enhet som fortfarande lyssnar på den gamla kanalen. En familjemedlem som redan står kvar på Handla-fliken på sin telefon medan en annan familjemedlem byter recept på sin egen enhet får ALDRIG realtidsuppdateringen — deras vy blir tyst inaktuell (visar gamla varor/bock-status) tills de manuellt byter flik fram och tillbaka (vilket kör `loadShoppingTab()` igen via `js/ui/navigation.js` rad 15 och prenumererar om).",
+   "severity": "P1",
+   "evidence": "subscribeShoppingItems (rad 33-35): `.channel(\\`shopping_items:${listId}\\`).on('postgres_changes', { event: '*', schema: 'public', table: 'shopping_items', filter: \\`list_id=eq.${listId}\\` }, ...)` — kanalen återskapas bara i `loadShoppingTab` (rad 730), som bara körs vid explicit flikbyte/reload, inte när en annan enhets API-anrop byter ut den aktiva listan.",
+   "finder": "slice:shopping-list"
+  },
+  {
+   "file": "js/shopping/shopping-list.js",
+   "line": 796,
+   "title": "Dubbla egna varor med samma namn delar bock-nyckel och tas bort/bockas fel via indexOf",
+   "description": "Egna varors bock-nyckel är text-baserad (`manual::${name}`, se `manualItemLi` rad 562). Om hushållet råkar lägga till samma vara två gånger (t.ex. 'Mjölk' via snabb-tillägg vid två olika tillfällen — `addManualItem` gör ingen dublettkontroll), delar båda raderna exakt samma `_checkedItems`-nyckel: att bocka den ena visar automatiskt BÅDA som bockade i UI:t (rad 564/648/658 läser samma nyckel för alla rader med samma namn). Dessutom slår `removeManualItem` (rad 797) upp raden att ta bort via `(window._shopManualItems || []).indexOf(item)`, vilket alltid returnerar den FÖRSTA träffen — trycker användaren på ×-knappen för den ANDRA 'Mjölk'-raden tas i stället den FÖRSTA bort.",
+   "severity": "P2",
+   "evidence": "removeManualItem (rad 796-799): `const idx = (window._shopManualItems || []).indexOf(item); const id = idx === -1 ? null : window._shopItemIds?.[\\`manual::${idx}\\`];` — indexOf ger alltid första förekomsten, oavsett vilken rads ×-knapp som klickades. manualItemLi (rad 562-564) delar checked-nyckel per namn, inte per rad-id.",
+   "finder": "slice:shopping-list"
+  },
+  {
+   "file": "js/shopping/shopping-list.js",
+   "line": 750,
+   "title": "ensureActiveShoppingList ignorerar fel från SELECT-frågan efter befintlig aktiv lista — kan skapa dublettlistor vid nätverksfel eller race",
+   "description": "`const { data: existing } = await window.db.from('shopping_lists')...` (rad 750-755) destrukturerar bara `data`, inte `error`. Misslyckas frågan (t.ex. tillfälligt nätverksfel) blir `existing` `undefined`, och koden går vidare som om ingen aktiv lista finns och skapar en NY (rad 761-766) — trots att kommentaren på rad 745-746 hävdar att funktionen 'Återanvänder alltid en befintlig aktiv lista så att vi aldrig får två aktiva rader'. Ingen lås/spärr skyddar heller mot att två enheter (eller två flikar) anropar `ensureActiveShoppingList` samtidigt när `window._shopListId` är null på båda — båda kan hinna se 'ingen aktiv lista' och båda skapa varsin ny aktiv lista, varpå `loadShoppingTab`s `.limit(1)` utan `.order()` (rad 692-698) plockar en godtycklig av de två, så tillagda varor kan hamna i en lista som inte visas.",
+   "severity": "P2",
+   "evidence": "ensureActiveShoppingList (rad 750-755): `const { data: existing } = await window.db.from('shopping_lists').select('id').eq('household_id', householdId).eq('is_active', true).limit(1);` — inget `error`-hanteringssteg, inget lås mot parallella anrop.",
+   "finder": "slice:shopping-list"
+  },
+  {
+   "file": "js/shopping/shopping-list.js",
+   "line": 781,
+   "title": "Position för ny egen vara beräknas klientsidan från array-längd — kan kollidera vid samtidig tillägg från två enheter",
+   "description": "`addManualItem` sätter `position = (window._shopManualItems || []).length` (rad 781) helt klientsidan, utan DB-side sekvens. Om två familjemedlemmar på var sin enhet lägger till en egen vara nästan samtidigt när båda utgår från samma uppladdade state (t.ex. båda ser 3 befintliga egna varor), kan båda infoga sin nya rad med `position: 3` — en positionskollision. Skadar inte data (ingen unik-constraint bryts, båda varorna visas), men sorteringsordningen mellan de två blir odefinierad/DB-beroende tills nästa `commitManualOrder`-omdrag städar upp den (kontiguerlig 0..n läks annars aldrig automatiskt av sig själv förrän en drag-and-drop görs).",
+   "severity": "P2",
+   "evidence": "addManualItem (rad 781): `const position = (window._shopManualItems || []).length;` — inget DB-genererat sekvensvärde, inget lås mot parallell insert med samma position.",
+   "finder": "slice:shopping-list"
+  },
+  {
+   "file": "js/weekly-plan/plan-viewer.js",
+   "line": 326,
+   "title": "selectRecipeForCustomDay optimistically marks a custom-day pick as saved even when the DB write is silently skipped",
+   "description": "When a user picks a recipe for a custom-planning day (enterCustomPickMode → selectRecipeForCustomDay), the code first re-reads the row's plan_id. If the row now belongs to an active plan (row.plan_id != null) — e.g. because someone on another device generated/extended a plan covering that date in the meantime — NEITHER the update branch (`row && row.plan_id == null`) NOR the insert branch (`!row`) executes. `dbErr` stays `undefined`, so `if (dbErr) throw dbErr;` does not throw. Execution falls through to the 'success' path anyway: `window._customDays.entries[date]` is unconditionally set to the newly picked recipe, the sheet closes, and renderWeeklyPlanData is called showing the picked recipe as if it were saved. Nothing was actually written to meal_days — the plan-owned row is untouched (correctly, per invariant #1), but the client now shows a recipe choice that does not exist in the database and will silently vanish on the next real reload/from another device, with no error ever shown to the user.",
+   "severity": "P1",
+   "evidence": "if (row && row.plan_id == null) { ...update... } else if (!row) { ...insert... }\n    if (dbErr) throw dbErr;\n    const updatedEntries = { ...(window._customDays?.entries || {}), [date]: { note: existing.note || '', recipeId, recipeTitle: title } };\n    window._customDays = { entries: updatedEntries }; (lines 343-353) — the 'row exists AND plan_id != null' case falls through both conditions with dbErr left undefined, so the optimistic entries[date] update on line 352 runs unconditionally.",
+   "finder": "slice:plan-viewer"
+  },
+  {
+   "file": "js/weekly-plan/plan-viewer.js",
+   "line": 824,
+   "title": "postCustomDays silently no-ops (without informing the caller) when a custom-day write collides with a plan day",
+   "description": "postCustomDays('set', ...) is used by saveCustomDay and convertBlockedToCustom to save a free-text note on a custom/blocked day. Inside the per-date Promise.all callback, if the meal_days row already belongs to an active plan (`row.plan_id != null`), the code does a bare `return;` — correctly refusing to overwrite a plan day (protects invariant #1) — but this early return also skips updating the local `entries` cache AND, critically, is swallowed by Promise.all: no error/flag is propagated to the caller. saveCustomDay/convertBlockedToCustom then proceed down their success path (close sheet, show as saved) even though the note was never persisted. A family member editing a custom-day note at the same moment another device is generating a plan covering that date will see 'saved' with no error, but the note is gone.",
+   "severity": "P1",
+   "evidence": "if (row && row.plan_id != null) return; // aldrig skriv över plan-dagar\n      let dbErr;\n      if (row) { ...update... } else { ...insert... }\n      if (dbErr) throw dbErr;\n      entries[date] = { ...(entries[date] || {}), note: note || '' }; (lines 824-834) — the early return on 824 bypasses the entries[date] assignment AND leaves no error for saveCustomDay's try/catch to notice.",
+   "finder": "slice:plan-viewer"
+  },
+  {
+   "file": "js/weekly-plan/plan-viewer.js",
+   "line": 632,
+   "title": "confirmPlan() never refreshes the (only) deluxe week view, leaving a stale 'Förslag' badge and no self-correction path",
+   "description": "confirmPlan() sets window.planConfirmed = true, hides the confirm button, and tries to remove `.day-card-actions` elements — a class that no longer exists anywhere in plan-viewer-deluxe.js (dead code from the retired classic view; grep confirms it's only referenced in this file and CSS). It never calls window.renderWeeklyPlanData(...), renderDeluxe(), or switchTab — the three hooks plan-viewer-deluxe.js relies on (see its wrapSync mechanism, lines 1334-1379) to repaint the deluxe pane. Since the deluxe hero renders a 'Förslag' (pending/draft) badge whenever `!plan?.confirmedAt && !window.planConfirmed` was true at last renderDeluxe() call (plan-viewer-deluxe.js lines 393-394, 721), that badge stays visible on every day after confirming. Worse, this module's realtime subscription only listens on the meal_days table (subscribeMealDays, line 26); confirming a plan only touches weekly_plans.confirmed_at, so there is no realtime echo to self-correct it either. The stale 'unconfirmed' UI persists until the user happens to switch tabs away and back (which resets and re-renders).",
+   "severity": "P1",
+   "evidence": "window.planConfirmed = true;\n    document.getElementById('confirmPlanWrap').style.display = 'none';\n    // Bekräftad plan → ta bort snabbåtgärderna (slumpa/byt dag) från korten\n    document.querySelectorAll('.day-card-actions').forEach(b => b.remove()); (lines 644-647) — no window.renderWeeklyPlanData/renderDeluxe/switchTab call anywhere in confirmPlan; '.day-card-actions' matches nothing in the current deluxe DOM (grep -r 'day-card-actions' only hits this file + css + docs).",
+   "finder": "slice:plan-viewer"
+  },
+  {
+   "file": "js/weekly-plan/plan-viewer.js",
+   "line": 442,
+   "title": "modifyDay (freeDay/unfreeDay) calls the module-local renderWeeklyPlanData, not window.renderWeeklyPlanData, so the deluxe view doesn't repaint immediately after 'Fri dag'/'Ångra fri dag'",
+   "description": "modifyDay is reachable directly from the deluxe sheet's 'editor' view (blockedDayEditorHtml's 'Ångra fri dag' button calls unfreeDay(dateIso) directly, plan-viewer-deluxe.js line ~1208) and from the free-day success toast's undo action (plan-viewer-deluxe.js line 1307: `onClick: () => window.unfreeDay(s.date)`). On success it calls the bare `renderWeeklyPlanData(data.weeklyPlan, shop)` (this module's own function reference, resolved at module-load time), not `window.renderWeeklyPlanData`. Because plan-viewer-deluxe.js reassigns `window.renderWeeklyPlanData` to a wrapper that also calls renderDeluxe() (its documented workaround specifically for 'plan-viewer.js internt anropar sin LOKALA renderWeeklyPlanData'), any call path that doesn't go through `window.renderWeeklyPlanData`/`window.loadWeeklyPlan`/`window.switchTab` skips that repaint. Concretely: tap 'Fri dag' on a day → toast appears with an 'Ångra' button → tap it → server correctly un-frees the day, but the visible deluxe card keeps showing 'Fri dag' until a meal_days realtime echo arrives (if the socket is connected) or the user switches tabs — on a flaky mobile connection this can look like the undo silently failed.",
+   "severity": "P1",
+   "evidence": "const shop = data.shoppingList || window._lastShop || null;\n    renderWeeklyPlanData(data.weeklyPlan, shop); (line 441-442, bare call) — contrast with saveCustomDay/clearCustomDay in the same file, which deliberately call `window.renderWeeklyPlanData(...)` with the comment 'Via window.* så BÅDE deluxe- och Idag-vyns re-render-hookar kör' (lines 857-859).",
+   "finder": "slice:plan-viewer"
+  },
+  {
+   "file": "js/weekly-plan/plan-viewer.js",
+   "line": 268,
+   "title": "selectRecipeForDay has no window._opBusy guard, allowing two concurrent /api/replace-recipe writes for the same day",
+   "description": "Every other mutating flow in this module and in plan-viewer-deluxe.js (modifyDay, convertBlockedToCustom, selectRecipeForCustomDay, saveCustomDay, clearCustomDay, dlxShuffle, dlxFreeDay) checks/sets the shared `window._opBusy` lock before writing. selectRecipeForDay does not: it only disables the single clicked button (`btn.disabled = true`). The recipe list (js/recipes/recipe-browser.js line 113) renders one 'Välj' button per recipe card, all wired to `onclick=\"selectRecipeForDay(event,...)\"`, and none of the OTHER cards' buttons are disabled while one request is in flight. A user who taps recipe A then quickly taps recipe B (before A's fetch resolves) fires two overlapping POST /api/replace-recipe calls for the same date with different recipeId. Whichever response resolves last wins the subsequent updateLastPlanDay()/re-render, which may not match whichever write actually landed last server-side — the on-screen recipe can end up not matching the persisted one until the next full reload.",
+   "severity": "P1",
+   "evidence": "const btn = event.currentTarget;\n  btn.disabled    = true;\n  btn.textContent = 'Sparar…'; (lines 268-270) — no `if (window._opBusy) return; window._opBusy = true;` guard, unlike selectRecipeForCustomDay's identical-shaped handler just below it (lines 329-330: `if (window._opBusy) return; window._opBusy = true;`).",
+   "finder": "slice:plan-viewer"
+  },
+  {
+   "file": "js/weekly-plan/plan-viewer.js",
+   "line": 92,
+   "title": "buildTimeline's custom-day horizon expansion is overridden by the hard-coded cap, contradicting its own comment",
+   "description": "The loop over customEntries expands `back`/`forward` so that custom-planning days outside the plan/archive range are included ('Custom-dagar kan ligga utanför plan/arkiv → se till att de kommer med'). But immediately after, `forward` is unconditionally clamped to `TIMELINE_DAYS_CAP` (45) regardless of how far out a custom day is, and `back` is clamped to `backCap` which is derived only from the oldest archived plan (or 45 if there is none) — the custom-day expansion computed just above is never factored into backCap. A custom note/recipe pick placed more than 45 days in the future, or more than 45 days in the past with no older archive, is silently dropped from the timeline (and therefore invisible in the deluxe view, which only ever iterates `window._timelineByDate`), despite the comment's promise that custom days are always included.",
+   "severity": "P2",
+   "evidence": "for (const dateIso of Object.keys(customEntries)) {\n    const d = diffDaysIso(todayIso, dateIso);\n    if (d >= 0) forward = Math.max(forward, d);\n    else back = Math.max(back, -d);\n  }\n  const archiveBack = ...;\n  const backCap = Math.min(Math.max(archiveBack, TIMELINE_DAYS_CAP), 365);\n  back = Math.min(Math.max(back, 0), backCap);\n  forward = Math.min(Math.max(forward, 0), TIMELINE_DAYS_CAP); (lines 92-104) — forward's clamp uses the constant TIMELINE_DAYS_CAP, not the custom-day-expanded value.",
+   "finder": "slice:plan-viewer"
+  },
+  {
+   "file": "js/weekly-plan/plan-viewer.js",
+   "line": 621,
+   "title": "discardPlan() also calls the bare (non-window) renderWeeklyPlanData, briefly desyncing the deluxe view",
+   "description": "Like modifyDay, discardPlan calls the module-local `renderWeeklyPlanData(emptyPlan, shop, false, archive, customDays)` instead of `window.renderWeeklyPlanData(...)`, so plan-viewer-deluxe.js's renderDeluxe() is not invoked synchronously after a successful discard. Unlike the confirmPlan case, this one is likely self-correcting because /api/discard-plan deletes the plan's meal_days rows, which does fire the meal_days realtime subscription (subscribeMealDays) → window.loadWeeklyPlan() (which IS wrapped) → eventual repaint. But there is a window between 'discard succeeded' and the realtime echo landing where the deluxe view still shows the just-discarded plan's day cards, and no `window._planMutateUntil` suppression is set here (unlike selectRecipeForDay) to bridge that gap, so on a slow/disconnected realtime channel the discarded plan can appear to linger indefinitely until a manual tab switch.",
+   "severity": "P2",
+   "evidence": "renderWeeklyPlanData(emptyPlan, shop, false, archive, customDays); (line 621, bare call, inside the try block after the /api/discard-plan POST succeeds) — no window._planMutateUntil set anywhere in discardPlan, and no window./switchTab call either.",
+   "finder": "slice:plan-viewer"
+  },
+  {
+   "file": "js/weekly-plan/plan-viewer.js",
+   "line": 563,
+   "title": "openSavingPopover's header shows the raw day.saving number instead of formatting it via fmtKr",
+   "description": "Every other price figure in the same popover (promoPrice, regularPrice, savingPerUnit) is passed through fmtKr() for consistent rounding/formatting ('12,5 kr' / '13 kr' / '–' for null). The header line interpolates `day.saving` directly. day.saving comes straight from the DB's numeric `saving` column (buildTimeline line 129: `saving: entry.saving || null`) and can be a float with many decimals or, in principle, null while savingMatches is still non-empty (the length check only guards savingMatches, not saving itself) — either case renders an unrounded or literally 'null' figure in the modal title, inconsistent with the rest of the module's currency formatting.",
+   "severity": "P2",
+   "evidence": "<h2>${ICON_COIN} Sparat ca ${day.saving} kr</h2> (line 563) — compare with `<span class=\"saving-delta\">−${fmtKr(m.savingPerUnit)}</span>` a few lines above, which does use fmtKr().",
+   "finder": "slice:plan-viewer"
+  },
+  {
+   "file": "js/weekly-plan/plan-viewer.js",
+   "line": 22,
+   "title": "unsubscribeMealDays is dead code — the realtime channel is never torn down, so a household switch without a full page reload keeps listening on the old household_id",
+   "description": "subscribeMealDays guards with `if (_planChannel) return; // redan prenumererar` so it only ever subscribes once per page load, to whichever householdId was current at the time. unsubscribeMealDays() exists to tear that down but is never called or exported anywhere in the codebase (grep confirms zero call sites). If a user's session household ever changes without a full reload (e.g. household membership updated by an admin while the tab is open, or any future multi-household support), loadWeeklyPlan() would still call subscribeMealDays(newHouseholdId) but the early-return guard would keep the stale channel filtered on the OLD household_id, silently starving the UI of realtime updates for the new household.",
+   "severity": "P2",
+   "evidence": "function unsubscribeMealDays() { if (_planChannel) { window.db.removeChannel(_planChannel); _planChannel = null; } } (lines 15-20) — never referenced again in the file or elsewhere in the repo; subscribeMealDays's guard `if (_planChannel) return;` (line 23) means a second call with a different householdId is a silent no-op.",
+   "finder": "slice:plan-viewer"
+  },
+  {
+   "file": "js/weekly-plan/plan-generator.js",
+   "title": "Blockera-dag-togglen sparar aldrig något — rebuild sker direkt efter varje klick och tappar 'blocked'-klassen",
+   "description": "toggleDayBlock() (rad 223-227) togglar CSS-klassen 'blocked' på den klickade knappen och anropar sedan omedelbart updateDateHint(). updateDateHint() (rad 157-198) bygger alltid om hela dag-listan via renderDayToggles(days) (rad 191, funktionsdefinition rad 200-221) genom att sätta container.innerHTML från grunden — och dagobjekten i 'days'-arrayen (byggda rad 181-190) har ALDRIG någon 'blocked'-egenskap, så de nya knapparna renderas alltid utan 'blocked'-klassen. Direkt efter att updateDateHint() kört klart läses getBlockedDates() (rad 193, definition rad 229-232) från den precis nybyggda (och därmed alltid oblockerade) DOM:en. Resultatet: att klicka på en dag-chip för att blockera den har ingen bestående effekt alls — texten visar aldrig '(N blockerade)', och getBlockedDates() som skickas med i generatePlan() (rad 283, blocked_dates: getBlockedDates()) är alltid en tom array.",
+   "severity": "P1",
+   "evidence": "js/weekly-plan/plan-generator.js:223-227 `export function toggleDayBlock(btn) { btn.classList.toggle('blocked'); updateDateHint(); updateSettingsPreview(); }` följt av rad 191 `renderDayToggles(days);` och rad 193 `const blocked = getBlockedDates();` — renderDayToggles (rad 200-221) bygger `cls = 'day-toggle-chip' + (isWeekend?...) + (holiday?...)` utan någon referens till tidigare blockerat tillstånd.",
+   "failure_scenario": "En familjemedlem öppnar genereringsguiden, ser att de ska bort på lördag och trycker på lördags-chipen för att blockera den (t.ex. för att slippa laga mat den dagen). Chipen togglas visuellt men försvinner direkt igen eftersom hela listan ritas om synkront i samma klickhanterare. 'X av Y dagar planeras (Z blockerade)'-texten visar aldrig någon blockering, och när matsedeln genereras skickas blocked_dates: [] till /api/generate — lördagen får ändå ett recept, trots att familjen trodde de hade uteslutit den.",
+   "finder": "slice:weekly-plan-ovrigt"
+  },
+  {
+   "file": "js/weekly-plan/ingredient-preview.js",
+   "title": "moveToShoppingList() rapporterar alltid \"lyckades\" även när ingen aktiv inköpslista hittades eller uppdaterades",
+   "description": "moveToShoppingList() (rad 37-65) hämtar en aktiv shopping_lists-rad (rad 43-47) och uppdaterar recipe_items_moved_at ENDAST om `lists?.length` är sant (rad 48-54). Men success-koden — btn.dataset.movedAt = today, knapptext återställd, disabled=false, tab-byte och loadShoppingTab() (rad 55-59) — körs ovillkorligt EFTER if-blocket, oavsett om någon rad faktiskt hittades/uppdaterades. Om ingen aktiv inköpslista finns (t.ex. direkt efter en generering med skip_shopping:true, innan planen bekräftats — se plan-generator.js rad 282) eller om SELECT-frågan misslyckas (dess `error` läses aldrig ut alls, rad 43), tystas felet helt och UI:t agerar som om flytten lyckades.",
+   "severity": "P1",
+   "evidence": "js/weekly-plan/ingredient-preview.js:43-58 `const { data: lists } = await window.db.from('shopping_lists').select('id').eq('is_active', true).limit(1); if (lists?.length) { ... } btn.dataset.movedAt = today; btn.textContent = 'Flytta till inköpslista →'; btn.disabled = false; window.switchTab('shop');` — success-raderna 55-59 ligger utanför if-blocket och saknar felkontroll av SELECT-anropet.",
+   "failure_scenario": "Ett nytt hushåll (eller en familj som just avslutat en inköpsrunda och inte har någon aktiv lista) genererar en matsedel (skip_shopping:true, ingen shopping_lists-rad skapas ännu), öppnar veckovyn och trycker 'Flytta till inköpslista →' i ingrediensförhandsgranskningen innan de bekräftat planen. Ingen DB-rad finns att flagga, uppdateringen hoppas tyst över, men knappen visar ändå 'lyckades', appen byter till Handla-fliken och laddar om den — utan att recipe_items_moved_at någonsin sattes någonstans. Nästa gång listan visas ser det ut som att flytten aldrig skedde, utan felmeddelande som förklarar varför.",
+   "finder": "slice:weekly-plan-ovrigt"
+  },
+  {
+   "file": "js/weekly-plan/prisoptimera.js",
+   "title": "prisoptimera.js targetDays() saknar de skyddsfilter (!d.custom / !d.free) som deals-popup.js har i samma funktion — duplicerad logik har divergerat",
+   "description": "Både prisoptimera.js och deals-popup.js implementerar en nästan identisk targetDays()-funktion för att avgöra vilka dagar i window._lastPlan.days som får bytas ut mot ett rea-recept. deals-popup.js (rad 54-57) filtrerar bort `d.custom` och `d.free` utöver `d.blocked`; prisoptimera.js (rad 174-176) filtrerar bara på `d.recipeId && !d.blocked` — de extra villkoren saknas helt. Verifiering mot plan-viewer.js (buildTimeline, rad 106-141) visar att det verkliga fältnamnet för en egen/anpassad dag är `isCustom`, inte `custom`, så deals-popup.js:s eget `!d.custom`-villkor är i praktiken redan en no-op (fältet finns aldrig på dagobjekten) — idag ger avvikelsen alltså ingen skillnad i beteende eftersom custom-dagar (plan_id NULL) aldrig ingår i window._lastPlan.days överhuvudtaget. Men koden signalerar en avsedd skyddsregel som inte längre stämmer med datamodellen, och de två filen har tyst divergerat: fixas typo:en `custom`→`isCustom` i deals-popup.js utan att uppdatera prisoptimera.js på samma sätt, börjar Prisoptimeras dagväljare erbjuda dagar som Veckans fynd-popupen skulle skydda.",
+   "severity": "P2",
+   "evidence": "js/weekly-plan/prisoptimera.js:174-176 `function targetDays() { return (window._lastPlan?.days || []).filter((d) => d.recipeId && !d.blocked); }` jämfört med js/weekly-plan/deals-popup.js:54-57 `return days.filter((d) => d.recipeId && !d.blocked && !d.custom && !d.free);` — och plan-viewer.js:115 `const isCustom = !!custom && !entry.recipeId && !entry.isArchive;` (fältet heter isCustom, inte custom).",
+   "failure_scenario": "Latent: ingen omedelbar dataförlust idag eftersom custom-dagar aldrig hamnar i _lastPlan.days. Men om en framtida ändring korrigerar deals-popup.js:s villkor till !d.isCustom (så det faktiskt gör något), eller om datamodellen ändras så att custom-dagar börjar dyka upp i plan.days, kommer prisoptimera.js:s dagväljare — som saknar motsvarande skydd — att låta användaren av misstag skriva över en manuellt inlagd/anpassad dag via 'Lägg in på en dag'.",
+   "finder": "slice:weekly-plan-ovrigt"
+  },
+  {
+   "file": "js/weekly-plan/plan-generator.js",
+   "title": "Nätverksfel vid generering visar rått engelskt/tekniskt felmeddelande istället för begriplig svenska",
+   "description": "I generatePlan()s catch-block (rad 342-346) sätts status.textContent = `Fel: ${err.message}` rakt av. Om window.apiFetch (rad 287-291) kastar på grund av nätverksfel (t.ex. offline, timeout) blir err.message ofta en webbläsargenererad engelsk text som 'Failed to fetch' eller 'Load failed' — inte den begripliga svenska text som CLAUDE.md kräver för alla felmeddelanden i appen ('Kunde inte spara matsedeln — prova att generera igen.' är det angivna mönstret).",
+   "severity": "P2",
+   "evidence": "js/weekly-plan/plan-generator.js:342-346 `} catch (err) { status.textContent = \\`Fel: ${err.message}\\`; status.className = 'trigger-status error'; btn.disabled = false; }` — ingen svensk fallback-text, ingen kontroll av felets typ (jämför med t.ex. prisoptimera.js/deals-popup.js som alltid visar färdig svensk text vid fel).",
+   "failure_scenario": "Familjen genererar en matsedel i bilen med dålig mobiltäckning. fetch till /api/generate misslyckas på nätverksnivå. Statusraden visar 'Fel: Failed to fetch' istället för en begriplig svensk uppmaning — förvirrande för den icke-tekniska föräldern som inte förstår vad de ska göra.",
+   "finder": "slice:weekly-plan-ovrigt"
+  },
+  {
+   "file": "js/weekly-plan/plan-generator.js",
+   "title": "updateSettingsPreview() hoppar helt över datumintervall-klampningen av vegetariska/Ture-dagar om recepten inte hunnit laddas",
+   "description": "updateSettingsPreview() (rad 99-153) returnerar tidigt om window._allRecipes saknas (rad 101). Men samma funktion ansvarar även för att klampa vegetarianDays/tureDays/untestedCount mot det valda datumintervallet (rad 127-141) — en logik som inte har något med receptlistan att göra. Öppnas genereringsguiden innan _allRecipes hunnit laddas (långsamt nät, snabb interaktion) och användaren ändrar start-/slutdatum eller togglar en blockerad dag under tiden, sker ingen klampning alls: fälten kan tillfälligt tillåta fler vegetariska/Ture-dagar än det finns dagar i intervallet.",
+   "severity": "P2",
+   "evidence": "js/weekly-plan/plan-generator.js:99-101 `export function updateSettingsPreview() { const preview = document.getElementById('settingsPreview'); if (!preview || !window._allRecipes) return; ...` — klampningslogiken på rad 127-141 ligger efter detta guard-villkor och delar dess early-return.",
+   "failure_scenario": "Vid en ovanligt långsam initial receptladdning öppnar användaren snabbt guiden och sätter start-/slutdatum till ett kort 2-dagarsintervall samtidigt som vegetarianDays fortfarande stod på 4 från förra sessionen. Eftersom window._allRecipes ännu inte är satt körs aldrig klampningen som annars skulle sänkt fältet till max 2 — värdet skickas sedan orört till /api/generate om användaren hinner trycka 'Skapa förslag' innan nästa preview-uppdatering hinner klampa det.",
+   "finder": "slice:weekly-plan-ovrigt"
+  },
+  {
+   "file": "js/today/today-view.js",
+   "line": 359,
+   "title": "todayAddItem saknar egen busy-spärr — dubbel Enter kan skapa dubblettvaror",
+   "description": "window.todayAddItem() har ingen _opBusy-liknande spärr. Vid snabb dubbel-Enter i snabbfältet (onkeydown i quickAddHtml, rad 205) hinner två anrop av todayAddItem köras: båda läser samma input.value INNAN addManualItem() satt btn.disabled, och båda passerar `if (!window._shopListId...) await loadShoppingTab()` samtidigt eftersom _shopListId ännu inte hunnit sättas av det första anropet. addManualItem() (js/shopping/shopping-list.js:771) sätter visserligen btn.disabled=true, men kontrollerar aldrig `if (btn.disabled) return` vid start — disabled-flaggan skyddar bara mot native musklick på knappen, inte mot ett andra programmatiskt anrop via Enter-vägen. Resultat: samma vara kan hamna två gånger på hushållets delade inköpslista.",
+   "severity": "P1",
+   "evidence": "window.todayAddItem = async function () {\n  const input = document.getElementById('todayAddInput');\n  const item = input?.value.trim();\n  if (!item) { input?.focus(); return; }\n  try {\n    if (!window._shopListId && window.loadShoppingTab) await window.loadShoppingTab();\n  } catch { /* ... */ }\n  await window.addManualItem('todayAddInput', 'todayAddBtn');\n  ... (js/today/today-view.js:359-371); onkeydown=\"...todayAddItem()\" (rad 205); addManualItem() saknar `if (btn.disabled) return;` (js/shopping/shopping-list.js:771-793).",
+   "finder": "slice:today-ui"
+  },
+  {
+   "file": "js/today/today-view.js",
+   "line": 364,
+   "title": "Snabbtillägg litar på cachat window._shopListId — kan skriva till en övergiven inköpslista efter ny matsedel",
+   "description": "Guarden `if (!window._shopListId && window.loadShoppingTab) await window.loadShoppingTab();` uppdaterar bara listan om _shopListId ANNU inte är satt. Om användaren tidigare besökt Handla-fliken (så _shopListId pekar på lista A) och sedan genererar en ny matsedel utan att besöka Handla-fliken igen, deaktiverar servern lista A och skapar en ny aktiv lista B (api/generate.js) — men window._shopListId i klienten uppdateras aldrig automatiskt (renderWeeklyPlanData/_lastShop sätter aldrig _shopListId, se js/weekly-plan/plan-viewer.js). Ett snabbtillägg från Idag-fliken går då via addManualItem → ensureActiveShoppingList(), som också bara returnerar det cachade (nu inaktiva) list-ID:t direkt (js/shopping/shopping-list.js:747-748) utan att verifiera att listan fortfarande är aktiv. Varan hamnar på den övergivna listan A och syns aldrig i den riktiga (aktiva) inköpslistan B.",
+   "severity": "P1",
+   "evidence": "try {\n    if (!window._shopListId && window.loadShoppingTab) await window.loadShoppingTab();\n  } catch { /* addManualItem ger begripligt fel nedan */ }\n  await window.addManualItem('todayAddInput', 'todayAddBtn'); (js/today/today-view.js:363-366); jfr ensureActiveShoppingList(): `if (window._shopListId) return window._shopListId;` (js/shopping/shopping-list.js:748).",
+   "finder": "slice:today-ui"
+  },
+  {
+   "file": "js/today/today-view.js",
+   "line": 310,
+   "title": "Ingen ombild av 'idag'/'imorgon' vid midnatt om Idag-fliken hålls öppen",
+   "description": "now/todayIso/tomorrowIso beräknas bara inne i renderTodayView(), och renderTodayView triggas enbart av wrappade funktioner (renderWeeklyPlanData, loadWeeklyPlan, switchTab till 'idag') — det finns varken setInterval eller visibilitychange-lyssnare i filen som tvingar fram en ny render vid dygnsskifte. Om familjen har appen öppen på Idag-fliken över midnatt (typiskt för en köks-PWA som lämnas uppe) utan att byta flik eller trigga en datauppdatering, fortsätter 'Ikväll'-herokortet att visa gårdagens (redan ätna) middag och 'I morgon'-kortet fortsätter visa vad som nu faktiskt är dagens middag — tvärtemot vad rubrikerna säger.",
+   "severity": "P1",
+   "evidence": "const now = new Date();\n  const todayIso = fmtIso(now);\n  const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);\n  const tomorrowIso = fmtIso(tomorrow);\n  const todayEntry = timeline[todayIso] || null;\n  ... (js/today/today-view.js:310-321) — ingen timer/visibilitychange i hela filen som triggar renderTodayView() vid dygnsskifte.",
+   "finder": "slice:today-ui"
+  },
+  {
+   "file": "js/today/today-view.js",
+   "line": 336,
+   "title": "'X middagar kvar · Y veg' blandar 'kvar'- och 'hela veckan'-semantik",
+   "description": "kvar filtreras på d.date >= todayIso (bara kommande/dagens middagar), men veg räknas över hela weekDays utan datumfilter — inklusive redan ätna vegetariska dagar tidigare i veckan. Sammanfattningstexten '{kvar} middagar kvar · {veg} veg' läses naturligt som att båda talen gäller det som återstår, men veg-siffran kan innehålla dagar som redan passerat, vilket ger en missvisande siffra (t.ex. 'kvar' visar en lägre familj-relevant siffra medan veg räknas för hela veckan).",
+   "severity": "P2",
+   "evidence": "const kvar = weekDays.filter(d => dayInfo(d)?.kind === 'recipe' && d.date >= todayIso).length;\n  const veg = weekDays.filter(d => dayInfo(d)?.protein === 'vegetarisk').length;\n  ...\n  const sumLeft = `${kvar} ${kvar === 1 ? 'middag' : 'middagar'} kvar · ${veg} veg`; (js/today/today-view.js:336-339)",
+   "finder": "slice:today-ui"
+  },
+  {
+   "file": "js/today/today-view.js",
+   "line": 216,
+   "title": "Prislarm-bannern kollas exakt en gång per sidladdning och blir kvar/inaktuell resten av sessionen",
+   "description": "_pricingChecked spärrar checkPricingStatus() till EN körning per sidladdning (kommentaren på rad 210-212 bekräftar att detta är avsiktligt). Konsekvensen: (1) om reor-hämtningen börjar fela EFTER den första kollen, visas aldrig något larm förrän appen laddas om; (2) om ett larm väl visats och problemet sedan åtgärdas (t.ex. Joakim kör om cronen manuellt) under samma (potentiellt flera dagar långa) PWA-session, försvinner aldrig bannern och 'days'-räknaren i texten fryser vid det ursprungliga värdet — familjen kan se '...inte kunnat hämtas på 2 dagar' i flera dagar efter att felet redan är löst.",
+   "severity": "P2",
+   "evidence": "let _pricingChecked = false;\n\nasync function checkPricingStatus() {\n  if (_pricingChecked) return;\n  _pricingChecked = true;\n  ... (js/today/today-view.js:213-238) — ingen omkontroll, ingen rensning av _pricingBannerHtml vid lyckad status senare i sessionen.",
+   "finder": "slice:today-ui"
+  },
+  {
+   "file": "js/today/today-view.js",
+   "line": 41,
+   "title": "Ikväll/I morgon kan visa tom titel om snapshot-titeln saknas trots att receptobjektet finns",
+   "description": "mk() sätter title från d.recipe||'' respektive d.customRecipeTitle||'' — faller aldrig tillbaka på r?.title (det uppslagna receptobjektet, som redan hämtas via recipeById() ett par rader ovanför och skickas in i mk()). Om recipe_title_snapshot/customRecipeTitle av någon anledning är null/tom medan recipe_id/customRecipeId ändå pekar på ett giltigt recept, renderas herokortet ('Ikväll'/'I morgon') med en tom titel-rubrik istället för att falla tillbaka på det faktiska receptnamnet — trots att namnet finns tillgängligt i r.title.",
+   "severity": "P2",
+   "evidence": "if (d.recipeId && !d.isCustom) {\n    const r = recipeById(d.recipeId);\n    return mk('recipe', d.recipe || '', d.recipeId, r, ...);\n  }\n  if (d.isCustom && d.customRecipeId) {\n    const r = recipeById(d.customRecipeId);\n    return mk('recipe', d.customRecipeTitle || '', d.customRecipeId, r, null);\n  } (js/today/today-view.js:39-46); mk() använder title-parametern rakt av utan r?.title-fallback (rad 56-66).",
+   "finder": "slice:today-ui"
+  },
+  {
+   "file": "js/today/today-view.js",
+   "line": 164,
+   "title": "weekHtml räknar ut ett eget 'idag' istället för att återanvända renderTodayView:s todayIso",
+   "description": "weekHtml() gör en egen `fmtIso(new Date())` för att avgöra past/today-styling och veckonummer, separat från todayIso som redan räknats ut i renderTodayView (rad 311) och skickas in via weekDays/sumLeft/sumRight men INTE som datumvärde. I praktiken körs de i samma tick så skillnaden är försumbar, men det är en duplicerad 'nu'-källa som kan divergera om koden refaktoreras (t.ex. om weekHtml görs asynkron) eller exakt vid ett dygnsskifte mellan de två new Date()-anropen — samma rotorsak som den större midnattsstaleness-buggen ovan.",
+   "severity": "P2",
+   "evidence": "function weekHtml(weekDays, sumLeft, sumRight) {\n  if (!weekDays.length) return '';\n  const todayIso = fmtIso(new Date());\n  ... (js/today/today-view.js:162-164, 187) — separat från const todayIso = fmtIso(now); i renderTodayView (rad 311).",
+   "finder": "slice:today-ui"
+  },
+  {
+   "file": "js/today/today-view.js",
+   "line": 245,
+   "title": "Fästa lappar rensas till tom lista vid tillfälligt fel istället för att behålla senast kända data",
+   "description": "checkPinnedNotes() sätter _pinnedNotes = [] i catch-blocket vid ETT misslyckat anrop (t.ex. en tillfällig nätverksblip eller att loadPinnedNotes kastar mitt i en Supabase-omstart). Eftersom funktionen anropas både efter varje loadWeeklyPlan och vid varje byte till Idag-fliken, kan ett enstaka transient fel få tidigare korrekt visade 'Fästa lappar'-kort att försvinna ur vyn istället för att behålla de senast kända lapparna tills nästa lyckade hämtning.",
+   "severity": "P2",
+   "evidence": "async function checkPinnedNotes() {\n  try {\n    if (typeof window.loadPinnedNotes !== 'function') return;\n    _pinnedNotes = await window.loadPinnedNotes();\n    renderTodayView();\n  } catch { _pinnedNotes = []; }\n} (js/today/today-view.js:245-251)",
+   "finder": "slice:today-ui"
+  },
+  {
+   "file": "js/ui/cook-mode.js",
+   "line": 100,
+   "title": "Portionsstepper hoppar över steg när startvärdet ligger över taket på 12",
+   "description": "_cookServStep klampar alltid till [1,12] på varje delta-steg, men det initiala _cookServings (satt vid öppning, rad 141) klampas ALDRIG mot samma tak — den läses direkt från #targetServings-inputen (eller receptets egen servings). Om det värdet är större än 12 (t.ex. households.target_servings har lästs in oklampat från DB i initServingsSetting, js/weekly-plan/plan-generator.js:23-34, eller ett recept har servings>12), visar matlagningsläget korrekt det höga starttalet, men första tryck på '−' hoppar direkt ner till 12 istället för att minska med 1 — ett synligt, oväntat dubbelhopp i skalningen.",
+   "severity": "P2",
+   "evidence": "window._cookServStep = function (delta) {\n  _cookServings = Math.min(12, Math.max(1, _cookServings + delta));\n  renderServings();\n}; (js/ui/cook-mode.js:100-103); _cookServings = parseInt(document.getElementById('targetServings')?.value, 10) || _cookBase; (rad 141) — ingen motsvarande klampning vid öppning.",
+   "finder": "slice:today-ui"
+  },
+  {
+   "file": "js/ui/cook-mode.js",
+   "line": 105,
+   "title": "Progressetiketten antar sekventiell avbockning men steg kan bockas i valfri ordning",
+   "description": "updateProgress() räknar done som antal .cook-step.done oavsett vilka steg som bockats, men markerar 'current' bara på det FÖRSTA obockade steget i DOM-ordning (`_overlay.querySelector('.cook-step:not(.done)')`). Klick-hanteraren för steg (rad 148) tillåter att valfritt steg bockas i valfri ordning. Om användaren t.ex. bockar steg 4 innan steg 1-3, visar etiketten 'Steg 2 av N' (baserat på done=1) samtidigt som steg 1 markeras 'current' — talet och den visuella markeringen syftar då inte på samma steg som faktiskt precis bockades, vilket är förvirrande vid spisen.",
+   "severity": "P2",
+   "evidence": "function updateProgress() {\n  if (!_overlay) return;\n  const total = _overlay.querySelectorAll('.cook-step').length;\n  const done  = _overlay.querySelectorAll('.cook-step.done').length;\n  ...\n  const next = _overlay.querySelector('.cook-step:not(.done)');\n  if (next && done > 0) next.classList.add('current');\n} (js/ui/cook-mode.js:105-117); <li class=\"cook-step\" onclick=\"this.classList.toggle('done');window._cookProgress()\"> (rad 148, ingen ordningsspärr).",
+   "finder": "slice:today-ui"
+  },
+  {
+   "file": "js/ui/scroll.js",
+   "line": 34,
+   "title": "Scrolla-till-topp-knappen respekterar inte prefers-reduced-motion",
+   "description": "scrollBtn:s klick-hanterare anropar window.scrollTo({top:0, behavior:'smooth'}) direkt istället för att gå via modulens egen smoothScrollTo()/prefersReducedMotion()-kontroll (som används för veckovyns snap-scroll längre ner i samma fil). CSS-regeln @media(prefers-reduced-motion:reduce){...scroll-behavior:auto!important} (css/styles.css:5828-5836) styr bara scroll-behavior-baserad ('auto') scrollning — ett explicit behavior:'smooth' i JS-anropet åsidosätter det enligt CSSOM View-spekens semantik. Resultat: en användare med 'Reducera rörelse' aktiverat i OS får ändå en animerad scroll när de trycker 'till toppen'-knappen, i strid med projektets uttalade designprincip.",
+   "severity": "P2",
+   "evidence": "scrollBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' })); (js/ui/scroll.js:34) — jfr smoothScrollTo() som explicit kollar prefersReducedMotion() (rad 40-50) och den globala CSS-regeln som bara omfattar behavior:'auto' (css/styles.css:5828-5836).",
+   "finder": "slice:today-ui"
+  },
+  {
+   "file": "js/recipes/recipe-import.js",
+   "line": 137,
+   "title": "Importförhandsvisningen är osynlig — modalen får aldrig .open-klassen",
+   "description": "openEditModal() (recipe-editor.js:23-25) sätter display:'block' och lägger sedan till klassen 'open' i nästa animationsframe, vilket krävs eftersom CSS-regeln '#editModal { opacity: 0 }' / '#editModal.open { opacity: 1 }' (css/styles.css:4890-4891) styr synligheten. openImportPreview() sätter bara style.display='block' (rad 150) men lägger ALDRIG till klassen 'open'. Grep över hela js/ bekräftar att ingen annan kod lägger till klassen efter import. Modalen förblir därmed opacity:0 = helt osynlig, trots att den ligger i DOM och tar emot klick.",
+   "severity": "P0",
+   "evidence": "recipe-import.js:150  document.getElementById('editModal').style.display = 'block';  (ingen classList.add('open') någonstans i funktionen eller anropskedjan importFromUrl→closeImportModal()+openImportPreview() / importFromPhoto→samma). Jämför recipe-editor.js:23-25 som gör requestAnimationFrame(() => m.classList.add('open')).",
+   "finder": "slice:recipes"
+  },
+  {
+   "file": "js/recipes/recipe-editor.js",
+   "line": 14,
+   "title": "Null protein renderas fel i editor-selecten och sparas tyst som 'Fisk'",
+   "description": "data-mapper.js:17 returnerar `protein: row.protein ?? null` — protein kan vara null för recept i databasen. openEditModal sätter `edit-protein.value = r.protein` utan null-koll. index.html:477-483 har inget tomt/placeholder-alternativ i selecten, så att sätta value till null (stringifieras till \"null\") matchar ingen <option> och webbläsaren faller tillbaka till FÖRSTA optionen ('Fisk'). Om användaren öppnar och sparar receptet utan att röra proteinfältet skrivs protein='fisk' permanent till databasen — vilket i sin tur påverkar den deterministiska proteinbalanseringen i api/_shared/select-recipes.js (max 2 per proteintyp).",
+   "severity": "P1",
+   "evidence": "recipe-editor.js:14  document.getElementById('edit-protein').value      = r.protein;  — ingen fallback för null; index.html:477-483 saknar <option value=\"\">.",
+   "finder": "slice:recipes"
+  },
+  {
+   "file": "js/recipes/recipe-browser.js",
+   "line": 96,
+   "title": "data-title HTML-escapas före lowercase → jumpToRecipe hittar inte recept med &, <, >, \" eller ' i titeln",
+   "description": "renderCard sätter `data-title=\"${escapeHtml(r.title).toLowerCase()}\"` — dvs escapeHtml körs FÖRST, så t.ex. 'Fisk & skaldjur' blir 'fisk &amp; skaldjur'. jumpToRecipe(title) (anropas från 'Sök i receptboken' i js/weekly-plan/plan-viewer-deluxe.js:1090) jämför mot `title.toLowerCase()` — den RÅA, oescapade titeln, dvs 'fisk & skaldjur'. Strängarna matchar aldrig för titlar med specialtecken. Efter redigering av samma recept sätts card.dataset.title = updated.title.toLowerCase() (recipe-editor.js:141) UTAN escapeHtml, vilket bekräftar inkonsekvensen — bara nyss redigerade kort råkar matcha korrekt.",
+   "severity": "P1",
+   "evidence": "recipe-browser.js:96  data-title=\"${escapeHtml(r.title).toLowerCase()}\"  vs recipe-browser.js:276  if (card.dataset.title === title.toLowerCase()) toggleCard(card);",
+   "finder": "slice:recipes"
+  },
+  {
+   "file": "js/recipes/recipe-import.js",
+   "line": 70,
+   "title": "Rått/tekniskt felmeddelande visas i stället för svensk text vid nätverksfel eller icke-JSON-svar",
+   "description": "Mönstret `fb.textContent = e.message || 'svensk fallback'` prioriterar det kastade felets egna meddelande före den svenska fallbacktexten. Två konkreta vägar ger ett engelskt/tekniskt e.message: (1) offline/nätverksfel ger `TypeError: Failed to fetch` från fetch; (2) /api/import-recipe har 30s maxtid (vercel.json) — vid timeout eller serverkrasch svarar Vercel ofta med en HTML-felsida, och `await res.json()` (rad 64) kastar då en SyntaxError typ 'Unexpected token < in JSON at position 0'. Båda fallen bryter mot CLAUDE.md:s krav på begriplig svensk felhandlingstext (jämför recipe-editor.js som ALDRIG läcker e.message, bara fasta svenska strängar).",
+   "severity": "P1",
+   "evidence": "recipe-import.js:70  fb.textContent = e.message || 'Kunde inte hämta receptet — kontrollera adressen.';  (samma mönster rad 103 för fotoimport).",
+   "finder": "slice:recipes"
+  },
+  {
+   "file": "js/recipes/recipe-editor.js",
+   "line": 70,
+   "title": "parseInt(...) || fallback nollar tyst bort legitimt värdet 0 för tid/portioner",
+   "description": "`parseInt(document.getElementById('edit-time').value) || null` och samma mönster för servings (rad 71): om användaren skriver '0' blir parseInt 0, vilket är falsy i JS, så uttrycket faller igenom till fallback (null respektive 4) i stället för att spara 0. Inputfälten har min=\"1\" i HTML men det är bara en visuell spinner-gräns — inget <form>-submit triggas så webbläsarens required/min-validering stoppar aldrig ett manuellt inskrivet '0'.",
+   "severity": "P2",
+   "evidence": "recipe-editor.js:70-71  time: parseInt(document.getElementById('edit-time').value) || null,  servings: parseInt(document.getElementById('edit-servings').value) || 4,",
+   "finder": "slice:recipes"
+  },
+  {
+   "file": "js/recipes/recipe-editor.js",
+   "line": 126,
+   "title": "Full-row overwrite vid spara kan tysta konkurrerande ändringar från annan familjemedlem (t.ex. 'Provat'-togglingen)",
+   "description": "saveRecipe() för befintligt recept skriver HELA raden via recipeToRow(updated,...) baserat på `updated = {...r, ...formData}`, där r är receptets state i DENNA klients window.RECIPES-cache (satt vid sidladdning, ingen realtime-synk syns i denna slice). Formuläret har inget tested-fält, så `updated.tested` blir vad r.tested råkar vara i just den här klientens cache. Scenario: familjemedlem A togglar 'Provat' på recept #7 via mobilen (toggleTested skriver direkt till DB). Familjemedlem B har receptredigeraren för #7 öppen på en surfplatta som laddades FÖRE A:s ändring; när B klickar Spara (även för en helt orelaterad ändring, t.ex. bara ändra tid) skrivs updated.tested=false över A:s tested=true i databasen — 'senaste skrivning vinner' på hela raden i stället för bara de fält B faktiskt ändrade.",
+   "severity": "P2",
+   "evidence": "recipe-editor.js:123-134  const r = window.RECIPES.find(...); const updated = { ...r, ...formData }; ... .update(recipeToRow(updated, householdId)).eq('id', updated.id)... — formData saknar 'tested', så helraden (inkl. ev. inaktuellt tested-fält) skrivs över.",
+   "finder": "slice:recipes"
+  },
+  {
+   "file": "js/recipes/recipe-editor.js",
+   "line": 85,
+   "title": "Insert-svarets faktiska DB-rad kastas bort — lokalt state byggs av klientens egen (ovaliderade) kopia",
+   "description": "`.insert(recipeToRow(newRecipe, householdId)).select().single()` hämtar den verkliga sparade raden i `data`, men koden ignorerar den och sätter i stället `saved = newRecipe` (klientens egen, redan skickade objekt). Om databasen normaliserar, trunkerar eller sätter default på något fält (t.ex. via kolumn-typ, trigger, eller om unik-constraint på id gör att en annan rad faktiskt sparades) syns aldrig avvikelsen i UI:t förrän sidan laddas om nästa gång — kortet som visas i receptbläddraren kan då avvika tyst från vad som faktiskt ligger i Supabase.",
+   "severity": "P2",
+   "evidence": "recipe-editor.js:85-91  const { data, error } = await window.db.from('recipes').insert(...).select().single(); if (error) throw error; saved = newRecipe;  — 'data' läses aldrig ut.",
+   "finder": "slice:recipes"
+  },
+  {
+   "file": "js/recipes/recipe-browser.js",
+   "line": 281,
+   "title": "toggleTested saknar busy-spärr mot dubbel-tap",
+   "description": "Funktionen sätter bara pill.style.opacity='0.5' som visuell markör men inaktiverar aldrig pill:en (ingen disabled/pointer-events:none) under den asynkrona Supabase-anropet. Ett snabbt dubbeltryck innan opacityn hinner synas kan trigga två parallella toggleTested-anrop för samma recept, som båda läser samma (ännu ej uppdaterade) r.tested och skickar samma update — i praktiken ofarligt (idempotent skrivning) men bryter mönstret _opBusy som resten av appen använder för att undvika dubbla skrivningar, och ger onödig extra nätverkstrafik/flimmer om svaren kommer i olika ordning.",
+   "severity": "P2",
+   "evidence": "recipe-browser.js:283-284  const pill = event.currentTarget; pill.style.opacity = '0.5';  — ingen disabled-flagga eller in-flight-koll innan await-anropet på rad 289-294.",
+   "finder": "slice:recipes"
+  },
+  {
+   "file": "js/recipes/recipe-editor.js",
+   "line": 10,
+   "title": "openEditModal ger ingen återkoppling om receptet redan är borttaget/saknas i lokal cache",
+   "description": "Om `window.RECIPES.find(r => r.id === id)` inte hittar receptet (t.ex. ett annat hushållsmedlem har raderat det, eller kortet renderades från en inaktuell lista) returnerar funktionen tyst utan att öppna modalen och utan felmeddelande. Användaren som klickar 'Redigera recept' på ett sådant kort ser ingenting hända — ingen förklaring till varför knappen inte reagerar.",
+   "severity": "P2",
+   "evidence": "recipe-editor.js:10-11  const r = window.RECIPES.find(r => r.id === id);  if (!r) return;  — inget felmeddelande eller toast till användaren.",
+   "finder": "slice:recipes"
+  },
+  {
+   "file": "js/shopping/dispatch-preferences.js",
+   "line": 49,
+   "title": "AI-inköpsprompten respekterar inte \"har hemma\" (skafferi) — ber AI-agenten köpa varor familjen redan äger",
+   "description": "getUncheckedItems()/getUncheckedManualItems() (rad 49-64), som buildPrompt() (rad 153-198) bygger AI-shoppingprompten från, filtrerar bara bort BOCKADE varor (window._checkedItems) — inte skafferimarkerade (\"har hemma\", window._pantryItems via isPantryName i shopping-list.js). Övriga textexportsfunktioner i samma app (t.ex. rebuildShopText i shopping-list.js rad 509/517/526) filtrerar konsekvent bort pantry-varor också (`!isPantryName(item)`), men dispatch-preferences.js gör det inte. Konkret scenario: familjen bockar 'smör' som \"har hemma\" (redan hemma). Sedan trycker en förälder på \"Kopiera AI-inköpsprompt\" för att låta en webbläsar-AI-agent handla på willys.se — prompten listar ändå smör som en vara att köpa, så agenten köper en vara i onödan. Om HELA listan bara innehåller skafferivaror visas knappen ändå som aktiv och en icke-tom \"köp detta\"-prompt genereras, istället för att signalera att inget behöver handlas.",
+   "severity": "P1",
+   "evidence": "function getUncheckedItems() {\n  const items = window._shopRecipeItems || {};\n  const checked = window._checkedItems || {};\n  const result = {};\n  for (const [cat, list] of Object.entries(items)) {\n    const unchecked = list.filter((_, idx) => !checked[`recipe::${cat}::${idx}`]);\n    ... // ingen isPantryName-filtrering, jämför shopping-list.js:509 som gör det",
+   "finder": "slice:dispatch-frontend"
+  },
+  {
+   "file": "js/shopping/dispatch-preferences.js",
+   "line": 15,
+   "title": "Misslyckad preferensladdning + valfri redigering skriver över (raderar) tidigare sparade preferenser",
+   "description": "loadPrefs() (rad 15-26) faller tyst tillbaka till DEFAULTS ({blockedBrands:[], preferOrganic:{}, preferSwedish:{}}) om GET-anropet misslyckas (nätverksblip, 401, timeout) — ingen felindikator, prefsLoaded förblir false. Om användaren sedan gör EN ändring (lägger till ett varumärke, togglar en eko/svensk-kategori) skickar savePrefs() (rad 28-42) hela `prefs`-objektet till set_preferences, som (api/shopping.js rad 15-22) ALLTID skriver hela filen — ingen merge. Resultat: alla tidigare sparade blockerade varumärken och eko/svenskt-val för hushållet skrivs över och försvinner permanent, utlöst av en enda transient nätverksmiss vid inläsning.",
+   "severity": "P1",
+   "evidence": "async function loadPrefs() {\n  if (prefsLoaded) return prefs;\n  try {\n    const res = await window.apiFetch(...);\n    if (res.ok) { prefs = await res.json(); prefsLoaded = true; }\n  } catch { /* använd defaults */ }\n  return prefs;\n}",
+   "finder": "slice:dispatch-frontend"
+  },
+  {
+   "file": "js/shopping/dispatch-ui.js",
+   "line": 29,
+   "title": "Ingen spärr mot dubbel dispatch mellan modal-stängning och återöppning — kan lägga varor dubbelt i den riktiga Willys-korgen",
+   "description": "Huvudknappen \"Skicka till Willys\" (index.html:372, dispatchToWillysBtn) inaktiveras aldrig medan en dispatch pågår, och openDispatchConfirm()/runDispatch() har ingen modul-nivå busy-flagga (till skillnad från appens vanliga _opBusy-mönster). runDispatch() disablar bara den tillfälliga \"Skicka\"-knappen i modalen, men showResult() ersätter omedelbart hela modal-innehållet (rad 54-57) så den disablade knappen försvinner ur DOM direkt. Om användaren stänger modalen (klick på overlay/handleDispatchOverlayClick) medan POST /api/dispatch-to-willys fortfarande pågår (kan ta upp till 60s), kan hen omedelbart klicka på huvudknappen igen och skicka en NY dispatch — två samtidiga POST:ar mot den skarpa Willys-korgen, som var för sig lägger till varor. Risk för verkligt dubbelinköp/dubbla kvantiteter i familjens riktiga matkasse.",
+   "severity": "P1",
+   "evidence": "export async function runDispatch() {\n  const runBtn = document.getElementById(\"dispatchRunBtn\");\n  if (runBtn) { runBtn.disabled = true; ... }\n  showResult(`<p>Skickar till Willys…</p>...`); // ersätter DOM, ingen global busy-flagga\n  ...\n  const res = await fetch(\"/api/dispatch-to-willys\", { method: \"POST\", ... });",
+   "finder": "slice:dispatch-frontend"
+  },
+  {
+   "file": "js/shopping/dispatch-ui.js",
+   "line": 117,
+   "title": "Sen dispatch-respons tvingar upp modalen igen även om användaren redan stängt den eller bytt flik",
+   "description": "showResult() (rad 117-123), som anropas av renderResult() efter att fetch-svaret kommit tillbaka, sätter alltid `modal.style.display = \"\"` och låser bakgrundsscroll igen — utan att kontrollera om användaren redan stängt dialogen (closeDispatchModal) eller navigerat till en helt annan flik under tiden requesten pågick (upp till 60s). Eftersom #dispatchModal ligger utanför flik-innehållet i DOM (index.html:383, tas aldrig bort vid flikbyte) kan resultatmodalen dyka upp helt oväntat medan familjemedlemmen redan är i en annan del av appen, och scrollen låses igen utan att de förstår varför.",
+   "severity": "P2",
+   "evidence": "function showResult(html) {\n  const modal = document.getElementById(\"dispatchModal\");\n  const body = document.getElementById(\"dispatchModalBody\");\n  body.innerHTML = html;\n  modal.style.display = \"\";\n  document.body.style.overflow = \"hidden\";              // lås bakgrundsscroll (Session 121)\n}",
+   "finder": "slice:dispatch-frontend"
+  },
+  {
+   "file": "js/shopping/dispatch-preferences.js",
+   "line": 201,
+   "title": "\"Kopiera AI-inköpsprompt\"-knappens aktiv/inaktiv-status och eko/svenskt-kategorilistan blir stale efter bockning — knapp kan klickas tyst utan effekt",
+   "description": "renderPromptButton() (rad 201-214) och renderPreferencesUI()/getShoppingCategories() (rad 44-47, 96-143) beräknas bara EN gång per flikladdning, via initDispatchUI()→initPreferences() (dispatch-ui.js rad 14-15). De körs aldrig om när användaren bockar/avbockar varor lokalt (toggleShopItem i shopping-list.js) eller när en bockning strömmas in via realtime från annan enhet/familjemedlem (subscribeShoppingItems' snabbväg för receptvaror i shopping-list.js rad 37-57 patchar bara DOM:en direkt, anropar aldrig renderPromptButton). Konkret: en förälder öppnar Handla-fliken med 8 obockade varor (knappen blir aktiv), bockar sedan av samtliga varor medan de handlar i affären. Knappen \"Kopiera AI-inköpsprompt\" ser fortfarande aktiv/klickbar ut. Klickar man på den kör copyAIPrompt() buildPrompt(), som nu (rätt) returnerar null (totalCount===0) — funktionen avbryter tyst (rad 218: `if (!prompt) return;`), utan felmeddelande eller feedback. Användaren förstår inte varför \"ingenting händer\". Motsvarande gäller åt andra hållet: om listan var tom vid flikladdning (knapp inaktiverad) och man sedan lägger till en manuell vara, förblir knappen inaktiverad tills fliken laddas om.",
+   "severity": "P2",
+   "evidence": "export async function initPreferences() {\n  await loadPrefs();\n  renderPreferencesUI();\n  renderPromptButton();   // körs bara här — aldrig från toggleShopItem/realtime-patchen\n}",
+   "finder": "slice:dispatch-frontend"
+  },
+  {
+   "file": "js/shopping/dispatch-ui.js",
+   "line": 30,
+   "title": "Bekräfta-dialogens vara-räkning inkluderar \"har hemma\"-markerade varor, till skillnad från vad servern faktiskt skickar",
+   "description": "openDispatchConfirm() (rad 29-49) räknar recipeCount/manualCount rakt av från window._shopRecipeItems/window._shopManualItems, som INTE exkluderar pantry-markerade (\"har hemma\") rader — dessa finns kvar i arrayerna, bara visuellt taggade i UI:t (shopping-list.js). Servern (api/dispatch-to-willys.js, fetchShoppingListFromSupabase) filtrerar däremot uttryckligen bort pantry-varor innan dispatch. Resultat: bekräfta-dialogen kan säga \"Skicka 15 ingredienser till din Willys-korg?\" när servern i praktiken bara bearbetar t.ex. 12 — missvisande antal för användaren precis innan de bekräftar en skarp korg-fyllning.",
+   "severity": "P2",
+   "evidence": "export function openDispatchConfirm() {\n  const items = window._shopRecipeItems || {};\n  const recipeCount = Object.values(items).reduce((sum, arr) => sum + (arr?.length || 0), 0);\n  const manualCount = (window._shopManualItems || []).length;\n  const totalCount = recipeCount + manualCount;  // ingen pantry-filtrering",
+   "finder": "slice:dispatch-frontend"
+  },
+  {
+   "file": "js/shopping/dispatch-preferences.js",
+   "line": 38,
+   "title": "Sparfel visas i ett element som kan vara osynligt (dolt preferenspanel) — tyst dataförlust utan synlig feedback",
+   "description": "Vid misslyckad savePrefs() (rad 28-42) sätts felmeddelandet \"Kunde inte spara — försök igen.\" i #prefsError, som ligger inuti #prefsBody. #prefsBody har `display:none` som utgångsläge (rad 121) och togglas av togglePrefsPanel() — om användaren stänger panelen innan den debouncade sparningen (500ms) hunnit köra och misslyckas, sätts felmeddelandet på ett element vars förälder är display:none och syns därför aldrig. Användaren tror att ändringen sparades (ingen synlig indikation på motsatsen) men den försvinner tyst nästa gång prefs laddas om.",
+   "severity": "P2",
+   "evidence": "} catch {\n      const err = document.getElementById(\"prefsError\");\n      if (err) { err.textContent = \"Kunde inte spara — försök igen.\"; err.style.display = \"\"; }\n    }\n  }, 500);\n}\n// ... <div id=\"prefsError\" ...> ligger inuti <div class=\"prefs-body\" id=\"prefsBody\" style=\"display:none\">",
+   "finder": "slice:dispatch-frontend"
+  },
+  {
+   "file": "js/supabase-client.js",
+   "line": 97,
+   "title": "Auth-gaten återvisas aldrig om sessionen går ut/återkallas mitt i användning",
+   "description": "Den enda globala onAuthStateChange-lyssnaren som körs efter boot() rensar bara household-cachen vid SIGNED_OUT (rad 97-98). requireAuth() i js/auth-gate.js anropas bara en gång i boot() (js/app.js:224) och dess egen onAuthStateChange-lyssnare (auth-gate.js:150-152) reagerar bara på PASSWORD_RECOVERY. Om Supabase-SDK:t avfyrar SIGNED_OUT senare (refresh-token ogiltig/återkallad, t.ex. en platta som står med appen öppen i flera dygn i köket) finns ingen kod som anropar showGate() igen — appen ser ut att fungera men alla efterföljande Supabase-/apiFetch-anrop saknar giltig session.",
+   "severity": "P1",
+   "evidence": "js/supabase-client.js:97-98: `auth.onAuthStateChange((event) => {\\n  if (event === 'SIGNED_OUT') clearHouseholdCache();\\n});` — ingen showGate()/UI-reaktion. js/auth-gate.js:150-152 lyssnar bara på 'PASSWORD_RECOVERY'. requireAuth() (auth-gate.js:154-168) anropas endast en gång, i js/app.js:224.",
+   "finder": "slice:core-infra-js"
+  },
+  {
+   "file": "js/utils.js",
+   "line": 44,
+   "title": "timeStr() tappar timeNote om den inte börjar med '+' — döljer t.ex. ugnstemperatur",
+   "description": "timeStr() lägger bara till r.timeNote i den visade tiden om strängen börjar med '+'. Men det kanoniska formatet i CLAUDE.md-exemplet ('ugn 150°') och gott om verklig receptdata (t.ex. 'snabb', '20–30 min', 'ugn 225°', 'tid ej angiven – uppskattat' — se docs/legacy/recipes-backup-2026-05-16.json) börjar inte med '+'. Dessa timeNote-värden visas aldrig i receptkortet (recipe-browser.js:91) eller redigeringsvyn (recipe-editor.js:140) trots att de finns i databasen.",
+   "severity": "P2",
+   "evidence": "js/utils.js:41-45: `export function timeStr(r) {\\n  if (!r.time) return null;\\n  const base = ...;\\n  return r.timeNote && r.timeNote.startsWith('+') ? base + ' ' + r.timeNote : base;\\n}` — jfr CLAUDE.md-exemplet `\"timeNote\": \"ugn 150°\"`, som inte börjar med '+'.",
+   "finder": "slice:core-infra-js"
+  },
+  {
+   "file": "js/app.js",
+   "line": 162,
+   "title": "buildTagFilterUI() körs bara en gång vid init — nya taggar dyker aldrig upp i Filter-sheeten förrän omladdning",
+   "description": "buildTagFilterUI() är en lokal (icke-exporterad, icke-window-exponerad) funktion som bara anropas en gång i init() (rad 48). När ett nytt recept sparas läggs det till i window.RECIPES och renderRecipeBrowser() körs om (js/recipes/recipe-editor.js:102-107), men buildTagFilterUI() anropas aldrig igen — det finns ingen väg för recipe-editor.js att nå funktionen. En ny tagg på ett nytt/redigerat recept syns därför inte i Filter-bottensheeten förrän hela sidan laddas om, trots att receptbrowsern redan visar/filtrerar på den nya datan korrekt via andra filter.",
+   "severity": "P2",
+   "evidence": "js/app.js:48: `buildTagFilterUI();` (körs bara i init()). js/app.js:162-189 definierar funktionen utan window-exponering. js/recipes/recipe-editor.js:102-107: `window.RECIPES.push(saved); window._allRecipes = window.RECIPES; ... window.renderRecipeBrowser();` — inget anrop till taggbygget.",
+   "finder": "slice:core-infra-js"
+  },
+  {
+   "file": "js/app.js",
+   "line": 106,
+   "title": "Race: snabb stäng+återöppna av samma bottom-sheet kan lämna den osynlig trots att den är 'öppen'",
+   "description": "closeSheet() schemalägger `sheet.hidden = true` 280ms senare via setTimeout, utan att spara/avbryta timer-id:t. Om openSheet() för samma id anropas igen innan de 280ms passerat (t.ex. användaren stänger och trycker på Filter/Sortera-knappen igen snabbt), sätter openSheet() `sheet.hidden = false` och lägger till klassen 'open' direkt — men den gamla timeouten från stängningen kör ändå klart och sätter `sheet.hidden = true` på den nyss återöppnade sheeten. Resultatet: openSheetCount och CSS-klassen 'open' säger att sheeten är öppen, men `hidden`-attributet gör den osynlig/otillgänglig tills användaren stänger och öppnar den en gång till.",
+   "severity": "P2",
+   "evidence": "js/app.js:106-122: `function closeSheet(id) {\\n  ...\\n  setTimeout(() => { sheet.hidden = true; }, 280);\\n}` — ingen clearTimeout vid efterföljande openSheet()-anrop (rad 88-104).",
+   "finder": "slice:core-infra-js"
+  },
+  {
+   "file": "js/app.js",
+   "line": 226,
+   "title": "boot() awaitar inte loadWeeklyPlan() innan deep-link till vecko-fliken hanteras",
+   "description": "boot() kör `window.loadWeeklyPlan()` utan await och läser direkt därefter query-parametern `?tab=...` för att växla flik. Om länken pekar på `tab=vecka` (eller `shop`, som ofta beror på veckoplanens data) kan `switchTab()` hinna rendera fliken innan veckoplanen faktiskt hämtats färdigt från Supabase, eftersom hämtningen fortfarande pågår i bakgrunden.",
+   "severity": "P2",
+   "evidence": "js/app.js:223-232: `async function boot() {\\n  await requireAuth();\\n  await init();\\n  window.loadWeeklyPlan();\\n\\n  const tabParam = new URLSearchParams(window.location.search).get('tab');\\n  if (tabParam && [...].includes(tabParam)) {\\n    window.switchTab(tabParam);\\n  }\\n  ...`",
+   "finder": "slice:core-infra-js"
+  },
+  {
+   "file": "js/supabase-client.js",
+   "line": 55,
+   "title": "household_id-cachen i localStorage revalideras aldrig mot servern",
+   "description": "getHouseholdId() läser och litar blint på `localStorage['hh:<uid>']` för alltid (rad 56-59) utan att någonsin köra en ny fråga för att bekräfta att medlemskapet fortfarande gäller. Om en familjemedlem tas bort ur hushållet (household_members) eller householdet byts, fortsätter enheten att använda det gamla, ogiltiga household_id:t vid varje sidladdning — RLS blockerar tyst efterföljande läsningar/skrivningar (t.ex. tomma recept/planer) utan att appen ger något begripligt felmeddelande om orsaken, eftersom koden aldrig ens frågar databasen igen.",
+   "severity": "P2",
+   "evidence": "js/supabase-client.js:55-59: `const lsKey = user ? \\`hh:${user.id}\\` : null;\\n if (lsKey) {\\n   const stored = localStorage.getItem(lsKey);\\n   if (stored) { _householdIdCache = stored; return stored; }\\n }` — ingen TTL, ingen bakgrundsvalidering, ingen väg att upptäcka att stored är inaktuellt.",
+   "finder": "slice:core-infra-js"
+  },
+  {
+   "file": "api/generate.js",
+   "line": 372,
+   "title": "Custom-day guard query ignores Supabase errors — a transient read failure disables invariant #1 protection entirely",
+   "description": "The Promise.all fetch of custom days (`meal_days` rows with `plan_id IS NULL` in the requested range) never checks `.error`; only `.data` is read afterwards via `customRows?.data || []`. Supabase/PostgREST query failures (RLS hiccup, transient 5xx, momentary network issue) resolve normally as `{data:null, error:{...}}` rather than throwing, so on any such failure `customDates` silently becomes an empty Set instead of the real list. Every downstream use of `customDates` (excluding custom days from `activeDays` at line 401, and excluding them from the `days` array written by `savePlanToSupabase` at line 465) then treats family-authored custom days as regular fillable days. `savePlanToSupabase`'s UPSERT is keyed on `(household_id, date)` (line 202), so it will silently overwrite the existing custom row: `plan_id` flips from NULL to the new plan's id and the machine-picked recipe replaces whatever the family had entered — the exact scenario the Session 121 UPSERT fix and the `customDates` exclusion were built to prevent, defeated by one unlucky read.",
+   "severity": "P0",
+   "evidence": "db.from(\"meal_days\").select(\"date\").eq(\"household_id\", householdId)\n      .is(\"plan_id\", null).gte(\"date\", start_date).lte(\"date\", end_date),\n  ]);\n  const customDates = new Set((customRows?.data || []).map((r) => r.date));  // no error check on customRows",
+   "finder": "slice:api-generate"
+  },
+  {
+   "file": "api/generate.js",
+   "line": 162,
+   "title": "Old plan's meal_days are deleted unconditionally by plan_id, but only rows before the new start date are archived — a shorter/nearer-term regeneration silently destroys the previously-planned days beyond the new plan's coverage",
+   "description": "In `archiveOldPlan`, the archive-candidate SELECT is scoped to `date < newStartDate` (lines 126-132), but the cleanup DELETE right after it (line 162) is scoped only by `.eq(\"plan_id\", oldPlan.id)` — no date bound at all. Any old-plan day that falls outside the new plan's window (i.e. after the new plan's `end_date`, or any day >= newStartDate that the new plan doesn't cover) is neither archived (excluded by the `date < newStartDate` filter) nor re-created (the new plan's UPSERT in `savePlanToSupabase` only writes rows for `[start_date, end_date]`). It is simply deleted. The same asymmetry exists in the RPC that has actually replaced this JS path in production (`db/migrations/001_activate_plan_atomic.sql` lines 58-89: `where date < p_new_start_date` for archiving vs. unconditional `delete from meal_days where plan_id = v_old_plan.id`), and per docs/status.md migrations 001-003 are confirmed run — so this is the live behavior, not a dormant fallback.",
+   "severity": "P0",
+   "evidence": "// Deaktivera gammal plan + ta bort dess meal_days (de är arkiverade eller överskrivna)\n  await database.from(\"meal_days\").delete().eq(\"plan_id\", oldPlan.id);\n  await database.from(\"weekly_plans\").update({ is_active: false }).eq(\"id\", oldPlan.id);\n-- and archive select above it only takes `.lt(\"date\", newStartDate)` (line 130) -- rows dated after the new plan's end_date are covered by neither clause.",
+   "finder": "slice:api-generate"
+  },
+  {
+   "file": "api/generate.js",
+   "line": 90,
+   "title": "fetchExistingShoppingList swallows Supabase errors, so a transient read failure silently wipes manual shopping-list items and checked state on regeneration",
+   "description": "Neither the `shopping_lists` lookup (lines 90-95) nor the `shopping_items` lookup (lines 99-103) checks `.error`; a failed read is indistinguishable from \"no active list exists\" and the function returns `null`. `saveShoppingListToSupabase` then treats `existingShop` as absent (lines 299, 305) and builds a brand-new list containing only recipe-derived ingredients — any manually-added items (e.g. \"toalettpapper\") and all previously checked-off items are dropped with no error surfaced to the user.",
+   "severity": "P1",
+   "evidence": "const { data: lists } = await db\n    .from(\"shopping_lists\")\n    .select(\"id, recipe_items_moved_at\")\n    .eq(\"household_id\", householdId)\n    .eq(\"is_active\", true)\n    .limit(1);\n  if (!lists?.length) return null;   // treats a query ERROR identically to \"no active list\"",
+   "finder": "slice:api-generate"
+  },
+  {
+   "file": "api/generate.js",
+   "line": 260,
+   "title": "JS fallback plan-activation swallows archiveOldPlan errors and still activates the new plan, and archiveOldPlan itself doesn't check the days-to-archive SELECT's error before reaching the unconditional delete",
+   "description": "`activatePlanAtomic`'s fallback wraps `archiveOldPlan` in a try/catch that only logs (`console.error(\"archive error:\", e)`) and unconditionally proceeds to `activatePlan` regardless of the outcome. Combined with `archiveOldPlan`'s own missing error check on the days-to-archive SELECT (line 126, `const { data: daysToArchive } = await database...` — no `error` destructured), a mere transient read failure there makes `daysToArchive?.length` falsy, skipping archiving entirely while execution still falls through to the unconditional `meal_days` delete a few lines later — permanently discarding days that were never archived, with the failure never surfacing past a server console log. This path is currently dormant (migration 001's RPC is installed per docs/status.md) but is exactly the code every future household hits before their own Supabase project has the RPC installed (relevant to the planned M1 multi-tenant rollout), and is the only safety net if the RPC is ever dropped or fails.",
+   "severity": "P1",
+   "evidence": "try { await archiveOldPlan(startDate, householdId, database); } catch (e) { console.error(\"archive error:\", e); }\n  await activatePlan(newPlanId, householdId, database);\n  return { usedRpc: false };",
+   "finder": "slice:api-generate"
+  },
+  {
+   "file": "api/generate.js",
+   "line": 508,
+   "title": "A shopping-list write failure after the plan is already activated reports a generic total failure, even though the matsedel itself already changed",
+   "description": "By the time `saveShoppingListToSupabase` runs (line 509), `savePlanToSupabase` (501) and `activatePlanAtomic` (504) have already committed and activated the new weekly plan, and `saveHistoryToSupabase` (505) has already run. If the shopping-items insert then fails (`if (itemsErr) throw itemsErr;`, line 312) or any other step in `saveShoppingListToSupabase` throws, the exception propagates out of the handler and `createSupabaseHandler` returns a generic 500 (\"Något gick fel — prova igen om en stund\"). The user sees a failure and may retry generation, unaware that their matsedel for the period was already successfully replaced — a partial success is reported as a total failure.",
+   "severity": "P1",
+   "evidence": "const newPlanId = await savePlanToSupabase(weeklyPlan, householdId);\n  await activatePlanAtomic(newPlanId, start_date, householdId);\n  await saveHistoryToSupabase(days, householdId);\n\n  let shoppingList = null;\n  if (!skip_shopping && shoppingCategories) {\n    await saveShoppingListToSupabase(shoppingCategories, existingShop, start_date, end_date, householdId); // throwing here still leaves the plan swap committed",
+   "finder": "slice:api-generate"
+  },
+  {
+   "file": "api/generate.js",
+   "line": 271,
+   "title": "recipe_history upsert result is never inspected — a failed write silently stops recipes from being excluded from repeats",
+   "description": "`saveHistoryToSupabase` calls `await db.from(\"recipe_history\").upsert(rows, { onConflict: \"household_id,recipe_id\" });` without destructuring or checking `{ error }`. Any write failure here is completely silent — no log, no propagated error, no visible symptom other than that the same recipe can reappear inside the intended 14-day cooldown on the next generation, since `recentlyUsedIds` (lines 78-87) reads from whatever `recipe_history` last successfully contained. The mirror-image read side, `fetchHistory` (lines 66-76), has the same missing-error-check pattern (fails open to an empty `usedOn` on any query error), compounding the same class of silent degradation.",
+   "severity": "P2",
+   "evidence": "if (!rows.length) return;\n  await db.from(\"recipe_history\").upsert(rows, { onConflict: \"household_id,recipe_id\" });  // result/error completely discarded",
+   "finder": "slice:api-generate"
+  },
+  {
+   "file": "api/generate.js",
+   "line": 357,
+   "title": "vegetarian_days/ture_days/untested_count are clamped against total span length, not against the actual number of days the generator will fill",
+   "description": "`clampCount` caps the requested counts at `spanDays` — the total calendar days between start_date and end_date (line 351-353) — but the generator only actually fills `activeDays` (line 401), which excludes both `blocked_dates` and custom-planned days. When a requested range contains several blocked or custom days, a user can request e.g. 3 \"Ture-dagar\" that passes the earlier recipe-availability check (lines 387-395, which also compares against the spanDays-clamped `constraints.ture_days`, not `activeDays.length`) yet `selectRecipes`'s index slicing (`shuffledIndices.slice(0, tureCount)` in select-recipes.js) naturally truncates against the smaller `activeDays.length` with no error or warning — the family silently gets fewer Ture/vegetarian days than the setting says.",
+   "severity": "P2",
+   "evidence": "const clampCount = (v) => Math.min(Math.max(parseInt(v) || 0, 0), spanDays);\n...\n  const activeDays = allDays.filter((d) => !blockedSet.has(d.date) && !customDates.has(d.date));  // can be much shorter than spanDays, but constraints were clamped against spanDays",
+   "finder": "slice:api-generate"
+  },
+  {
+   "file": "api/confirm.js",
+   "line": 109,
+   "title": "confirmed_at-skrivningen är ofelsökt (fel svalt tyst) — kan lämna en 'spöke-bekräftad' plan öppen för discard",
+   "description": "Raden `await db.from(\"weekly_plans\").update({ confirmed_at: ... }).eq(\"id\", plan.id);` kollar aldrig `{ error }`. Om detta enda UPDATE misslyckas (nätverksglapp, RLS, timeout) har familjen redan fått ett 200-svar med `confirmedAt` satt och inköpslistan är redan aktiverad — appen visar 'Bekräftad ✓' och tar bort snabbknapparna (js/weekly-plan/plan-viewer.js:644-654 läser aldrig ut ett fel härifrån eftersom `res.ok` redan är sant). Men i databasen står planen fortfarande med confirmed_at = null. Nästa gång någon i familjen laddar om appen (eller en annan familjemedlem på en annan telefon) ser de en OBEKRÄFTAD plan och kan trycka 'Kassera förslag' — vilket via discard-plan.js raderar meal_days och recipe_history för en plan familjen redan har handlat efter. Det är en indirekt väg att bryta hård invariant #1.",
+   "severity": "P1",
+   "evidence": "// Sätt confirmed_at på planen\n  await db.from(\"weekly_plans\").update({ confirmed_at: new Date().toISOString() }).eq(\"id\", plan.id);",
+   "finder": "slice:api-dagops"
+  },
+  {
+   "file": "api/confirm.js",
+   "line": 39,
+   "title": "Race mellan confirm.js och discard-plan.js på samma plan kan lämna en 'bekräftad men raderad' plan med en föräldralös aktiv inköpslista",
+   "description": "Ingen av endpointerna låser raden eller re-verifierar plan-tillståndet strax före skrivning. Scenario med två familjemedlemmar på varsin telefon nästan samtidigt: A trycker 'Bekräfta' (confirm.js läser planen rad 39-47, bygger inköpslista från meal_days), B trycker 'Kassera förslag' på samma opåbörjade plan nästan samtidigt (discard-plan.js läser samma plan, är fortfarande confirmed_at=null, och hinner köra `.delete().eq(\"plan_id\", plan.id)` (rad 32) + `.update({ is_active:false })` (rad 33) FÖRE att A når fram till confirm.js:109). A:s efterföljande `weekly_plans.update({confirmed_at: ...}).eq(\"id\", plan.id)` (confirm.js:109) matchar bara på id, inte is_active, så den lyckas ändå — resultatet blir en plan-rad med confirmed_at satt men is_active=false och NOLL meal_days-rader kvar, plus en nyss aktiverad shopping_list (byggd av A från nu raderade dagar) som inte längre hör ihop med någon aktiv plan. Familjen ser antingen 'ingen aktiv plan' eller en föräldralös inköpslista beroende på vilken vy som laddas.",
+   "severity": "P1",
+   "evidence": "confirm.js: await db.from(\"weekly_plans\").update({ confirmed_at: new Date().toISOString() }).eq(\"id\", plan.id);  (ingen is_active-koll)\ndiscard-plan.js:32-33: await db.from(\"meal_days\").delete().eq(\"plan_id\", plan.id);\n  await db.from(\"weekly_plans\").update({ is_active: false }).eq(\"id\", plan.id);",
+   "finder": "slice:api-dagops"
+  },
+  {
+   "file": "api/discard-plan.js",
+   "line": 36,
+   "title": "Kassering raderar recipe_history ovillkorligt för planens recept-id:n — kan radera äkta historik från en tidigare BEKRÄFTAD vecka",
+   "description": "recipe_history har en rad per (household_id, recipe_id) (onConflict \"household_id,recipe_id\" i replace-recipe.js/generate.js), dvs den lagrar bara SENASTE `used_on` per recept — inte per tillfälle. Kod-kommentaren antar att alla history-rader för planens recept skapades AV denna kasserade plan, men det stämmer inte alltid: om familjen manuellt väljer ett recept via 'byt recept' med explicit `newRecipeId` (replace-recipe.js rad 43-45) hoppar den över recentIds-filtret helt och skriver om recipe_history till dagens datum (replace-recipe.js rad 119-122) — oavsett om receptet redan har en ÄKTA historikrad från en tidigare BEKRÄFTAD vecka. Kasserar familjen sedan detta opåbörjade förslag raderas den raden helt (discard-plan.js rad 36-41), och all vetskap om att receptet verkligen lagades för N dagar sedan försvinner — receptet ser nu ut att aldrig ha lagats, vilket kan göra att det dyker upp igen orimligt snabbt.",
+   "severity": "P1",
+   "evidence": "// Rensa recipe_history för planens recept så de kan väljas direkt igen\n  if (planRecipeIds.length > 0) {\n    await db.from(\"recipe_history\")\n      .delete()\n      .eq(\"household_id\", householdId)\n      .in(\"recipe_id\", planRecipeIds);\n  }",
+   "finder": "slice:api-dagops"
+  },
+  {
+   "file": "api/replace-recipe.js",
+   "line": 119,
+   "title": "recipe_history skrivs redan vid 'byt recept'-klick i en obekräftad plan — övergivna mellansteg städas aldrig bort",
+   "description": "Varje 'byt recept'-klick (även upprepade slumpningar på samma dag i ett opåbörjat förslag) skriver direkt till recipe_history med used_on=idag (rad 119-122), oavsett om planen någonsin bekräftas. Om familjen slumpar en dag flera gånger (recept A → B → C) innan de nöjer sig med C, får A och B också used_on=idag. discard-plan.js städar bara recept som finns KVAR i planen vid kasseringstillfället (dvs C, inte A/B) — A och B:s history-rader blir kvarlämnade permanent med 'använd idag', trots att familjen aldrig lagade dem. Följden: A och B utesluts felaktigt ur receptval i 14 dagar framöver, vilket minskar variationen utan anledning.",
+   "severity": "P2",
+   "evidence": "db.from(\"recipe_history\").upsert(\n      { household_id: householdId, recipe_id: picked.id, used_on: today },\n      { onConflict: \"household_id,recipe_id\" }\n    ),",
+   "finder": "slice:api-dagops"
+  },
+  {
+   "file": "api/confirm.js",
+   "line": 102,
+   "title": "Avaktivering av gammal inköpslista är ofelsökt — kan lämna två aktiva listor samtidigt",
+   "description": "`.update({ is_active: false })...eq(\"is_active\", true)` för den gamla listan kollar aldrig `error`. Om just den skrivningen misslyckas medan den efterföljande aktiveringen av den nya listan (rad 104-106, som KONTROLLERAS och kastar vid fel) lyckas, finns plötsligt två shopping_lists-rader med is_active=true för hushållet. Andra endpoints (t.ex. replace-recipe.js rad 139-141, confirm.js rad 42-47) läser aktiv lista med `.eq(\"is_active\", true).limit(1)` utan ORDER BY — vilket rad som returneras är odefinierat, så manuella varor/bockningar kan hämtas från fel (äldre) lista vid nästa ombyggnad. Samma ofelsökta mönster finns i replace-recipe.js rad 192-193.",
+   "severity": "P2",
+   "evidence": "await db.from(\"shopping_lists\").update({ is_active: false })\n    .eq(\"household_id\", householdId).eq(\"is_active\", true);\n  const { error: actErr } = await db.from(\"shopping_lists\")\n    .update({ is_active: true }).eq(\"id\", newList.id);",
+   "finder": "slice:api-dagops"
+  },
+  {
+   "file": "api/confirm.js",
+   "line": 125,
+   "title": "confirm.js svar-payload weeklyPlan.days saknar date/recipe/blocked — annat format än toWeeklyPlan() i move-day/swap-days/skip-day",
+   "description": "`mealDays` hämtas rad 20-24 med bara kolumnen `recipe_id` OCH filtrerat med `.not(\"recipe_id\",\"is\",null)` (utesluter fria/blockerade dagar helt). Samma variabel återanvänds rad 125 för att bygga `confirmedPlan.days`, vilket ger objekt av formen `{recipeId: N}` — utan `date`, `recipe` (titel), `saving` eller `blocked`, och med fria dagar helt utelämnade ur listan. Detta skiljer sig från `toWeeklyPlan()`-formen som move-day.js/skip-day.js/swap-days.js returnerar. Just nu läser frontendens `confirmPlan()` (js/weekly-plan/plan-viewer.js rad 640-654) aldrig `data.weeklyPlan`, så felet är för tillfället overksamt — men payloaden är trasig/vilseledande och en framtida konsument (eller en annan vy) som förlitar sig på samma svarsform som övriga day-ops-endpoints skulle få fel datum/titel eller tappa fria dagar helt.",
+   "severity": "P2",
+   "evidence": "const { data: mealDays } = await db\n    .from(\"meal_days\")\n    .select(\"recipe_id\")\n    .eq(\"plan_id\", plan.id)\n    .not(\"recipe_id\", \"is\", null);\n...\n  const confirmedPlan = {\n    ...\n    days: (mealDays || []).map((d) => ({ recipeId: d.recipe_id })),\n  };",
+   "finder": "slice:api-dagops"
+  },
+  {
+   "file": "api/replace-recipe.js",
+   "line": 53,
+   "title": "'Idag'/cutoff-datum beräknas i UTC (toISOString) — kan bli fel dag runt svensk midnatt",
+   "description": "`new Date().toISOString().slice(0,10)` (rad 53-55 för 14-dagars-cutoff, samt rad 103 för `today`/used_on) ger UTC-datumet. Vercel-funktioner kör i UTC medan familjen är i Sverige (UTC+1/UTC+2). Svensk lokal midnatt inträffar INNAN UTC-datumet växlar (svensk 00:00–01:00 CET / 00:00–02:00 CEST motsvarar fortfarande föregående UTC-dygn). Byter familjen recept eller bekräftar planen strax efter midnatt lokal tid stämplas `recipe_history.used_on` med GÅRDAGENS datum istället för dagens, och 14-dagars-cutoffen (rad 53-55) räknas ett dygn fel under samma fönster. Samma mönster finns i confirm.js rad 60 (`today`). Jämför med skip-day.js's `addDays()` som medvetet ankrar på T12:00:00 för att undvika precis den här klassen av fel — den tekniken används inte här.",
+   "severity": "P2",
+   "evidence": "const cutoff = new Date();\n    cutoff.setDate(cutoff.getDate() - 14);\n    const cutoffStr = cutoff.toISOString().slice(0, 10);\n...\n  const today = new Date().toISOString().slice(0, 10);",
+   "finder": "slice:api-dagops"
+  },
+  {
+   "file": "api/skip-day.js",
+   "line": 93,
+   "title": "Krock-kontroll vid 'gör fri dag' ignorerar Supabase-fel från SELECT:en",
+   "description": "`const { data: clash } = await db...maybeSingle();` destrukturerar aldrig `error`. Om själva SELECT-anropet failar (nätverk/DB-hicka) blir `clash` falsy och koden tolkar det som 'ingen krock', och fortsätter direkt till INSERT av en ny svansdag på `newDate` (rad 105-116) — utan att verkligen ha verifierat att dagen är ledig. Skydd finns bara indirekt om det faktiskt finns ett unikt index på (household_id, date) som får INSERT:en att faila och fångas av `insErr` (rad 113-116); om inget sådant constraint finns kan detta i värsta fall skriva över/dubblettskapa en rad tyst.",
+   "severity": "P2",
+   "evidence": "const { data: clash } = await db\n      .from(\"meal_days\")\n      .select(\"date\")\n      .eq(\"household_id\", householdId)\n      .eq(\"date\", newDate)\n      .maybeSingle();\n    if (clash) {",
+   "finder": "slice:api-dagops"
+  },
+  {
+   "file": "api/move-day.js",
+   "line": 39,
+   "title": "Ingen låsning/version-kontroll mellan läsning och skrivning i move-day/swap-days/skip-day — samtidiga anrop kan tysta bort varandras ändring",
+   "description": "Samtliga tre dagflytt-endpoints läser `meal_days` (move-day.js rad 49-53, swap-days.js rad 54-58, skip-day.js rad 73-77), räknar ut nästa tillstånd helt i minnet, och skriver sedan (move-day.js rad 69-84 osv.) — utan transaktion, `SELECT ... FOR UPDATE` eller någon optimistisk låsning (t.ex. en version-kolumn). Om två anrop till samma hushålls dagflytt-endpoints (dubbeltryck pga. långsam nätverksrespons, eller två familjemedlemmar som redigerar matsedeln samtidigt på varsin telefon) körs nästan samtidigt, läser båda samma utgångsläge, räknar ut oberoende resultat, och den som skriver sist skriver rakt över den förstas resultat utan att märka konflikten — den första ändringen försvinner tyst, ingen felindikation ges till någon av användarna trots att invariant-kontrollen (`sameRecipes`) i _shared/day-ops.js bara skyddar mot att ETT enskilt anrops egen beräkning tappar recept, inte mot att TVÅ anrop kolliderar.",
+   "severity": "P2",
+   "evidence": "const { data: rows, error: rowsErr } = await db\n    .from(\"meal_days\")\n    .select(\"date, recipe_id, recipe_title_snapshot, saving, saving_matches, blocked\")\n    .eq(\"plan_id\", plan.id)\n    .order(\"date\");\n  ...\n  const result = planAfterMove(rows, date, before);\n  ...\n  const { error: writeErr } = await db\n    .from(\"meal_days\")\n    .upsert(payload, { onConflict: \"household_id,date\" });",
+   "finder": "slice:api-dagops"
+  },
+  {
+   "file": "api/_shared/shopping-builder.js",
+   "line": 429,
+   "title": "Ovanliga ASCII-bråk (1/8, 1/5, 1/6, 3/8, 5/8, 2/5, 3/5, 4/5, 5/6 …) konverteras aldrig till unicode-glyfer → mängd och namn korrumperas",
+   "severity": "P1",
+   "category": "logikbugg / mängdparsning",
+   "evidence": "raw = raw.replace(/\\b3\\/4\\b/g, '¾').replace(/\\b1\\/2\\b/g, '½').replace(/\\b1\\/4\\b/g, '¼')\n         .replace(/\\b2\\/3\\b/g, '0,67').replace(/\\b1\\/3\\b/g, '0,33');",
+   "description": "Bara 3/4, 1/2, 1/4, 2/3 och 1/3 skrivs om till unicode-bråk innan parsningen. Skriver ett recept ingrediensen som t.ex. \"1/8 tsk muskotnöt\" (FRACS-tabellen i parseFraction stödjer faktiskt ⅛, ⅜, ⅝, ⅞, ⅕, ⅖, ⅗, ⅘, ⅙, ⅚ — men bara om raden redan innehåller unicode-glyfen) matchar amount-regexen bara \"1\" (siffran före \"/\"), och resten \"/8 tsk muskotnöt\" blir kvar i `remaining`. Unit-regexen hittar ingen enhet (\"/8\" matchar inget), och namnstriket `remaining.replace(/,.*$/, \"\")` gör ingenting här — slutresultatet blir amount=1 (8× för högt) och namn=\"/8 tsk muskotnöt\" istället för amount=0.125, unit=\"tsk\", namn=\"muskotnöt\". Familjen ser en trasig rad i inköpslistan (fel mängd + skräptext i namnet) istället för en ren \"muskotnöt\"-rad, och kan råka köpa 8× för mycket eller bli förvirrad och hoppa över varan.",
+   "finder": "slice:api-shopping-deals"
+  },
+  {
+   "file": "api/_shared/shopping-builder.js",
+   "line": 405,
+   "title": "cleanIngredient() \"X eller Y\"-ombyggnad tappar ordet efter \"eller\" helt när det inte finns någon text/mängd före adjektivet",
+   "severity": "P1",
+   "category": "logikbugg / mängdparsning",
+   "evidence": "if (ADJEKTIV.has(lastBeforeWord)) {\n  const lastWord = s.replace(/,\\s+.*$/, \"\").trim().split(/\\s+/).pop().toLowerCase();\n  s = beforeEller.replace(new RegExp(\"\\\\s+\" + lastBeforeWord + \"$\", \"i\"), \" \" + lastWord).trim();\n} else if (lastBeforeWord.endsWith(\"-\")) {\n  ...\n  s = beforeEller.replace(/\\s+\\S+-$/, \" \" + afterEllerBase).trim();\n}",
+   "description": "Ersättningsregexen kräver ett whitespace-tecken FÖRE adjektivet/fragmentet (`\\\\s+fryst$` respektive `\\\\s+\\\\S+-$`) för att träffa. När ingrediensraden saknar mängd och `beforeEller` bara BESTÅR AV adjektivet självt (t.ex. raden \"fryst eller färsk spenat\" utan ledande siffra) blir `beforeEller` = \"fryst\" — en enda token utan föregående whitespace. Regexen matchar då inte, `.replace()` blir en no-op, och resultatet blir bara \"fryst\" — ordet \"spenat\" försvinner spårlöst. Samma sak för bindestrecksgrenen: \"grönsaks- eller kycklingbuljong\" utan ledande mängd blir kvar som det trasiga ordet \"grönsaks-\". (Med en ledande mängd, t.ex. \"400 g fryst eller färsk spenat\", fungerar det korrekt eftersom \"400 g\" ger regexen ett whitespace att matcha mot — buggen syns bara för mängdlösa rader.) Resultatet är en obegriplig post i inköpslistan (\"fryst\" eller \"grönsaks-\") istället för den faktiska ingrediensen.",
+   "finder": "slice:api-shopping-deals"
+  },
+  {
+   "file": "api/_shared/shopping-builder.js",
+   "line": 607,
+   "title": "friendlyRound() saknar golv för dl/cl/l/kg/msk/tsk/cm — neddskalade portioner kan visas som \"0 dl\"",
+   "severity": "P1",
+   "category": "mängd-/enhetsfel vid portionsskalning",
+   "evidence": "function friendlyRound(amount, unit) {\n  if (INTEGER_MEASURE_UNITS.has(unit)) return Math.max(1, Math.round(amount));\n  if (DECIMAL_MEASURE_UNITS.has(unit)) return Math.round(amount * 4) / 4;   // kvarts-precision: 1,75 dl\n  return Math.ceil(amount - 1e-9);   // styckevaror uppåt till heltal\n}",
+   "description": "INTEGER_MEASURE_UNITS-grenen (g/ml/krm) har ett explicit golv `Math.max(1, ...)` så att en nedskalning aldrig visar 0. DECIMAL_MEASURE_UNITS-grenen (dl/cl/l/kg/msk/tsk/cm) saknar motsvarande golv. Ett storhushålls-recept med t.ex. \"1 dl vinäger\" för 12 portioner, skalat ner till hushållets mål på 1 portion (target_servings, backlog #12 — redan byggt och aktivt), ger factor=1/12≈0,083 → skalad mängd 0,083 dl. `Math.round(0,083*4)/4 = Math.round(0,33)/4 = 0/4 = 0`. Raden visas som \"vinäger (0 dl)\" i inköpslistan. En familjemedlem som handlar efter listan ser \"0 dl\" och hoppar rimligen över varan helt, trots att receptet fortfarande kräver en (liten) mängd.",
+   "finder": "slice:api-shopping-deals"
+  },
+  {
+   "file": "api/_shared/shopping-builder.js",
+   "line": 541,
+   "title": "normalizeName(): token-baklängesskanning (Fallback 2) körs före n-gram-fallbacken (Fallback 3) → fel/ofullständig canon för sammansatta ingrediensrader, kan tappa en hel ingrediens ur listan",
+   "severity": "P2",
+   "category": "logikbugg / merge",
+   "evidence": "  const tokens = name.split(/\\s+/).filter(Boolean);\n  if (tokens.length > 1) {\n    for (let i = tokens.length - 1; i >= 0; i--) {\n      const t = tokens[i];\n      if (TOKEN_BLOCKLIST.has(t)) continue;\n      if (NORMALIZATION_TABLE[t]) return NORMALIZATION_TABLE[t];\n      if (CANON_SET.has(t)) return t;\n    }\n    // Fallback 3: n-gram sökning ...",
+   "description": "Om en ingrediensrad (t.ex. från AI-import eller slarvigt formaterat recept) innehåller två olika livsmedel på en rad, som \"riven parmesan och basilika\", stripper Fallback 1 bara \"riven \" (→ \"parmesan och basilika\", som inte finns i tabellen). Fallback 2 skannar tokens BAKLÄNGES och hittar \"basilika\" som canon direkt (sista token) och returnerar det — utan att någonsin pröva n-gram-fallbacken (Fallback 3) som skulle hittat frasen \"riven parmesan\" → \"parmesan\". Resultatet: hela raden mappas till \"basilika\", och \"parmesan\" försvinner helt ur inköpslistan (varken som mängd- eller no-amount-post) trots att det är den ingrediens som faktiskt hade en mängd. Kräver en ingrediensrad som bryter mot projektets \"en ingrediens per rad\"-konvention (t.ex. via ofullständig import), men eftersom Gemini-importen skriver direkt utan mänsklig granskning av varje rad är scenariot realistiskt.",
+   "finder": "slice:api-shopping-deals"
+  },
+  {
+   "file": "api/_shared/shopping-builder.js",
+   "line": 686,
+   "title": "svKey() sorterar ord som börjar på å/ä/ö FÖRE \"z\"-ord — fel svensk bokstavsordning i inköpslistan",
+   "severity": "P2",
+   "category": "logikbugg / sortering",
+   "evidence": "const svKey = (s) =>\n    s.trim().toLowerCase()\n     .replace(/å/g, \"z\u0001\").replace(/ä/g, \"z\u0002\").replace(/ö/g, \"z\u0003\");",
+   "description": "Tanken är att mappa å/ä/ö till \"efter z\" i sorteringen, men implementationen ger fel resultat: \"zucchini\" blir kvar som \"zucchini\", medan \"ärtor\" blir \"z\u0002rtor\". Vid strängjämförelse är \"z\u0002rtor\" < \"zucchini\" (tecken 2: \u0002 < \"u\"), så \"Ärtor\" hamnar FÖRE \"Zucchini\" i Grönsaker-kategorin — men korrekt svensk ordning har z före å/ä/ö, dvs. Zucchini ska stå ovanför Ärtor. En familjemedlem som scannar en alfabetiserad inköpslista i Willys-ordning blir förvirrad av att zucchini och ärtor (båda vanliga, kan ligga i samma weckorecept t.ex. wok) står i fel inbördes ordning.",
+   "finder": "slice:api-shopping-deals"
+  },
+  {
+   "file": "api/_shared/shopping-builder.js",
+   "line": 664,
+   "title": "buildShoppingList(): samma ingrediens med IMPLICIT (enhetslös) och EXPLICIT \"st\"-mängd räknas som olika enheter → hela mängden tappas till en no-amount-rad",
+   "severity": "P2",
+   "category": "logikbugg / merge",
+   "evidence": "const keysByName = new Map();\n  for (const [key, item] of merged) {\n    if (!keysByName.has(item.name)) keysByName.set(item.name, []);\n    keysByName.get(item.name).push(key);\n  }\n  for (const [name, keys] of keysByName) {\n    if (keys.length > 1) {\n      for (const k of keys) merged.delete(k);\n      noAmount.set(name, name);\n    }\n  }",
+   "description": "Merge-nyckeln är `${normalized}||${unit ?? \"\"}`. Ett recept som skriver \"3 äpplen\" (ingen enhetsträff → unit=null → nyckel \"äpple||\") och ett annat som skriver \"2 st äpple\" (unit=\"st\" → nyckel \"äpple||st\") ger TVÅ olika nycklar för konceptuellt samma \"antal-styck\"-mängd. keysByName-passet ser då 2 nycklar för samma namn, tar bort BÅDA (5 äpplen totalt försvinner) och lägger bara till bar text \"äpple\" utan mängd. En familjemedlem som handlar vet då inte om de ska köpa 2, 3 eller 5 äpplen — exakt den typ av mängdinformation appen är till för att ge. Detta är samma bakomliggande brist som när två genuint olika enheter (t.ex. g och st) blandas, men triggas även av den vanliga stilskillnaden \"3 äpplen\" vs \"2 st äpple\" mellan olika receptförfattare/importer.",
+   "finder": "slice:api-shopping-deals"
+  },
+  {
+   "file": "api/deals.js",
+   "line": 114,
+   "title": "recipesHandler ignorerar Supabase-felfältet från receptfrågan — misslyckad fråga ger tyst tomt förslag istället för felmeddelande",
+   "severity": "P2",
+   "category": "felhantering",
+   "evidence": "const [offers, recipeRes] = await Promise.all([\n    fetchOffersFromWillys(store),\n    db.from(\"recipes\")\n      .select(\"id, title, time, tags, protein, tested, ingredients\")\n      .eq(\"household_id\", householdId),\n  ]);\n\n  ...\n  const recipes = (recipeRes.data || []).map((r) => ({",
+   "description": "Supabase-JS-anrop kastar inte automatiskt vid fel — de returnerar `{ data, error }`. Här läses bara `recipeRes.data || []`; om frågan misslyckas (RLS-konfigurationsfel, nätverksfel, borttagen kolumn m.m.) sätts `recipeRes.error` men koden märker det aldrig och fortsätter tyst med en tom receptlista. Klienten får `{ suggestions: [] }` med 200 OK — familjemedlemmen som klickat \"visa receptförslag\" i prisoptimera-flödet ser bara \"inga träffar\" istället för ett begripligt felmeddelande om att något gick fel, och kan dra fel slutsats (\"inga rea-recept den här veckan\") när det egentligen är ett tekniskt fel.",
+   "finder": "slice:api-shopping-deals"
+  },
+  {
+   "file": "api/shopping.js",
+   "line": 9,
+   "title": "get_preferences sväljer ALLA fel från readFileRaw (även nätverks-/autentiseringsfel) utan loggning — visar tyst standardinställningar",
+   "severity": "P2",
+   "category": "felhantering",
+   "evidence": "if (action === \"get_preferences\") {\n    let prefs;\n    try { prefs = await readFileRaw(\"dispatch-preferences.json\"); } catch { prefs = PREFS_DEFAULTS; }\n    return res.status(200).json(prefs);\n  }",
+   "description": "Catch-blocket saknar bindning till felet (`catch {}`) och loggar inget — om GITHUB_PAT är ogiltig, GitHub API är nere, eller filen har blivit korrupt JSON, returneras tyst PREFS_DEFAULTS (tomma blockedBrands/preferOrganic/preferSwedish) som 200 OK. Användaren ser bara \"inga inköpspreferenser satta\" istället för ett felmeddelande, och om de sparade riktiga preferenser tidigare (t.ex. blockerade varumärken) verkar det som att de försvunnit — trots att filen troligen fortfarande finns kvar på GitHub, appen kunde bara inte läsa den just då. Ingen server-logg gör felet svårt att felsöka i efterhand.",
+   "finder": "slice:api-shopping-deals"
+  },
+  {
+   "file": "api/_shared/shopping-builder.js",
+   "line": 10,
+   "title": "Duplicerad nyckel \"rödlökar\" i NORMALIZATION_TABLE (rad 10 och rad 169)",
+   "severity": "P2",
+   "category": "dead-code",
+   "evidence": "Rad 10: \"rödlökar\": \"rödlök\", \"röd lök\": \"rödlök\", \"tunt skivad rödlök\": \"rödlök\",\nRad 169: \"rödlökar\": \"rödlök\",",
+   "description": "Samma nyckel \"rödlökar\" definieras två gånger i samma objektlitteral (rad 10 i lök-blocket, rad 169 i \"Plural-mappings\"-blocket) med identiskt värde \"rödlök\". Funktionellt är detta ofarligt (JS låter den sista tysta skriva över den första, och båda pekar på samma canon), men det är förvirrande vid framtida underhåll av lexikonet och ett tecken på att audit-skriptet (scripts/audit-ingredients.mjs) eller en linter inte flaggar dubbletter i denna fil.",
+   "finder": "slice:api-shopping-deals"
+  },
+  {
+   "file": "api/import-recipe.js",
+   "line": 327,
+   "title": "Gemini-retryns totala timeout-budget (upp till 50s) överskrider Vercels maxDuration (30s) för denna endpoint",
+   "description": "callGeminiRaw loopar över GEMINI_MODELS (2 modeller) och ger VARJE fetch-anrop ett eget AbortSignal.timeout(25000) (rad 327). Om första modellen är seg/överbelastad och verkligen tar sina 25s innan timeout, hinner loopen bara ~5s med modell 2 innan hela Vercel-funktionen (vercel.json: \"api/import-recipe.js\": {\"maxDuration\": 30}) tvångsavslutas av plattformen — INNAN funktionens egna try/catch (handler.js rad 58-63) hinner producera det avsedda svenska felmeddelandet. Resultatet blir en rå plattforms-timeout (504/FUNCTION_INVOCATION_TIMEOUT) i stället för t.ex. \"Alla modeller har hög belastning — prova igen om en stund.\" Samma mönster gäller handleUrl:s redirect-följning (rad 119-145): upp till 6 fetch-hopp à 10s timeout vardera (60s) innan Gemini ens anropas, vilket ensamt kan överskrida 30s-budgeten.",
+   "severity": "P1",
+   "evidence": "327:        signal: AbortSignal.timeout(25000),\n321:  for (const model of GEMINI_MODELS) { ... } (2 modeller ⇒ upp till 50s)\nvercel.json: \"api/import-recipe.js\": { \"maxDuration\": 30 }",
+   "finder": "slice:api-import"
+  },
+  {
+   "file": "api/import-recipe.js",
+   "line": 243,
+   "title": "Protein för utländska (icke-.se) JSON-LD-recept beräknas på oöversatt text — nästan alla får fel protein='vegetarisk'",
+   "description": "mapJsonLdToRecipe (rad 207-248) anropar guessProtein(title, ingredients) på rad 243 direkt på den RÅA JSON-LD-datan, INNAN eventuell översättning. guessProtein (rad 380-387) matchar bara SVENSKA nyckelord (t.ex. 'nötkött|biff|köttfärs|lamm' för kött, 'kyckling' för kyckling). För en utländsk sajt (isForeignUrl==true, dvs. domänen slutar inte på .se) är originaltexten typiskt engelsk ('ground beef', 'chicken breast') — inget av dessa ord matchar de svenska mönstren, så protein faller alltid tillbaka till 'vegetarisk'. Översättningen sker FÖRST EFTER detta, i postProcessForeignRecipe (rad 260-289), som bara skriver över title/ingredients/instructions (rad 279-288) — protein och tags (redan satta till 'vegetarisk'/'vegetarisk'-tagg) uppdateras ALDRIG. Resultat: en importerad amerikansk köttfärsgryta sparas med protein='vegetarisk', vilket förstör proteinbalanseringen (max 2 per proteintyp) och vegetarisk-dag-matchningen i api/_shared/select-recipes.js (rad 90: `r.protein === 'vegetarisk'`) — familjen kan få kött serverat på en dag som är avsedd att vara vegetarisk, helt tyst.",
+   "severity": "P1",
+   "evidence": "243:  const protein = guessProtein(title, ingredients);\n155-158:  if (isForeignUrl(parsed) && apiKey) { const converted = await postProcessForeignRecipe(recipe, apiKey); return res.status(200).json({ recipe: converted }); }\n279-288: return { ...recipe, title: ..., ingredients: ..., instructions: ... } // protein/tags saknas i spreadet över — behålls från förkonverteringen",
+   "finder": "slice:api-import"
+  },
+  {
+   "file": "api/import-recipe.js",
+   "line": 211,
+   "title": "Ingen validering att importerat JSON-LD-recept faktiskt har ingredienser/instruktioner innan 200 OK returneras",
+   "description": "mapJsonLdToRecipe extraherar `ingredients` (rad 211-219, default []) och `instructions` (rad 221-234, default []) från data.recipeIngredient/recipeInstructions. Om en sajts strukturerade data saknar dessa fält, har annat fältnamn, eller är malformad, blir båda tomma arrayer — men extractJsonLd/handleUrl (rad 152-160) returnerar ändå 200 OK med `{recipe}` som om importen lyckades, utan någon kontroll av att `ingredients.length>0` eller `instructions.length>0`. Familjemedlemmen sparar då ett recept som ser klart ut men saknar helt ingredienser/instruktioner — inköpslistegenereringen kommer tyst hoppa över receptet utan felmeddelande när det senare väljs till matsedeln.",
+   "severity": "P1",
+   "evidence": "211-219:  const ingredients = (data.recipeIngredient || []).map(...).filter(Boolean);\n221-234:  let instructions = []; if (Array.isArray(data.recipeInstructions)) {...} ...\n159:    return res.status(200).json({ recipe }); // ingen kontroll av tomt innehåll",
+   "finder": "slice:api-import"
+  },
+  {
+   "file": "api/import-recipe.js",
+   "line": 342,
+   "title": "Rått engelskt Gemini/Google-felmeddelande kan visas ordagrant för användaren — bryter mot regeln om svenska, teknikfria felmeddelanden",
+   "description": "Vid ett Gemini-svar som inte är ok och inte är 429/503 (t.ex. 400/403 pga ogiltig nyckel eller felformaterad begäran) hämtas `detail` direkt från Googles JSON-svar (`error.message`, ofta engelsk teknisk text som 'API key not valid. Please pass a valid API key.') och kastas som `new Error(detail)`. handler.js:s `userMessage()` (rad 10-13) betraktar alla `new Error(...)`-instanser med meddelande som 'avsiktliga' och visar dem ORDAGRANT för användaren — så ett Google-genererat engelskt felmeddelande kan nå familjen rakt av, i strid med CLAUDE.md:s krav på 'alltid på begriplig svenska utan tekniska termer'.",
+   "severity": "P2",
+   "evidence": "339-343:    if (!geminiRes.ok) {\n      let detail = \"\";\n      try { detail = (await geminiRes.json())?.error?.message || \"\"; } catch {}\n      throw new Error(detail || `Gemini svarade ${geminiRes.status} — prova igen.`);\n    }",
+   "finder": "slice:api-import"
+  },
+  {
+   "file": "api/import-recipe.js",
+   "line": 373,
+   "title": "`recipe.tags || buildTags(...)` fångar inte tom array — Gemini-recept med tags:[] mister tyst vardag30/helg60-klassning",
+   "description": "callGemini (rad 364-376) sätter `recipe.tags = recipe.tags || buildTags(recipe.time, recipe.protein);` (rad 373). En tom array `[]` är truthy i JS, så om Gemini returnerar `\"tags\": []` (fullt möjligt eftersom svarsformatet bara styrs via textprompt, ingen JSON-schema-tvingning skickas i API-anropet, rad 326) triggas ALDRIG buildTags-fallbacken. Receptet sparas då utan `vardag30`/`helg60`-tagg. api/_shared/select-recipes.js rad 67-68 filtrerar weekday/weekend-pooler strikt på `r.tags.includes(\"vardag30\")` / `.includes(\"helg60\")` — ett recept utan någon av dessa taggar blir permanent osynligt för både vardags- och helggenerering, utan att användaren varnas vid import.",
+   "severity": "P2",
+   "evidence": "373:  recipe.tags     = recipe.tags     || buildTags(recipe.time, recipe.protein);\napi/_shared/select-recipes.js:67-68: const weekdayPool = ...pool.filter((r) => r.tags.includes(\"vardag30\")...); const weekendPool = ...pool.filter((r) => r.tags.includes(\"helg60\")...);",
+   "finder": "slice:api-import"
+  },
+  {
+   "file": "api/import-recipe.js",
+   "line": 155,
+   "title": "isForeignUrl testas mot ursprungs-URL:en, inte den slutliga URL:en efter omdirigeringar",
+   "description": "`isForeignUrl(parsed)` (rad 155) använder variabeln `parsed` (den URL användaren angav, satt en gång på rad 103) — men den faktiska sidan som hämtas kan vara en helt annan efter upp till 5 omdirigeringar (`current`, muterad rad 144, och `html` hämtas från `current.href` rad 124/147). En .se-kortlänk/redirect som pekar till en utländsk engelsk receptsajt klassas alltså som 'inhemsk' och hoppar helt över Gemini-konverteringen (imperialenheter/engelska behålls i det sparade receptet). Omvänt kan en icke-.se-redirect-domän som landar på en svensk sida trigga onödiga Gemini-anrop på redan-svensk text.",
+   "severity": "P2",
+   "evidence": "103:  parsed = new URL(url);\n144:      current = next;\n155:    if (isForeignUrl(parsed) && apiKey) { // borde vara isForeignUrl(current)",
+   "finder": "slice:api-import"
+  },
+  {
+   "file": "api/import-recipe.js",
+   "line": 273,
+   "title": "postProcessForeignRecipe sväljer alla fel tyst utan loggning — misslyckad översättning syns varken för användare eller i serverloggar",
+   "description": "`catch { return recipe; }` (rad 273-275) fångar ALLA fel från callGeminiRaw (nätverksfel, timeout, kastade Errors med detail-text från fynd ovan, JSON-parsfel) och returnerar tyst det ÖVERSÄTTNINGSLÖSA originalreceptet med `res.status(200)`. Ingen `console.error` loggas här (jämför övriga fångst-punkter i filen som i alla fall producerar synliga felmeddelanden till klienten). Kombinerat med fyndet om protein-felklassning ovan får familjen ett recept som ser 'importerat OK' ut men har engelska ingredienser/instruktioner och fel protein-tagg, utan någon spårbar signal om att något gick fel.",
+   "severity": "P2",
+   "evidence": "267-275:  try {\n    result = await callGeminiRaw([{ text: `${CONVERSION_PROMPT}\\n${payload}` }], apiKey);\n  } catch {\n    return recipe; // returnera originalet om konverteringen misslyckas\n  }",
+   "finder": "slice:api-import"
+  },
+  {
+   "file": "api/import-recipe.js",
+   "line": 393,
+   "title": "buildTags ger ingen tidstagg alls för recept med tid > 60 minuter — permanent osynliga för automatisk matsedelsgenerering",
+   "description": "buildTags (rad 389-398) lägger bara till `vardag30` (tid ≤30) eller `helg60` (tid ≤60) — recept med `time` över 60 minuter (t.ex. en långbräserad gryta importerad via JSON-LD, där mapJsonLdToRecipe alltid anropar buildTags ovillkorligt, rad 244) får INGEN av dessa taggar. Eftersom select-recipes.js filtrerar vardags-/helgpooler strikt på dessa två taggar (rad 67-68), blir sådana recept aldrig valda av den deterministiska generatorn — helt tyst, utan varning till användaren vid import att receptet 'inte kommer synas' i automatiska matsedlar.",
+   "severity": "P2",
+   "evidence": "393-396:  if (time !== null && time !== undefined) {\n    if (time <= 30) tags.push(\"vardag30\");\n    else if (time <= 60) tags.push(\"helg60\");\n  } // inget else-fall för time > 60",
+   "finder": "slice:api-import"
+  },
+  {
+   "file": "api/import-recipe.js",
+   "line": 165,
+   "title": "Missvisande felmeddelande när GOOGLE_API_KEY saknas via URL-importvägen döljer den verkliga orsaken (jämfört med foto-vägen)",
+   "description": "När JSON-LD saknas och `apiKey` är ofylld returnerar handleUrl (rad 163-167) 'Den här sajten stöds inte — prova en annan receptsajt...' — vilket antyder en sajt-specifik begränsning. Den verkliga orsaken är dock att GOOGLE_API_KEY inte är konfigurerad i Vercel, exakt samma rotorsak som handlePhoto rapporterar korrekt och tydligt på rad 298 ('Fotoimport är inte konfigurerat — GOOGLE_API_KEY saknas i Vercel.'). En användare som stöter på URL-vägens meddelande kommer förgäves testa andra sajter i stället för att förstå att servern är felkonfigurerad — samma bugg gäller ALLA sajter utan JSON-LD tills nyckeln konfigureras.",
+   "severity": "P2",
+   "evidence": "163-167:  if (!apiKey) {\n    return res.status(422).json({ error: \"Den här sajten stöds inte — prova en annan receptsajt eller lägg in receptet manuellt.\" });\n  }\n298: return res.status(500).json({ error: \"Fotoimport är inte konfigurerat — GOOGLE_API_KEY saknas i Vercel.\" });",
+   "finder": "slice:api-import"
+  },
+  {
+   "file": "api/import-recipe.js",
+   "line": 349,
+   "title": "Den 'polerade' quota-överbelastningstexten är i praktiken oåtkomlig kod",
+   "description": "Fallbacken `\"Alla modeller har hög belastning — prova igen om en stund.\"` (rad 349) väljs bara om `lastError` är falsy. Men lastError sätts ALLTID till en truthy sträng vid varje iteration som gör att loopen fortsätter (nätverksfel rad 330, eller 429/503 rad 335), och de enda sätten att nå rad 348 utan `break` är just via dessa vägar. Alltså visas alltid den mindre begripliga per-modell-texten (t.ex. \"gemini-2.0-flash har hög belastning\", utan förklarande kontext) i stället för den avsedda, mer användarvänliga slutmeningen.",
+   "severity": "P2",
+   "evidence": "334-337:    if (geminiRes.status === 429 || geminiRes.status === 503) {\n      lastError = `${model} har hög belastning`;\n      continue;\n    }\n348-350:  if (!geminiRes || !geminiRes.ok) {\n    throw new Error(lastError || \"Alla modeller har hög belastning — prova igen om en stund.\");\n  }",
+   "finder": "slice:api-import"
+  },
+  {
+   "file": "api/dispatch-to-willys.js",
+   "line": 71,
+   "title": "Ingen idempotensspärr mot dubbel dispatch — timeout+retry dubblerar varorna i den riktiga Willys-korgen",
+   "description": "POST /api/dispatch-to-willys har varken en server-side lock, en idempotensnyckel eller ett sätt att avbryta ett redan pågående körning. Klienten (js/shopping/dispatch-ui.js rad 58-59, 69-72) sätter en 60000ms AbortController och visar vid timeout meddelandet \"Tog för lång tid — Willys svarade inte. Prova igen om en stund.\" — men ett AbortController.abort() på klienten stoppar bara att klienten LÄSER svaret; det avbryter INTE den redan startade serverless-exekveringen (vercel.json ger funktionen upp till maxDuration=60 sekunder, exakt samma gräns som klientens timer, så en långsam Willys-runda kan mycket väl slutföras strax efter att klienten redan gett upp). Familjemedlemmen ser ett fel, trycker \"Skicka\" igen i en ny bekräftelsedialog (dispatch-ui.js rad 51-53 stänger av knappen bara för den EGNA modal-instansen, inte över hela sessionen) — och den första körningen hinner ändå lägga alla matchade varor i den riktiga Willys-korgen samtidigt som den andra körningen upprepar hela flödet (addProductsInBatches, rad 296-337) och lägger samma koder igen. Willys addProducts (willys-cart-client.js rad 41-64) är en additiv \"lägg till\"-operation (qty:1 per anrop) utan någon vidhäftad dispatch-id — så resultatet blir dubbla kvantiteter av varje matchad vara i en riktig varukorg, upptäcks bara om familjen råkar räkna varorna på willys.se.",
+   "severity": "P1",
+   "evidence": "dispatch-to-willys.js:71-119 (ingen lock/idempotensnyckel i POST-hanteraren); addProductsInBatches (rad 296-337) kör alltid alla batchar på nytt; willys-cart-client.js:41-64 addProducts är rent additivt; dispatch-ui.js:58-59 `const timeoutId = setTimeout(() => controller.abort(), 60000);` matchar exakt vercel.json maxDuration:60 för dispatch-to-willys.js — så serverkörningen kan fullfölja EFTER att klienten redan visat timeout-felet och tillåtit en ny \"Skicka\".",
+   "finder": "slice:api-willys-infra"
+  },
+  {
+   "file": "api/dispatch-to-willys.js",
+   "line": 349,
+   "title": "Supabase-fel vid läsning av inköpslistan ignoreras helt — visas som \"ingen matchning\" istället för ett begripligt driftfel",
+   "description": "fetchShoppingListFromSupabase destrukturerar bara `{ data: lists }` respektive `{ data: items }` från Supabase-anropen och kollar ALDRIG `error`-fältet (till skillnad från pantry-frågan några rader längre ner, rad 358, som korrekt kollar `error` — så mönstret är känt i samma funktion men missas här). Om Supabase-anropet mot `shopping_lists` eller `shopping_items` misslyckas (nätverksfel, RLS-fel, tillfälligt Supabase-driftstopp — appen har ingen lokal testmiljö och Supabase gratistier pausar efter inaktivitet enligt CLAUDE.md) blir `lists`/`items` null, och koden tolkar det exakt som en TOM lista: `{ recipeItems: {}, manualItems: [] }`. Det ger `canons.length === 0` i runDispatch (rad 226-228) → `{ ok:false, error:\"no_matches\" }` → familjen ser meddelandet \"Hittade ingen matchning för veckans inköpslista. Prova en annan vecka eller lägg till manuellt.\" — helt missvisande när den verkliga orsaken är ett databasfel, inte en tom eller omatchbar lista. Bryter mot CLAUDE.md:s felhanteringsprincip (begripligt fel, inte tyst konsollogg) eftersom felet varken loggas eller visas korrekt.",
+   "severity": "P1",
+   "evidence": "dispatch-to-willys.js:349-353 `const { data: lists } = await db.from(\"shopping_lists\")...` (ingen error-koll) och rad 365-369 `const { data: items } = await db.from(\"shopping_items\")...` (ingen error-koll) — jämför med samma funktions pantry-fråga rad 358-362 som gör `const { data: pantryRows, error } = await db...; if (!error) pantry = new Set(...)`, vilket visar att mönstret att kolla error är känt men uteglömt på de två andra frågorna.",
+   "finder": "slice:api-willys-infra"
+  },
+  {
+   "file": "api/dispatch-to-willys.js",
+   "line": 243,
+   "title": "Ingen deduplicering av matchade produktkoder innan de skickas till Willys — två olika canon-namn som matchar samma produkt ger dubbel vara i korgen",
+   "description": "`const codes = matched.map(m => m.code).filter(Boolean);` bygger listan över koder som ska läggas i korgen direkt från `matched`-arrayen utan att deduplicera. `extractCanonsFromShoppingList` (rad 403-420) garanterar bara att varje CANON (normaliserat ingrediensnamn) förekommer en gång — den garanterar inte att två OLIKA canon-strängar (t.ex. \"parmesan\" och \"parmesanost\", eller \"grädde\" och \"vispgrädde\" om normaliseringen skiljer dem åt) inte råkar matcha samma Willys-produktkod via sökfallbacken (willys-search.js relevans-steg, rad 72-76) eller rea-cachen. Om det händer hamnar samma kod två gånger i `codes`, hamnar i samma eller olika batchar i addProductsInBatches, och läggs till KORGEN TVÅ GÅNGER (Willys addProducts är additivt, se ovan) — utan att `add.failed` eller `missing` visar något avvikande, eftersom båda anropen lyckas. Familjen ser bara \"✓ N produkter tillagda\" och upptäcker dubbleringen först vid genomgång av korgen på willys.se.",
+   "severity": "P2",
+   "evidence": "dispatch-to-willys.js:243 `const codes = matched.map(m => m.code).filter(Boolean);` — inget `[...new Set(codes)]`-steg någonstans i runDispatch (rad 224-287) innan koderna skickas till addProductsInBatches.",
+   "finder": "slice:api-willys-infra"
+  },
+  {
+   "file": "api/dispatch-to-willys.js",
+   "line": 335,
+   "title": "Cookie-utgång mitt i en dispatch (efter att några varor redan lagts till) klassas som vanliga \"missing\"-varor, inte som auth_expired — ingen larmnotis skickas, och användaren får en missvisande förklaring",
+   "description": "`authExpired = added.length === 0 && auth401 > 0` (rad 335) kräver att INGET alls landade i korgen för att räknas som en riktig cookie-utgång. Om Willys-sessionen går ut MITT UNDER en dispatch — t.ex. efter att de första batcharna redan lyckats (added.length > 0) och resten sedan nekas med 401 — hamnar dessa koder bara i `add.failed`, vidare i `missing` (rad 272-275, 286) och redovisas för användaren som \"Kunde inte matchas (lägg till själv)\" i UI:t (dispatch-ui.js rad 84-87), som om Willys helt enkelt saknade produkten. Den verkliga orsaken (utgången session) syns aldrig, och `notifyAlert(...)` (rad 82, endast i toppnivå-felgrenen för `result.error === \"auth_expired\"`, rad 81-88) triggas ALDRIG för detta scenario — så Joakim får inget larm om att cookies behöver förnyas förrän en HEL körning misslyckas totalt. Detta gör cookie-livscykeln osynlig i den vanligaste degraderingsvägen (delvis utgång under en körning, inte total utgång mellan körningar).",
+   "severity": "P2",
+   "evidence": "dispatch-to-willys.js:333-335 `// Äkta auth-utgång: ingen vara landade OCH minst en nekades med 401...` `const authExpired = added.length === 0 && auth401 > 0;` — jämfört med rad 264-286 där `add.failed`-koder (oavsett om orsaken var 401 eller något annat) alltid hamnar i `missing` utan att skilja på orsak, och rad 81-88 där `notifyAlert` bara nås via `result.error === \"auth_expired\"` från preflight/heltäckande 401, inte från addProductsInBatches delvisa 401:or.",
+   "finder": "slice:api-willys-infra"
+  },
+  {
+   "file": "api/dispatch-to-willys.js",
+   "line": 391,
+   "title": "Inköpspreferenser läses via CDN-cachad readFileRaw — en nyss sparad preferens (blockerat varumärke, eko/svenskt) kan ignoreras i upp till ~60 sekunder vid dispatch",
+   "description": "`fetchDispatchPreferences()` hämtar `dispatch-preferences.json` med `readFileRaw` (api/_shared/github.js rad 31-35), som går mot `raw.githubusercontent.com` — enligt kodkommentaren i github.js \"CDN-cachad, snabbare men kan vara ~60s gammal\". Om en familjemedlem precis blockerat ett varumärke eller slagit på eko/svenskt-preferens i UI:t (skrivs via api/shopping.js → writeFile, som går direkt mot GitHub Contents API och INTE är cache-bustad på läsningssidan) och sedan omedelbart klickar \"Skicka till Willys\", kan dispatchen läsa den GAMLA cachade preferensfilen i upp till en minut — blockerat varumärke filtreras då inte bort, eller eko/svenskt-viktningen uteblir, utan att appen visar någon varning om att preferensen ännu inte hunnit slå igenom. `readFile` (github.js rad 18-25, som cache-bustar med `?t=${Date.now()}`) hade undvikit detta men används inte här.",
+   "severity": "P2",
+   "evidence": "dispatch-to-willys.js:391 `const prefs = await readFileRaw(\"dispatch-preferences.json\");`; github.js:31-35 `export async function readFileRaw(path) { const res = await fetch(`${RAW_BASE}/${path}`); ... }` (ingen cache-bust), kontra readFile rad 18-25 som gör `${API_BASE}/${path}?t=${Date.now()}`.",
+   "finder": "slice:api-willys-infra"
+  },
+  {
+   "file": "api/_shared/github.js",
+   "line": 45,
+   "title": "writeFile:s \"3-försöks retry\" täcker bara HTTP 409 — ett transient fel vid SHA-läsningen ger ett omedelbart, oåterhämtat fel redan på första försöket",
+   "description": "I varje varv läses aktuell SHA via ett GET (rad 47-48); om det GET:et misslyckas av ett tillfälligt skäl (nätverksblip, 500 från GitHub) sätts `sha` aldrig, och koden fortsätter ändå direkt till PUT utan sha. För en REDAN EXISTERANDE fil svarar GitHub då normalt med ett fel som INTE är 409 (t.ex. 422 \"sha wasn't supplied\") — och eftersom retry-villkoret är `putRes.status === 409 && attempt < 2` (rad 56) hoppar koden direkt till `throw` på FÖRSTA försöket, trots att kommentaren (rad 37-39) utlovar 3 försök. Det innebär att en enstaka nätverksglitch vid SHA-läsningen (inte ens en riktig skrivkonflikt) permanent kraschar sparandet av `dispatch-preferences.json`, utan att de facto återförsöka.",
+   "severity": "P2",
+   "evidence": "github.js:45-58 — `const getRes = await fetch(...); if (getRes.ok) sha = (await getRes.json()).sha;` följt av PUT och `if (putRes.status === 409 && attempt < 2) continue; throw new Error(...)` — ett icke-409-svar (vilket ett saknat sha ofta ger) avslutar loopen direkt istället för att räknas som ett återförsöksbart fel.",
+   "finder": "slice:api-willys-infra"
+  },
+  {
+   "file": "api/dispatch-to-willys.js",
+   "line": 349,
+   "title": "Ingen ORDER BY på \"aktiv\" inköpslista — om fler än en lista råkar vara markerad aktiv för hushållet blir valet av lista odeterministiskt",
+   "description": "`.eq(\"is_active\", true).limit(1)` saknar en `.order(...)` (t.ex. på `created_at`/`id`). Postgres/PostgREST garanterar ingen radordning utan explicit ORDER BY, så om databasen av någon anledning (t.ex. ett race mellan att en ny lista skapas och den gamla inaktiveras, eller en bugg i listgenereringen på annan slice) tillfälligt har mer än en rad med `is_active=true` för samma hushåll, kan dispatchen välja fel/gammal lista utan felmeddelande — och skicka en inaktuell inköpslista till Willys istället för den nuvarande.",
+   "severity": "P2",
+   "evidence": "dispatch-to-willys.js:349-353 `const { data: lists } = await db.from(\"shopping_lists\").select(\"id, household_id\").eq(\"is_active\", true).limit(1);` — inget `.order()` innan `.limit(1)`.",
+   "finder": "slice:api-willys-infra"
+  },
+  {
+   "file": "api/dispatch-to-willys.js",
+   "line": 226,
+   "title": "Klientens \"tom lista\"-koll baseras på potentiellt inaktuell lokal state — ett annat familjemedlems tömning på en annan enhet ger en missvisande \"ingen matchning\"-text istället för \"listan är tom\"",
+   "description": "dispatch-ui.js (rad 34-40, egen fil men styr vilket serverfel som blir synligt) visar ett separat \"Inköpslistan är tom — inget att skicka\"-meddelande BARA om `window._shopRecipeItems`/`window._shopManualItems` lokalt är tomma. Är den lokala state stale (t.ex. en annan familjemedlem har tömt eller ändrat listan på sin telefon strax innan, men den här enheten inte hunnit läsa om) skickas ändå POST-anropet, och serverns `extractCanonsFromShoppingList` (som läser den FAKTISKA, uppdaterade Supabase-listan) kan då hitta 0 canons → `{ ok:false, error:\"no_matches\" }` (rad 226-228) → meddelandet \"Hittade ingen matchning för veckans inköpslista. Prova en annan vecka eller lägg till manuellt.\" — vilket är missvisande när den riktiga orsaken är att listan blivit tom, inte att inget kunde matchas.",
+   "severity": "P2",
+   "evidence": "dispatch-to-willys.js:226-228 `if (canons.length === 0) { return { ok: false, error: \"no_matches\" }; }` ger meddelandet på rad 89-95 i handler; jämför med klientens egen (men lokala/staleness-känsliga) tomkoll i dispatch-ui.js rad 34-40.",
+   "finder": "slice:api-willys-infra"
+  },
+  {
+   "file": "api/_shared/willys-matcher.js",
+   "line": 120,
+   "title": "matchRecipe/buildDealCandidates ignorerar blockedBrands och eko/svenskt-preferenser som dispatchen respekterar — visad besparing kan vara ouppnåelig",
+   "description": "matchRecipe(recipe, offers) (rad 120–139) tar bara emot recipe+offers och räknar totalSaving som max savingPerUnit per canon över ALLA offers, utan hänsyn till blockade varumärken eller eko/svenskt-preferenser. Denna funktion (och buildDealCandidates/mainProteinSaving/weightedSaving som konsumerar dess output) driver dels de besparingssiffror som visas i matsedeln (generate.js rad 425–440, 471–473: `saving`/`savingMatches` per dag) och dels 'Veckans fynd'-förslagen (generate.js rad 483–488, deals.js POST rad 123–135). Ingenstans i denna kedja filtreras blockade varumärken eller preferenser bort. Jämför med dispatch-matcher.js findReaMatch (rad 94–119) som VID FAKTISK korgfyllning explicit hoppar över `brandBlocked(offer, blockedBrands)`-träffar (rad 110) och prioriterar eko/svenskt via prefScore (rad 111, 113). Så samma canon kan få olika 'bästa' erbjudande i de två stegen: planerings-/förslagssteget räknar besparingen på ett erbjudande som dispatchen sedan medvetet hoppar över.",
+   "severity": "P1",
+   "evidence": "matchRecipe (willys-matcher.js:120-139) har ingen blockedBrands/wanted-parameter och totalSaving-beräkningen (rad 130-136) tar okritiskt `offer.savingPerUnit` för alla offers som matchar canon:\n```\nconst savingsByCanon = new Map();\nfor (const { canon, offer } of matches) {\n  const cur = savingsByCanon.get(canon) || 0;\n  const s = offer.savingPerUnit || 0;\n  if (s > cur) savingsByCanon.set(canon, s);\n}\n```\njämfört med dispatch-matcher.js findReaMatch (rad 94-119) som filtrerar bort blockerade märken innan max-besparingen väljs:\n```\nif (brandBlocked(offer, blockedBrands)) continue;\nconst score = wanted ? prefScore(...) : 0;\n...\nif (score > bestScore || (score === bestScore && saving > bestSaving)) { best = offer; ... }\n```\nKonkret scenario: Familjen har lagt till varumärket 'Eldorado' i Inköpspreferenser (blockedBrands). Denna vecka har Eldorados krossade tomater störst savingPerUnit för canon 'tomat' (8 kr), medan ett obundet märke bara ger 2 kr. Vid generering räknar matchRecipe (som saknar blockedBrands) besparingen på Eldorado-erbjudandet (8 kr) och lyfter in ett tomatrecept i planen/’Veckans fynd’ med texten 'Spara 45 kr'. Familjen trycker 'Skicka till Willys' — dispatchens findReaMatch hoppar medvetet över Eldorado (blockerat) och hittar bara 2 kr-alternativet (eller inget alls, faller till sök med savingPerUnit 0). Den besparing familjen såg i UI:t stämmer alltså inte med vad som faktiskt hamnar i korgen.",
+   "finder": "slice:api-matchers"
+  },
+  {
+   "file": "api/_shared/willys-matcher.js",
+   "line": 29,
+   "title": "BABY_FOOD_RE fångar bara mönstret 'från N mån/år' — andra vanliga åldersetiketter kan slinka igenom och falskmatcha som riktig ingrediens",
+   "description": "BABY_FOOD_RE = /\\bfrån\\s+\\d+\\s*[-–]?\\s*\\d*\\s*(mån|år)/i kräver att ordet 'från' står direkt före siffran. Kommentaren (rad 26-28) motiverar valet med att undvika falska träffar på 'Lagrad 24 Månader' (lagrad ost/chark), men konsekvensen är att barnmatsprodukter som anger ålder UTAN ordet 'från' — t.ex. '8 Mån', '6-8 Mån', 'Fr.o.m. 6 Mån', '1+ År' — inte fångas av vare sig BABY_FOOD_RE eller det bredare GLOBAL_REJECT_RE (som bara letar efter det explicita ordet 'barnmat', vilket många barnmatsvarumärken som Hipp/Semper/Felix inte alltid skriver ut i produktnamnet). Testsviten (tests/match.test.js:268) verifierar bara exakt formatet 'Från 6 Månader' — det alternativa formatet är obeprövat.",
+   "severity": "P2",
+   "evidence": "willys-matcher.js rad 26-29:\n```\n// Barnmat anges ofta med ålder (\"Från 6 Månader\", \"Från 1–3 År\") snarare än\n// ordet \"barnmat\". Kräver \"från\" så att lagrad ost/chark (\"Lagrad 24 Månader\")\n// inte fastnar...\nconst BABY_FOOD_RE = /\\bfrån\\s+\\d+\\s*[-–]?\\s*\\d*\\s*(mån|år)/i;\n```\nKonkret scenario: Willys har rean 'Hipp Kyckling & Ris 8 Mån 190g' (ingen ordet 'från', ingen 'barnmat'). extractOfferCanon hittar canon 'kyckling' i namnet, rejectsMatch(kyckling, offer) testar GLOBAL_REJECT_RE (ingen träff, ordet 'barnmat' saknas) och BABY_FOOD_RE (ingen träff, ordet 'från' saknas) — produkten godkänns och matchRecipe/findReaMatch kan matcha barnmatsburken mot ett kycklingrecept, både i visad besparing och (om den råkar bli 'bästa' erbjudandet) i faktisk korgfyllning.",
+   "finder": "slice:api-matchers"
+  },
+  {
+   "file": "api/_shared/willys-matcher.js",
+   "line": 108,
+   "title": "extractRecipeCanons kraschar (TypeError) om ett ingrediensled inte är en sträng — stänger av prisoptimering för hela hushållet",
+   "description": "extractRecipeCanons (rad 106-114) itererar recipe.ingredients och anropar parseIngredient(raw) utan att kontrollera att raw är en sträng. parseIngredient (shopping-builder.js rad 424) gör direkt raw.replace(...) som första operation — om raw är null, undefined eller ett tal (t.ex. en trasig rad från Gemini-import eller manuell redigering) kastas en TypeError. matchRecipe anropas dels i generate.js (rad 425, innanför try/catch som tyst degraderar OCH triggar en onödig 'Willys-feeden kan vara bruten'-larmwebhook trots att felet är i receptdatan, inte feeden), dels i deals.js POST-handlern (rad 124) UTAN egen try/catch runt just den raden — där fångas felet av handler.js:s generiska wrapper och blir ett 500 med 'Något gick fel — prova igen om en stund', vilket släcker HELA 'Prisoptimera steg 2' för hushållet tills den trasiga receptraden rättas, utan att peka ut vilket recept som är boven.",
+   "severity": "P2",
+   "evidence": "willys-matcher.js rad 106-114:\n```\nfunction extractRecipeCanons(recipe) {\n  const canons = new Set();\n  for (const raw of recipe.ingredients || []) {\n    const { name } = parseIngredient(raw);\n    ...\n```\nOm recipe.ingredients innehåller t.ex. [null, \"600 g torsk\"] (kan uppstå via receptimport eller manuell redigering utan validering av arrayens elementtyper) kastar parseIngredient(null) TypeError vid `raw.replace(...)` (shopping-builder.js:426), vilket buntar av matchRecipe för HELA det receptet och — eftersom matchRecipe anropas i en loop över alla recept i deals.js:124 (`recipes.map((r) => ({ r, m: matchRecipe(r, selectedOffers) }))`) utan per-recept try/catch — hela POST /api/deals-anropet kraschar till ett generiskt 500-fel för samtliga recept, inte bara det trasiga.",
+   "finder": "slice:api-matchers"
+  },
+  {
+   "file": "api/_shared/history.js",
+   "line": 12,
+   "title": "fetchHistory/recentlyUsedIds är död kod som läser den avvecklade recipe-history.json — kolliderar till namnet med de faktiska (Supabase-baserade) funktionerna i generate.js",
+   "description": "api/_shared/history.js exporterar fetchHistory(pat) (rad 12-29) som läser 'recipe-history.json' via GitHub (readFile) och recentlyUsedIds(history, days=14) (rad 31-40). Grep över hela api/ visar att INGEN fil importerar dessa två funktioner från detta modul — generate.js definierar egna, identiskt namngivna funktioner (rad 66-87) som i stället läser Supabase-tabellen recipe_history. Enda importen från detta modul någonstans i api/ är `shuffle` (replace-recipe.js:4, select-recipes.js:9). Detta strider mot CLAUDE.md:s uttryckliga påstående att recipe-history.json 'är kvarlämnade och läses inte av koden' — koden FINNS kvar och skulle läsa filen om den någonsin importerades. Eftersom `shuffle` redan importeras från samma fil på flera ställen är det lätt hänt att en framtida ändring av misstag importerar fetchHistory/recentlyUsedIds härifrån i stället för generate.js:s lokala Supabase-variant (samma funktionsnamn, snarlik signatur) — då skulle 14-dagars-historikfiltreringen tyst falla tillbaka på en urgammal, osynkad GitHub-JSON-fil (eller `{ usedOn: {} }` om filen saknas/inte kan läsas, se catch-blocket rad 26-28), vilket bryter proteinbalans/repetitionsskyddet utan att någon märker det direkt.",
+   "severity": "P2",
+   "evidence": "history.js rad 12-29:\n```\nexport async function fetchHistory(pat) {\n  try {\n    const { content: parsed } = await readFile(\"recipe-history.json\", pat);\n    ...\n  } catch {\n    return { usedOn: {} };\n  }\n}\n```\ngenerate.js rad 66-76 har en helt egen, Supabase-baserad implementation med samma namn:\n```\nasync function fetchHistory(householdId) {\n  const { data } = await db.from(\"recipe_history\").select(\"recipe_id, used_on\").eq(\"household_id\", householdId);\n  ...\n}\n```\nOch grep bekräftar att history.js:s fetchHistory/recentlyUsedIds aldrig importeras: enda importen från './_shared/history.js' i api/ är `{ shuffle }` (replace-recipe.js:4, select-recipes.js:9).",
+   "finder": "slice:api-matchers"
+  },
+  {
+   "file": "service-worker.js",
+   "line": 50,
+   "title": "Navigate-hanteraren cachar HTTP-felsvar som index.html (ingen res.ok-koll)",
+   "description": "I navigationsgrenen (req.mode === 'navigate') cachas fetch-svaret ovillkorligt som './index.html' — till skillnad från JS-grenen (rad 69: `if (res.ok)`) och den statiska tillgångsgrenen (rad 87: `if (res.ok)`) saknas motsvarande koll här. Om nätverksanropet lyckas på transportnivå men servern svarar med t.ex. 500/502/504 (vanligt vid Vercel-rullande deploy eller cold start) cachas felsidan som appens skal och SKRIVER ÖVER den senaste fungerande index.html i Cache Storage.",
+   "severity": "P1",
+   "evidence": "51-58: `event.respondWith(\\n  fetch(req)\\n    .then((res) => {\\n      const copy = res.clone();\\n      caches.open(CACHE_VERSION).then((c) => c.put('./index.html', copy));\\n      return res;\\n    })\\n    .catch(() => caches.match('./index.html'))\\n);` — jämför med rad 69 (`if (res.ok) { ... }`) och rad 87 (`if (res.ok) { ... }`) i de andra två grenarna, som har skyddet men denna saknar det.",
+   "finder": "slice:api-handler-alert"
+  },
+  {
+   "file": "service-worker.js",
+   "line": 55,
+   "title": "Bakgrunds-cache.put i fetch-hanteraren är fire-and-forget (saknar event.waitUntil)",
+   "description": "I alla tre fetch-grenarna (navigate rad 55, JS-moduler rad 71, statiska filer rad 89) startas `caches.open(CACHE_VERSION).then((c) => c.put(...))` utan att kedjas till `event.respondWith()`s promise eller läggas i `event.waitUntil()`. Enligt Service Worker-specen förlängs workerns livstid bara av promisen till respondWith (och ev. waitUntil) — en 'lös' cache.put-promise har ingen livstidsgaranti och kan avbrytas av UA:t så snart svaret skickats, särskilt på strikta implementationer (t.ex. iOS Safari). Effekten är att cacheuppdateringar tyst kan utebli utan att något fel loggas, vilket gör offline-fallbacken äldre än senast lyckade hämtning trots att inget nätverksfel inträffade.",
+   "severity": "P2",
+   "evidence": "55: `caches.open(CACHE_VERSION).then((c) => c.put('./index.html', copy));` (samma mönster rad 71 och 89) — ingen av dessa promises returneras till respondWith-kedjan eller skickas till event.waitUntil().",
+   "finder": "slice:api-handler-alert"
+  },
+  {
+   "file": "api/_shared/alert.js",
+   "line": 18,
+   "title": "notifyAlert returnerar true även om webhooken svarar med HTTP-fel",
+   "description": "Funktionen kollar bara att fetch() inte kastar (nätverksfel) — den läser aldrig `res.ok`/`res.status`. fetch() kastar INTE vid HTTP-fel (4xx/5xx), bara vid transportfel. Om ALERT_WEBHOOK pekar på en död/felkonfigurerad endpoint (t.ex. ntfy.sh-topic borttagen → 404, eller fel token → 403) rapporterar funktionen ändå leverans som lyckad. Eftersom hela poängen med notifyAlert är att larma när något degraderar TYST (Willys-feed/cookies), gör denna bugg att larmvägen kan vara lika tyst trasig som det den ska bevaka — ingen loggning, inget undantag, `return true` trots att meddelandet aldrig nådde fram.",
+   "severity": "P2",
+   "evidence": "11-19: `try {\\n    await fetch(url, {...});\\n    return true;\\n  } catch {\\n    return false;\\n  }` — inget villkor på `res.ok`/`res.status` innan `return true`.",
+   "finder": "slice:api-handler-alert"
+  },
+  {
+   "file": "api/_shared/handler.js",
+   "line": 10,
+   "title": "userMessage maskerar avsiktliga svenska felmeddelanden från custom Error-subklasser",
+   "description": "`userMessage` avgör 'avsiktligt fel' med `err.constructor === Error` — en strikt identitetskoll som bara accepterar plain `new Error(...)`. Kastas ett fel via en subklass (t.ex. `class ValidationError extends Error {}` med ett medvetet skrivet svenskt meddelande), maskeras det ändå till den generiska texten trots att avsikten (per kommentaren rad 6-9) är att just SÅDANA avsiktliga meddelanden ska nå användaren. Inga api/*.js-filer definierar idag en Error-subklass (verifierat med grep), så felet är latent — men det är ett förrädiskt mönster: nästa utvecklare som skriver `class XError extends Error` för en tydligare feltyp får sitt handlingsorienterade svenska meddelande tyst nedgraderat till 'Något gick fel — prova igen om en stund.' utan varning från test eller kompilator.",
+   "severity": "P2",
+   "evidence": "10-13: `function userMessage(err) {\\n  const intentional = err instanceof Error && err.constructor === Error && err.message;\\n  return intentional ? err.message : \"Något gick fel — prova igen om en stund.\";\\n}`",
+   "finder": "slice:api-handler-alert"
+  },
+  {
+   "file": "api/_shared/handler.js",
+   "line": 54,
+   "title": "Miljövariabelnamn läcks till klienten vid konfigurationsfel, före auth-kollen",
+   "description": "Om GITHUB_PAT (createHandler) eller SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY (createSupabaseHandler) saknas i miljön, returneras felsvaret med de exakta engelska env-variabelnamnen direkt i JSON — vilket bryter projektets egna uttalade princip (CLAUDE.md: 'Felmeddelanden i appen — alltid på begriplig svenska utan tekniska termer, med handlingsorienterad uppmaning'). Dessutom sker denna kontroll INNAN requireUser (JWT-kollen) körs (rad 53-56 resp. 78-82), så en oautentiserad anropare kan också se detta konfigurationsläckage. Låg sannolikhet i drift (kräver genuint felkonfigurerad deploy), men om det inträffar visas exakt den typ av tekniska text projektet uttryckligen vill undvika.",
+   "severity": "P2",
+   "evidence": "53-56: `const pat = process.env.GITHUB_PAT;\\n    if (!pat) return res.status(500).json({ error: \"GITHUB_PAT saknas i env\" });\\n\\n    if (!(await requireUser(req, res))) return;` — samma mönster rad 78-82 med `\"SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY saknas i env\"`.",
+   "finder": "slice:api-handler-alert"
+  },
+  {
+   "file": "api/_shared/supabase.js",
+   "line": 22,
+   "title": "Proxy-wrappern kring db anropar SupabaseClient-metoder med fel 'this' (fungerar idag, men uppgraderingsskört)",
+   "description": "`db` är en `Proxy` vars `get`-trap returnerar `getOrCreateDb()[prop]` direkt (utan `Reflect.get(target, prop, receiver)`). Vid ett anrop som `db.from('recipes')` blir `this` inuti metoden Proxy-objektet `db`, inte den riktiga SupabaseClient-instansen — eftersom JS binder `this` till mottagaren i member-uttrycket (`db`), inte till returvärdet från get-trappen. Det fungerar idag eftersom supabase-js (v2.110.2, verifierat i node_modules) bara använder TypeScript-kompileringstida `private` (ingen riktig `#`-privat fältsyntax), så varje `this.xxx`-åtkomst internt routas transparent tillbaka genom samma Proxy-trap till singleton-klienten. Men om ett framtida supabase-js/postgrest-js/auth-js uppdaterar till riktiga `#private`-fält eller WeakMap-nyckelt internt state (vanligt i moderna JS-bibliotek), skulle EVERY `db.*`-anrop i hela backend plötsligt kasta `TypeError: Cannot read private member ...` eller tyst returnera `undefined` för internt state — ett fullständigt backend-avbrott utlöst av en rutinmässig `npm update`, som inte skulle fångas av testsviten (den kör mot samma installerade version).",
+   "severity": "P2",
+   "evidence": "22-26: `export const db = new Proxy({}, {\\n  get(_, prop) {\\n    return getOrCreateDb()[prop];\\n  },\\n});` — get-trappen forwardar inte receiver, så `db.from(...)`-anrop binder `this` till Proxy-objektet `db`, inte till den underliggande SupabaseClient-instansen.",
+   "finder": "slice:api-handler-alert"
+  }
+ ],
+ "coverage": [
+  {
+   "finder": "plan-viewer-deluxe",
+   "notes": ""
+  },
+  {
+   "finder": "lists-view",
+   "notes": ""
+  },
+  {
+   "finder": "shopping-list",
+   "notes": "Läste hela js/shopping/shopping-list.js (985 rader) rad för rad: realtime-prenumeration (subscribeShoppingItems/unsubscribeShoppingItems), buildShopState, pantry/\"har hemma\" (loadPantry/togglePantryItem/pantryKey/isPantryName), setShopMode/toggleHandlaMode/toggleEditMode, applyRemovalById, deleteWithUndo/removeShopItem, scheduleCheckedSave/toggleShopItem, shopCounts/updateShopProgress/shopProgressHtml, itemTextCell/renameShopItem/updateNameInMemory, rebuildShopText, recipeItemLi/manualItemLi, renderFullShoppingList, loadShoppingTab, ensureActiveShoppingList, addManualItem/removeManualItem, drag-and-drop (startManualDrag/onManualDragMove/endManualDrag/commitManualOrder), clearShoppingList, copyShoppingList, renderShoppingData, samt window.*-exponeringarna i botten.\n\nFör att verifiera nyckelfynden (särskilt stale `_shopListId`/`_shopItemIds` och manual-checked-nyckelmismatchen) grep:ade jag även, som stödbevis (inte fullständigt granskade som egen slice): js/state.js (bekräftar var window._checkedItems/_shopRecipeItems/_shopManualItems/_checkSeq/_checkSeqNext initieras — _shopItemIds/_shopListId initieras INTE där, men allt läses via `?.`), js/ui/navigation.js (bekräftar att `switchTab('shop')` alltid kör loadShoppingTab), js/today/today-view.js (todayAddItem/quick-add-flödet), js/weekly-plan/plan-viewer.js (anropsplatser för renderShoppingData efter replace-recipe/skip-day), samt api/generate.js, api/replace-recipe.js, api/confirm.js (för att bekräfta att checkedItems-formatet där är namn-baserat och att dessa endpoints skapar HELT NYA shopping_lists-rader vid ombyggnad).\n\nHann INTE djupgranska (utanför min slice, bara ytligt grep-verifierade referenser hit): js/shopping/dispatch-ui.js, js/shopping/dispatch-preferences.js, js/weekly-plan/plan-viewer-deluxe.js, js/weekly-plan/prisoptimera.js, js/weekly-plan/deals-popup.js, js/weekly-plan/ingredient-preview.js, samt api/skip-day-motsvarande logik (day-ops.js) — dessa kan innehålla egna problem men rapporteras inte här eftersom de ligger utanför tilldelad slice; nämns bara som stödbevis för fynd som är förankrade i shopping-list.js."
+  },
+  {
+   "finder": "plan-viewer",
+   "notes": ""
+  },
+  {
+   "finder": "weekly-plan-ovrigt",
+   "notes": ""
+  },
+  {
+   "finder": "today-ui",
+   "notes": "Läste HELA de tilldelade filerna rad för rad: js/today/today-view.js (420 rader, alla funktioner: dayInfo/mk/typeLabelFor, heroHtml, tomorrowHtml, weekHtml, quickAddHtml, checkPricingStatus, checkPinnedNotes/pinnedNotesHtml, loadingHtml/noPlanHtml, renderTodayView, todayAddItem, wrap/installHooks); js/ui/cook-mode.js (201 rader, alla funktioner: wake lock, lockScroll/unlockScroll, progressLabel, parseQty/fmtQty/QTY_UNITS-regex, renderServings, _cookServStep, updateProgress, closeCookMode/onCookKey, openCookMode); js/ui/feedback.js (113 rader, showToast/toastHost, confirmDialog helt); js/ui/navigation.js (47 rader, switchTab/closeHeaderSearch/toggleHeaderSearch) helt; js/ui/scroll.js (84 rader) helt.\n\nFör att verifiera datum-/statelogiken läste jag även js/utils.js (fmtIso/weekStartOf/addDaysIso/isoWeekNumber/getSwedishHolidays) och relevanta delar av js/weekly-plan/plan-viewer.js (buildTimeline, renderWeeklyPlanData, confirmPlan/discardPlan) samt js/state.js och js/app.js (importordning) för att kontrollera att wrap()-hookarna faktiskt hittar riktiga funktioner vid modul-load, och js/shopping/shopping-list.js (addManualItem, ensureActiveShoppingList, subscribeShoppingItems) samt js/weekly-plan/plan-generator.js (targetServings-inmatning) som stödbevis för fynd som triggas FRÅN min slice men vars root-orsak delvis ligger i angränsande filer (flaggat tydligt i respektive fynd). Kontrollerade även css/styles.css:s prefers-reduced-motion-regel för scroll.js-fyndet.\n\nInte djupare granskat (utanför slice, bara läst as needed): plan-viewer-deluxe.js, lists-view.js, api/*, recipe-*.js. Har inte kunnat köra testsviten eller manuellt reproducera i browser (strikt read-only-granskning) — alla fynd är statisk kodanalys och bör verifieras interaktivt (särskilt midnattsstaleness och dubbel-Enter-racet, som kräver tajming som är svår att bekräfta utan att köra appen)."
+  },
+  {
+   "finder": "recipes",
+   "notes": ""
+  },
+  {
+   "finder": "dispatch-frontend",
+   "notes": ""
+  },
+  {
+   "finder": "core-infra-js",
+   "notes": ""
+  },
+  {
+   "finder": "api-generate",
+   "notes": "Läste api/generate.js rad för rad i sin helhet (520 rader) — samtliga funktioner: getCurrentSeason, buildDayList, filterRecipes, fetchRecipes, fetchHistory, recentlyUsedIds, fetchExistingShoppingList, archiveOldPlan, savePlanToSupabase, activatePlan, isMissingRpcError, activatePlanAtomic, saveHistoryToSupabase, saveShoppingListToSupabase och hela handler-kroppen (constraints-validering, ture/veg-dagar, prisoptimering/pricing_status-blocket, selectRecipes-anrop, dry_run-gren, plan/historik/inköpslista-skrivningen).\n\nLäste även, för kontraktsförståelse (enligt uppdrag): api/_shared/select-recipes.js (hela), api/_shared/day-ops.js (hela, används EJ av generate.js men lästes för invariant-kontext), api/_shared/history.js (hela, shuffle/fetchHistory/recentlyUsedIds — obs: generate.js har egna lokala kopior av fetchHistory/recentlyUsedIds som INTE importeras härifrån, de är dupliceringar med Supabase- resp. GitHub-baserad I/O), api/_shared/handler.js (hela, för att förstå fel→svensk text-mappningen och JWT-kravet), db/migrations/001_activate_plan_atomic.sql (hela, för att verifiera att RPC:n delar samma \"unconditional delete\"-brist som JS-fallbacken, och för att bekräfta att migrationen är körd enligt docs/status.md), tests/plan-orchestration.test.js (hela, för att bekräfta att inget test täcker felvägarna jag flaggat — särskilt inte scenariot \"kortare ny period än gamla planen\" eller \"customDates-frågan felar\").\n\nVerifierade via docs/status.md att migrationerna 001-003 är körda i produktion (så RPC-vägen, inte JS-fallbacken, är den normalt aktiva — vilket jag använde för att bedöma allvarlighetsgrad: fyndet om att gamla planens dagar utanför nya arkiveringsintervallet raderas oåterkalleligt gäller BÅDA vägarna och är därför en LIVE bugg, medan de rent JS-fallback-specifika bristerna (arkiveringens saknade felkontroll + den nedslukade catch:en) nedgraderades till P1/latent eftersom de bara triggas om RPC:n saknas/faller bort — vilket ändå är relevant för planerad M1-flerfamiljsutrullning där nya Supabase-projekt startar utan migrationen körd.\n\nKontrollerade sekundärt (ej fullständig filgranskning, bara punktkoll): api/_shared/supabase.js (fetchTargetServings/getHouseholdId — inga nya fynd utöver redan kända/uteslutna), api/move-day.js, api/swap-days.js, js/weekly-plan/plan-viewer*.js (endast grep efter \"locked\" för att verifiera att den redan kända/uteslutna \"locked tappas\"-buggen är vad jag tror den är, samt för att avgöra att \"locked\" inte är en aktiv skrivskyddsfunktion som generate.js kringgår).\n\nINTE granskat (utanför slice eller explicit uteslutet): api/willys-offers.js, api/_shared/willys-matcher.js/buildDealCandidates i detalj (bara ytligt, för prisoptimeringsblocket), api/_shared/shopping-builder.js (buildShoppingList-internlogik — mängd-/enhetsfel där hör till inköpslist-slicen), api/_shared/alert.js (notifyAlert-implementationen — antog den är felsäker baserat på namngivning/kommentarer, läste inte filen), frontend-anropande kod (js/weekly-plan/plan-generator.js) mer än en grep — blocked_dates/custom-day-initiering vid wizard-öppning granskades INTE (skulle kunna interagera med fynd #1/#7 men är en annan slice), getHouseholdId \"första hushållet\"-frågan (explicit uteslutet), Willys/dispatch-relaterat (explicit uteslutet), nextId-kollisionen i recipe-editor.js (explicit uteslutet)."
+  },
+  {
+   "finder": "api-dagops",
+   "notes": "Läste HELA innehållet rad för rad i alla sju tilldelade filer: api/move-day.js (87 rader), api/swap-days.js (149), api/skip-day.js (176), api/replace-recipe.js (207), api/confirm.js (129), api/discard-plan.js (45), api/_shared/day-ops.js (114). Verifierade auth-täckning via api/_shared/handler.js (createSupabaseHandler → requireUser/JWT) för samtliga sju filer — alla skyddade. För att verifiera/falsifiera hypoteser läste jag också stödjande kontext utanför slicen (utan att granska den filen rad-för-rad): api/generate.js rad 1-90 och 240-280 (för att bekräfta att recipe_history skrivs vid generering med used_on=idag, och att onConflict \"household_id,recipe_id\" innebär en rad per recept/hushåll) samt js/weekly-plan/plan-viewer.js rad 625-700 (för att verifiera att confirm.js:s weeklyPlan-fält faktiskt inte konsumeras av frontend just nu). Körde grep över db/migrations för schema/unique-constraints på recipe_history men hittade ingen SQL-fil med den tabellen i repot (schemat existerar bara i Supabase, ej i migrations-mappen) — mitt antagande om unik (household_id, recipe_id) bygger på onConflict-satserna i koden, inte en läst DDL-fil.\n\nEj djupdykt (utanför slicen, bara ytligt refererat för kontext): api/_shared/shopping-builder.js, api/_shared/supabase.js (fetchTargetServings/getHouseholdId-internals), api/_shared/history.js (shuffle), api/generate.js i sin helhet, js/weekly-plan/plan-viewer-deluxe.js i sin helhet. Body-validering (t.ex. att `date`/`date1`/`date2` verkligen är giltiga ISO-datumsträngar och inte t.ex. SQL-injicerbara eller felformaterade) litar jag på att Supabase-klienten/kolumntypen (date) hanterar via typvalidering — testade inte explicit.\n\nGranskade INTE (per instruktion) kända/exkluderade punkter: locked-tapp i move-day/swap-day, discard-plan raderar historik ovillkorligt (rapporterade dock en SKARPARE, mer specifik variant av detta — att det kan radera historik från en ANNAN, bekräftad plan, vilket är utöver den kända \"ovillkorligt\"-noteringen), nextId-kollision, stale 'Välj'-titel, getHouseholdId \"första hushållet\", saknad JWT i dispatch/willys-offers, SSRF i import-recipe, Willys-cookies i gist."
+  },
+  {
+   "finder": "api-shopping-deals",
+   "notes": ""
+  },
+  {
+   "finder": "api-import",
+   "notes": "Läste api/import-recipe.js i sin helhet, rad för rad (402 rader): handler-entry, isPrivateIp/isForeignUrl, handleUrl (redirect-följning, JSON-LD-försök, Gemini-fallback), extractJsonLd/mapJsonLdToRecipe/parseDuration, postProcessForeignRecipe, handlePhoto, callGeminiRaw/callGemini, guessProtein/buildTags/truncate. Läste även api/_shared/handler.js (createHandler/userMessage/requireUser) för att förstå hur kastade fel mappas till HTTP-svar och varför rå Gemini-feltext kan läcka igenom till klienten. Läste relevanta delar av api/_shared/select-recipes.js (rad 1-160) för att verifiera att tags/protein från detta fynd faktiskt konsumeras deterministiskt vid matsedelsgenerering (vardag30/helg60-filter, protein==='vegetarisk'-filter). Verifierade maxDuration-konfiguration i vercel.json.\n\nEj täckt (utanför slice / ej hunnet): frontend-anroparen av denna endpoint (troligen i js/recipes/import.js) — hur klienten hanterar 422/500/nätverksfel, om den visar backend-felsträngen direkt eller har egen fallback-text; hur/var det returnerade receptobjektet faktiskt skrivs till Supabase (recipe-editor.js) och om NÅGON validering sker där som kompenserar för fynd 3/5/8 ovan; SSRF-detaljerna i isPrivateIp/redirect-loop (uttryckligen exkluderat av uppdraget); js/data-mapper.js recipeToRow (om t.ex. icke-array `ingredients`/`instructions` från ett trasigt Gemini-svar skulle krascha vid skrivning eller bara tystas där också)."
+  },
+  {
+   "finder": "api-willys-infra",
+   "notes": "Lästa HELT rad för rad: api/dispatch-to-willys.js (420 rader), api/willys-offers.js (159 rader), api/_shared/willys-cart-client.js (77 rader), api/_shared/willys-search.js (81 rader), api/_shared/secrets-store.js (88 rader), api/_shared/github.js (59 rader). För att verifiera hypoteser läste jag även stödfiler utanför slicen: js/shopping/dispatch-ui.js (klientens dispatch-flöde, för att bekräfta timeout/dubbel-dispatch-scenariot och för att inte felaktigt flagga en redan känd busy-spärr), js/shopping/shopping-list.js rad 110-185 (pantryKey-konventionen, för att verifiera att \"har hemma\"-filtreringen i dispatch-to-willys.js faktiskt är korrekt normaliserad — den var det, så jag drog tillbaka en initial felaktig hypotes om case-mismatch), api/shopping.js (för att se hur writeFile/readFileRaw-preferensflödet används av UI:t), och vercel.json (för att bekräfta att serverns maxDuration exakt matchar klientens 60s abort-timer, vilket underbygger dubbel-dispatch-fyndet).\n\nInte djupgranskat på radnivå (utanför slicen, förutsatt korrekt): api/_shared/dispatch-matcher.js (matchCanons — endast en grep-rad läst för signaturen), api/_shared/willys-matcher.js (extractOfferCanon/rejectsMatch/relevantToCanon/brandBlocked/canonProteinCategory — används av willys-search.js men tillhör troligen en annan slice), api/_shared/shopping-builder.js (parseIngredient/normalizeName/categorize), api/_shared/supabase.js (db-klienten), api/_shared/alert.js (notifyAlert), api/_shared/handler.js (createHandler, JWT-wrapper använd av api/shopping.js). Antog att dessa fungerar som dokumenterat/namngivet eftersom de ligger utanför den tilldelade slicen.\n\nRapporterade INTE (redan kända/uteslutna): saknad JWT på dispatch-to-willys/willys-offers, Willys-cookies i gist, SSRF-luckor i import-recipe (rör inte min slice ändå), getHouseholdId \"första hushållet\"."
+  },
+  {
+   "finder": "api-matchers",
+   "notes": "Helt lästa rad för rad: api/_shared/willys-matcher.js (287 rader), api/_shared/dispatch-matcher.js (120 rader), api/_shared/select-recipes.js (162 rader), api/_shared/history.js (40 rader), api/_shared/constants.js (3 rader) — hela min tilldelade slice.\n\nFör att verifiera korrekt användning/gränssnitt lästes även (delvis, utanför slicen): api/generate.js (rad 1-100, 366-494: recept-/historik-hämtning, prisoptimeringsblocket, selectRecipes-anrop, deals-uppbyggnad), api/deals.js (hela filen, 146 rader), api/_shared/handler.js (hela filen, för att verifiera felhanteringens svenska text och att kraschar inte läcker tekniska detaljer), api/_shared/shopping-builder.js (delvis: NORMALIZATION_TABLE-storlek, parseIngredient rad 424-484, CANON_SET/CANON_REJECT_PATTERNS rad 486-517, normalizeName rad 530-563 — för att verifiera att willys-matcher.js:s antaganden om dessa håller). Kontrollerade även js/data-mapper.js (tags-defaultvärde) och grepade replace-recipe.js/discard-plan.js/willys-search.js/dispatch-to-willys.js för att spåra blockedBrands-flödet och bekräfta att matchRecipe är den enda konsument som saknar det.\n\nEJ granskat i detalj: api/_shared/willys-search.js (full kropp — bara grepad), api/_shared/willys-cart-client.js, api/dispatch-to-willys.js (full kropp — bara grepad för blockedBrands-wiring), api/generate.js utanför de nämnda radintervallen, resten av api/_shared/shopping-builder.js (CATEGORY_KEYWORDS, SKAFFERI_OVERRIDE, buildShoppingList, portionsskalning), samt fulla testfiler tests/select-recipes.test.js (468 rader), tests/match-corpus.test.js (107 rader), tests/dispatch-to-willys.test.js, tests/cookies-endpoint.test.js — bara grepade för enstaka nyckelord, inte lästa rad för rad. Körde inga tester (read-only-granskning som instruerat).\n\nBekräftade explicit att den \"nyligen fixade\" max-savingPerUnit-per-canon-regeln i findReaMatch (dispatch-matcher.js) och matchRecipe (willys-matcher.js) är internt konsekventa VAD GÄLLER besparingsvalet i sig (störst savingPerUnit vinner i båda) — det kvarvarande hålet jag hittade är att bara findReaMatch tar hänsyn till blockedBrands/eko/svenskt-preferenser, inte matchRecipe/buildDealCandidates (Finding 1). Uteslöt en misstänkt bugg där weightedSaving/mainProteinSaving skulle läsa fel fält (m.savingPerUnit på {canon,offer}-formen från matchRecipe direkt) — verifierade att BÅDA anroparna (generate.js rad 428-440, deals.js:bestMatchesByCanon rad 74-92) plattar ut matches till {canon, savingPerUnit, regularPrice, bulk, ...} innan de skickas in i weightedSaving/mainProteinSaving/buildDealCandidates, så det är inte en live-bugg. Uteslöt även en misstänkt tidszonsbugg i historikens 14-dagarsgräns (recentlyUsedIds) eftersom både skrivning (`used_on: today` i generate.js rad 269, 478) och läsning sker med samma server-side UTC-datum (new Date().toISOString().slice(0,10)) — inget klient/server-glapp."
+  },
+  {
+   "finder": "api-handler-alert",
+   "notes": "Läste rad för rad, i sin helhet: api/_shared/handler.js (91 rader), api/_shared/supabase.js (58 rader), api/_shared/alert.js (23 rader), vercel.json (14 rader), service-worker.js (99 rader), manifest.webmanifest (21 rader). Bekräftade att root-katalogen saknar manifest.json (finns bara extension/manifest.json, som ligger utanför min slice — rörde den inte).\n\nExtra verifiering utöver läsning: (1) grep i api/*.js efter `extends Error` och `new TypeError/RangeError/SyntaxError` för att bedöma om userMessage-maskeringsbuggen (fynd 4) faktiskt triggas idag — inga träffar, så den är bekräftat latent snarare än aktiv. (2) grep efter notifyAlert-anrop (dispatch-to-willys.js:82, generate.js:448) — ingen anropare läser returvärdet idag, vilket sänker impact på fynd 3 men inte gör buggen overklig. (3) Inspekterade node_modules/@supabase/supabase-js (v2.110.2) käll- och byggd kod för att verifiera att `private`-nyckelordet där är TS-kompileringstid (inga `#`-privata fält i dist/index.cjs), vilket förklarar varför Proxy-mönstret i supabase.js (fynd 6) fungerar idag trots fel `this`-bindning. (4) Jämförde index.html:20/619 (css/app-versionsnummer) mot service-worker.js PRECACHE-listan — i synk just nu (v=168), inga avvikelser att rapportera som aktiv bugg (nämnde risken kort men inkluderade den inte som separat fynd eftersom den inte är trasig just nu).\n\nEj granskat (utanför slice, endast snabbt sneglat för kontext): api/*.js-filernas fullständiga innehåll (deals.js, willys-offers.js, dispatch-to-willys.js m.fl.) — lästes bara punktvis för att bedöma om vercel.json:s maxDuration-täckning verkar rimlig (deals.js/willys-offers.js gör en enda Willys-fetch, inget uppenbart behov av override; drog slutsatsen att inget fynd var tillräckligt underbyggt för rapportering här). js/-modulerna (annan slice) rördes inte. Har inte kunnat verifiera Vercels faktiska HTTP-cache-headers för statiska filer (ingen headers-sektion i vercel.json) mot det SW-interna 'nätet först'-antagandet för navigate — nämnde risken internt men uteslöt den som fynd pga för låg konfidensgrad utan tillgång till faktiska produktionsheaders."
+  }
+ ]
+}
