@@ -1,6 +1,18 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–124. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–126. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+**Session 126 — Nattaudit: heltäckande bugg- & UX-granskning av hela repot (rapport-only).**
+
+Joakims beställning: "hitta ALLA buggar och UX-fel, kör hela natten, rapport — inga fixar". Kördes autonomt över natten (usage-pauser hanterade via väktar-routine som återupptog arbetet).
+
+**Metod (7 vågor, ~230 agenter):** baslinje (testsvit grön) → statiskt kontraktssvep → 16 per-slice-finders → 6 UX-linser (touch/tema/fel/a11y/flöden/Playwright) → 4 Opus-säkerhetsagenter (auth/CORS/secrets, XSS, **live RLS-audit via Management-API**, felvägar) → **Opus-skeptiker verifierade VARJE råfynd adversariellt** (28 motbevisades; 12 påstådda P0 → 2 äkta) → 5 extra linsrundor → completeness-critic + 4 ikapp-granskningar (oläst `swap-days.js`, `feedback.js`, **korpus-körning av inköpspipelinen mot alla 264 verkliga recept**, live kolumnkontrakt).
+
+**Resultat: 2 P0 · 48 P1 · 235 P2** — rapport med teman + rekommenderad åtgärdsordning i `docs/qc-night/repo-audit-2026-07-12.md`, fulldata i `audit-verified.json`. Största enskilda upptäckter: realtime-publikationen saknar `meal_days`/`shopping_items` (synken har varit DÖD i produktion — förklarar "andra enheten uppdateras inte"); systematiskt mönster av svalda Supabase-fel i confirm/generate/replace; bock-status skrivs som full-state (raderar partnerns bockar); "endast Vegetarisk"-toggeln gör generering omöjlig; 3 korpus-bevisade parserfel ("soltorkade tomater i olja"→rapsolja m.fl.). **Friskt:** RLS-mallen håller på alla riktiga tabeller, data-mapper = live-schemat exakt (invariant #2), inga trasiga window.*-kontrakt.
+
+**Ingen kod ändrad.** Nästa steg: Joakim prioriterar (rapportens ordningsförslag: error-koll-svepet först), DDL-besluten F215/F287 kräver uttryckligt OK.
 
 ---
 
