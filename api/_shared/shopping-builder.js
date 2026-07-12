@@ -58,6 +58,12 @@ export const NORMALIZATION_TABLE = {
   "körsbärstomater": "körsbärstomat", "cocktailtomater": "körsbärstomat",
   "cocktailtomat": "körsbärstomat", "mini tomater": "körsbärstomat",
   "tomater": "tomat", "tomatpure": "tomatpuré",
+  // Tomat (konserv/beredd — self-canons, får INTE mergas med färsk tomat. F306/F307)
+  "soltorkade tomater": "soltorkade tomater",
+  "soltorkade tomater i olja": "soltorkade tomater",
+  "soltorkade tomater på burk": "soltorkade tomater",
+  "krossade tomater": "krossade tomater",
+  "passerade tomater": "passerade tomater",
   // Örter (färsk = samma nyckel, torkad = separat)
   "färsk persilja": "persilja", "bladpersilja": "persilja", "finhackad persilja": "persilja",
   "torkad persilja": "torkad persilja",
@@ -87,6 +93,7 @@ export const NORMALIZATION_TABLE = {
   // Pasta & ris
   "pennepasta": "penne", "lasagneplatta": "lasagneplattor",
   "arborio": "risotto-ris", "avorioris": "risotto-ris",
+  "pasta": "pasta", "spagetti": "spaghetti",
   // Kål
   "vitkålshuvud": "vitkål", "spetskålshuvud": "spetskål",
   "broccolibuketter": "broccoli", "pak choi": "pak choy",
@@ -110,6 +117,10 @@ export const NORMALIZATION_TABLE = {
   "nötfärs": "köttfärs", "hushållsfärs": "köttfärs",
   "kycklinglårfilé": "kycklinglår", "kycklinginnerfilé": "kycklingfilé",
   "tärnat bacon": "bacon", "chorizokorv": "chorizo",
+  // Sammansatta kött/ost-namn som stemming/enkelords-kategorisering missar (F309)
+  "fläskkotlett": "fläskkotlett", "fläskkotletter": "fläskkotlett",
+  "monterey jack-ost": "ost", "queso fresco-ost": "ost",
+  "rotisserie-kyckling": "färdiggrillad kyckling",
   // Rotfrukter
   "rotselleri": "selleri", "blekselleri": "selleri", "blekselleristjälk": "selleri",
   "jordärtskockor": "jordärtskocka", "rödbeta": "rödbetor",
@@ -322,7 +333,7 @@ const CATEGORY_KEYWORDS = {
     "räkor", "kräftor", "tonfisk", "ansjovis", "sardeller", "skaldjur", "makrill",
     "kyckling", "kycklingfilé", "kycklinglår", "kycklingfärs",
     "köttfärs", "fläskfärs", "vegofärs",
-    "fläskfilé", "fläsk", "stekfläsk",
+    "fläskfilé", "fläsk", "fläskkotlett", "stekfläsk",
     "bacon", "pancetta", "chorizo", "salsiccia", "korv",
     "biff", "oxfilé", "lamm", "tofu", "tempeh",
   ],
@@ -399,6 +410,9 @@ function cleanIngredient(raw) {
   s = s.replace(/\s+à\s+.*$/i, "");
   // Strippa "efter smak"-suffix (förberedelseanvisning, inte en ingrediens)
   s = s.replace(/\s+efter\s+smak$/i, "");
+  // Strippa "för N pers/personer/portioner"-suffix (portionsanvisning, F310) —
+  // t.ex. "pasta för 4 personer" → "pasta".
+  s = s.replace(/\s+för\s+\d+\s+(pers(oner)?|portioner)$/i, "");
   // Gäller både med och utan mängd: "X eller Y" → första alternativet. Utan detta
   // föll no-amount-fallet ("kyckling eller tofu") vidare till normalizeName som
   // godtyckligt valde SISTA canon-ordet (tofu) — inkonsekvent med mängd-vägen.
@@ -428,6 +442,13 @@ export function parseIngredient(raw) {
   // Normalize simple slash fractions: 3/4→¾, 1/2→½, 1/4→¼, 1/3→0,33, 2/3→0,67
   raw = raw.replace(/\b3\/4\b/g, '¾').replace(/\b1\/2\b/g, '½').replace(/\b1\/4\b/g, '¼')
            .replace(/\b2\/3\b/g, '0,67').replace(/\b1\/3\b/g, '0,33');
+  // Normalize svenska "X till Y"-intervall → bindestreck-range (F270), t.ex.
+  // "4,8 till 7,2 dl" → "4,8-7,2 dl". Decimalkomma konverteras till punkt i
+  // samma steg, annars misslyckas range-detekteringen i parseFraction när
+  // BÅDA talen har decimalkomma (t.ex. "4,8-7,2" — bara första kommat skulle
+  // annars bli punkt). Max-värdet plockas som vanligt av parseFraction.
+  raw = raw.replace(/(\d+[.,]\d+|\d+)\s+till\s+(\d+[.,]\d+|\d+)/gi, (_, a, b) =>
+    `${a.replace(",", ".")}-${b.replace(",", ".")}`);
 
   // Handle doh-format: "ingredient name (… qty …)" → rearrange to "qty ingredient name".
   // Only when string doesn't start with a digit/fraction (old format always starts med qty).
@@ -446,7 +467,10 @@ export function parseIngredient(raw) {
           .replace(/^(ca|cirka|ungefär|omkring|från)\s+/i, "")
           .trim();
         const qm = clause.match(QTY_RE);
-        if (qm) { chosen = qm; break; }
+        // F308: "vispgrädde (36%) eller matlagningsgrädde (1,2 dl)" — 36% är en
+        // fetthalt, inte en mängd. Hoppa över klausulen så nästa mängdbärande
+        // klausul (t.ex. "1,2 dl") väljs istället.
+        if (qm && !qm[2].trim().startsWith("%")) { chosen = qm; break; }
       }
       if (chosen) break;
     }
@@ -478,7 +502,9 @@ export function parseIngredient(raw) {
     unit = unitMatch[1].toLowerCase();
     remaining = remaining.slice(unitMatch[0].length).trim();
   }
-  let name = remaining.replace(/,.*$/, "").trim().toLowerCase() || cleaned.toLowerCase();
+  // F270: /,\s+.*$/ (inte /,.*$/) så decimalkomma i löptext ("7,2 dl") inte
+  // klipper namnet i förtid — samma mönster som redan används ovan (eller-hantering).
+  let name = remaining.replace(/,\s+.*$/, "").trim().toLowerCase() || cleaned.toLowerCase();
   name = name.replace(/^(nykokt|nykokta|kokt|kokta)\s+/, "");
   return { amount, unit, name };
 }
@@ -525,6 +551,9 @@ const STEM_ADJ_PREFIX = /^(liten|små|smått|stor|stora|rejäl|rejäla|färsk|f�
 const TOKEN_BLOCKLIST = new Set([
   "i", "och", "eller", "till", "av", "à", "ca", "cm", "dl", "cl", "ml", "kg", "g", "l",
   "vatten", "salt", "peppar", "socker", "svartpeppar",
+  // F306: beredningsvätskor får aldrig bli canon via token-scan (t.ex.
+  // "soltorkade tomater i olja" ska inte resolva till "olja"/rapsolja).
+  "olja", "lag", "spad",
 ]);
 
 export function normalizeName(name) {
