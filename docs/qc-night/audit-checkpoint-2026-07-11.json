@@ -52,8 +52,12 @@
     "vag6": {
       "runId": "wf_76e8fb0a-50a",
       "scriptPath": "/root/.claude/projects/-home-user-Receptbok/71220b30-48da-592e-9c44-6da4a11c0d99/workflows/scripts/audit-vag6-loop-until-dry-wf_76e8fb0a-50a.js"
+    },
+    "vag6b": {
+      "runId": "wf_00f3fc5f-fe5",
+      "scriptPath": "/root/.claude/projects/-home-user-Receptbok/71220b30-48da-592e-9c44-6da4a11c0d99/workflows/scripts/audit-vag6b-dry-forlangning-wf_00f3fc5f-fe5.js"
     }
   },
   "vaktarroutine": "trig_01RehTBn8QvSUj3FGaAbA3UM (audit-natt-vakt, 7 * * * *)",
-  "senast_uppdaterad": "2026-07-12 ~09:05 UTC — Våg 6 gav 48 nya, förlängning 6b lanseras"
+  "senast_uppdaterad": "2026-07-12 ~09:10 UTC — Våg 6b (rundor 4-5) lanserad"
 }
