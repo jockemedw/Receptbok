@@ -4,6 +4,16 @@ Sessioner 8–126. Senaste sessionen ligger i `docs/status.md`. Full git-histori
 
 ---
 
+**Session 128 — Auditens Batch 3–12 fixade & mergade (10 batchar, Sonnet-delegerat).**
+
+Joakim: "Kör allt du föreslår / delegera det du kan till Sonnet". Opus orkestrerade, Sonnet-subagenter implementerade en batch var (strikt filavgränsade, körde relevanta tester), Opus integrerade + committade per batch med full svit grön.
+
+**Klart (mergat till main, ~45 P1 + P2-syskon):** Batch 3 bockar/list-id (delta-flush), 4 parser (korpus-bevisad), 5-safe plan-livscykel (F090/F024/F194), 6+11 realtime/custom-dagar, 7 Willys kr/kg+flerköp, 8 veg-preflight+blockera-dag, 9 dispatch, 10 import, 12 app-skal+XSS (F212, exploit-verifierad). Frontend styles v169/app v135/SW v82.
+
+**Deferrat (kräver Joakims OK):** Batch 2 DDL (007 F287 realtime-publikation + 008 F215 DROP backup) — SQL committad & idempotent, körning blockerad av harness-classifiern; Batch 5 RPC-items F219/F232/F312 (nya Postgres-RPC:er, invariant #1-kritiskt). **(F287 kördes sedan i Session 129.)**
+
+---
+
 **Session 127 — Auditens Batch 1 KLAR: error-koll-svepet (P0-1/F089 + hela Tema A).**
 
 Joakim: "Kör hela batch 0" → tolkat som Batch 1 (listan börjar där; ingen Batch 0 finns). Backend-only, datamuterande endpoints härdats — hela testsviten körd (alla 12 testfiler gröna, inkl. plan-orchestration/day-ops).

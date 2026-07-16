@@ -16,10 +16,10 @@ Mönster: destrukturera `{ data, error }` och kasta — handler.js översätter 
 - [x] F313 `api/swap-days.js:110` — plan-gränsernas persist-fel (svar ≠ DB)
 - [x] Bonus (samma tema): plans-/mealDays-läsningarna i `confirm.js:9/20` felkollas också (gav tidigare vilseledande 400)
 
-## Batch 2 — DB-migrationer (P0-2 + F287) · ⚠️ SQL REDO, KÖRNING BLOCKERAD
-SQL-filerna finns committade i `db/migrations/` (007 = F287, 008 = F215) och är idempotenta. Körning mot live-Supabase via Management-API:t BLOCKERADES av harness-classifiern (produktions-DDL/DROP) — måste köras utanför auto-läge, av Joakim eller med uttrycklig approval. Verifierat live 2026-07-12: publikationen har bara family_lists/-items (F287 äkta); backup-tabellen har 262 rader + RLS AV (F215 äkta).
-- [ ] **F287** kör `db/migrations/007_realtime_meal_days_shopping_items.sql` → väcker realtime-synken (kör FÖRST, ofarlig, additiv). Verifiera sedan realtime mellan två enheter.
-- [ ] **F215 (P0!)** ta JSON-dump av `recipes_qc_backup_20260607` (revert-snapshot Session 83, bedömd inaktuell), kör sedan `db/migrations/008_drop_qc_backup.sql`.
+## Batch 2 — DB-migrationer (P0-2 + F287) · F287 ✅ KÖRD 2026-07-16, F215 HÅLLS
+SQL-filerna finns committade i `db/migrations/` (007 = F287, 008 = F215) och är idempotenta.
+- [x] **F287** — `007` KÖRD mot live-Supabase 2026-07-16 (Joakims uttryckliga OK, via Management-API:t). Pre-koll: publikationen hade bara family_lists/-items. Efter: `meal_days` + `shopping_items` ligger nu i `supabase_realtime` → den döda cross-device-synken är väckt. **Kvar: live-verifiera realtime mellan två telefoner** (kan inte avgöras headless).
+- [ ] **F215 (P0!)** HÅLLS (Joakims val 2026-07-16) — kräver JSON-dump av `recipes_qc_backup_20260607` (revert-snapshot Session 83) före `008`. Kör vid separat OK.
 - [ ] Info (inget krav): `dispatch_preferences`-tabellen ligger förprovisionerad men okopplad (backlog #5) — dokumenterad, beslut vid #5-bygget.
 
 ## Batch 3 — Bockar & list-id (Tema C+D) · frontend — ✅ KLAR 2026-07-12 (live-verifiera 2 telefoner)
@@ -82,16 +82,19 @@ SQL-filerna finns committade i `db/migrations/` (007 = F287, 008 = F215) och är
 - [x] F212 `plan-viewer-deluxe.js:1090` (+today-view.js:20, plan-viewer.js:769) — ersätt handrullade escapers med `utils.jsStringAttr` (XSS)
 - [x] F182 `prisoptimera.js:98` — tangentbord + ≥44px i deal-grupperna
 
-## Batch 13 — P2-svepen (235 st, ta områdesvis när tillfälle ges)
-- [ ] api/endpoints (48) · api/_shared (18) — bl.a. felkontrakt-enhetlighet, `validUntil`-crashguard i willys-offers
-- [ ] js/weekly-plan (28) · js/shopping (25) · js/recipes (18) · js/core+ui (19) · js/today (8) · js/lists (6)
-- [ ] CSS & markup (36) — touch-targets <44px-svepet, overscroll, z-index
-- [ ] PWA (6) · tester (3, bl.a. koppla `plan-orchestration`/`day-ops`-testerna till Edit-hookarna) · databas & övrigt
-- [ ] `js/ui/feedback.js`-klustret: focus trap, fokusåterställning, inert bakgrund, toast-arior
+## Batch 13 — P2-svepen · SÄKRA RENDER-FYND ✅ KLARA 2026-07-16 (workflow, ~65 fynd)
+Fil-klustrad städ-workflow (10 agenter + verify), hela sviten grön, render-only + inert (canon separat). Version-bump styles v170/app v136/SW v83.
+- [x] **CSS & markup:** touch-targets ≥44px (F143–156,170,171,187,188,201,204,177), WCAG-kontrast (F157/158/161/184/185/186), [hidden]-guards + overscroll (F144,267,268), aria-markup (F177/178/181/189,236), F142 dlx-sheet scroll-lås. **+ död klassisk CSS borttagen (~474 rader)** — `.timeline-*`, `.plan-group`, `.week-day-card` + compound; KEEP-selektorer verifierat orörda.
+- [x] **feedback.js-klustret:** focus-trap, fokusåterställning, scroll-lock/inert, aria-live-host (F299–303).
+- [x] **JS render/a11y/fel:** tangentbordsåtkomst (F174,180,190,191,192), svenska felfallbacks (F054,070,117,122,165,166,211,242,286,168), död kod (F135,001,050), text/format (F237,238,239,240,028,193,188), willys-offers isNaN-guard (F228).
+- [x] **PWA:** maskable-ikon precache (F003), neutral manifest-färg (F160).
+- [x] **Canon (separat commit, datamuterande):** F113 dubblettnyckel + canon-kandidater i NORMALIZATION_TABLE. Restpost: `offers.json` raderad.
+- [ ] **Medvetet lämnade (designbeslut, ej render-only):** F155 (färg/ikon-väljarens tätpackade träffytor), F159 (mörk-tema-toast inverse-surface), F304 (toast pointer-events = interaktionsändring). Tas som designsteg om önskat.
+- [ ] **Kvar av Batch 13 (backend-beteende, ej denna omgång):** api-felkontrakt-enhetlighet + svalda DB-fel · shopping/plan/dispatch skriv-logik · F256 (case-okänslig tagg-matchning i select-recipes — recept-skrivväg, kräver granskning) · tester (F272–274 regressionstäckning) · resterande js P2 per område.
 
 ## Live-verifiering (Joakim, mobil — även i status.md-kön)
 - [ ] Riktig `/api/deals` + dispatch → Willys-JSON-formaten parsas fortfarande
 - [ ] Extremgenerering (alla-veg + proteintoggle) mot riktiga korpusen
 - [ ] Import-förhandsvisningen (F067) — syns den överhuvudtaget?
-- [ ] Efter F287-migrationen: realtime mellan två telefoner
+- [ ] Efter F287-migrationen (KÖRD 2026-07-16): realtime mellan två telefoner (bocka/planera på den ena → syns på den andra)
 - [ ] Skärmläsartest av fel-toasts

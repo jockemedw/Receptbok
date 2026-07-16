@@ -11,7 +11,9 @@ function toastHost() {
   if (_host && document.body.contains(_host)) return _host;
   _host = document.createElement('div');
   _host.id = 'toastHost';
-  _host.setAttribute('aria-live', 'polite');
+  // Ingen aria-live på hosten — varje toast styr själv via role="alert"
+  // (fel, assertivt) resp. role="status" (info/success, polite). En permanent
+  // polite live-region här skulle annars kapa fel-toasternas assertiva annonsering.
   document.body.appendChild(_host);
   return _host;
 }
@@ -85,21 +87,67 @@ export function confirmDialog({
     overlay.querySelector('.confirm-cancel').textContent = cancelLabel;
     overlay.querySelector('.confirm-ok').textContent = confirmLabel;
 
+    // Spara triggern så fokus kan återlämnas när dialogen stängs.
+    const opener = document.activeElement;
+
+    // Lås bakgrunden: inert + aria-hidden på syskonen (döljer dem för
+    // skärmläsare och tangentbord, så aria-modal-löftet faktiskt hålls) och
+    // frys body-scroll så sidan inte rör sig bakom modalen på mobil.
+    const prevOverflow = document.body.style.overflow;
+    const backdropKin = [];
+    Array.from(document.body.children).forEach((child) => {
+      if (child === overlay || child.id === 'toastHost') return;
+      backdropKin.push([child, child.hasAttribute('inert'), child.getAttribute('aria-hidden')]);
+      child.setAttribute('inert', '');
+      child.setAttribute('aria-hidden', 'true');
+    });
+    document.body.style.overflow = 'hidden';
+
     let done = false;
     const finish = (val) => {
       if (done) return;
       done = true;
       overlay.classList.remove('show');
-      document.removeEventListener('keydown', onKey);
+      overlay.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+      backdropKin.forEach(([child, hadInert, prevHidden]) => {
+        if (!hadInert) child.removeAttribute('inert');
+        if (prevHidden === null) child.removeAttribute('aria-hidden');
+        else child.setAttribute('aria-hidden', prevHidden);
+      });
       setTimeout(() => overlay.remove(), 200);
       resolve(val);
+      // Återlämna fokus till det element som öppnade dialogen (om det finns kvar).
+      if (opener && typeof opener.focus === 'function' && document.contains(opener)) {
+        opener.focus();
+      }
     };
-    const onKey = (e) => { if (e.key === 'Escape') finish(false); };
+    // Lyssna på overlayen (inte document) — då hanterar varje dialog bara sina
+    // egna tangenttryck, och två samtidigt öppna dialoger krockar inte.
+    const onKey = (e) => {
+      if (e.key === 'Escape') { finish(false); return; }
+      if (e.key === 'Tab') {
+        // Fånga Tab inom .confirm-box så fokus inte vandrar ut till bakgrunden.
+        const focusable = overlay.querySelectorAll(
+          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
 
     overlay.addEventListener('click', (e) => { if (e.target === overlay) finish(false); });
     overlay.querySelector('.confirm-cancel').addEventListener('click', () => finish(false));
     overlay.querySelector('.confirm-ok').addEventListener('click', () => finish(true));
-    document.addEventListener('keydown', onKey);
+    overlay.addEventListener('keydown', onKey);
 
     document.body.appendChild(overlay);
     requestAnimationFrame(() => {

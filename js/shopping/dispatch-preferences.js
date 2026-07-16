@@ -84,7 +84,7 @@ function renderBrandPills() {
   const container = document.getElementById("brandPills");
   if (!container) return;
   container.innerHTML = prefs.blockedBrands
-    .map((b) => `<span class="pref-pill">${escapeHtml(b)}<button class="pref-pill-x" onclick="removeBrand('${jsStringAttr(b)}')">&times;</button></span>`)
+    .map((b) => `<span class="pref-pill">${escapeHtml(b)}<button class="pref-pill-x" aria-label="Ta bort märke" onclick="removeBrand('${jsStringAttr(b)}')">&times;</button></span>`)
     .join("");
 }
 
@@ -117,7 +117,7 @@ export function renderPreferencesUI() {
   const cats = getShoppingCategories();
 
   const brandPillsHtml = prefs.blockedBrands
-    .map((b) => `<span class="pref-pill">${escapeHtml(b)}<button class="pref-pill-x" onclick="removeBrand('${jsStringAttr(b)}')">&times;</button></span>`)
+    .map((b) => `<span class="pref-pill">${escapeHtml(b)}<button class="pref-pill-x" aria-label="Ta bort märke" onclick="removeBrand('${jsStringAttr(b)}')">&times;</button></span>`)
     .join("");
 
   const organicToggles = cats.map((cat) => {
@@ -131,13 +131,13 @@ export function renderPreferencesUI() {
   }).join("");
 
   anchor.innerHTML = `
-    <button class="prefs-header" onclick="togglePrefsPanel()">
+    <button class="prefs-header" onclick="togglePrefsPanel()" aria-expanded="false" aria-controls="prefsBody">
       ${ICON_GEAR} Inköpspreferenser
       <span class="prefs-chevron" id="prefsChevron">›</span>
     </button>
     <div class="prefs-body" id="prefsBody" style="display:none">
       <div class="prefs-group">
-        <div class="prefs-label">Blockade varumärken</div>
+        <div class="prefs-label">Blockerade varumärken</div>
         <div class="prefs-brand-row">
           <input id="brandInput" type="text" placeholder="Lägg till varumärke..." class="prefs-brand-input"
                  onkeydown="if(event.key==='Enter'){addBrand();event.preventDefault()}">
@@ -162,9 +162,11 @@ export function renderPreferencesUI() {
 function togglePrefsPanel() {
   const body = document.getElementById("prefsBody");
   const chev = document.getElementById("prefsChevron");
+  const btn = document.querySelector(".prefs-header");
   const open = body.style.display === "none";
   body.style.display = open ? "" : "none";
   chev.classList.toggle("open", open);
+  if (btn) btn.setAttribute("aria-expanded", String(open));
 }
 
 export function buildPrompt() {

@@ -40,7 +40,7 @@ export function jsStringAttr(s) {
 
 export function timeStr(r) {
   if (!r.time) return null;
-  const base = r.time < 60 ? r.time + ' min' : (r.time / 60).toFixed(1).replace('.0', '') + ' h';
+  const base = r.time < 60 ? r.time + ' min' : (r.time / 60).toFixed(1).replace('.0', '').replace('.', ',') + ' h';
   return r.timeNote && r.timeNote.startsWith('+') ? base + ' ' + r.timeNote : base;
 }
 

@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm">
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=169">
+<link rel="stylesheet" href="css/styles.css?v=170">
 <style>/* tömd — CSS flyttad till css/styles.css */
 
 </style>
@@ -57,7 +57,7 @@
   <div class="header-search-area hidden" id="headerSearchArea">
     <div class="search-wrap">
       <span class="search-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
-      <input id="search" type="text" placeholder="Sök på namn, ingrediens, tagg…" autocomplete="off">
+      <input id="search" type="text" placeholder="Sök på namn, ingrediens, tagg…" autocomplete="off" aria-label="Sök recept">
       <button type="button" class="search-clear hidden" id="searchClear" aria-label="Rensa sökning">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
@@ -112,7 +112,7 @@
 
   <div id="weekNoData" class="no-data" style="display:none">
     <div class="no-data-icon"><svg class="icon icon-em-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/></svg></div>
-    <p>Ingen matsedel ännu — skapa familjens första plan!</p>
+    <p>Ingen matsedel ännu — skapa familjens första matsedel!</p>
     <button class="empty-cta-btn" onclick="openNewPlan()">+ Skapa matsedel</button>
   </div>
 
@@ -127,7 +127,7 @@
     </div>
 
     <div class="week-section" id="ingredientSection">
-      <div class="ingredient-section-header" onclick="toggleIngredientSection()">
+      <div class="ingredient-section-header" role="button" tabindex="0" aria-expanded="false" aria-controls="ingredientPreview" onclick="toggleIngredientSection()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleIngredientSection();}">
         <h2 class="section-title" id="ingredientSectionTitle">Veckans ingredienser</h2>
         <span class="ingredient-toggle-chevron">›</span>
       </div>
@@ -303,7 +303,7 @@
 
 
     <button class="generate-btn" id="generateBtn" onclick="generatePlan()">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 13.2 10.8 19 12 13.2 13.2 12 20 10.8 13.2 5 12 10.8 10.8z"/><path d="M19 5l.5 2 M5 19l-.5-2" opacity=".7"/></svg> Generera ny plan
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 13.2 10.8 19 12 13.2 13.2 12 20 10.8 13.2 5 12 10.8 10.8z"/><path d="M19 5l.5 2 M5 19l-.5-2" opacity=".7"/></svg> Generera ny matsedel
     </button>
     <div class="trigger-status" id="triggerStatus"></div>
 
@@ -337,7 +337,7 @@
       <div class="manual-add-title">Eller lägg till varor manuellt</div>
       <div class="manual-add-row">
         <input type="text" id="manualItemInputEmpty" class="manual-add-input"
-               placeholder="T.ex. Toalettpapper"
+               placeholder="T.ex. Toalettpapper" aria-label="Lägg till vara"
                onkeydown="if(event.key==='Enter')addManualItem('manualItemInputEmpty','manualAddBtnEmpty')">
         <button class="manual-add-btn" id="manualAddBtnEmpty"
                 onclick="addManualItem('manualItemInputEmpty','manualAddBtnEmpty')">Lägg till</button>
@@ -361,7 +361,7 @@
         <div class="manual-add-title">Lägg till vara</div>
         <div class="manual-add-row">
           <input type="text" id="manualItemInput" class="manual-add-input"
-                 placeholder="T.ex. Toalettpapper"
+                 placeholder="T.ex. Toalettpapper" aria-label="Lägg till vara"
                  onkeydown="if(event.key==='Enter')addManualItem()">
           <button class="manual-add-btn" id="manualAddBtn" onclick="addManualItem()">Lägg till</button>
         </div>
@@ -380,11 +380,11 @@
   <div id="listsContent"></div>
 </div>
 
-<div id="dispatchModal" class="modal-overlay" style="display:none" onclick="handleDispatchOverlayClick(event)">
+<div id="dispatchModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="dispatchModalTitle" onclick="handleDispatchOverlayClick(event)">
   <div class="modal-box dispatch-modal-box">
     <div class="modal-header">
       <h2 id="dispatchModalTitle">Skicka till Willys</h2>
-      <button onclick="closeDispatchModal()">✕</button>
+      <button onclick="closeDispatchModal()" aria-label="Stäng">✕</button>
     </div>
     <div id="dispatchModalBody"></div>
   </div>
@@ -466,11 +466,11 @@
   </button>
 </nav>
 
-<div id="editModal" class="modal-overlay" style="display:none" onclick="handleModalOverlayClick(event)">
+<div id="editModal" class="modal-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="editModalTitle" onclick="handleModalOverlayClick(event)">
   <div class="modal-box">
     <div class="modal-header">
       <h2 id="editModalTitle">Redigera recept</h2>
-      <button onclick="closeEditModal()">✕</button>
+      <button onclick="closeEditModal()" aria-label="Stäng">✕</button>
     </div>
     <label>Titel<input type="text" id="edit-title"></label>
     <label>Protein
@@ -496,11 +496,11 @@
   </div>
 </div>
 
-<div id="importModal" class="modal-overlay import-overlay" style="display:none" onclick="if(event.target===this)closeImportModal()">
+<div id="importModal" class="modal-overlay import-overlay" style="display:none" role="dialog" aria-modal="true" aria-labelledby="importModalTitle" onclick="if(event.target===this)closeImportModal()">
   <div class="import-sheet">
     <div class="import-handle"></div>
     <div class="import-header">
-      <h2>Lägg till recept</h2>
+      <h2 id="importModalTitle">Lägg till recept</h2>
       <button class="import-close" onclick="closeImportModal()" aria-label="Stäng">✕</button>
     </div>
     <div class="import-body">
@@ -517,7 +517,7 @@
       <div class="import-content">
         <div id="importUrlSection">
           <p class="import-hint">Klistra in länken till ett recept</p>
-          <input type="url" id="importUrlInput" placeholder="https://www.ica.se/recept/..." class="import-input">
+          <input type="url" id="importUrlInput" placeholder="https://www.ica.se/recept/..." class="import-input" aria-label="Receptlänk">
           <button class="btn-import-action" id="importUrlBtn" onclick="importFromUrl()">Hämta recept</button>
         </div>
         <div id="importPhotoSection" style="display:none">
@@ -616,6 +616,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=135"></script>
+<script type="module" src="js/app.js?v=136"></script>
 </body>
 </html>

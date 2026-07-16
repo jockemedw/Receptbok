@@ -98,15 +98,18 @@ export function renderCard(r) {
      data-tags="${escapeHtml((r.tags || []).join(' '))}"
      data-tested="${r.tested}"
      data-time="${r.time || 999}">
-  <div class="card-header" onclick="toggleCard(this.closest('.recipe-card'))">
+  <div class="card-header" role="button" tabindex="0"
+       onclick="toggleCard(this.closest('.recipe-card'))"
+       onkeydown="if(event.target===this&&(event.key==='Enter'||event.key===' ')){event.preventDefault();toggleCard(this.closest('.recipe-card'))}">
     <div class="recipe-num">${r.id}</div>
     <div class="card-info">
       <div class="card-title">${escapeHtml(r.title)}</div>
       <div class="card-meta">
         <span class="pill pill-protein">${proteinLabel[r.protein] || r.protein}</span>
         ${t ? `<span class="pill pill-time">⏱ ${t}</span>` : ''}
-        <span class="pill ${r.tested ? 'pill-tested' : 'pill-untested'} pill-toggle"
-              onclick="toggleTested(event, ${r.id})">${r.tested ? '✓ Provat' : 'Ej provat'}</span>
+        <span class="pill ${r.tested ? 'pill-tested' : 'pill-untested'} pill-toggle" role="button" tabindex="0"
+              onclick="toggleTested(event, ${r.id})"
+              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTested(event, ${r.id})}">${r.tested ? '✓ Provat' : 'Oprövat'}</span>
       </div>
     </div>
     <button class="select-btn"
@@ -295,7 +298,7 @@ export async function toggleTested(event, id) {
     if (error) throw error;
     r.tested = newTested;
     pill.className   = `pill ${newTested ? 'pill-tested' : 'pill-untested'} pill-toggle`;
-    pill.textContent = newTested ? '✓ Provat' : 'Ej provat';
+    pill.textContent = newTested ? '✓ Provat' : 'Oprövat';
     pill.closest('.recipe-card').dataset.tested = newTested;
   } catch {
     pill.style.outline = '2px solid var(--rust)';

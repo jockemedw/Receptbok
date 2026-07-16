@@ -44,11 +44,24 @@ const I = {
 // esc = utils.escapeHtml (samma semantik) — en enda implementation i utils.
 const esc = escapeHtml;
 
+// Serverns svenska {error}-text flaggas userFacing → catch-blocken visar den.
+// Transport-/parsfel (fetch-TypeError 'Failed to fetch', SyntaxError från
+// res.json() på icke-JSON) saknar flaggan och faller till svensk fallback, så
+// råa engelska tekniska strängar aldrig når användaren.
+function dlxServerError(msg) {
+  const e = new Error(msg || 'Okänt fel');
+  e.userFacing = true;
+  return e;
+}
+function dlxUserMessage(e, fallback) {
+  return (e && e.userFacing && e.message && e.message !== 'fel' && e.message !== 'Okänt fel') ? e.message : fallback;
+}
+
 // "Rester/använd upp"-dag (backlog #14, lätta varianten): egna anteckningar vars
 // text handlar om rester känns igen och får en egen markör — ren rendering,
 // samma custom-day-data som förut. (Datan bevisar mönstret: familjen skriver
 // redan "Rester"/"Kylskåpstömning" som noteringar.)
-const RESTER_RE = /rester|kylskåpstömning|kylskåpständning|använd upp|tömma kylen/i;
+const RESTER_RE = /rester|kylskåpstömning|kylskåpsstädning|använd upp|tömma kylen/i;
 function customNoteMark(note) {
   if (note && RESTER_RE.test(note)) {
     return `<span class="dlx-own dlx-own-leftovers" title="Rester/använd upp" aria-label="Rester/använd upp">${I.leftovers}</span>`;
@@ -939,7 +952,7 @@ window.dlxPickMoveTarget = async function (before) {
       body: JSON.stringify({ date: from, before: before || null }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'fel');
+    if (!res.ok) throw dlxServerError(data.error);
     window._dlxMove = null;
     suppressEcho();
     rerender(data.weeklyPlan, window._lastShop);
@@ -950,7 +963,7 @@ window.dlxPickMoveTarget = async function (before) {
   } catch (e) {
     move.pending = null;
     renderDeluxe();   // läget kvar — användaren kan välja en annan plats eller avbryta
-    window.showToast?.(e.message?.length > 4 ? e.message : 'Kunde inte flytta dagen — prova igen.', { type: 'error' });
+    window.showToast?.(dlxUserMessage(e, 'Kunde inte flytta dagen — prova igen.'), { type: 'error' });
   } finally {
     window._opBusy = false;
   }
@@ -984,7 +997,7 @@ async function dlxPickSwapTarget(toDate) {
       body: JSON.stringify({ date1: swap.from, date2: toDate }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'fel');
+    if (!res.ok) throw dlxServerError(data.error);
     window._dlxSwap = null;
     suppressEcho();
     // Egna anteckningar kan ha bytt datum → spegla det innan re-render.
@@ -994,7 +1007,7 @@ async function dlxPickSwapTarget(toDate) {
   } catch (e) {
     swap.pending = null;
     renderDeluxe();   // läget kvar — användaren kan välja ett annat mål eller avbryta
-    window.showToast?.(e.message?.length > 4 ? e.message : 'Kunde inte byta dagarna — prova igen.', { type: 'error' });
+    window.showToast?.(dlxUserMessage(e, 'Kunde inte byta dagarna — prova igen.'), { type: 'error' });
   } finally {
     window._opBusy = false;
   }

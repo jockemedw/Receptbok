@@ -100,6 +100,7 @@ export const NORMALIZATION_TABLE = {
   // Svamp
   "champinjon": "champinjoner", "skivade champinjoner": "champinjoner",
   "shiitakesvamp": "shiitake", "blandad svamp": "svamp",
+  "portobellosvamp": "champinjoner", "baby bella-svamp": "champinjoner",
   // Spenat
   "bladspenat": "spenat", "babyspenat": "spenat", "färsk spenat": "spenat",
   "fryst hackad spenat": "fryst spenat",
@@ -177,11 +178,15 @@ export const NORMALIZATION_TABLE = {
   "tortillas": "tortilla",
   "potatisar": "potatis", "sötpotatisar": "sötpotatis",
   "citroner": "citron", "limefrukter": "lime", "lime frukter": "lime",
-  "rödlökar": "rödlök",
   // Kål-varianter
   "lacinatokål": "grönkål",
   // Buljong plural
   "fiskbuljongtärningar": "fiskbuljong",
+  "grönsaksbuljongtärningar": "grönsaksbuljong", "hönsbuljongtärningar": "hönsbuljong",
+  "buljongtärningar": "buljongtärning", "umamibuljongtärningar": "buljongtärning",
+  // Self-canons (Session 83) — råvaror som redan är kanoniska
+  "matvete": "matvete", "torsk": "torsk", "sej": "sej", "pizzadeg": "pizzadeg",
+  "nori": "nori", "nori-ark": "nori", "citrongräs": "citrongräs",
 
   // ─── Fas 8.2 — canon-utökning (Session 77) ───────────────────────────────
   // Höjer pris-matchbarheten. Bakåt-tokenskanningen fångar varianter, så ofta

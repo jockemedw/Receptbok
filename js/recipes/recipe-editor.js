@@ -148,8 +148,9 @@ export async function saveRecipe() {
       card.querySelector('.card-meta').innerHTML = `
         <span class="pill pill-protein">${proteinLabel[updated.protein] || updated.protein}</span>
         ${t ? `<span class="pill pill-time">⏱ ${t}</span>` : ''}
-        <span class="pill ${updated.tested ? 'pill-tested' : 'pill-untested'} pill-toggle"
-              onclick="toggleTested(event, ${updated.id})">${updated.tested ? '✓ Provat' : 'Ej provat'}</span>`;
+        <span class="pill ${updated.tested ? 'pill-tested' : 'pill-untested'} pill-toggle" role="button" tabindex="0"
+              onclick="toggleTested(event, ${updated.id})"
+              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTested(event, ${updated.id})}">${updated.tested ? '✓ Provat' : 'Oprövat'}</span>`;
       const inner = card.querySelector('.detail-inner');
       inner.innerHTML = renderDetailInner(updated);
       inner.dataset.rendered = '1';

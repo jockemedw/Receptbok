@@ -31,11 +31,14 @@ window.addEventListener('scroll', () => {
   window.lastScrollY = y;
 }, { passive: true });
 
-scrollBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
-
 function prefersReducedMotion() {
   return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 }
+
+scrollBtn.addEventListener('click', () => {
+  if (prefersReducedMotion()) window.scrollTo(0, 0);
+  else window.scrollTo({ top: 0, behavior: 'smooth' });
+});
 
 export function smoothScrollTo(target, duration) {
   const start = window.scrollY;

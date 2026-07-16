@@ -2,14 +2,22 @@
 
 import { CAT_ICONS, escapeHtml } from '../utils.js';
 
+function syncIngredientAria(section) {
+  const header = section.querySelector('.ingredient-section-header');
+  if (header) header.setAttribute('aria-expanded', String(section.classList.contains('ingredient-section-open')));
+}
+
 export function toggleIngredientSection() {
-  document.getElementById('ingredientSection').classList.toggle('ingredient-section-open');
+  const section = document.getElementById('ingredientSection');
+  section.classList.toggle('ingredient-section-open');
+  syncIngredientAria(section);
 }
 
 export function renderIngredientPreview(recipeItems, movedAt, expand = false) {
   const section = document.getElementById('ingredientSection');
   if (expand) section.classList.add('ingredient-section-open');
   else        section.classList.remove('ingredient-section-open');
+  syncIngredientAria(section);
 
   const btn = document.getElementById('flyttaBtn');
   if (!recipeItems || Object.values(recipeItems).every(v => v.length === 0)) {
