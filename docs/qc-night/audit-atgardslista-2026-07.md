@@ -90,7 +90,9 @@ Fil-klustrad städ-workflow (10 agenter + verify), hela sviten grön, render-onl
 - [x] **PWA:** maskable-ikon precache (F003), neutral manifest-färg (F160).
 - [x] **Canon (separat commit, datamuterande):** F113 dubblettnyckel + canon-kandidater i NORMALIZATION_TABLE. Restpost: `offers.json` raderad.
 - [ ] **Medvetet lämnade (designbeslut, ej render-only):** F155 (färg/ikon-väljarens tätpackade träffytor), F159 (mörk-tema-toast inverse-surface), F304 (toast pointer-events = interaktionsändring). Tas som designsteg om önskat.
-- [ ] **Kvar av Batch 13 (backend-beteende, ej denna omgång):** api-felkontrakt-enhetlighet + svalda DB-fel · shopping/plan/dispatch skriv-logik · F256 (case-okänslig tagg-matchning i select-recipes — recept-skrivväg, kräver granskning) · tester (F272–274 regressionstäckning) · resterande js P2 per område.
+- [x] **Inköpslistans parser-kvalitet (6 fynd, PR #186, datamuterande/testgrindat):** F105 (generell slash-bråk), F106 (eller-ombyggnad ordgräns), F107 (friendlyRound-golv, ej "0 dl"), F109 (svensk å/ä/ö-sortering), F110 (implicit+"st"-merge), F271 (osynliga tecken/NBSP). 15 nya regressionsassertions i shopping.test.js (99→114), korpus grön.
+- [ ] **Kvar av Batch 13 (kräver Joakims OK — invariant-känsligt/utåtriktat):** `generate.js`-felhärdning F092/F094/F095/F225 (plan-aktivering, invariant #1) · dispatch-idempotens F124/F226/F126/F127/F128 (dubbel Willys-korg) · rate-limiting F208/F209/F210 · F108/F269 (kategoriserings-ordning, högre regg-risk) · F256 (case-okänslig tagg-matchning, recept-skrivväg) · api-felkontrakt-svepet (Batch 1-mönstret för icke-generate/dispatch-endpoints) · tester F272–274 · resterande js P2 per område.
+- [ ] **Säkra defensiva guards (kan tas autonomt nästa omgång):** F134 (extractRecipeCanons TypeError-guard — stänger annars av prisopt för hela hushållet), F133 (BABY_FOOD_RE), F138 (alert HTTP-fel), F141 (proxy `this`), F116/F118/F119/F282 (import-validering), F123 (död kod).
 
 ## Live-verifiering (Joakim, mobil — även i status.md-kön)
 - [ ] Riktig `/api/deals` + dispatch → Willys-JSON-formaten parsas fortfarande
