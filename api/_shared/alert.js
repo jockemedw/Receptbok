@@ -9,12 +9,19 @@ export async function notifyAlert(message) {
   const url = process.env.ALERT_WEBHOOK;
   if (!url) return false;
   try {
-    await fetch(url, {
+    const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "text/plain; charset=utf-8" },
       body: String(message).slice(0, 500),
       signal: AbortSignal.timeout(3000),
     });
+    // F138: fetch() kastar inte vid HTTP-fel (4xx/5xx) — en död/felkonfig-topic
+    // (borttagen ntfy-topic → 404, fel token → 403) rapporterades förut som lyckat
+    // larm. Kontrollera res.ok så tyst-larm-detektionen faktiskt blir meningsfull.
+    if (!res.ok) {
+      console.warn(`notifyAlert: webhook svarade ${res.status}`);
+      return false;
+    }
     return true;
   } catch {
     return false;

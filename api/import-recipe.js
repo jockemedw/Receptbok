@@ -190,13 +190,19 @@ function extractJsonLd(html) {
   const scriptRegex =
     /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi;
   let match;
+  // F282: @type kan vara en array (["Recipe","HowTo"]) — vanligt hos SEO-plugins.
+  // Strikt === "Recipe" missade dem och lät giltig JSON-LD falla till Gemini.
+  const isRecipe = (t) => (Array.isArray(t) ? t.includes("Recipe") : t === "Recipe");
   while ((match = scriptRegex.exec(html)) !== null) {
     try {
       let data = JSON.parse(match[1]);
-      if (Array.isArray(data)) data = data.find((d) => d["@type"] === "Recipe");
-      if (data?.["@graph"]) data = data["@graph"].find((d) => d["@type"] === "Recipe");
-      if (!data || data["@type"] !== "Recipe") continue;
-      return mapJsonLdToRecipe(data);
+      if (Array.isArray(data)) data = data.find((d) => isRecipe(d["@type"]));
+      if (data?.["@graph"]) data = data["@graph"].find((d) => isRecipe(d["@type"]));
+      if (!data || !isRecipe(data["@type"])) continue;
+      const recipe = mapJsonLdToRecipe(data);
+      // F116: en JSON-LD-träff utan ingredienser är i praktiken en miss — fall
+      // igenom till nästa script/Gemini i stället för att returnera ett tomt recept.
+      if (recipe.ingredients?.length) return recipe;
     } catch {
       continue;
     }
@@ -332,7 +338,9 @@ async function callGeminiRaw(parts, apiKey) {
     }
 
     if (geminiRes.status === 429 || geminiRes.status === 503) {
-      lastError = `${model} har hög belastning`;
+      // F123: fast användarvänlig text — läck inte det interna modellnamnet, och
+      // gör den slutliga fallbacken (nedan) konsekvent i stället för oåtkomlig.
+      lastError = "Tjänsten har hög belastning — prova igen om en stund.";
       continue;
     }
 
@@ -347,7 +355,7 @@ async function callGeminiRaw(parts, apiKey) {
   }
 
   if (!geminiRes || !geminiRes.ok) {
-    throw new Error(lastError || "Alla modeller har hög belastning — prova igen om en stund.");
+    throw new Error(lastError || "Tjänsten har hög belastning — prova igen om en stund.");
   }
 
   const data = await geminiRes.json();
