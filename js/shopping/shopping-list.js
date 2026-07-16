@@ -505,7 +505,7 @@ function shopProgressHtml() {
   const { total, done } = shopCounts();
   if (!total) return '';
   const off = (RING_C * (1 - done / total)).toFixed(1);
-  return `<div id="shopProgress" class="shop-progress${done >= total ? ' complete' : ''}">
+  return `<div id="shopProgress" class="shop-progress${done >= total ? ' complete' : ''}" role="status" aria-live="polite">
     <span class="shop-ring" aria-hidden="true">
       <svg viewBox="0 0 60 60">
         <circle class="shop-ring-track" cx="30" cy="30" r="26"/>

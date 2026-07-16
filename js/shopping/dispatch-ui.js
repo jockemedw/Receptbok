@@ -40,7 +40,7 @@ export function openDispatchConfirm() {
     return;
   }
   showResult(`
-    <p>Skicka ${totalCount} ingredienser till din Willys-korg?</p>
+    <p>Skicka ${totalCount} ingrediens${totalCount !== 1 ? 'er' : ''} till din Willys-korg?</p>
     <p class="dispatch-note">Matchade produkter (rea och söknings-träffar) läggs in i korgen. Omatchade rapporteras efteråt så du kan lägga till dem själv.</p>
     <div class="dispatch-actions">
       <button class="btn-secondary" onclick="closeDispatchModal()">Avbryt</button>
@@ -104,7 +104,7 @@ function renderResult(data) {
         }: ${data.prefMisses.map(p => escapeHtml(p.canon)).join(", ")} — vanlig variant ligger i korgen.</p>`
       : "";
     showResult(`
-      <p>✓ ${data.addedCount} produkter tillagda i din Willys-korg.</p>
+      <p>✓ ${data.addedCount} produkt${data.addedCount !== 1 ? 'er' : ''} tillagda i din Willys-korg.</p>
       ${sourceNote}
       ${prefHtml}
       ${missingHtml}

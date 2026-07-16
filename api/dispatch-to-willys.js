@@ -83,7 +83,7 @@ export default async function handler(req, res) {
       return res.status(200).json({
         ok: false,
         error: "auth_expired",
-        message: "Dina Willys-cookies har gått ut. Be Joakim uppdatera dem i Vercel.",
+        message: "Kopplingen till Willys behöver förnyas. Utskicket fungerar igen när den är uppdaterad.",
       });
     }
     if (!result.ok && result.error === "no_matches") {
@@ -113,7 +113,7 @@ export default async function handler(req, res) {
     return res.status(500).json({
       ok: false,
       error: "internal",
-      message: "Något gick fel vid dispatch — prova igen om en stund.",
+      message: "Något gick fel när listan skulle skickas till Willys — prova igen om en stund.",
     });
   }
 }

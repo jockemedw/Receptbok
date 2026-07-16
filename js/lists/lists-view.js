@@ -393,7 +393,7 @@ function detailHtml(list) {
     : `<div class="content-heading fl-detail-heading"><h1 class="content-heading-title">${escapeHtml(list.title)}</h1></div>`;
 
   const rows = items.map((i) => `
-    <li class="shopping-item${i.checked ? ' checked' : ''}" onclick="flToggleItem(this,'${i.id}')">
+    <li class="shopping-item${i.checked ? ' checked' : ''}" role="button" tabindex="0" onclick="flToggleItem(this,'${i.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();flToggleItem(this,'${i.id}');}">
       <span class="item-checkbox">${i.checked ? '✓' : ''}</span>
       <span class="item-text">${escapeHtml(i.text)}</span>
       ${_editMode ? `<button type="button" class="fl-remove" aria-label="Ta bort raden"

@@ -131,13 +131,13 @@ export function renderPreferencesUI() {
   }).join("");
 
   anchor.innerHTML = `
-    <button class="prefs-header" onclick="togglePrefsPanel()">
+    <button class="prefs-header" onclick="togglePrefsPanel()" aria-expanded="false" aria-controls="prefsBody">
       ${ICON_GEAR} Inköpspreferenser
       <span class="prefs-chevron" id="prefsChevron">›</span>
     </button>
     <div class="prefs-body" id="prefsBody" style="display:none">
       <div class="prefs-group">
-        <div class="prefs-label">Blockade varumärken</div>
+        <div class="prefs-label">Blockerade varumärken</div>
         <div class="prefs-brand-row">
           <input id="brandInput" type="text" placeholder="Lägg till varumärke..." class="prefs-brand-input"
                  onkeydown="if(event.key==='Enter'){addBrand();event.preventDefault()}">
@@ -162,9 +162,11 @@ export function renderPreferencesUI() {
 function togglePrefsPanel() {
   const body = document.getElementById("prefsBody");
   const chev = document.getElementById("prefsChevron");
+  const btn = document.querySelector(".prefs-header");
   const open = body.style.display === "none";
   body.style.display = open ? "" : "none";
   chev.classList.toggle("open", open);
+  if (btn) btn.setAttribute("aria-expanded", String(open));
 }
 
 export function buildPrompt() {

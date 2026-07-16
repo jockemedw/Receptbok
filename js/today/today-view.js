@@ -188,7 +188,7 @@ function weekHtml(weekDays, sumLeft, sumRight) {
   return `
     <div class="today-section-head">
       <h2 class="today-h2">Vecka ${isoWeekNumber(todayIso)}</h2>
-      <span class="today-link" onclick="switchTab('vecka')">Hela matsedeln</span>
+      <span class="today-link" role="button" tabindex="0" onclick="switchTab('vecka')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchTab('vecka');}">Hela matsedeln</span>
     </div>
     <button type="button" class="today-weave-card" onclick="switchTab('vecka')" aria-label="Öppna matsedeln">
       <div class="today-weave-row">${threads}</div>
@@ -265,7 +265,7 @@ function pinnedNotesHtml() {
   return `
     <div class="today-section-head">
       <h2 class="today-h2">Fästa lappar</h2>
-      <span class="today-link" onclick="switchTab('listor')">Alla anteckningar</span>
+      <span class="today-link" role="button" tabindex="0" onclick="switchTab('listor')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchTab('listor');}">Alla anteckningar</span>
     </div>
     <div class="today-notes">${cards}</div>`;
 }

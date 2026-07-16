@@ -89,13 +89,6 @@ export function toggleProtein(btn) {
   updateSettingsPreview();
 }
 
-export function toggleSettings() {
-  const panel = document.getElementById('settingsPanel');
-  const arrow = document.getElementById('settingsArrow');
-  const open  = panel.classList.toggle('open');
-  arrow.classList.toggle('open', open);
-}
-
 export function updateSettingsPreview() {
   const preview = document.getElementById('settingsPreview');
   if (!preview || !window._allRecipes) return;
@@ -311,7 +304,13 @@ export async function generatePlan() {
       body: JSON.stringify(body),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Okänt fel');
+    if (!res.ok) {
+      // Serverns svenska {error}-text flaggas userFacing så catch-blocket kan
+      // visa den; nätverks-/parse-fel saknar flaggan och faller till svenska.
+      const e = new Error(data.error || 'Okänt fel');
+      e.userFacing = true;
+      throw e;
+    }
 
     status.textContent = `✓ Klar! ${data.days} dagar planerade. Bekräfta matsedeln för att bygga inköpslistan.`;
     status.className   = 'trigger-status success';
@@ -361,7 +360,9 @@ export async function generatePlan() {
       setTimeout(() => window.openDealsPopup(), 400);
     }
   } catch (err) {
-    status.textContent = `Fel: ${err.message}`;
+    status.textContent = (err.userFacing && err.message && err.message !== 'Okänt fel')
+      ? err.message
+      : 'Kunde inte skapa matsedeln — kontrollera nätet och prova igen.';
     status.className   = 'trigger-status error';
     btn.disabled       = false;
   }
@@ -408,7 +409,6 @@ export function stepNum(id, delta) {
 window.initDatePickers      = initDatePickers;
 window.getSelectedProteins  = getSelectedProteins;
 window.toggleProtein        = toggleProtein;
-window.toggleSettings       = toggleSettings;
 window.updateSettingsPreview = updateSettingsPreview;
 window.updateDateHint       = updateDateHint;
 window.toggleDayBlock       = toggleDayBlock;

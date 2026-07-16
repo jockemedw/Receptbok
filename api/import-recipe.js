@@ -162,7 +162,7 @@ async function handleUrl(url, res) {
   // Försök 2: Gemini-fallback om nyckel finns
   if (!apiKey) {
     return res.status(422).json({
-      error: "Den här sajten stöds inte — prova en annan receptsajt eller lägg in receptet manuellt.",
+      error: "Automatisk import är inte konfigurerad just nu — lägg in receptet manuellt så länge.",
     });
   }
 
@@ -339,7 +339,8 @@ async function callGeminiRaw(parts, apiKey) {
     if (!geminiRes.ok) {
       let detail = "";
       try { detail = (await geminiRes.json())?.error?.message || ""; } catch {}
-      throw new Error(detail || `Gemini svarade ${geminiRes.status} — prova igen.`);
+      if (detail) console.error(`Gemini ${geminiRes.status}: ${detail}`);
+      throw new Error("Kunde inte tolka receptet just nu — prova igen om en stund.");
     }
 
     break;

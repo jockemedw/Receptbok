@@ -142,10 +142,10 @@ export function openCookMode(recipeId) {
   _cookIngs = (r.ingredients || []).map((raw) => ({ raw, parsed: parseQty(raw) }));
   const factor0 = _cookServings / _cookBase;
   const ings = _cookIngs.map((entry) =>
-    `<li class="cook-ing" onclick="this.classList.toggle('done')"><span class="cook-ing-box"></span><span>${ingLineHtml(entry, factor0)}</span></li>`
+    `<li class="cook-ing" role="button" tabindex="0" onclick="this.classList.toggle('done')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('done');}"><span class="cook-ing-box"></span><span>${ingLineHtml(entry, factor0)}</span></li>`
   ).join('');
   const steps = (r.instructions || []).map((s, i) =>
-    `<li class="cook-step" onclick="this.classList.toggle('done');window._cookProgress()">
+    `<li class="cook-step" role="button" tabindex="0" onclick="this.classList.toggle('done');window._cookProgress()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.classList.toggle('done');window._cookProgress();}">
        <span class="cook-step-num">${i + 1}</span><span class="cook-step-text">${escapeHtml(s)}</span>
      </li>`
   ).join('');
@@ -159,6 +159,9 @@ export function openCookMode(recipeId) {
 
   _overlay = document.createElement('div');
   _overlay.className = 'cook-overlay';
+  _overlay.setAttribute('role', 'dialog');
+  _overlay.setAttribute('aria-modal', 'true');
+  _overlay.setAttribute('aria-label', 'Matlagningsläge');
   _overlay.innerHTML = `
     <div class="cook-safe-strip"></div>
     <div class="cook-head">

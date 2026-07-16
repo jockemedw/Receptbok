@@ -190,7 +190,10 @@ export function normalizeOffers(results) {
       qualifyingCount,
       realMixAndMatch: !!promo.realMixAndMatch,
       conditionLabel: promo.conditionLabel || null,
-      validUntil: promo.validUntil ? new Date(promo.validUntil).toISOString() : null,
+      validUntil: (() => {
+        const vu = promo.validUntil ? new Date(promo.validUntil) : null;
+        return vu && !isNaN(vu) ? vu.toISOString() : null;
+      })(),
       comparePrice: item.comparePrice || null,
       priceUnit: item.priceUnit || null,
     });

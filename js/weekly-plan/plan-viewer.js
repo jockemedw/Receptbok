@@ -9,15 +9,21 @@ const ICON_POT = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="curr
 const ICON_NOTE = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h11l3 3v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><path d="M8 11h8 M8 14h8 M8 17h5"/></svg>';
 const ICON_CALENDAR = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>';
 
+// Fel som kastas med en känd svensk server-text flaggas userFacing → catch-
+// blocken visar dem för användaren. Nätverks-/parse-fel (t.ex. webbläsarens
+// TypeError 'Failed to fetch') saknar flaggan och faller till den svenska
+// fallbacktexten, så råa engelska tekniska strängar aldrig når användaren.
+function serverError(msg) {
+  const e = new Error(msg || 'Okänt fel');
+  e.userFacing = true;
+  return e;
+}
+function userFacingMessage(e, fallback) {
+  return (e && e.userFacing && e.message && e.message !== 'Okänt fel') ? e.message : fallback;
+}
+
 // ── Realtime-prenumeration för matsedeln ──────────────────────────────────────
 let _planChannel = null;
-
-function unsubscribeMealDays() {
-  if (_planChannel) {
-    window.db.removeChannel(_planChannel);
-    _planChannel = null;
-  }
-}
 
 // F231: ett meal_days-event som kommer in under en interaktion (byt-läge,
 // deluxe-vyns byt/flytta-läge) eller vårt eget 4s-ekofönster fick tidigare
@@ -301,9 +307,10 @@ export async function selectRecipeForDay(event, recipeId, title) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ date, newRecipeId: recipeId }),
     });
-    if (!res.ok) throw new Error();
+    let data = {};
+    try { data = await res.json(); } catch { /* ingen JSON */ }
+    if (!res.ok) throw serverError(data.error);
 
-    const data = await res.json();
     updateLastPlanDay(date, recipeId, title);
     window._planMutateUntil = Date.now() + 4000;   // dämpa realtids-ekot, se suppressEcho() i plan-viewer-deluxe.js
     if (data.shoppingList) {
@@ -317,7 +324,7 @@ export async function selectRecipeForDay(event, recipeId, title) {
     exitReplaceMode();
     renderWeeklyPlanData(window._lastPlan || null, window._lastShop || null, false, window._planArchive, window._customDays);
     window.switchTab('vecka');
-  } catch {
+  } catch (err) {
     btn.disabled    = false;
     btn.textContent = 'Välj';
     const banner = document.getElementById('replaceBanner');
@@ -325,7 +332,7 @@ export async function selectRecipeForDay(event, recipeId, title) {
       const e = document.createElement('span');
       e.className  = 'replace-err';
       e.style.cssText = 'color:var(--rust);font-size:0.8rem';
-      e.textContent   = 'Kunde inte spara — prova igen.';
+      e.textContent   = userFacingMessage(err, 'Kunde inte spara — prova igen.');
       banner.insertBefore(e, banner.querySelector('.replace-banner-cancel'));
     }
   }
@@ -462,7 +469,7 @@ async function modifyDay(date, action) {
       body: JSON.stringify({ date, action }),
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Okänt fel');
+    if (!res.ok) throw serverError(data.error);
 
     // Fri dag-editorn bor i dag-sheeten → stäng den vid lyckat resultat.
     window.dlxCloseSheet?.();
@@ -480,7 +487,7 @@ async function modifyDay(date, action) {
   } catch (e) {
     const actionMsg = { free: 'göra fri', unfree: 'ångra fri dag på' };
     const fallback = `Kunde inte ${actionMsg[action] || 'ändra'} dagen — prova igen.`;
-    window.showToast?.((e.message && e.message !== 'Okänt fel') ? e.message : fallback, { type: 'error' });
+    window.showToast?.(userFacingMessage(e, fallback), { type: 'error' });
   } finally {
     window._opBusy = false;
   }
@@ -629,7 +636,7 @@ export async function discardPlan() {
     const res = await window.apiFetch('/api/discard-plan', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
     let data = {};
     try { data = await res.json(); } catch { /* ingen JSON */ }
-    if (!res.ok) throw new Error(data.error || `Serverfel ${res.status}`);
+    if (!res.ok) throw serverError(data.error || `Serverfel ${res.status}`);
 
     window.planConfirmed = false;
     window.dlxCloseSheet?.();
@@ -655,7 +662,9 @@ export async function discardPlan() {
     btn.disabled = false;
     if (confirmBtn) confirmBtn.disabled = false;
     btn.textContent = 'Kassera förslag';
-    statusEl.textContent = `Kunde inte kassera: ${e.message || 'okänt fel'} — prova igen.`;
+    statusEl.textContent = e.userFacing
+      ? `Kunde inte kassera: ${e.message} — prova igen.`
+      : 'Kunde inte kassera — prova igen.';
     statusEl.className = 'confirm-status';
     console.error('discardPlan error:', e);
   }
@@ -671,7 +680,7 @@ export async function confirmPlan() {
   try {
     const res  = await window.apiFetch('/api/confirm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Okänt fel');
+    if (!res.ok) throw serverError(data.error);
 
     window.planConfirmed = true;
     document.getElementById('confirmPlanWrap').style.display = 'none';
@@ -687,7 +696,7 @@ export async function confirmPlan() {
   } catch (e) {
     btn.disabled    = false;
     btn.textContent = '✓ Bekräfta och bygg inköpslista';
-    statusEl.textContent = 'Kunde inte bekräfta — prova igen.';
+    statusEl.textContent = userFacingMessage(e, 'Kunde inte bekräfta — prova igen.');
     statusEl.className   = 'confirm-status';
   }
 }

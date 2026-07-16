@@ -76,7 +76,7 @@ export async function importFromUrl() {
   } catch (e) {
     if (e.name === 'AbortError') return;   // sheeten stängdes av användaren (F197) — visa ingen felruta
     fb.style.color = 'var(--rust)';
-    fb.textContent = e.message || 'Kunde inte hämta receptet — kontrollera adressen.';
+    fb.textContent = 'Kunde inte hämta receptet — kontrollera adressen.';
     btn.disabled   = false;
   } finally {
     if (importAbortController === controller) importAbortController = null;
@@ -115,7 +115,7 @@ export async function importFromPhoto() {
   } catch (e) {
     if (e.name === 'AbortError') return;   // sheeten stängdes av användaren (F197) — visa ingen felruta
     fb.style.color = 'var(--rust)';
-    fb.textContent = e.message || 'Kunde inte tolka bilden — prova med klarare ljus eller närmre avstånd.';
+    fb.textContent = 'Kunde inte tolka bilden — prova med klarare ljus eller närmre avstånd.';
     btn.disabled   = false;
   } finally {
     clearInterval(msgTimer);
