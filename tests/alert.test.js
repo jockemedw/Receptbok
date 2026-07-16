@@ -49,6 +49,14 @@ const realUrl = process.env.ALERT_WEBHOOK;
   assertEq(r, false, "fetch-fel: returnerar false");
 }
 
+// 4. Webhook svarar HTTP-fel (t.ex. borttagen topic → 404) → returnerar false (F138)
+{
+  process.env.ALERT_WEBHOOK = "https://ntfy.sh/receptbok-test";
+  global.fetch = async () => ({ ok: false, status: 404 });
+  const r = await notifyAlert("x");
+  assertEq(r, false, "webhook 404: returnerar false (inte falskt lyckat larm)");
+}
+
 // Återställ globalt tillstånd
 global.fetch = realFetch;
 if (realUrl === undefined) delete process.env.ALERT_WEBHOOK;

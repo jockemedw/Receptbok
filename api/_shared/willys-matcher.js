@@ -106,6 +106,7 @@ export function extractOfferCanon(offer) {
 function extractRecipeCanons(recipe) {
   const canons = new Set();
   for (const raw of recipe.ingredients || []) {
+    if (typeof raw !== "string") continue;  // F134: en trasig icke-sträng-rad kraschar annars parseIngredient → prisopt av för hela hushållet
     const { name } = parseIngredient(raw);
     const canon = normalizeName(name);
     if (canon && !SAVING_SKIP_CANONS.has(canon)) canons.add(canon);
