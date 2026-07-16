@@ -404,6 +404,10 @@ function parseFraction(str) {
 }
 
 function cleanIngredient(raw) {
+  // F271: strippa osynliga formatteringstecken (mjukt bindestreck U+00AD, zero-width
+  // space/ZWNJ/ZWJ, BOM) och normalisera NBSP → vanligt mellanslag FÖRST, annars
+  // överlever t.ex. "bryssel[U+00AD]kål" och ger en dubblettrad i fel kategori.
+  raw = raw.replace(/[­​‌‍﻿]/g, "").replace(/ /g, " ");
   let s = raw.includes(":") ? raw.split(":")[1].trim() : raw.trim();
   s = s.replace(/\s*\(.*?\)\s*/g, " ").trim();
   s = s.replace(/^(ev\.?\s+|eventuellt\s+|ca\s+)/i, "");
@@ -427,7 +431,11 @@ function cleanIngredient(raw) {
     const lastBeforeWord = beforeEller.split(/\s+/).pop().toLowerCase();
     if (ADJEKTIV.has(lastBeforeWord)) {
       const lastWord = s.replace(/,\s+.*$/, "").trim().split(/\s+/).pop().toLowerCase();
-      s = beforeEller.replace(new RegExp("\\s+" + lastBeforeWord + "$", "i"), " " + lastWord).trim();
+      // F106: ankra mot ordgräns (^|\s) i stället för obligatorisk whitespace —
+      // annars träffar inte ersättningen när adjektivet är ENDA ordet före "eller"
+      // (t.ex. "fryst eller färsk spenat" → beforeEller="fryst") och ordet efter
+      // "eller" tappas. $1 bevarar ev. föregående ord/mängd utan dubbelt mellanslag.
+      s = beforeEller.replace(new RegExp("(^|\\s)" + lastBeforeWord + "$", "i"), "$1" + lastWord).trim();
     } else if (lastBeforeWord.endsWith("-")) {
       // "grönsaks- eller kycklingbuljong" → extract base noun from afterEller
       const afterEller = s.split(" eller ").slice(1).join(" eller ").trim();
@@ -444,9 +452,15 @@ export function parseIngredient(raw) {
   // Normalize slash fraction ranges like "1/4–1/2" (take max) before simple fractions
   raw = raw.replace(/(\d+)\/(\d+)\s*[–-]\s*(\d+)\/(\d+)/g, (_, an, ad, bn, bd) =>
     String(Math.round(Math.max(+an / +ad, +bn / +bd) * 100) / 100).replace('.', ','));
-  // Normalize simple slash fractions: 3/4→¾, 1/2→½, 1/4→¼, 1/3→0,33, 2/3→0,67
-  raw = raw.replace(/\b3\/4\b/g, '¾').replace(/\b1\/2\b/g, '½').replace(/\b1\/4\b/g, '¼')
-           .replace(/\b2\/3\b/g, '0,67').replace(/\b1\/3\b/g, '0,33');
+  // Normalize slash-bråk generellt (F105): tidigare konverterades bara fem
+  // hårdkodade bråk — "3/8", "1/6", "5/8" m.fl. föll igenom och korrumperade
+  // mängd/namn. 3/4·1/2·1/4 behålls som unicode-tecken (befintligt beteende);
+  // 2/3 och 1/3 faller ut som 0,67 / 0,33 via samma 2-decimalers avrundning som förr.
+  raw = raw.replace(/\b(\d+)\/(\d+)\b/g, (m, n, d) => {
+    const UNICODE = { "3/4": "¾", "1/2": "½", "1/4": "¼" };
+    if (UNICODE[m]) return UNICODE[m];
+    return String(Math.round((+n / +d) * 100) / 100).replace(".", ",");
+  });
   // Normalize svenska "X till Y"-intervall → bindestreck-range (F270), t.ex.
   // "4,8 till 7,2 dl" → "4,8-7,2 dl". Decimalkomma konverteras till punkt i
   // samma steg, annars misslyckas range-detekteringen i parseFraction när
@@ -640,7 +654,7 @@ const DECIMAL_MEASURE_UNITS = new Set(["dl", "cl", "l", "liter", "kg", "msk", "t
 // oskalade rader (faktor 1) lämnas exakt som idag, så default = noll regression.
 function friendlyRound(amount, unit) {
   if (INTEGER_MEASURE_UNITS.has(unit)) return Math.max(1, Math.round(amount));
-  if (DECIMAL_MEASURE_UNITS.has(unit)) return Math.round(amount * 4) / 4;   // kvarts-precision: 1,75 dl
+  if (DECIMAL_MEASURE_UNITS.has(unit)) return Math.max(0.25, Math.round(amount * 4) / 4);   // kvarts-precision + golv 0,25 så nedskalning aldrig ger "0 dl" (F107)
   return Math.ceil(amount - 1e-9);   // styckevaror uppåt till heltal
 }
 
@@ -668,7 +682,12 @@ export function buildShoppingList(selectedIds, allRecipes, opts = {}) {
       if (amount === null) {
         noAmount.set(normalized, normalized);
       } else {
-        const key = `${normalized}||${unit ?? ""}`;
+        // F110: explicit "st" och enhetslöst (implicit styck) ska mötas i SAMMA
+        // merge-nyckel — annars splittras "3 äpplen" + "2 st äpple" på två nycklar
+        // och keysByName-deduppen nedan tömmer båda till noAmount (mängden tappas).
+        // Bara nyckeln normaliseras; lagrad unit (display) lämnas orörd.
+        const keyUnit = unit === "st" ? "" : (unit ?? "");
+        const key = `${normalized}||${keyUnit}`;
         if (merged.has(key)) {
           const entry = merged.get(key);
           entry.amount += amount * factor;
@@ -717,12 +736,15 @@ export function buildShoppingList(selectedIds, allRecipes, opts = {}) {
   }
 
   // Sortera på namnet (som är början på strängen i formatet "namn (qty)").
-  // å/ä/ö mappas sist — localeCompare med sv-locale är opålitligt i Vercels serverless-miljö.
+  // F109: mappa å/ä/ö till tecken ÖVER 'z' ({|}) och jämför RÅTT med </>. Den gamla
+  // "z"-metoden via localeCompare var opålitlig i Vercels serverless-miljö:
+  // localeCompare ignorerade kontrolltecknen och sorterade t.ex. "ägg" FÖRE
+  // "zucchini" i stället för sist. Nyckeln är redan transformerad → råa </> räcker.
   const svKey = (s) =>
     s.trim().toLowerCase()
-     .replace(/å/g, "z\u0001").replace(/ä/g, "z\u0002").replace(/ö/g, "z\u0003");
+     .replace(/å/g, "{").replace(/ä/g, "|").replace(/ö/g, "}");
   for (const arr of Object.values(categories)) {
-    arr.sort((a, b) => svKey(a).localeCompare(svKey(b)));
+    arr.sort((a, b) => (svKey(a) < svKey(b) ? -1 : svKey(a) > svKey(b) ? 1 : 0));
   }
 
   return categories;

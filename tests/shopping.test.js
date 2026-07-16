@@ -386,6 +386,70 @@ assertEq(normalizeName("citroner"), "citron", "normalize: citroner → citron (p
   assertTrue(mixRes.Mejeri.includes("grädde (8 dl)"), "skalning: merge med olika servings-bas skalar per recept");
 }
 
+// ─── Nattaudit-fynd F105/F106/F107/F109/F110/F271 ────────────────────────────
+
+// F105: ovanliga slash-bråk (1/8, 1/6, 3/8, 5/8 …) konverteras generellt.
+// Tidigare hanterades bara 3/4·1/2·1/4·2/3·1/3 → övriga korrumperade mängd/namn.
+{
+  const p = parseIngredient("3/8 dl grädde");
+  assertEq(p.amount, 0.38, "F105: '3/8 dl grädde' → amount 0,38 (generellt slash-bråk)");
+  assertEq(p.unit, "dl", "F105: '3/8 dl grädde' → unit dl");
+  assertEq(normalizeName(p.name), "grädde", "F105: '3/8 dl grädde' → namn grädde (ej korrumperat)");
+}
+{
+  const p = parseIngredient("1/6 tsk salt");
+  assertEq(p.amount, 0.17, "F105: '1/6 tsk salt' → amount 0,17");
+}
+{
+  // Redan hanterade bråk behåller befintligt beteende (3/4 → ¾ = 0,75).
+  const p = parseIngredient("3/4 dl mjölk");
+  assertEq(p.amount, 0.75, "F105: '3/4 dl mjölk' → amount 0,75 (befintligt beteende bevarat)");
+}
+
+// F106: "X eller Y" där adjektivet är ENDA ordet före "eller" tappade tidigare
+// ordet efter "eller" (ombyggnads-regexen krävde whitespace före adjektivet).
+{
+  const p = parseIngredient("fryst eller färsk spenat");
+  assertEq(normalizeName(p.name), "spenat", "F106: 'fryst eller färsk spenat' → spenat (ej 'fryst')");
+  assertFalse(p.name === "fryst", "F106: mängdlös 'eller'-rad behåller varan, inte adjektivet");
+}
+
+// F107: nedskalade decimal-enheter (dl/msk/…) fick golv → aldrig "0 dl".
+{
+  const rec = [{ id: 40, title: "R", servings: 4, ingredients: ["0,4 dl grädde"] }];
+  const res = buildShoppingList([40], rec, { targetServings: 1 });   // faktor 0,25 → 0,1 dl
+  assertFalse(res.Mejeri.some((s) => s.includes("(0 dl)")), "F107: nedskalad dl-mängd blir aldrig '0 dl'");
+  assertTrue(res.Mejeri.includes("grädde (¼ dl)"), "F107: golv 0,25 → 'grädde (¼ dl)'");
+}
+
+// F109: å/ä/ö ska sorteras EFTER z-ord (svensk ordning), inte före.
+{
+  const recipes = makeRecipes({ 41: ["200 g ärtor", "1 st zucchini"] });
+  const gron = buildShoppingList([41], recipes).Grönsaker;
+  const zIdx = gron.findIndex((s) => s.startsWith("zucchini"));
+  const äIdx = gron.findIndex((s) => s.startsWith("ärtor"));
+  assertTrue(zIdx >= 0 && äIdx >= 0, "F109: både zucchini och ärtor finns i Grönsaker");
+  assertTrue(äIdx > zIdx, "F109: 'ärtor' (ä) sorteras EFTER 'zucchini' (z)");
+}
+
+// F110: implicit (enhetslös) + explicit "st" mängd av samma vara ska slås ihop,
+// inte splittras på två merge-nycklar och tappa mängden till noAmount.
+{
+  const recipes = makeRecipes({ 42: ["3 äpplen", "2 st äpple"] });
+  const frukt = buildShoppingList([42], recipes).Frukt;
+  assertTrue(frukt.includes("äpple (5)"), "F110: '3 äpplen' + '2 st äpple' → 'äpple (5)'");
+  assertFalse(frukt.includes("äpple"), "F110: äpple läggs inte till mängdlöst (mängden tappas inte)");
+}
+
+// F271: osynligt mjukt bindestreck (U+00AD) i namnet ska strippas → ingen
+// dubblettrad i fel kategori.
+{
+  const recipes = makeRecipes({ 43: ["bryssel­kål (340 g)"] });
+  const result = buildShoppingList([43], recipes);
+  assertTrue(result.Grönsaker.includes("brysselkål (340 g)"), "F271: mjukt bindestreck strippas → 'brysselkål (340 g)' i Grönsaker");
+  assertFalse(Object.values(result).flat().some((s) => s.includes("­")), "F271: inget osynligt tecken kvar i utdatan");
+}
+
 // ─── Slutrapport ──────────────────────────────────────────────────────────────
 const total = passed + failed;
 console.log(`\nPASS ${passed}/${total}${failed ? ` — ${failed} FAIL` : ""}`);
