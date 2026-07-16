@@ -5450,6 +5450,8 @@ body.cook-open { overflow: hidden; }
   pointer-events: none;
   transition: opacity 0.22s ease;
   z-index: var(--z-dlx-backdrop);
+  touch-action: none;
+  overscroll-behavior: contain;
 }
 .dlx-sheet-backdrop.open { opacity: 1; pointer-events: auto; }
 .dlx-sheet {
