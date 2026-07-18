@@ -262,9 +262,6 @@ export function setShopMode(mode) {
   document.getElementById('modeBtnText').classList.toggle('active', !isHandla);
   document.getElementById('shoppingList').style.display = isHandla ? '' : 'none';
   document.getElementById('shoppingText').classList.toggle('visible', !isHandla);
-  // Läges-knapparna hör bara hemma i handla-vyn
-  const editBar = document.getElementById('shopEditBar');
-  if (editBar) editBar.style.display = isHandla ? '' : 'none';
   if (!isHandla && window._editRowKey) {
     window._editRowKey = null;
     renderFullShoppingList(window._shopRecipeItems || null, window._shopManualItems || []);
@@ -276,9 +273,9 @@ export function setShopMode(mode) {
 // nollställs vid omladdning) — själva bock-statusen ligger kvar i Supabase.
 export function toggleHandlaMode() {
   window._handlaMode = !window._handlaMode;
-  const btn = document.getElementById('handlaModeBtn');
+  const btn = document.getElementById('handlaModeFab');
   if (btn) {
-    btn.classList.toggle('active', window._handlaMode);
+    btn.classList.toggle('is-active', window._handlaMode);
     btn.setAttribute('aria-pressed', window._handlaMode ? 'true' : 'false');
   }
   renderFullShoppingList(window._shopRecipeItems || null, window._shopManualItems || []);
@@ -1155,6 +1152,20 @@ export function copyShoppingList() {
   });
 }
 
+// Rund handla-läge-knapp (FAB över plusset). Start kräver en bekräftelse —
+// avstängning sker direkt (man är klar, ingen fråga behövs).
+export async function handlaModeFabClick() {
+  if (!window._handlaMode) {
+    const ok = await window.confirmDialog({
+      title: 'Starta handla-läge?',
+      message: 'Medan ni handlar sjunker bockade varor ner under strecket "I korgen" så listan alltid visar det som är kvar att plocka. Tryck på kundvagnen igen när ni är klara.',
+      confirmLabel: 'Starta',
+    });
+    if (!ok) return;
+  }
+  toggleHandlaMode();
+}
+
 // ── Flytande + : lägg till egen vara (ersätter gamla sektionen längst ner) ───
 export function openShopAddSheet() {
   if (document.getElementById('shopAddOverlay')) return;
@@ -1219,6 +1230,7 @@ window.openShopAddSheet   = openShopAddSheet;
 window.closeShopAddSheet  = closeShopAddSheet;
 window.shopAddSubmit      = shopAddSubmit;
 window.toggleHandlaMode   = toggleHandlaMode;
+window.handlaModeFabClick = handlaModeFabClick;
 window.renameShopItem     = renameShopItem;
 window.removeShopItem     = removeShopItem;
 window.removeManualItem   = removeManualItem;
