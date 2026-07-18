@@ -39,6 +39,8 @@ const I = {
   cart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.6 11.2A1.5 1.5 0 0 0 9.06 16.4H18a1.5 1.5 0 0 0 1.46-1.14L21 8H6"/><circle cx="10" cy="20" r="1.4"/><circle cx="17.5" cy="20" r="1.4"/></svg>',
   // Bock — grön "klar"-markör bredvid kundvagnen.
   tick: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4 4L19 6.5"/></svg>',
+  // Soptunna — "ta bort dagen helt" (danger-åtgärd i dag-sheeten).
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4l.8-12"/><path d="M10 11v6 M14 11v6"/></svg>',
 };
 
 // esc = utils.escapeHtml (samma semantik) — en enda implementation i utils.
@@ -1208,6 +1210,12 @@ function sheetMenuHtml(d, s) {
   if (d.isToday) {
     rows += sheetRow("dlxSheetView('lista')", '', I.plus, 'Lägg till på listan', 'Något som saknas hemma?');
   }
+  // Ta bort dagen HELT — gäller både genererade plandagar och egna dagar.
+  // Danger-åtgärd sist i menyn; bekräftelsedialog i dlxSheetDeleteDay.
+  if (!d.isArchive && (isCustomRecipe || d.planId === 'active')) {
+    rows += sheetRow('dlxSheetDeleteDay()', 'rust', I.trash, 'Ta bort dagen helt',
+      'Dagen försvinner ur matsedeln — varor som inte är inhandlade tas bort från listan');
+  }
 
   return `
     <p class="dlx-sheet-sub">${sheetWhen(d)}${sub ? ` · ${esc(sub)}` : ''}${dayShopChip(d) ? ` ${dayShopChip(d)}` : ''}</p>
@@ -1403,6 +1411,50 @@ window.dlxSheetRemoveFromList = function () {
   const s = window._dlxSheet;
   if (!s) return;
   sheetListAction('remove_day', `${s.day}ens ingredienser togs bort från inköpslistan.`);
+};
+
+// Ta bort dagen HELT (även genererade plandagar) — danger-bekräftelse, sedan
+// /api/skip-day action:delete. Servern städar inköpslistan (o-inhandlade
+// varor) och räknar om planens datumspann; tömd plan deaktiveras.
+window.dlxSheetDeleteDay = async function () {
+  const s = window._dlxSheet;
+  if (!s || window._opBusy) return;
+  const d = (window._timelineByDate || {})[s.date] || {};
+  const what = d.recipe || d.customRecipeTitle || d.customNote || null;
+  const ok = await window.confirmDialog({
+    title: 'Ta bort dagen helt?',
+    message: `${s.day}${what ? ` (${what})` : ''} försvinner ur matsedeln. Varor som inte är inhandlade tas bort från inköpslistan.`,
+    confirmLabel: 'Ta bort dagen',
+    danger: true,
+  });
+  if (!ok) return;
+  window._opBusy = true;
+  try {
+    const res = await window.apiFetch('/api/skip-day', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date: s.date, action: 'delete' }),
+    });
+    let data = {};
+    try { data = await res.json(); } catch { /* ingen JSON */ }
+    if (!res.ok) throw Object.assign(new Error(data.error || ''), { serverMsg: data.error });
+    window.dlxCloseSheet();
+    window._planMutateUntil = Date.now() + 4000;   // dämpa realtids-ekot
+    if (data.shoppingList) {
+      window._preserveChecked = false;
+      window.loadShoppingTab?.();
+    }
+    await window.loadWeeklyPlan();
+    if (data.listStale) {
+      window.showToast?.('Dagen är borttagen, men inköpslistan kunde inte uppdateras — ladda om och prova igen.', { type: 'error' });
+    } else {
+      window.showToast?.('Dagen är borttagen ur matsedeln.', { type: 'success' });
+    }
+  } catch (e) {
+    window.showToast?.(e?.serverMsg || 'Kunde inte ta bort dagen — prova igen.', { type: 'error' });
+  } finally {
+    window._opBusy = false;
+  }
 };
 
 // Lägg till på listan — återanvänder addManualItem (som toastar sina egna fel
