@@ -236,6 +236,20 @@ function freshDbWithOldPlan() {
   assertEq(daysForPlan(db, newId), 3, "save: alla 3 dagar skrivs för nya planen");
   assertEq(activeCount(db), 1, "save: fortfarande exakt en aktiv plan (den gamla) — nya är inte påslagen än");
   assertEq(db._state.plans.find((p) => p.is_active).id, 1, "save: den gamla planen är fortfarande den aktiva");
+
+  // Inköpsrundor (migration 009): UPSERT:en på (household_id, date) behåller
+  // gamla kolumnvärden vid regenerering över samma vecka — därför MÅSTE varje
+  // dagrad explicit nolla shopped_at + shopping_list_id, annars står den nya
+  // rättens dag felaktigt som "inhandlad".
+  const newDays = db._state.mealDays.filter((d) => d.plan_id === newId);
+  assertTrue(
+    newDays.every((d) => "shopped_at" in d && d.shopped_at === null),
+    "save: varje dagrad nollar shopped_at explicit (upsert-skydd)"
+  );
+  assertTrue(
+    newDays.every((d) => "shopping_list_id" in d && d.shopping_list_id === null),
+    "save: varje dagrad nollar shopping_list_id explicit (upsert-skydd)"
+  );
 }
 
 // ─── Test 2: fel vid dag-skrivning städar bort plan-raden, gammal plan orörd ──

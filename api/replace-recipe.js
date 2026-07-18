@@ -1,7 +1,7 @@
-import { buildShoppingList } from "./_shared/shopping-builder.js";
 import { createSupabaseHandler } from "./_shared/handler.js";
-import { db, getHouseholdId, fetchTargetServings } from "./_shared/supabase.js";
+import { db, getHouseholdId } from "./_shared/supabase.js";
 import { shuffle } from "./_shared/history.js";
+import { getActiveList, fetchCoverage, unshoppedDates, rebuildActiveList } from "./_shared/shopping-store.js";
 
 export default createSupabaseHandler(async (req, res) => {
   const { date, currentRecipeId: rawCurrentId, weekRecipeIds: rawWeekIds = [], newRecipeId, saving, savingMatches } = req.body || {};
@@ -26,7 +26,7 @@ export default createSupabaseHandler(async (req, res) => {
 
   const { data: mealDayRow } = await db
     .from("meal_days")
-    .select("blocked")
+    .select("blocked, shopped_at")
     .eq("household_id", householdId)
     .eq("plan_id", plan.id)
     .eq("date", date)
@@ -110,12 +110,15 @@ export default createSupabaseHandler(async (req, res) => {
 
   // Uppdatera meal_days + recipe_history parallellt. Kasta vid fel — annars
   // svarar endpointen 200 med nya titeln trots att inget persisterades.
+  // shopped_at nollas alltid: ett utbytt recept är per definition o-inhandlat
+  // (var dagen redan inhandlad behövs nya varor → tillbaka på listan nedan).
   const [{ error: mdErr }, { error: histErr }] = await Promise.all([
     db.from("meal_days").update({
       recipe_id: picked.id,
       recipe_title_snapshot: picked.title,
       saving: keepSaving,
       saving_matches: keepMatches,
+      shopped_at: null,
     }).eq("household_id", householdId).eq("date", date),
     db.from("recipe_history").upsert(
       { household_id: householdId, recipe_id: picked.id, used_on: today },
@@ -124,86 +127,34 @@ export default createSupabaseHandler(async (req, res) => {
   ]);
   if (mdErr || histErr) throw mdErr || histErr;
 
-  // Bygg om inköpslistan om planen är bekräftad
+  // Bygg om inköpslistan om planen är bekräftad (Session 130, inköpsrundor):
+  // täckningen = aktiva listans o-inhandlade dagar + den utbytta dagen. Redan
+  // inhandlade dagar inkluderas ALDRIG — ett mitt-i-veckan-byte lägger alltså
+  // inte tillbaka måndagens redan köpta varor, och övriga bockar överlever.
   if (plan.confirmed_at) {
-    // allMealDays hämtas efter update → innehåller redan picked.id på rätt dag.
-    // Ett svalt läsfel här skulle ersätta aktiva listan med en TOM — avbryt då.
-    const { data: allMealDays, error: mealErr } = await db
-      .from("meal_days")
-      .select("recipe_id")
-      .eq("plan_id", plan.id)
-      .not("recipe_id", "is", null);
-    if (mealErr) throw new Error("Receptet byttes, men inköpslistan kunde inte byggas om — ladda om och prova igen.");
+    const activeList = await getActiveList(householdId);
+    let coverDates = activeList
+      ? unshoppedDates(await fetchCoverage(householdId, activeList.id))
+      : [];
 
-    const selectedIds = (allMealDays || []).map((d) => d.recipe_id);
-
-    const targetServings = await fetchTargetServings(householdId);
-    const shoppingCategories = buildShoppingList(selectedIds.filter(Boolean), allRecipes, { targetServings });
-
-    const { data: existingLists } = await db
-      .from("shopping_lists").select("id, recipe_items_moved_at")
-      .eq("household_id", householdId).eq("is_active", true).limit(1);
-
-    let manualItems = [];
-    let checkedItems = {};
-    let recipeItemsMovedAt = null;
-    if (existingLists?.length) {
-      recipeItemsMovedAt = existingLists[0].recipe_items_moved_at || null;
-      const { data: existingItems } = await db
-        .from("shopping_items").select("name, checked")
-        .eq("list_id", existingLists[0].id).eq("source", "manual");
-      manualItems = (existingItems || []).map((i) => i.name);
-      (existingItems || []).filter((i) => i.checked).forEach((i) => {
-        checkedItems[`manual::${i.name}`] = true;
-      });
+    // Fallback (lista från före migration 009/backfillen saknar dagkoppling):
+    // planens o-inhandlade receptdagar — exakt det gamla beteendet.
+    if (!coverDates.length) {
+      const { data: allMealDays, error: mealErr } = await db
+        .from("meal_days")
+        .select("date, shopped_at")
+        .eq("plan_id", plan.id)
+        .not("recipe_id", "is", null);
+      if (mealErr) throw new Error("Receptet byttes, men inköpslistan kunde inte byggas om — ladda om och prova igen.");
+      coverDates = (allMealDays || []).filter((d) => !d.shopped_at).map((d) => d.date);
     }
 
-    // Skapa listan INAKTIV, skriv varorna, aktivera SIST — så en misslyckad
-    // vary-insert aldrig lämnar familjen med en aktiv men tom lista. Den gamla
-    // listan är kvar aktiv tills den nya är komplett.
-    const { data: newList, error: listErr } = await db
-      .from("shopping_lists")
-      .insert({
-        household_id: householdId,
-        start_date: plan.start_date,
-        end_date: plan.end_date,
-        generated_at: today,
-        recipe_items_moved_at: recipeItemsMovedAt,
-        is_active: false,
-      })
-      .select()
-      .single();
-    if (listErr) throw listErr;
-
-    const itemRows = [];
-    for (const [category, items] of Object.entries(shoppingCategories || {})) {
-      (items || []).forEach((name, pos) => {
-        itemRows.push({ list_id: newList.id, category, name, source: "recipe", checked: false, position: pos });
-      });
-    }
-    manualItems.forEach((name, idx) => {
-      itemRows.push({
-        list_id: newList.id, category: "Övrigt", name, source: "manual",
-        checked: !!(checkedItems[`manual::${name}`]), position: idx,
-      });
+    const { shoppingList } = await rebuildActiveList({
+      householdId,
+      coverDates: [...new Set([...coverDates, date])],
+      span: { startDate: plan.start_date, endDate: plan.end_date },
+      recipes: allRecipes,
     });
-    if (itemRows.length > 0) {
-      const { error: itemsErr } = await db.from("shopping_items").insert(itemRows);
-      if (itemsErr) throw itemsErr;
-    }
-
-    // Ta den färdiga listan i bruk allra sist: stäng av gamla, slå på nya.
-    await db.from("shopping_lists").update({ is_active: false })
-      .eq("household_id", householdId).eq("is_active", true);
-    const { error: actErr } = await db.from("shopping_lists")
-      .update({ is_active: true }).eq("id", newList.id);
-    if (actErr) throw actErr;
-
-    const shoppingList = {
-      generated: today, startDate: plan.start_date, endDate: plan.end_date,
-      recipeItems: shoppingCategories, recipeItemsMovedAt,
-      manualItems, checkedItems,
-    };
     return res.status(200).json({ recipe: picked.title, recipeId: picked.id, saving: keepSaving, savingMatches: keepMatches, shoppingList });
   }
 

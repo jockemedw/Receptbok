@@ -272,18 +272,33 @@ function shownWeekDays() {
   });
 }
 
-// "Handlat för": dagens ingredienser ligger på en bekräftad inköpslista.
-// Bara aktiva planens receptdagar — arkivet kan innehålla aldrig bekräftade
-// förslag (archiveOldPlan kollar inte confirmed_at) och egna dagar ingår
-// aldrig i listan.
+// Inköpsrundor (migration 009): riktig per-dag-data i stället för den gamla
+// heuristiken "bekräftad plan ⇒ allt handlat".
+//   Inhandlad (shopped_at satt)  → grön kundvagn+bock, dagen är klar-handlad.
+//   På listan (pekar på aktiva listan, ej inhandlad) → neutral kundvagn.
 function isShoppedDay(d) {
-  return d.planId === 'active' && !d.isCustom && !!d.recipeId
-      && !!(window._lastPlan?.confirmedAt || window.planConfirmed);
+  return !!d.shoppedAt;
+}
+
+function isOnListDay(d) {
+  return !!d.onList && !d.shoppedAt;
 }
 
 function shoppedChip() {
-  return `<span class="dlx-shopped" role="img" title="Handlat för — ingredienserna finns på inköpslistan"
-    aria-label="Ingredienser på inköpslistan"><span class="dlx-shopped-cart">${I.cart}</span><span class="dlx-shopped-tick">${I.tick}</span></span>`;
+  return `<span class="dlx-shopped" role="img" title="Inhandlad — dagens ingredienser är köpta"
+    aria-label="Inhandlad"><span class="dlx-shopped-cart">${I.cart}</span><span class="dlx-shopped-tick">${I.tick}</span></span>`;
+}
+
+function onListChip() {
+  return `<span class="dlx-shopped onlist" role="img" title="På inköpslistan — dagens ingredienser ligger på listan"
+    aria-label="På inköpslistan"><span class="dlx-shopped-cart">${I.cart}</span></span>`;
+}
+
+// Rätt chip för dagen (eller tom sträng) — används av kort, Ikväll och sheeten.
+function dayShopChip(d) {
+  if (isShoppedDay(d)) return shoppedChip();
+  if (isOnListDay(d)) return onListChip();
+  return '';
 }
 
 // ── "Ikväll"-kort — svarar på familjens vanligaste fråga direkt i heron ──────
@@ -334,8 +349,8 @@ function buildTonight(timeline) {
         </div>
         <div class="dlx-tonight-main">
           <span class="dlx-tonight-title">${mark}${esc(label)}</span>
-          ${sub ? `<span class="dlx-tonight-sub">${esc(sub)}${isShoppedDay(d) ? ' ' + shoppedChip() : ''}</span>`
-                : (isShoppedDay(d) ? `<span class="dlx-tonight-sub">${shoppedChip()}</span>` : '')}
+          ${sub ? `<span class="dlx-tonight-sub">${esc(sub)}${dayShopChip(d) ? ' ' + dayShopChip(d) : ''}</span>`
+                : (dayShopChip(d) ? `<span class="dlx-tonight-sub">${dayShopChip(d)}</span>` : '')}
         </div>
       </div>
       <span class="dlx-tonight-chev" aria-hidden="true">›</span>
@@ -520,7 +535,7 @@ function recipeDayCard(d, opts) {
         </div>
         <div class="dlx-day-main">
           <h3 class="dlx-day-recipe">${esc(d.recipe || '')}</h3>
-          <div class="dlx-day-meta">${metaParts.join('')}${savingPill}${isShoppedDay(d) ? shoppedChip() : ''}</div>
+          <div class="dlx-day-meta">${metaParts.join('')}${savingPill}${dayShopChip(d)}</div>
         </div>
         <span class="dlx-day-chev" aria-hidden="true">›</span>
       </div>
@@ -547,7 +562,7 @@ function emptyDayCard(d) {
               <span class="dlx-day-flags">${dayBadges(d)}</span></div>
             <div class="dlx-day-main">
               <h3 class="dlx-day-recipe"><span class="dlx-own dlx-own-recipe" title="Recept ur receptboken" aria-label="Recept ur receptboken">${I.pot}</span>${esc(d.customRecipeTitle || '')}</h3>
-              ${metaParts.length ? `<div class="dlx-day-meta">${metaParts.join('')}</div>` : ''}
+              ${(metaParts.length || dayShopChip(d)) ? `<div class="dlx-day-meta">${metaParts.join('')}${dayShopChip(d)}</div>` : ''}
             </div>
             <span class="dlx-day-chev" aria-hidden="true">›</span>
           </div>
@@ -1173,12 +1188,29 @@ function sheetMenuHtml(d, s) {
       }
     }
   }
+  // Inköpsrundor: lägg dagens ingredienser på listan / lägg tillbaka / ta bort.
+  // Gäller receptdagar (egna och aktiva planens) som inte är arkiv/passerade.
+  const hasListRecipe = isCustomRecipe || (d.planId === 'active' && !!d.recipeId);
+  if (hasListRecipe && !d.isArchive && !d.isPast) {
+    if (isShoppedDay(d)) {
+      rows += sheetRow('dlxSheetAddToList()', '', I.cart, 'Lägg tillbaka på inköpslistan',
+        'Behöver ni handla för dagen igen? Varorna läggs på listan på nytt');
+    } else if (isOnListDay(d)) {
+      if (isCustomRecipe) {
+        rows += sheetRow('dlxSheetRemoveFromList()', '', I.cart, 'Ta bort från inköpslistan',
+          'Dagens ingredienser plockas bort från listan');
+      }
+    } else if (isCustomRecipe || window.planConfirmed) {
+      rows += sheetRow('dlxSheetAddToList()', '', I.cart, 'Lägg ingredienser på inköpslistan',
+        'Varorna hamnar på familjens gemensamma lista');
+    }
+  }
   if (d.isToday) {
     rows += sheetRow("dlxSheetView('lista')", '', I.plus, 'Lägg till på listan', 'Något som saknas hemma?');
   }
 
   return `
-    <p class="dlx-sheet-sub">${sheetWhen(d)}${sub ? ` · ${esc(sub)}` : ''}${isShoppedDay(d) ? ` ${shoppedChip()}` : ''}</p>
+    <p class="dlx-sheet-sub">${sheetWhen(d)}${sub ? ` · ${esc(sub)}` : ''}${dayShopChip(d) ? ` ${dayShopChip(d)}` : ''}</p>
     <p class="dlx-sheet-title">${d.isToday ? `${I.pot}<span>` : '<span>'}${esc(title || '')}</span></p>
     ${rows}`;
 }
@@ -1330,6 +1362,47 @@ window.dlxSheetFree = async function (kind) {
         : `Dagen är fri — ${recipeTitle} flyttas till slutet av matsedeln.`;
     window.showToast?.(msg, { type: 'success', action: { label: 'Ångra', onClick: () => window.unfreeDay(s.date) } });
   }
+};
+
+// Inköpsrundor: lägg dagens ingredienser på listan (custom-dag eller
+// återläggning av inhandlad dag — servern nollar spärren) respektive ta bort
+// en dags ingredienser. Servern bygger om listan; vi hämtar om båda vyerna.
+async function sheetListAction(action, successMsg) {
+  const s = window._dlxSheet;
+  if (!s || window._opBusy) return;
+  window._opBusy = true;
+  try {
+    const res = await window.apiFetch('/api/shopping', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, date: s.date }),
+    });
+    let data = {};
+    try { data = await res.json(); } catch { /* ingen JSON */ }
+    if (!res.ok) throw Object.assign(new Error(data.error || ''), { serverMsg: data.error });
+    window.dlxCloseSheet();
+    window._planMutateUntil = Date.now() + 4000;   // dämpa realtids-ekot
+    window._preserveChecked = false;
+    window.loadShoppingTab?.();      // Inköp-fliken: nya listan + täckningsrad
+    await window.loadWeeklyPlan();   // Matsedeln: chips + rundstatus
+    window.showToast?.(successMsg, { type: 'success' });
+  } catch (e) {
+    window.showToast?.(e?.serverMsg || 'Kunde inte uppdatera inköpslistan — prova igen.', { type: 'error' });
+  } finally {
+    window._opBusy = false;
+  }
+}
+
+window.dlxSheetAddToList = function () {
+  const s = window._dlxSheet;
+  if (!s) return;
+  sheetListAction('add_day', `${s.day}ens ingredienser ligger nu på inköpslistan.`);
+};
+
+window.dlxSheetRemoveFromList = function () {
+  const s = window._dlxSheet;
+  if (!s) return;
+  sheetListAction('remove_day', `${s.day}ens ingredienser togs bort från inköpslistan.`);
 };
 
 // Lägg till på listan — återanvänder addManualItem (som toastar sina egna fel

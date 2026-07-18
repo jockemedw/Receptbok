@@ -1,6 +1,23 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–126. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–129. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+**Session 129 — Restpost-städning: Batch 13 säkert render-svep + F287-migration (workflow).**
+
+Joakim: "Städa så mycket som möjligt av restposterna med workflow, låt agenter testa allt jag slipper." Opus orkestrerade en fil-klustrad städ-workflow (10 fix-agenter + 1 verify-agent), alla filavgränsade så inga skrivkonflikter. Tre scoping-beslut inhämtade: (1) bara säkra render-only-fynd, (2) kör F287 nu men håll F215, (3) canon-kandidater + radera offers.json.
+
+**Klart (2 mergade PR:er, hela sviten grön genomgående):**
+- **PR #185** — render-svepet + F287 nedan. **PR #186** — inköpslistans parser-kvalitet: 6 datamuterande men testgrindade fynd (F105 slash-bråk, F106 eller-ombyggnad, F107 friendlyRound-golv, F109 svensk sortering, F110 implicit+"st"-merge, F271 osynliga tecken) med 15 nya regressionsassertions (shopping 99→114), korpus grön. Backend-only, ingen version-bump.
+- **~65 säkra P2-fynd** ur Batch 13: touch-targets ≥44px, WCAG-kontrast, [hidden]-guards + overscroll, aria-markup/tangentbordsåtkomst, feedback.js focus-trap/inert/aria-live, svenska felfallbacks i stället för läckt e.message, willys-offers isNaN-guard, text/format-fixar, död kod (fetchHistory/toggleSettings/unsubscribeMealDays). **Död klassisk CSS borttagen (~474 rader)** — hela `.timeline-*`/`.plan-group`/`.week-day-card`-familjen; KEEP-selektorer (`.custom-*`/`.detail-inner`/`.holiday-dot`) verifierat orörda.
+- **Canon (separat commit, datamuterande, testgrindat):** F113 dubblettnyckel + canon-kandidater i NORMALIZATION_TABLE (plural-buljongtärningar, self-canons matvete/torsk/sej/pizzadeg/nori/citrongräs, portobello/baby bella→champinjoner).
+- **`offers.json` raderad** (noll referenser). Version-bump styles **v170/app v136/SW v83**.
+- **F287-migrationen KÖRD** mot live-Supabase (Joakims OK, via Management-API:t) — `meal_days` + `shopping_items` ligger nu i `supabase_realtime`; **den döda cross-device-synken är väckt.** Pre-/efter-koll verifierad.
+
+**Medvetet lämnade (ej render-only):** F155/F159/F304 (designbeslut) · F256 (case-okänslig tagg-matchning — recept-skrivväg) · resten av Batch 13 (backend-beteende: api-felkontrakt, svalda DB-fel, plan/dispatch skriv-logik, regressionstester F272–274).
+
+**Kvar / väntar Joakims OK:** F215 DROP backup-tabell (dump först) · Batch 5 RPC-items F219/F232/F312 · **mobil-verifiering** (se kön — särskilt realtime mellan två telefoner nu när F287 är körd).
 
 ---
 

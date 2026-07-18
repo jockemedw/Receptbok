@@ -144,8 +144,32 @@ assertEq(rotateMove(["A","B","C","D","E"], 1, 1), null,                  "rotate
 // ── contentOf: bara innehållsfälten, alltid definierade ──────────────────────
 {
   const c = contentOf({ date: d(0), blocked: true, locked: true, recipe_id: undefined });
-  assertEq(c, { recipe_id: null, recipe_title_snapshot: null, saving: null, saving_matches: null },
+  assertEq(c, { recipe_id: null, recipe_title_snapshot: null, saving: null, saving_matches: null,
+                shopped_at: null, shopping_list_id: null },
     "contentOf: nullar odefinierade fält, tar inte med date/blocked/locked");
+}
+
+// ── Inköpsrundor: inhandlat-status följer receptinnehållet, inte datumet ─────
+{
+  const rows = mkRows(["A","B","C"]);
+  rows[0].shopped_at = "2026-06-09T10:00:00Z";  // A är inhandlad
+  rows[0].shopping_list_id = "lista-1";
+
+  const r = planAfterMove(rows, d(0), null);    // A flyttas sist
+  assertEq(layout(r.next), "BCA", "rundor: A flyttad sist");
+  assertEq(r.next[2].shopped_at, "2026-06-09T10:00:00Z", "rundor: shopped_at följer med receptet vid move");
+  assertEq(r.next[2].shopping_list_id, "lista-1", "rundor: shopping_list_id följer med receptet vid move");
+  assertEq(r.next[0].shopped_at ?? null, null, "rundor: nya första dagen är o-inhandlad");
+
+  // changedRows ser en ren stämpelflytt som ändring (annars skrivs den aldrig)
+  const ch = changedRows(rows, r.next).map((x) => x.date);
+  assertTrue(ch.includes(d(0)) && ch.includes(d(2)), "rundor: changedRows fångar stämpelflytten");
+
+  // free: luckan som skjuts in har inga rundfält satta
+  const freed = planAfterFree(rows, d(1), d(3));
+  assertEq(freed.next[1].shopped_at ?? null, null, "rundor: fri lucka har ingen inhandlat-stämpel");
+  assertEq(freed.next[2].shopped_at ?? null, null, "rundor: B:s stämpel (ingen) följer med vid free");
+  assertEq(freed.next[0].shopped_at, "2026-06-09T10:00:00Z", "rundor: A:s stämpel orörd vid free");
 }
 
 // ── Resultat ──────────────────────────────────────────────────────────────────

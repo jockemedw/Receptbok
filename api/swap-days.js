@@ -30,6 +30,9 @@ function fullContent(r) {
     custom_note:           r?.custom_note ?? null,
     locked:                r?.locked === true,
     blocked:               r?.blocked === true,
+    // Inköpsrundor: inhandlat-status + listtäckning följer innehållet vid byte.
+    shopped_at:            r?.shopped_at ?? null,
+    shopping_list_id:      r?.shopping_list_id ?? null,
   };
 }
 
@@ -63,7 +66,7 @@ export default createSupabaseHandler(async (req, res) => {
   // anteckningar (plan_id null), så de kan byta plats med varandra.
   const { data: rows, error: rowsErr } = await db
     .from("meal_days")
-    .select("date, plan_id, recipe_id, recipe_title_snapshot, saving, saving_matches, blocked, locked, custom_note")
+    .select("date, plan_id, recipe_id, recipe_title_snapshot, saving, saving_matches, blocked, locked, custom_note, shopped_at, shopping_list_id")
     .eq("household_id", householdId)
     .in("date", [date1, date2]);
   if (rowsErr) throw new Error("Kunde inte läsa matsedeln — prova igen.");
