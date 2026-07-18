@@ -429,6 +429,9 @@
     width: 1.25rem;
     height: 1.25rem;
   }
+  /* Kundvagnens optiska tyngd (korg + hjul) ligger höger om viewBox-mitten —
+     handtaget sticker ut vänster. Nudge så den ser centrerad ut i runda knappen. */
+  #handlaModeFab svg { margin-left: -1.5px; }
 
   .recipe-fab:active { transform: scale(0.93); }
 
