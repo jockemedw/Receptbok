@@ -481,24 +481,11 @@ function shopCounts() {
   return { total, done, perCat };
 }
 
-const RING_C = 2 * Math.PI * 26; // omkrets för r=26 i 60×60-viewBoxen
-
+// Progressringen ("X av Y klara / kvar att plocka") är borttagen på Joakims
+// begäran (för plottrigt) — kvar är kategoriräknarna och "Vi har handlat"-
+// framhävningen när allt är bockat.
 export function updateShopProgress() {
   const { total, done, perCat } = shopCounts();
-  const ring  = document.querySelector('#shopProgress .shop-ring-fill');
-  const count = document.querySelector('#shopProgress .shop-ring-count');
-  const lbl   = document.querySelector('#shopProgress .shop-progress-label');
-  const sub   = document.querySelector('#shopProgress .shop-progress-sub');
-  if (ring)  ring.style.strokeDashoffset = (total ? RING_C * (1 - done / total) : RING_C).toFixed(1);
-  if (count) count.textContent = done;
-  if (lbl) lbl.textContent = total
-    ? (done >= total ? 'Allt klart! 🎉' : `${done} av ${total} klara`)
-    : '';
-  if (sub) sub.textContent = total
-    ? (done >= total ? 'hela listan är i korgen' : `${total - done} kvar att plocka`)
-    : '';
-  document.querySelectorAll('#shopProgress, .shop-progress').forEach(el =>
-    el.classList.toggle('complete', total > 0 && done >= total));
   // Allt i korgen + o-inhandlade täckta dagar → lyft fram "Vi har handlat"
   // (föreslå, aldrig stämpla automatiskt — bockning sker gradvis i butiken).
   const covEl = document.getElementById('shopCoverage');
@@ -510,26 +497,6 @@ export function updateShopProgress() {
     const c = perCat[el.dataset.cat];
     if (c) el.textContent = `${c.done} av ${c.total}`;
   });
-}
-
-function shopProgressHtml() {
-  const { total, done } = shopCounts();
-  if (!total) return '';
-  const off = (RING_C * (1 - done / total)).toFixed(1);
-  return `<div id="shopProgress" class="shop-progress${done >= total ? ' complete' : ''}" role="status" aria-live="polite">
-    <span class="shop-ring" aria-hidden="true">
-      <svg viewBox="0 0 60 60">
-        <circle class="shop-ring-track" cx="30" cy="30" r="26"/>
-        <circle class="shop-ring-fill" cx="30" cy="30" r="26"
-                stroke-dasharray="${RING_C.toFixed(1)}" stroke-dashoffset="${off}"/>
-      </svg>
-      <span class="shop-ring-count">${done}</span>
-    </span>
-    <span class="shop-progress-txt">
-      <span class="shop-progress-label">${done >= total ? 'Allt klart! 🎉' : `${done} av ${total} klara`}</span>
-      <span class="shop-progress-sub">${done >= total ? 'hela listan är i korgen' : `${total - done} kvar att plocka`}</span>
-    </span>
-  </div>`;
 }
 
 // Textcell för en vara: redigerbart fält när just den raden redigeras
@@ -799,7 +766,7 @@ export function renderFullShoppingList(recipeItems, manualItems) {
     </div>`;
   }
 
-  document.getElementById('shoppingList').innerHTML = shopProgressHtml() + checkHtml;
+  document.getElementById('shoppingList').innerHTML = checkHtml;
   const textEl = document.getElementById('shoppingText');
   textEl.innerHTML = textBlocksHtml +
     `<button class="shop-copy-btn" onclick="copyShoppingList()">Kopiera hela listan</button>`;
