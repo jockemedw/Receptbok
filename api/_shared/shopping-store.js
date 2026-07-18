@@ -205,6 +205,7 @@ export async function rebuildActiveList({
   return {
     listId: newList.id,
     shoppingList: {
+      listId: newList.id,
       generated: today,
       startDate,
       endDate,
