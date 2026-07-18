@@ -2122,6 +2122,9 @@
     color: var(--forest);
     line-height: 1.4;
   }
+  /* Inköpslistan: texten tar all ledig plats → penna/har hemma/drag/× samlas
+     som en ikongrupp till höger (scopat — Listor-flikens rader rörs inte). */
+  #shoppingList .item-text { flex: 1; }
 
   /* ── TRIGGER BUTTON ── */
   .trigger-section {
