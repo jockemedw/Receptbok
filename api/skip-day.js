@@ -1,8 +1,9 @@
 import { createSupabaseHandler } from "./_shared/handler.js";
 import { db, getHouseholdId } from "./_shared/supabase.js";
 import { planAfterFree, planAfterUnfree, changedRows, contentOf } from "./_shared/day-ops.js";
+import { getActiveList, fetchCoverage, unshoppedDates, rebuildActiveList } from "./_shared/shopping-store.js";
 
-// "Gör fri dag" (free) och "Ångra fri dag" (unfree).
+// "Gör fri dag" (free), "Ångra fri dag" (unfree) och "Ta bort dagen helt" (delete).
 //
 // free:   Den valda dagen blir fri (inget recept). Allt från och med den dagen
 //         skjuts en dag framåt och matsedeln förlängs med en dag i slutet — så
@@ -54,11 +55,93 @@ function upsertPayload(householdId, planId, rows) {
 export default createSupabaseHandler(async (req, res) => {
   const { date, action } = req.body || {};
   if (!date) return res.status(400).json({ error: "date saknas" });
-  if (!["free", "unfree"].includes(action)) {
-    return res.status(400).json({ error: "action måste vara 'free' eller 'unfree'" });
+  if (!["free", "unfree", "delete"].includes(action)) {
+    return res.status(400).json({ error: "action måste vara 'free', 'unfree' eller 'delete'" });
   }
 
   const householdId = await getHouseholdId();
+
+  // ── delete: ta bort dagen HELT (Session 130-uppföljning, Joakims krav) ─────
+  // Till skillnad från free (som skjuter planen) försvinner dagen ur matsedeln
+  // — även genererade plandagar. Uttrycklig användaråtgärd bakom en danger-
+  // bekräftelse i UI:t, så invariant #1 ("aldrig som sidoeffekt") hålls.
+  // Fungerar för plan-dagar, fria dagar och egna dagar (plan_id null).
+  if (action === "delete") {
+    const { data: row, error: rowErr } = await db
+      .from("meal_days")
+      .select("date, plan_id, shopped_at, shopping_list_id")
+      .eq("household_id", householdId)
+      .eq("date", date)
+      .maybeSingle();
+    if (rowErr) throw new Error("Kunde inte läsa dagen — prova igen.");
+    if (!row) return res.status(404).json({ error: "Dagen finns inte i matsedeln." });
+
+    const { error: delErr } = await db
+      .from("meal_days")
+      .delete()
+      .eq("household_id", householdId)
+      .eq("date", date);
+    if (delErr) throw new Error("Kunde inte ta bort dagen — prova igen.");
+
+    // Låg dagens varor på aktiva listan (o-inhandlade)? Bygg om listan utan dem.
+    // Inhandlade dagar lämnar inga varor kvar att städa. Misslyckas ombygget är
+    // dagen ändå borttagen — flagga så klienten kan säga det ärligt.
+    let shoppingList = null;
+    let listStale = false;
+    if (!row.shopped_at && row.shopping_list_id) {
+      try {
+        const activeList = await getActiveList(householdId);
+        if (activeList && row.shopping_list_id === activeList.id) {
+          const covered = unshoppedDates(await fetchCoverage(householdId, activeList.id));
+          const rebuilt = await rebuildActiveList({
+            householdId,
+            coverDates: covered.filter((d) => d !== date),
+            span: { startDate: activeList.start_date, endDate: activeList.end_date },
+          });
+          shoppingList = rebuilt.shoppingList;
+        }
+      } catch (e) {
+        console.error("skip-day delete: kunde inte bygga om listan", e);
+        listStale = true;
+      }
+    }
+
+    // Plan-dag: räkna om planens datumspann; en tömd plan deaktiveras.
+    let weeklyPlan = null;
+    if (row.plan_id) {
+      const { data: plans } = await db
+        .from("weekly_plans")
+        .select("id, start_date, end_date, confirmed_at")
+        .eq("id", row.plan_id)
+        .limit(1);
+      const plan = plans?.[0];
+      const { data: planRows, error: reReadErr } = await db
+        .from("meal_days")
+        .select("date, recipe_id, recipe_title_snapshot, saving, saving_matches, blocked")
+        .eq("plan_id", row.plan_id)
+        .order("date");
+      if (reReadErr) throw new Error("Dagen togs bort, men matsedeln kunde inte läsas om — ladda om sidan.");
+
+      if (!planRows?.length) {
+        const { error: deactErr } = await db
+          .from("weekly_plans").update({ is_active: false }).eq("id", row.plan_id);
+        if (deactErr) console.error("skip-day delete: kunde inte deaktivera tömd plan", deactErr);
+      } else if (plan) {
+        const newStart = planRows[0].date;
+        const newEnd = planRows[planRows.length - 1].date;
+        if (newStart !== plan.start_date || newEnd !== plan.end_date) {
+          const { error: boundsErr } = await db
+            .from("weekly_plans")
+            .update({ start_date: newStart, end_date: newEnd })
+            .eq("id", plan.id);
+          if (boundsErr) console.error("skip-day delete: kunde inte uppdatera datumspann", boundsErr);
+        }
+        weeklyPlan = toWeeklyPlan({ ...plan, start_date: newStart, end_date: newEnd }, planRows);
+      }
+    }
+
+    return res.status(200).json({ ok: true, weeklyPlan, shoppingList, listStale });
+  }
 
   const { data: plans, error: planErr } = await db
     .from("weekly_plans")

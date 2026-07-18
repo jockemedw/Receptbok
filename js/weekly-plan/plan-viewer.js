@@ -563,6 +563,7 @@ export function blockedDayEditorHtml(dateIso, dayName) {
         <button type="button" class="custom-note-save" onclick="convertBlockedToCustom('${dateIso}')">Spara notering</button>
       </div>
     </div>
+    <button type="button" class="custom-day-remove" onclick="dlxSheetDeleteDay()">Ta bort dagen helt</button>
   </div>`;
 }
 window.blockedDayEditorHtml = blockedDayEditorHtml;
@@ -975,6 +976,22 @@ export async function clearCustomDay(dateIso) {
   if (window._opBusy) return;   // delad spärr med premiumvyn (backlog #10)
   window._opBusy = true;
   try {
+    // Låg dagens ingredienser på inköpslistan (inköpsrundor)? Plocka bort dem
+    // FÖRE raderingen (remove_day kräver att dagen finns i täckningen).
+    // Misslyckas städningen tas dagen ändå bort — säg det ärligt i en toast.
+    if (window._timelineByDate?.[dateIso]?.onList) {
+      try {
+        const res = await window.apiFetch('/api/shopping', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'remove_day', date: dateIso }),
+        });
+        if (res.ok) { window._preserveChecked = false; window.loadShoppingTab?.(); }
+        else window.showToast?.('Dagen tas bort, men inköpslistan kunde inte uppdateras — ladda om och prova igen.', { type: 'error' });
+      } catch {
+        window.showToast?.('Dagen tas bort, men inköpslistan kunde inte uppdateras — ladda om och prova igen.', { type: 'error' });
+      }
+    }
     await postCustomDays('clear', [dateIso]);
     window.dlxCloseSheet?.();   // editorn bor i dag-sheeten
     // Via window.* så både deluxe- och Idag-vyn re-renderas (se saveCustomDay).
