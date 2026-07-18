@@ -103,6 +103,11 @@ function renderResult(data) {
           [...new Set(data.prefMisses.flatMap(p => p.wanted || []))].join("/")
         }: ${data.prefMisses.map(p => escapeHtml(p.canon)).join(", ")} — vanlig variant ligger i korgen.</p>`
       : "";
+    // Inköpsrundor: erbjud stämpling — aldrig automatiskt (korgen är fylld men
+    // köpet inte genomfört, och omatchade varor kan behöva handlas ändå).
+    const markBtn = (window._shopCoverage || []).some((r) => !r.shopped_at)
+      ? `<button class="btn-secondary" onclick="closeDispatchModal();markRoundShopped()">Markera som inhandlat</button>`
+      : "";
     showResult(`
       <p>✓ ${data.addedCount} produkt${data.addedCount !== 1 ? 'er' : ''} tillagda i din Willys-korg.</p>
       ${sourceNote}
@@ -110,6 +115,7 @@ function renderResult(data) {
       ${missingHtml}
       <div class="dispatch-actions">
         <a class="btn-primary" href="${CART_URL}" target="_blank" rel="noopener">Öppna willys.se →</a>
+        ${markBtn}
         <button class="btn-secondary" onclick="closeDispatchModal()">Stäng</button>
       </div>
     `);

@@ -2,7 +2,7 @@
 // Läser state: _shopListId, _shopItemIds, _checkedItems, _checkedSaveTimer, _shopRecipeItems, _shopManualItems
 // Skriver state: _shopListId, _shopItemIds, _checkedItems, _checkedSaveTimer, _shopRecipeItems, _shopManualItems
 
-import { CAT_ICONS, escapeHtml, fmtIso } from '../utils.js';
+import { CAT_ICONS, escapeHtml, fmtIso, fmtShort } from '../utils.js';
 
 // Kanonisk kategoriordning (samma som inköpslistan byggs i) — håller ordningen
 // stabil oavsett i vilken ordning DB-raderna råkar komma tillbaka.
@@ -495,6 +495,13 @@ export function updateShopProgress() {
     : '';
   document.querySelectorAll('#shopProgress, .shop-progress').forEach(el =>
     el.classList.toggle('complete', total > 0 && done >= total));
+  // Allt i korgen + o-inhandlade täckta dagar → lyft fram "Vi har handlat"
+  // (föreslå, aldrig stämpla automatiskt — bockning sker gradvis i butiken).
+  const covEl = document.getElementById('shopCoverage');
+  if (covEl) {
+    const hasUnshopped = (window._shopCoverage || []).some((r) => !r.shopped_at);
+    covEl.classList.toggle('all-picked', total > 0 && done >= total && hasUnshopped);
+  }
   document.querySelectorAll('.shopping-cat-count[data-cat]').forEach(el => {
     const c = perCat[el.dataset.cat];
     if (c) el.textContent = `${c.done} av ${c.total}`;
@@ -780,6 +787,82 @@ export function renderFullShoppingList(recipeItems, manualItems) {
   textEl._fullText = textParts.join('\n\n');
 }
 
+// ── Inköpsrundor: täckningsrad + "Vi har handlat" (migration 009) ────────────
+// window._shopCoverage = meal_days-rader (date, shopped_at, recipe_title_snapshot)
+// vars shopping_list_id pekar på aktiva listan. Raden visar vilka middagar
+// listan täcker och bär knappen som stämplar rundan som inhandlad.
+
+export function renderShopCoverage() {
+  const el = document.getElementById('shopCoverage');
+  if (!el) return;
+  const cov = window._shopCoverage || [];
+  const unshopped = cov.filter((r) => !r.shopped_at);
+  if (!cov.length) { el.innerHTML = ''; el.style.display = 'none'; return; }
+  el.style.display = '';
+
+  if (!unshopped.length) {
+    el.innerHTML = `<div class="shop-coverage is-done">
+      <span class="shop-coverage-txt">Inhandlat ✓ — nästa lista tar bara med nya middagar</span>
+    </div>`;
+    return;
+  }
+
+  const n = unshopped.length;
+  const span = n > 1
+    ? `${fmtShort(unshopped[0].date)} – ${fmtShort(unshopped[n - 1].date)}`
+    : fmtShort(unshopped[0].date);
+  el.innerHTML = `<div class="shop-coverage">
+    <span class="shop-coverage-txt">Listan täcker <strong>${n} ${n === 1 ? 'middag' : 'middagar'}</strong> · ${escapeHtml(span)}</span>
+    <button type="button" class="shop-coverage-btn" id="markShoppedBtn" onclick="markRoundShopped()">Vi har handlat ✓</button>
+  </div>`;
+}
+
+export async function refreshShopCoverage() {
+  if (!window._shopListId) return;
+  try {
+    const householdId = await window.getHouseholdId();
+    const { data, error } = await window.db
+      .from('meal_days')
+      .select('date, shopped_at, recipe_title_snapshot')
+      .eq('household_id', householdId)
+      .eq('shopping_list_id', window._shopListId)
+      .order('date');
+    if (error) return;
+    window._shopCoverage = data || [];
+    renderShopCoverage();
+  } catch { /* täckningsraden är sekundär — låt den vara vid nätfel */ }
+}
+
+export async function markRoundShopped() {
+  const unshopped = (window._shopCoverage || []).filter((r) => !r.shopped_at);
+  if (!unshopped.length) return;
+  const ok = await window.confirmDialog({
+    title: 'Klart med handlingen?',
+    message: 'Middagarna på listan markeras som inhandlade — nästa lista tar bara med nya middagar, inget ni redan köpt kommer tillbaka. Varor ni inte hunnit bocka flyttas till Egna tillägg så de inte försvinner.',
+    confirmLabel: 'Ja, vi har handlat',
+  });
+  if (!ok) return;
+  const btn = document.getElementById('markShoppedBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Sparar…'; }
+  try {
+    const res = await window.apiFetch('/api/shopping', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'mark_shopped' }),
+    });
+    let data = {};
+    try { data = await res.json(); } catch { /* ingen JSON */ }
+    if (!res.ok) throw Object.assign(new Error(data.error || ''), { serverMsg: data.error });
+    window._preserveChecked = false;
+    await loadShoppingTab();          // konverterade varor visas nu som Egna tillägg
+    window.loadWeeklyPlan?.();        // chips på Matsedeln + Idag
+    window.showToast?.('Markerat som inhandlat — nya middagar lägger bara till nya varor.', { type: 'success' });
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Vi har handlat ✓'; }
+    window.showToast?.(e?.serverMsg || 'Kunde inte markera som inhandlat — prova igen.', { type: 'error' });
+  }
+}
+
 export async function loadShoppingTab() {
   document.getElementById('shopLoading').style.display  = '';
   document.getElementById('shopContent').style.display  = 'none';
@@ -813,6 +896,19 @@ export async function loadShoppingTab() {
       items = rows ?? [];
     }
 
+    // Inköpsrundor (migration 009): vilka middagar listan täcker. Saknas
+    // kolumnen (migrationen ej körd) blir det tyst en tom täckning.
+    window._shopCoverage = [];
+    if (list) {
+      const { data: covRows, error: covErr } = await window.db
+        .from('meal_days')
+        .select('date, shopped_at, recipe_title_snapshot')
+        .eq('household_id', householdId)
+        .eq('shopping_list_id', list.id)
+        .order('date');
+      if (!covErr) window._shopCoverage = covRows || [];
+    }
+
     const hasRecipeItems = !!(list?.recipe_items_moved_at && items.some(i => i.source === 'recipe'));
     const hasManual      = items.some(i => i.source === 'manual');
 
@@ -835,6 +931,7 @@ export async function loadShoppingTab() {
     if (!preserveChecked) window._checkedItems = state.checkedItems;
 
     renderFullShoppingList(hasRecipeItems ? state.recipeItems : null, state.manualItems);
+    renderShopCoverage();
   } catch {
     document.getElementById('shopLoading').style.display = 'none';
     document.getElementById('shopNoData').style.display  = '';
@@ -1101,4 +1198,6 @@ window.copyShoppingList   = copyShoppingList;
 window.addManualItem      = addManualItem;
 window.loadShoppingTab    = loadShoppingTab;
 window.renderShoppingData = renderShoppingData;
+window.markRoundShopped   = markRoundShopped;
+window.refreshShopCoverage = refreshShopCoverage;
 window.renderFullShoppingList = renderFullShoppingList;

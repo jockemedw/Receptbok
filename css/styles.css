@@ -2980,6 +2980,52 @@
     color: var(--on-accent);
   }
 
+  /* ── Inköpsrundor: täckningsrad + "Vi har handlat" (Session 130) ──
+     Temavänlig via variabler (ljust + mörkt). Knappen ≥44px touch-target. */
+  .shop-coverage {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+    background: var(--linen-card);
+    border: 1.5px solid var(--birch-soft);
+    border-radius: 12px;
+    padding: 0.55rem 0.85rem;
+    margin: 0 0 0.8rem;
+  }
+  .shop-coverage-txt {
+    font-size: 0.86rem;
+    color: var(--text-muted);
+    line-height: 1.35;
+  }
+  .shop-coverage-txt strong { color: var(--forest); font-weight: 600; }
+  .shop-coverage-btn {
+    min-height: 44px;
+    padding: 0.45rem 1rem;
+    border: 1.5px solid var(--lichen-deep);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--lichen-deep);
+    font-family: inherit;
+    font-size: 0.86rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+  }
+  @media (hover: hover) { .shop-coverage-btn:hover { background: var(--lichen-deep); color: var(--on-accent); } }
+  .shop-coverage-btn:disabled { opacity: 0.6; cursor: default; }
+  /* Allt bockat → lyft fram knappen (föreslå stämpling, aldrig automatik) */
+  #shopCoverage.all-picked .shop-coverage-btn {
+    background: var(--lichen-deep);
+    color: var(--on-accent);
+    box-shadow: 0 2px 10px color-mix(in srgb, var(--lichen-deep) 35%, transparent);
+  }
+  .shop-coverage.is-done {
+    border-style: dashed;
+  }
+  .shop-coverage.is-done .shop-coverage-txt { color: var(--lichen-deep); font-weight: 500; }
+
   /* ── Omordning av egna varor (drag-and-drop, alltid tillgängligt) ── */
   .drag-handle {
     display: inline-flex;   /* permanent synligt → dra utan att gå in i Redigera */
@@ -4054,6 +4100,9 @@ html.auth-required body {
 .dlx-shopped-tick { display: inline-flex; color: var(--lichen-deep, #5e7a68); }
 .dlx-shopped-cart svg { width: 16px; height: 16px; }
 .dlx-shopped-tick svg { width: 12px; height: 12px; }
+/* "På listan"-variant (inköpsrundor): kundvagn utan bock, dämpad — varorna
+   ligger på listan men är inte inhandlade än. */
+.dlx-shopped.onlist .dlx-shopped-cart { color: var(--moss-muted, #8a8577); }
 .dlx-tonight-sub .dlx-shopped-cart svg,
 .dlx-sheet-sub .dlx-shopped-cart svg { width: 15px; height: 15px; vertical-align: -2px; }
 .dlx-tonight-sub .dlx-shopped-tick svg,

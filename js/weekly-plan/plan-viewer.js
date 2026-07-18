@@ -47,6 +47,9 @@ function subscribeMealDays(householdId) {
   _planChannel = window.db
     .channel(`meal_days:${householdId}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'meal_days', filter: `household_id=eq.${householdId}` }, () => {
+      // Inköpsrundor: partnerns "Vi har handlat"/add_day syns i Inköp-flikens
+      // täckningsrad utan omladdning (billig, egen hämtning — ingen plan-reload).
+      window.refreshShopCoverage?.();
       // Ladda inte om direkt om användaren är mitt i en interaktion — men
       // tappa inte eventet: markera planen som stale (F231).
       if (window.replaceMode || window.customPickMode) { markPlanStale(); return; }
@@ -144,6 +147,9 @@ function buildTimeline(plan, archive, customDays) {
     const entry = byDate.get(iso) || {};
     const custom = customEntries[iso];
     const isCustom = !!custom && !entry.recipeId && !entry.isArchive;
+    // Inköpsrundor: dagens rundstatus — från plan-dagen eller custom-dagen.
+    const shoppedAt = entry.shoppedAt || custom?.shoppedAt || null;
+    const dayListId = entry.listId || custom?.listId || null;
     days.push({
       date: iso,
       day: DAY_NAMES_LONG[dow],
@@ -168,6 +174,8 @@ function buildTimeline(plan, archive, customDays) {
       customNote: isCustom ? (custom.note || '') : '',
       customRecipeId: isCustom ? (custom.recipeId || null) : null,
       customRecipeTitle: isCustom ? (custom.recipeTitle || '') : '',
+      shoppedAt,
+      onList: !!dayListId && dayListId === window._activeShopListId,
     });
   }
   return days;
@@ -208,6 +216,9 @@ async function loadCustomDays() {
         note:        row.custom_note || '',
         recipeId:    row.recipe_id ?? null,
         recipeTitle: row.recipe_title_snapshot || '',
+        // Inköpsrundor (migration 009) — saknas kolumnerna blir de undefined → null
+        shoppedAt:   row.shopped_at ?? null,
+        listId:      row.shopping_list_id ?? null,
       };
     }
     return { entries };
@@ -241,6 +252,8 @@ async function loadActivePlanFromSupabase(householdId) {
       savingMatches: row.saving_matches ?? null,
       locked:        row.locked === true,
       blocked:       row.blocked === true,
+      shoppedAt:     row.shopped_at ?? null,        // inköpsrundor (migration 009)
+      listId:        row.shopping_list_id ?? null,
     })),
   };
 }
@@ -268,6 +281,7 @@ async function loadShopSummaryFromSupabase(householdId) {
   }
   for (const cat of Object.keys(recipeItems)) recipeItems[cat] = recipeItems[cat].filter(Boolean);
   return {
+    listId:             list.id,   // för "på listan"-chipsen (inköpsrundor)
     recipeItems:        Object.keys(recipeItems).length ? recipeItems : null,
     recipeItemsMovedAt: list.recipe_items_moved_at || null,
   };
@@ -388,8 +402,25 @@ export async function selectRecipeForCustomDay(event, recipeId, title) {
       dbErr = new Error('Dagen ingår nu i en matsedel — kunde inte spara.');
     }
     if (dbErr) throw dbErr;
-    const updatedEntries = { ...(window._customDays?.entries || {}), [date]: { note: existing.note || '', recipeId, recipeTitle: title } };
+    const updatedEntries = { ...(window._customDays?.entries || {}), [date]: { ...existing, note: existing.note || '', recipeId, recipeTitle: title } };
     window._customDays = { entries: updatedEntries };
+
+    // Låg dagen redan på inköpslistan (inköpsrundor)? Då gäller listans varor
+    // det GAMLA receptet — bygg om via add_day så listan speglar det nya.
+    // Inhandlade dagar rörs inte ("Lägg tillbaka" är ett uttryckligt val i dag-vyn).
+    if (window._timelineByDate?.[date]?.onList) {
+      try {
+        const res = await window.apiFetch('/api/shopping', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'add_day', date }),
+        });
+        if (res.ok) { window._preserveChecked = false; window.loadShoppingTab?.(); }
+        else window.showToast?.('Receptet sparades, men inköpslistan kunde inte uppdateras — öppna dagen och välj "Lägg ingredienser på inköpslistan".', { type: 'error' });
+      } catch {
+        window.showToast?.('Receptet sparades, men inköpslistan kunde inte uppdateras — öppna dagen och välj "Lägg ingredienser på inköpslistan".', { type: 'error' });
+      }
+    }
     exitCustomPickMode();
     renderWeeklyPlanData(
       window._lastPlan || null,
@@ -711,6 +742,11 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
   window._customDays = customData;
   window._lastPlan = plan;
   window._lastShop = shop;
+  // Aktiva inköpslistans id (för "på listan"-chipsen). API-payloads och
+  // Supabase-summeringen bär listId; äldre/återanvända payloads utan fältet
+  // behåller senast kända id i stället för att blanka chipsen.
+  if (shop && shop.listId) window._activeShopListId = shop.listId;
+  else if (!shop) window._activeShopListId = null;
 
   if (!hasActivePlan && !(archiveData.plans && archiveData.plans.length) && !Object.keys(customData.entries || {}).length) {
     document.getElementById('weekLoading').style.display = 'none';

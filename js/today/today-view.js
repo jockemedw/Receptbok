@@ -168,10 +168,9 @@ function weekHtml(weekDays, sumLeft, sumRight) {
   const threads = weekDays.map(d => {
     const info = dayInfo(d);
     const hasMeal = info && info.kind === 'recipe';
-    // "Handlat för": ingredienserna ligger på en bekräftad inköpslista —
-    // samma härledning som kundvagnschipet i Matsedel-vyn.
-    const shopped = d.planId === 'active' && !d.isCustom && !!d.recipeId
-      && !!(window._lastPlan?.confirmedAt || window.planConfirmed);
+    // "Inhandlad": riktig per-dag-data (meal_days.shopped_at, inköpsrundor) —
+    // samma källa som kundvagnschipet i Matsedel-vyn.
+    const shopped = !!d.shoppedAt;
     const cls = [
       'today-thread',
       d.date < todayIso ? 'past' : '',
