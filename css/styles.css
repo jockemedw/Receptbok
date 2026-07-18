@@ -457,6 +457,10 @@
   body:not([data-active-tab="recept"]) .tab-recept-only {
     display: none;
   }
+  /* Visa inköps-FAB:en (+ lägg till vara) bara på Inköp-fliken */
+  body:not([data-active-tab="shop"]) .tab-shop-only {
+    display: none;
+  }
 
   .recipe-count { display: none; }
 
@@ -2892,7 +2896,27 @@
   .pantry-btn svg { width: 17px; height: 17px; }
   .pantry-btn.active { color: var(--lichen-deep); }
   @media (hover: hover) { .pantry-btn:hover { color: var(--forest); } }
-  #shoppingList.editing .pantry-btn { display: none; }   /* redigera-läget: bara × */
+  .shopping-item.row-editing .pantry-btn { display: none; }   /* radredigering: bara × */
+
+  /* Penn-knapp — alltid synlig radredigering (ersätter gamla ✎ Redigera-läget) */
+  .row-edit-btn {
+    background: none;
+    border: none;
+    color: var(--birch, #c9bfa8);
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    min-width: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .row-edit-btn svg { width: 16px; height: 16px; }
+  @media (hover: hover) { .row-edit-btn:hover { color: var(--forest); } }
+  .shopping-item.row-editing .row-edit-btn,
+  .shopping-item.row-editing .drag-handle { display: none; }
 
   .shopping-item.pantry { opacity: 0.45; cursor: default; }
   .shopping-item.pantry .item-text { font-style: italic; }
@@ -2907,7 +2931,7 @@
     white-space: nowrap;
   }
 
-  /* Ta-bort-knapp (× på varje vara) — visas bara i redigera-läget */
+  /* Ta-bort-knapp (× på varje vara) — visas bara medan raden redigeras */
   .remove-item-btn {
     margin-left: auto;
     background: none;
@@ -2926,13 +2950,13 @@
     flex-shrink: 0;
     display: none;
   }
-  #shoppingList.editing .remove-item-btn { display: block; }
+  .shopping-item.row-editing .remove-item-btn { display: inline-flex; }
   @media (hover: hover) { .remove-item-btn:hover { color: var(--rust); } }
 
-  /* I redigera-läget ska klick på raden inte bocka av — bara × tar bort */
-  #shoppingList.editing .shopping-item { cursor: default; }
+  /* Medan raden redigeras ska klick på den inte bocka av — bara × tar bort */
+  .shopping-item.row-editing { cursor: default; }
 
-  /* Redigerbart textfält för en vara (redigera-läge) */
+  /* Redigerbart textfält för en vara (radredigering) */
   .item-edit-input {
     flex: 1;
     min-width: 0;
@@ -3025,6 +3049,41 @@
     border-style: dashed;
   }
   .shop-coverage.is-done .shop-coverage-txt { color: var(--lichen-deep); font-weight: 500; }
+
+  /* ── Flytande + : lägg till vara-panelen (ersätter gamla sektionen) ── */
+  .shop-add-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: var(--z-sheet);
+    display: flex;
+    align-items: flex-end;
+    opacity: 0;
+    transition: opacity 0.18s;
+  }
+  .shop-add-overlay.open { opacity: 1; }
+  .shop-add-panel {
+    background: var(--linen-card);
+    width: 100%;
+    border-radius: 16px 16px 0 0;
+    padding: 1rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+    box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.18);
+  }
+  .shop-add-close {
+    display: block;
+    margin: 0.5rem auto 0;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.85rem;
+    min-height: 44px;
+    padding: 0 1.25rem;
+    cursor: pointer;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .shop-add-overlay { transition: none; }
+  }
 
   /* ── Omordning av egna varor (drag-and-drop, alltid tillgängligt) ── */
   .drag-handle {

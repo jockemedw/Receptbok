@@ -262,10 +262,13 @@ export function setShopMode(mode) {
   document.getElementById('modeBtnText').classList.toggle('active', !isHandla);
   document.getElementById('shoppingList').style.display = isHandla ? '' : 'none';
   document.getElementById('shoppingText').classList.toggle('visible', !isHandla);
-  // Redigera-läget hör bara hemma i handla-vyn
+  // Läges-knapparna hör bara hemma i handla-vyn
   const editBar = document.getElementById('shopEditBar');
   if (editBar) editBar.style.display = isHandla ? '' : 'none';
-  if (!isHandla && window._editMode) toggleEditMode();
+  if (!isHandla && window._editRowKey) {
+    window._editRowKey = null;
+    renderFullShoppingList(window._shopRecipeItems || null, window._shopManualItems || []);
+  }
 }
 
 // Handla-läge: bockade varor sjunker ner under ett streck ("I korgen"),
@@ -281,21 +284,22 @@ export function toggleHandlaMode() {
   renderFullShoppingList(window._shopRecipeItems || null, window._shopManualItems || []);
 }
 
-// Redigera-läge: visar en ×-knapp på varje vara så att man kan ta bort den helt
-// (inte bara bocka av den som köpt).
-export function toggleEditMode() {
-  window._editMode = !window._editMode;
-  const list = document.getElementById('shoppingList');
-  const btn  = document.getElementById('editModeBtn');
-  if (list) list.classList.toggle('editing', window._editMode);
-  if (btn) {
-    btn.classList.toggle('active', window._editMode);
-    btn.textContent = window._editMode ? '✓ Klar' : '✎ Redigera';
-  }
-  // Re-rendera så varornas text växlar mellan etikett och redigerbart fält
-  if (window._shopRecipeItems || (window._shopManualItems && window._shopManualItems.length)) {
-    renderFullShoppingList(window._shopRecipeItems || null, window._shopManualItems || []);
-  }
+// Radredigering (ersätter det gamla ✎ Redigera-läget, Session 130-uppföljning):
+// varje rad har en alltid synlig penn-knapp → just den raden blir ett textfält
+// med ×-knapp (ta bort). Sparas vid Enter/blur via commitRowEdit.
+export function editShopRow(key) {
+  window._editRowKey = key;
+  renderFullShoppingList(window._shopRecipeItems || null, window._shopManualItems || []);
+  const input = document.querySelector('.shopping-item.row-editing .item-edit-input');
+  if (input) { input.focus(); input.select?.(); }
+}
+
+export async function commitRowEdit(inputEl) {
+  // Nolla FÖRE rename — renameShopItem re-renderar för egna varor och ska då
+  // rendera raden som vanlig etikett igen, inte återskapa fältet.
+  window._editRowKey = null;
+  await renameShopItem(inputEl);   // no-op vid oförändrat namn
+  renderFullShoppingList(window._shopRecipeItems || null, window._shopManualItems || []);
 }
 
 // Tar bort en vara ur in-memory-state och re-renderar från minnet — ingen
@@ -426,7 +430,7 @@ async function flushPendingChecks() {
 }
 
 export function toggleShopItem(el, key) {
-  if (window._editMode) return;   // i redigera-läget gör radklick inget — bara × tar bort
+  if (window._editRowKey === key) return;   // raden redigeras — klick bockar inte
   if (el.classList.contains('pantry')) return;   // "har hemma"-vara bockas inte — den handlas inte
   const nowChecked = !window._checkedItems[key];
   window._checkedItems[key] = nowChecked;
@@ -528,17 +532,25 @@ function shopProgressHtml() {
   </div>`;
 }
 
-// Textcell för en vara: redigerbart fält i redigera-läge, annars vanlig text.
-// Namnet escapas alltid (varorna är användarredigerbara → XSS-skydd).
-function itemTextCell(name, rowId) {
-  if (window._editMode) {
+// Textcell för en vara: redigerbart fält när just den raden redigeras
+// (penn-knappen), annars vanlig text. Namnet escapas alltid (XSS-skydd).
+function itemTextCell(name, rowId, key) {
+  if (window._editRowKey === key) {
     const v = escapeHtml(name);
     return `<input class="item-edit-input" type="text" value="${v}" data-id="${rowId ?? ''}" data-orig="${v}"
               onclick="event.stopPropagation()"
               onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
-              onchange="renameShopItem(this)">`;
+              onblur="commitRowEdit(this)">`;
   }
   return `<span class="item-text">${escapeHtml(name)}</span>`;
+}
+
+const ICON_PENCIL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4l10-10a2 2 0 0 0-2.8-2.8L5 17v3z"/><path d="M13.5 6.5l4 4"/></svg>';
+
+// Penn-knapp — alltid synlig på varje rad (döljs bara medan raden redigeras).
+function rowEditBtnHtml(key) {
+  return `<button class="row-edit-btn" title="Ändra varan" aria-label="Ändra varan" data-key="${escapeHtml(key)}"
+            onclick="event.stopPropagation();editShopRow(this.dataset.key)">${ICON_PENCIL}</button>`;
 }
 
 // Byt namn på en vara (i redigera-läge). Uppdaterar DB + minne utan omladdning.
@@ -649,13 +661,16 @@ function recipeItemLi(cat, idx, name) {
   const pantry  = isPantryName(name);
   const checked = !pantry && (window._checkedItems[key] || false);
   const rowId   = window._shopItemIds?.[key];
-  return `<li class="shopping-item${checked ? ' checked' : ''}${pantry ? ' pantry' : ''}"
+  const editing = window._editRowKey === key;
+  return `<li class="shopping-item${checked ? ' checked' : ''}${pantry ? ' pantry' : ''}${editing ? ' row-editing' : ''}"
               onclick="toggleShopItem(this,'${key}')">
     <span class="item-checkbox">${checked ? '✓' : ''}</span>
-    ${itemTextCell(name, rowId)}
+    ${itemTextCell(name, rowId, key)}
     ${pantry ? '<span class="pantry-tag">har hemma</span>' : ''}
+    ${rowEditBtnHtml(key)}
     ${pantryBtnHtml(name)}
     <button class="remove-item-btn" data-key="${key}" title="Ta bort varan"
+            onpointerdown="event.preventDefault()"
             onclick="event.stopPropagation();removeShopItem(this.dataset.key)">×</button>
   </li>`;
 }
@@ -667,17 +682,21 @@ function manualItemLi(idx, name) {
   const pantry  = isPantryName(name);
   const checked = !pantry && (window._checkedItems[key] || false);
   const rowId   = window._shopItemIds?.[key];   // namn-baserad (F035) — samma nyckel som ovan
+  const editing = window._editRowKey === key;
   const handle  = `<button class="drag-handle" title="Dra för att byta ordning" aria-label="Dra för att byta ordning"
               onpointerdown="startManualDrag(event, this)" onclick="event.stopPropagation()">${ICON_DRAG}</button>`;
-  return `<li class="shopping-item${checked ? ' checked' : ''}${pantry ? ' pantry' : ''}"
+  return `<li class="shopping-item${checked ? ' checked' : ''}${pantry ? ' pantry' : ''}${editing ? ' row-editing' : ''}"
               data-key="${escapeHtml(key)}" data-manual-idx="${idx}"
               onclick="toggleShopItem(this,this.dataset.key)">
     <span class="item-checkbox">${checked ? '✓' : ''}</span>
-    ${itemTextCell(name, rowId)}
+    ${itemTextCell(name, rowId, key)}
     ${pantry ? '<span class="pantry-tag">har hemma</span>' : ''}
+    ${rowEditBtnHtml(key)}
     ${pantryBtnHtml(name)}
     ${handle}
-    <button class="remove-item-btn" data-item="${escapeHtml(name)}" title="Ta bort varan" onclick="event.stopPropagation();removeManualItem(this.dataset.item)">×</button>
+    <button class="remove-item-btn" data-item="${escapeHtml(name)}" title="Ta bort varan"
+            onpointerdown="event.preventDefault()"
+            onclick="event.stopPropagation();removeManualItem(this.dataset.item)">×</button>
   </li>`;
 }
 
@@ -1169,6 +1188,46 @@ export function copyShoppingList() {
   });
 }
 
+// ── Flytande + : lägg till egen vara (ersätter gamla sektionen längst ner) ───
+export function openShopAddSheet() {
+  if (document.getElementById('shopAddOverlay')) return;
+  const ov = document.createElement('div');
+  ov.id = 'shopAddOverlay';
+  ov.className = 'shop-add-overlay';
+  ov.onclick = (e) => { if (e.target === ov) closeShopAddSheet(); };
+  ov.innerHTML = `<div class="shop-add-panel" role="dialog" aria-modal="true" aria-label="Lägg till vara">
+    <div class="manual-add-title">Lägg till vara</div>
+    <div class="manual-add-row">
+      <input type="text" id="manualItemInput" class="manual-add-input"
+             placeholder="T.ex. Toalettpapper" aria-label="Lägg till vara"
+             onkeydown="if(event.key==='Enter'){event.preventDefault();shopAddSubmit();}else if(event.key==='Escape'){closeShopAddSheet();}">
+      <button class="manual-add-btn" id="manualAddBtn" onclick="shopAddSubmit()">Lägg till</button>
+    </div>
+    <button type="button" class="shop-add-close" onclick="closeShopAddSheet()">Stäng</button>
+  </div>`;
+  document.body.appendChild(ov);
+  requestAnimationFrame(() => ov.classList.add('open'));
+  // Fokusera synkront i tryck-gesten — annars öppnar iOS inte tangentbordet.
+  document.getElementById('manualItemInput')?.focus();
+}
+
+export function closeShopAddSheet() {
+  document.getElementById('shopAddOverlay')?.remove();
+}
+
+// Lägg till + toast + behåll fältet öppet för nästa vara (addManualItem tömmer
+// fältet BARA vid lyckad skrivning och toastar sina egna fel).
+export async function shopAddSubmit() {
+  const input = document.getElementById('manualItemInput');
+  const item = input?.value.trim();
+  if (!item) { input?.focus(); return; }
+  await addManualItem();
+  if (input && input.value === '') {
+    window.showToast?.(`${item} ligger nu på inköpslistan.`, { type: 'success' });
+    input.focus();
+  }
+}
+
 // Renderar ett shop-objekt från API-svar (används av plan-viewer efter skip/block)
 export function renderShoppingData(shop) {
   const recipeItemsData = shop.recipeItems || shop.categories || null;
@@ -1187,7 +1246,11 @@ export function renderShoppingData(shop) {
 window.setShopMode        = setShopMode;
 window.toggleShopItem     = toggleShopItem;
 window.togglePantryItem   = togglePantryItem;
-window.toggleEditMode     = toggleEditMode;
+window.editShopRow        = editShopRow;
+window.commitRowEdit      = commitRowEdit;
+window.openShopAddSheet   = openShopAddSheet;
+window.closeShopAddSheet  = closeShopAddSheet;
+window.shopAddSubmit      = shopAddSubmit;
 window.toggleHandlaMode   = toggleHandlaMode;
 window.renameShopItem     = renameShopItem;
 window.removeShopItem     = removeShopItem;
