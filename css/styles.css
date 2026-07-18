@@ -3699,6 +3699,9 @@
   box-shadow: 0 -2px 16px rgba(0,0,0,0.06);
   padding: 6px 4px env(safe-area-inset-bottom, 0px);
   z-index: var(--z-chrome);
+  /* Eget kompositor-lager: iOS kan annars låta fixed-element "glida med" och
+     snäppa tillbaka under scroll (repaint-lag) — translateZ(0) pinnar baren. */
+  transform: translateZ(0);
 }
 
 @media (max-width: 599px) {
