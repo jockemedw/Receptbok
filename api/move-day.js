@@ -48,7 +48,7 @@ export default createSupabaseHandler(async (req, res) => {
 
   const { data: rows, error: rowsErr } = await db
     .from("meal_days")
-    .select("date, recipe_id, recipe_title_snapshot, saving, saving_matches, blocked")
+    .select("date, recipe_id, recipe_title_snapshot, saving, saving_matches, blocked, shopped_at, shopping_list_id")
     .eq("plan_id", plan.id)
     .order("date");
   if (rowsErr) throw new Error("Kunde inte läsa matsedeln — prova igen.");

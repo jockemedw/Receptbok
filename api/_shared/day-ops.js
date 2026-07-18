@@ -13,6 +13,11 @@ export function contentOf(r) {
     recipe_title_snapshot: r.recipe_title_snapshot ?? null,
     saving:                r.saving ?? null,
     saving_matches:        r.saving_matches ?? null,
+    // Inköpsrundor (migration 009): inhandlat-status och listtäckning följer
+    // RECEPTINNEHÅLLET, inte datumet — flyttas måndagens inhandlade lasagne
+    // till torsdag är den fortfarande inhandlad.
+    shopped_at:            r.shopped_at ?? null,
+    shopping_list_id:      r.shopping_list_id ?? null,
   };
 }
 
@@ -109,6 +114,8 @@ export function changedRows(oldRows, nextRows) {
       || o.recipe_title_snapshot !== n.recipe_title_snapshot
       || (o.saving ?? null) !== (n.saving ?? null)
       || JSON.stringify(o.saving_matches ?? null) !== JSON.stringify(n.saving_matches ?? null)
-      || (o.blocked === true) !== (n.blocked === true);
+      || (o.blocked === true) !== (n.blocked === true)
+      || (o.shopped_at ?? null) !== (n.shopped_at ?? null)
+      || (o.shopping_list_id ?? null) !== (n.shopping_list_id ?? null);
   });
 }

@@ -1,6 +1,6 @@
-import { buildShoppingList } from "./_shared/shopping-builder.js";
 import { createSupabaseHandler } from "./_shared/handler.js";
-import { db, getHouseholdId, fetchTargetServings } from "./_shared/supabase.js";
+import { db, getHouseholdId } from "./_shared/supabase.js";
+import { rebuildActiveList } from "./_shared/shopping-store.js";
 import { fetchOffersFromWillys } from "./willys-offers.js";
 import { matchRecipe, buildDealCandidates } from "./_shared/willys-matcher.js";
 import { selectRecipes, bucketBySaving, hasTure } from "./_shared/select-recipes.js";
@@ -206,6 +206,11 @@ export async function savePlanToSupabase(weeklyPlan, householdId, database = db)
     saving_matches: d.savingMatches || null,
     blocked: d.blocked === true,
     locked: false,
+    // Nollas EXPLICIT: UPSERT:en på (household_id, date) behåller annars gamla
+    // kolumnvärden när en vecka regenereras över sig själv — och den nya rättens
+    // dag skulle felaktigt stå som "inhandlad" (inköpsrundor, migration 009).
+    shopped_at: null,
+    shopping_list_id: null,
   }));
 
   // UPSERT på (household_id, date): regenerering av en vecka skriver då rent över
@@ -284,57 +289,6 @@ async function saveHistoryToSupabase(days, householdId) {
     .map((d) => ({ household_id: householdId, recipe_id: d.recipeId, used_on: today }));
   if (!rows.length) return;
   await db.from("recipe_history").upsert(rows, { onConflict: "household_id,recipe_id" });
-}
-
-async function saveShoppingListToSupabase(shoppingCategories, existingShop, startDate, endDate, householdId) {
-  const today = new Date().toISOString().slice(0, 10);
-  // Skapa listan INAKTIV, skriv varorna, aktivera SIST (speglar activatePlan) — så
-  // en misslyckad vary-insert aldrig lämnar familjen med en aktiv men tom lista.
-  // Den gamla listan är kvar aktiv tills den nya är komplett.
-  const { data: newList, error: listErr } = await db
-    .from("shopping_lists")
-    .insert({
-      household_id: householdId,
-      start_date: startDate,
-      end_date: endDate,
-      generated_at: today,
-      recipe_items_moved_at: null,
-      is_active: false,
-    })
-    .select()
-    .single();
-  if (listErr) throw listErr;
-
-  const itemRows = [];
-  for (const [category, items] of Object.entries(shoppingCategories || {})) {
-    (items || []).forEach((name, pos) => {
-      itemRows.push({ list_id: newList.id, category, name, source: "recipe", checked: false, position: pos });
-    });
-  }
-  (existingShop?.manualItems || []).forEach((name, idx) => {
-    itemRows.push({
-      list_id: newList.id,
-      category: "Övrigt",
-      name,
-      source: "manual",
-      checked: !!(existingShop?.checkedItems?.[`manual::${name}`]),
-      position: idx,
-    });
-  });
-
-  if (itemRows.length > 0) {
-    const { error: itemsErr } = await db.from("shopping_items").insert(itemRows);
-    if (itemsErr) throw itemsErr;
-  }
-
-  // Ta den färdiga listan i bruk allra sist: stäng av gamla, slå på nya.
-  await db.from("shopping_lists").update({ is_active: false })
-    .eq("household_id", householdId).eq("is_active", true);
-  const { error: actErr } = await db.from("shopping_lists")
-    .update({ is_active: true }).eq("id", newList.id);
-  if (actErr) throw actErr;
-
-  return newList.id;
 }
 
 // ── Handler ─────────────────────────────────────────────────────────────────
@@ -526,10 +480,6 @@ export default createSupabaseHandler(async (req, res) => {
     return res.status(200).json({ ok: true, dry_run: true, days: days.length, weeklyPlan, deals, pricingDegraded });
   }
 
-  const selectedIds = days.map((d) => d.recipeId).filter(Boolean);
-  const targetServings = skip_shopping ? null : await fetchTargetServings(householdId);
-  const shoppingCategories = skip_shopping ? null : buildShoppingList(selectedIds, allRecipes, { targetServings });
-
   // Skriv nya planen + alla dagar (inaktiv). Glappar dag-skrivningen kastas det
   // här och den gamla aktiva planen är fortfarande orörd — användaren behåller
   // sin matsedel i stället för att få en tom.
@@ -540,15 +490,17 @@ export default createSupabaseHandler(async (req, res) => {
   await saveHistoryToSupabase(days, householdId);
 
   let shoppingList = null;
-  if (!skip_shopping && shoppingCategories) {
-    await saveShoppingListToSupabase(shoppingCategories, existingShop, start_date, end_date, householdId);
-    shoppingList = {
-      generated: today, startDate: start_date, endDate: end_date,
-      recipeItems: shoppingCategories,
-      recipeItemsMovedAt: null,
-      manualItems: existingShop?.manualItems || [],
-      checkedItems: existingShop?.checkedItems || {},
-    };
+  if (!skip_shopping) {
+    // existingShop hämtades som pre-flight ovan (avbryter FÖRE planskrivningen
+    // vid läsfel); själva bevarandet av manuella varor + bockar gör motorn.
+    void existingShop;
+    const rebuilt = await rebuildActiveList({
+      householdId,
+      coverDates: days.filter((d) => d.recipeId).map((d) => d.date),
+      span: { startDate: start_date, endDate: end_date },
+      recipes: allRecipes,
+    });
+    shoppingList = rebuilt.shoppingList;
   }
 
   return res.status(200).json({ ok: true, days: days.length, weeklyPlan, shoppingList, deals, pricingDegraded });
