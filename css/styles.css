@@ -3057,7 +3057,10 @@
     background: rgba(0, 0, 0, 0.35);
     z-index: var(--z-sheet);
     display: flex;
-    align-items: flex-end;
+    /* TOPP-förankrad: iOS-tangentbordet krymper bara synliga ytan nedifrån —
+       en botten-panel hamnar UNDER tangentbordet (fixed följer layout-
+       viewporten). Högst upp är fältet alltid synligt direkt. */
+    align-items: flex-start;
     opacity: 0;
     transition: opacity 0.18s;
   }
@@ -3065,9 +3068,9 @@
   .shop-add-panel {
     background: var(--linen-card);
     width: 100%;
-    border-radius: 16px 16px 0 0;
-    padding: 1rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
-    box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.18);
+    border-radius: 0 0 16px 16px;
+    padding: calc(0.9rem + env(safe-area-inset-top)) 1rem 0.75rem;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
   }
   .shop-add-close {
     display: block;
