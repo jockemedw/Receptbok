@@ -74,6 +74,7 @@
     --z-dlx-backdrop: 950;   /* dlx-sheet-backdrop */
     --z-dlx-sheet: 960;      /* dlx-sheet */
     --z-modal: 1000;         /* modal-overlay */
+    --z-drag: 1050;          /* dlx-drag-float — lyft dagkort under drag & släpp */
     --z-cook-overlay: 1100;  /* cook-overlay */
     --z-toast: 1200;         /* toastHost */
     --z-confirm: 1300;       /* confirm-overlay (över toasts) */
@@ -6286,3 +6287,125 @@ main#receptView {
 .po-dc-cur { font-size: 0.66rem; color: var(--text-muted); display: block; margin-top: 1px; }
 .po-noplan { font-size: 0.8rem; color: var(--text-muted); font-style: italic; }
 .po-foot { font-size: 0.68rem; color: var(--text-muted); line-height: 1.5; padding: 0.6rem 0.5rem 0.5rem; text-align: center; }
+
+/* ═══ Session 131 — Drag & släpp av dagar (långtryck → wiggle → dra) ═══ */
+/* Gestlagret bor i js/weekly-plan/day-drag.js. Långtryck lyfter ett dagkort,
+   övriga flyttbara kort wigglar (iOS-hemskärm), släpp på ett kort = byt plats,
+   släpp mellan två kort = kläm in (rust-linjen visar var). Reduced motion:
+   den globala regeln nollar wiggle/flygningar — tillstånden (lyft, dim,
+   mål-ring, linje) är statiska och bär betydelsen ensamma. */
+
+/* Långtryck ska aldrig trigga textmarkering/iOS-callout på dagkorten */
+.dlx-day, .dlx-tonight {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Insert-linjen positioneras absolut i dagslistan */
+.dlx-days { position: relative; }
+
+/* Wiggle på flyttbara kort — subtil, organisk (olika fas per rad) */
+@keyframes dlxWiggle {
+  from { transform: rotate(-0.45deg); }
+  to   { transform: rotate(0.5deg); }
+}
+.dlx-days.dlx-drag-mode .dlx-day-slot > [data-date]:not(.dlx-drag-src):not(.dlx-drag-off) {
+  animation: dlxWiggle 0.26s ease-in-out infinite alternate;
+}
+.dlx-days.dlx-drag-mode .dlx-day-slot:nth-child(2n) > [data-date]:not(.dlx-drag-src):not(.dlx-drag-off) { animation-delay: -0.13s; }
+.dlx-days.dlx-drag-mode .dlx-day-slot:nth-child(3n) > [data-date]:not(.dlx-drag-src):not(.dlx-drag-off) { animation-delay: -0.07s; animation-duration: 0.29s; }
+
+/* Källdagens plats — spöke med streckad ram tills draget landar */
+.dlx-days.dlx-drag-mode .dlx-drag-src {
+  opacity: 0.35;
+  border-style: dashed !important;
+  border-color: var(--birch) !important;
+  box-shadow: none !important;
+}
+
+/* Ogiltiga mål (arkiv, fria dagar, passerade) — dämpade, stilla */
+.dlx-days.dlx-drag-mode .dlx-drag-off { opacity: 0.35; }
+
+/* Hovrat byt-mål: lugn lichen-ring + ⇄-chip vid chevronen */
+.dlx-days.dlx-drag-mode .dlx-drag-over {
+  animation: none;
+  transform: scale(1.02);
+  border-color: var(--lichen) !important;
+  box-shadow: 0 0 0 2px var(--lichen) inset, var(--shadow-md);
+}
+.dlx-days.dlx-drag-mode .dlx-drag-over::after {
+  content: '⇄';
+  position: absolute;
+  right: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--lichen);
+  color: var(--on-accent);
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+/* Grannarna glider isär runt insert-linjen (transform-only → ingen layoutshift) */
+.dlx-days.dlx-drag-mode .dlx-nudge-up   { animation: none; transform: translateY(-5px); }
+.dlx-days.dlx-drag-mode .dlx-nudge-down { animation: none; transform: translateY(5px); }
+
+/* "Kläm in här"-linjen — rust, med prick i vänsterkanten */
+.dlx-drop-line {
+  position: absolute;
+  left: 1.35rem;
+  right: 1.35rem;
+  height: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-standard), top var(--dur-fast) var(--ease-out);
+  z-index: var(--z-base);
+}
+.dlx-drop-line::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; top: -1.5px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--rust);
+}
+.dlx-drop-line::after {
+  content: '';
+  position: absolute;
+  left: -5px; top: -5px;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--rust);
+  box-shadow: 0 0 0 3px rgba(181, 106, 76, 0.25);
+}
+.dlx-drop-line.visible { opacity: 1; }
+
+/* Flytande kortet — wrappern följer fingret (JS-transform, ingen transition),
+   .dlx-drag-lift bär lyft-poppen och landningen (transition) */
+.dlx-drag-float {
+  position: fixed;
+  left: 0; top: 0;
+  z-index: var(--z-drag);
+  pointer-events: none;
+  will-change: transform;
+  transition: opacity var(--dur-fast) var(--ease-standard);
+}
+.dlx-drag-float .dlx-drag-lift {
+  border-radius: 15px;
+  transition: transform 0.18s var(--ease-spring), box-shadow 0.18s var(--ease-standard), opacity var(--dur-fast) var(--ease-standard);
+}
+/* Över ett giltigt mål: tona ned ghosten så mål-ringen/insert-linjen läses igenom */
+.dlx-drag-float.over .dlx-drag-lift { opacity: 0.72; }
+.dlx-drag-float .dlx-drag-lift > [class] { animation: none; }   /* ingen dlxFadeIn på klonen */
+.dlx-drag-float.lifted .dlx-drag-lift {
+  transform: scale(1.035) rotate(1.3deg);
+  box-shadow: 0 18px 40px -16px rgba(44, 63, 51, 0.5), 0 4px 14px rgba(44, 63, 51, 0.16);
+  border-radius: 15px;
+}
+.dlx-drag-float.landing { transition: transform 0.19s var(--ease-out), opacity 0.19s var(--ease-standard); }
