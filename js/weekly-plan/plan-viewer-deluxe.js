@@ -481,6 +481,13 @@ function heroDateRange(startIso, endIso) {
 
 // ── Dagskort ──────────────────────────────────────────────────────────────────
 
+// Retro-planering (Session 131): passerade dagar får bytas/flyttas — familjen
+// planerar ofta om i efterhand — men bara 14 dagar bakåt (samma fönster som
+// recepthistoriken; servern i swap-days.js har samma gräns). Äldre = historik.
+function dlxMinSwapIso() {
+  return addDaysIso(fmtIso(new Date()), -14);
+}
+
 // Tilläggsklasser under pågående byt/flytta-läge: källa, giltigt mål eller
 // nedtonad. Beräknas i renderingen (state-driven) så markeringarna alltid
 // stämmer — även efter en re-render mitt i flödet.
@@ -489,13 +496,11 @@ function modeCls(d, kind) {
   if (!mode) return '';
   if (d.date === mode.from) return ' dlx-swap-source' + (mode.pending ? ' dlx-busy' : '');
   if (window._dlxMove) return ' dlx-dim';   // i flytta-läge är bara släppzonerna mål
+  const inWindow = d.date >= dlxMinSwapIso();
   const eligible =
-    kind === 'recipe' ? (d.planId === 'active' && !d.isArchive) :
-    // F024 (QC-natt): egen planering = bytbar (byter datum), men INTE om den
-    // ligger i det förflutna — annars kan ett byte mot en gammal, aldrig
-    // arkiverad anteckning dra tillbaka aktiva planens datumspann i historien.
-    kind === 'custom' ? (!d.isArchive && !d.isPast) :
-    kind === 'gap'    ? !d.isPast :
+    kind === 'recipe' ? (d.planId === 'active' && !d.isArchive && inWindow) :
+    kind === 'custom' ? (!d.isArchive && inWindow) :
+    kind === 'gap'    ? inWindow :
     false;                                  // fri dag kan aldrig bytas
   if (!eligible) return ' dlx-dim';
   return ' dlx-swap-target' + (window._dlxSwap.pending === d.date ? ' dlx-busy' : '');
@@ -601,10 +606,10 @@ function emptyDayCard(d) {
       </article>`;
   }
 
-  // Tom dag (gap) — bara framtida är klickbar. dlxDayClick routar: i byt
-  // dag-läge väljs dagen som mål (receptet flyttas dit), annars öppnas
-  // sheeten med egen-planering-editorn.
-  const clickable = !d.isPast;
+  // Tom dag (gap) — framtida är alltid klickbar; passerad bara i byt dag-läge
+  // (retro-planering: receptet kan flyttas till en tom passerad dag). Utanför
+  // läget öppnar dlxDayClick sheeten med egen-planering-editorn.
+  const clickable = !d.isPast || !!window._dlxSwap;
   const click = clickable ? `onclick="dlxDayClick('${d.date}', '${attr(d.day)}')"` : '';
   return `
     <article class="dlx-day gap slim${clickable ? '' : ' inert'}${modeCls(d, 'gap')}" data-date="${d.date}" ${click}>
@@ -913,7 +918,6 @@ document.addEventListener('keydown', (e) => {
 function moveZoneCtx() {
   const from = window._dlxMove?.from;
   if (!from) return null;
-  const todayIso = fmtIso(new Date());
   const movable = (window._lastPlan?.days || []).filter(d => !d.blocked && d.recipeId);
   const srcIdx = movable.findIndex(d => d.date === from);
   if (srcIdx === -1) return null;
@@ -921,7 +925,9 @@ function moveZoneCtx() {
 
   const set = new Set();
   for (const d of movable) {
-    if (d.date < todayIso) continue;       // inga flytt till passerade positioner
+    // Retro-planering: även passerade positioner är giltiga mål — familjen
+    // planerar ofta om i efterhand. (Planens datum ligger fast; bara innehållet
+    // roteras, så spannet påverkas inte.)
     if (d.date === from) continue;         // zonen före källan = no-op
     if (d.date === successor) continue;    // zonen direkt efter källan = no-op
     set.add(d.date);
@@ -998,10 +1004,12 @@ async function dlxPickSwapTarget(toDate) {
   if (t) {
     if (t.isArchive) { window.showToast?.('Arkiverade veckor är historik och kan inte ändras — bara dagar i aktuella matsedeln går att byta.', { type: 'info' }); return; }
     if (t.blocked)   { window.showToast?.('Fria dagar kan inte bytas — ångra fri dag först.', { type: 'info' }); return; }
-    // F024 (QC-natt): blockera passerade dagar oavsett isCustom — tidigare
-    // slapp egen-planering-dagar (t.isCustom=true) igenom kollen helt, vilket
-    // lät ett byte mot en gammal anteckning dra tillbaka planens spann.
-    if (!t.recipeId && t.isPast) { window.showToast?.('Passerade dagar kan inte väljas som mål.', { type: 'info' }); return; }
+  }
+  // Retro-planering: passerade dagar är ok inom 14-dagarsfönstret (retro-byten
+  // vid omplanering i efterhand); äldre är historik — samma gräns som servern.
+  if (toDate < dlxMinSwapIso() || swap.from < dlxMinSwapIso()) {
+    window.showToast?.('Dagar äldre än två veckor är historik och kan inte ändras.', { type: 'info' });
+    return;
   }
 
   // Omedelbar feedback: banner växlar till "Byter dag…", båda korten markeras
@@ -1202,8 +1210,10 @@ function sheetMenuHtml(d, s) {
     }
     if (active) {
       rows += sheetRow('dlxSheetStartSwap()', '', I.swap, 'Byt dag', 'Låt dagen byta plats med en annan dag');
+      // Retro-planering: flytta går även på passerade dagar (omplanering i
+      // efterhand). Fri dag/äta ute gäller bara idag och framåt.
+      rows += sheetRow('dlxSheetStartMove()', '', I.move, 'Flytta dag', 'Kläm in dagen mellan två andra dagar');
       if (!d.isPast) {
-        rows += sheetRow('dlxSheetStartMove()', '', I.move, 'Flytta dag', 'Kläm in dagen mellan två andra dagar');
         if (d.isToday) {
           rows += sheetRow("dlxSheetFree('ute')", '', I.fork, 'Vi äter ute', 'Ingen matlagning — receptet sparas till senare');
           rows += sheetRow("dlxSheetFree('rester')", 'ochre', I.leftovers, 'Rester ikväll', 'Töm kylskåpet — receptet sparas till senare');
@@ -1247,9 +1257,11 @@ function sheetMenuHtml(d, s) {
 }
 
 function sheetSwapTargets(fromDate) {
-  const todayIso = fmtIso(new Date());
+  // Retro-planering: även passerade plandagar (inom 14-dagarsfönstret) går att
+  // byta med — familjen planerar ofta om i efterhand.
+  const minIso = dlxMinSwapIso();
   return (window._lastPlan?.days || []).filter(x =>
-    x.recipeId && !x.blocked && x.date !== fromDate && x.date >= todayIso);
+    x.recipeId && !x.blocked && x.date !== fromDate && x.date >= minIso);
 }
 
 function renderSheet() {
