@@ -18,7 +18,7 @@
 // flygningar nollas av den globala reduced-motion-regeln i styles.css;
 // JS hoppar dessutom över animationsväntetiderna.
 
-import { fmtIso } from '../utils.js';
+import { fmtIso, addDaysIso } from '../utils.js';
 
 const HOLD_MS = 380;          // långtryck innan draget aktiveras
 const HOLD_SLOP = 8;          // px rörelse som bryter hållet (= svepets dödzon)
@@ -45,25 +45,28 @@ function collectEntries() {
 }
 
 // ── Behörighet — speglar modeCls/dlxPickSwapTarget-reglerna i plan-viewer-deluxe ──
-// Källa: aktiva planens receptdagar eller egen planering (ej arkiv/passerad/fri).
-// Byt-mål: framtida (inkl. idag) icke-arkiv, icke-fri dag — recept kräver aktiv plan.
+// Källa: aktiva planens receptdagar eller egen planering (ej arkiv/fri).
+// Byt-mål: icke-arkiv, icke-fri dag — recept kräver aktiv plan.
+// Retro-planering (Session 131): passerade dagar får dras och tas emot —
+// familjen planerar ofta om i efterhand — men bara 14 dagar bakåt (samma
+// fönster som recepthistoriken och servern i swap-days.js). Äldre = historik.
 // Kläm in-zoner: bara när källan är en aktiv plan-receptdag (move-day roterar
 // planens rader) — samma zonregler som moveZoneCtx (inga no-op-positioner).
 function dragContext(srcDate) {
-  const todayIso = fmtIso(new Date());
+  const minIso = addDaysIso(fmtIso(new Date()), -14);
   const tl = window._timelineByDate || {};
   const src = tl[srcDate];
-  if (!src || src.isArchive || src.isPast || src.blocked) return null;
+  if (!src || src.isArchive || src.blocked || srcDate < minIso) return null;
 
   const srcIsPlan = !!src.recipeId && !src.isCustom && src.planId === 'active';
   const srcIsCustom = !!src.isCustom && !!(src.customRecipeId || src.customRecipeTitle || src.customNote);
   if (!srcIsPlan && !srcIsCustom) return null;
 
   const canSwap = (date) => {
-    if (date === srcDate || date < todayIso) return false;
+    if (date === srcDate || date < minIso) return false;
     const d = tl[date];
-    if (!d) return true;                                  // tom framtida dag utanför horisonten
-    if (d.isArchive || d.blocked) return false;           // historik & fria dagar rörs aldrig
+    if (!d) return true;                                  // tom dag utanför horisonten
+    if (d.isArchive || d.blocked) return false;           // arkiv & fria dagar rörs aldrig
     if (d.recipeId && !d.isCustom) return d.planId === 'active';
     return true;                                          // egen dag eller tom dag
   };
@@ -76,7 +79,7 @@ function dragContext(srcDate) {
     if (i !== -1) {
       const successor = movable[i + 1]?.date || null;
       for (const d of movable) {
-        if (d.date < todayIso || d.date === srcDate || d.date === successor) continue;
+        if (d.date === srcDate || d.date === successor) continue;
         insertBefores.add(d.date);
       }
       const last = movable[movable.length - 1]?.date || null;

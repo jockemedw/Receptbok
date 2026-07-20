@@ -6305,16 +6305,21 @@ main#receptView {
 /* Insert-linjen positioneras absolut i dagslistan */
 .dlx-days { position: relative; }
 
-/* Wiggle på flyttbara kort — subtil, organisk (olika fas per rad) */
+/* Flyttbara kort: KORT wiggle-puls vid aktiveringen (3 svängar, ~0,7 s) som
+   sedan landar i en statisk, tydlig markering — streckad lichen-ram + samma
+   lugna pulsring (dlxPulse) som tryck-flödets byt-mål. Grafiken bär betydelsen,
+   inte rörelsen (Joakims mobilfeedback: konstant wiggle var för mycket). */
 @keyframes dlxWiggle {
   from { transform: rotate(-0.45deg); }
   to   { transform: rotate(0.5deg); }
 }
 .dlx-days.dlx-drag-mode .dlx-day-slot > [data-date]:not(.dlx-drag-src):not(.dlx-drag-off) {
-  animation: dlxWiggle 0.26s ease-in-out infinite alternate;
+  animation: dlxWiggle 0.24s ease-in-out 3 alternate, dlxPulse 1.8s ease-in-out 0.85s infinite;
+  border-style: dashed;
+  border-color: var(--lichen);
 }
-.dlx-days.dlx-drag-mode .dlx-day-slot:nth-child(2n) > [data-date]:not(.dlx-drag-src):not(.dlx-drag-off) { animation-delay: -0.13s; }
-.dlx-days.dlx-drag-mode .dlx-day-slot:nth-child(3n) > [data-date]:not(.dlx-drag-src):not(.dlx-drag-off) { animation-delay: -0.07s; animation-duration: 0.29s; }
+.dlx-days.dlx-drag-mode .dlx-day-slot:nth-child(2n) > [data-date]:not(.dlx-drag-src):not(.dlx-drag-off) { animation-delay: -0.1s, 0.85s; }
+.dlx-days.dlx-drag-mode .dlx-day-slot:nth-child(3n) > [data-date]:not(.dlx-drag-src):not(.dlx-drag-off) { animation-delay: -0.05s, 0.85s; }
 
 /* Källdagens plats — spöke med streckad ram tills draget landar */
 .dlx-days.dlx-drag-mode .dlx-drag-src {
@@ -6327,10 +6332,12 @@ main#receptView {
 /* Ogiltiga mål (arkiv, fria dagar, passerade) — dämpade, stilla */
 .dlx-days.dlx-drag-mode .dlx-drag-off { opacity: 0.35; }
 
-/* Hovrat byt-mål: lugn lichen-ring + ⇄-chip vid chevronen */
+/* Hovrat byt-mål: solid lichen-ring + ⇄-chip vid chevronen (solid ram skiljer
+   det tydligt från de streckade "kan ta emot"-korten) */
 .dlx-days.dlx-drag-mode .dlx-drag-over {
   animation: none;
   transform: scale(1.02);
+  border-style: solid;
   border-color: var(--lichen) !important;
   box-shadow: 0 0 0 2px var(--lichen) inset, var(--shadow-md);
 }
