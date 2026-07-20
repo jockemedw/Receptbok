@@ -1,8 +1,25 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–129. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–130. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
 
 ---
+
+**Session 130 — INKÖPSRUNDOR: robust ingrediens-/inköpsflöde för Matsedel + Inköp.**
+
+Joakims beställning: (1) kunna skicka ingredienser även för helt manuellt valda receptdagar, (2) spärr så att redan inhandlade recept aldrig skickas igen vid mitt-i-veckan-handling (handla mån för mån–fre → planera lör–sön → handla lör = bara nya varor), (3) mest intuitiva lösningen för hela Matsedel/Inköp. Tre produktbeslut inhämtade i sessionen: dispatch stämplar aldrig automatiskt (manuell knapp i resultatmodalen) · egna receptdagar inom planens spann följer automatiskt med vid Bekräfta · obockade varor vid "Vi har handlat" flyttas till Egna tillägg (inget tappas).
+
+**Vald arkitektur — dagnivå-spårning:** två nya nullable-kolumner på `meal_days` (migration **009**): `shopped_at` (spärren) + `shopping_list_id` (täckning: "dagens ingredienser ligger på denna lista"). En dag: *ej på listan → på listan → inhandlad*. Uniform regel: listan byggs alltid om från en explicit mängd täckta, o-inhandlade dagar — spärren faller ut naturligt. Varunivå-provenance förkastades (merge-steget summerar mängder över recept; dagnivå räcker).
+
+**Byggt (hela sviten grön):**
+- **Backend (datamuterande):** ny motor `api/_shared/shopping-store.js` (`rebuildActiveList`/`markRoundShopped`/`fetchCoverage`) ersätter den tredubblerade bygg+spara-koden i confirm/replace-recipe/generate. **Nytt: receptvarors bockar överlever ombyggnad** vid identiskt namn (mängdändrad vara blir obockad — mer ska köpas). Nya actions i `api/shopping.js` (12-filsgränsen intakt): `add_day` (custom-dagar + återläggning, nollar spärren), `remove_day`, `mark_shopped` (stämplar + konverterar obockade icke-skafferi-varor till Egna tillägg). confirm tar med custom-receptdagar i spannet + redan täckta dagar; replace-recipe bygger från o-inhandlad täckning (fallback = gamla beteendet för listor utan dagkoppling); generate-upserten nollar rundfälten explicit (annars ärver regenererad dag gamla värden); day-ops/swap/skip/move låter rundstatus följa receptinnehållet vid flytt.
+- **Frontend (render-only + API-anrop):** chips datadrivna ("Inhandlad" grön kundvagn+bock, "På listan" dämpad kundvagn — även egna dagar; ersätter heuristiken "bekräftad plan ⇒ allt handlat"). Dag-sheeten: "Lägg ingredienser på inköpslistan" / "Lägg tillbaka på inköpslistan" / "Ta bort från inköpslistan". Inköp: täckningsrad "Listan täcker N middagar · spann" + knappen **"Vi har handlat ✓"** (lyfts fram när allt är bockat — aldrig autostämpling); dispatch-resultatmodalen får "Markera som inhandlat". Idag-vyns prickar läser `shopped_at`. Realtime uppdaterar täckningsraden. **styles v171/app v137/SW v84.**
+- **Tester:** ny `tests/shopping-store.test.js` (35 assertions, inkl. hela mitt-i-veckan-scenariot som låser spärren) + day-ops (42) + plan-orchestration (39) utökade.
+
+**✅ UTRULLAT:** migration 009 KÖRD mot live-Supabase (Joakims OK, verifierad — kolumnerna finns; backfill 0 rader var korrekt, ingen aktiv bekräftad plan fanns) och PR #189 MERGAD till main. Kvar: mobil-verifiering (se kön i status.md).
+
+**Uppföljning 3–7 (Joakims krav, PR #191–#195): Inköp-flikens UI stramat.** (3) Flytande **+**-knapp (FAB, bara på Inköp) öppnar panel för egna varor — gamla "Lägg till vara"-sektionen borttagen; **penna på varje rad** → raden blir textfält med × (Enter/blur sparar); ✎ Redigera-läget borttaget. (4, #192) Panelen **toppförankrad** — iOS-tangentbordet dolde botten-varianten. (5, #193) Pennan **högergrupperad** med övriga radikoner (`#shoppingList .item-text{flex:1}`). (6, #194) **Progressringen borttagen** ("X av Y klara" — för plottrigt); kategoriräknare + "Vi har handlat"-framhävning kvar. (7, #195) **Handla-läget = rund kundvagns-FAB över plusset** med bekräftelsefråga vid start (avstängning direkt); gamla knappraden borttagen. **styles v176/app v141/SW v90.**
+
+**Uppföljning 2 (Joakims krav): "Ta bort dagen helt".** Ny action `delete` i `/api/skip-day` — tar bort en dag HELT ur matsedeln (även genererade plandagar, fria dagar och egna dagar): raderar `meal_days`-raden, plockar bort dagens o-inhandlade varor från listan (via motorn), räknar om planens datumspann, deaktiverar tömd plan. UI: danger-raden "Ta bort dagen helt" sist i dag-sheetens meny (plandagar + egna receptdagar) och i fri dag-editorn; bekräftelsedialog. "Ta bort markering" på egen dag städar nu även listan. **app v138/SW v85.**
 
 **Session 129 — Restpost-städning: Batch 13 säkert render-svep + F287-migration (workflow).**
 

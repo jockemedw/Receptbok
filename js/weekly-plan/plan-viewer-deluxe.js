@@ -155,6 +155,7 @@ function animateWeekChange(dir, apply) {
   if (!pane || prefersReducedMotion()) { apply(); renderDeluxe(); return; }
   if (_dlxAnimBusy) return;
   _dlxAnimBusy = true;
+  window._dlxWeekAnimBusy = true;   // day-drag.js: starta inget långtryck mitt i glidet
   pane.style.transition = 'transform 0.14s ease-in, opacity 0.14s ease-in';
   pane.style.transform = `translateX(${dir * -56}px)`;
   pane.style.opacity = '0';
@@ -167,7 +168,7 @@ function animateWeekChange(dir, apply) {
     pane.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
     pane.style.transform = 'translateX(0)';
     pane.style.opacity = '1';
-    setTimeout(() => { _dlxAnimBusy = false; }, 210);
+    setTimeout(() => { _dlxAnimBusy = false; window._dlxWeekAnimBusy = false; }, 210);
   }, 145);
 }
 
@@ -200,12 +201,13 @@ function installSwipe(pager, pane) {
   let x0 = 0, y0 = 0, t0 = 0, mode = null;   // mode: null | 'h' | 'v'
 
   pager.addEventListener('touchstart', (e) => {
-    if (_dlxAnimBusy || e.touches.length !== 1) return;
+    if (_dlxAnimBusy || window._dlxDragActive || e.touches.length !== 1) return;
     x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now(); mode = null;
   }, { passive: true });
 
   pager.addEventListener('touchmove', (e) => {
-    if (_dlxAnimBusy || e.touches.length !== 1) return;
+    // _dlxDragActive: långtrycks-draget (day-drag.js) äger gesten — svepet står still.
+    if (_dlxAnimBusy || window._dlxDragActive || e.touches.length !== 1) return;
     const dx = e.touches[0].clientX - x0, dy = e.touches[0].clientY - y0;
     if (mode === null) {
       if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;                 // dödzon
@@ -1029,6 +1031,27 @@ async function dlxPickSwapTarget(toDate) {
     window._opBusy = false;
   }
 }
+
+// ── Drag & släpp (day-drag.js) — direktutförande med redan valt mål ──────────
+// Samma säkra vägar som tryck-flödena (swap-/move-läget): _opBusy-spärren,
+// pending-bannern, felhantering och glöd-kvittot återanvänds rakt av. Skillnad:
+// läget städas alltid efteråt så ett misslyckat drag aldrig lämnar användaren
+// i ett oväntat byt/flytta-läge.
+window.dlxPerformSwap = async function (fromDate, toDate) {
+  if (window._opBusy) return;
+  window._dlxMove = null;
+  window._dlxSwap = { from: fromDate, pending: null };
+  await dlxPickSwapTarget(toDate);
+  if (window._dlxSwap && !window._dlxSwap.pending) { window._dlxSwap = null; renderDeluxe(); }
+};
+
+window.dlxPerformMove = async function (fromDate, before) {
+  if (window._opBusy) return;
+  window._dlxSwap = null;
+  window._dlxMove = { from: fromDate, pending: null };
+  await window.dlxPickMoveTarget(before || null);
+  if (window._dlxMove && !window._dlxMove.pending) { window._dlxMove = null; renderDeluxe(); }
+};
 
 // ── Dag-sheeten (backlog #15, variant B — universellt interaktionsmönster) ───
 // Bottensheet som är ENDA vägen in i daginteraktionen: alla dagkort (recept,
