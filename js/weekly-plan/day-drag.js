@@ -21,11 +21,11 @@
 // flygningar nollas av den globala reduced-motion-regeln i styles.css;
 // JS hoppar dessutom över animationsväntetiderna.
 
-import { fmtIso, addDaysIso, isoWeekNumber } from '../utils.js';
+import { fmtIso, addDaysIso, isoWeekNumber, retroWindowStartIso } from '../utils.js';
 
 const HOLD_MS = 380;          // långtryck innan draget aktiveras
 const HOLD_SLOP = 8;          // px rörelse som bryter hållet (= svepets dödzon)
-const EDGE_BAND = 16;         // ± px runt en kortgräns som räknas som "mellan två dagar"
+const EDGE_BAND = 18;         // ± px runt en kortgräns som räknas som "mellan två dagar"
 const FLY_MS = 190;           // landnings-/returflygningens längd
 const EDGE_W = 26;            // px vid skärmkanten som räknas som "byt vecka"-zon
 const DWELL_MS = 550;         // så länge fingret ska vila i zonen innan veckan byts
@@ -50,15 +50,19 @@ function collectEntries() {
 }
 
 // ── Behörighet — speglar modeCls/dlxPickSwapTarget-reglerna i plan-viewer-deluxe ──
-// Källa: aktiva planens receptdagar eller egen planering (ej arkiv/fri).
+// Källa: valfri INNEHÅLLSDAG — aktiva planens receptdagar eller egen planering
+// (recept eller anteckning). Aldrig arkiv eller fria dagar.
 // Byt-mål: icke-arkiv, icke-fri dag — recept kräver aktiv plan.
 // Retro-planering (Session 131): passerade dagar får dras och tas emot —
-// familjen planerar ofta om i efterhand — men bara 14 dagar bakåt (samma
-// fönster som recepthistoriken och servern i swap-days.js). Äldre = historik.
-// Kläm in-zoner: bara när källan är en aktiv plan-receptdag (move-day roterar
-// planens rader) — samma zonregler som moveZoneCtx (inga no-op-positioner).
+// familjen planerar ofta om i efterhand — men bara inom retro-fönstret (14
+// dagar, samma som servern). Äldre = historik.
+// Kläm in-zoner — GENERALISERADE (Session 131): före varje innehållsdag
+// oavsett typ (/api/move-day roterar numera fullt innehåll över alla dagtyper;
+// tomma dagar är hål som vandrar). Ej före källan själv eller dagen direkt
+// efter (no-op), och spannet får aldrig korsa en arkiverad vecka (arkivdagar
+// bor i plan_archives — servern vägrar också).
 function dragContext(srcDate) {
-  const minIso = addDaysIso(fmtIso(new Date()), -14);
+  const minIso = retroWindowStartIso();
   const tl = window._timelineByDate || {};
   const src = tl[srcDate];
   if (!src || src.isArchive || src.blocked || srcDate < minIso) return null;
@@ -76,22 +80,8 @@ function dragContext(srcDate) {
     return true;                                          // egen dag eller tom dag
   };
 
-  const insertBefores = new Set();
-  let endAfter = null;
-  if (srcIsPlan) {
-    const movable = (window._lastPlan?.days || []).filter((d) => !d.blocked && d.recipeId);
-    const i = movable.findIndex((d) => d.date === srcDate);
-    if (i !== -1) {
-      const successor = movable[i + 1]?.date || null;
-      for (const d of movable) {
-        if (d.date === srcDate || d.date === successor) continue;
-        insertBefores.add(d.date);
-      }
-      const last = movable[movable.length - 1]?.date || null;
-      endAfter = last && last !== srcDate ? last : null;
-    }
-  }
-  return { srcDate, canSwap, insertBefores, endAfter };
+  const zones = window.dlxInsertZones?.(srcDate) || { insertBefores: new Set(), endAfter: null };
+  return { srcDate, canSwap, insertBefores: zones.insertBefores, endAfter: zones.endAfter };
 }
 
 // ── Träff-test — smala "mellan två dagar"-band vinner över kort-mitten ───────

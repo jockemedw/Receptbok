@@ -1,5 +1,7 @@
 import { createSupabaseHandler } from "./_shared/handler.js";
 import { db, getHouseholdId } from "./_shared/supabase.js";
+import { fullContent } from "./_shared/day-ops.js";
+import { RETRO_WINDOW_DAYS } from "./_shared/constants.js";
 
 // "Byt dag" — byter innehåll mellan två dagar i matsedeln.
 //
@@ -18,23 +20,8 @@ import { db, getHouseholdId } from "./_shared/supabase.js";
 // Receptmängden i planen är oförändrad vid varje byte (ett recept lämnar bara
 // sin dag och ett annat tar dess plats) → inköpslistan rörs inte.
 
-// Hela radens innehåll = allt UTOM datumet. Inkluderar plan_id och custom_note
-// så att en plan-dag och en egen-planering-dag kan byta plats fullt ut.
-function fullContent(r) {
-  return {
-    plan_id:               r?.plan_id ?? null,
-    recipe_id:             r?.recipe_id ?? null,
-    recipe_title_snapshot: r?.recipe_title_snapshot ?? null,
-    saving:                r?.saving ?? null,
-    saving_matches:        r?.saving_matches ?? null,
-    custom_note:           r?.custom_note ?? null,
-    locked:                r?.locked === true,
-    blocked:               r?.blocked === true,
-    // Inköpsrundor: inhandlat-status + listtäckning följer innehållet vid byte.
-    shopped_at:            r?.shopped_at ?? null,
-    shopping_list_id:      r?.shopping_list_id ?? null,
-  };
-}
+// fullContent (hela radens innehåll = allt utom datumet, inkl. plan_id och
+// custom_note) delas med move-day och bor i _shared/day-ops.js.
 
 export default createSupabaseHandler(async (req, res) => {
   const { date1, date2 } = req.body || {};
@@ -47,7 +34,7 @@ export default createSupabaseHandler(async (req, res) => {
   // den kunde ett byte mot en gammal, aldrig arkiverad egen-planering-dag dra
   // aktiva planens datumspann långt bak i historien. Servern står på egna ben
   // oavsett klientvalideringen i plan-viewer-deluxe.js/day-drag.js.
-  const minIso = new Date(Date.now() - 14 * 86400e3).toISOString().slice(0, 10);
+  const minIso = new Date(Date.now() - RETRO_WINDOW_DAYS * 86400e3).toISOString().slice(0, 10);
   if (date1 < minIso || date2 < minIso) {
     return res.status(400).json({ error: "Dagar äldre än två veckor är historik och kan inte ändras." });
   }
