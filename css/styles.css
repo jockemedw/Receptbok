@@ -6416,3 +6416,61 @@ main#receptView {
   border-radius: 15px;
 }
 .dlx-drag-float.landing { transition: transform 0.19s var(--ease-out), opacity 0.19s var(--ease-standard); }
+
+/* ── Kantbläddring under drag (iPhone-hemskärmen) — indikatorer vid kanterna ──
+   Synlig-dämpad = veckobyte möjligt åt det hållet (upptäckbarhet). "arming"
+   fylls medan fingret vilar i zonen — transitionens längd ≈ dwell-tiden
+   (550 ms) så glöden fungerar som progress. pointer-events: none (ren grafik,
+   zonlogiken bor i day-drag.js). */
+.dlx-drag-edge {
+  position: fixed;
+  top: 28%;
+  bottom: 18%;
+  width: 34px;
+  z-index: var(--z-drag);
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-standard);
+}
+.dlx-drag-edge.left  { left: 0;  background: linear-gradient(to right, color-mix(in srgb, var(--lichen) 22%, transparent), transparent); border-radius: 0 18px 18px 0; }
+.dlx-drag-edge.right { right: 0; background: linear-gradient(to left,  color-mix(in srgb, var(--lichen) 22%, transparent), transparent); border-radius: 18px 0 0 18px; }
+.dlx-drag-edge.visible { opacity: 0.6; }
+.dlx-drag-edge.arming  { opacity: 1; }
+/* Starkare glöd som fylls under dwell — ::before med långsam opacity-transition */
+.dlx-drag-edge::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.55s linear;
+}
+.dlx-drag-edge.left::before  { background: linear-gradient(to right, color-mix(in srgb, var(--lichen) 45%, transparent), transparent); }
+.dlx-drag-edge.right::before { background: linear-gradient(to left,  color-mix(in srgb, var(--lichen) 45%, transparent), transparent); }
+.dlx-drag-edge.arming::before { opacity: 1; }
+.dlx-edge-chev {
+  position: relative;
+  font-size: 1.5rem;
+  line-height: 1;
+  font-weight: 600;
+  color: var(--lichen-deep, #5e7a68);
+  transition: transform 0.55s var(--ease-out);
+}
+.dlx-drag-edge.arming .dlx-edge-chev { transform: scale(1.45); }
+.dlx-edge-week {
+  position: relative;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--forest);
+  background: var(--linen-card);
+  border: 1px solid var(--birch-soft);
+  border-radius: 999px;
+  padding: 0.12rem 0.38rem;
+  font-variant-numeric: tabular-nums;
+}

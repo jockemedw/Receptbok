@@ -1,7 +1,10 @@
 // Drag & släpp av dagar i matsedeln (Session 131) — långtryck på ett dagkort
-// lyfter det (övriga flyttbara kort wigglar, iOS-hemskärmskänsla), dra och släpp:
+// lyfter det (övriga flyttbara kort wigglar kort, iOS-hemskärmskänsla), dra och släpp:
 //   • på ett annat kort  → dagarna byter plats (samma väg som "Byt dag" → /api/swap-days)
 //   • mellan två kort    → dagen kläms in där (samma väg som "Flytta dag" → /api/move-day)
+//   • vid skärmkanten    → vila fingret där → veckan glider över (iPhone-hemskärmen:
+//                          dra en app till kanten för att byta sida) och dagen kan
+//                          släppas i föregående/nästa vecka.
 //
 // Rent GESTLAGER — all mutationslogik återanvänds via window.dlxPerformSwap/
 // window.dlxPerformMove (plan-viewer-deluxe.js): samma spärrar (_opBusy), samma
@@ -18,12 +21,14 @@
 // flygningar nollas av den globala reduced-motion-regeln i styles.css;
 // JS hoppar dessutom över animationsväntetiderna.
 
-import { fmtIso, addDaysIso } from '../utils.js';
+import { fmtIso, addDaysIso, isoWeekNumber } from '../utils.js';
 
 const HOLD_MS = 380;          // långtryck innan draget aktiveras
 const HOLD_SLOP = 8;          // px rörelse som bryter hållet (= svepets dödzon)
 const EDGE_BAND = 16;         // ± px runt en kortgräns som räknas som "mellan två dagar"
 const FLY_MS = 190;           // landnings-/returflygningens längd
+const EDGE_W = 26;            // px vid skärmkanten som räknas som "byt vecka"-zon
+const DWELL_MS = 550;         // så länge fingret ska vila i zonen innan veckan byts
 
 let _hold = null;             // { date, card, x0, y0, timer, pointerId }
 let _drag = null;             // aktivt drag — se activateDrag()
@@ -90,8 +95,8 @@ function dragContext(srcDate) {
 }
 
 // ── Träff-test — smala "mellan två dagar"-band vinner över kort-mitten ───────
-function hitTest(ctx, x, y) {
-  const entries = collectEntries();
+// entries samlas EN gång per frame i loopen (delas med klass-uppdateringen).
+function hitTest(ctx, entries, x, y) {
   for (let i = 0; i < entries.length; i++) {
     const { el, date } = entries[i];
     if (!ctx.insertBefores.has(date)) continue;
@@ -153,6 +158,40 @@ function makeGhost(card) {
   return { wrap, baseLeft: left, baseTop: top, w, h };
 }
 
+// ── Kantbläddring (iPhone-hemskärmen) — indikatorer vid vänster/höger kant ───
+// Synlig-dämpad när steget är möjligt (upptäckbarhet), "arming" fylls medan
+// fingret vilar i zonen (CSS-transition ≈ dwell-tiden = progresskänsla).
+function makeEdges() {
+  const mk = (dir) => {
+    const el = document.createElement('div');
+    el.className = 'dlx-drag-edge ' + (dir < 0 ? 'left' : 'right');
+    el.innerHTML = `<span class="dlx-edge-chev" aria-hidden="true">${dir < 0 ? '‹' : '›'}</span><span class="dlx-edge-week"></span>`;
+    document.body.appendChild(el);
+    return el;
+  };
+  return { '-1': mk(-1), '1': mk(1) };
+}
+
+// Visad veckas måndag läses ur DOM (första dagslottens datum) — ingen ny export.
+function shownWeekStartFromDom() {
+  return daysContainer()?.querySelector(':scope > .dlx-day-slot')?.dataset.slot || null;
+}
+
+function updateEdges(d) {
+  const ws = shownWeekStartFromDom();
+  for (const dir of [-1, 1]) {
+    const el = d.edges[String(dir)];
+    if (!el) continue;
+    const can = !window._dlxWeekAnimBusy && !!window.dlxDragWeekStep?.(dir, true);
+    el.classList.toggle('visible', can);
+    el.classList.toggle('arming', can && d.edgeDir === dir);
+    if (ws) {
+      const label = el.querySelector('.dlx-edge-week');
+      if (label) label.textContent = `v.${isoWeekNumber(addDaysIso(ws, dir * 7))}`;
+    }
+  }
+}
+
 // ── Aktivering (långtrycket gick i mål) ───────────────────────────────────────
 function activateDrag() {
   const h = _hold;
@@ -166,10 +205,6 @@ function activateDrag() {
   navigator.vibrate?.(12);
 
   container.classList.add('dlx-drag-mode');
-  for (const { el, date } of collectEntries()) {
-    if (date === ctx.srcDate) el.classList.add('dlx-drag-src');
-    else if (!ctx.canSwap(date)) el.classList.add('dlx-drag-off');
-  }
 
   const line = document.createElement('div');
   line.className = 'dlx-drop-line';
@@ -182,6 +217,9 @@ function activateDrag() {
     x: h.x0, y: h.y0,
     ghost: makeGhost(h.card),
     line,
+    edges: makeEdges(),
+    edgeDir: 0,               // kantzon fingret vilar i just nu (−1/0/+1)
+    dwellStart: 0,            // när vilan i zonen började
     hover: null,
     raf: 0,
     nextSuppress: 0,
@@ -190,11 +228,13 @@ function activateDrag() {
   startLoop();
 }
 
-// ── rAF-loop: ghost följer fingret, kant-autoscroll, träff-test, eko-dämpning ─
+// ── rAF-loop: ghost följer fingret, kant-autoscroll, kantbläddring, träff-test,
+//    idempotenta drag-klasser (överlever omrenderingar), eko-dämpning ─────────
 function startLoop() {
   const step = () => {
     const d = _drag;
     if (!d) return;
+    const now = Date.now();
 
     // Kant-autoscroll — dra mot topp/botten scrollar sidan mjukt med
     const topEdge = 130, botEdge = 100;
@@ -206,11 +246,39 @@ function startLoop() {
     d.ghost.wrap.style.transform =
       `translate3d(${d.ghost.baseLeft + (d.x - d.x0)}px, ${d.ghost.baseTop + (d.y - d.y0)}px, 0)`;
 
-    setHover(hitTest(d.ctx, d.x, d.y));
+    const entries = collectEntries();
+
+    // Drag-lägets kort-klasser hålls färska IDEMPOTENT varje frame — så de
+    // överlever ALLA omrenderingar (veckobyte, realtime-eko) utan hooks.
+    for (const { el, date } of entries) {
+      const isSrc = date === d.ctx.srcDate;
+      el.classList.toggle('dlx-drag-src', isSrc);
+      el.classList.toggle('dlx-drag-off', !isSrc && !d.ctx.canSwap(date));
+    }
+
+    // Kantbläddring: vila fingret i kantzonen DWELL_MS → veckan glider över
+    // (iPhone-hemskärmen). Efter bytet krävs en ny vila — slide-animationen
+    // (window._dlxWeekAnimBusy) gate:ar naturligt takten för upprepade byten.
+    const dir = d.x < EDGE_W ? -1 : d.x > window.innerWidth - EDGE_W ? 1 : 0;
+    const canStep = dir !== 0 && !window._dlxWeekAnimBusy && !!window.dlxDragWeekStep?.(dir, true);
+    if (!canStep || dir !== d.edgeDir) {
+      d.edgeDir = canStep ? dir : 0;
+      d.dwellStart = now;
+    } else if (now - d.dwellStart >= DWELL_MS) {
+      if (window.dlxDragWeekStep(dir)) {
+        navigator.vibrate?.(8);
+        setHover(null);        // markeringarna släcks medan panelen glider
+      }
+      d.edgeDir = 0;
+    }
+    updateEdges(d);
+
+    // Träff-test pausas medan veckopanelen glider (korten är i rörelse).
+    if (window._dlxWeekAnimBusy) setHover(null);
+    else setHover(hitTest(d.ctx, entries, d.x, d.y));
 
     // Dämpa realtime-omhämtningar under hela draget så vyn inte byggs om
     // under fingret (plan-viewer.js kör om-laddningen när dämpningen släpper).
-    const now = Date.now();
     if (now > d.nextSuppress) {
       window._planMutateUntil = now + 4000;
       d.nextSuppress = now + 1500;
@@ -272,6 +340,7 @@ function teardownVisuals(d) {
   document.querySelectorAll('#weekDeluxe .dlx-drag-src, #weekDeluxe .dlx-drag-off, #weekDeluxe .dlx-drag-over, #weekDeluxe .dlx-nudge-up, #weekDeluxe .dlx-nudge-down')
     .forEach((el) => el.classList.remove('dlx-drag-src', 'dlx-drag-off', 'dlx-drag-over', 'dlx-nudge-up', 'dlx-nudge-down'));
   d.line?.remove();
+  if (d.edges) Object.values(d.edges).forEach((el) => el.remove());
 }
 
 async function endDrag(commit) {
@@ -314,7 +383,7 @@ document.addEventListener('pointerdown', (e) => {
   if (_drag || _hold) return;                                   // en gest i taget
   if (e.pointerType === 'mouse' && e.button !== 0) return;
   if (window._opBusy || window._dlxSwap || window._dlxMove || window._dlxSheet) return;
-  if (window._dlxWeekAnimBusy) return;                        // mitt i veckoglid
+  if (window._dlxWeekAnimBusy) return;                          // mitt i veckoglid
   if (e.target.closest('button, a, input, textarea, select')) return;
   const card = e.target.closest('#weekDeluxe .dlx-day-slot > [data-date]');
   if (!card) return;

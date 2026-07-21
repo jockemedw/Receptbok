@@ -184,6 +184,23 @@ window.dlxWeekToday = function () {
   animateWeekChange(dir, () => { _dlxWeekStart = null; });
 };
 
+// Drag & släpp över veckogränser (day-drag.js): som dlxWeekStep men med
+// drag-egna klampgränser — framåt t.o.m. EN vecka bortom tidslinjens sista
+// (släpp på nästa, ännu tomma, vecka = horisonten växer när dagen landar),
+// bakåt så länge målveckan når in i 14-dagarsfönstret (retro-gränsen).
+// probe=true svarar bara på OM steget är möjligt (kantindikatorernas läge).
+window.dlxDragWeekStep = function (dir, probe = false) {
+  if (_dlxAnimBusy) return false;
+  const next = addDaysIso(shownWeekStart(), dir * 7);
+  const b = timelineBounds();
+  if (!b) return false;
+  if (dir > 0 && next > addDaysIso(b.max, 7)) return false;
+  if (dir < 0 && addDaysIso(next, 6) < dlxMinSwapIso()) return false;
+  if (probe) return true;
+  animateWeekChange(dir, () => { _dlxWeekStart = next === currentWeekStart() ? null : next; });
+  return true;
+};
+
 // Direkt hopp (autohopp vid färsk generering + notis-bannern) — ingen svep-anim.
 window.dlxWeekGoto = function (dateIso) {
   const ws = weekStartOf(dateIso);
