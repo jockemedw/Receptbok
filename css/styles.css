@@ -6305,41 +6305,49 @@ main#receptView {
 /* Insert-linjen positioneras absolut i dagslistan */
 .dlx-days { position: relative; }
 
-/* Flyttbara kort: KORT wiggle-puls vid aktiveringen (3 svängar, ~0,7 s) som
-   sedan landar i en statisk, tydlig markering — streckad lichen-ram + samma
-   lugna pulsring (dlxPulse) som tryck-flödets byt-mål. Grafiken bär betydelsen,
-   inte rörelsen (Joakims mobilfeedback: konstant wiggle var för mycket). */
+/* Flyttbara kort: KORT wiggle-puls vid aktiveringen (3 svängar, ~0,8 s) som
+   sedan landar i ett LUGNT statiskt läge — en mjuk streckad lichen-ram som
+   säger "den här kan ta emot". Ingen fortsatt puls/rörelse på mottagarna
+   (Joakims feedback: konstant wiggle var för mycket; iPhones edit-läge är
+   lugnt tills man hovrar ett mål). Den aktiva rörelsen bor på ghosten,
+   luckan och det hovrade målet — inte i bakgrunden. */
 @keyframes dlxWiggle {
-  from { transform: rotate(-0.45deg); }
-  to   { transform: rotate(0.5deg); }
+  from { transform: rotate(-0.4deg); }
+  to   { transform: rotate(0.45deg); }
 }
 .dlx-days.dlx-drag-mode .dlx-day-slot > [data-date]:not(.dlx-drag-src):not(.dlx-drag-off) {
-  animation: dlxWiggle 0.24s ease-in-out 3 alternate, dlxPulse 1.8s ease-in-out 0.85s infinite;
+  animation: dlxWiggle 0.26s ease-in-out 3 alternate;
   border-style: dashed;
-  border-color: var(--lichen);
+  border-color: color-mix(in srgb, var(--lichen) 60%, transparent);
+  /* Grannarnas isärglidning (nudge) fjädrar mjukt — den öppnande luckan är
+     kärnan i iPhone-känslan. transform-transitionen ligger här (inte på nudge-
+     reglerna) så både öppning OCH stängning animeras. */
+  transition: transform 0.24s var(--ease-spring), border-color var(--dur-base) var(--ease-standard);
 }
-.dlx-days.dlx-drag-mode .dlx-day-slot:nth-child(2n) > [data-date]:not(.dlx-drag-src):not(.dlx-drag-off) { animation-delay: -0.1s, 0.85s; }
-.dlx-days.dlx-drag-mode .dlx-day-slot:nth-child(3n) > [data-date]:not(.dlx-drag-src):not(.dlx-drag-off) { animation-delay: -0.05s, 0.85s; }
+.dlx-days.dlx-drag-mode .dlx-day-slot:nth-child(2n) > [data-date]:not(.dlx-drag-src):not(.dlx-drag-off) { animation-delay: -0.11s; }
+.dlx-days.dlx-drag-mode .dlx-day-slot:nth-child(3n) > [data-date]:not(.dlx-drag-src):not(.dlx-drag-off) { animation-delay: -0.06s; }
 
-/* Källdagens plats — spöke med streckad ram tills draget landar */
+/* Källdagens plats — mjukt nedtonat "hål" tills draget landar (kortet lyft) */
 .dlx-days.dlx-drag-mode .dlx-drag-src {
-  opacity: 0.35;
+  opacity: 0.3;
   border-style: dashed !important;
   border-color: var(--birch) !important;
   box-shadow: none !important;
+  transition: opacity 0.18s var(--ease-standard);
 }
 
-/* Ogiltiga mål (arkiv, fria dagar, passerade) — dämpade, stilla */
-.dlx-days.dlx-drag-mode .dlx-drag-off { opacity: 0.35; }
+/* Ogiltiga mål (arkiv, fria dagar, äldre än fönstret) — dämpade, stilla */
+.dlx-days.dlx-drag-mode .dlx-drag-off { opacity: 0.32; }
 
-/* Hovrat byt-mål: solid lichen-ring + ⇄-chip vid chevronen (solid ram skiljer
-   det tydligt från de streckade "kan ta emot"-korten) */
+/* Hovrat byt-mål: kortet lyfter lätt mot fingret + solid lichen-ring + ⇄-chip.
+   Fjädrar in (ease-spring) så det känns magnetiskt — som att slot:en "griper". */
 .dlx-days.dlx-drag-mode .dlx-drag-over {
-  animation: none;
-  transform: scale(1.02);
+  animation: none !important;   /* avbryt ev. wiggle-burst direkt (bas-regeln har högre specificitet) */
+  transform: scale(1.035);
   border-style: solid;
   border-color: var(--lichen) !important;
-  box-shadow: 0 0 0 2px var(--lichen) inset, var(--shadow-md);
+  box-shadow: 0 0 0 2px var(--lichen) inset, 0 12px 28px -14px rgba(44, 63, 51, 0.45);
+  transition: transform 0.2s var(--ease-spring), box-shadow 0.2s var(--ease-standard), border-color 0.15s;
 }
 .dlx-days.dlx-drag-mode .dlx-drag-over::after {
   content: '⇄';
@@ -6357,13 +6365,20 @@ main#receptView {
   color: var(--on-accent);
   font-size: 0.9rem;
   line-height: 1;
+  box-shadow: 0 2px 6px rgba(44, 63, 51, 0.25);
 }
 
-/* Grannarna glider isär runt insert-linjen (transform-only → ingen layoutshift) */
-.dlx-days.dlx-drag-mode .dlx-nudge-up   { animation: none; transform: translateY(-5px); }
-.dlx-days.dlx-drag-mode .dlx-nudge-down { animation: none; transform: translateY(5px); }
+/* Grannarna glider isär och öppnar en RIKTIG lucka runt sömmen (iPhone: listan
+   delar på sig för att ge plats). animation:none avbryter ev. pågående
+   wiggle-burst så translaten tar över transform-kanalen direkt (annars äger
+   keyframe-animationen den och luckan öppnas inte förrän bursten spelat klart).
+   Transformerna påverkar aldrig träffytan — hitTest läser layout-position
+   (offsetTop), inte transformerad rect. */
+.dlx-days.dlx-drag-mode .dlx-nudge-up   { animation: none !important; transform: translateY(-14px); }
+.dlx-days.dlx-drag-mode .dlx-nudge-down { animation: none !important; transform: translateY(14px); }
 
-/* "Kläm in här"-linjen — rust, med prick i vänsterkanten */
+/* "Kläm in här"-sömmen — rust (appens CTA-färg), sitter mitt i den öppnade
+   luckan med en mjuk glöd så den läses som "släpp här". */
 .dlx-drop-line {
   position: absolute;
   left: 1.35rem;
@@ -6371,7 +6386,9 @@ main#receptView {
   height: 0;
   pointer-events: none;
   opacity: 0;
-  transition: opacity var(--dur-fast) var(--ease-standard), top var(--dur-fast) var(--ease-out);
+  transform: scaleX(0.6);
+  transform-origin: left center;
+  transition: opacity 0.16s var(--ease-standard), transform 0.22s var(--ease-spring), top 0.18s var(--ease-out);
   z-index: var(--z-base);
 }
 .dlx-drop-line::before {
@@ -6381,17 +6398,18 @@ main#receptView {
   height: 3px;
   border-radius: 2px;
   background: var(--rust);
+  box-shadow: 0 0 10px -1px color-mix(in srgb, var(--rust) 65%, transparent);
 }
 .dlx-drop-line::after {
   content: '';
   position: absolute;
-  left: -5px; top: -5px;
+  left: -4px; top: -5px;
   width: 10px; height: 10px;
   border-radius: 50%;
   background: var(--rust);
-  box-shadow: 0 0 0 3px rgba(181, 106, 76, 0.25);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--rust) 22%, transparent);
 }
-.dlx-drop-line.visible { opacity: 1; }
+.dlx-drop-line.visible { opacity: 1; transform: scaleX(1); }
 
 /* Flytande kortet — wrappern följer fingret (JS-transform, ingen transition),
    .dlx-drag-lift bär lyft-poppen och landningen (transition) */
@@ -6405,17 +6423,20 @@ main#receptView {
 }
 .dlx-drag-float .dlx-drag-lift {
   border-radius: 15px;
-  transition: transform 0.18s var(--ease-spring), box-shadow 0.18s var(--ease-standard), opacity var(--dur-fast) var(--ease-standard);
+  transition: transform 0.2s var(--ease-spring), box-shadow 0.2s var(--ease-standard), opacity var(--dur-fast) var(--ease-standard);
 }
 /* Över ett giltigt mål: tona ned ghosten så mål-ringen/insert-linjen läses igenom */
-.dlx-drag-float.over .dlx-drag-lift { opacity: 0.72; }
+.dlx-drag-float.over .dlx-drag-lift { opacity: 0.7; }
 .dlx-drag-float .dlx-drag-lift > [class] { animation: none; }   /* ingen dlxFadeIn på klonen */
+/* Upplyft "hållet" kort — upprätt (iPhone lutar inte den lyfta ikonen), lätt
+   förstorat med en djup mjuk skugga så det tydligt svävar över listan. */
 .dlx-drag-float.lifted .dlx-drag-lift {
-  transform: scale(1.035) rotate(1.3deg);
-  box-shadow: 0 18px 40px -16px rgba(44, 63, 51, 0.5), 0 4px 14px rgba(44, 63, 51, 0.16);
+  transform: scale(1.05) rotate(0.4deg);
+  box-shadow: 0 24px 50px -18px rgba(44, 63, 51, 0.58), 0 6px 18px rgba(44, 63, 51, 0.2);
   border-radius: 15px;
 }
-.dlx-drag-float.landing { transition: transform 0.19s var(--ease-out), opacity 0.19s var(--ease-standard); }
+/* Wrappern glider till målet; det inre kortet settlar (scale → 1) = sätter sig */
+.dlx-drag-float.landing { transition: transform 0.2s var(--ease-out), opacity 0.2s var(--ease-standard); }
 
 /* ── Kantbläddring under drag (iPhone-hemskärmen) — indikatorer vid kanterna ──
    Synlig-dämpad = veckobyte möjligt åt det hållet (upptäckbarhet). "arming"
