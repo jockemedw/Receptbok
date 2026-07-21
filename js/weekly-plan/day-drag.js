@@ -26,7 +26,7 @@ import { fmtIso, addDaysIso, isoWeekNumber, retroWindowStartIso } from '../utils
 const HOLD_MS = 380;          // långtryck innan draget aktiveras
 const HOLD_SLOP = 8;          // px rörelse som bryter hållet (= svepets dödzon)
 const EDGE_BAND = 18;         // ± px runt en kortgräns som räknas som "mellan två dagar"
-const FLY_MS = 190;           // landnings-/returflygningens längd
+const FLY_MS = 200;           // landnings-/returflygningens längd (= CSS .landing-transition)
 const EDGE_W = 26;            // px vid skärmkanten som räknas som "byt vecka"-zon
 const DWELL_MS = 550;         // så länge fingret ska vila i zonen innan veckan byts
 
@@ -85,30 +85,36 @@ function dragContext(srcDate) {
 }
 
 // ── Träff-test — smala "mellan två dagar"-band vinner över kort-mitten ───────
-// entries samlas EN gång per frame i loopen (delas med klass-uppdateringen).
-function hitTest(ctx, entries, x, y) {
+// Geometrin läses från offsetTop/offsetHeight (LAYOUT-position) — inte
+// getBoundingClientRect — så den är IMMUN mot gap-/lyft-transformerna. Det gör
+// att korten kan glida isär hur mycket som helst för att ge plats (iPhone-
+// känslan) utan att träffytorna rör sig → ingen oscillation. Y jämförs i
+// container-koordinater (yc), horisontellt hoppas x-koll (korten är fullbredd →
+// förlåtande touch). `seam` returneras i container-space (positionLine/landning).
+function hitTest(ctx, entries, cTop, y) {
+  const yc = y - cTop;
   for (let i = 0; i < entries.length; i++) {
     const { el, date } = entries[i];
     if (!ctx.insertBefores.has(date)) continue;
-    const r = el.getBoundingClientRect();
-    if (!r.height) continue;
-    const prev = entries[i - 1]?.el.getBoundingClientRect();
-    const yBound = prev?.height ? (prev.bottom + r.top) / 2 : r.top;
-    if (Math.abs(y - yBound) <= EDGE_BAND) {
-      return { kind: 'insert', before: date, y: yBound, above: entries[i - 1]?.el || null, below: el };
+    if (!el.offsetHeight) continue;
+    const prev = entries[i - 1]?.el;
+    const seam = prev ? (prev.offsetTop + prev.offsetHeight + el.offsetTop) / 2 : el.offsetTop;
+    if (Math.abs(yc - seam) <= EDGE_BAND) {
+      return { kind: 'insert', before: date, seam, above: prev || null, below: el };
     }
   }
   if (ctx.endAfter) {
-    const lastEntry = entries.find((en) => en.date === ctx.endAfter);
-    const r = lastEntry?.el.getBoundingClientRect();
-    if (r?.height && Math.abs(y - r.bottom) <= EDGE_BAND) {
-      return { kind: 'insert', before: null, y: r.bottom + 3, above: lastEntry.el, below: null };
+    const le = entries.find((en) => en.date === ctx.endAfter)?.el;
+    if (le?.offsetHeight) {
+      const seam = le.offsetTop + le.offsetHeight;
+      if (Math.abs(yc - seam) <= EDGE_BAND) {
+        return { kind: 'insert', before: null, seam: seam + 3, above: le, below: null };
+      }
     }
   }
   for (const { el, date } of entries) {
     if (date === ctx.srcDate || !ctx.canSwap(date)) continue;
-    const r = el.getBoundingClientRect();
-    if (r.height && y >= r.top && y <= r.bottom && x >= r.left && x <= r.right) {
+    if (el.offsetHeight && yc >= el.offsetTop && yc <= el.offsetTop + el.offsetHeight) {
       return { kind: 'swap', date, el };
     }
   }
@@ -118,7 +124,7 @@ function hitTest(ctx, entries, x, y) {
 function sameTarget(a, b) {
   if (!a && !b) return true;
   if (!a || !b || a.kind !== b.kind) return false;
-  return a.kind === 'swap' ? a.date === b.date : a.before === b.before;
+  return a.kind === 'swap' ? a.date === b.date : (a.before || '') === (b.before || '');
 }
 
 // ── Flytande kort (ghost) — yttre wrapper följer fingret (ingen transition),
@@ -264,8 +270,13 @@ function startLoop() {
     updateEdges(d);
 
     // Träff-test pausas medan veckopanelen glider (korten är i rörelse).
-    if (window._dlxWeekAnimBusy) setHover(null);
-    else setHover(hitTest(d.ctx, entries, d.x, d.y));
+    if (window._dlxWeekAnimBusy) {
+      setHover(null);
+    } else {
+      const c = daysContainer();
+      const cTop = c ? c.getBoundingClientRect().top : 0;
+      setHover(hitTest(d.ctx, entries, cTop, d.y));
+    }
 
     // Dämpa realtime-omhämtningar under hela draget så vyn inte byggs om
     // under fingret (plan-viewer.js kör om-laddningen när dämpningen släpper).
@@ -300,19 +311,22 @@ function setHover(t) {
   if (t.kind === 'swap') {
     t.el.classList.add('dlx-drag-over');
   } else {
-    positionLine(t.y);
+    positionLine(t.seam);
     d.line.classList.add('visible');
+    // Grannarna GLIDER isär och öppnar en riktig lucka runt sömmen (iPhone:
+    // listan delar på sig för att ge plats). Sömmen ligger fast (mitt emellan
+    // grannarnas layout-positioner) → transformerna påverkar aldrig träffytan.
     t.above?.classList.add('dlx-nudge-up');
     t.below?.classList.add('dlx-nudge-down');
   }
 }
 
-function positionLine(yViewport) {
+// yContainer = container-space (samma som hitTest seam) → linjen ligger rätt
+// oavsett scroll, eftersom .dlx-days är dess positionerade förälder.
+function positionLine(yContainer) {
   const d = _drag;
-  const c = daysContainer();
-  if (!d || !c) return;
-  const r = c.getBoundingClientRect();
-  d.line.style.top = `${yViewport - r.top}px`;
+  if (!d) return;
+  d.line.style.top = `${yContainer}px`;
 }
 
 // ── Avslut: släpp på mål, släpp utanför eller avbrott ─────────────────────────
@@ -350,7 +364,12 @@ async function endDrag(commit) {
     d.ghost.wrap.remove();
     window.dlxPerformSwap?.(d.ctx.srcDate, t.date);
   } else if (t?.kind === 'insert') {
-    await flyGhost(d.ghost, d.ghost.baseLeft, t.y - d.ghost.h / 2, { fade: true });
+    // Flyg ghosten in i luckan (sömmen, i viewport-koordinater) och LANDA den
+    // där — settle-scale (lifted av) i stället för att tona bort, så draget
+    // "sätter sig" i springan innან servern svarar och vyn ritas om.
+    const c = daysContainer();
+    const cTop = c ? c.getBoundingClientRect().top : 0;
+    await flyGhost(d.ghost, d.ghost.baseLeft, cTop + t.seam - d.ghost.h / 2);
     d.ghost.wrap.remove();
     window.dlxPerformMove?.(d.ctx.srcDate, t.before);
   } else {
