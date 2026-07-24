@@ -110,9 +110,19 @@ function ensureScaffold() {
 }
 
 // ── Datahämtning ut ur timeline ──────────────────────────────────────────────
+// Memoiserad (Session 131, prestanda): sorteringen är O(n log n) över HELA
+// tidslinjen (hundratals dagar) och anropades tidigare flera gånger per
+// bildruta under drag — via dlxDragWeekStep(probe) i gestlagrets rAF-loop.
+// Cachen nycklas på map-objektets identitet + nyckelantal: buildTimeline
+// skapar en ny map vid varje omrendering, så cachen invalideras automatiskt.
+let _tlCache = { src: null, n: -1, sorted: null, bounds: undefined };
 function sortedTimeline() {
   const map = window._timelineByDate || {};
-  return Object.values(map).sort((a, b) => a.date.localeCompare(b.date));
+  const n = Object.keys(map).length;
+  if (_tlCache.src === map && _tlCache.n === n && _tlCache.sorted) return _tlCache.sorted;
+  const sorted = Object.values(map).sort((a, b) => a.date.localeCompare(b.date));
+  _tlCache = { src: map, n, sorted, bounds: undefined };
+  return sorted;
 }
 
 function recipeById(id) {
@@ -130,9 +140,12 @@ function shownWeekStart()   { return _dlxWeekStart || currentWeekStart(); }
 // Stepparens klampgränser: veckorna som tidslinjen (plan + arkiv + egna dagar)
 // faktiskt täcker — utanför finns inget att visa.
 function timelineBounds() {
-  const t = sortedTimeline();
-  if (!t.length) return null;
-  return { min: weekStartOf(t[0].date), max: weekStartOf(t[t.length - 1].date) };
+  const t = sortedTimeline();                  // fyller/validerar _tlCache
+  if (_tlCache.bounds !== undefined) return _tlCache.bounds;
+  _tlCache.bounds = t.length
+    ? { min: weekStartOf(t[0].date), max: weekStartOf(t[t.length - 1].date) }
+    : null;
+  return _tlCache.bounds;
 }
 
 // Går det att kliva `dir` veckor från visad vecka utan att lämna tidslinjen?

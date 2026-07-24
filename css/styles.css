@@ -6311,21 +6311,34 @@ main#receptView {
    (Joakims feedback: konstant wiggle var för mycket; iPhones edit-läge är
    lugnt tills man hovrar ett mål). Den aktiva rörelsen bor på ghosten,
    luckan och det hovrade målet — inte i bakgrunden. */
+/* Keyframes börjar OCH slutar på rotate(0) → inget snapp tillbaka när bursten
+   spelat klart (den gamla from/to-varianten slutade på 0,45° och snappade till
+   noll, vilket transform-transitionen dessutom animerade = synlig studs). */
 @keyframes dlxWiggle {
-  from { transform: rotate(-0.4deg); }
-  to   { transform: rotate(0.45deg); }
+  0%   { transform: rotate(0deg); }
+  25%  { transform: rotate(-0.5deg); }
+  75%  { transform: rotate(0.5deg); }
+  100% { transform: rotate(0deg); }
 }
+/* Mottagarkortens vilande läge under hela draget: mjuk streckad ram, redo att
+   glida isär. will-change promotar dem till egna lager → nudge-rörelsen blir
+   ren kompositor-transform utan repaint. */
 .dlx-days.dlx-drag-mode .dlx-day-slot > [data-date]:not(.dlx-drag-src):not(.dlx-drag-off) {
-  animation: dlxWiggle 0.26s ease-in-out 3 alternate;
   border-style: dashed;
   border-color: color-mix(in srgb, var(--lichen) 60%, transparent);
   /* Grannarnas isärglidning (nudge) fjädrar mjukt — den öppnande luckan är
      kärnan i iPhone-känslan. transform-transitionen ligger här (inte på nudge-
      reglerna) så både öppning OCH stängning animeras. */
   transition: transform 0.24s var(--ease-spring), border-color var(--dur-base) var(--ease-standard);
+  will-change: transform;
 }
-.dlx-days.dlx-drag-mode .dlx-day-slot:nth-child(2n) > [data-date]:not(.dlx-drag-src):not(.dlx-drag-off) { animation-delay: -0.11s; }
-.dlx-days.dlx-drag-mode .dlx-day-slot:nth-child(3n) > [data-date]:not(.dlx-drag-src):not(.dlx-drag-off) { animation-delay: -0.06s; }
+/* Jiggel-bursten scopas till intro-klassen (JS tar bort den efter ~0,8 s) —
+   efter det finns ingen animation kvar som kan slåss med nudge-transformerna. */
+.dlx-days.dlx-drag-mode.dlx-drag-intro .dlx-day-slot > [data-date]:not(.dlx-drag-src):not(.dlx-drag-off) {
+  animation: dlxWiggle 0.26s ease-in-out 3;
+}
+.dlx-days.dlx-drag-mode.dlx-drag-intro .dlx-day-slot:nth-child(2n) > [data-date]:not(.dlx-drag-src):not(.dlx-drag-off) { animation-delay: -0.11s; }
+.dlx-days.dlx-drag-mode.dlx-drag-intro .dlx-day-slot:nth-child(3n) > [data-date]:not(.dlx-drag-src):not(.dlx-drag-off) { animation-delay: -0.06s; }
 
 /* Källdagens plats — mjukt nedtonat "hål" tills draget landar (kortet lyft) */
 .dlx-days.dlx-drag-mode .dlx-drag-src {
@@ -6342,12 +6355,14 @@ main#receptView {
 /* Hovrat byt-mål: kortet lyfter lätt mot fingret + solid lichen-ring + ⇄-chip.
    Fjädrar in (ease-spring) så det känns magnetiskt — som att slot:en "griper". */
 .dlx-days.dlx-drag-mode .dlx-drag-over {
-  animation: none !important;   /* avbryt ev. wiggle-burst direkt (bas-regeln har högre specificitet) */
+  animation: none !important;   /* avbryt ev. jiggel-burst direkt (intro-regeln har högre specificitet) */
   transform: scale(1.035);
   border-style: solid;
   border-color: var(--lichen) !important;
+  /* Skuggan sätts direkt (ingen box-shadow-transition) — att animera en stor
+     blur är repaint per frame; scale-transformen bär rörelsen i stället. */
   box-shadow: 0 0 0 2px var(--lichen) inset, 0 12px 28px -14px rgba(44, 63, 51, 0.45);
-  transition: transform 0.2s var(--ease-spring), box-shadow 0.2s var(--ease-standard), border-color 0.15s;
+  transition: transform 0.2s var(--ease-spring), border-color 0.15s var(--ease-standard);
 }
 .dlx-days.dlx-drag-mode .dlx-drag-over::after {
   content: '⇄';
@@ -6379,16 +6394,19 @@ main#receptView {
 
 /* "Kläm in här"-sömmen — rust (appens CTA-färg), sitter mitt i den öppnade
    luckan med en mjuk glöd så den läses som "släpp här". */
+/* Positionen bärs av transform (JS skriver translate3d) — ALDRIG `top`, som är
+   en layout-egenskap och tvingade fram omlayout varje frame. Själva "växa
+   fram"-skalningen bor på ::before så den inte krockar med JS-transformen. */
 .dlx-drop-line {
   position: absolute;
   left: 1.35rem;
   right: 1.35rem;
+  top: 0;
   height: 0;
   pointer-events: none;
   opacity: 0;
-  transform: scaleX(0.6);
-  transform-origin: left center;
-  transition: opacity 0.16s var(--ease-standard), transform 0.22s var(--ease-spring), top 0.18s var(--ease-out);
+  will-change: transform, opacity;
+  transition: opacity 0.16s var(--ease-standard), transform 0.18s var(--ease-out);
   z-index: var(--z-base);
 }
 .dlx-drop-line::before {
@@ -6399,7 +6417,11 @@ main#receptView {
   border-radius: 2px;
   background: var(--rust);
   box-shadow: 0 0 10px -1px color-mix(in srgb, var(--rust) 65%, transparent);
+  transform: scaleX(0.6);
+  transform-origin: left center;
+  transition: transform 0.22s var(--ease-spring);
 }
+.dlx-drop-line.visible::before { transform: scaleX(1); }
 .dlx-drop-line::after {
   content: '';
   position: absolute;
@@ -6409,7 +6431,7 @@ main#receptView {
   background: var(--rust);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--rust) 22%, transparent);
 }
-.dlx-drop-line.visible { opacity: 1; transform: scaleX(1); }
+.dlx-drop-line.visible { opacity: 1; }
 
 /* Flytande kortet — wrappern följer fingret (JS-transform, ingen transition),
    .dlx-drag-lift bär lyft-poppen och landningen (transition) */
@@ -6419,11 +6441,14 @@ main#receptView {
   z-index: var(--z-drag);
   pointer-events: none;
   will-change: transform;
+  contain: layout paint;        /* isolera ghosten — den kan aldrig invalidera listan */
   transition: opacity var(--dur-fast) var(--ease-standard);
 }
+/* Bara transform/opacity transitioneras — skuggan sätts direkt (se .lifted) så
+   den stora blurren aldrig repaintas bildruta för bildruta. */
 .dlx-drag-float .dlx-drag-lift {
   border-radius: 15px;
-  transition: transform 0.2s var(--ease-spring), box-shadow 0.2s var(--ease-standard), opacity var(--dur-fast) var(--ease-standard);
+  transition: transform 0.2s var(--ease-spring), opacity var(--dur-fast) var(--ease-standard);
 }
 /* Över ett giltigt mål: tona ned ghosten så mål-ringen/insert-linjen läses igenom */
 .dlx-drag-float.over .dlx-drag-lift { opacity: 0.7; }
