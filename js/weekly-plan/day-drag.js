@@ -1,5 +1,5 @@
 // Drag & släpp av dagar i matsedeln (Session 131) — långtryck på ett dagkort
-// lyfter det (övriga flyttbara kort wigglar kort, iOS-hemskärmskänsla), dra och släpp:
+// lyfter det (övriga flyttbara kort jigglar kort, iOS-hemskärmskänsla), dra och släpp:
 //   • på ett annat kort  → dagarna byter plats (samma väg som "Byt dag" → /api/swap-days)
 //   • mellan två kort    → dagen kläms in där (samma väg som "Flytta dag" → /api/move-day)
 //   • vid skärmkanten    → vila fingret där → veckan glider över (iPhone-hemskärmen:
@@ -13,12 +13,28 @@
 // kvar som tangentbordsnåbar väg — draget är ett snabbare alternativ, inte en
 // ersättning.
 //
+// ── PRESTANDA (Session 131, jank-passet) ────────────────────────────────────
+// Målet är 60 fps på mobil: NOLL layout-läsningar och noll onödiga DOM-
+// skrivningar i steady state. Principerna som håller det:
+//   1. MÄT EN GÅNG. Kortens geometri (offsetTop/offsetHeight) cachas vid
+//      aktivering. Transformer påverkar aldrig layout → cachen är giltig hela
+//      draget. En MutationObserver på dagslistan flaggar för ommätning bara när
+//      listan FAKTISKT byts ut (veckobyte, realtime-omrendering).
+//   2. STRIKT LÄS→SKRIV per frame. Allt som läser layout sker först (en enda
+//      scrollY-läsning i steady state), därefter enbart skrivningar. Ingen
+//      write→read→write-cykel som tvingar fram synkron layout.
+//   3. SKRIV BARA VID FÖRÄNDRING. Ghost-transform, sömmens läge, kant-etiketter
+//      och klasser jämförs mot senast skrivna värde.
+//   4. BARA KOMPOSITOR-EGENSKAPER i rörelse (transform/opacity) — aldrig top/
+//      left/box-shadow under fingret.
+//   5. Den icke-passiva touchmove-lyssnaren registreras BARA under draget, så
+//      resten av appen behåller webbläsarens snabba scroll-väg.
+//
 // Touch-först (Pointer Events): långtryck HOLD_MS utan rörelse aktiverar;
 // rörelse innan dess lämnar över till vanlig scroll/veckosvep (samma dödzon,
 // 8 px, som installSwipe). Under aktivt drag stängs veckosvepet av
-// (window._dlxDragActive läses i installSwipe) och sidscroll förhindras via en
-// icke-passiv touchmove-preventDefault. prefers-reduced-motion: wiggle och
-// flygningar nollas av den globala reduced-motion-regeln i styles.css;
+// (window._dlxDragActive läses i installSwipe). prefers-reduced-motion: jiggel
+// och flygningar nollas av den globala reduced-motion-regeln i styles.css;
 // JS hoppar dessutom över animationsväntetiderna.
 
 import { fmtIso, addDaysIso, isoWeekNumber, retroWindowStartIso } from '../utils.js';
@@ -29,6 +45,10 @@ const EDGE_BAND = 18;         // ± px runt en kortgräns som räknas som "mella
 const FLY_MS = 200;           // landnings-/returflygningens längd (= CSS .landing-transition)
 const EDGE_W = 26;            // px vid skärmkanten som räknas som "byt vecka"-zon
 const DWELL_MS = 550;         // så länge fingret ska vila i zonen innan veckan byts
+const INTRO_MS = 820;         // jiggel-burstens längd (klassen tas bort efteråt)
+const EDGE_POLL_MS = 250;     // hur ofta kantindikatorernas status räknas om
+const SCROLL_TOP_EDGE = 130;  // autoscroll-zon upptill
+const SCROLL_BOT_EDGE = 100;  // autoscroll-zon nedtill
 
 let _hold = null;             // { date, card, x0, y0, timer, pointerId }
 let _drag = null;             // aktivt drag — se activateDrag()
@@ -42,34 +62,33 @@ function daysContainer() {
   return document.querySelector('#weekDeluxe .dlx-days');
 }
 
-function collectEntries() {
-  const c = daysContainer();
-  if (!c) return [];
-  return [...c.querySelectorAll(':scope > .dlx-day-slot > [data-date]')]
-    .map((el) => ({ el, date: el.dataset.date }));
-}
-
 // ── Behörighet — speglar modeCls/dlxPickSwapTarget-reglerna i plan-viewer-deluxe ──
 // Källa: valfri INNEHÅLLSDAG — aktiva planens receptdagar eller egen planering
 // (recept eller anteckning). Aldrig arkiv eller fria dagar.
-// Byt-mål: icke-arkiv, icke-fri dag — recept kräver aktiv plan.
-// Retro-planering (Session 131): passerade dagar får dras och tas emot —
-// familjen planerar ofta om i efterhand — men bara inom retro-fönstret (14
-// dagar, samma som servern). Äldre = historik.
-// Kläm in-zoner — GENERALISERADE (Session 131): före varje innehållsdag
-// oavsett typ (/api/move-day roterar numera fullt innehåll över alla dagtyper;
-// tomma dagar är hål som vandrar). Ej före källan själv eller dagen direkt
-// efter (no-op), och spannet får aldrig korsa en arkiverad vecka (arkivdagar
-// bor i plan_archives — servern vägrar också).
-function dragContext(srcDate) {
-  const minIso = retroWindowStartIso();
+// Retro-planering: passerade dagar får dras och tas emot — familjen planerar
+// ofta om i efterhand — men bara inom retro-fönstret (14 dagar, samma som
+// servern). Äldre = historik.
+//
+// Billig förkoll som körs vid VARJE pointerdown på ett kort (även rena tryck) —
+// därför bara map-uppslag, inga loopar över tidslinjen.
+function canDragFrom(srcDate) {
   const tl = window._timelineByDate || {};
   const src = tl[srcDate];
-  if (!src || src.isArchive || src.blocked || srcDate < minIso) return null;
-
+  if (!src || src.isArchive || src.blocked || srcDate < retroWindowStartIso()) return null;
   const srcIsPlan = !!src.recipeId && !src.isCustom && src.planId === 'active';
   const srcIsCustom = !!src.isCustom && !!(src.customRecipeId || src.customRecipeTitle || src.customNote);
-  if (!srcIsPlan && !srcIsCustom) return null;
+  return (srcIsPlan || srcIsCustom) ? src : null;
+}
+
+// Full kontext — byggs BARA vid aktivering (dlxInsertZones går igenom hela
+// tidslinjen; det ska inte belasta vanliga tryck).
+// Byt-mål: icke-arkiv, icke-fri dag — recept kräver aktiv plan.
+// Kläm in-zoner: före varje innehållsdag oavsett typ (/api/move-day roterar
+// fullt innehåll över alla dagtyper; tomma dagar är hål som vandrar).
+function dragContext(srcDate) {
+  if (!canDragFrom(srcDate)) return null;
+  const minIso = retroWindowStartIso();
+  const tl = window._timelineByDate || {};
 
   const canSwap = (date) => {
     if (date === srcDate || date < minIso) return false;
@@ -84,39 +103,57 @@ function dragContext(srcDate) {
   return { srcDate, canSwap, insertBefores: zones.insertBefores, endAfter: zones.endAfter };
 }
 
+// ── Geometri-cache — mäts en gång, giltig tills listan byts ut ───────────────
+// offsetTop/offsetHeight är LAYOUT-position (immun mot transformer) och räknas
+// från .dlx-days (position: relative) → samma koordinatrymd som sömmen och
+// släpp-linjen. Att luckan öppnas 14 px flyttar alltså aldrig träffytorna.
+function measure(d) {
+  const c = daysContainer();
+  if (!c) return;
+  const rect = c.getBoundingClientRect();                  // ENDA rect-läsningen
+  d.containerDocTop = rect.top + window.scrollY;
+  d.items = [...c.querySelectorAll(':scope > .dlx-day-slot > [data-date]')]
+    .map((el) => ({ el, date: el.dataset.date, top: el.offsetTop, h: el.offsetHeight }));
+  d.needsMeasure = false;
+  applyStaticClasses(d);
+}
+
+// Källa/ogiltiga mål märks EN gång per mätning — inte 60 ggr/sek. Eftersom
+// ommätning triggas av MutationObserver överlever märkningen alla
+// omrenderingar (veckobyte, realtime-eko) precis som förut.
+function applyStaticClasses(d) {
+  for (const it of d.items) {
+    const isSrc = it.date === d.ctx.srcDate;
+    it.el.classList.toggle('dlx-drag-src', isSrc);
+    it.el.classList.toggle('dlx-drag-off', !isSrc && !d.ctx.canSwap(it.date));
+  }
+}
+
 // ── Träff-test — smala "mellan två dagar"-band vinner över kort-mitten ───────
-// Geometrin läses från offsetTop/offsetHeight (LAYOUT-position) — inte
-// getBoundingClientRect — så den är IMMUN mot gap-/lyft-transformerna. Det gör
-// att korten kan glida isär hur mycket som helst för att ge plats (iPhone-
-// känslan) utan att träffytorna rör sig → ingen oscillation. Y jämförs i
-// container-koordinater (yc), horisontellt hoppas x-koll (korten är fullbredd →
-// förlåtande touch). `seam` returneras i container-space (positionLine/landning).
-function hitTest(ctx, entries, cTop, y) {
-  const yc = y - cTop;
-  for (let i = 0; i < entries.length; i++) {
-    const { el, date } = entries[i];
-    if (!ctx.insertBefores.has(date)) continue;
-    if (!el.offsetHeight) continue;
-    const prev = entries[i - 1]?.el;
-    const seam = prev ? (prev.offsetTop + prev.offsetHeight + el.offsetTop) / 2 : el.offsetTop;
+// Rent räknearbete på cachad geometri: noll DOM-access, noll layout.
+// yc = pekaren i container-koordinater. `seam` returneras i samma rymd.
+function hitTest(ctx, items, yc) {
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    if (!ctx.insertBefores.has(it.date) || !it.h) continue;
+    const prev = items[i - 1];
+    const seam = prev ? (prev.top + prev.h + it.top) / 2 : it.top;
     if (Math.abs(yc - seam) <= EDGE_BAND) {
-      return { kind: 'insert', before: date, seam, above: prev || null, below: el };
+      return { kind: 'insert', before: it.date, seam, above: prev?.el || null, below: it.el };
     }
   }
   if (ctx.endAfter) {
-    const le = entries.find((en) => en.date === ctx.endAfter)?.el;
-    if (le?.offsetHeight) {
-      const seam = le.offsetTop + le.offsetHeight;
+    const le = items.find((it) => it.date === ctx.endAfter);
+    if (le?.h) {
+      const seam = le.top + le.h;
       if (Math.abs(yc - seam) <= EDGE_BAND) {
-        return { kind: 'insert', before: null, seam: seam + 3, above: le, below: null };
+        return { kind: 'insert', before: null, seam: seam + 3, above: le.el, below: null };
       }
     }
   }
-  for (const { el, date } of entries) {
-    if (date === ctx.srcDate || !ctx.canSwap(date)) continue;
-    if (el.offsetHeight && yc >= el.offsetTop && yc <= el.offsetTop + el.offsetHeight) {
-      return { kind: 'swap', date, el };
-    }
+  for (const it of items) {
+    if (it.date === ctx.srcDate || !it.h || !ctx.canSwap(it.date)) continue;
+    if (yc >= it.top && yc <= it.top + it.h) return { kind: 'swap', date: it.date, el: it.el };
   }
   return null;
 }
@@ -128,7 +165,7 @@ function sameTarget(a, b) {
 }
 
 // ── Flytande kort (ghost) — yttre wrapper följer fingret (ingen transition),
-//    inre .dlx-drag-lift bär lyft-skalningen/rotationen (med transition) ──────
+//    inre .dlx-drag-lift bär lyft-skalningen (med transition) ────────────────
 function makeGhost(card) {
   const r = card.getBoundingClientRect();
   const w = card.offsetWidth || r.width;
@@ -155,8 +192,6 @@ function makeGhost(card) {
 }
 
 // ── Kantbläddring (iPhone-hemskärmen) — indikatorer vid vänster/höger kant ───
-// Synlig-dämpad när steget är möjligt (upptäckbarhet), "arming" fylls medan
-// fingret vilar i zonen (CSS-transition ≈ dwell-tiden = progresskänsla).
 function makeEdges() {
   const mk = (dir) => {
     const el = document.createElement('div');
@@ -168,24 +203,34 @@ function makeEdges() {
   return { '-1': mk(-1), '1': mk(1) };
 }
 
-// Visad veckas måndag läses ur DOM (första dagslottens datum) — ingen ny export.
-function shownWeekStartFromDom() {
-  return daysContainer()?.querySelector(':scope > .dlx-day-slot')?.dataset.slot || null;
-}
-
-function updateEdges(d) {
-  const ws = shownWeekStartFromDom();
+// Statusen (går steget? vilket veckonummer?) räknas om på intervall — inte per
+// frame. dlxDragWeekStep(probe) är numera billig (memoiserad tidslinje), men
+// pollningen håller frame-budgeten ren oavsett.
+function refreshEdgeState(d) {
+  const ws = d.items[0]?.date || null;
   for (const dir of [-1, 1]) {
     const el = d.edges[String(dir)];
     if (!el) continue;
     const can = !window._dlxWeekAnimBusy && !!window.dlxDragWeekStep?.(dir, true);
-    el.classList.toggle('visible', can);
-    el.classList.toggle('arming', can && d.edgeDir === dir);
+    if (can !== d.edgeCan[dir]) {
+      d.edgeCan[dir] = can;
+      el.classList.toggle('visible', can);
+    }
     if (ws) {
-      const label = el.querySelector('.dlx-edge-week');
-      if (label) label.textContent = `v.${isoWeekNumber(addDaysIso(ws, dir * 7))}`;
+      const label = `v.${isoWeekNumber(addDaysIso(ws, dir * 7))}`;
+      if (label !== d.edgeLabel[dir]) {
+        d.edgeLabel[dir] = label;
+        el.querySelector('.dlx-edge-week').textContent = label;   // skriv bara vid förändring
+      }
     }
   }
+}
+
+// Arming-läget måste svara direkt (det ÄR dwell-progressen) — men bara på byte.
+function setArming(d, dir) {
+  if (d.armedDir === dir) return;
+  d.armedDir = dir;
+  for (const k of [-1, 1]) d.edges[String(k)]?.classList.toggle('arming', k === dir);
 }
 
 // ── Aktivering (långtrycket gick i mål) ───────────────────────────────────────
@@ -200,101 +245,125 @@ function activateDrag() {
   window._dlxDragActive = true;
   navigator.vibrate?.(12);
 
-  container.classList.add('dlx-drag-mode');
+  // Jiggel-bursten scopas till en klass som tas bort när den spelat klart →
+  // efter det finns INGEN animation kvar att slåss med nudge-transformerna.
+  container.classList.add('dlx-drag-mode', 'dlx-drag-intro');
 
   const line = document.createElement('div');
   line.className = 'dlx-drop-line';
   container.appendChild(line);
 
   _drag = {
-    ctx,
+    ctx, container,
     pointerId: h.pointerId,
     x0: h.x0, y0: h.y0,
     x: h.x0, y: h.y0,
     ghost: makeGhost(h.card),
     line,
     edges: makeEdges(),
+    edgeCan: { '-1': null, '1': null },
+    edgeLabel: { '-1': null, '1': null },
+    armedDir: 0,
     edgeDir: 0,               // kantzon fingret vilar i just nu (−1/0/+1)
     dwellStart: 0,            // när vilan i zonen började
+    edgeCheckAt: 0,
     hover: null,
+    items: [],
+    containerDocTop: 0,
+    needsMeasure: true,
+    lastGX: null, lastGY: null,
+    lastSeam: null,
     raf: 0,
     nextSuppress: 0,
+    introTimer: setTimeout(() => container.classList.remove('dlx-drag-intro'), INTRO_MS),
   };
+
+  // Ommätning bara när listan FAKTISKT ändras (veckobyte/omrendering) — inte
+  // per frame. Attribut observeras inte, så våra egna klass-skrivningar loopar
+  // aldrig tillbaka hit.
+  _drag.observer = new MutationObserver(() => { if (_drag) _drag.needsMeasure = true; });
+  _drag.observer.observe(container, { childList: true, subtree: true });
+
+  // Icke-passiv touchmove BARA under draget → resten av appen behåller
+  // webbläsarens snabba scroll-väg. Fingret står stilla vid aktivering
+  // (långtryck) så ingen scroll har hunnit starta → preventDefault biter.
+  document.addEventListener('touchmove', blockTouchScroll, { passive: false });
+
   try { h.card.setPointerCapture?.(h.pointerId); } catch { /* capture är bara en optimering */ }
-  startLoop();
+  _drag.raf = requestAnimationFrame(frame);
 }
 
-// ── rAF-loop: ghost följer fingret, kant-autoscroll, kantbläddring, träff-test,
-//    idempotenta drag-klasser (överlever omrenderingar), eko-dämpning ─────────
-function startLoop() {
-  const step = () => {
-    const d = _drag;
-    if (!d) return;
-    const now = Date.now();
+function blockTouchScroll(e) {
+  if (_drag) e.preventDefault();
+}
 
-    // Kant-autoscroll — dra mot topp/botten scrollar sidan mjukt med
-    const topEdge = 130, botEdge = 100;
-    let dy = 0;
-    if (d.y < topEdge) dy = -Math.min(14, (topEdge - d.y) / 5);
-    else if (d.y > window.innerHeight - botEdge) dy = Math.min(14, (d.y - (window.innerHeight - botEdge)) / 5);
-    if (dy) window.scrollBy(0, dy);
+// ── Frame-loop: läs-fas → skriv-fas, allt övrigt cachat ──────────────────────
+function frame(ts) {
+  const d = _drag;
+  if (!d) return;
 
-    d.ghost.wrap.style.transform =
-      `translate3d(${d.ghost.baseLeft + (d.x - d.x0)}px, ${d.ghost.baseTop + (d.y - d.y0)}px, 0)`;
+  // ══ LÄS-FAS ══ (allt som kan tvinga fram layout sker här, före skrivningar)
+  if (d.needsMeasure) {
+    measure(d);              // enda tillfället vi rör layout — vid DOM-ändring
+    setHover(null);          // gamla hover-referenser pekar på utbytta noder
+  }
+  const scrollY = window.scrollY;
+  const yc = d.y + scrollY - d.containerDocTop;
 
-    const entries = collectEntries();
+  // ══ SKRIV-FAS ══ (härifrån: inga layout-läsningar)
 
-    // Drag-lägets kort-klasser hålls färska IDEMPOTENT varje frame — så de
-    // överlever ALLA omrenderingar (veckobyte, realtime-eko) utan hooks.
-    for (const { el, date } of entries) {
-      const isSrc = date === d.ctx.srcDate;
-      el.classList.toggle('dlx-drag-src', isSrc);
-      el.classList.toggle('dlx-drag-off', !isSrc && !d.ctx.canSwap(date));
+  // Ghosten följer fingret — skriv bara när värdet faktiskt ändrats
+  const gx = d.ghost.baseLeft + (d.x - d.x0);
+  const gy = d.ghost.baseTop + (d.y - d.y0);
+  if (gx !== d.lastGX || gy !== d.lastGY) {
+    d.ghost.wrap.style.transform = `translate3d(${gx}px, ${gy}px, 0)`;
+    d.lastGX = gx; d.lastGY = gy;
+  }
+
+  // Kantbläddring: vila fingret i kantzonen DWELL_MS → veckan glider över.
+  // Slide-animationen (_dlxWeekAnimBusy) gate:ar takten för upprepade byten.
+  const dir = d.x < EDGE_W ? -1 : d.x > window.innerWidth - EDGE_W ? 1 : 0;
+  if (ts - d.edgeCheckAt > EDGE_POLL_MS) { refreshEdgeState(d); d.edgeCheckAt = ts; }
+  const canStep = dir !== 0 && d.edgeCan[dir] === true;
+  if (!canStep || dir !== d.edgeDir) {
+    d.edgeDir = canStep ? dir : 0;
+    d.dwellStart = ts;
+  } else if (ts - d.dwellStart >= DWELL_MS) {
+    if (window.dlxDragWeekStep(dir)) {
+      navigator.vibrate?.(8);
+      setHover(null);              // markeringarna släcks medan panelen glider
+      refreshEdgeState(d);         // veckan bytt → status direkt, inte om 250 ms
     }
+    d.edgeDir = 0;
+  }
+  setArming(d, d.edgeDir);
 
-    // Kantbläddring: vila fingret i kantzonen DWELL_MS → veckan glider över
-    // (iPhone-hemskärmen). Efter bytet krävs en ny vila — slide-animationen
-    // (window._dlxWeekAnimBusy) gate:ar naturligt takten för upprepade byten.
-    const dir = d.x < EDGE_W ? -1 : d.x > window.innerWidth - EDGE_W ? 1 : 0;
-    const canStep = dir !== 0 && !window._dlxWeekAnimBusy && !!window.dlxDragWeekStep?.(dir, true);
-    if (!canStep || dir !== d.edgeDir) {
-      d.edgeDir = canStep ? dir : 0;
-      d.dwellStart = now;
-    } else if (now - d.dwellStart >= DWELL_MS) {
-      if (window.dlxDragWeekStep(dir)) {
-        navigator.vibrate?.(8);
-        setHover(null);        // markeringarna släcks medan panelen glider
-      }
-      d.edgeDir = 0;
-    }
-    updateEdges(d);
+  // Träff-test pausas medan veckopanelen glider (korten är i rörelse).
+  setHover(window._dlxWeekAnimBusy ? null : hitTest(d.ctx, d.items, yc));
 
-    // Träff-test pausas medan veckopanelen glider (korten är i rörelse).
-    if (window._dlxWeekAnimBusy) {
-      setHover(null);
-    } else {
-      const c = daysContainer();
-      const cTop = c ? c.getBoundingClientRect().top : 0;
-      setHover(hitTest(d.ctx, entries, cTop, d.y));
-    }
+  // Autoscroll sist i skriv-fasen — nästa frames scrollY-läsning fångar upp den
+  let dy = 0;
+  if (d.y < SCROLL_TOP_EDGE) dy = -Math.min(14, (SCROLL_TOP_EDGE - d.y) / 5);
+  else if (d.y > window.innerHeight - SCROLL_BOT_EDGE) {
+    dy = Math.min(14, (d.y - (window.innerHeight - SCROLL_BOT_EDGE)) / 5);
+  }
+  if (dy) window.scrollBy(0, dy);
 
-    // Dämpa realtime-omhämtningar under hela draget så vyn inte byggs om
-    // under fingret (plan-viewer.js kör om-laddningen när dämpningen släpper).
-    if (now > d.nextSuppress) {
-      window._planMutateUntil = now + 4000;
-      d.nextSuppress = now + 1500;
-    }
-    d.raf = requestAnimationFrame(step);
-  };
-  _drag.raf = requestAnimationFrame(step);
+  // Dämpa realtime-omhämtningar under hela draget så vyn inte byggs om
+  // under fingret (plan-viewer.js kör om-laddningen när dämpningen släpper).
+  if (ts > d.nextSuppress) {
+    window._planMutateUntil = Date.now() + 4000;
+    d.nextSuppress = ts + 1500;
+  }
+
+  d.raf = requestAnimationFrame(frame);
 }
 
 function setHover(t) {
   const d = _drag;
   if (!d) return;
   if (sameTarget(d.hover, t)) {
-    // Samma kläm in-zon men sidan kan ha scrollat → håll linjen i rätt läge
-    if (t?.kind === 'insert') positionLine(t.y);
+    if (t?.kind === 'insert') positionLine(t.seam);   // no-op om sömmen är oförändrad
     return;
   }
   if (d.hover?.kind === 'swap') d.hover.el.classList.remove('dlx-drag-over');
@@ -315,18 +384,19 @@ function setHover(t) {
     d.line.classList.add('visible');
     // Grannarna GLIDER isär och öppnar en riktig lucka runt sömmen (iPhone:
     // listan delar på sig för att ge plats). Sömmen ligger fast (mitt emellan
-    // grannarnas layout-positioner) → transformerna påverkar aldrig träffytan.
+    // grannarnas LAYOUT-positioner) → transformerna påverkar aldrig träffytan.
     t.above?.classList.add('dlx-nudge-up');
     t.below?.classList.add('dlx-nudge-down');
   }
 }
 
-// yContainer = container-space (samma som hitTest seam) → linjen ligger rätt
-// oavsett scroll, eftersom .dlx-days är dess positionerade förälder.
+// Sömmen flyttas med transform (kompositor) — aldrig `top` (layout).
+// Skrivs bara när den faktiskt ändras.
 function positionLine(yContainer) {
   const d = _drag;
-  if (!d) return;
-  d.line.style.top = `${yContainer}px`;
+  if (!d || yContainer === d.lastSeam) return;
+  d.lastSeam = yContainer;
+  d.line.style.transform = `translate3d(0, ${yContainer}px, 0)`;
 }
 
 // ── Avslut: släpp på mål, släpp utanför eller avbrott ─────────────────────────
@@ -340,7 +410,14 @@ function flyGhost(ghost, toLeft, toTop, { fade = false } = {}) {
 }
 
 function teardownVisuals(d) {
-  daysContainer()?.classList.remove('dlx-drag-mode');
+  d.observer?.disconnect();
+  clearTimeout(d.introTimer);
+  document.removeEventListener('touchmove', blockTouchScroll, { passive: false });
+  d.container?.classList.remove('dlx-drag-mode', 'dlx-drag-intro');
+  for (const it of d.items) {
+    it.el.classList.remove('dlx-drag-src', 'dlx-drag-off', 'dlx-drag-over', 'dlx-nudge-up', 'dlx-nudge-down');
+  }
+  // Säkerhetsnät om listan bytts ut mellan mätningarna (noder utanför cachen)
   document.querySelectorAll('#weekDeluxe .dlx-drag-src, #weekDeluxe .dlx-drag-off, #weekDeluxe .dlx-drag-over, #weekDeluxe .dlx-nudge-up, #weekDeluxe .dlx-nudge-down')
     .forEach((el) => el.classList.remove('dlx-drag-src', 'dlx-drag-off', 'dlx-drag-over', 'dlx-nudge-up', 'dlx-nudge-down'));
   d.line?.remove();
@@ -364,11 +441,9 @@ async function endDrag(commit) {
     d.ghost.wrap.remove();
     window.dlxPerformSwap?.(d.ctx.srcDate, t.date);
   } else if (t?.kind === 'insert') {
-    // Flyg ghosten in i luckan (sömmen, i viewport-koordinater) och LANDA den
-    // där — settle-scale (lifted av) i stället för att tona bort, så draget
-    // "sätter sig" i springan innან servern svarar och vyn ritas om.
-    const c = daysContainer();
-    const cTop = c ? c.getBoundingClientRect().top : 0;
+    // Flyg ghosten in i luckan och LANDA den där (settle) i stället för att
+    // tona bort — draget sätter sig innan servern svarat och vyn ritas om.
+    const cTop = d.container ? d.container.getBoundingClientRect().top : 0;
     await flyGhost(d.ghost, d.ghost.baseLeft, cTop + t.seam - d.ghost.h / 2);
     d.ghost.wrap.remove();
     window.dlxPerformMove?.(d.ctx.srcDate, t.before);
@@ -397,14 +472,14 @@ document.addEventListener('pointerdown', (e) => {
   const card = e.target.closest('#weekDeluxe .dlx-day-slot > [data-date]');
   if (!card) return;
   const date = card.dataset.date;
-  if (!dragContext(date)) return;                               // dagen är inte flyttbar
+  if (!canDragFrom(date)) return;                               // billig förkoll (rena tryck)
   _hold = {
     date, card,
     x0: e.clientX, y0: e.clientY,
     pointerId: e.pointerId,
     timer: setTimeout(activateDrag, HOLD_MS),
   };
-});
+}, { passive: true });
 
 document.addEventListener('pointermove', (e) => {
   if (_hold && e.pointerId === _hold.pointerId) {
@@ -412,25 +487,22 @@ document.addEventListener('pointermove', (e) => {
     return;
   }
   if (_drag && e.pointerId === _drag.pointerId) {
+    // Bara bokföring — all DOM-påverkan sker i rAF-loopen (en skrivning/frame
+    // även om pekaren levererar flera events per frame).
     _drag.x = e.clientX;
     _drag.y = e.clientY;
   }
-});
+}, { passive: true });
 
 document.addEventListener('pointerup', (e) => {
   if (_hold && e.pointerId === _hold.pointerId) { cancelHold(); return; }
   if (_drag && e.pointerId === _drag.pointerId) endDrag(true);
-});
+}, { passive: true });
 
 document.addEventListener('pointercancel', (e) => {
   if (_hold && e.pointerId === _hold.pointerId) { cancelHold(); return; }
   if (_drag && e.pointerId === _drag.pointerId) endDrag(false);
-});
-
-// Sidscroll får inte kapa draget (icke-passiv → preventDefault fungerar).
-document.addEventListener('touchmove', (e) => {
-  if (_drag) e.preventDefault();
-}, { passive: false });
+}, { passive: true });
 
 // Långtryck ska inte öppna webbläsarens kontextmeny/textmarkering.
 document.addEventListener('contextmenu', (e) => {
