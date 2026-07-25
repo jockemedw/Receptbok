@@ -6295,6 +6295,59 @@ main#receptView {
    den globala regeln nollar wiggle/flygningar — tillstånden (lyft, dim,
    mål-ring, linje) är statiska och bär betydelsen ensamma. */
 
+/* Blinkfria omrenderingar under en pågående operation (byt/flytta dag):
+   dagkortens entré-animation (dlxFadeIn/dlxFadeInDim) spelas om varje gång ett
+   kort remountas → 0,4 s intoning = synligt blink när ett byte landar. Här
+   nollas bara VARAKTIGHETEN, inte animationen: slutrutan (fill: both) bär
+   dämpningen av passerade/arkiverade dagar och måste finnas kvar. */
+.dlx-days.dlx-quiet .dlx-day,
+.dlx-days.dlx-quiet .dlx-tonight { animation-duration: 0.001ms !important; }
+
+/* ── Helskärms-indikator under en pågående dag-operation ────────────────────
+   Ersätter det gamla "Byter dag…"-kortet som kilades in ovanför dagslistan och
+   knuffade layouten. Ligger över allt, blockerar tryck under skrivningen och
+   försvinner så fort servern svarat. */
+.dlx-op-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--forest-deep, #2c3f33) 28%, transparent);
+  backdrop-filter: blur(1.5px);
+  -webkit-backdrop-filter: blur(1.5px);
+  opacity: 0;
+  transition: opacity 0.09s var(--ease-standard);
+}
+.dlx-op-overlay.open { opacity: 1; }
+.dlx-op-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--linen-card);
+  color: var(--forest-deep);
+  border-radius: 999px;
+  padding: 0.7rem 1.15rem;
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  font-weight: 600;
+  box-shadow: 0 12px 32px -12px rgba(44, 63, 51, 0.5), 0 2px 8px rgba(44, 63, 51, 0.18);
+  scale: 0.94;
+  transition: scale 0.16s var(--ease-out);
+}
+.dlx-op-overlay.open .dlx-op-pill { scale: 1; }
+.dlx-op-spinner {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  border: 2.5px solid color-mix(in srgb, var(--lichen) 35%, transparent);
+  border-top-color: var(--rust);
+  animation: dlxOpSpin 0.7s linear infinite;
+  flex: none;
+}
+@keyframes dlxOpSpin { to { rotate: 360deg; } }
+
 /* Långtryck ska aldrig trigga textmarkering/iOS-callout på dagkorten */
 .dlx-day, .dlx-tonight {
   -webkit-user-select: none;
@@ -6311,34 +6364,32 @@ main#receptView {
    (Joakims feedback: konstant wiggle var för mycket; iPhones edit-läge är
    lugnt tills man hovrar ett mål). Den aktiva rörelsen bor på ghosten,
    luckan och det hovrade målet — inte i bakgrunden. */
-/* Keyframes börjar OCH slutar på rotate(0) → inget snapp tillbaka när bursten
-   spelat klart (den gamla from/to-varianten slutade på 0,45° och snappade till
-   noll, vilket transform-transitionen dessutom animerade = synlig studs). */
+/* Jigglet animerar den INDIVIDUELLA `rotate`-egenskapen — inte den samlade
+   transform-kanalen. Det gör att en EVIG wiggle kan samexistera med
+   lucköppningens `translate` och målets `scale` på samma element (de är egna
+   egenskaper som komponeras oberoende, Safari/iOS 14.1+). Tidigare slogs de
+   om `transform`, vilket tvingade fram en kort burst som måste avbrytas för
+   att luckan skulle kunna öppnas. */
 @keyframes dlxWiggle {
-  0%   { transform: rotate(0deg); }
-  25%  { transform: rotate(-0.5deg); }
-  75%  { transform: rotate(0.5deg); }
-  100% { transform: rotate(0deg); }
+  0%, 100% { rotate: -0.5deg; }
+  50%      { rotate: 0.5deg; }
 }
-/* Mottagarkortens vilande läge under hela draget: mjuk streckad ram, redo att
-   glida isär. will-change promotar dem till egna lager → nudge-rörelsen blir
-   ren kompositor-transform utan repaint. */
+/* Mottagarkortens läge under hela draget: mjuk streckad ram + lugnt jiggel som
+   lever tills man släpper (iPhone-hemskärmen). 0.52s cykel = halva den tidigare
+   hastigheten — märkbart men aldrig darrigt. */
 .dlx-days.dlx-drag-mode .dlx-day-slot > [data-date]:not(.dlx-drag-src):not(.dlx-drag-off) {
+  animation: dlxWiggle 0.52s ease-in-out infinite;
   border-style: dashed;
   border-color: color-mix(in srgb, var(--lichen) 60%, transparent);
-  /* Grannarnas isärglidning (nudge) fjädrar mjukt — den öppnande luckan är
-     kärnan i iPhone-känslan. transform-transitionen ligger här (inte på nudge-
-     reglerna) så både öppning OCH stängning animeras. */
-  transition: transform 0.24s var(--ease-spring), border-color var(--dur-base) var(--ease-standard);
+  /* Lucköppningen (translate) och målets scale fjädrar mjukt; rotate tonar ut
+     när drag-läget släpps så jigglet inte snäpper till noll. */
+  transition: translate 0.24s var(--ease-spring), scale 0.2s var(--ease-spring),
+              rotate 0.2s var(--ease-out), border-color var(--dur-base) var(--ease-standard);
   will-change: transform;
 }
-/* Jiggel-bursten scopas till intro-klassen (JS tar bort den efter ~0,8 s) —
-   efter det finns ingen animation kvar som kan slåss med nudge-transformerna. */
-.dlx-days.dlx-drag-mode.dlx-drag-intro .dlx-day-slot > [data-date]:not(.dlx-drag-src):not(.dlx-drag-off) {
-  animation: dlxWiggle 0.26s ease-in-out 3;
-}
-.dlx-days.dlx-drag-mode.dlx-drag-intro .dlx-day-slot:nth-child(2n) > [data-date]:not(.dlx-drag-src):not(.dlx-drag-off) { animation-delay: -0.11s; }
-.dlx-days.dlx-drag-mode.dlx-drag-intro .dlx-day-slot:nth-child(3n) > [data-date]:not(.dlx-drag-src):not(.dlx-drag-off) { animation-delay: -0.06s; }
+/* Olika fas per rad → organiskt, inte synkront marscherande */
+.dlx-days.dlx-drag-mode .dlx-day-slot:nth-child(2n) > [data-date]:not(.dlx-drag-src):not(.dlx-drag-off) { animation-delay: -0.22s; }
+.dlx-days.dlx-drag-mode .dlx-day-slot:nth-child(3n) > [data-date]:not(.dlx-drag-src):not(.dlx-drag-off) { animation-delay: -0.12s; }
 
 /* Källdagens plats — mjukt nedtonat "hål" tills draget landar (kortet lyft) */
 .dlx-days.dlx-drag-mode .dlx-drag-src {
@@ -6354,15 +6405,16 @@ main#receptView {
 
 /* Hovrat byt-mål: kortet lyfter lätt mot fingret + solid lichen-ring + ⇄-chip.
    Fjädrar in (ease-spring) så det känns magnetiskt — som att slot:en "griper". */
+/* Hovrat mål: `scale` som egen egenskap → jigglet (rotate) får fortsätta,
+   kortet bara växer. Ingen animation: none-hack behövs längre. */
 .dlx-days.dlx-drag-mode .dlx-drag-over {
-  animation: none !important;   /* avbryt ev. jiggel-burst direkt (intro-regeln har högre specificitet) */
-  transform: scale(1.035);
+  scale: 1.035;
   border-style: solid;
   border-color: var(--lichen) !important;
   /* Skuggan sätts direkt (ingen box-shadow-transition) — att animera en stor
      blur är repaint per frame; scale-transformen bär rörelsen i stället. */
   box-shadow: 0 0 0 2px var(--lichen) inset, 0 12px 28px -14px rgba(44, 63, 51, 0.45);
-  transition: transform 0.2s var(--ease-spring), border-color 0.15s var(--ease-standard);
+  transition: scale 0.2s var(--ease-spring), border-color 0.15s var(--ease-standard);
 }
 .dlx-days.dlx-drag-mode .dlx-drag-over::after {
   content: '⇄';
@@ -6389,8 +6441,8 @@ main#receptView {
    keyframe-animationen den och luckan öppnas inte förrän bursten spelat klart).
    Transformerna påverkar aldrig träffytan — hitTest läser layout-position
    (offsetTop), inte transformerad rect. */
-.dlx-days.dlx-drag-mode .dlx-nudge-up   { animation: none !important; transform: translateY(-14px); }
-.dlx-days.dlx-drag-mode .dlx-nudge-down { animation: none !important; transform: translateY(14px); }
+.dlx-days.dlx-drag-mode .dlx-nudge-up   { translate: 0 -14px; }
+.dlx-days.dlx-drag-mode .dlx-nudge-down { translate: 0 14px; }
 
 /* "Kläm in här"-sömmen — rust (appens CTA-färg), sitter mitt i den öppnade
    luckan med en mjuk glöd så den läses som "släpp här". */

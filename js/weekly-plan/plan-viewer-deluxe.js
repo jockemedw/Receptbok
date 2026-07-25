@@ -757,6 +757,10 @@ function renderDaysDiff(host, days, { tonightHtml = '', tonightDate = null } = {
     container.className = 'dlx-days';
     sec.appendChild(container);
   }
+  // Blinkfritt: under en pågående operation (byt/flytta) eller ett aktivt drag
+  // nollas kortens entré-animation, annars tonar varje utbytt kort in på nytt
+  // (0,4 s) och läses som ett blink när bytet landar.
+  container.classList.toggle('dlx-quiet', !!(window._opBusy || window._dlxDragActive));
 
   const zones = moveZoneCtx();                 // släppzoner i flytta-läge (annars null)
   const existing = new Map();
@@ -790,20 +794,46 @@ function renderDaysDiff(host, days, { tonightHtml = '', tonightDate = null } = {
 }
 
 // Banner för pågående byt/flytta-läge — state-driven så den överlever re-renders.
+// OBS: bara INSTRUKTIONS-läget ("välj dag") renderas här. Under själva
+// skrivningen visas en helskärms-indikator i stället (dlxShowOpOverlay) — den
+// gamla busy-bannern kilades in ovanför dagslistan och knuffade layouten.
 function modeBannerHtml() {
-  if (window._dlxSwap) {
-    const busy = !!window._dlxSwap.pending;
-    return `<div class="dlx-swap-banner${busy ? ' busy' : ''}">
-      <span>${busy ? `${I.swap} Byter dag…` : `${I.swap} Välj dagen att byta med — recept, egen planering eller tom dag`}</span>
-      ${busy ? '' : '<button onclick="dlxCancelSwap()">Avbryt</button>'}</div>`;
+  if (window._dlxSwap && !window._dlxSwap.pending) {
+    return `<div class="dlx-swap-banner">
+      <span>${I.swap} Välj dagen att byta med — recept, egen planering eller tom dag</span>
+      <button onclick="dlxCancelSwap()">Avbryt</button></div>`;
   }
-  if (window._dlxMove) {
-    const busy = !!window._dlxMove.pending;
-    return `<div class="dlx-swap-banner${busy ? ' busy' : ''}">
-      <span>${busy ? `${I.move} Flyttar dag…` : `${I.move} Tryck på platsen dit dagen ska flyttas`}</span>
-      ${busy ? '' : '<button onclick="dlxCancelMove()">Avbryt</button>'}</div>`;
+  if (window._dlxMove && !window._dlxMove.pending) {
+    return `<div class="dlx-swap-banner">
+      <span>${I.move} Tryck på platsen dit dagen ska flyttas</span>
+      <button onclick="dlxCancelMove()">Avbryt</button></div>`;
   }
   return '';
+}
+
+// ── Helskärms-indikator för pågående dag-operationer ─────────────────────────
+// Ligger över allt, blockerar tryck under skrivningen och försvinner så fort
+// servern svarat. Ersätter det inkilade "Byter dag…"-kortet (Joakims mobil-
+// feedback: layouten ska inte hoppa medan man väntar).
+let _opOverlayEl = null;
+function dlxShowOpOverlay(label) {
+  if (!_opOverlayEl) {
+    _opOverlayEl = document.createElement('div');
+    _opOverlayEl.className = 'dlx-op-overlay';
+    _opOverlayEl.setAttribute('role', 'status');
+    _opOverlayEl.setAttribute('aria-live', 'polite');
+    document.body.appendChild(_opOverlayEl);
+  }
+  _opOverlayEl.innerHTML = `<div class="dlx-op-pill"><span class="dlx-op-spinner" aria-hidden="true"></span><span>${esc(label)}</span></div>`;
+  requestAnimationFrame(() => _opOverlayEl?.classList.add('open'));
+}
+
+function dlxHideOpOverlay() {
+  if (!_opOverlayEl) return;
+  const el = _opOverlayEl;
+  _opOverlayEl = null;
+  el.classList.remove('open');
+  setTimeout(() => el.remove(), 140);
 }
 
 // Notis när ett obekräftat förslag ligger helt utanför den visade veckan —
@@ -1015,10 +1045,10 @@ window.dlxPickMoveTarget = async function (before) {
   if (!move || move.pending || window._opBusy) return;
   const from = move.from;
 
-  // Omedelbar feedback: banner växlar till "Flyttar dag…", källan får spinner
+  // Omedelbar feedback: helskärms-indikator (se dlxPickSwapTarget)
   window._opBusy = true;
   move.pending = before || '__end__';
-  renderDeluxe();
+  dlxShowOpOverlay('Flyttar dag…');
   suppressEcho();
 
   // Receptet som flyttas — för glöd-kvittot på landningsdagen efteråt
@@ -1046,6 +1076,7 @@ window.dlxPickMoveTarget = async function (before) {
     renderDeluxe();   // läget kvar — användaren kan välja en annan plats eller avbryta
     window.showToast?.(dlxUserMessage(e, 'Kunde inte flytta dagen — prova igen.'), { type: 'error' });
   } finally {
+    dlxHideOpOverlay();
     window._opBusy = false;
   }
 };
@@ -1068,10 +1099,11 @@ async function dlxPickSwapTarget(toDate) {
     return;
   }
 
-  // Omedelbar feedback: banner växlar till "Byter dag…", båda korten markeras
+  // Omedelbar feedback: helskärms-indikator (ingen omrendering av listan — den
+  // gav både ett inkilat banner-kort och ett extra blink innan svaret kom).
   window._opBusy = true;
   swap.pending = toDate;
-  renderDeluxe();
+  dlxShowOpOverlay('Byter dag…');
   suppressEcho();
 
   try {
@@ -1092,6 +1124,7 @@ async function dlxPickSwapTarget(toDate) {
     renderDeluxe();   // läget kvar — användaren kan välja ett annat mål eller avbryta
     window.showToast?.(dlxUserMessage(e, 'Kunde inte byta dagarna — prova igen.'), { type: 'error' });
   } finally {
+    dlxHideOpOverlay();
     window._opBusy = false;
   }
 }

@@ -45,7 +45,6 @@ const EDGE_BAND = 18;         // ± px runt en kortgräns som räknas som "mella
 const FLY_MS = 200;           // landnings-/returflygningens längd (= CSS .landing-transition)
 const EDGE_W = 26;            // px vid skärmkanten som räknas som "byt vecka"-zon
 const DWELL_MS = 550;         // så länge fingret ska vila i zonen innan veckan byts
-const INTRO_MS = 820;         // jiggel-burstens längd (klassen tas bort efteråt)
 const EDGE_POLL_MS = 250;     // hur ofta kantindikatorernas status räknas om
 const SCROLL_TOP_EDGE = 130;  // autoscroll-zon upptill
 const SCROLL_BOT_EDGE = 100;  // autoscroll-zon nedtill
@@ -245,9 +244,9 @@ function activateDrag() {
   window._dlxDragActive = true;
   navigator.vibrate?.(12);
 
-  // Jiggel-bursten scopas till en klass som tas bort när den spelat klart →
-  // efter det finns INGEN animation kvar att slåss med nudge-transformerna.
-  container.classList.add('dlx-drag-mode', 'dlx-drag-intro');
+  // Jigglet lever tills man släpper (CSS: evig animation på `rotate`, som
+  // komponeras oberoende av lucköppningens `translate` och målets `scale`).
+  container.classList.add('dlx-drag-mode');
 
   const line = document.createElement('div');
   line.className = 'dlx-drop-line';
@@ -275,7 +274,6 @@ function activateDrag() {
     lastSeam: null,
     raf: 0,
     nextSuppress: 0,
-    introTimer: setTimeout(() => container.classList.remove('dlx-drag-intro'), INTRO_MS),
   };
 
   // Ommätning bara när listan FAKTISKT ändras (veckobyte/omrendering) — inte
@@ -411,9 +409,8 @@ function flyGhost(ghost, toLeft, toTop, { fade = false } = {}) {
 
 function teardownVisuals(d) {
   d.observer?.disconnect();
-  clearTimeout(d.introTimer);
   document.removeEventListener('touchmove', blockTouchScroll, { passive: false });
-  d.container?.classList.remove('dlx-drag-mode', 'dlx-drag-intro');
+  d.container?.classList.remove('dlx-drag-mode');
   for (const it of d.items) {
     it.el.classList.remove('dlx-drag-src', 'dlx-drag-off', 'dlx-drag-over', 'dlx-nudge-up', 'dlx-nudge-down');
   }
