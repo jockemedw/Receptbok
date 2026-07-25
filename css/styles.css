@@ -6370,9 +6370,13 @@ main#receptView {
    egenskaper som komponeras oberoende, Safari/iOS 14.1+). Tidigare slogs de
    om `transform`, vilket tvingade fram en kort burst som måste avbrytas för
    att luckan skulle kunna öppnas. */
+/* Börjar OCH slutar på 0° — så en omstart (kort som remountas vid omrendering
+   eller byter rad-position) aldrig syns som ett ryck. Med -0,5° som startvärde
+   hoppade kortet till ytterläget vid varje omstart. */
 @keyframes dlxWiggle {
-  0%, 100% { rotate: -0.5deg; }
-  50%      { rotate: 0.5deg; }
+  0%, 100% { rotate: 0deg; }
+  25%      { rotate: -0.5deg; }
+  75%      { rotate: 0.5deg; }
 }
 /* Mottagarkortens läge under hela draget: mjuk streckad ram + lugnt jiggel som
    lever tills man släpper (iPhone-hemskärmen). 0.52s cykel = halva den tidigare
@@ -6381,11 +6385,15 @@ main#receptView {
   animation: dlxWiggle 0.52s ease-in-out infinite;
   border-style: dashed;
   border-color: color-mix(in srgb, var(--lichen) 60%, transparent);
-  /* Lucköppningen (translate) och målets scale fjädrar mjukt; rotate tonar ut
-     när drag-läget släpps så jigglet inte snäpper till noll. */
+  /* Lucköppningen (translate) och målets scale fjädrar mjukt. `rotate` ligger
+     MEDVETET utanför transition-listan: den drivs av animationen ovan, och en
+     transition på samma egenskap ger fajt/ryck vid varje stilomräkning.
+     Amplituden är 0,5° → att den snäpper till 0 vid släpp syns inte. */
   transition: translate 0.24s var(--ease-spring), scale 0.2s var(--ease-spring),
-              rotate 0.2s var(--ease-out), border-color var(--dur-base) var(--ease-standard);
-  will-change: transform;
+              border-color var(--dur-base) var(--ease-standard);
+  /* Individuella transform-egenskaper måste hintas var för sig — `transform`
+     täcker inte rotate/translate/scale. */
+  will-change: rotate, translate;
 }
 /* Olika fas per rad → organiskt, inte synkront marscherande */
 .dlx-days.dlx-drag-mode .dlx-day-slot:nth-child(2n) > [data-date]:not(.dlx-drag-src):not(.dlx-drag-off) { animation-delay: -0.22s; }
@@ -6405,9 +6413,12 @@ main#receptView {
 
 /* Hovrat byt-mål: kortet lyfter lätt mot fingret + solid lichen-ring + ⇄-chip.
    Fjädrar in (ease-spring) så det känns magnetiskt — som att slot:en "griper". */
-/* Hovrat mål: `scale` som egen egenskap → jigglet (rotate) får fortsätta,
-   kortet bara växer. Ingen animation: none-hack behövs längre. */
+/* Hovrat mål: kortet växer OCH slutar jiggla — det läser som "låst, släpp här"
+   och lugnar bilden (iPhone: målplatsen skakar inte). Omstarten när man lämnar
+   är osynlig eftersom keyframen börjar på 0°. */
 .dlx-days.dlx-drag-mode .dlx-drag-over {
+  animation: none;
+  rotate: 0deg;
   scale: 1.035;
   border-style: solid;
   border-color: var(--lichen) !important;
