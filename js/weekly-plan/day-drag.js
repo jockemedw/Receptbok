@@ -41,7 +41,13 @@ import { fmtIso, addDaysIso, isoWeekNumber, retroWindowStartIso } from '../utils
 
 const HOLD_MS = 380;          // långtryck innan draget aktiveras
 const HOLD_SLOP = 8;          // px rörelse som bryter hållet (= svepets dödzon)
-const EDGE_BAND = 18;         // ± px runt en kortgräns som räknas som "mellan två dagar"
+// Träffbanden runt en kortgräns ("mellan två dagar"). HYSTERES: ett aktivt mål
+// behålls tills fingret dragit sig undan ordentligt (EXIT > ENTER). Utan det
+// flippar målet insert↔swap vid varje darrning på bandkanten — grannarna
+// hoppade 14 px in och ut och det såg ut som frenetiskt skakande.
+const EDGE_BAND = 18;         // ± px för att FÅNGA en söm
+const EDGE_BAND_EXIT = 34;    // ± px innan en fångad söm SLÄPPER
+const SWAP_STICK = 10;        // px marginal innan ett fångat byt-mål släpper
 const FLY_MS = 200;           // landnings-/returflygningens längd (= CSS .landing-transition)
 const EDGE_W = 26;            // px vid skärmkanten som räknas som "byt vecka"-zon
 const DWELL_MS = 550;         // så länge fingret ska vila i zonen innan veckan byts
@@ -131,13 +137,17 @@ function applyStaticClasses(d) {
 // ── Träff-test — smala "mellan två dagar"-band vinner över kort-mitten ───────
 // Rent räknearbete på cachad geometri: noll DOM-access, noll layout.
 // yc = pekaren i container-koordinater. `seam` returneras i samma rymd.
-function hitTest(ctx, items, yc) {
+function hitTest(ctx, items, yc, curr) {
+  // Sömmar först — en REDAN FÅNGAD söm får ett bredare band (hysteres), så
+  // små fingerdarrningar inte kastar målet fram och tillbaka.
+  const isHeldSeam = (before) => curr?.kind === 'insert' && (curr.before || '') === (before || '');
   for (let i = 0; i < items.length; i++) {
     const it = items[i];
     if (!ctx.insertBefores.has(it.date) || !it.h) continue;
     const prev = items[i - 1];
     const seam = prev ? (prev.top + prev.h + it.top) / 2 : it.top;
-    if (Math.abs(yc - seam) <= EDGE_BAND) {
+    const band = isHeldSeam(it.date) ? EDGE_BAND_EXIT : EDGE_BAND;
+    if (Math.abs(yc - seam) <= band) {
       return { kind: 'insert', before: it.date, seam, above: prev?.el || null, below: it.el };
     }
   }
@@ -145,9 +155,19 @@ function hitTest(ctx, items, yc) {
     const le = items.find((it) => it.date === ctx.endAfter);
     if (le?.h) {
       const seam = le.top + le.h;
-      if (Math.abs(yc - seam) <= EDGE_BAND) {
+      const band = isHeldSeam(null) ? EDGE_BAND_EXIT : EDGE_BAND;
+      if (Math.abs(yc - seam) <= band) {
         return { kind: 'insert', before: null, seam: seam + 3, above: le.el, below: null };
       }
+    }
+  }
+  // Ett redan fångat byt-mål behåller greppet tills fingret lämnat kortet med
+  // marginal — annars flippar målet mellan två grannkort vid kortgränsen.
+  if (curr?.kind === 'swap') {
+    const held = items.find((it) => it.date === curr.date);
+    if (held?.h && ctx.canSwap(held.date)
+      && yc >= held.top - SWAP_STICK && yc <= held.top + held.h + SWAP_STICK) {
+      return { kind: 'swap', date: held.date, el: held.el };
     }
   }
   for (const it of items) {
@@ -337,7 +357,7 @@ function frame(ts) {
   setArming(d, d.edgeDir);
 
   // Träff-test pausas medan veckopanelen glider (korten är i rörelse).
-  setHover(window._dlxWeekAnimBusy ? null : hitTest(d.ctx, d.items, yc));
+  setHover(window._dlxWeekAnimBusy ? null : hitTest(d.ctx, d.items, yc, d.hover));
 
   // Autoscroll sist i skriv-fasen — nästa frames scrollY-läsning fångar upp den
   let dy = 0;
