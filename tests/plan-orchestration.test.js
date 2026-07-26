@@ -207,21 +207,37 @@ function assertTrue(cond, desc) { assertEq(!!cond, true, desc); }
 const activeCount = (db) => db._state.plans.filter((p) => p.is_active).length;
 const daysForPlan = (db, id) => db._state.mealDays.filter((d) => d.plan_id === id).length;
 
+// Datum RELATIVA till idag — inte hårdkodade. archiveOldPlan trimmar bort arkiv
+// vars end_date är äldre än 30 dagar (cutoff = idag − 30 d). Med frusna datum
+// blev testet en tidsbomb: fixturens gamla plan (2026-06-24/25) passerade
+// 30-dagarsgränsen 2026-07-26 → det nyskapade arkivet raderades direkt av
+// trim-steget → "0 arkiv" och rött testfall trots korrekt produktkod. Genom att
+// alltid lägga gamla planen ett par dagar bakåt hålls arkivet inom fönstret
+// oavsett när sviten körs.
+function isoDaysAgo(n) {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().slice(0, 10);
+}
+const OLD_START = isoDaysAgo(3);   // gamla planens dagar — nyligen, inom 30-dagarsfönstret
+const OLD_MID   = isoDaysAgo(2);
+const OLD_END   = isoDaysAgo(1);
+
 const NEW_PLAN = {
-  generated: "2026-07-01", startDate: "2026-07-01", endDate: "2026-07-03",
+  generated: isoDaysAgo(0), startDate: isoDaysAgo(0), endDate: isoDaysAgo(-2),
   days: [
-    { date: "2026-07-01", day: "Onsdag",  recipe: "Laxpasta",    recipeId: 2 },
-    { date: "2026-07-02", day: "Torsdag", recipe: "Kycklingwok", recipeId: 3 },
-    { date: "2026-07-03", day: "Fredag",  recipe: "Tacos",       recipeId: 5 },
+    { date: isoDaysAgo(0),  day: "Onsdag",  recipe: "Laxpasta",    recipeId: 2 },
+    { date: isoDaysAgo(-1), day: "Torsdag", recipe: "Kycklingwok", recipeId: 3 },
+    { date: isoDaysAgo(-2), day: "Fredag",  recipe: "Tacos",       recipeId: 5 },
   ],
 };
 
 function freshDbWithOldPlan() {
   return makeMockDb({
-    plans: [{ id: 1, household_id: "h", start_date: "2026-06-24", end_date: "2026-06-26", is_active: true }],
+    plans: [{ id: 1, household_id: "h", start_date: OLD_START, end_date: OLD_END, is_active: true }],
     mealDays: [
-      { plan_id: 1, household_id: "h", date: "2026-06-24", recipe_id: 11, recipe_title_snapshot: "Gammal1", saving: null },
-      { plan_id: 1, household_id: "h", date: "2026-06-25", recipe_id: 12, recipe_title_snapshot: "Gammal2", saving: null },
+      { plan_id: 1, household_id: "h", date: OLD_START, recipe_id: 11, recipe_title_snapshot: "Gammal1", saving: null },
+      { plan_id: 1, household_id: "h", date: OLD_MID,   recipe_id: 12, recipe_title_snapshot: "Gammal2", saving: null },
     ],
   });
 }
