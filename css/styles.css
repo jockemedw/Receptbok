@@ -152,6 +152,33 @@
     padding-bottom: var(--bottom-nav-h);
   }
 
+  /* ── Textmarkering: av på UI-ytor, på där text faktiskt ska kunna kopieras ──
+     Appen är touch-först: att hålla in ett kort eller en varurad betyder
+     "flytta", inte "markera text". Utan detta poppar iOS/Android upp en
+     markering + callout-meny mitt i draget. Markering slås därför av globalt
+     och tillbaka på för inmatningsfält och de rena textytorna (kopiera-vyn,
+     receptdetaljen, anteckningar). */
+  body {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+  input, textarea, select, [contenteditable="true"],
+  .shop-text-view, .shop-text-view *,
+  .recipe-detail, .recipe-detail *,
+  .fl-note-body, .today-note-body, .today-hero-note, .today-tonight-body,
+  .selectable, .selectable * {
+    -webkit-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default;
+  }
+  /* …men aldrig på knappar/ikoner inuti de textytorna */
+  button, button *, svg, .icon {
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
   /* ── HEADER ── */
   header {
     background: var(--lichen);
@@ -2707,6 +2734,21 @@
   }
   @media (hover: hover) { .shop-clear-btn:hover { background: rgba(181,106,76,0.08); } }
   .shop-clear-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  /* Två rensa-knappar sida vid sida: "Rensa plockade" (mjuk) + "Rensa lista" */
+  .shop-clear-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 2rem;
+  }
+  .shop-clear-row .shop-clear-btn {
+    margin-top: 0;
+    flex: 1;
+    min-height: 44px;
+  }
+  .shop-clear-row .shop-clear-btn.is-soft { color: var(--moss-muted); }
+  @media (hover: hover) {
+    .shop-clear-row .shop-clear-btn.is-soft:hover { background: rgba(97,110,91,0.08); }
+  }
 
   /* ── SHOPPING TEXT VIEW ── */
   .shop-text-view { display: none; }

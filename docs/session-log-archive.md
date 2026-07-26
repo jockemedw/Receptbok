@@ -1,6 +1,32 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–130. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–131. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+**Session 131 — Drag & släpp av dagar i matsedeln (byggd + 7 feedback-rundor, allt mergat till main).**
+
+Joakims beställning: långtryck på en dag → *wiggle* → dra och släpp för att byta plats med valfri dag, eller släppa "mellan två dagar" för att klämma in den där. Utvecklades iterativt mot mobilen: bygge → 7 rundor skarp feedback → färdig gest. **PR #199–#207** (samt #205 som räddade a11y-fynd ur en gammal PR). Ingen migration behövdes.
+
+**Arkitektur — rent GESTLAGER (ny slice `js/weekly-plan/day-drag.js`).** All mutationslogik återanvänds via befintliga säkra vägar: släpp **på ett kort** → samma flöde som "Byt dag" (`/api/swap-days`), släpp **mellan två kort** → "Flytta dag" (`/api/move-day`). Inga nya endpoints (12-filsgränsen intakt), tryck-flödena i dag-sheeten kvar som tangentbordsnåbar väg. Gest: långtryck 380 ms (Pointer Events, touch-först) → lyft + haptisk puls; rörelse innan dess lämnar över till scroll/veckosvep; under drag fryses svepet och realtime-ekot dämpas.
+
+**Enda datamuterande ändringen:** `/api/move-day` generaliserades att rotera **fullt innehåll** (`fullContent`/`spanAfterInsert`/`changedFullRows` i `day-ops.js`) över ALLA dagtyper — plandagar, egna receptdagar, anteckningar; tomma dagar deltar som vandrande hål; fria dagar pinnade; **arkivvakt** (spann får inte korsa `plan_archives`); ingen aktiv plan krävs. Invariantkoll (recept + noteringar + plan_id bevaras exakt) före varje skrivning; upsert före delete. Dessutom **retro-fönstret**: passerade dagar får bytas/flyttas/redigeras 14 dagar bakåt (`RETRO_WINDOW_DAYS` i api-constants + `retroWindowStartIso()` i utils — EN regel för alla ytor); F024:s hårda framtidskrav i `swap-days` uppmjukat därefter.
+
+**Feedback-rundorna (rotorsak → fix):**
+1. *"Wigglen är överdriven"* → kort puls; statisk grafik bär betydelsen. **(#200)**
+2. *"Måste kunna flytta med passerade dagar"* → retro-fönstret ovan. **(#200)**
+3. *"Kan inte scrolla mellan veckor med lyft kort"* → **kantbläddring**: dra till skärmkanten, vila ~0,55 s → veckan glider över (iPhone-hemskärmen), kortet kvar under fingret. Framåt max en vecka bortom horisonten, bakåt till retro-fönstret. **(#201)**
+4. *"Kan fortfarande inte kläma in mellan två dagar"* → zonerna byggdes bara av aktiva planens receptdagar; familjens veckor är ofta helt manuella. Generaliserad motor + EN delad zonbyggare (`window.dlxInsertZones`) för både drag och tryck-flöde. *"Dagar blir helt låsta"* → tomma passerade dagar var inerta; nu klickbara/redigerbara inom retro-fönstret. **(#202)**
+5. *"Ska kännas som iPhone"* → riktig lucka som fjädrar upp (14 px), upprätt "hållet" kort, lugnt mottagarläge, magnetiskt byt-mål, **transform-immun träffgeometri** (`offsetTop` i stället för rect → noll oscillation). **(#203)**
+6. *"Janky — låg fps, hoppar, studsar, flimrar"* → **prestandapass**: `sortedTimeline`/`timelineBounds` memoiserade (sorterade HELA tidslinjen 2×/frame!), geometrin mäts en gång + MutationObserver, strikt läs→skriv per frame, sömmen flyttas med `transform` i stället för `top`, icke-passiv `touchmove` bara under drag (snabbare scroll i HELA appen), `box-shadow` ur transitions. **Mätt: forcerade layout-läsningar 3 475 → 0 (max 40/frame → 0), p50/p95 16,7 ms.** **(#204)**
+7. *"Wigglen för snabb, slutar för tidigt, skärmen blinkar, 'byter dag'-kort kilas in"* → cykeltiden halverad (0,52 s) och **evig** tack vare att jigglet animerar den **individuella `rotate`-egenskapen** (komponeras oberoende av lucköppningens `translate` och målets `scale` — den kollisionen var skälet till att jigglet förut måste vara en burst); blinket bort via `.dlx-quiet` (nollar entré-animationens *varaktighet*, behåller `fill`-slutrutan som bär dämpningen av passerade dagar) + slopad pending-omrendering → **en** omrendering per byte; **helskärms-indikator** (`.dlx-op-overlay`) ersätter det inkilade kortet. **(#206)**
+8. *"Wigglen skakar frenetiskt ibland"* → **rotorsak: träffytorna hade EN tröskel utan hysteres.** Finger på bandkanten flippade målet **23 ggr på 24 pixelrörelser** (reproducerat i harnessen). Fix: hysteres — fångad söm släpper först vid 34 px (fångas vid 18), fångat byt-mål vid 10 px marginal. **Efter: 0 växlingar**, motprov visar att svep fortfarande ger 2 rena övergångar. Plus: `rotate` ur transition-listan (fajt med animationen), keyframes 0°→0° (osynliga omstarter), `will-change: rotate, translate`, hovrat mål slutar jiggla. **(#207)**
+
+**Verifiering:** hela testsviten grön genomgående (`day-ops` omskriven mot nya motorn, 54 assertions). Headless Playwright-harness mot riktig modulkod + riktig CSS: **65/65** — gest, byt/kläm in över alla dagtyper, retro, kantbläddring, upplåst tom dag, mörkt tema, Escape, **prestandagrind** (0 layout-läsningar, p95 16,8 ms, noll tappade bildrutor) och **gränsstabilitet** (0 fladder + motprov mot klibbighet). Harnessen bor i sessionens scratchpad (ej i repot) — bygg om vid behov: stubbat `_timelineByDate`/`_lastPlan`, tickande fejkklocka, patchade layout-räknare. **styles v186 / app v149 / SW v100.**
+
+**Kvar:** mobil-verifiering av rundorna 2–8 (checklistan i *Väntar på live-verifiering*). Grundflödet är redan bekräftat av Joakim ("Det funkar").
+
+Session 8–130 i `docs/session-log-archive.md`. Full git-historik: `git log --oneline`.
 
 ---
 

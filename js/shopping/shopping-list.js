@@ -89,27 +89,11 @@ function subscribeShoppingItems(listId) {
     .channel(`shopping_items:${listId}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'shopping_items', filter: `list_id=eq.${listId}` }, (payload) => {
       const { eventType, new: newRow, old: oldRow } = payload;
-      if (eventType === 'UPDATE' && newRow?.source === 'recipe') {
-        // Riktad DOM-uppdatering för receptvaror (undviker full reload)
-        const key = Object.keys(window._shopItemIds || {}).find(k => window._shopItemIds[k] === newRow.id);
-        if (!key) return;
-        const serverChecked = newRow.checked === true;
-        if (window._checkedItems[key] === serverChecked) return; // redan rätt
-        window._checkedItems[key] = serverChecked;
-        if (serverChecked) window._checkSeq[key] = window._checkSeqNext++;
-        else delete window._checkSeq[key];
-        if (window._handlaMode) {
-          // handla-läge: bockade varor byter plats (upp/ner under strecket) → rendera om
-          renderFullShoppingList(window._shopRecipeItems, window._shopManualItems);
-        } else {
-          const el = document.querySelector(`.shopping-item[onclick*="${key}"]`);
-          if (el) {
-            el.classList.toggle('checked', serverChecked);
-            el.querySelector('.item-checkbox').textContent = serverChecked ? '✓' : '';
-          }
-        }
-        rebuildShopText();
-        updateShopProgress();
+      if (eventType === 'UPDATE') {
+        // Riktad uppdatering i minnet (bock, namn, ordning) — ingen omladdning.
+        // Går raden inte att placera (okänt id → vår state är gammal) faller vi
+        // tillbaka på en full omladdning.
+        if (!applyRemoteUpdate(newRow)) { window._preserveChecked = false; loadShoppingTab(); }
       } else if (eventType === 'DELETE') {
         // Borttagen vara → ta bort på plats (bevarar ordning, ingen omladdning).
         // Lokala borttagningar är redan hanterade → då blir detta en no-op.
@@ -142,6 +126,7 @@ function subscribeShoppingItems(listId) {
 function buildShopState(list, items) {
   const recipeRows = {};   // kategori → rader
   const manualRows = [];
+  _itemPos = new Map(items.map((r) => [r.id, r.position]));
   for (const row of items) {
     if (row.source === 'recipe') (recipeRows[row.category] ||= []).push(row);
     else if (row.source === 'manual') manualRows.push(row);
@@ -180,6 +165,104 @@ function buildShopState(list, items) {
   }
 
   return { recipeItems, manualItems, checkedItems, itemIds };
+}
+
+// ── Riktade uppdateringar från realtime (ingen omladdning) ───────────────────
+// Tidigare laddade varje UPDATE på en EGEN vara om hela Handla-fliken. Att dra
+// om ordningen skriver en `position` per rad → lika många realtime-event → och
+// listan blinkade "laddar…" varje gång man flyttade en vara (Joakims rapport).
+// Nu tolkas UPDATE-eventet i minnet: namn, ordning och bock hanteras var för
+// sig och vyn ritas om från state (eller uppdateras på plats).
+let _itemPos = new Map();   // shopping_items.id → position (för ordningsjämförelse)
+
+function keyForId(id) {
+  return Object.keys(window._shopItemIds || {}).find((k) => window._shopItemIds[k] === id) || null;
+}
+
+function nameForKey(key) {
+  const rm = key.match(/^recipe::(.+)::(\d+)$/);
+  if (rm) return window._shopRecipeItems?.[rm[1]]?.[parseInt(rm[2], 10)] ?? null;
+  if (key.startsWith('manual::')) return key.slice('manual::'.length);
+  return null;
+}
+
+// Raden i DOM för en bock-nyckel. Egna varor bär data-key; receptvaror gör det
+// också sedan Session 132 (tidigare matchades de via onclick-strängen).
+function itemElByKey(key) {
+  try {
+    return document.querySelector(`.shopping-item[data-key="${CSS.escape(key)}"]`);
+  } catch {
+    return null;
+  }
+}
+
+// Sorterar om egna varor efter serverns position-ordning. Returnerar true om
+// ordningen faktiskt ändrades (annars behövs ingen re-render — t.ex. när det
+// är ekot av vårt eget drag som kommer tillbaka).
+function reorderManualFromPositions() {
+  const items = window._shopManualItems || [];
+  if (items.length < 2) return false;
+  const posOf = (name) => {
+    const id = window._shopItemIds?.[`manual::${name}`];
+    const p = id != null ? _itemPos.get(id) : undefined;
+    return p == null ? Number.MAX_SAFE_INTEGER : p;
+  };
+  const sorted = items
+    .map((name, i) => ({ name, i, pos: posOf(name) }))
+    .sort((a, b) => (a.pos - b.pos) || (a.i - b.i))
+    .map((x) => x.name);
+  if (sorted.every((name, i) => name === items[i])) return false;
+  window._shopManualItems = sorted;
+  return true;
+}
+
+// Applicerar en UPDATE-rad på in-memory-state. Returnerar false när raden är
+// okänd (då är vår state gammal → anroparen laddar om).
+function applyRemoteUpdate(row) {
+  if (!row || row.id == null) return false;
+  let key = keyForId(row.id);
+  if (!key) return false;
+  let render = false;
+
+  // 1. Namnbyte på en annan enhet
+  const currentName = nameForKey(key);
+  if (currentName != null && row.name && row.name !== currentName) {
+    updateNameInMemory(row.id, row.name);
+    key = keyForId(row.id) || key;   // egna varors nyckel är namn-baserad → den flyttade
+    render = true;
+  }
+
+  // 2. Ny ordning på egna varor (drag på den här eller en annan enhet)
+  if (row.source === 'manual' && _itemPos.get(row.id) !== row.position) {
+    _itemPos.set(row.id, row.position);
+    if (reorderManualFromPositions()) render = true;
+  }
+
+  // 3. Bockning
+  const serverChecked = row.checked === true;
+  if (window._checkedItems[key] !== serverChecked) {
+    window._checkedItems[key] = serverChecked;
+    if (serverChecked) window._checkSeq[key] = window._checkSeqNext++;
+    else delete window._checkSeq[key];
+    if (window._handlaMode) {
+      render = true;   // bockade varor byter plats (upp/ner under strecket)
+    } else {
+      const el = itemElByKey(key);
+      if (el) {
+        el.classList.toggle('checked', serverChecked);
+        el.querySelector('.item-checkbox').textContent = serverChecked ? '✓' : '';
+      } else {
+        render = true;
+      }
+    }
+  }
+
+  // Mitt i ett pågående drag rivs inte listan under fingret — state är redan
+  // uppdaterad och nästa render (vid släpp) visar rätt.
+  if (render && !_manualDrag) renderFullShoppingList(window._shopRecipeItems, window._shopManualItems);
+  else rebuildShopText();
+  updateShopProgress();
+  return true;
 }
 
 const ICON_NOTE = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h11l3 3v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><path d="M8 11h8 M8 14h8 M8 17h5"/></svg>';
@@ -344,6 +427,7 @@ function applyRemovalById(id) {
   if (!found) return false;
 
   _pendingChecks.delete(id);   // ingen väntande skrivning kvar för en borttagen rad
+  _itemPos.delete(id);
   window._checkedItems = checkedItems;
   window._shopItemIds  = itemIds;
   renderFullShoppingList(Object.keys(recipeItems).length ? recipeItems : null, manualItems);
@@ -627,7 +711,8 @@ function recipeItemLi(cat, idx, name) {
   const rowId   = window._shopItemIds?.[key];
   const editing = window._editRowKey === key;
   return `<li class="shopping-item${checked ? ' checked' : ''}${pantry ? ' pantry' : ''}${editing ? ' row-editing' : ''}"
-              onclick="toggleShopItem(this,'${key}')">
+              data-key="${escapeHtml(key)}"
+              onclick="toggleShopItem(this,this.dataset.key)">
     <span class="item-checkbox">${checked ? '✓' : ''}</span>
     ${itemTextCell(name, rowId, key)}
     ${pantry ? '<span class="pantry-tag">har hemma</span>' : ''}
@@ -1092,14 +1177,21 @@ async function commitManualOrder(shownOrderIdx) {
   window._shopManualItems = newItems;
   renderFullShoppingList(window._shopRecipeItems, newItems);
 
+  // Skriv BARA de rader vars position faktiskt ändrades, och uppdatera
+  // positionskartan direkt — då blir realtime-ekot av vårt eget drag en no-op
+  // i applyRemoteUpdate i stället för en omladdning per flyttad rad.
+  const changed = [];
+  newItems.forEach((name, k) => {
+    const id = window._shopItemIds?.[`manual::${name}`];
+    if (id == null || _itemPos.get(id) === k) return;
+    _itemPos.set(id, k);
+    changed.push({ id, position: k });
+  });
+  if (!changed.length) return;
+
   try {
-    const ps = newItems
-      .map((name, k) => {
-        const id = window._shopItemIds?.[`manual::${name}`];
-        return id ? window.db.from('shopping_items').update({ position: k }).eq('id', id) : null;
-      })
-      .filter(Boolean);
-    await Promise.all(ps);
+    await Promise.all(changed.map(({ id, position }) =>
+      window.db.from('shopping_items').update({ position }).eq('id', id)));
   } catch {
     window.showToast?.('Kunde inte spara ordningen — prova igen.', { type: 'error' });
   }
@@ -1137,6 +1229,43 @@ export async function clearShoppingList() {
   } finally {
     btn.disabled = false;
     btn.textContent = 'Rensa lista';
+  }
+}
+
+// Rensar BARA de varor som är bockade ("plockade") — resten av listan står
+// kvar. Ingen omladdning: raderna plockas ur minnet en och en och vyn ritas om.
+export async function clearPickedItems() {
+  const picked = Object.entries(window._checkedItems || {})
+    .filter(([key, on]) => on && window._shopItemIds?.[key] != null)
+    .map(([key]) => ({ key, id: window._shopItemIds[key] }));
+  if (!picked.length) {
+    window.showToast?.('Inga plockade varor att rensa — bocka av det ni lagt i korgen först.', { type: 'info' });
+    return;
+  }
+
+  const n = picked.length;
+  const ok = await window.confirmDialog({
+    title: n === 1 ? 'Rensa den plockade varan?' : `Rensa ${n} plockade varor?`,
+    message: 'Bara det som är avbockat tas bort — resten av listan står kvar. Det går inte att ångra.',
+    confirmLabel: 'Rensa plockade',
+    danger: true,
+  });
+  if (!ok) return;
+
+  const btn = document.getElementById('modeBtnClearPicked');
+  if (btn) { btn.disabled = true; btn.textContent = 'Rensar…'; }
+  try {
+    const ids = picked.map((p) => p.id);
+    const { error } = await window.db.from('shopping_items').delete().in('id', ids);
+    if (error) throw error;
+    for (const id of ids) { applyRemovalById(id); _itemPos.delete(id); }
+    window._checkSeq = {};   // inget är bockat längre → handla-lägets ordning nollas
+    updateShopProgress();
+    window.showToast?.(n === 1 ? 'Den plockade varan är borta.' : `${n} plockade varor är borta.`, { type: 'success' });
+  } catch {
+    window.showToast?.('Kunde inte rensa de plockade varorna — prova igen.', { type: 'error' });
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Rensa plockade'; }
   }
 }
 
@@ -1236,6 +1365,7 @@ window.removeShopItem     = removeShopItem;
 window.removeManualItem   = removeManualItem;
 window.startManualDrag    = startManualDrag;
 window.clearShoppingList  = clearShoppingList;
+window.clearPickedItems   = clearPickedItems;
 window.copyShoppingList   = copyShoppingList;
 window.addManualItem      = addManualItem;
 window.loadShoppingTab    = loadShoppingTab;

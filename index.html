@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm">
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=186">
+<link rel="stylesheet" href="css/styles.css?v=187">
 <style>/* tömd — CSS flyttad till css/styles.css */
 
 </style>
@@ -353,7 +353,10 @@
       <div id="shopCoverage" style="display:none"></div>
       <div id="shoppingList"></div>
       <div id="shoppingText" class="shop-text-view"></div>
-      <button class="shop-clear-btn" id="modeBtnClear" onclick="clearShoppingList()">Rensa lista</button>
+      <div class="shop-clear-row">
+        <button class="shop-clear-btn is-soft" id="modeBtnClearPicked" onclick="clearPickedItems()">Rensa plockade</button>
+        <button class="shop-clear-btn" id="modeBtnClear" onclick="clearShoppingList()">Rensa lista</button>
+      </div>
       <div id="prefsSection"></div>
       <div id="promptBtnSection"></div>
       <button class="shop-dispatch-btn" id="dispatchToWillysBtn" style="display:none" onclick="openDispatchConfirm()">
@@ -612,6 +615,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=149"></script>
+<script type="module" src="js/app.js?v=150"></script>
 </body>
 </html>
