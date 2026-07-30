@@ -23,8 +23,10 @@
 ### P0-1 · F089 · Custom-day-skyddet i genereringen slås ut av ett svalt läsfel
 `api/generate.js:372` — guarden som skyddar egna dagar (`plan_id NULL`, **invariant #1**) läser befintliga custom-dagar utan att kontrollera `error`. Vid transient DB-fel (nätverkshicka, free-tier-väckning) blir listan tom, guarden tror att inga custom-dagar finns — och genereringen kan skriva över dem. **Fix (XS):** kasta vid `error` så genereringen avbryts oskadd.
 
-### P0-2 · F215 · Backup-tabell utan RLS, läsbar/raderbar med publika anon-nyckeln
+### P0-2 · F215 · Backup-tabell utan RLS, läsbar/raderbar med publika anon-nyckeln — ✅ ÅTGÄRDAD 2026-07-30
 Live-DB har `public.recipes_qc_backup_20260607` (rest från qc-arbetet 7 juni, ingen migration styr den) med **RLS AV och fulla anon-grants**. Vem som helst som plockar anon-nyckeln ur frontend-koden kan läsa och radera tabellen — receptdata exponeras utanför RLS-skyddet. **Fix (XS, kräver ditt OK — skrivande DDL):** `DROP TABLE` (backupen är 5 veckor gammal och recepten lever i `recipes`), alternativt `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` + revoke.
+
+**Åtgärdad (Session 133, 2026-07-30):** Supabase egna database-linter flaggade samma sak (`rls_disabled_in_public`), Joakim gav OK → migration `008_drop_qc_backup.sql` körd via Management-API:t. JSON-dump togs först (levererad utanför repot) och var innehållsidentisk med den redan committade `docs/recipe-backup-20260607.json`, 262/262 recept — revert-vägen intakt. Efterkontroll: tabellen borta, samtliga 14 kvarvarande `public`-tabeller har RLS + minst en policy, `recipes` intakt, security advisor 0 `rls_disabled_in_public`-fynd. Därmed är **båda P0-fynden ur nattauditen stängda** (P0-1 i Session 127).
 
 ---
 
