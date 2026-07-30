@@ -1,6 +1,22 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–131. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–132. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+**Session 132 — Inköpslistan: blinkfri realtidsordning, "Rensa plockade", textmarkering av på touch-ytor (render-only, mobil-verifiering kvar).**
+
+Joakim rapporterade app-problem på Inköp-fliken. Tre fixar, alla frontend/render-only (`js/shopping/shopping-list.js` + CSS/HTML), ingen serverkod eller migration:
+
+- **Blinket vid omordning borta.** Att dra om en egen vara skriver en `position` per rad → lika många realtime-UPDATE-event → och den gamla handlern laddade om HELA Handla-fliken vid varje (bara `source==='recipe'` hade en riktad väg; manuella uppdateringar, namnbyten och omordningar föll igenom till full reload → "laddar…"-blink). Ny **`applyRemoteUpdate(row)`** tolkar UPDATE i minnet och hanterar namn, ordning och bock var för sig; okänt id → fallback till reload. `commitManualOrder` skriver nu **bara de rader vars position faktiskt ändrats** och uppdaterar `_itemPos`-kartan direkt → realtime-ekot av det egna draget blir en no-op i stället för en reload. Mitt i ett pågående drag (`_manualDrag`) rivs aldrig listan under fingret. Receptvarornas `<li>` fick `data-key` (som egna varor redan hade) → riktad DOM-uppdatering via `itemElByKey` (CSS.escape) i stället för skör onclick-strängmatchning.
+- **"Rensa plockade"-knapp** (ny, bredvid "Rensa lista"): `clearPickedItems()` tar bort BARA avbockade varor, resten står kvar. Bekräftelsedialog, riktad borttagning ur minnet (ingen reload), toast-kvitto.
+- **Textmarkering av på UI-ytor** (CSS): touch-först — att hålla in ett kort/rad ska betyda "flytta", inte trigga iOS/Android textmarkering + callout. `user-select: none` globalt, återpåslaget för inmatningsfält och rena textytor (kopiera-vyn, receptdetalj, anteckningar), aldrig på knappar/ikoner.
+
+**Verifiering:** `node --check` rent; `tests/shopping.test.js` 114/114 + hela sviten grön. Ingen autom/harness för realtids-omordning (kräver live-Supabase) → **mobil-verifiering krävs**. **styles v187 / app v150 / SW v101.**
+
+**Test-fix (samma session):** `tests/plan-orchestration.test.js` blev rött i CI (#437, 2026-07-26) — spårat till en **tidsbomb i testfixturen**, inte inköpsändringen och inte en produktbugg. `archiveOldPlan` (`api/generate.js`) trimmar bort arkiv äldre än 30 dagar (`cutoff = idag − 30 d`); fixturens hårdkodade gamla plan (2026-06-24/25) korsade den gränsen 2026-07-26, så det nyskapade arkivet raderades direkt av trim-steget → "0 arkiv". Grönt i CI #430 (2026-07-25, cutoff 06-25) men rött #437 (2026-07-26, cutoff 06-26) — exakt 30-dagarsgränsen. Fix: fixturens datum relativa till idag (`isoDaysAgo`) → alltid inom fönstret. Produktkoden orörd (30-dagars-trimmen är avsiktlig). 39/39.
+
+**Kvar:** mobil-verifiering (se verifieringskön i `docs/status.md`).
 
 ---
 

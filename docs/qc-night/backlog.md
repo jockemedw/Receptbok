@@ -16,5 +16,5 @@
 (Lämnade oförändrade i nattjobbet — genuin författar-vaghet, inte fel.)
 
 ## 4. Städning
-- **Droppa backup-tabellen** `recipes_qc_backup_20260607` i Supabase när allt känns bra (revert-källa tills dess).
+- ✅ **Backup-tabellen `recipes_qc_backup_20260607` DROPPAD** (2026-07-30, Session 133, migration `008` på Joakims OK — Supabase-linterns `rls_disabled_in_public` utlöste beslutet; tabellen saknade RLS och låg läsbar/raderbar med anon-nyckeln). Revert-källan finns kvar off-DB i den committade `docs/recipe-backup-20260607.json` (verifierat innehållsidentisk med tabellen, 262/262 recept).
 - Återstående P2-audit (~660) domineras av ofarliga `uppdelat`/`på burk`-beskrivningar som redan parsas rätt — ingen åtgärd krävs, men kan filtreras bort ur audit-heuristiken om siffran stör.

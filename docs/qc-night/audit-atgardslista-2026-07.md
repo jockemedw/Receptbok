@@ -19,7 +19,7 @@ Mönster: destrukturera `{ data, error }` och kasta — handler.js översätter 
 ## Batch 2 — DB-migrationer (P0-2 + F287) · F287 ✅ KÖRD 2026-07-16, F215 HÅLLS
 SQL-filerna finns committade i `db/migrations/` (007 = F287, 008 = F215) och är idempotenta.
 - [x] **F287** — `007` KÖRD mot live-Supabase 2026-07-16 (Joakims uttryckliga OK, via Management-API:t). Pre-koll: publikationen hade bara family_lists/-items. Efter: `meal_days` + `shopping_items` ligger nu i `supabase_realtime` → den döda cross-device-synken är väckt. **Kvar: live-verifiera realtime mellan två telefoner** (kan inte avgöras headless).
-- [ ] **F215 (P0!)** HÅLLS (Joakims val 2026-07-16) — kräver JSON-dump av `recipes_qc_backup_20260607` (revert-snapshot Session 83) före `008`. Kör vid separat OK.
+- [x] **F215 (P0!)** — `008` KÖRD mot live-Supabase 2026-07-30 (Session 133, Joakims uttryckliga OK, via Management-API:t). Utlöstes av Supabase database-linterns `rls_disabled_in_public`. JSON-dump av `recipes_qc_backup_20260607` togs först och levererades till Joakim utanför repot — den visade sig innehållsidentisk med den redan committade `docs/recipe-backup-20260607.json` (262/262 recept lika), så revert-vägen är intakt trots DROP:en. Efterkontroll: tabellen borta, alla 14 kvarvarande public-tabeller har RLS + policies, `recipes` intakt, security advisor 0 fynd.
 - [ ] Info (inget krav): `dispatch_preferences`-tabellen ligger förprovisionerad men okopplad (backlog #5) — dokumenterad, beslut vid #5-bygget.
 
 ## Batch 3 — Bockar & list-id (Tema C+D) · frontend — ✅ KLAR 2026-07-12 (live-verifiera 2 telefoner)
