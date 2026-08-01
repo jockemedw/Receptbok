@@ -6751,6 +6751,7 @@ main#receptView {
 .daypick-chip.is-onlist { background: var(--moss-soft); color: var(--lichen-deep); border-color: var(--lichen); }
 .daypick-chip.is-shopped { background: var(--stone); color: var(--text-muted); }
 .daypick-chip.is-today { background: var(--clay); color: var(--rust-deep); }
+.daypick-chip.is-archive { background: none; color: var(--text-muted); border-color: var(--border); }
 
 .daypick-more {
   width: 100%;

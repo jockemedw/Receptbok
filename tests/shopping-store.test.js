@@ -44,6 +44,7 @@ function makeMockDb(initial = {}) {
     items: (initial.items || []).map((i) => ({ ...i })),
     recipes: (initial.recipes || []).map((r) => ({ ...r })),
     pantry: (initial.pantry || []).map((p) => ({ ...p })),
+    archives: (initial.archives || []).map((a) => ({ ...a })),
     seq: 1000,
     failItemsInsert: false,
   };
@@ -54,6 +55,7 @@ function makeMockDb(initial = {}) {
     : name === "shopping_items" ? state.items
     : name === "recipes" ? state.recipes
     : name === "pantry_items" ? state.pantry
+    : name === "plan_archives" ? state.archives
     : null;
 
   const matches = (row, filters) => filters.every(([kind, col, val]) => {
@@ -352,6 +354,51 @@ const itemNamed = (db, listId, prefix) =>
   assertEq(emptied.coveredDates, [], "set_days: tomt urval täcker inga dagar");
   assertTrue(!itemNamed(db, emptied.shoppingList.listId, "torsk"), "set_days: receptvarorna töms vid tomt urval");
   assertEq(emptied.shoppingList.manualItems, ["Toapapper"], "set_days: Egna tillägg överlever ett tomt urval");
+}
+
+// ── 8d. setCoveredDays: dagar ur en ARKIVERAD matsedel går att handla för ────
+// Två matsedlar efter varandra → den första arkiveras och dess meal_days-rader
+// raderas. Väljs en sådan dag ska raden återskapas som egen dag och varorna
+// hamna på listan (Joakims rapport: "föreslås bara att generera ingredienser
+// från den senare").
+{
+  const db = makeMockDb({
+    // Bara den AKTIVA planens dag finns i meal_days …
+    mealDays: [day("2026-07-27", { recipe_id: 3 })],
+    // … den arkiverade veckans dagar lever bara i plan_archives.
+    archives: [{
+      id: 1, household_id: HH, archived_at: "2026-07-26T10:00:00Z",
+      start_date: "2026-07-20", end_date: "2026-07-21",
+      days: [
+        { date: "2026-07-20", recipe: "Fisk", recipeId: 1 },
+        { date: "2026-07-21", recipe: "Sallad", recipeId: 2 },
+      ],
+    }],
+    recipes: HH_RECIPES,
+  });
+
+  const res = await setCoveredDays({
+    householdId: HH, dates: ["2026-07-20", "2026-07-27"], database: db,
+  });
+  assertEq(res.restoredDates, ["2026-07-20"], "arkiv: den arkiverade dagen återskapades");
+  assertEq(res.coveredDates, ["2026-07-20", "2026-07-27"], "arkiv: både arkiv- och plandag täcks");
+  assertEq(res.skipped, [], "arkiv: inget hoppades över");
+  assertTrue(!!itemNamed(db, res.shoppingList.listId, "torsk"), "arkiv: den arkiverade dagens vara hamnade på listan");
+  assertTrue(!!itemNamed(db, res.shoppingList.listId, "högrev"), "arkiv: aktiva planens vara ligger kvar");
+
+  const restored = db._state.mealDays.find((d) => d.date === "2026-07-20");
+  assertTrue(restored.plan_id === null, "arkiv: raden återskapas som EGEN dag (plan_id null)");
+  assertEq(restored.recipe_title_snapshot, "Fisk", "arkiv: recepttiteln följer med");
+  assertEq(db._state.archives.length, 1, "arkiv: arkivraden lämnas orörd (historiken står kvar)");
+
+  // Andra gången finns raden redan → ingen dubblett
+  const again = await setCoveredDays({ householdId: HH, dates: ["2026-07-20"], database: db });
+  assertEq(again.restoredDates, [], "arkiv: dagen återskapas inte en gång till");
+  assertEq(db._state.mealDays.filter((d) => d.date === "2026-07-20").length, 1, "arkiv: ingen dubblettrad");
+
+  // Datum som varken finns i meal_days eller arkivet rapporteras som skippat
+  const nope = await setCoveredDays({ householdId: HH, dates: ["2026-07-20", "2030-01-01"], database: db });
+  assertEq(nope.skipped, ["2030-01-01"], "arkiv: okänt datum hoppas över, inte återskapas");
 }
 
 // ── pantryKey-paritet ────────────────────────────────────────────────────────

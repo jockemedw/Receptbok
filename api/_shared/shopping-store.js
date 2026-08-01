@@ -229,20 +229,36 @@ export async function rebuildActiveList({
 //     rörs inte: historiken om att de en gång handlats står kvar.
 //   - Dagar utan recept och fria dagar filtreras bort tyst men rapporteras i
 //     `skipped` så UI:t kan berätta vad som hoppades över.
+//   - ARKIVERADE DAGAR återskapas (se restoreArchivedDays). Genererar man två
+//     matsedlar efter varandra arkiveras den första och dess meal_days-rader
+//     raderas — utan återskapning gick dess dagar inte att handla för.
 //
 // Tomt urval är tillåtet: receptvarorna töms och bara Egna tillägg blir kvar.
 export async function setCoveredDays({ householdId, dates, database = db }) {
   const wanted = [...new Set(dates || [])].sort();
 
   let usable = [];
+  let restored = [];
   if (wanted.length) {
-    const { data, error } = await database
-      .from("meal_days")
-      .select("date, recipe_id, blocked")
-      .eq("household_id", householdId)
-      .in("date", wanted);
-    if (error) throw new Error("Kunde inte läsa matsedelns dagar — prova igen.");
-    usable = (data || [])
+    const read = async () => {
+      const { data, error } = await database
+        .from("meal_days")
+        .select("date, recipe_id, blocked")
+        .eq("household_id", householdId)
+        .in("date", wanted);
+      if (error) throw new Error("Kunde inte läsa matsedelns dagar — prova igen.");
+      return data || [];
+    };
+
+    let rows = await read();
+    const have = new Set(rows.map((r) => r.date));
+    const missing = wanted.filter((d) => !have.has(d));
+    if (missing.length) {
+      restored = await restoreArchivedDays({ householdId, dates: missing, database });
+      if (restored.length) rows = await read();
+    }
+
+    usable = rows
       .filter((r) => r.recipe_id && r.blocked !== true)
       .map((r) => r.date)
       .sort();
@@ -266,7 +282,60 @@ export async function setCoveredDays({ householdId, dates, database = db }) {
     database,
   });
 
-  return { shoppingList, coveredDates: usable, skipped };
+  return { shoppingList, coveredDates: usable, skipped, restoredDates: restored };
+}
+
+// Återskapar meal_days-rader för dagar som bara finns kvar i plan_archives.
+//
+// Bakgrund: `archiveOldPlan` (api/generate.js) flyttar den gamla planens dagar
+// till `plan_archives` och RADERAR deras meal_days-rader. Genererar man två
+// matsedlar efter varandra försvinner alltså den förstas dagar ur den tabell
+// som hela inköpsmotorn bygger på — de gick inte att handla för.
+//
+// Raden återskapas som en EGEN dag (`plan_id = null`) — exakt samma form som en
+// familjeplanerad dag, som per invariant #1 alltid bevaras och aldrig skrivs
+// över av en generering. Att välja en gammal dag i väljaren är alltså detsamma
+// som att adoptera tillbaka den i matsedeln, vilket är precis vad användaren
+// menar med "handla för den dagen".
+//
+// Rör ALDRIG dagar som redan har en rad (då finns dagen i en plan och ägs av
+// den). Arkivraden lämnas orörd — historiken står kvar.
+async function restoreArchivedDays({ householdId, dates, database = db }) {
+  const wanted = new Set(dates);
+  if (!wanted.size) return [];
+
+  const { data: archives, error } = await database
+    .from("plan_archives")
+    .select("archived_at, days")
+    .eq("household_id", householdId);
+  // Arkivet är en bekvämlighet, inte en sanningskälla — ett läsfel ska inte
+  // stoppa resten av urvalet. Dagarna rapporteras då som skipped i stället.
+  if (error) return [];
+
+  // Nyaste arkivet vinner om samma datum finns i flera (t.ex. omplanerad vecka).
+  const byDate = new Map();
+  const sorted = (archives || []).slice().sort((a, b) =>
+    String(a.archived_at || "").localeCompare(String(b.archived_at || "")));
+  for (const arch of sorted) {
+    for (const d of arch.days || []) {
+      if (!d?.date || !d?.recipeId || !wanted.has(d.date)) continue;
+      byDate.set(d.date, { recipeId: d.recipeId, title: d.recipe || null });
+    }
+  }
+  if (!byDate.size) return [];
+
+  const rows = [...byDate.entries()].map(([date, v]) => ({
+    household_id: householdId,
+    date,
+    plan_id: null,
+    recipe_id: v.recipeId,
+    recipe_title_snapshot: v.title,
+  }));
+
+  const { error: insErr } = await database.from("meal_days").insert(rows);
+  if (insErr) throw new Error("Kunde inte hämta tillbaka dagarna från den tidigare matsedeln — prova igen.");
+
+  return rows.map((r) => r.date).sort();
 }
 
 // "Vi har handlat" — stämplar alla o-inhandlade täckta dagar på aktiva listan
