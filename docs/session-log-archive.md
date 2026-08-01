@@ -1,9 +1,28 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–132. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–133. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
 
 ---
 
+**Session 133 — F215 stängd: backup-tabellen utan RLS är droppad (DDL, körd på Joakims OK). Ingen kod ändrad.**
+
+Joakim visade ett larm från Supabase egen database-linter: `rls_disabled_in_public` på `public.recipes_qc_backup_20260607`. Vid kontroll var det **nattauditens P0-2/F215**, det sista öppna DDL-beslutet, som hållits sedan 2026-07-16.
+
+**Vad tabellen var och hur illa det låg.** En revert-snapshot tagen inför qc-natten 7 juni (Session 83) — 262 recept, 600 kB — skapad manuellt utanför `db/migrations/` och därför utan RLS. Bilden: originalpärmen (`recipes`) står inlåst, men fotokopian låg på hallbordet. Värre än linter-raden antyder: utöver att RLS var av hade `anon` och `authenticated` **fulla rättigheter** (SELECT/UPDATE/DELETE/TRUNCATE). Anon-nyckeln ligger per design i frontend-koden och ska skyddas av RLS — alltså kunde vem som helst med appens källkod både läsa och radera hela snapshoten. Kontrollerat att avvikelsen var isolerad: övriga 14 tabeller i `public` hade RLS på.
+
+**Hold-villkoret var redan uppfyllt.** Joakims villkor från 16 juli var en JSON-dump före DROP. Dumpen togs (levererad till Joakim utanför repot, 262 rader × 15 kolumner) och jämfördes mot den redan committade `docs/recipe-backup-20260607.json` — **262/262 recept innehållsidentiska** på titel, ingredienser, instruktioner, protein, taggar och portioner. Revert-vägen för nattjobbet gick alltså aldrig genom tabellen längre; den lever kvar off-DB i repot. Det gjorde DROP:en till det klart enklare valet framför RLS+revoke.
+
+**Körning och efterkontroll.** Migration `008_drop_qc_backup.sql` (redan committad sedan Session 128) kördes via Management-API:t på Joakims uttryckliga OK. Verifierat direkt efteråt: tabellen borta · **samtliga 14 kvarvarande `public`-tabeller har RLS på + minst en policy** · `public.recipes` intakt (263 recept — snapshoten var 262, recepten har vidareutvecklats sedan juni) · Supabase security advisor rapporterar **0** `rls_disabled_in_public`-fynd.
+
+**Konsekvens:** **båda P0-fynden ur nattauditen 2026-07-12 är nu stängda** (P0-1/F089 i Session 127), och inga DDL-beslut från auditen är längre öppna.
+
+**Kvar (nytt, obeslutat):** advisorns två WARN — `function_search_path_mutable` (billig idempotent `ALTER FUNCTION`, buntas lämpligen med nästa migration) och `auth_leaked_password_protection` (dashboard-inställning, blir angelägen vid M1 när främmande hushåll registrerar sig själva). Båda dokumenterade under *Öppna utredningar*; ingen åtgärd utan Joakims OK.
+
+**Ändringens natur:** DB-DDL + dokumentation. Ingen frontend, ingen serverkod, inga versionsbumpar, inget att mobil-verifiera. Testsviten orörd av ändringen men körd som kontroll — grön.
+
+**Kvar från tidigare:** Session 132:s inköpslista-fixar och Session 131:s rundor 2–8 väntar fortfarande på skarp mobilkoll (se kön).
+
+---
 **Session 132 — Inköpslistan: blinkfri realtidsordning, "Rensa plockade", textmarkering av på touch-ytor (render-only, mobil-verifiering kvar).**
 
 Joakim rapporterade app-problem på Inköp-fliken. Tre fixar, alla frontend/render-only (`js/shopping/shopping-list.js` + CSS/HTML), ingen serverkod eller migration:

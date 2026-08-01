@@ -312,7 +312,7 @@ export async function generatePlan() {
       throw e;
     }
 
-    status.textContent = `✓ Klar! ${data.days} dagar planerade. Bekräfta matsedeln för att bygga inköpslistan.`;
+    status.textContent = `✓ Klar! ${data.days} dagar planerade. Välj sedan vilka dagar du vill handla för.`;
     status.className   = 'trigger-status success';
     btn.disabled       = false;
     // Tyst prisdegradering: Willys-feeden svarade inte/gav inget parsebart.
@@ -355,7 +355,11 @@ export async function generatePlan() {
     window.switchTab('vecka');
     // Stäng wizard-sheeten — förslaget + bekräfta-raden är nu det viktiga.
     window.closeBottomSheet?.('planSheet');
-    window.showToast?.(`Förslag klart — ${data.days} dagar planerade. Bekräfta för att bygga inköpslistan.`, { type: 'success', duration: 5000 });
+    window.showToast?.(`Förslag klart — ${data.days} dagar planerade.`, {
+      type: 'success',
+      duration: 6000,
+      action: { label: 'Välj dagar', onClick: () => window.openShoppingDayPicker?.() },
+    });
     if (window._weeklyDeals?.candidates?.length && window.openDealsPopup) {
       setTimeout(() => window.openDealsPopup(), 400);
     }

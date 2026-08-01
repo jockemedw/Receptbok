@@ -1,10 +1,13 @@
 import { createSupabaseHandler } from "./_shared/handler.js";
 import { readFileRaw, writeFile } from "./_shared/github.js";
 import { db, getHouseholdId } from "./_shared/supabase.js";
-import { getActiveList, fetchCoverage, unshoppedDates, rebuildActiveList, markRoundShopped } from "./_shared/shopping-store.js";
+import { getActiveList, fetchCoverage, unshoppedDates, rebuildActiveList, setCoveredDays, markRoundShopped } from "./_shared/shopping-store.js";
 
 // Action-dispatchad inköpsendpoint (mönstret håller api/ under 12-filsgränsen):
 //   get_preferences / set_preferences — inköpspreferenser (dispatch-preferences.json)
+//   set_days     — manuellt dagurval: listan byggs om så den täcker EXAKT de
+//                  valda dagarna (Session 134). Ersätter den automatiska
+//                  bygget som tidigare låg i /api/confirm.
 //   add_day      — lägg en dags ingredienser på listan (custom-dag eller
 //                  återläggning av en redan inhandlad dag; nollar spärren)
 //   remove_day   — ta bort en dags ingredienser från listan
@@ -14,7 +17,7 @@ import { getActiveList, fetchCoverage, unshoppedDates, rebuildActiveList, markRo
 const PREFS_DEFAULTS = { blockedBrands: [], preferOrganic: {}, preferSwedish: {} };
 
 export default createSupabaseHandler(async (req, res) => {
-  const { action, preferences, date } = req.body || {};
+  const { action, preferences, date, dates } = req.body || {};
 
   if (action === "get_preferences") {
     let prefs;
@@ -32,6 +35,19 @@ export default createSupabaseHandler(async (req, res) => {
     };
     await writeFile("dispatch-preferences.json", prefs, pat, "Uppdatera inköpspreferenser");
     return res.status(200).json(prefs);
+  }
+
+  if (action === "set_days") {
+    if (!Array.isArray(dates)) return res.status(400).json({ error: "Inga dagar valda." });
+    // Bara rena ISO-datum släpps vidare — resten är antingen skräp eller en
+    // klient som skickar fel format, och ska inte tyst bli en tom lista.
+    const clean = [...new Set(dates.filter((d) => typeof d === "string" && /^\d{4}-\d{2}-\d{2}$/.test(d)))];
+    if (clean.length !== new Set(dates).size) {
+      return res.status(400).json({ error: "Något av datumen såg konstigt ut — ladda om sidan och prova igen." });
+    }
+    const householdId = await getHouseholdId();
+    const { shoppingList, coveredDates, skipped } = await setCoveredDays({ householdId, dates: clean });
+    return res.status(200).json({ ok: true, shoppingList, coveredDates, skipped });
   }
 
   if (action === "add_day") {

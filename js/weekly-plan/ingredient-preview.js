@@ -22,7 +22,7 @@ export function renderIngredientPreview(recipeItems, movedAt, expand = false) {
   const btn = document.getElementById('flyttaBtn');
   if (!recipeItems || Object.values(recipeItems).every(v => v.length === 0)) {
     document.getElementById('ingredientPreview').innerHTML =
-      '<p style="color:var(--text-muted);font-size:0.85rem;padding:0.5rem 0">Inga ingredienser genererade ännu.</p>';
+      '<p style="color:var(--text-muted);font-size:0.85rem;padding:0.5rem 0">Inga receptvaror på listan ännu — välj dagarna du vill handla för.</p>';
     btn.style.display = 'none';
     return;
   }
