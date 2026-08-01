@@ -6633,8 +6633,38 @@ main#receptView {
 .daypick-panel {
   display: flex;
   flex-direction: column;
-  max-height: 86vh;
+  max-height: 80vh;
+  padding-top: 0;
 }
+
+/* Draghandtagets yta — tilltagen så gesten "fäll ned" går att träffa. */
+.daypick-grab {
+  flex: 0 0 auto;
+  padding: 0.7rem 0 0.5rem;
+  cursor: grab;
+  touch-action: none;      /* gesten ägs av dragningen, inte av sidscrollen */
+}
+.daypick-grab .bottom-sheet-handle { margin-bottom: 0; }
+
+/* Stängkryss — sheeten täcker nästan hela skärmen, så backdropen räcker inte
+   som enda väg ut. */
+.daypick-close {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.daypick-close svg { width: 20px; height: 20px; }
+.daypick-close:active { background: var(--stone); }
 .daypick-body {
   flex: 1 1 auto;
   min-height: 0;
@@ -6777,6 +6807,18 @@ main#receptView {
   cursor: pointer;
 }
 .daypick-save:disabled { opacity: 0.6; cursor: default; }
+.daypick-cancel {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 0.4rem;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+.daypick-cancel:disabled { opacity: 0.5; cursor: default; }
 
 /* Ingången från Matsedelns ingrediensruta */
 .daypick-open-btn {

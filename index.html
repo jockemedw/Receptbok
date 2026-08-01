@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm">
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=188">
+<link rel="stylesheet" href="css/styles.css?v=189">
 <style>/* tömd — CSS flyttad till css/styles.css */
 
 </style>
@@ -555,8 +555,13 @@
      inköpslistan (js/shopping/day-picker.js). Innehållet renderas i JS. -->
 <div class="bottom-sheet" id="shopDaysSheet" role="dialog" aria-modal="true" aria-labelledby="shopDaysTitle" hidden>
   <div class="bottom-sheet-backdrop" data-sheet-close="shopDaysSheet"></div>
-  <div class="bottom-sheet-panel daypick-panel">
-    <div class="bottom-sheet-handle"></div>
+  <div class="bottom-sheet-panel daypick-panel" id="shopDaysPanel">
+    <div class="daypick-grab" id="shopDaysGrab">
+      <div class="bottom-sheet-handle"></div>
+    </div>
+    <button type="button" class="daypick-close" data-sheet-close="shopDaysSheet" aria-label="Stäng">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
     <h3 class="bottom-sheet-title" id="shopDaysTitle">Vilka dagar ska du handla för?</h3>
     <p class="wiz-sub">Bocka i dagarna vars ingredienser ska ligga på inköpslistan. Redan inhandlade dagar går att lägga tillbaka.</p>
     <div class="daypick-body" id="shopDaysBody"></div>
@@ -637,6 +642,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=151"></script>
+<script type="module" src="js/app.js?v=152"></script>
 </body>
 </html>

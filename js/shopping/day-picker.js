@@ -64,9 +64,12 @@ export async function openShoppingDayPicker() {
 
   renderShopDayPicker();
   window.openBottomSheet?.('shopDaysSheet');
+  initDragToClose();
 }
 
 export function closeShoppingDayPicker() {
+  const panel = document.getElementById('shopDaysPanel');
+  if (panel) { panel.style.transition = ''; panel.style.transform = ''; }
   window.closeBottomSheet?.('shopDaysSheet');
   window._shopDayPick = null;
 }
@@ -196,7 +199,8 @@ export function renderShopDayFoot() {
     </div>
     <button type="button" class="daypick-save" id="shopDaysSaveBtn" onclick="saveShoppingDayPick()"${s.busy ? ' disabled' : ''}>
       ${s.busy ? 'Bygger inköpslistan…' : 'Skicka ingredienser till inköpslistan'}
-    </button>`;
+    </button>
+    <button type="button" class="daypick-cancel" onclick="closeShoppingDayPicker()"${s.busy ? ' disabled' : ''}>Avbryt</button>`;
 }
 
 export async function saveShoppingDayPick() {
@@ -252,6 +256,45 @@ export async function saveShoppingDayPick() {
     window._opBusy = false;
     if (state()) state().busy = false;
   }
+}
+
+// ── Dra ned för att stänga ───────────────────────────────────────────────────
+// Draghandtaget ser ut som något man ska kunna fälla ned, så det ska också gå.
+// Gesten sitter på handtagsytan (inte hela panelen) så listans scroll är orörd.
+// Panelen följer fingret nedåt; släpper man förbi tröskeln stängs sheeten,
+// annars fjädrar den tillbaka.
+const DRAG_CLOSE_PX = 90;
+
+function initDragToClose() {
+  const grab = document.getElementById('shopDaysGrab');
+  const panel = document.getElementById('shopDaysPanel');
+  if (!grab || !panel || grab.dataset.dragBound === '1') return;
+  grab.dataset.dragBound = '1';
+
+  let startY = null;
+
+  const move = (e) => {
+    if (startY === null) return;
+    const dy = e.touches[0].clientY - startY;
+    if (dy <= 0) { panel.style.transform = ''; return; }
+    e.preventDefault();                       // annars scrollar sidan bakom
+    panel.style.transition = 'none';
+    panel.style.transform = `translateY(${dy}px)`;
+  };
+
+  const end = (e) => {
+    if (startY === null) return;
+    const dy = (e.changedTouches?.[0]?.clientY ?? startY) - startY;
+    startY = null;
+    panel.style.transition = '';
+    panel.style.transform = '';
+    if (dy > DRAG_CLOSE_PX) closeShoppingDayPicker();
+  };
+
+  grab.addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; }, { passive: true });
+  grab.addEventListener('touchmove', move, { passive: false });
+  grab.addEventListener('touchend', end);
+  grab.addEventListener('touchcancel', end);
 }
 
 window.openShoppingDayPicker  = openShoppingDayPicker;
