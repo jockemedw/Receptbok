@@ -1,5 +1,7 @@
-// Sökklient mot Willys publika /search-endpoint.
-// Används som fallback när en canon inte finns i rea-kampanj-cachen.
+// Sökklient mot Axfood-plattformens publika /search-endpoint (Willys + Hemköp).
+// För Willys används den som fallback när en canon inte finns i rea-kampanj-cachen.
+// För Hemköp är den ENDA matchningsvägen — den butiken har inget rea-flöde inkopplat
+// (se hasOffers i axfood-stores.js), så varje canon går via sök.
 //
 // Returnerad hit-shape: { code, name, brandLine, priceValue, canon, source: 'search' }
 //
@@ -14,10 +16,11 @@
 
 import { extractOfferCanon, rejectsMatch, relevantToCanon, brandBlocked } from "./willys-matcher.js";
 import { ORGANIC_RE, SWEDISH_RE } from "./dispatch-matcher.js";
+import { STORES } from "./axfood-stores.js";
 
-const SEARCH_URL = "https://www.willys.se/search";
+export function createSearchClient({ fetchImpl = fetch, blockedBrands = [], baseUrl = STORES.willys.baseUrl } = {}) {
+  const SEARCH_URL = `${baseUrl}/search`;
 
-export function createSearchClient({ fetchImpl = fetch, blockedBrands = [] } = {}) {
   // wanted (valfri, backlog #20): { organic, swedish } — bland lika giltiga
   // kandidater i samma matchnings-steg föredras den som uppfyller preferensen.
   // Utan wanted är beteendet exakt som förut (första träffen i steget vinner).

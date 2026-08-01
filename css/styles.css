@@ -6773,6 +6773,69 @@ main#receptView {
   padding-top: 0.8rem;
   margin-top: 0.8rem;
 }
+
+/* ── Butiksväljaren (Willys/Hemköp) ──────────────────────────────────────── */
+/* Kort sheet — bara ett par rader, så ingen fast höjd och ingen dragyta. */
+.storepick-panel {
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+}
+.storepick-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin-top: 0.4rem;
+}
+.storepick-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  min-height: 56px;
+  padding: 0.7rem 0.9rem;
+  margin-bottom: 0.5rem;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--linen-card);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s var(--ease-out), background 0.15s var(--ease-out);
+}
+button.storepick-row:active { border-color: var(--lichen); background: var(--moss-soft); }
+.storepick-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 600;
+  color: var(--forest);
+}
+.storepick-go {
+  flex: 0 0 auto;
+  color: var(--rust);
+  font-size: 1.1rem;
+}
+/* Butik utan cookies: syns kvar, men som information — inte som en trasig knapp. */
+.storepick-row.is-off {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  cursor: default;
+  opacity: 0.7;
+  background: none;
+  border-style: dashed;
+}
+.storepick-hint {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .storepick-row { transition: none; }
+}
 .daypick-summary {
   font-size: 0.85rem;
   color: var(--forest);

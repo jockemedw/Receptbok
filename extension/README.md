@@ -1,7 +1,9 @@
-# Receptbok Willys-cookies (Chrome-extension)
+# Receptbok butikscookies (Chrome-extension)
 
-Skickar passivt willys.se-cookies + CSRF-token till Receptbokens dispatch-endpoint
-så att korgen alltid kan fyllas automatiskt utan manuell rotation.
+Skickar passivt cookies + CSRF-token från **willys.se och hemkop.se** till
+Receptbokens dispatch-endpoint, så att varukorgen alltid kan fyllas automatiskt
+utan manuell rotation. Butikerna hålls isär: varje butik har egna cookies, egen
+CSRF-token och egen 7-dagarströskel.
 
 ## Engångs-setup (server-side)
 
@@ -45,32 +47,50 @@ Kör dessa **innan** du installerar extensionen — annars får du 401 från end
 1. Klicka på extension-ikonen → popup öppnas.
 2. Öppna **Inställningar**.
 3. Klistra **Shared secret** (samma värde som `WILLYS_REFRESH_SECRET` i Vercel).
-4. Verifiera **Butiks-ID** (default `2160` = Ekholmen). Ändra om du flyttar.
+4. Verifiera **Butiks-ID (Willys)** (default `2160` = Ekholmen). Ändra om du flyttar.
+   Hemköp behöver inget butiks-ID — det används bara av Willys rea-flöde.
 5. Klicka **Spara**.
+
+## Uppgradera från 1.0 (Willys-only)
+
+Version 1.1 lade till Hemköp. Efter `git pull`:
+
+1. `chrome://extensions` → klicka **Uppdatera** på kortet (nya host-permissions för
+   `hemkop.se` kräver omladdning — utan den fångas inga Hemköp-cookies).
+2. Besök https://www.hemkop.se inloggad en gång.
+3. Öppna popupen → båda butikerna ska visa grönt.
+
+Willys-statusen följer med automatiskt; gamla `csrfToken`/`lastRefreshAt` migreras
+till de nya per-butiksnycklarna vid första start.
 
 ## Verifiera att det fungerar
 
 1. Öppna ny tab → besök https://www.willys.se (logga in om du inte redan är)
 2. Vänta ~5–10 sek
-3. Öppna popup → status ska vara **grön ✓ "Aktuell"** med "Senast uppdaterad: nu"
-4. Verifiera i secret gist att `users.joakim.updatedAt` har dagens timestamp.
-5. Klicka **Skicka till Willys** i Receptboken → kontrollera att inköpslistan landar i willys.se/cart som vanligt.
+3. Öppna popup → **Willys** ska vara **grön ✓ "Aktuell"** med "Senast uppdaterad: nu"
+4. Upprepa för https://www.hemkop.se → **Hemköp** blir grön
+5. Verifiera i secret gist att `users.joakim.stores.willys.updatedAt` respektive
+   `users.joakim.stores.hemkop.updatedAt` har dagens timestamp.
+6. Klicka **Skicka till butik** i Receptboken → välj butik → kontrollera att
+   inköpslistan landar i den butikens varukorg.
 
-## Statusindikator
+## Statusindikator (visas per butik)
 
 | Färg | Betydelse |
 |---|---|
 | 🟢 Aktuell | Senaste refresh < 60 dagar sedan |
 | 🟡 Uppdatera snart | 60–80 dagar sedan |
 | 🔴 Kritiskt | > 80 dagar — kritiskt nära cookie-utgång |
-| 🟡 Inte uppdaterad än | Ingen lyckad refresh; logga in på willys.se |
+| 🟡 Inte uppdaterad än | Ingen lyckad refresh; logga in på butikens sajt |
 | 🔴 Fel: ... | Endpoint eller nätverk failade — se popup-meddelandet |
 
 ## Felsökning
 
 - **"Shared secret saknas"** → öppna inställningar, klistra in värdet
-- **"Ingen CSRF fångad än"** → besök en willys.se-sida (inte bara root) som triggar XHR
-- **"Inga cookies"** → logga in på willys.se igen
+- **"Ingen CSRF fångad än"** → besök en sida hos butiken (inte bara root) som triggar XHR
+- **"Inga cookies"** → logga in på butikens sajt igen
+- **Hemköp står kvar på "Inte uppdaterad än"** → tillägget är inte omladdat efter
+  uppgraderingen; se *Uppgradera från 1.0* ovan
 - **"Endpoint svarade 401"** → secret matchar inte; jämför mot Vercel env var
 - **"Endpoint svarade 502"** → gist-skrivning failade; kontrollera GITHUB_PAT har `gist`-scope
 - **"Endpoint svarade 500"** → en env var saknas i Vercel (`WILLYS_REFRESH_SECRET`, `GITHUB_GIST_PAT`, `WILLYS_SECRETS_GIST_ID`)

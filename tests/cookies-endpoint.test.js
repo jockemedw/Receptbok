@@ -102,7 +102,7 @@ function makeGistFetch(initial) {
     users: { andra: { cookie: "x", csrf: "y", storeId: "9999" } },
   });
   const store = createSecretsStore({ fetchImpl, pat: "pat", gistId: "g1", ttlMs: 60_000 });
-  await store.writeUser("joakim", { cookie: "c", csrf: "t", storeId: "2160" });
+  await store.writeUser("joakim", "willys", { cookie: "c", csrf: "t", storeId: "2160" });
   const state = fetchImpl.state();
   assertEq(state.users.andra?.cookie, "x", "writeUser bevarar andra user");
   assertEq(state.users.joakim?.cookie, "c", "writeUser skapar joakim");
@@ -112,7 +112,7 @@ function makeGistFetch(initial) {
 {
   const fetchImpl = makeGistFetch({ users: {} });
   const store = createSecretsStore({ fetchImpl, pat: "pat", gistId: "g1", ttlMs: 60_000 });
-  await store.writeUser("joakim", { cookie: "c", csrf: "t", storeId: "2160" });
+  await store.writeUser("joakim", "willys", { cookie: "c", csrf: "t", storeId: "2160" });
   const state = fetchImpl.state();
   assertTrue(state.users.joakim?.updatedAt, "updatedAt sätts");
   assertTrue(/^\d{4}-\d{2}-\d{2}T/.test(state.users.joakim.updatedAt), "updatedAt är ISO 8601");
@@ -123,7 +123,7 @@ function makeGistFetch(initial) {
   const fetchImpl = makeGistFetch({ users: { joakim: { cookie: "old", csrf: "old", storeId: "2160" } } });
   const store = createSecretsStore({ fetchImpl, pat: "pat", gistId: "g1", ttlMs: 60_000 });
   await store.readUser("joakim");
-  await store.writeUser("joakim", { cookie: "new", csrf: "newt", storeId: "2160" });
+  await store.writeUser("joakim", "willys", { cookie: "new", csrf: "newt", storeId: "2160" });
   const reread = await store.readUser("joakim");
   assertEq(reread?.cookie, "new", "readUser ser writeUsers nya cookie utan extra GET");
   const gets = fetchImpl.calls.filter(c => c.method === "GET").length;
@@ -134,7 +134,7 @@ function makeGistFetch(initial) {
 {
   const fetchImpl = makeGistFetch({ users: {} });
   const store = createSecretsStore({ fetchImpl, pat: "pat", gistId: "g1", ttlMs: 60_000 });
-  await store.writeUser("joakim", { cookie: "c", csrf: "t", storeId: "2160" });
+  await store.writeUser("joakim", "willys", { cookie: "c", csrf: "t", storeId: "2160" });
   const patch = fetchImpl.calls.find(c => c.method === "PATCH");
   assertTrue(patch, "PATCH skickades");
   const body = JSON.parse(patch.body);
@@ -143,12 +143,18 @@ function makeGistFetch(initial) {
 
 // ─── cookies-endpoint: runRefresh ─────────────────────────────────
 
+// Speglar produktionsstorets kontrakt: skriver per butik under stores[<butik>]
+// och speglar Willys till de platta fälten (rollback-garantin).
 function fakeStore(initial = {}) {
   const users = { ...initial };
   return {
-    writeUser: async (userId, payload) => {
-      users[userId] = { ...payload, updatedAt: new Date().toISOString() };
-      return users[userId];
+    writeUser: async (userId, store, payload) => {
+      if (!users[userId]) users[userId] = {};
+      if (!users[userId].stores) users[userId].stores = {};
+      const entry = { ...payload, updatedAt: new Date().toISOString() };
+      users[userId].stores[store] = entry;
+      if (store === "willys") Object.assign(users[userId], payload, { updatedAt: entry.updatedAt });
+      return entry;
     },
     _users: users,
   };
@@ -257,6 +263,119 @@ function fakeStore(initial = {}) {
   });
   assertEq(result.status, 502, "store-fel → 502");
   assertEq(result.body.error, "store_write_failed", "felkod store_write_failed");
+}
+
+// ─── Butiksuppdelning: cookies per butik (Willys + Hemköp) ───────────────────
+
+// S1. writeUser skriver under stores[<butik>] och speglar Willys platt
+{
+  const fetchImpl = makeGistFetch({ users: {} });
+  const store = createSecretsStore({ fetchImpl, pat: "pat", gistId: "g1", ttlMs: 60_000 });
+  await store.writeUser("joakim", "willys", { cookie: "wc", csrf: "wt", storeId: "2160" });
+  const state = fetchImpl.state();
+  assertEq(state.users.joakim.stores.willys.cookie, "wc", "willys-skrivning hamnar i stores.willys");
+  assertEq(state.users.joakim.cookie, "wc", "willys-skrivning speglas till platta fältet (rollback-garanti)");
+  assertEq(state.users.joakim.storeId, "2160", "speglingen tar med storeId");
+}
+
+// S2. Hemköp-skrivning speglas INTE platt (annars läser gammal kod fel butik)
+{
+  const fetchImpl = makeGistFetch({
+    users: { joakim: { cookie: "wc", csrf: "wt", storeId: "2160", stores: { willys: { cookie: "wc", csrf: "wt", storeId: "2160" } } } },
+  });
+  const store = createSecretsStore({ fetchImpl, pat: "pat", gistId: "g1", ttlMs: 60_000 });
+  await store.writeUser("joakim", "hemkop", { cookie: "hc", csrf: "ht" });
+  const state = fetchImpl.state();
+  assertEq(state.users.joakim.stores.hemkop.cookie, "hc", "hemköp-skrivning hamnar i stores.hemkop");
+  assertEq(state.users.joakim.cookie, "wc", "hemköp-skrivning rör inte det platta willys-fältet");
+  assertEq(state.users.joakim.stores.willys.cookie, "wc", "hemköp-skrivning rör inte stores.willys");
+  assertEq(state.users.joakim.stores.hemkop.storeId, undefined, "utelämnat storeId skrivs inte som fält");
+}
+
+// S3. Willys-skrivning rör inte en befintlig Hemköp-entry
+{
+  const fetchImpl = makeGistFetch({
+    users: { joakim: { stores: { hemkop: { cookie: "hc", csrf: "ht" } } } },
+  });
+  const store = createSecretsStore({ fetchImpl, pat: "pat", gistId: "g1", ttlMs: 60_000 });
+  await store.writeUser("joakim", "willys", { cookie: "wc", csrf: "wt", storeId: "2160" });
+  assertEq(fetchImpl.state().users.joakim.stores.hemkop.cookie, "hc", "willys-skrivning bevarar hemköp");
+}
+
+// S4. readUser läser rätt butik
+{
+  const fetchImpl = makeGistFetch({
+    users: { joakim: { stores: {
+      willys: { cookie: "wc", csrf: "wt", storeId: "2160" },
+      hemkop: { cookie: "hc", csrf: "ht" },
+    } } },
+  });
+  const store = createSecretsStore({ fetchImpl, pat: "pat", gistId: "g1", ttlMs: 60_000 });
+  assertEq((await store.readUser("joakim", "willys"))?.cookie, "wc", "readUser('willys') ger willys-cookien");
+  assertEq((await store.readUser("joakim", "hemkop"))?.cookie, "hc", "readUser('hemkop') ger hemköp-cookien");
+  assertEq((await store.readUser("joakim"))?.cookie, "wc", "readUser utan butik defaultar till willys");
+}
+
+// S5. Legacy-fallback: bara Willys ärver de gamla platta fälten
+{
+  const fetchImpl = makeGistFetch({
+    users: { joakim: { cookie: "legacy", csrf: "lt", storeId: "2160" } }, // inget stores-objekt
+  });
+  const store = createSecretsStore({ fetchImpl, pat: "pat", gistId: "g1", ttlMs: 60_000 });
+  assertEq((await store.readUser("joakim", "willys"))?.cookie, "legacy", "willys faller tillbaka på platta fältet");
+  assertEq(await store.readUser("joakim", "hemkop"), null, "hemköp ärver ALDRIG willys-cookien");
+}
+
+// ─── runRefresh: butiksvalidering ────────────────────────────────────────────
+
+// S6. Saknat store-fält behandlas som willys (gammal extension)
+{
+  const store = fakeStore();
+  const result = await runRefresh({
+    secretHeader: "abc", expectedSecret: "abc",
+    payload: { userId: "joakim", cookie: "c", csrf: "t", storeId: "2160" },
+    store,
+  });
+  assertEq(result.status, 200, "saknat store → 200");
+  assertEq(result.body.store, "willys", "saknat store defaultar till willys");
+  assertTrue(store._users.joakim.stores.willys, "skrevs under stores.willys");
+}
+
+// S7. Okänd butik → 400 (aldrig tyst willys-fallback)
+{
+  const store = fakeStore();
+  const result = await runRefresh({
+    secretHeader: "abc", expectedSecret: "abc",
+    payload: { userId: "joakim", cookie: "c", csrf: "t", storeId: "2160", store: "coop" },
+    store,
+  });
+  assertEq(result.status, 400, "okänd butik → 400");
+  assertEq(result.body.field, "store", "felfältet är store");
+}
+
+// S8. Hemköp utan storeId är giltigt (butiks-ID används bara av Willys reor)
+{
+  const store = fakeStore();
+  const result = await runRefresh({
+    secretHeader: "abc", expectedSecret: "abc",
+    payload: { userId: "joakim", cookie: "hc", csrf: "ht", store: "hemkop" },
+    store,
+  });
+  assertEq(result.status, 200, "hemköp utan storeId → 200");
+  assertEq(result.body.store, "hemkop", "svaret rapporterar hemkop");
+  assertEq(store._users.joakim.stores.hemkop.cookie, "hc", "hemköp-cookien skrevs");
+}
+
+// S9. Willys utan storeId är fortfarande ogiltigt
+{
+  const store = fakeStore();
+  const result = await runRefresh({
+    secretHeader: "abc", expectedSecret: "abc",
+    payload: { userId: "joakim", cookie: "c", csrf: "t", store: "willys" },
+    store,
+  });
+  assertEq(result.status, 400, "willys utan storeId → 400");
+  assertEq(result.body.field, "storeId", "felfältet är storeId");
 }
 
 // ─── secretsMatch (konstant-tids-jämförelse) ─────────────────────────────────

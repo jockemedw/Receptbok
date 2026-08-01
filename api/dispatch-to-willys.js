@@ -1,32 +1,36 @@
-// Dispatch-endpoint: fyller användarens Willys-korg med veckans inköpslista.
-// Plus sub-route för cookie-refresh från Chrome-extensionen (kombinerat för att
-// hålla oss under Vercel Hobby-planens 12-funktioner-tak).
+// Dispatch-endpoint: fyller användarens varukorg hos en Axfood-butik (Willys
+// eller Hemköp) med veckans inköpslista. Plus sub-route för cookie-refresh från
+// Chrome-extensionen (kombinerat för att hålla oss under Vercel Hobby-planens
+// 12-funktioner-tak — filnamnet är historiskt och behålls därför).
 //
-// GET  /api/dispatch-to-willys                                → { featureAvailable: bool }
-// POST /api/dispatch-to-willys { date? }                      → { ok, addedCount, missing, cartUrl } | { ok:false, error, message }
+// GET  /api/dispatch-to-willys                                → { featureAvailable, stores: [{id,label,available}] }
+// POST /api/dispatch-to-willys { store?, date? }              → { ok, addedCount, missing, cartUrl, store } | { ok:false, error, message }
 // POST /api/dispatch-to-willys?op=refresh-cookies + body      → { ok, updatedAt } | { error }
 //   Header: X-Refresh-Secret krävs på refresh-cookies-vägen
 //
-// Cred-källor (minst en krävs för featureAvailable=true):
+// `store` är "willys" (default när fältet saknas) eller "hemkop" — se
+// _shared/axfood-stores.js. Cookie-uppsättningen är per butik; bara Willys har
+// ett rea-flöde (hasOffers) och legacy-env-fallback.
+//
+// Cred-källor (minst en krävs för att en butik ska vara available):
 //   1. Secret gist (föredragen) — kräver GITHUB_GIST_PAT + WILLYS_SECRETS_GIST_ID,
 //      populeras av Chrome-extension via POST ?op=refresh-cookies
-//   2. Env-fallback (legacy) — WILLYS_COOKIE + WILLYS_CSRF (manuell rotation)
-//   WILLYS_STORE_ID — default 2160 (Ekholmen), används av båda källorna
+//   2. Env-fallback (legacy, ENDAST Willys) — WILLYS_COOKIE + WILLYS_CSRF
+//   WILLYS_STORE_ID — default 2160 (Ekholmen), används bara av Willys rea-flöde
 //
 // Säkerhet: returnerar aldrig cookies eller CSRF-token i loggning eller response.
 
 import { fetchOffersFromWillys } from "./willys-offers.js";
-import { createSearchClient } from "./_shared/willys-search.js";
-import { createCartClient } from "./_shared/willys-cart-client.js";
+import { createSearchClient } from "./_shared/axfood-search.js";
+import { createCartClient } from "./_shared/axfood-cart-client.js";
 import { matchCanons } from "./_shared/dispatch-matcher.js";
 import { parseIngredient, normalizeName, categorize } from "./_shared/shopping-builder.js";
 import { createSecretsStore } from "./_shared/secrets-store.js";
+import { STORES, STORE_IDS, DEFAULT_STORE, resolveStore } from "./_shared/axfood-stores.js";
 import { readFileRaw } from "./_shared/github.js";
 import { db } from "./_shared/supabase.js";
 import { notifyAlert } from "./_shared/alert.js";
 import { timingSafeEqual } from "node:crypto";
-
-const CART_URL = "https://www.willys.se/";
 
 // Konstant-tids-jämförelse av delade hemligheter (X-Refresh-Secret) — undviker
 // att svarstiden läcker hur många tecken som stämmer. Olika längd → false direkt
@@ -54,36 +58,56 @@ export default async function handler(req, res) {
   // fine-grained tokens stödjer inte gists). Fallback till GITHUB_PAT för bakåtkomp.
   const pat = process.env.GITHUB_GIST_PAT || process.env.GITHUB_PAT;
   const gistId = process.env.WILLYS_SECRETS_GIST_ID;
-  const store = (pat && gistId) ? createSecretsStore({ pat, gistId }) : null;
-  const secrets = await resolveWillysSecrets({ store, env: process.env, userId: "joakim" });
-  const featureAvailable = !!secrets;
+  const secretsStore = (pat && gistId) ? createSecretsStore({ pat, gistId }) : null;
 
+  // GET: butiksstatus för väljaren. featureAvailable behålls så att frontend och
+  // backend kan deployas i valfri ordning utan att knappen försvinner.
   if (req.method === "GET") {
-    return res.status(200).json({ featureAvailable });
+    const stores = [];
+    for (const id of STORE_IDS) {
+      const s = await resolveStoreSecrets({ secretsStore, store: id, env: process.env, userId: "joakim" });
+      stores.push({ id, label: STORES[id].label, available: !!s });
+    }
+    return res.status(200).json({ featureAvailable: stores.some(s => s.available), stores });
   }
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Metod ej tillåten" });
   }
-  if (!featureAvailable) {
-    return res.status(200).json({ featureAvailable: false });
+
+  // Okänd butik avvisas i stället för att tyst falla tillbaka på Willys —
+  // att lägga varorna i fel butiks korg är värre än ett tydligt fel.
+  const shop = resolveStore(req.body?.store);
+  if (!shop) {
+    return res.status(400).json({
+      ok: false,
+      error: "unknown_store",
+      message: "Okänd butik — välj Willys eller Hemköp och prova igen.",
+    });
+  }
+
+  const secrets = await resolveStoreSecrets({ secretsStore, store: shop.id, env: process.env, userId: "joakim" });
+  if (!secrets) {
+    return res.status(200).json({ featureAvailable: false, store: { id: shop.id, label: shop.label } });
   }
 
   try {
-    console.log(`dispatch source=${secrets.source}`);
+    console.log(`dispatch store=${shop.id} source=${secrets.source}`);
     const shoppingList = await fetchShoppingListFromSupabase();
     const preferences = await fetchDispatchPreferences();
     const blockedBrands = preferences.blockedBrands;
-    const offers = await fetchOffersFromWillys(secrets.storeId);
-    const searchClient = createSearchClient({ blockedBrands });
-    const cartClient = createCartClient({ cookies: secrets.cookies, csrf: secrets.csrf });
+    // Bara Willys har ett rea-flöde inkopplat. För Hemköp går varje canon via
+    // produktsök — matchCanons faller igenom till searchClient när offers är tom.
+    const offers = shop.hasOffers ? await fetchOffersFromWillys(secrets.storeId) : [];
+    const searchClient = createSearchClient({ blockedBrands, baseUrl: shop.baseUrl });
+    const cartClient = createCartClient({ cookies: secrets.cookies, csrf: secrets.csrf, baseUrl: shop.baseUrl });
     const result = await runDispatch({ shoppingList, offers, searchClient, cartClient, blockedBrands, preferences });
 
     if (!result.ok && result.error === "auth_expired") {
-      await notifyAlert("Receptboken: Willys-cookies har gått ut — varukorgsexport fungerar inte förrän de förnyas.");
+      await notifyAlert(`Receptboken: ${shop.label}-cookies har gått ut — varukorgsexport fungerar inte förrän de förnyas.`);
       return res.status(200).json({
         ok: false,
         error: "auth_expired",
-        message: "Kopplingen till Willys behöver förnyas. Utskicket fungerar igen när den är uppdaterad.",
+        message: `Kopplingen till ${shop.label} behöver förnyas. Utskicket fungerar igen när den är uppdaterad.`,
       });
     }
     if (!result.ok && result.error === "no_matches") {
@@ -97,14 +121,15 @@ export default async function handler(req, res) {
       return res.status(200).json({
         ok: false,
         error: result.error || "unknown",
-        message: "Kunde inte skicka till Willys — prova igen om en stund.",
+        message: `Kunde inte skicka till ${shop.label} — prova igen om en stund.`,
       });
     }
     return res.status(200).json({
       ok: true,
       addedCount: result.addedCount,
       missing: result.missing,
-      cartUrl: CART_URL,
+      cartUrl: shop.cartUrl,
+      store: { id: shop.id, label: shop.label },
       sources: result.sources,
       prefMisses: result.prefMisses || [],
     });
@@ -113,7 +138,7 @@ export default async function handler(req, res) {
     return res.status(500).json({
       ok: false,
       error: "internal",
-      message: "Något gick fel när listan skulle skickas till Willys — prova igen om en stund.",
+      message: `Något gick fel när listan skulle skickas till ${shop.label} — prova igen om en stund.`,
     });
   }
 }
@@ -159,28 +184,45 @@ export async function runRefresh({ secretHeader, expectedSecret, payload, store 
   if (!csrf || typeof csrf !== "string") {
     return { status: 400, body: { error: "bad_request", field: "csrf" } };
   }
-  if (!storeId || typeof storeId !== "string") {
+  // Saknat store-fält = en extension från före Hemköp-stödet → Willys.
+  const shop = resolveStore(payload.store);
+  if (!shop) {
+    return { status: 400, body: { error: "bad_request", field: "store" } };
+  }
+  // storeId används bara av Willys rea-/campaigns-endpoint. Hemköp har inget
+  // butiks-ID inkopplat och ska inte tvingas skicka ett.
+  if (shop.hasOffers && (!storeId || typeof storeId !== "string")) {
     return { status: 400, body: { error: "bad_request", field: "storeId" } };
   }
   try {
-    const written = await store.writeUser(userId, { cookie, csrf, storeId });
-    return { status: 200, body: { ok: true, updatedAt: written.updatedAt } };
+    const written = await store.writeUser(userId, shop.id, { cookie, csrf, storeId });
+    return { status: 200, body: { ok: true, store: shop.id, updatedAt: written.updatedAt } };
   } catch (err) {
     console.error("refresh-cookies store error:", err?.message || err);
     return { status: 502, body: { error: "store_write_failed" } };
   }
 }
 
-// Avgör vilken cookie/csrf-källa som ska användas för dispatch.
+// Avgör vilken cookie/csrf-källa som ska användas för dispatch mot EN butik.
 // Föredrar gist (Chrome-extensionen håller den fräsch); faller tillbaka till
 // env vars (manuell rotation, samma värden som körde live före Fas 4F).
 //
+// `store` är butiken ("willys"/"hemkop"); `storeId` i retursvaret är Willys
+// numeriska butiks-ID för campaigns-endpointen — två olika saker med snarlika namn.
+//
+// Env-fallbacken gäller BARA butiker med hasEnvFallback (Willys). Hemköp har
+// aldrig haft env-vars, och att låta den ärva WILLYS_COOKIE skulle betyda att
+// dispatchen tyst la varorna i fel butiks korg.
+//
 // Returnerar { cookies, csrf, storeId, source } eller null om ingen källa har
 // både cookie och csrf.
-export async function resolveWillysSecrets({ store, env, userId = "joakim" }) {
-  if (store) {
+export async function resolveStoreSecrets({ secretsStore, store = DEFAULT_STORE, env, userId = "joakim" }) {
+  const shop = resolveStore(store);
+  if (!shop) return null;
+
+  if (secretsStore) {
     try {
-      const user = await store.readUser(userId);
+      const user = await secretsStore.readUser(userId, shop.id);
       if (user?.cookie && user?.csrf) {
         return {
           cookies: user.cookie,
@@ -190,10 +232,10 @@ export async function resolveWillysSecrets({ store, env, userId = "joakim" }) {
         };
       }
     } catch (err) {
-      console.error("resolveWillysSecrets gist-läsning failade:", err?.message || err);
+      console.error("resolveStoreSecrets gist-läsning failade:", err?.message || err);
     }
   }
-  if (env.WILLYS_COOKIE && env.WILLYS_CSRF) {
+  if (shop.hasEnvFallback && env.WILLYS_COOKIE && env.WILLYS_CSRF) {
     return {
       cookies: env.WILLYS_COOKIE,
       csrf: env.WILLYS_CSRF,

@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm">
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=190">
+<link rel="stylesheet" href="css/styles.css?v=191">
 <style>/* tömd — CSS flyttad till css/styles.css */
 
 </style>
@@ -368,8 +368,8 @@
       </div>
       <div id="prefsSection"></div>
       <div id="promptBtnSection"></div>
-      <button class="shop-dispatch-btn" id="dispatchToWillysBtn" style="display:none" onclick="openDispatchConfirm()">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19 19 5"/><path d="M9 5h10v10"/></svg> Skicka till Willys
+      <button class="shop-dispatch-btn" id="dispatchToWillysBtn" style="display:none" onclick="openStorePicker()">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 19 19 5"/><path d="M9 5h10v10"/></svg> Skicka till butik
       </button>
     </div>
   </div>
@@ -569,6 +569,22 @@
   </div>
 </div>
 
+<div class="bottom-sheet" id="shopStoreSheet" role="dialog" aria-modal="true" aria-labelledby="shopStoreTitle" hidden>
+  <div class="bottom-sheet-backdrop" data-sheet-close="shopStoreSheet"></div>
+  <div class="bottom-sheet-panel storepick-panel">
+    <div class="bottom-sheet-handle"></div>
+    <button type="button" class="daypick-close" data-sheet-close="shopStoreSheet" aria-label="Stäng">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <h3 class="bottom-sheet-title" id="shopStoreTitle">Vilken butik?</h3>
+    <p class="wiz-sub">Inköpslistan läggs i din varukorg hos butiken du väljer. Du betalar själv i butikens kassa.</p>
+    <div class="storepick-body" id="shopStoreBody"></div>
+    <div class="daypick-foot">
+      <button type="button" class="btn-secondary" data-sheet-close="shopStoreSheet">Avbryt</button>
+    </div>
+  </div>
+</div>
+
 <div class="bottom-sheet" id="sortSheet" role="dialog" aria-modal="true" aria-labelledby="sortSheetTitle" hidden>
   <div class="bottom-sheet-backdrop" data-sheet-close="sortSheet"></div>
   <div class="bottom-sheet-panel">
@@ -642,6 +658,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=153"></script>
+<script type="module" src="js/app.js?v=154"></script>
 </body>
 </html>

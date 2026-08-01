@@ -1,44 +1,60 @@
-// Popup-UI: visar status + tillåter uppdatera shared secret/storeId och manuell refresh.
+// Popup-UI: status per butik + shared secret/storeId + manuell refresh.
 
 const $ = (id) => document.getElementById(id);
 
+const STORES = [
+  { id: "willys", label: "Willys", domain: "willys.se" },
+  { id: "hemkop", label: "Hemköp", domain: "hemkop.se" },
+];
+
+const lastRefreshKey = (store) => `lastRefreshAt_${store}`;
+const lastErrorKey = (store) => `lastError_${store}`;
+
 async function load() {
-  const data = await chrome.storage.local.get(["secret", "storeId", "lastRefreshAt", "lastError"]);
+  const keys = ["secret", "storeId", ...STORES.flatMap(s => [lastRefreshKey(s.id), lastErrorKey(s.id)])];
+  const data = await chrome.storage.local.get(keys);
   $("secretInput").value = data.secret || "";
   $("storeIdInput").value = data.storeId || "2160";
-  renderStatus(data.lastRefreshAt, data.lastError);
+  renderAll(data);
 }
 
-function renderStatus(lastRefreshAt, lastError) {
-  const dot = $("statusDot");
-  const label = $("statusLabel");
-  const last = $("lastRefresh");
-  dot.className = "dot";
-  if (lastError) {
-    dot.classList.add("red");
-    label.textContent = `Fel: ${lastError}`;
-    last.textContent = "";
-    return;
-  }
+function renderAll(data) {
+  $("storeStatuses").innerHTML = STORES.map(s => {
+    const { cls, label, detail } = statusFor(s, data[lastRefreshKey(s.id)], data[lastErrorKey(s.id)]);
+    return `
+      <section class="status">
+        <span class="dot ${cls}"></span>
+        <span class="label"><strong>${s.label}</strong> — ${escapeHtml(label)}</span>
+      </section>
+      <p class="last">${escapeHtml(detail)}</p>`;
+  }).join("");
+}
+
+function statusFor(store, lastRefreshAt, lastError) {
+  if (lastError) return { cls: "red", label: `Fel: ${lastError}`, detail: "" };
   if (!lastRefreshAt) {
-    dot.classList.add("yellow");
-    label.textContent = "Inte uppdaterad än";
-    last.textContent = "Logga in på willys.se så fångas cookies automatiskt.";
-    return;
+    return {
+      cls: "yellow",
+      label: "Inte uppdaterad än",
+      detail: `Logga in på ${store.domain} så fångas cookies automatiskt.`,
+    };
   }
-  const ageMs = Date.now() - new Date(lastRefreshAt).getTime();
-  const ageDays = Math.floor(ageMs / 86_400_000);
-  if (ageDays >= 80) {
-    dot.classList.add("red");
-    label.textContent = "Kritiskt — uppdatera snart";
-  } else if (ageDays >= 60) {
-    dot.classList.add("yellow");
-    label.textContent = "Uppdatera snart";
-  } else {
-    dot.classList.add("green");
-    label.textContent = "Aktuell";
-  }
-  last.textContent = `Senast uppdaterad: ${new Date(lastRefreshAt).toLocaleString("sv-SE")} (${ageDays}d sedan)`;
+  const ageDays = Math.floor((Date.now() - new Date(lastRefreshAt).getTime()) / 86_400_000);
+  const cls = ageDays >= 80 ? "red" : ageDays >= 60 ? "yellow" : "green";
+  const label = ageDays >= 80 ? "Kritiskt — uppdatera snart"
+    : ageDays >= 60 ? "Uppdatera snart"
+    : "Aktuell";
+  return {
+    cls,
+    label,
+    detail: `Senast uppdaterad: ${new Date(lastRefreshAt).toLocaleString("sv-SE")} (${ageDays}d sedan)`,
+  };
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => (
+    { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+  ));
 }
 
 $("settingsForm").addEventListener("submit", async (e) => {
@@ -58,7 +74,10 @@ $("refreshBtn").addEventListener("click", async () => {
     await chrome.runtime.sendMessage({ type: "manual-refresh" });
     await load();
   } catch (err) {
-    await chrome.storage.local.set({ lastError: `Refresh failade: ${err.message}` });
+    // Skriv felet på båda butikerna — vi vet inte vilken som fallerade här.
+    const patch = {};
+    for (const s of STORES) patch[lastErrorKey(s.id)] = `Refresh failade: ${err.message}`;
+    await chrome.storage.local.set(patch);
     await load().catch(() => { /* render-failure hanteras nedan */ });
   } finally {
     $("refreshBtn").disabled = false;
@@ -67,5 +86,5 @@ $("refreshBtn").addEventListener("click", async () => {
 });
 
 load().catch((err) => {
-  $("statusLabel").textContent = `Kunde inte läsa inställningar: ${err.message}`;
+  $("storeStatuses").textContent = `Kunde inte läsa inställningar: ${err.message}`;
 });

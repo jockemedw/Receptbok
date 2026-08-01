@@ -4,10 +4,10 @@
 
 import { extractOfferCanon, rejectsMatch } from "../api/_shared/willys-matcher.js";
 import { fetchOffersFromWillys } from "../api/willys-offers.js";
-import { createSearchClient } from "../api/_shared/willys-search.js";
+import { createSearchClient } from "../api/_shared/axfood-search.js";
 import { matchCanons } from "../api/_shared/dispatch-matcher.js";
-import { createCartClient, pickUnitForCode } from "../api/_shared/willys-cart-client.js";
-import { runDispatch, resolveWillysSecrets } from "../api/dispatch-to-willys.js";
+import { createCartClient, pickUnitForCode } from "../api/_shared/axfood-cart-client.js";
+import { runDispatch, resolveStoreSecrets } from "../api/dispatch-to-willys.js";
 
 let passed = 0;
 let failed = 0;
@@ -668,7 +668,7 @@ assertEq(pickUnitForCode(undefined), "pieces", "undefined-kod → pieces (krasch
   assertEq(result.error, "auth_expired", "inget landade + 401 → auth_expired");
 }
 
-// ─── Task R: resolveWillysSecrets — gist + env-var fallback ───────
+// ─── Task R: resolveStoreSecrets — gist + env-var fallback ───────
 
 // R1. Gist har user → använder gist-värden
 {
@@ -678,7 +678,7 @@ assertEq(pickUnitForCode(undefined), "pieces", "undefined-kod → pieces (krasch
       : null,
   };
   const env = { WILLYS_COOKIE: "e_cookie", WILLYS_CSRF: "e_csrf", WILLYS_STORE_ID: "e_store" };
-  const out = await resolveWillysSecrets({ store, env, userId: "joakim" });
+  const out = await resolveStoreSecrets({ secretsStore: store, env, userId: "joakim" });
   assertEq(out?.cookies, "g_cookie", "gist-cookie föredras");
   assertEq(out?.csrf, "g_csrf", "gist-csrf föredras");
   assertEq(out?.storeId, "g_store", "gist-storeId föredras");
@@ -689,7 +689,7 @@ assertEq(pickUnitForCode(undefined), "pieces", "undefined-kod → pieces (krasch
 {
   const store = { readUser: async () => null };
   const env = { WILLYS_COOKIE: "e_cookie", WILLYS_CSRF: "e_csrf", WILLYS_STORE_ID: "e_store" };
-  const out = await resolveWillysSecrets({ store, env, userId: "joakim" });
+  const out = await resolveStoreSecrets({ secretsStore: store, env, userId: "joakim" });
   assertEq(out?.cookies, "e_cookie", "fallback till env-cookie");
   assertEq(out?.csrf, "e_csrf", "fallback till env-csrf");
   assertEq(out?.storeId, "e_store", "fallback till env-storeId");
@@ -700,7 +700,7 @@ assertEq(pickUnitForCode(undefined), "pieces", "undefined-kod → pieces (krasch
 {
   const store = { readUser: async () => { throw new Error("gist 502"); } };
   const env = { WILLYS_COOKIE: "e_cookie", WILLYS_CSRF: "e_csrf", WILLYS_STORE_ID: "e_store" };
-  const out = await resolveWillysSecrets({ store, env, userId: "joakim" });
+  const out = await resolveStoreSecrets({ secretsStore: store, env, userId: "joakim" });
   assertEq(out?.source, "env", "gist-fel → env-fallback");
 }
 
@@ -708,14 +708,14 @@ assertEq(pickUnitForCode(undefined), "pieces", "undefined-kod → pieces (krasch
 {
   const store = { readUser: async () => null };
   const env = {};
-  const out = await resolveWillysSecrets({ store, env, userId: "joakim" });
+  const out = await resolveStoreSecrets({ secretsStore: store, env, userId: "joakim" });
   assertEq(out, null, "ingen källa → null");
 }
 
 // R5. store=null → använder bara env
 {
   const env = { WILLYS_COOKIE: "e", WILLYS_CSRF: "t", WILLYS_STORE_ID: "2160" };
-  const out = await resolveWillysSecrets({ store: null, env, userId: "joakim" });
+  const out = await resolveStoreSecrets({ secretsStore: null, env, userId: "joakim" });
   assertEq(out?.source, "env", "store=null → env-källa");
 }
 
@@ -723,7 +723,7 @@ assertEq(pickUnitForCode(undefined), "pieces", "undefined-kod → pieces (krasch
 {
   const store = { readUser: async () => ({ cookie: "g", csrf: "", storeId: "2160" }) };
   const env = { WILLYS_COOKIE: "e", WILLYS_CSRF: "t", WILLYS_STORE_ID: "2160" };
-  const out = await resolveWillysSecrets({ store, env, userId: "joakim" });
+  const out = await resolveStoreSecrets({ secretsStore: store, env, userId: "joakim" });
   assertEq(out?.source, "env", "gist utan csrf → env-fallback");
 }
 
@@ -731,10 +731,102 @@ assertEq(pickUnitForCode(undefined), "pieces", "undefined-kod → pieces (krasch
 {
   const store = { readUser: async () => ({ cookie: "g", csrf: "t", storeId: "" }) };
   const env = { WILLYS_STORE_ID: "9999" };
-  const out = await resolveWillysSecrets({ store, env, userId: "joakim" });
+  const out = await resolveStoreSecrets({ secretsStore: store, env, userId: "joakim" });
   // Cookie+CSRF räcker för att klassas som gist-källa, storeId fyller från env
   assertEq(out?.source, "gist", "gist-källa OK när cookie+csrf finns");
   assertEq(out?.storeId, "9999", "storeId från env när gist saknar");
+}
+
+// ─── Task H: Hemköp som andra butik (Axfood-parametrisering) ─────
+
+// H1. Cart-klienten träffar den butik som baseUrl pekar ut
+{
+  const fetchImpl = makeRecordingFetch({
+    "GET cart": { ok: true, status: 200, body: { entries: [] } },
+    "POST addProducts": { ok: true, status: 200, body: {} },
+  });
+  const client = createCartClient({
+    fetchImpl, cookies: "x=1", csrf: "tok", baseUrl: "https://www.hemkop.se",
+  });
+  await client.preflight();
+  await client.addProducts(["123_ST"]);
+  const [pre, add] = fetchImpl.calls;
+  assertEq(pre.url, "https://www.hemkop.se/axfood/rest/cart", "preflight går mot hemkop.se");
+  assertEq(add.url, "https://www.hemkop.se/axfood/rest/cart/addProducts", "addProducts går mot hemkop.se");
+  assertEq(add.headers.origin, "https://www.hemkop.se", "origin-headern följer butiken");
+  assertEq(add.headers.referer, "https://www.hemkop.se/", "referer-headern följer butiken");
+}
+
+// H2. Utan baseUrl är beteendet exakt som förut (Willys)
+{
+  const fetchImpl = makeRecordingFetch({ "GET cart": { ok: true, status: 200, body: { entries: [] } } });
+  const client = createCartClient({ fetchImpl, cookies: "x=1", csrf: "tok" });
+  await client.preflight();
+  assertEq(fetchImpl.calls[0].url, "https://www.willys.se/axfood/rest/cart", "default-baseUrl är willys.se");
+}
+
+// H3. Sökklienten söker hos rätt butik
+{
+  let seenUrl = null;
+  const client = createSearchClient({
+    fetchImpl: async (url) => {
+      seenUrl = url;
+      return { ok: true, status: 200, json: async () => ({ results: [
+        { code: "9_ST", name: "Mellanmjölk 1,5%", productLine2: "Garant", online: true, outOfStock: false },
+      ] }) };
+    },
+    baseUrl: "https://www.hemkop.se",
+  });
+  const hit = await client.findProductByCanon("mjölk");
+  assertTrue(seenUrl.startsWith("https://www.hemkop.se/search?q="), "sök-URL byggs från butikens baseUrl");
+  assertEq(hit?.code, "9_ST", "träff returneras som vanligt");
+}
+
+// H4. Hemköp har inget rea-flöde → tom offers-pool, allt matchas via sök
+{
+  const shoppingList = { recipeItems: { Mejeri: ["mjölk (1 l)"], Frukt: ["banan (3 st)"] }, manualItems: [] };
+  const searchClient = {
+    findProductByCanon: async (canon) => ({
+      code: `${canon}_ST`, name: canon, brandLine: null, canon, source: "search",
+    }),
+  };
+  const cartClient = {
+    preflight: async () => ({ ok: true, status: 200 }),
+    addProducts: async () => ({ ok: true, status: 200, response: {} }),
+    verifyCart: async () => ({ ok: true, entries: [] }),
+  };
+  const result = await runDispatch({ shoppingList, offers: [], searchClient, cartClient });
+  assertEq(result.ok, true, "hemköp-dispatch lyckas utan reor");
+  assertEq(result.addedCount, 2, "båda varorna lades i korgen");
+  assertEq(result.sources.rea, 0, "inga rea-träffar när offers är tom");
+  assertEq(result.sources.search, 2, "alla träffar kommer från sök");
+}
+
+// H5. Env-fallbacken gäller Willys men aldrig Hemköp
+{
+  const secretsStore = { readUser: async () => null };
+  const env = { WILLYS_COOKIE: "e_cookie", WILLYS_CSRF: "e_csrf", WILLYS_STORE_ID: "2160" };
+  const willys = await resolveStoreSecrets({ secretsStore, store: "willys", env, userId: "joakim" });
+  const hemkop = await resolveStoreSecrets({ secretsStore, store: "hemkop", env, userId: "joakim" });
+  assertEq(willys?.source, "env", "willys faller tillbaka på env");
+  assertEq(hemkop, null, "hemköp ärver ALDRIG willys env-cookies");
+}
+
+// H6. Butiken skickas vidare till readUser, och okänd butik ger null
+{
+  const seen = [];
+  const secretsStore = {
+    readUser: async (userId, store) => {
+      seen.push(store);
+      return { cookie: `${store}_c`, csrf: `${store}_t`, storeId: "2160" };
+    },
+  };
+  const out = await resolveStoreSecrets({ secretsStore, store: "hemkop", env: {}, userId: "joakim" });
+  assertEq(seen.join(","), "hemkop", "butiken skickas vidare till readUser");
+  assertEq(out?.cookies, "hemkop_c", "hemköps egen cookie används");
+
+  const unknown = await resolveStoreSecrets({ secretsStore, store: "coop", env: {}, userId: "joakim" });
+  assertEq(unknown, null, "okänd butik → null");
 }
 
 console.log(`\n${passed} passerade, ${failed} failade`);
