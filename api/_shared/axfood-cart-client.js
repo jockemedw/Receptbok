@@ -1,15 +1,18 @@
-// Klient för Willys cart-API.
-// Reverse-engineered + verifierad i scripts/willys-cart-poc.mjs (Session 37).
+// Klient för Axfood-plattformens cart-API (Willys + Hemköp).
+// Reverse-engineered + verifierad i scripts/willys-cart-poc.mjs (Session 37)
+// och scripts/hemkop-cart-poc.mjs (2026-06-23) — båda butikerna svarar identiskt.
 //
 // Auth: cookies-sträng (inkl. JSESSIONID + axfoodRememberMe) + x-csrf-token-header.
 // Cookies har livslängd ≈ 3 mån (knutna till axfoodRememberMe). CSRF följer med.
+// Cookie-uppsättningarna är per butik — en Willys-cookie fungerar inte mot Hemköp.
 //
 // Alla operationer kräver båda delarna — preflight misslyckas annars med 401.
 
-const BASE = "https://www.willys.se";
+import { STORES } from "./axfood-stores.js";
+
 const UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36";
 
-// Härleder rätt pickUnit ur produktkodens enhets-suffix. Willys/Axfood-koder är
+// Härleder rätt pickUnit ur produktkodens enhets-suffix. Axfood-koder är
 // `<id>_ST` (styck) eller `<id>_KG` (lösvikt, prissatt per kg). En vikt-vara som
 // skickas med pickUnit "pieces" avvisas av addProducts med 400
 // (error.illegal.argument) — det var roten till att lös potatis aldrig landade i
@@ -19,7 +22,9 @@ export function pickUnitForCode(code) {
   return /_kg$/i.test(String(code)) ? "kilograms" : "pieces";
 }
 
-export function createCartClient({ fetchImpl = fetch, cookies, csrf }) {
+export function createCartClient({ fetchImpl = fetch, cookies, csrf, baseUrl = STORES.willys.baseUrl }) {
+  const BASE = baseUrl;
+
   function baseHeaders(extra = {}) {
     return {
       "user-agent": UA,

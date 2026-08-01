@@ -1,15 +1,21 @@
-// Dispatch-UI: knapp → confirm → POST → resultat-modal.
+// Dispatch-UI: knapp → butiksval → confirm → POST → resultat-modal.
 // Läser state: window._shopRecipeItems (för räkning i confirm-dialog)
 // Feature-toggled via GET /api/dispatch-to-willys vid tab-load.
+//
+// Butikerna (Willys/Hemköp) kommer från backend — frontend hårdkodar varken
+// namn eller URL:er, så en ny Axfood-butik bara dyker upp i väljaren.
 
 import { initPreferences } from './dispatch-preferences.js';
 import { escapeHtml } from '../utils.js';
 
-// Startsidan istället för /cart (som 404:ar). willys.se kommer ihåg
-// användarens valda butik (Ekholmen 2160) via session-cookie.
-const CART_URL = "https://www.willys.se/";
-
 const ICON_HOURGLASS = '<svg class="icon icon-em-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12 M6 20h12 M6 4l6 8-6 8 M18 4l-6 8 6 8"/></svg>';
+
+// Butikslistan från GET-anropet: [{ id, label, available }]
+let stores = [];
+
+function storeLabel(id) {
+  return stores.find(s => s.id === id)?.label || 'butiken';
+}
 
 export async function initDispatchUI() {
   initPreferences();
@@ -20,13 +26,44 @@ export async function initDispatchUI() {
     const res = await fetch("/api/dispatch-to-willys");
     if (!res.ok) { btn.style.display = "none"; return; }
     const data = await res.json();
+    // Äldre backend svarar utan stores[] — behandla det som enbart Willys, så
+    // knappen aldrig försvinner för att frontend deployats före backend.
+    stores = Array.isArray(data.stores) && data.stores.length
+      ? data.stores
+      : [{ id: 'willys', label: 'Willys', available: !!data.featureAvailable }];
     btn.style.display = data.featureAvailable ? "" : "none";
   } catch {
     btn.style.display = "none";
   }
 }
 
-export function openDispatchConfirm() {
+// Butiksväljaren visar ALLA butiker, även de utan cookies — annars finns ingen
+// synlig väg till att koppla den andra butiken.
+export function openStorePicker() {
+  if (window._opBusy) return;   // dispatch pågår redan (F078)
+  const body = document.getElementById("shopStoreBody");
+  if (!body) return;
+
+  body.innerHTML = stores.map(s => s.available
+    ? `<button type="button" class="storepick-row" onclick="chooseDispatchStore('${escapeHtml(s.id)}')">
+         <span class="storepick-name">${escapeHtml(s.label)}</span>
+         <span class="storepick-go" aria-hidden="true">→</span>
+       </button>`
+    : `<div class="storepick-row is-off">
+         <span class="storepick-name">${escapeHtml(s.label)}</span>
+         <span class="storepick-hint">Behöver kopplas — logga in på butikens sajt i webbläsaren där tillägget är installerat</span>
+       </div>`
+  ).join("");
+
+  window.openBottomSheet?.('shopStoreSheet');
+}
+
+export function chooseDispatchStore(storeId) {
+  window.closeBottomSheet?.('shopStoreSheet');
+  openDispatchConfirm(storeId);
+}
+
+export function openDispatchConfirm(storeId) {
   if (window._opBusy) return;   // dispatch pågår redan — hindra ny bekräftelse (F078)
   const items = window._shopRecipeItems || {};
   const recipeCount = Object.values(items).reduce((sum, arr) => sum + (arr?.length || 0), 0);
@@ -39,25 +76,28 @@ export function openDispatchConfirm() {
     `);
     return;
   }
+  const label = storeLabel(storeId);
+  setModalTitle(`Skicka till ${label}`);
   showResult(`
-    <p>Skicka ${totalCount} ingrediens${totalCount !== 1 ? 'er' : ''} till din Willys-korg?</p>
-    <p class="dispatch-note">Matchade produkter (rea och söknings-träffar) läggs in i korgen. Omatchade rapporteras efteråt så du kan lägga till dem själv.</p>
+    <p>Skicka ${totalCount} ingrediens${totalCount !== 1 ? 'er' : ''} till din ${escapeHtml(label)}-korg?</p>
+    <p class="dispatch-note">Matchade produkter läggs in i korgen. Omatchade rapporteras efteråt så du kan lägga till dem själv.</p>
     <div class="dispatch-actions">
       <button class="btn-secondary" onclick="closeDispatchModal()">Avbryt</button>
-      <button class="btn-primary" id="dispatchRunBtn" onclick="runDispatch()">Skicka</button>
+      <button class="btn-primary" id="dispatchRunBtn" onclick="runDispatch('${escapeHtml(storeId)}')">Skicka</button>
     </div>
   `);
 }
 
-export async function runDispatch() {
+export async function runDispatch(storeId) {
   if (window._opBusy) return;   // spärr mot dubbel dispatch (F078)
   window._opBusy = true;
+  const label = storeLabel(storeId);
   const mainBtn = document.getElementById("dispatchToWillysBtn");
   if (mainBtn) mainBtn.disabled = true;
   const runBtn = document.getElementById("dispatchRunBtn");
   if (runBtn) { runBtn.disabled = true; runBtn.textContent = "Skickar…"; }
   showResult(`
-    <p>Skickar till Willys…</p>
+    <p>Skickar till ${escapeHtml(label)}…</p>
     <div class="dispatch-loader">${ICON_HOURGLASS}</div>
   `);
   const controller = new AbortController();
@@ -66,17 +106,17 @@ export async function runDispatch() {
     const res = await fetch("/api/dispatch-to-willys", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date: new Date().toISOString().slice(0, 10) }),
+      body: JSON.stringify({ store: storeId, date: new Date().toISOString().slice(0, 10) }),
       signal: controller.signal,
     });
     const data = await res.json();
-    renderResult(data);
+    renderResult(data, label);
   } catch (err) {
     const msg = err.name === "AbortError"
-      ? "Tog för lång tid — Willys svarade inte. Prova igen om en stund."
-      : "Kunde inte nå Willys. Prova igen om en stund.";
+      ? `Tog för lång tid — ${label} svarade inte. Prova igen om en stund.`
+      : `Kunde inte nå ${label}. Prova igen om en stund.`;
     showResult(`
-      <p>${msg}</p>
+      <p>${escapeHtml(msg)}</p>
       <div class="dispatch-actions"><button onclick="closeDispatchModal()">Stäng</button></div>
     `);
   } finally {
@@ -86,18 +126,23 @@ export async function runDispatch() {
   }
 }
 
-function renderResult(data) {
+function renderResult(data, fallbackLabel) {
+  const label = data.store?.label || fallbackLabel || 'butiken';
   if (data.ok) {
     const missingHtml = (data.missing || []).length
       ? `<p class="dispatch-missing-header">Kunde inte matchas (lägg till själv):</p>
          <ul class="dispatch-missing">${data.missing.map(m => `<li>${escapeHtml(m)}</li>`).join("")}</ul>`
       : "";
     const sources = data.sources || {};
+    // Butiker utan rea-flöde (Hemköp) matchar allt via sök — visa då bara den
+    // siffran i stället för ett förvirrande "0 från rea".
     const sourceNote = (sources.rea || sources.search)
-      ? `<p class="dispatch-sources">${sources.rea || 0} från rea, ${sources.search || 0} från sök</p>`
+      ? `<p class="dispatch-sources">${sources.rea
+          ? `${sources.rea} från rea, ${sources.search || 0} från sök`
+          : `${sources.search || 0} från sök`}</p>`
       : "";
     // Eko/svenskt-preferenser som inte kunde uppfyllas (backlog #20) — varan
-    // ligger i korgen men i vanlig variant; byt själv på willys.se om viktigt.
+    // ligger i korgen men i vanlig variant; byt själv i butiken om viktigt.
     const prefHtml = (data.prefMisses || []).length
       ? `<p class="dispatch-sources">Kunde inte fås som ${
           [...new Set(data.prefMisses.flatMap(p => p.wanted || []))].join("/")
@@ -108,13 +153,15 @@ function renderResult(data) {
     const markBtn = (window._shopCoverage || []).some((r) => !r.shopped_at)
       ? `<button class="btn-secondary" onclick="closeDispatchModal();markRoundShopped()">Markera som inhandlat</button>`
       : "";
+    const cartUrl = data.cartUrl || "https://www.willys.se/";
+    setModalTitle(`Skickat till ${label}`);
     showResult(`
-      <p>✓ ${data.addedCount} produkt${data.addedCount !== 1 ? 'er' : ''} tillagda i din Willys-korg.</p>
+      <p>✓ ${data.addedCount} produkt${data.addedCount !== 1 ? 'er' : ''} tillagda i din ${escapeHtml(label)}-korg.</p>
       ${sourceNote}
       ${prefHtml}
       ${missingHtml}
       <div class="dispatch-actions">
-        <a class="btn-primary" href="${CART_URL}" target="_blank" rel="noopener">Öppna willys.se →</a>
+        <a class="btn-primary" href="${escapeHtml(cartUrl)}" target="_blank" rel="noopener">Öppna ${escapeHtml(label)} →</a>
         ${markBtn}
         <button class="btn-secondary" onclick="closeDispatchModal()">Stäng</button>
       </div>
@@ -125,6 +172,11 @@ function renderResult(data) {
     <p>${escapeHtml(data.message || "Något gick fel — prova igen om en stund.")}</p>
     <div class="dispatch-actions"><button onclick="closeDispatchModal()">Stäng</button></div>
   `);
+}
+
+function setModalTitle(text) {
+  const el = document.getElementById("dispatchModalTitle");
+  if (el) el.textContent = text;
 }
 
 function showResult(html) {
@@ -145,6 +197,8 @@ export function handleDispatchOverlayClick(event) {
 }
 
 // Exponera på window för inline onclick
+window.openStorePicker = openStorePicker;
+window.chooseDispatchStore = chooseDispatchStore;
 window.openDispatchConfirm = openDispatchConfirm;
 window.runDispatch = runDispatch;
 window.closeDispatchModal = closeDispatchModal;

@@ -1,16 +1,34 @@
-// Läser/skriver cookies+CSRF för dispatch-användare till en secret gist.
+// Läser/skriver cookies+CSRF per användare OCH butik till en secret gist.
 // Används av:
-//   - api/cookies/willys.js  → writeUser (Chrome-extension postar cookies hit)
-//   - api/dispatch-to-willys.js → readUser (cart-anrop till Willys)
+//   - api/dispatch-to-willys.js?op=refresh-cookies → writeUser (extensionen postar hit)
+//   - api/dispatch-to-willys.js                    → readUser (cart-anrop till butiken)
 //
-// Cache: 5 min in-memory (TTL-baserad). Minskar GitHub-API-anrop när dispatch
-// körs flera gånger inom kort tid.
+// Format (users[<id>].stores[<butik>] är sanningen sedan Hemköp tillkom):
+//   { "users": { "joakim": {
+//       "cookie": "…", "csrf": "…", "storeId": "2160", "updatedAt": "…",   ← spegling, se nedan
+//       "stores": {
+//         "willys": { "cookie": "…", "csrf": "…", "storeId": "2160", "updatedAt": "…" },
+//         "hemkop": { "cookie": "…", "csrf": "…", "updatedAt": "…" }
+//       } } } }
+//
+// Bakåtkompatibilitet åt båda håll:
+//   - LÄSNING: saknas stores[<butik>] faller Willys (och bara Willys) tillbaka på de
+//     gamla platta fälten, så befintlig dispatch fungerar innan extensionen uppdaterats.
+//   - SKRIVNING: en Willys-skrivning speglas till de platta fälten, så en rollback till
+//     föregående kodversion fortsätter hitta cookien utan datamigrering.
+//   Hemköp har medvetet INGEN sådan fallback — det finns inget legacy-läge att ärva,
+//   och att låta Hemköp läsa Willys-cookien skulle skicka varor till fel butik.
+//
+// Cache: 5 min in-memory (TTL-baserad) på HELA gist-innehållet — alla användare och
+// butiker delar den, så ett butiksbyte kostar inget extra GitHub-anrop.
 //
 // Concurrency: GitHub Gists API har ingen SHA-baserad concurrency control
 // (till skillnad från Contents API i _shared/github.js). Skrivningar är
 // last-write-wins. För single-user single-extension-flödet är race-risken
 // försumbar; writeUser läser ändå fresh state innan PATCH för att inte
 // stomp:a ev. parallella users.
+
+import { DEFAULT_STORE } from "./axfood-stores.js";
 
 const GIST_API = "https://api.github.com/gists";
 const SECRETS_FILE = "willys-secrets.json";
@@ -46,22 +64,45 @@ export function createSecretsStore({ fetchImpl = fetch, pat, gistId, ttlMs = 5 *
     return data;
   }
 
-  async function readUser(userId) {
+  async function readUser(userId, store = DEFAULT_STORE) {
     const data = await getData();
     const user = data.users?.[userId];
-    return user || null;
+    if (!user) return null;
+
+    const perStore = user.stores?.[store];
+    if (perStore && perStore.cookie) return perStore;
+
+    // Legacy-fallback: de platta fälten är per definition Willys (formatet fanns
+    // innan det gick att välja butik). Andra butiker får aldrig ärva dem.
+    if (store === DEFAULT_STORE && user.cookie) {
+      return { cookie: user.cookie, csrf: user.csrf, storeId: user.storeId, updatedAt: user.updatedAt };
+    }
+    return null;
   }
 
-  async function writeUser(userId, { cookie, csrf, storeId }) {
+  async function writeUser(userId, store, { cookie, csrf, storeId }) {
     cache = null;
     const data = await fetchGist();
     if (!data.users) data.users = {};
-    data.users[userId] = {
-      cookie,
-      csrf,
-      storeId,
-      updatedAt: new Date().toISOString(),
-    };
+    if (!data.users[userId]) data.users[userId] = {};
+    const user = data.users[userId];
+    if (!user.stores) user.stores = {};
+
+    const updatedAt = new Date().toISOString();
+    const entry = { cookie, csrf, updatedAt };
+    // storeId används bara av campaigns-endpointen (reor) och finns därför bara
+    // för Willys — utelämna fältet helt i stället för att skriva undefined.
+    if (storeId !== undefined && storeId !== null && storeId !== "") entry.storeId = storeId;
+    user.stores[store] = entry;
+
+    // Spegla Willys till de platta fälten så en rollback till föregående
+    // kodversion (som bara känner till det formatet) fortfarande hittar cookien.
+    if (store === DEFAULT_STORE) {
+      user.cookie = cookie;
+      user.csrf = csrf;
+      user.storeId = storeId;
+      user.updatedAt = updatedAt;
+    }
     const res = await fetchImpl(`${GIST_API}/${gistId}`, {
       method: "PATCH",
       headers: {
