@@ -28,13 +28,14 @@ function dayTitle(d) {
 // Källa är tidslinjen (aktiv plan + egna dagar + arkiv) — samma karta som
 // matsedeln renderas från, så väljaren visar exakt det familjen ser i appen.
 //
-// ARKIVDAGAR UTESLUTS: när en plan arkiveras flyttas dagarna till plan_archives
-// och raderas ur meal_days. De finns alltså inte att bygga varor från — servern
-// skulle bara rapportera dem som överhoppade. Bättre att aldrig visa dem.
+// ARKIVDAGAR INGÅR. Genererar man två matsedlar efter varandra arkiveras den
+// första och dess meal_days-rader raderas — men servern återskapar raden när
+// dagen väljs (restoreArchivedDays), så de går att handla för. De märks med
+// "Tidigare matsedel" så det syns var de kommer ifrån.
 function pickableDays() {
   const byDate = window._timelineByDate || {};
   return Object.values(byDate)
-    .filter((d) => !d.isArchive && !d.blocked && (d.recipeId || d.customRecipeId) && dayTitle(d))
+    .filter((d) => !d.blocked && (d.recipeId || d.customRecipeId) && dayTitle(d))
     .sort((a, b) => (a.date < b.date ? -1 : 1));
 }
 
@@ -122,6 +123,7 @@ function dayRowHtml(d, selected) {
   if (d.shoppedAt) chips.push('<span class="daypick-chip is-shopped">Inhandlad</span>');
   else if (d.onList) chips.push('<span class="daypick-chip is-onlist">På listan</span>');
   if (d.isToday) chips.push('<span class="daypick-chip is-today">Idag</span>');
+  if (d.isArchive) chips.push('<span class="daypick-chip is-archive">Tidigare matsedel</span>');
 
   return `<label class="daypick-row${selected ? ' is-selected' : ''}">
     <input type="checkbox" class="daypick-check" ${selected ? 'checked' : ''}

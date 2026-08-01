@@ -115,6 +115,12 @@ function buildTimeline(plan, archive, customDays) {
   if (sortedArchive.length) {
     const oldest = sortedArchive[0].startDate;
     back = Math.max(back, diffDaysIso(oldest, todayIso));
+    // Arkiverade dagar kan ligga i FRAMTIDEN: genererar man två matsedlar efter
+    // varandra arkiveras den första även om den täcker kommande dagar. Utan
+    // detta föll de utanför horisonten och syntes varken i matsedeln eller i
+    // dagväljaren — bara den senaste planens dagar gick att handla för.
+    const newestEnd = sortedArchive.reduce((m, p) => (p.endDate > m ? p.endDate : m), sortedArchive[0].endDate);
+    forward = Math.max(forward, diffDaysIso(todayIso, newestEnd));
   }
   if (plan?.endDate) {
     forward = Math.max(forward, diffDaysIso(todayIso, plan.endDate));
