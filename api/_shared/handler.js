@@ -20,7 +20,7 @@ function userMessage(err) {
 // supabase.js importeras DYNAMISKT (först vid request) så att testsviten kan
 // importera wrappade endpoints utan att dra in @supabase/supabase-js vid
 // import-tid. Fail-closed: allt som inte är en giltig token ger 401.
-async function requireUser(req, res) {
+export async function requireUser(req, res) {
   const authz = req.headers?.authorization || req.headers?.Authorization || "";
   const token = authz.startsWith("Bearer ") ? authz.slice(7).trim() : null;
   if (!token) {

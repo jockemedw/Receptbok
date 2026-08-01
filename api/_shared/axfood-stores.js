@@ -24,6 +24,7 @@ export const STORES = {
     cookieDomain: "willys.se",
     hasOffers: true,
     hasEnvFallback: true,
+    hasPasswordLogin: false,   // BankID — se kommentaren ovan
   },
   hemkop: {
     id: "hemkop",
@@ -33,6 +34,7 @@ export const STORES = {
     cookieDomain: "hemkop.se",
     hasOffers: false,
     hasEnvFallback: false,
+    hasPasswordLogin: true,
   },
 };
 

@@ -42,6 +42,7 @@ pdf-pages/
 scripts/.willys-cookies.local
 scripts/.hemkop-cookies.local
 scripts/.hemkop-curl.local
+scripts/.hemkop-login.local
 scripts/willys-cart-poc-*.log
 
 # Dishingouthealth-scrape (Session 43) — engångs-import-artefakter

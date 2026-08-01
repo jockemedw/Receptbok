@@ -829,6 +829,161 @@ assertEq(pickUnitForCode(undefined), "pieces", "undefined-kod → pieces (krasch
   assertEq(unknown, null, "okänd butik → null");
 }
 
+// ─── Lösenordsinloggning (Session 136) ─────────────────────────────────────
+// Kärnan i testerna är KONTOLÅSNINGSSKYDDET: avvisade uppgifter får aldrig
+// leda till ett andra försök, varken mot nästa kandidat-endpoint eller som
+// intern retry. Räkna anropen, inte bara utfallet.
+{
+  const { createAuthClient, CredentialsRejected } = await import("../api/_shared/axfood-auth.js");
+  const { encrypt, decrypt } = await import("../api/_shared/crypto-box.js");
+  const { randomBytes } = await import("node:crypto");
+
+  // Mockat fetch-svar med Set-Cookie + valfri header/kropp.
+  const reply = ({ status = 200, cookies = [], headers = {}, body = "" }) => ({
+    status,
+    ok: status >= 200 && status < 300,
+    headers: {
+      getSetCookie: () => cookies,
+      get: (k) => headers[String(k).toLowerCase()] ?? null,
+    },
+    text: async () => body,
+  });
+
+  // (a) Lyckad inloggning → cookie + csrf, och exakt ETT login-anrop.
+  {
+    const calls = [];
+    // OBS ordningen: /axfood/rest/customer/login slutar också på "/login", så
+    // den grenen MÅSTE testas före den generella inloggningssidan.
+    const fetchImpl = async (url) => {
+      calls.push(String(url));
+      if (url.endsWith("/axfood/rest/customer/login")) return reply({ status: 200, cookies: ["JSESSIONID=loggedin; Path=/"] });
+      if (url.endsWith("/axfood/rest/cart")) return reply({ status: 200, headers: { "x-csrf-token": "tok123" }, body: '{"customer":{"uid":"x"}}' });
+      if (url.endsWith("/login")) return reply({ cookies: ["JSESSIONID=abc; Path=/"] });
+      return reply({ status: 404 });
+    };
+    const out = await createAuthClient({ fetchImpl, baseUrl: "https://www.hemkop.se" })
+      .login({ username: "a@b.se", password: "hemligt" });
+    assertTrue(out.cookie.includes("JSESSIONID=loggedin"), "login: sessionscookien följer med");
+    assertEq(out.csrf, "tok123", "login: csrf plockas ur cart-svaret");
+    assertEq(calls.filter(u => u.includes("customer/login")).length, 1, "login: exakt ett inloggningsanrop");
+  }
+
+  // (b) Fel lösenord → CredentialsRejected, och kandidat 2 provas ALDRIG.
+  {
+    const calls = [];
+    const fetchImpl = async (url) => {
+      calls.push(String(url));
+      if (url.endsWith("/axfood/rest/customer/login")) return reply({ status: 401, body: '{"error":"badCredentials"}' });
+      if (url.endsWith("/login")) return reply({ cookies: ["JSESSIONID=abc"] });
+      return reply({ status: 200 });
+    };
+    let threw = null;
+    try {
+      await createAuthClient({ fetchImpl, baseUrl: "https://www.hemkop.se" })
+        .login({ username: "a@b.se", password: "fel" });
+    } catch (e) { threw = e; }
+    assertTrue(threw instanceof CredentialsRejected, "login: fel lösenord ger CredentialsRejected");
+    assertEq(calls.filter(u => u.includes("j_spring_security_check")).length, 0,
+      "KONTOLÅSNING: nästa kandidat provas inte efter avvisade uppgifter");
+    assertEq(calls.filter(u => u.includes("customer/login")).length, 1,
+      "KONTOLÅSNING: exakt ett inloggningsförsök, ingen retry");
+  }
+
+  // (c) 404 på kandidat 1 är INTE ett inloggningsförsök → kandidat 2 får provas.
+  {
+    const calls = [];
+    const fetchImpl = async (url) => {
+      calls.push(String(url));
+      if (url.endsWith("/axfood/rest/customer/login")) return reply({ status: 404 });
+      if (url.endsWith("/j_spring_security_check")) return reply({ status: 302, cookies: ["JSESSIONID=ok"], headers: { location: "https://www.hemkop.se/" } });
+      if (url.endsWith("/axfood/rest/cart")) return reply({ status: 200, headers: { "x-csrf-token": "t2" }, body: '{"customer":{}}' });
+      if (url.endsWith("/login")) return reply({ cookies: ["JSESSIONID=abc"] });
+      return reply({ status: 404 });
+    };
+    const out = await createAuthClient({ fetchImpl, baseUrl: "https://www.hemkop.se" })
+      .login({ username: "a@b.se", password: "rätt" });
+    assertEq(out.csrf, "t2", "login: faller vidare till j_spring när endpointen saknas");
+    assertEq(calls.filter(u => u.includes("j_spring_security_check")).length, 1, "login: kandidat 2 provas vid 404");
+  }
+
+  // (d) Inloggning gick igenom men sessionen är inte giltig → kastar.
+  {
+    const fetchImpl = async (url) => {
+      if (url.endsWith("/axfood/rest/customer/login")) return reply({ status: 200 });
+      if (url.endsWith("/axfood/rest/cart")) return reply({ status: 401 });
+      if (url.endsWith("/login")) return reply({ cookies: ["JSESSIONID=abc"] });
+      return reply({ status: 404 });
+    };
+    let threw = false;
+    try {
+      await createAuthClient({ fetchImpl, baseUrl: "https://www.hemkop.se" }).login({ username: "a", password: "b" });
+    } catch { threw = true; }
+    assertTrue(threw, "login: ogiltig session efter inloggning kastar");
+  }
+
+  // (e) resolveStoreSecrets rör inte login-vägen utan `login`-parametern —
+  //     det är garantin för att Willys och alla gamla anrop är oförändrade.
+  {
+    const secretsStore = { readUser: async () => null };
+    const out = await resolveStoreSecrets({ secretsStore, store: "hemkop", env: {}, userId: "joakim" });
+    assertEq(out, null, "resolveStoreSecrets: utan login-parameter → null som förut");
+  }
+
+  // (f) Willys når aldrig lösenordsvägen (BankID) ens om login skickas med.
+  {
+    const secretsStore = { readUser: async () => null };
+    const out = await resolveStoreSecrets({
+      secretsStore, store: "willys", env: {}, userId: "joakim",
+      login: { householdId: "hh-1" },
+    });
+    assertEq(out, null, "resolveStoreSecrets: Willys loggar aldrig in med lösenord");
+  }
+
+  // (g) Giltig gist-cookie → inloggning körs inte alls (billigare vägen vinner).
+  {
+    const secretsStore = { readUser: async () => ({ cookie: "c", csrf: "x" }) };
+    const out = await resolveStoreSecrets({
+      secretsStore, store: "hemkop", env: {}, userId: "joakim",
+      login: { householdId: "hh-1", fetchImpl: async () => { throw new Error("skulle inte anropas"); } },
+    });
+    assertEq(out.source, "gist", "resolveStoreSecrets: färsk cookie används före inloggning");
+  }
+
+  // (h) Krypteringen: rundgång, olikt plaintext, fel nyckel kastar.
+  {
+    const key = randomBytes(32);
+    const packed = encrypt("mitt-lösenord", key);
+    assertEq(decrypt(packed, key), "mitt-lösenord", "crypto: rundgång bevarar klartexten");
+    assertFalse(packed.includes("mitt-lösenord"), "crypto: ciphertext röjer inte klartexten");
+    assertTrue(encrypt("x", key) !== encrypt("x", key), "crypto: slumpad IV ger olika ciphertext");
+    let threw = false;
+    try { decrypt(packed, randomBytes(32)); } catch { threw = true; }
+    assertTrue(threw, "crypto: fel nyckel kastar i stället för att ge skräp");
+  }
+
+  // (i) Lösenordet får aldrig nå loggen.
+  {
+    const seen = [];
+    const origLog = console.log, origErr = console.error;
+    console.log = (...a) => seen.push(a.join(" "));
+    console.error = (...a) => seen.push(a.join(" "));
+    try {
+      const fetchImpl = async (url) => {
+        if (url.endsWith("/axfood/rest/customer/login")) return reply({ status: 401, body: "badCredentials" });
+        if (url.endsWith("/login")) return reply({ cookies: ["JSESSIONID=abc"] });
+        return reply({ status: 401, body: "badCredentials" });
+      };
+      try {
+        await createAuthClient({ fetchImpl, baseUrl: "https://www.hemkop.se" })
+          .login({ username: "a@b.se", password: "SUPERHEMLIGT" });
+      } catch { /* förväntat */ }
+    } finally {
+      console.log = origLog; console.error = origErr;
+    }
+    assertFalse(seen.join(" ").includes("SUPERHEMLIGT"), "SÄKERHET: lösenordet loggas aldrig");
+  }
+}
+
 console.log(`\n${passed} passerade, ${failed} failade`);
 if (failed > 0) {
   console.log("\nFailures:");
