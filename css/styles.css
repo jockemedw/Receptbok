@@ -6906,3 +6906,88 @@ button.storepick-row:active { border-color: var(--lichen); background: var(--mos
 @media (prefers-reduced-motion: reduce) {
   .daypick-row { transition: none; }
 }
+
+/* ── Koppla butik med eget konto (Session 136) ─────────────────────────────
+   Hemköp kan kopplas direkt i appen med användarnamn + lösenord; Willys kräver
+   webbläsartillägget eftersom inloggningen där går via BankID. */
+.storepick-line {
+  display: flex;
+  align-items: stretch;
+  gap: 0.4rem;
+}
+.storepick-line .storepick-row { flex: 1 1 auto; }
+.storepick-edit {
+  flex: 0 0 auto;
+  min-width: 44px;
+  min-height: 44px;
+  align-self: center;
+  padding: 0 0.7rem;
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.storepick-account {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  margin-top: 0.1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Okopplad butik som GÅR att koppla här — inbjudande, inte dämpad som is-off */
+.storepick-row.is-connect {
+  border-style: dashed;
+  border-color: var(--lichen);
+}
+.storepick-row.is-connect .storepick-hint { color: var(--lichen-deep); }
+
+.storelogin-lead {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 0.9rem;
+}
+.storelogin-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--forest-deep);
+  margin-bottom: 0.25rem;
+}
+.storelogin-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 0.8rem;
+  background: var(--paper);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  color: var(--forest-deep);
+  font-family: inherit;
+  font-size: 1rem;          /* ≥16px → iOS zoomar inte in fältet vid fokus */
+}
+.storelogin-input:focus {
+  outline: none;
+  border-color: var(--lichen);
+}
+.storelogin-err {
+  color: var(--rust-deep);
+  font-size: 0.82rem;
+  margin-bottom: 0.6rem;
+  min-height: 1em;
+}
+.storelogin-remove {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 0.4rem;
+  background: none;
+  border: none;
+  color: var(--rust-deep);
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}

@@ -1,9 +1,32 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–133. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–135. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
 
 ---
 
+**Session 135 — Hemköp går att handla från: butiksval i inköpslistan, dispatchen är inte längre Willys-låst (datamuterande, mobil-verifiering kvar).**
+
+Joakim har ett Hemköp-inlogg och ville kunna fylla den korgen från inköpslistan, precis som Willys-korgen.
+
+**Grundfrågan var redan besvarad.** Willys och Hemköp ligger båda på Axfood-plattformen, och `scripts/hemkop-cart-poc.mjs` kördes skarpt 2026-06-23 med alla prober PASS — auth, `/search`, `addProducts` och verify svarade 200, koden landade i korgen, format `<id>_ST`. Arbetet var alltså inte utforskning utan parametrisering: bas-URL och cookie-uppsättning är det enda som skiljer butikerna.
+
+**Butiksregister.** Nytt `api/_shared/axfood-stores.js` håller allt butiksspecifikt på ett ställe (bas-URL, korg-URL, cookie-domän, `hasOffers`, `hasEnvFallback`). `resolveStore()` ger `null` på okänt id — dispatchen svarar hellre 400 än lägger varorna i fel butiks korg. De två klienter som blev genuint flerbutiks bytte namn därefter: `willys-cart-client.js` → **`axfood-cart-client.js`** och `willys-search.js` → **`axfood-search.js`**, båda med `baseUrl` som defaultar till Willys. `willys-offers.js` och `willys-matcher.js` behöll sina namn — reor är Willys-only per beslut, och canon-lexikonet var redan butiksgeneriskt.
+
+**Bara korgfyllning för Hemköp (Joakims avgränsning).** Prisoptimera/reor fortsätter läsa Willys. Det tog också bort den enda öppna detaljen i den gamla statusnoteringen: Hemköps butiks-ID behövdes bara för campaigns-endpointen, och den anropas aldrig. För Hemköp går `offers: []` in i `runDispatch`, som då faller igenom till produktsök för varje canon — ingen ändring behövdes i `dispatch-matcher.js`.
+
+**Cookies per butik.** Gist-schemat fick `users.<id>.stores.<butik>`, och `readUser`/`writeUser` tar nu ett butiksargument. Bakåtkompatibelt åt båda håll: Willys **läser** de gamla platta fälten om `stores.willys` saknas, och **skriver** dem parallellt så en rollback till föregående kodversion hittar cookien utan datamigrering. Hemköp har medvetet ingen sådan fallback — varken platt läsning eller `WILLYS_COOKIE`-env — eftersom att ärva Willys-cookien skulle betyda att varorna tyst hamnar i fel butik. `runRefresh` kräver `storeId` bara för Willys och behandlar saknat `store`-fält som Willys, så en icke-uppdaterad extension fortsätter fungera.
+
+**UI: en knapp, ett val.** "Skicka till Willys" heter nu **"Skicka till butik"** och öppnar en bottom-sheet (`#shopStoreSheet`) som listar **båda** butikerna. Butik utan cookies visas kvar men dämpad med "Behöver kopplas" — annars fanns ingen synlig väg till att koppla den andra butiken. Sheeten registrerades i `closeAnyOpenSheet()` **och** Escape-listan i `js/app.js` direkt, alltså precis den lucka dagväljaren fick lappa i efterhand förra sessionen. Bekräftelsedialog, laddtext, resultat och länkknapp är butiksmedvetna; `cartUrl` kommer från backend. **Detalj som räddades ur befintlig kod:** korg-länken pekar på butikens *startsida*, inte `/cart` — den 404:ar hos Willys, och registret ärver den läxan för Hemköp.
+
+**Extensionen (v1.1.0).** `hemkop.se` tillagt i host_permissions; `background.js` kör nu en butikslista med separat CSRF, cookie-domän, 7-dagarströskel och in-flight-flagga per butik — annars hade ett färskt Willys-besök blockerat Hemköps allra första refresh. Gamla `csrfToken`/`lastRefreshAt` migreras engångs till Willys-nycklarna så tillägget inte ser ut att ha glömt bort sig. Popupen visar en statusprick per butik.
+
+**Ändringens natur:** **datamuterande** (skriver i en extern varukorg). Ingen migration, inga nya filer i `api/` — Hemköp är en `store`-parameter på befintliga `dispatch-to-willys.js`, så 12-gränsen (invariant #3) är intakt. Hela sviten grön: dispatch 123 (från 107), cookies 60 (från 37), övriga oförändrade. Hook-mönstren i `.claude/settings.json` följer de nya filnamnen. **styles v191/app v154/SW v105.**
+
+**Medvetet utanför scope:** "Kopiera AI-inköpsprompt" (`dispatch-preferences.js`) säger fortfarande "Du ska handla på willys.se åt mig" — ett separat, browser-drivet spår som inte halvbyggs här. Dispatch-endpointen saknar fortfarande JWT (den tar extensionens shared secret); oförändrat, fortsatt öppet.
+
+**Kvar från tidigare:** Session 134:s dagväljare, Session 132:s inköpslista-fixar och Session 131:s rundor 2–8 väntar fortfarande på skarp mobilkoll (se kön).
+
+---
 **Session 134 — Ingredienser till inköpslistan är nu ett helt manuellt steg: välj vilka dagar du handlar för (datamuterande, mobil-verifiering kvar).**
 
 Joakims önskemål: kunna generera och skicka **valfritt urval dagars** ingredienser till inköpslistan — oavsett om det gjorts tidigare — och att detta **ersätter** det automatiska bygget efter genererad matsedel.

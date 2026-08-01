@@ -26,9 +26,12 @@ import { createCartClient } from "./_shared/axfood-cart-client.js";
 import { matchCanons } from "./_shared/dispatch-matcher.js";
 import { parseIngredient, normalizeName, categorize } from "./_shared/shopping-builder.js";
 import { createSecretsStore } from "./_shared/secrets-store.js";
+import { createAuthClient, CredentialsRejected } from "./_shared/axfood-auth.js";
+import { readCredentials, saveCredentials, clearCredentials, credentialStatus } from "./_shared/store-credentials.js";
+import { requireUser } from "./_shared/handler.js";
 import { STORES, STORE_IDS, DEFAULT_STORE, resolveStore } from "./_shared/axfood-stores.js";
 import { readFileRaw } from "./_shared/github.js";
-import { db } from "./_shared/supabase.js";
+import { db, getHouseholdId } from "./_shared/supabase.js";
 import { notifyAlert } from "./_shared/alert.js";
 import { timingSafeEqual } from "node:crypto";
 
@@ -46,12 +49,23 @@ export function secretsMatch(a, b) {
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Refresh-Secret");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Refresh-Secret, Authorization");
   if (req.method === "OPTIONS") return res.status(200).end();
 
   // Sub-route: cookie-refresh från Chrome-extensionen
   if (req.query?.op === "refresh-cookies") {
     return handleRefreshCookies(req, res);
+  }
+
+  // Sub-routes: butiksinloggning som familjen anger i appen. Till skillnad från
+  // cookie-refreshen (som kommer från en extension utan session och därför
+  // autentiseras med delad hemlighet) görs de här av en INLOGGAD familjemedlem
+  // → JWT-krav enligt invariant #4. Hela filen wrappas medvetet inte: det
+  // skulle bryta både den publika GET:en och extensionens väg.
+  if (req.query?.op === "save-credentials" || req.query?.op === "clear-credentials") {
+    if (req.method !== "POST") return res.status(405).json({ error: "Metod ej tillåten" });
+    if (!(await requireUser(req, res))) return;
+    return handleCredentials(req, res);
   }
 
   // GITHUB_GIST_PAT = classic token med gist-scope (krävs för gist-läsning;
@@ -63,10 +77,28 @@ export default async function handler(req, res) {
   // GET: butiksstatus för väljaren. featureAvailable behålls så att frontend och
   // backend kan deployas i valfri ordning utan att knappen försvinner.
   if (req.method === "GET") {
+    // Sparade inloggningar räknas som "kopplad" även utan cookie — det är hela
+    // poängen med lösenordsvägen. Misslyckas läsningen (tabellen inte skapad än)
+    // faller vi tillbaka på cookie-status, exakt som före Session 136.
+    let creds = new Map();
+    try {
+      creds = await credentialStatus({ householdId: await getHouseholdId() });
+    } catch { /* ingen tabell / ingen DB → behandla som inga sparade uppgifter */ }
+
     const stores = [];
     for (const id of STORE_IDS) {
+      const shop = STORES[id];
       const s = await resolveStoreSecrets({ secretsStore, store: id, env: process.env, userId: "joakim" });
-      stores.push({ id, label: STORES[id].label, available: !!s });
+      const saved = creds.get(id) || null;
+      stores.push({
+        id,
+        label: shop.label,
+        available: !!s || (shop.hasPasswordLogin && !!saved),
+        // Hur butiken KAN kopplas — styr vilken väg UI:t erbjuder.
+        connectVia: shop.hasPasswordLogin ? "password" : "extension",
+        // Kontonamnet, aldrig lösenordet.
+        connectedAs: saved?.username || null,
+      });
     }
     return res.status(200).json({ featureAvailable: stores.some(s => s.available), stores });
   }
@@ -85,7 +117,15 @@ export default async function handler(req, res) {
     });
   }
 
-  const secrets = await resolveStoreSecrets({ secretsStore, store: shop.id, env: process.env, userId: "joakim" });
+  // householdId behövs för sparade butiksinloggningar. Misslyckas läsningen
+  // körs dispatchen vidare på cookie-vägen precis som före Session 136.
+  let householdId = null;
+  try { householdId = await getHouseholdId(); } catch { /* login-vägen står över */ }
+
+  const secrets = await resolveStoreSecrets({
+    secretsStore, store: shop.id, env: process.env, userId: "joakim",
+    login: householdId ? { householdId } : null,
+  });
   if (!secrets) {
     return res.status(200).json({ featureAvailable: false, store: { id: shop.id, label: shop.label } });
   }
@@ -103,11 +143,25 @@ export default async function handler(req, res) {
     const result = await runDispatch({ shoppingList, offers, searchClient, cartClient, blockedBrands, preferences });
 
     if (!result.ok && result.error === "auth_expired") {
-      await notifyAlert(`Receptboken: ${shop.label}-cookies har gått ut — varukorgsexport fungerar inte förrän de förnyas.`);
+      // Har butiken lösenordsinloggning kan vi laga det här själva: logga in EN
+      // gång och kör om. Bara ett omtag — fler försök är vägen till en låst
+      // användare. Misslyckas det faller vi igenom till samma besked som förut.
+      const retried = await retryWithFreshLogin({
+        shop, householdId, secretsStore, secrets,
+        run: (fresh) => runDispatch({
+          shoppingList, offers, searchClient, blockedBrands, preferences,
+          cartClient: createCartClient({ cookies: fresh.cookies, csrf: fresh.csrf, baseUrl: shop.baseUrl }),
+        }),
+      });
+      if (retried?.ok) return res.status(200).json(dispatchPayload(retried, shop));
+
+      await notifyAlert(`Receptboken: ${shop.label}-kopplingen har gått ut — varukorgsexport fungerar inte förrän den förnyas.`);
       return res.status(200).json({
         ok: false,
         error: "auth_expired",
-        message: `Kopplingen till ${shop.label} behöver förnyas. Utskicket fungerar igen när den är uppdaterad.`,
+        message: shop.hasPasswordLogin
+          ? `Kunde inte logga in på ${shop.label} — kontrollera användarnamn och lösenord under "Skicka till butik".`
+          : `Kopplingen till ${shop.label} behöver förnyas. Utskicket fungerar igen när den är uppdaterad.`,
       });
     }
     if (!result.ok && result.error === "no_matches") {
@@ -124,15 +178,7 @@ export default async function handler(req, res) {
         message: `Kunde inte skicka till ${shop.label} — prova igen om en stund.`,
       });
     }
-    return res.status(200).json({
-      ok: true,
-      addedCount: result.addedCount,
-      missing: result.missing,
-      cartUrl: shop.cartUrl,
-      store: { id: shop.id, label: shop.label },
-      sources: result.sources,
-      prefMisses: result.prefMisses || [],
-    });
+    return res.status(200).json(dispatchPayload(result, shop));
   } catch (err) {
     console.error("dispatch-to-willys error:", err?.message || err);
     return res.status(500).json({
@@ -141,6 +187,116 @@ export default async function handler(req, res) {
       message: `Något gick fel när listan skulle skickas till ${shop.label} — prova igen om en stund.`,
     });
   }
+}
+
+// Lyckat dispatch-svar. Egen funktion sedan omtaget efter ny inloggning
+// (retryWithFreshLogin) behöver returnera exakt samma form.
+function dispatchPayload(result, shop) {
+  return {
+    ok: true,
+    addedCount: result.addedCount,
+    missing: result.missing,
+    cartUrl: shop.cartUrl,
+    store: { id: shop.id, label: shop.label },
+    sources: result.sources,
+    prefMisses: result.prefMisses || [],
+  };
+}
+
+// Sessionen dog mitt i dispatchen. Har butiken lösenordsinloggning: logga in EN
+// gång, spara den färska sessionen och kör om körningen. Returnerar null om
+// vägen inte finns eller om något går fel — anroparen visar då sitt vanliga
+// "behöver förnyas"-besked.
+//
+// Aldrig mer än ETT försök: `secrets.source === "login"` betyder att vi redan
+// loggade in i den här körningen, och då är problemet inte en gammal cookie.
+async function retryWithFreshLogin({ shop, householdId, secretsStore, secrets, run }) {
+  if (!shop.hasPasswordLogin || !householdId) return null;
+  if (secrets.source === "login") return null;
+
+  try {
+    const fresh = await loginAndStore({ shop, householdId, secretsStore });
+    if (!fresh) return null;
+    console.log(`dispatch store=${shop.id} source=login (omtag efter utgången session)`);
+    return await run(fresh);
+  } catch (err) {
+    // CredentialsRejected loggas som fel uppgifter, inte som ett tekniskt fel.
+    console.error(`dispatch ${shop.id}: omtag med ny inloggning misslyckades:`, err?.rejected ? "uppgifterna avvisades" : (err?.message || err));
+    return null;
+  }
+}
+
+// Loggar in med hushållets sparade uppgifter och skriver den färska sessionen
+// till gisten, så nästa dispatch slipper logga in igen (samma lagring som
+// extensionen använder — ingen ny infrastruktur).
+async function loginAndStore({ shop, householdId, secretsStore, env = process.env, fetchImpl = fetch }) {
+  const creds = await readCredentials({ householdId, store: shop.id, env });
+  if (!creds) return null;
+
+  const auth = createAuthClient({ fetchImpl, baseUrl: shop.baseUrl });
+  const { cookie, csrf } = await auth.login(creds);
+
+  if (secretsStore) {
+    try {
+      await secretsStore.writeUser("joakim", shop.id, { cookie, csrf });
+    } catch (err) {
+      // Sessionen fungerar ändå den här körningen — bara nästa får logga in igen.
+      console.error(`loginAndStore: kunde inte spara ${shop.id}-sessionen:`, err?.message || err);
+    }
+  }
+  return { cookies: cookie, csrf, storeId: env.WILLYS_STORE_ID || "2160", source: "login" };
+}
+
+// Sub-routes ?op=save-credentials / ?op=clear-credentials: familjens egna
+// butiksinloggningar, angivna i appen. JWT-kontrollerad av anroparen.
+//
+// Lösenordet krypteras före lagring och returneras ALDRIG — svaret bär bara
+// användarnamnet så UI:t kan visa vilket konto som är kopplat.
+async function handleCredentials(req, res) {
+  const { store, username, password } = req.body || {};
+  const shop = resolveStore(store);
+  if (!shop) {
+    return res.status(400).json({ error: "Okänd butik." });
+  }
+  if (!shop.hasPasswordLogin) {
+    return res.status(400).json({
+      error: `${shop.label} kan inte kopplas med lösenord — den inloggningen kräver BankID.`,
+    });
+  }
+
+  let householdId;
+  try {
+    householdId = await getHouseholdId();
+  } catch {
+    return res.status(500).json({ error: "Kunde inte hitta hushållsinformation." });
+  }
+
+  if (req.query.op === "clear-credentials") {
+    await clearCredentials({ householdId, store: shop.id });
+    return res.status(200).json({ ok: true, store: shop.id, connectedAs: null });
+  }
+
+  if (typeof username !== "string" || !username.trim() || typeof password !== "string" || !password) {
+    return res.status(400).json({ error: "Fyll i både användarnamn och lösenord." });
+  }
+  if (!process.env.STORE_CRED_KEY) {
+    return res.status(500).json({ error: "Butiksinloggningar är inte påslaget än — kontakta den som sköter appen." });
+  }
+
+  // Verifiera uppgifterna direkt: bättre att få veta här än vid nästa utskick.
+  // ETT försök, ingen retry (kontolåsningsskydd i axfood-auth.js).
+  try {
+    const auth = createAuthClient({ baseUrl: shop.baseUrl });
+    await auth.login({ username: username.trim(), password });
+  } catch (err) {
+    if (err instanceof CredentialsRejected || err?.rejected) {
+      return res.status(400).json({ error: `Kunde inte logga in på ${shop.label} — kontrollera användarnamn och lösenord.` });
+    }
+    return res.status(502).json({ error: `Kunde inte nå ${shop.label} just nu — prova igen om en stund.` });
+  }
+
+  const saved = await saveCredentials({ householdId, store: shop.id, username: username.trim(), password });
+  return res.status(200).json({ ok: true, store: shop.id, connectedAs: saved.username });
 }
 
 // Sub-route ?op=refresh-cookies: tar emot cookie+CSRF från Chrome-extensionen
@@ -216,7 +372,7 @@ export async function runRefresh({ secretHeader, expectedSecret, payload, store 
 //
 // Returnerar { cookies, csrf, storeId, source } eller null om ingen källa har
 // både cookie och csrf.
-export async function resolveStoreSecrets({ secretsStore, store = DEFAULT_STORE, env, userId = "joakim" }) {
+export async function resolveStoreSecrets({ secretsStore, store = DEFAULT_STORE, env, userId = "joakim", login = null }) {
   const shop = resolveStore(store);
   if (!shop) return null;
 
@@ -242,6 +398,29 @@ export async function resolveStoreSecrets({ secretsStore, store = DEFAULT_STORE,
       storeId: env.WILLYS_STORE_ID || "2160",
       source: "env",
     };
+  }
+
+  // Sista utvägen: logga in med hushållets egna uppgifter (Session 136).
+  // Ligger sist med flit — finns redan en färsk cookie är den gratis, medan en
+  // inloggning kostar tre anrop mot butiken. I praktiken betyder ordningen att
+  // extensionen är reserv och inloggningen det som får det att fungera ändå.
+  //
+  // Kräver att anroparen skickat med `login: { householdId }`. Utan den
+  // parametern beter sig funktionen exakt som före Session 136 — det är därför
+  // befintliga tester och Willys-vägen är orörda.
+  if (login?.householdId && shop.hasPasswordLogin) {
+    try {
+      const fresh = await loginAndStore({
+        shop, householdId: login.householdId, secretsStore, env,
+        ...(login.fetchImpl ? { fetchImpl: login.fetchImpl } : {}),
+      });
+      if (fresh) return fresh;
+    } catch (err) {
+      // Fel uppgifter loggas som just det — inte som ett tekniskt haveri — och
+      // sväljs här: dispatchen svarar "behöver kopplas" i stället för att krascha.
+      console.error(`resolveStoreSecrets: inloggning mot ${shop.id} misslyckades:`,
+        err?.rejected ? "uppgifterna avvisades" : (err?.message || err));
+    }
   }
   return null;
 }
