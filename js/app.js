@@ -160,7 +160,7 @@ function popSheetHistory() {
 function closeAnyOpenSheet() {
   if (document.getElementById('dlxSheet')?.classList.contains('open')) { window.dlxCloseSheet?.(); return; }
   if (document.querySelector('.po-overlay')) { window.closePrisoptimera?.(); return; }
-  for (const id of ['sortSheet', 'filterSheet', 'planSheet']) {
+  for (const id of ['sortSheet', 'filterSheet', 'planSheet', 'shopDaysSheet']) {
     const s = document.getElementById(id);
     if (s && s.classList.contains('open')) { closeSheet(id); return; }
   }
@@ -184,7 +184,7 @@ document.body.addEventListener('click', e => {
 
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
-  ['sortSheet', 'filterSheet', 'planSheet'].forEach(id => {
+  ['sortSheet', 'filterSheet', 'planSheet', 'shopDaysSheet'].forEach(id => {
     const s = document.getElementById(id);
     if (s && !s.hidden) closeSheet(id);
   });
