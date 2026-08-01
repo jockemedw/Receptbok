@@ -706,7 +706,7 @@ export async function confirmPlan() {
   const btn      = document.getElementById('confirmPlanBtn');
   const statusEl = document.getElementById('confirmStatus');
   btn.disabled    = true;
-  btn.textContent = 'Bygger inköpslista…';
+  btn.textContent = 'Bekräftar…';
   statusEl.textContent = '';
 
   try {
@@ -715,19 +715,21 @@ export async function confirmPlan() {
     if (!res.ok) throw serverError(data.error);
 
     window.planConfirmed = true;
+    if (window._lastPlan) window._lastPlan.confirmedAt = data.weeklyPlan?.confirmedAt || new Date().toISOString();
     document.getElementById('confirmPlanWrap').style.display = 'none';
     // Bekräftad plan → ta bort snabbåtgärderna (slumpa/byt dag) från korten
     document.querySelectorAll('.day-card-actions').forEach(b => b.remove());
 
-    window.renderIngredientPreview(
-      data.shoppingList?.recipeItems || null,
-      data.shoppingList?.recipeItemsMovedAt || null,
-      true
-    );
-    window.showToast?.('Matsedeln bekräftad — veckans ingredienser är klara.', { type: 'success' });
+    // Inköpslistan byggs INTE här längre (Session 134) — familjen väljer själv
+    // vilka dagar som ska handlas. Toasten bär genvägen till det steget.
+    window.showToast?.('Matsedeln bekräftad — välj sedan vilka dagar du vill handla för.', {
+      type: 'success',
+      duration: 6000,
+      action: { label: 'Välj dagar', onClick: () => window.openShoppingDayPicker?.() },
+    });
   } catch (e) {
     btn.disabled    = false;
-    btn.textContent = '✓ Bekräfta och bygg inköpslista';
+    btn.textContent = '✓ Bekräfta matsedeln';
     statusEl.textContent = userFacingMessage(e, 'Kunde inte bekräfta — prova igen.');
     statusEl.className   = 'confirm-status';
   }
@@ -788,7 +790,7 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
   }
   if (confirmBtn) {
     confirmBtn.disabled = false;
-    confirmBtn.textContent = '✓ Bekräfta och bygg inköpslista';
+    confirmBtn.textContent = '✓ Bekräfta matsedeln';
   }
   const discardBtn = document.getElementById('discardPlanBtn');
   if (discardBtn) {

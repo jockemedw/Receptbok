@@ -218,6 +218,57 @@ export async function rebuildActiveList({
   };
 }
 
+// Manuellt dagurval (Session 134) — familjen väljer själv vilka dagar
+// inköpslistan ska täcka. Listan byggs om så den täcker EXAKT `dates`:
+//
+//   - Valda dagar får spärren nollad (shopped_at = null) FÖRE ombygget, så en
+//     dag som redan handlats kan skickas till listan igen ("oavsett om det är
+//     gjort tidigare"). Utan nollningen skulle dagen stå som både inhandlad
+//     och på listan — samma ordning som add_day använder.
+//   - Dagar som INTE är med i urvalet faller ur täckningen. Deras shopped_at
+//     rörs inte: historiken om att de en gång handlats står kvar.
+//   - Dagar utan recept och fria dagar filtreras bort tyst men rapporteras i
+//     `skipped` så UI:t kan berätta vad som hoppades över.
+//
+// Tomt urval är tillåtet: receptvarorna töms och bara Egna tillägg blir kvar.
+export async function setCoveredDays({ householdId, dates, database = db }) {
+  const wanted = [...new Set(dates || [])].sort();
+
+  let usable = [];
+  if (wanted.length) {
+    const { data, error } = await database
+      .from("meal_days")
+      .select("date, recipe_id, blocked")
+      .eq("household_id", householdId)
+      .in("date", wanted);
+    if (error) throw new Error("Kunde inte läsa matsedelns dagar — prova igen.");
+    usable = (data || [])
+      .filter((r) => r.recipe_id && r.blocked !== true)
+      .map((r) => r.date)
+      .sort();
+  }
+  const usableSet = new Set(usable);
+  const skipped = wanted.filter((d) => !usableSet.has(d));
+
+  if (usable.length) {
+    const { error: clrErr } = await database
+      .from("meal_days")
+      .update({ shopped_at: null })
+      .eq("household_id", householdId)
+      .in("date", usable);
+    if (clrErr) throw new Error("Kunde inte lägga dagarna på inköpslistan — prova igen.");
+  }
+
+  const { shoppingList } = await rebuildActiveList({
+    householdId,
+    coverDates: usable,
+    stampMovedAt: true,
+    database,
+  });
+
+  return { shoppingList, coveredDates: usable, skipped };
+}
+
 // "Vi har handlat" — stämplar alla o-inhandlade täckta dagar på aktiva listan
 // och konverterar obockade, icke-skafferi receptvaror till Egna tillägg
 // (source='manual') så de överlever nästa ombyggnad. Varorna byggs INTE om —

@@ -19,7 +19,7 @@
 //      (Spärren: de inhandlade dagarna kommer aldrig tillbaka.)
 
 import {
-  rebuildActiveList, markRoundShopped, getActiveList, fetchCoverage,
+  rebuildActiveList, setCoveredDays, markRoundShopped, getActiveList, fetchCoverage,
   unshoppedDates, pantryKey,
 } from "../api/_shared/shopping-store.js";
 
@@ -119,6 +119,9 @@ const RECIPES = [
   { id: 2, title: "Sallad", servings: 4, ingredients: ["1 st gurka", "2 dl grädde"] },
   { id: 3, title: "Gryta", servings: 4, ingredients: ["500 g högrev"] },
 ];
+// setCoveredDays hämtar recepten ur db (ingen recipes-parameter) → fixturen
+// måste bära household_id precis som de riktiga raderna gör.
+const HH_RECIPES = RECIPES.map((r) => ({ ...r, household_id: HH }));
 const day = (date, extra = {}) => ({ household_id: HH, date, recipe_id: 1, blocked: false, plan_id: null, ...extra });
 const allItems = (db, listId) => db._state.items.filter((i) => i.list_id === listId);
 const itemNamed = (db, listId, prefix) =>
@@ -278,6 +281,77 @@ const itemNamed = (db, listId, prefix) =>
   // De inhandlade dagarna är fortfarande stämplade
   const mon = db._state.mealDays.find((d) => d.date === "2026-07-20");
   assertTrue(!!mon.shopped_at, "scenario: måndagens stämpel orörd av ombygget");
+}
+
+// ── 8. setCoveredDays: manuellt dagurval (Session 134) ──────────────────────
+{
+  const db = makeMockDb({
+    mealDays: [
+      day("2026-07-20", { recipe_id: 1 }),                    // mån, torsk+grädde
+      day("2026-07-21", { recipe_id: 2 }),                    // tis, gurka+grädde
+      day("2026-07-22", { recipe_id: 3 }),                    // ons, högrev
+      day("2026-07-23", { recipe_id: null }),                 // tor, inget recept
+      day("2026-07-24", { recipe_id: 3, blocked: true }),     // fre, fri dag
+    ],
+    recipes: HH_RECIPES,
+  });
+
+  // Urval mån+ons → listan täcker exakt dem
+  const first = await setCoveredDays({ householdId: HH, dates: ["2026-07-22", "2026-07-20"], database: db });
+  assertEq(first.coveredDates, ["2026-07-20", "2026-07-22"], "set_days: täcker exakt de valda dagarna");
+  assertTrue(!!itemNamed(db, first.shoppingList.listId, "torsk"), "set_days: måndagens vara på listan");
+  assertTrue(!!itemNamed(db, first.shoppingList.listId, "högrev"), "set_days: onsdagens vara på listan");
+  assertTrue(!itemNamed(db, first.shoppingList.listId, "gurka"), "set_days: ovald tisdag hamnar INTE på listan");
+  assertTrue(!!first.shoppingList.recipeItemsMovedAt, "set_days: varorna flyttas fram direkt (stampMovedAt)");
+
+  // Dagar utan recept / fria dagar hoppas över och rapporteras
+  const skippy = await setCoveredDays({ householdId: HH, dates: ["2026-07-20", "2026-07-23", "2026-07-24"], database: db });
+  assertEq(skippy.coveredDates, ["2026-07-20"], "set_days: bara dagar med recept täcks");
+  assertEq(skippy.skipped, ["2026-07-23", "2026-07-24"], "set_days: dag utan recept + fri dag rapporteras som skippade");
+
+  // Nytt urval ersätter det gamla — bortvald dag faller ur täckningen
+  const second = await setCoveredDays({ householdId: HH, dates: ["2026-07-21"], database: db });
+  assertEq(second.coveredDates, ["2026-07-21"], "set_days: nytt urval ersätter det gamla");
+  assertTrue(!itemNamed(db, second.shoppingList.listId, "torsk"), "set_days: bortvald dags vara försvinner");
+  assertTrue(!!itemNamed(db, second.shoppingList.listId, "gurka"), "set_days: nyvald dags vara tillkommer");
+  const mon = db._state.mealDays.find((d) => d.date === "2026-07-20");
+  assertTrue(mon.shopping_list_id == null, "set_days: bortvald o-inhandlad dag får täckningspekaren nollad");
+}
+
+// ── 8b. setCoveredDays: redan inhandlad dag kan skickas igen ────────────────
+{
+  const db = makeMockDb({
+    mealDays: [day("2026-07-20", { recipe_id: 1 }), day("2026-07-21", { recipe_id: 2 })],
+    recipes: HH_RECIPES,
+  });
+  await setCoveredDays({ householdId: HH, dates: ["2026-07-20"], database: db });
+  await markRoundShopped(HH, db);
+  const stamped = db._state.mealDays.find((d) => d.date === "2026-07-20");
+  assertTrue(!!stamped.shopped_at, "set_days: dagen är stämplad som inhandlad");
+
+  // "Oavsett om det är gjort tidigare" — samma dag väljs igen
+  const again = await setCoveredDays({ householdId: HH, dates: ["2026-07-20", "2026-07-21"], database: db });
+  assertEq(again.coveredDates, ["2026-07-20", "2026-07-21"], "set_days: inhandlad dag kan väljas igen");
+  assertTrue(db._state.mealDays.find((d) => d.date === "2026-07-20").shopped_at == null,
+    "set_days: spärren nollas för omvald dag");
+  assertTrue(!!itemNamed(db, again.shoppingList.listId, "torsk"), "set_days: den redan handlade dagens varor kommer tillbaka");
+  const cov = unshoppedDates(await fetchCoverage(HH, again.shoppingList.listId, db));
+  assertEq(cov, ["2026-07-20", "2026-07-21"], "set_days: båda dagarna räknas som o-inhandlade igen");
+}
+
+// ── 8c. setCoveredDays: tomt urval tömmer receptvarorna, behåller Egna tillägg ─
+{
+  const db = makeMockDb({
+    mealDays: [day("2026-07-20", { recipe_id: 1 })],
+    recipes: HH_RECIPES,
+  });
+  const built = await setCoveredDays({ householdId: HH, dates: ["2026-07-20"], database: db });
+  db._state.items.push({ id: 9001, list_id: built.shoppingList.listId, name: "Toapapper", source: "manual", checked: false, position: 0, category: "Övrigt" });
+
+  const emptied = await setCoveredDays({ householdId: HH, dates: [], database: db });
+  assertEq(emptied.coveredDates, [], "set_days: tomt urval täcker inga dagar");
+  assertTrue(!itemNamed(db, emptied.shoppingList.listId, "torsk"), "set_days: receptvarorna töms vid tomt urval");
+  assertEq(emptied.shoppingList.manualItems, ["Toapapper"], "set_days: Egna tillägg överlever ett tomt urval");
 }
 
 // ── pantryKey-paritet ────────────────────────────────────────────────────────

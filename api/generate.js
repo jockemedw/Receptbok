@@ -1,6 +1,5 @@
 import { createSupabaseHandler } from "./_shared/handler.js";
 import { db, getHouseholdId } from "./_shared/supabase.js";
-import { rebuildActiveList } from "./_shared/shopping-store.js";
 import { fetchOffersFromWillys } from "./willys-offers.js";
 import { matchRecipe, buildDealCandidates } from "./_shared/willys-matcher.js";
 import { selectRecipes, bucketBySaving, hasTure } from "./_shared/select-recipes.js";
@@ -84,35 +83,6 @@ function recentlyUsedIds(history, days = 14) {
     if (date >= cutoffStr) ids.add(parseInt(id, 10));
   }
   return ids;
-}
-
-async function fetchExistingShoppingList(householdId) {
-  // Ett läsfel får inte tolkas som "ingen lista finns" — då tappas familjens
-  // manuella varor + bockar tyst vid regenerering. Kasta så genereringen avbryts.
-  const { data: lists, error: listsErr } = await db
-    .from("shopping_lists")
-    .select("id, recipe_items_moved_at")
-    .eq("household_id", householdId)
-    .eq("is_active", true)
-    .limit(1);
-  if (listsErr) throw listsErr;
-  if (!lists?.length) return null;
-
-  const list = lists[0];
-  const { data: items, error: itemsErr } = await db
-    .from("shopping_items")
-    .select("name, checked")
-    .eq("list_id", list.id)
-    .eq("source", "manual");
-  if (itemsErr) throw itemsErr;
-
-  const manualItems = (items || []).map((i) => i.name);
-  const checkedItems = {};
-  (items || []).filter((i) => i.checked).forEach((i) => {
-    checkedItems[`manual::${i.name}`] = true;
-  });
-
-  return { id: list.id, manualItems, checkedItems };
 }
 
 // Arkiverar ALLA kvarvarande dagar på den gamla planen i plan_archives, sedan
@@ -301,7 +271,6 @@ export default createSupabaseHandler(async (req, res) => {
     untested_count = 0,
     vegetarian_days = 0,
     ture_days = 0,
-    skip_shopping = false,
     blocked_dates = [],
     optimize_prices = false,
     season_weight = false,
@@ -333,10 +302,9 @@ export default createSupabaseHandler(async (req, res) => {
   };
 
   const householdId = await getHouseholdId();
-  const [allRecipes, historyData, existingShop, customRows] = await Promise.all([
+  const [allRecipes, historyData, customRows] = await Promise.all([
     fetchRecipes(householdId),
     fetchHistory(householdId),
-    skip_shopping ? Promise.resolve(null) : fetchExistingShoppingList(householdId),
     // Dagar familjen redan planerat SJÄLVA (custom days, plan_id = null) i
     // intervallet. De får ALDRIG skrivas över av genereringen (hård regel) — och
     // deras meal_days-rad ligger redan på (household_id, date), så en insert skulle
@@ -489,19 +457,10 @@ export default createSupabaseHandler(async (req, res) => {
   await activatePlanAtomic(newPlanId, start_date, householdId);
   await saveHistoryToSupabase(days, householdId);
 
-  let shoppingList = null;
-  if (!skip_shopping) {
-    // existingShop hämtades som pre-flight ovan (avbryter FÖRE planskrivningen
-    // vid läsfel); själva bevarandet av manuella varor + bockar gör motorn.
-    void existingShop;
-    const rebuilt = await rebuildActiveList({
-      householdId,
-      coverDates: days.filter((d) => d.recipeId).map((d) => d.date),
-      span: { startDate: start_date, endDate: end_date },
-      recipes: allRecipes,
-    });
-    shoppingList = rebuilt.shoppingList;
-  }
-
-  return res.status(200).json({ ok: true, days: days.length, weeklyPlan, shoppingList, deals, pricingDegraded });
+  // Inköpslistan rörs INTE här (Session 134). Genereringen skapar bara
+  // matsedeln; ingredienserna går till listan i ett separat, helt manuellt steg
+  // där familjen väljer vilka dagar som ska handlas
+  // (/api/shopping action:set_days). Den befintliga listan står orörd tills
+  // dess — inget försvinner för att någon genererar om matsedeln.
+  return res.status(200).json({ ok: true, days: days.length, weeklyPlan, deals, pricingDegraded });
 });

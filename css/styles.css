@@ -6625,3 +6625,178 @@ main#receptView {
   padding: 0.12rem 0.38rem;
   font-variant-numeric: tabular-nums;
 }
+
+/* ── Dagväljaren: manuellt urval av dagar till inköpslistan (Session 134) ──
+   Sheeten där familjen bockar i vilka dagars ingredienser som ska ligga på
+   listan. Touch-first: hela raden är klickyta, ≥44px hög. Tokenbaserad → båda
+   teman följer med utan egna dark-regler. */
+.daypick-panel {
+  display: flex;
+  flex-direction: column;
+  max-height: 86vh;
+}
+.daypick-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -0.25rem;
+  padding: 0 0.25rem;
+}
+.daypick-empty {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  text-align: center;
+  padding: 1.5rem 0.5rem;
+}
+.daypick-week {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 0.9rem 0.15rem 0.35rem;
+}
+.daypick-week:first-child { padding-top: 0.15rem; }
+
+.daypick-row {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-height: 52px;
+  padding: 0.5rem 0.7rem;
+  margin-bottom: 0.35rem;
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  background: var(--linen-card);
+  cursor: pointer;
+  transition: border-color 0.15s var(--ease-out), background 0.15s var(--ease-out);
+}
+.daypick-row.is-selected {
+  border-color: var(--lichen);
+  background: var(--moss-soft);
+}
+.daypick-check {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  accent-color: var(--lichen-deep);
+}
+.daypick-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.daypick-day {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.daypick-recipe {
+  font-size: 0.95rem;
+  color: var(--forest-deep);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.daypick-chips {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+}
+.daypick-chip {
+  font-size: 0.63rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  border-radius: 999px;
+  padding: 0.14rem 0.45rem;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+.daypick-chip.is-onlist { background: var(--moss-soft); color: var(--lichen-deep); border-color: var(--lichen); }
+.daypick-chip.is-shopped { background: var(--stone); color: var(--text-muted); }
+.daypick-chip.is-today { background: var(--clay); color: var(--rust-deep); }
+
+.daypick-more {
+  width: 100%;
+  min-height: 44px;
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.82rem;
+  padding: 0.6rem;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+}
+
+.daypick-foot {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--border);
+  padding-top: 0.8rem;
+  margin-top: 0.8rem;
+}
+.daypick-summary {
+  font-size: 0.85rem;
+  color: var(--forest);
+  text-align: center;
+  margin-bottom: 0.7rem;
+}
+.daypick-quick {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.7rem;
+}
+.daypick-quick-btn {
+  flex: 1 1 0;
+  min-height: 44px;
+  background: var(--linen-card);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  color: var(--forest);
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.daypick-save {
+  width: 100%;
+  min-height: 50px;
+  background: var(--rust);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.daypick-save:disabled { opacity: 0.6; cursor: default; }
+
+/* Ingången från Matsedelns ingrediensruta */
+.daypick-open-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  width: 100%;
+  min-height: 48px;
+  margin-bottom: 0.8rem;
+  background: var(--linen-card);
+  border: 1.5px solid var(--lichen);
+  border-radius: 12px;
+  color: var(--lichen-deep);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .daypick-row { transition: none; }
+}

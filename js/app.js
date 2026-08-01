@@ -11,6 +11,7 @@ import './ui/navigation.js';
 import './ui/feedback.js';
 import './ui/cook-mode.js';
 import './shopping/shopping-list.js';
+import './shopping/day-picker.js';
 import './shopping/dispatch-ui.js';
 import './lists/lists-view.js';
 import './weekly-plan/ingredient-preview.js';
