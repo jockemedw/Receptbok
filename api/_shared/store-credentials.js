@@ -27,7 +27,9 @@ export async function saveCredentials({ householdId, store, username, password, 
   };
   const { error } = await database.from("store_credentials").upsert(row, { onConflict: "household_id,store" });
   if (error) {
-    if (isMissingTable(error)) throw new Error("Butiksinloggningar är inte påslaget än — kontakta den som sköter appen.");
+    // Samma resonemang som STORE_CRED_KEY-kontrollen i dispatch-to-willys.js:
+    // bara en administratör kan hamna här, och då hjälper det exakta namnet.
+    if (isMissingTable(error)) throw new Error("Butiksinloggningar är inte aktiverade än — migration 010_store_credentials.sql är inte körd.");
     throw new Error("Kunde inte spara inloggningen — prova igen.");
   }
   return { store, username, updatedAt: row.updated_at };
