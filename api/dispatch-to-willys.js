@@ -279,8 +279,14 @@ async function handleCredentials(req, res) {
   if (typeof username !== "string" || !username.trim() || typeof password !== "string" || !password) {
     return res.status(400).json({ error: "Fyll i både användarnamn och lösenord." });
   }
+  // Administratörs-meddelande, inte ett familjemeddelande: den här vägen kan
+  // bara nås av den som sätter upp appen, och då är variabelns exakta namn det
+  // mest hjälpsamma som kan stå här (medvetet undantag från CLAUDE.md:s
+  // "inga tekniska termer" — den regeln skyddar familjen, inte administratören).
   if (!process.env.STORE_CRED_KEY) {
-    return res.status(500).json({ error: "Butiksinloggningar är inte påslaget än — kontakta den som sköter appen." });
+    return res.status(500).json({
+      error: "Butiksinloggningar är inte aktiverade än — krypteringsnyckeln STORE_CRED_KEY saknas i Vercel.",
+    });
   }
 
   // Verifiera uppgifterna direkt: bättre att få veta här än vid nästa utskick.

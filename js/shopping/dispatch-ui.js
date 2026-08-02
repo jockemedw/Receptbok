@@ -100,8 +100,8 @@ export function openStoreLogin(storeId) {
   const label = escapeHtml(s.label);
   body.innerHTML = `<form class="storelogin" onsubmit="return saveStoreLogin(event, '${escapeHtml(s.id)}')">
     <p class="storelogin-lead">Logga in med ditt vanliga konto hos ${label}. Uppgifterna sparas krypterat och används bara för att fylla din varukorg.</p>
-    <label class="storelogin-label" for="storeLoginUser">E-post eller användarnamn</label>
-    <input class="storelogin-input" id="storeLoginUser" type="email" inputmode="email"
+    <label class="storelogin-label" for="storeLoginUser">E-post eller kundnummer</label>
+    <input class="storelogin-input" id="storeLoginUser" type="text" inputmode="email"
            autocomplete="username" autocapitalize="none" spellcheck="false"
            value="${escapeHtml(s.connectedAs || '')}" required>
     <label class="storelogin-label" for="storeLoginPass">Lösenord</label>
