@@ -3,5 +3,7 @@
     "eldorado"
   ],
   "preferOrganic": {},
-  "preferSwedish": {}
+  "preferSwedish": {
+    "Fisk & kött": true
+  }
 }
