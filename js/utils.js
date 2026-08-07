@@ -88,13 +88,15 @@ export function addDaysIso(dateIso, n) {
   return fmtIso(d);
 }
 
-// Retro-planeringens fönster (Session 131): passerade dagar får bytas/flyttas/
-// redigeras t.o.m. detta datum bakåt (14 dagar — samma som recepthistoriken);
-// äldre är historik. EN regel för alla ytor: drag & släpp, byt/flytta-lägena,
-// dag-sheeten och editorerna. Servern speglar gränsen (RETRO_WINDOW_DAYS i
-// api/_shared/constants.js).
+// Retro-planeringens fönster: passerade dagar får bytas/flyttas/redigeras
+// t.o.m. detta datum bakåt. EN regel för alla ytor: drag & släpp,
+// byt/flytta-lägena, dag-sheeten och editorerna. Servern speglar gränsen
+// (RETRO_WINDOW_DAYS i api/_shared/constants.js) — håll siffrorna i synk.
+//
+// 45 dagar = hela tidslinjens horisont bakåt (TIMELINE_DAYS_CAP), så en passerad
+// dag hanteras precis som en kommande i hela den matsedel man ser (Session 137).
 export function retroWindowStartIso() {
-  return addDaysIso(fmtIso(new Date()), -14);
+  return addDaysIso(fmtIso(new Date()), -45);
 }
 
 // ISO 8601 veckonummer — måndag som första veckodag, v.1 innehåller 4 jan.

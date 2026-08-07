@@ -511,9 +511,9 @@ function heroDateRange(startIso, endIso) {
 
 // ── Dagskort ──────────────────────────────────────────────────────────────────
 
-// Retro-planering (Session 131): passerade dagar får bytas/flyttas/redigeras
-// inom retro-fönstret (14 dagar — EN regel för alla ytor, definierad i utils;
-// servern har samma gräns). Äldre = historik.
+// Passerade dagar hanteras precis som kommande — samma byten, flyttar och
+// redigeringar — i hela tidslinjens horisont bakåt. EN regel för alla ytor,
+// definierad i utils (retroWindowStartIso); servern har samma gräns.
 function dlxMinSwapIso() {
   return retroWindowStartIso();
 }
@@ -1089,13 +1089,13 @@ async function dlxPickSwapTarget(toDate) {
   // Förvalidera mot tidslinjen — begripligt besked direkt, ingen server-tur
   const t = (window._timelineByDate || {})[toDate];
   if (t) {
-    if (t.isArchive) { window.showToast?.('Arkiverade veckor är historik och kan inte ändras — bara dagar i aktuella matsedeln går att byta.', { type: 'info' }); return; }
+    if (t.isArchive) { window.showToast?.('Den här dagen kan inte bytas — ladda om sidan och prova igen.', { type: 'info' }); return; }
     if (t.blocked)   { window.showToast?.('Fria dagar kan inte bytas — ångra fri dag först.', { type: 'info' }); return; }
   }
-  // Retro-planering: passerade dagar är ok inom 14-dagarsfönstret (retro-byten
-  // vid omplanering i efterhand); äldre är historik — samma gräns som servern.
+  // Passerade dagar byts precis som kommande — hela tidslinjens horisont bakåt
+  // (samma gräns som servern, se retroWindowStartIso).
   if (toDate < dlxMinSwapIso() || swap.from < dlxMinSwapIso()) {
-    window.showToast?.('Dagar äldre än två veckor är historik och kan inte ändras.', { type: 'info' });
+    window.showToast?.('Dagen ligger längre bak än matsedeln sträcker sig och kan inte ändras.', { type: 'info' });
     return;
   }
 
@@ -1257,7 +1257,7 @@ function sheetRecipeHtml(d) {
     `<li><span class="dlx-step-num">${i + 1}</span><span>${esc(st)}</span></li>`).join('');
   const notes = r.notes ? `<div class="dlx-notes">💡 ${esc(r.notes)}</div>` : '';
   return `${back}
-    <p class="dlx-sheet-sub">${sheetWhen(d)}${d.isArchive ? ' · 📜 Historisk plan — bara för referens' : ''}</p>
+    <p class="dlx-sheet-sub">${sheetWhen(d)}</p>
     <p class="dlx-sheet-title">${esc(r.title)}</p>
     <div class="dlx-detail-head">
       <span class="dlx-status ${r.tested ? 'tested' : 'untested'}">${r.tested ? '✓ Provat' : 'Ej provat'}</span>
