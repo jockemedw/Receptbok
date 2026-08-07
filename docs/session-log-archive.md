@@ -1,6 +1,28 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–135. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–136. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 136 — Hemköp kopplas med eget lösenord i appen: dispatchen loggar in själv (datamuterande, PoC + migration väntar Joakim)
+
+Joakims fråga: *"Jag har ju egen inloggning med lösenord på Hemköp jämfört med Willys som bara har BankID. Det finns ingen öppning att du kan lägga till varorna åt mig som inloggad?"* — följt av *"Finns det en möjlighet att ange lösenord direkt i appen för mig? För framtida användarvänlighets skull?"*
+
+**Frågan var berättigad, och den gamla motiveringen höll inte.** Designspecen från 2026-04-25 förkastade server-side-login med två skäl: risk för BankID/SMS-OTP, och anti-bot-detektion. Det första gäller **bara Willys**. Hemköp ärvde ändå cookie-skördningen rakt av i Session 135, med priset att funktionen krävde handpåläggning (ladda om tillägget + besöka hemkop.se inloggad) och en cookie som dör var tredje månad.
+
+**Rekognosering före bygge (läs-only).** `hemkop.se/login` visade sig serveras av SAP Commerce **accstorefront** (`ng-app="ax.shopping.app"`) och dela ut **`JSESSIONID`** — samma sessionscookie `axfood-cart-client.js` redan använder. CSP-headern pekar på `*.commerce.ondemand.com` (Hybris i botten). CloudFront framför, **inga bot-manager-headers, ingen captcha** i sidskalet, och ett datacenter-IP fick 200. Lyckas inloggningen fungerar alltså hela befintliga pipelinen oförändrad. Kvarstående okändhet: sidan är ett Angular-skal utan `<form>`, så exakt endpoint måste fastställas empiriskt — därför en spike före kod i produktion.
+
+**Kontolåsning är den verkliga risken, inte tekniken.** Både `scripts/hemkop-login-poc.mjs` och `api/_shared/axfood-auth.js` bygger på samma hårda regel: kandidat-endpoints provas i tur och ordning **bara** så länge svaret betyder "endpointen finns inte" (404/405/501) — det är ingen inloggning och kostar inget försök. Så fort en endpoint avvisar uppgifterna (401/403/`badCredentials`) **stannar vi och kastar**; nästa kandidat provas aldrig med samma lösenord, och det finns ingen intern retry. Två tester räknar anropen just för att låsa det beteendet.
+
+**Lagring: krypterat i Supabase, inte i env vars.** Att uppgifterna ska kunna anges *i appen* utesluter Vercel-env — och gör funktionen användbar för främmande hushåll vid M1. Ny tabell `store_credentials` (migration `010`, RLS-mall från 002) + `api/_shared/crypto-box.js` (AES-256-GCM). Två lager: RLS hindrar att ett hushåll når ett annats rad, krypteringen gör att en databasdump ensam inte ger lösenorden — nyckeln (`STORE_CRED_KEY`) bor i Vercels env, aldrig i databasen. Lösenordet returneras **aldrig** till klienten; svaret bär bara användarnamnet.
+
+**Inkoppling utan att röra Willys.** `resolveStoreSecrets` fick login-källan **sist**, efter gist och env, och bara när anroparen skickar `login: { householdId }`. Utan den parametern beter sig funktionen exakt som förut — det är garantin (och två tester) för att Willys-vägen och alla gamla anrop är oförändrade. Efter lyckad inloggning skrivs sessionen tillbaka till gisten via befintliga `writeUser`, så nästa utskick slipper logga in igen: ingen ny infrastruktur, och extensionen är kvar som reserv. Dör sessionen mitt i ett utskick görs **ett** omtag med ny inloggning.
+
+**UI.** Butiksväljaren skilde förut bara på kopplad/okopplad. Nu tre lägen via `connectVia` från backend: kopplad (med kontonamn + "Ändra"), kopplingsbar med lösenord (Hemköp — tryckbar rad som öppnar formuläret i samma sheet), och kräver tillägget (Willys — oförändrad text, eftersom BankID inte går att automatisera). Fältet är `type="password"`/`autocomplete="current-password"`, 16px så iOS inte zoomar. Nya endpoints `?op=save-credentials`/`?op=clear-credentials` ligger på befintliga `dispatch-to-willys.js` (12-gränsen intakt, fortfarande exakt 12 filer) och kräver **JWT** via `requireUser` — invariant #4. Filen wrappas medvetet inte i sin helhet: det skulle bryta både den publika GET:en och extensionens shared-secret-väg. Sparningen verifierar uppgifterna direkt mot butiken, så fel lösenord upptäcks vid kopplingen och inte vid nästa utskick.
+
+**Ändringens natur:** **datamuterande** (skriver hushållets butiksinloggning, skriver i extern varukorg). Hela sviten grön; dispatch 123 → **140**. Nya fall täcker kontolåsningsskyddet (räknade anrop), att Willys aldrig når lösenordsvägen, att en färsk cookie vinner över inloggning, krypteringens rundgång/fel nyckel, och att **lösenordet aldrig når loggen**. **styles v192/app v155/SW v106.**
+
+**⚠️ Tre saker kräver Joakim innan funktionen fungerar skarpt:** (1) kör `node scripts/hemkop-login-poc.mjs` lokalt med riktiga uppgifter — **PASS är en spärr**, kandidat-endpointsen i `axfood-auth.js` är kvalificerade gissningar tills dess; (2) generera `STORE_CRED_KEY` (`node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`) och lägg i Vercel; (3) ge OK till migration `010`. Utan (2) och (3) svarar appen begripligt att funktionen inte är påslagen — inget kraschar, och cookie-vägen fungerar som förut.
 
 ---
 

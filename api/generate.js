@@ -85,67 +85,50 @@ function recentlyUsedIds(history, days = 14) {
   return ids;
 }
 
-// Arkiverar ALLA kvarvarande dagar på den gamla planen i plan_archives, sedan
-// deaktiveras den gamla planen.
+// Lösgör den gamla planens kvarvarande dagar från planen — de blir EGNA dagar
+// (plan_id = null), exakt samma form som en dag familjen planerat själv.
 //
-// F090 (QC-natt): SELECT:en filtrerade tidigare på `date < newStartDate`, men
-// DELETE:en nedan tar bort HELA plan_id oavsett datum → dagar efter nya planens
-// slutdatum (en kortare/närmare regenerering) arkiverades aldrig men raderades
-// ändå, tyst dataförlust. Fix: SELECT:en filtrerar inte längre på datum alls —
-// savePlanToSupabase:s UPSERT (household_id,date) körs FÖRE detta anrop och har
-// redan flyttat över plan_id till den nya planen för varje dag som skrivs över,
-// så alla rader som fortfarande har oldPlan.id här är per definition dagar som
-// INTE täcks av nya planen (vare sig före eller efter dess spann) — exakt de
-// dagar som ska arkiveras innan de raderas.
-// newStartDate-parametern är kvar oanvänd i signaturen (i stället för att tas
-// bort) så anropsställena (activatePlanAtomic, tester) inte behöver ändras.
-export async function archiveOldPlan(newStartDate, householdId, database = db) {
-  const { data: plans } = await database
+// Bakgrund (Session 137): tidigare flyttades de här dagarna till plan_archives
+// och deras meal_days-rader RADERADES. Arkivet var rent läsläge i hela UI:t, och
+// urvalet brydde sig inte om datum — genererade man två matsedlar efter varandra
+// låstes alltså den första även om den låg helt i FRAMTIDEN och inte hade börjat
+// än. Joakim: "jag ser inget behov av historiska kontra aktuella matsedlar".
+//
+// Nu bevaras dagarna i stället. Egna dagar är per invariant #1 aldrig något en
+// generering får skriva över, och de är fullt redigerbara på alla ytor — vilket
+// är precis vad en matsedel som ännu inte börjat ska vara. Ingenting arkiveras,
+// ingenting raderas: begreppet "historisk matsedel" finns inte längre.
+//
+// Urvalet behöver inget datumfilter: savePlanToSupabase:s UPSERT på
+// (household_id, date) körs FÖRE det här anropet och har redan flyttat över
+// plan_id till den nya planen för varje dag som skrivs över. Rader som ännu bär
+// oldPlan.id är alltså per definition dagar som den nya planen INTE täcker
+// (vare sig före eller efter dess spann) — exakt de som ska lösgöras.
+//
+// Anropas FÖRE activatePlanAtomic. Det är avsiktligt: när dagarna redan är
+// lösgjorda hittar även den GAMLA versionen av RPC:n activate_plan_atomic
+// (db/migrations/001) noll rader med oldPlan.id, så dess arkiverings- och
+// raderingssteg blir no-op:ar. Fixen gäller alltså direkt vid deploy, utan att
+// migration 011 behöver vara körd.
+export async function detachOldPlanDays(householdId, database = db) {
+  const { data: plans, error: planErr } = await database
     .from("weekly_plans")
-    .select("id, start_date, end_date")
+    .select("id")
     .eq("household_id", householdId)
     .eq("is_active", true)
     .limit(1);
-  if (!plans?.length) return;
+  if (planErr) throw planErr;
+  if (!plans?.length) return { detached: [] };
 
-  const oldPlan = plans[0];
-  const { data: daysToArchive } = await database
+  const { data: detached, error } = await database
     .from("meal_days")
-    .select("date, recipe_id, recipe_title_snapshot, saving")
-    .eq("plan_id", oldPlan.id)
-    .not("recipe_id", "is", null)
-    .order("date");
+    .update({ plan_id: null })
+    .eq("household_id", householdId)
+    .eq("plan_id", plans[0].id)
+    .select("date");
+  if (error) throw error;
 
-  if (daysToArchive?.length) {
-    const archiveDays = daysToArchive.map((d) => ({
-      date: d.date,
-      recipe: d.recipe_title_snapshot,
-      recipeId: d.recipe_id,
-      ...(d.saving ? { saving: d.saving } : {}),
-    }));
-    await database.from("plan_archives").insert({
-      household_id: householdId,
-      start_date: daysToArchive[0].date,
-      end_date: daysToArchive[daysToArchive.length - 1].date,
-      archived_at: new Date().toISOString(),
-      days: archiveDays,
-    });
-
-    // Trimma plan_archives — behåll bara plans med endDate inom 30 dagar bakåt
-    const cutoff = new Date(Date.now() - 30 * 864e5).toISOString().slice(0, 10);
-    const { data: old } = await database
-      .from("plan_archives")
-      .select("id, end_date")
-      .eq("household_id", householdId)
-      .lt("end_date", cutoff);
-    if (old?.length) {
-      await database.from("plan_archives").delete().in("id", old.map((r) => r.id));
-    }
-  }
-
-  // Deaktivera gammal plan + ta bort dess meal_days (de är arkiverade eller överskrivna)
-  await database.from("meal_days").delete().eq("plan_id", oldPlan.id);
-  await database.from("weekly_plans").update({ is_active: false }).eq("id", oldPlan.id);
+  return { detached: (detached || []).map((d) => d.date).sort() };
 }
 
 export async function savePlanToSupabase(weeklyPlan, householdId, database = db) {
@@ -222,20 +205,33 @@ export function isMissingRpcError(error) {
 }
 
 // Atomär plan-aktivering (backlog-punkt #3, CLAUDE.md hård regel "Befintlig
-// veckoplan får aldrig förstöras"): archiveOldPlan + activatePlan i EN
-// Postgres-transaktion via RPC:n activate_plan_atomic (db/migrations/001_*.sql)
-// — dör processen mitt i går hela bytet tillbaka i stället för att lämna
-// hushållet med noll aktiva planer.
+// veckoplan får aldrig förstöras"): plan-bytet sker i EN Postgres-transaktion
+// via RPC:n activate_plan_atomic (db/migrations/001_*.sql, uppdaterad i 011) —
+// dör processen mitt i går hela bytet tillbaka i stället för att lämna hushållet
+// med noll aktiva planer.
+//
+// Dagarna lösgörs FÖRE bytet (detachOldPlanDays). Ordningen är vald så att
+// fixen fungerar oavsett vilken version av RPC:n som ligger i Postgres: den
+// gamla versionen arkiverar och raderar rader med gamla plan_id, och sådana
+// finns inte kvar när detach:en har körts → båda stegen blir no-op:ar.
+//
+// Kvarvarande (litet) glapp om processen dör exakt MELLAN detach och aktivering:
+// den gamla planen står kvar som aktiv men utan dagar. Ingenting går förlorat —
+// dagarna finns kvar som egna dagar och syns och går att redigera i matsedeln —
+// och en ny generering läker läget. Migration 011 flyttar in detach-steget i
+// transaktionen och stänger även det glappet.
 //
 // Rollout-säkerhet: RPC:n finns bara i Postgres när Joakim manuellt har kört
 // SQL-filen i Supabase SQL Editor (inget migrationsverktyg i det här projektet).
 // Push till main deployas direkt (CLAUDE.md), så koden måste fungera BÅDE före
 // och efter att SQL:en är körd. Vi försöker RPC:n först; om PostgREST svarar att
-// funktionen saknas (isMissingRpcError) faller vi tillbaka till den gamla
-// tvåstegs-JS-vägen (archiveOldPlan + activatePlan var för sig) — exakt samma
-// beteende som innan den här ändringen. Atomiciteten slår på automatiskt så
-// fort SQL:en är körd, utan kodändring.
+// funktionen saknas (isMissingRpcError) faller vi tillbaka till att bara
+// aktivera den nya planen i JS.
 export async function activatePlanAtomic(newPlanId, startDate, householdId, database = db) {
+  // Bevara den gamla planens kvarvarande dagar som egna dagar. Misslyckas det
+  // ska bytet INTE fortsätta — annars raderar RPC:n dem som förr.
+  await detachOldPlanDays(householdId, database);
+
   const { error } = await database.rpc("activate_plan_atomic", {
     p_household_id: householdId,
     p_new_plan_id: newPlanId,
@@ -245,9 +241,8 @@ export async function activatePlanAtomic(newPlanId, startDate, householdId, data
 
   if (!isMissingRpcError(error)) throw error;
 
-  // Fallback: RPC:n är inte upplagd i Supabase än — kör den gamla,
-  // icke-atomära tvåstegsvägen så produktionen aldrig går sönder.
-  try { await archiveOldPlan(startDate, householdId, database); } catch (e) { console.error("archive error:", e); }
+  // Fallback: RPC:n är inte upplagd i Supabase än — aktivera i JS så
+  // produktionen aldrig går sönder.
   await activatePlan(newPlanId, householdId, database);
   return { usedRpc: false };
 }

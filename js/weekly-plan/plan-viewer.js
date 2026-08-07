@@ -88,12 +88,19 @@ function buildTimeline(plan, archive, customDays) {
   const byDate = new Map();
   const customEntries = (customDays && customDays.entries) || {};
 
+  // plan_archives är LEGACY (Session 137): en generering arkiverar inte längre
+  // bort den gamla planens dagar utan behåller dem som egna dagar i meal_days.
+  // Kvarvarande arkivrader läses fortfarande så inga dagar försvinner ur vyn
+  // innan migration 011 har materialiserat dem — men en riktig rad (egen dag
+  // eller aktiv plan) äger alltid dagen och vinner över arkivet. Utan den
+  // regeln göms en egen planering tyst bakom ett arkivkort för samma datum.
   const sortedArchive = (archive?.plans || []).slice().sort((a, b) => a.startDate.localeCompare(b.startDate));
   sortedArchive.forEach((p, idx) => {
     const planId = `arch-${p.startDate}`;
     const planLabel = `${fmtShort(p.startDate)} – ${fmtShort(p.endDate)}`;
     const colorIndex = idx % 4;
     for (const d of p.days) {
+      if (customEntries[d.date]) continue;
       byDate.set(d.date, { ...d, planId, planLabel, planColorIndex: colorIndex, isArchive: true });
     }
   });
@@ -152,7 +159,7 @@ function buildTimeline(plan, archive, customDays) {
     const dow = cur.getDay();
     const entry = byDate.get(iso) || {};
     const custom = customEntries[iso];
-    const isCustom = !!custom && !entry.recipeId && !entry.isArchive;
+    const isCustom = !!custom && !entry.recipeId;
     // Inköpsrundor: dagens rundstatus — från plan-dagen eller custom-dagen.
     const shoppedAt = entry.shoppedAt || custom?.shoppedAt || null;
     const dayListId = entry.listId || custom?.listId || null;

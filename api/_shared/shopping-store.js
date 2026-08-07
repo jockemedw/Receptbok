@@ -287,10 +287,13 @@ export async function setCoveredDays({ householdId, dates, database = db }) {
 
 // Återskapar meal_days-rader för dagar som bara finns kvar i plan_archives.
 //
-// Bakgrund: `archiveOldPlan` (api/generate.js) flyttar den gamla planens dagar
-// till `plan_archives` och RADERAR deras meal_days-rader. Genererar man två
-// matsedlar efter varandra försvinner alltså den förstas dagar ur den tabell
-// som hela inköpsmotorn bygger på — de gick inte att handla för.
+// LEGACY sedan Session 137: en generering arkiverar inte längre bort den gamla
+// planens dagar (detachOldPlanDays i api/generate.js behåller dem som egna
+// dagar), så nya arkivrader skrivs aldrig. Funktionen står kvar för de arkiv
+// som redan fanns när ändringen gjordes — tidigare RADERADES dagarnas
+// meal_days-rader vid arkiveringen, så genererade man två matsedlar efter
+// varandra försvann den förstas dagar ur den tabell som hela inköpsmotorn
+// bygger på och gick inte att handla för. Är arkivet tomt är detta en no-op.
 //
 // Raden återskapas som en EGEN dag (`plan_id = null`) — exakt samma form som en
 // familjeplanerad dag, som per invariant #1 alltid bevaras och aldrig skrivs

@@ -28,15 +28,15 @@ export default createSupabaseHandler(async (req, res) => {
   if (!date1 || !date2) return res.status(400).json({ error: "date1 och date2 krävs" });
   if (date1 === date2) return res.status(400).json({ error: "Välj två olika dagar" });
 
-  // Retro-planering (Session 131): familjen planerar ofta om i efterhand, så
-  // passerade dagar FÅR bytas — men bara 14 dagar bakåt (samma fönster som
-  // recepthistoriken). Gränsen bevarar andemeningen i F024/invariant #1: utan
-  // den kunde ett byte mot en gammal, aldrig arkiverad egen-planering-dag dra
-  // aktiva planens datumspann långt bak i historien. Servern står på egna ben
-  // oavsett klientvalideringen i plan-viewer-deluxe.js/day-drag.js.
+  // Retro-planering: familjen planerar ofta om i efterhand, så passerade dagar
+  // FÅR bytas — hela tidslinjens horisont bakåt (RETRO_WINDOW_DAYS). Gränsen
+  // bevarar andemeningen i F024/invariant #1: utan den kunde ett byte mot en
+  // flera år gammal egen-planering-dag dra aktiva planens datumspann långt bak
+  // i historien. Servern står på egna ben oavsett klientvalideringen i
+  // plan-viewer-deluxe.js/day-drag.js.
   const minIso = new Date(Date.now() - RETRO_WINDOW_DAYS * 86400e3).toISOString().slice(0, 10);
   if (date1 < minIso || date2 < minIso) {
-    return res.status(400).json({ error: "Dagar äldre än två veckor är historik och kan inte ändras." });
+    return res.status(400).json({ error: "Dagen ligger längre bak än matsedeln sträcker sig och kan inte ändras." });
   }
 
   const householdId = await getHouseholdId();

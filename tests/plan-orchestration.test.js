@@ -1,6 +1,6 @@
 // Integrationstest för plan-orkestreringen i api/generate.js:
-//   savePlanToSupabase → activatePlanAtomic (RPC activate_plan_atomic, med
-//   fallback till archiveOldPlan + activatePlan i två steg om RPC:n saknas)
+//   savePlanToSupabase → activatePlanAtomic (detachOldPlanDays + RPC
+//   activate_plan_atomic, med fallback till activatePlan om RPC:n saknas)
 //
 // Kör med `node tests/plan-orchestration.test.js` (kräver node_modules eftersom
 // generate.js importerar @supabase/supabase-js via _shared/supabase.js — klienten
@@ -8,25 +8,36 @@
 //
 // Låser den HÅRDA regeln (CLAUDE.md, Session 95 + backlog #3): en aktiv plan får
 // aldrig sakna sina dagar, och en avbruten skrivning får aldrig förstöra den
-// gamla planen — varken i fallback-vägen (två separata UPDATE) eller i RPC-vägen
-// (en transaktion i Postgres, mockad här).
+// gamla planen.
+//
+// Låser dessutom Session 137-beteendet: den gamla planens kvarvarande dagar
+// ARKIVERAS INTE bort — de bevaras som egna dagar (plan_id = null) och förblir
+// därmed redigerbara. En matsedel som ännu inte börjat får aldrig låsas bara för
+// att en nyare har genererats.
+//
 // Testar:
 //   1. Happy path: planen skapas INAKTIV, dagarna skrivs, aktiveras sist →
 //      exakt en aktiv plan, och den har dagar.
 //   2. Fel vid dag-skrivning: den halv-skrivna plan-raden städas bort, den gamla
 //      aktiva planen är orörd.
-//   3. Hela sekvensen (gammal JS-väg): efter archive+activate finns exakt en
-//      aktiv plan med dagar.
-//   4. activatePlanAtomic, RPC finns och lyckas → exakt en aktiv plan med dagar,
-//      gamla planens dagar arkiverade/borttagna.
-//   5. activatePlanAtomic, RPC SAKNAS (PGRST202) → faller tillbaka till
-//      archiveOldPlan+activatePlan, samma slutresultat som test 3.
-//   6. activatePlanAtomic, RPC:n finns men kraschar MITT I (simulerat fel,
-//      t.ex. nätfel under transaktionen) → hela bytet rullas tillbaka:
-//      gamla planen fortfarande aktiv med sina dagar intakta, INGEN ändring
-//      smiter igenom (atomicitet, inte bara "fallback").
+//   3. Hela sekvensen (JS-vägen): efter detach+activate finns exakt en aktiv
+//      plan med dagar, och gamla dagarna lever kvar som egna dagar.
+//   4. activatePlanAtomic, RPC (migration 011) finns och lyckas → exakt en aktiv
+//      plan, gamla dagarna bevarade som egna dagar, inget arkiverat.
+//   5. activatePlanAtomic mot den GAMLA RPC:n (migration 001, som arkiverar och
+//      raderar) → tack vare att detach:en körs FÖRE anropet hittar den inga
+//      rader att förstöra. Rollout-säkerheten: fixen gäller redan innan
+//      migration 011 har körts.
+//   6. activatePlanAtomic, RPC SAKNAS (PGRST202) → faller tillbaka till
+//      activatePlan, samma slutresultat som test 3.
+//   7. activatePlanAtomic, RPC:n finns men kraschar MITT I (simulerat fel, t.ex.
+//      nätfel under transaktionen) → bytet går inte igenom: gamla planen är
+//      fortfarande aktiv, nya planen fortfarande inaktiv, och INGEN dag har gått
+//      förlorad (de ligger kvar som egna dagar och syns i matsedeln).
+//   8. detachOldPlanDays rör bara den gamla planens rader — nya planens dagar
+//      och familjens egna dagar lämnas i fred (invariant #1).
 
-import { savePlanToSupabase, archiveOldPlan, activatePlan, activatePlanAtomic, isMissingRpcError } from "../api/generate.js";
+import { savePlanToSupabase, detachOldPlanDays, activatePlan, activatePlanAtomic, isMissingRpcError } from "../api/generate.js";
 
 // ─── Mockad Supabase-db (kedjebar query-builder) ─────────────────────────────
 // Stödjer exakt de kedjor de tre funktionerna använder. Håller in-memory-tabeller
@@ -43,8 +54,11 @@ function makeMockDb(initial = {}) {
     //   "crash"   → funktionen finns men kraschar MITT I — eftersom en riktig
     //               Postgres-funktion körs i en transaktion ska INGET av dess
     //               delsteg synas i state efteråt (allt-eller-inget)
-    //   annars    → kör samma logik som SQL-filen (db/migrations/001_*.sql)
-    //               mot in-memory-tabellerna och committar
+    //   "legacy"  → den GAMLA funktionen (db/migrations/001_*.sql) som arkiverar
+    //               och raderar gamla planens dagar — ligger kvar i Postgres tills
+    //               migration 011 körts, så koden måste vara säker mot den
+    //   annars    → kör samma logik som db/migrations/011_*.sql mot
+    //               in-memory-tabellerna och committar
     rpcMode: initial.rpcMode || null,
   };
 
@@ -161,25 +175,36 @@ function makeMockDb(initial = {}) {
     const oldPlan = state.plans.find((p) => p.household_id === householdId && p.is_active);
 
     if (oldPlan) {
-      const daysToArchive = state.mealDays
-        .filter((d) => d.plan_id === oldPlan.id && d.date < newStartDate && d.recipe_id != null)
-        .sort((a, b) => (a.date < b.date ? -1 : 1));
+      if (state.rpcMode === "legacy") {
+        // db/migrations/001: arkivera dagarna före nya startdatumet och radera
+        // ALLA gamla planens dagar. Körs den efter detachOldPlanDays finns inga
+        // rader kvar med gamla plan_id → båda stegen blir no-op:ar.
+        const daysToArchive = state.mealDays
+          .filter((d) => d.plan_id === oldPlan.id && d.date < newStartDate && d.recipe_id != null)
+          .sort((a, b) => (a.date < b.date ? -1 : 1));
 
-      if (daysToArchive.length) {
-        state.archives.push({
-          household_id: householdId,
-          start_date: daysToArchive[0].date,
-          end_date: daysToArchive[daysToArchive.length - 1].date,
-          archived_at: new Date().toISOString(),
-          days: daysToArchive.map((d) => ({
-            date: d.date, recipe: d.recipe_title_snapshot, recipeId: d.recipe_id,
-            ...(d.saving ? { saving: d.saving } : {}),
-          })),
-        });
-      }
+        if (daysToArchive.length) {
+          state.archives.push({
+            household_id: householdId,
+            start_date: daysToArchive[0].date,
+            end_date: daysToArchive[daysToArchive.length - 1].date,
+            archived_at: new Date().toISOString(),
+            days: daysToArchive.map((d) => ({
+              date: d.date, recipe: d.recipe_title_snapshot, recipeId: d.recipe_id,
+              ...(d.saving ? { saving: d.saving } : {}),
+            })),
+          });
+        }
 
-      for (let i = state.mealDays.length - 1; i >= 0; i--) {
-        if (state.mealDays[i].plan_id === oldPlan.id) state.mealDays.splice(i, 1);
+        for (let i = state.mealDays.length - 1; i >= 0; i--) {
+          if (state.mealDays[i].plan_id === oldPlan.id) state.mealDays.splice(i, 1);
+        }
+      } else {
+        // db/migrations/011: bevara gamla planens kvarvarande dagar som EGNA
+        // dagar. Inget arkiveras, ingenting raderas.
+        for (const d of state.mealDays) {
+          if (d.plan_id === oldPlan.id) d.plan_id = null;
+        }
       }
       oldPlan.is_active = false;
     }
@@ -206,14 +231,14 @@ function assertTrue(cond, desc) { assertEq(!!cond, true, desc); }
 
 const activeCount = (db) => db._state.plans.filter((p) => p.is_active).length;
 const daysForPlan = (db, id) => db._state.mealDays.filter((d) => d.plan_id === id).length;
+// Egna dagar = plan_id null. Det är hit den gamla planens kvarvarande dagar tar
+// vägen numera, i stället för till plan_archives.
+const ownDays = (db) => db._state.mealDays.filter((d) => d.plan_id == null);
+const hasDay = (db, date) => db._state.mealDays.some((d) => d.date === date);
 
-// Datum RELATIVA till idag — inte hårdkodade. archiveOldPlan trimmar bort arkiv
-// vars end_date är äldre än 30 dagar (cutoff = idag − 30 d). Med frusna datum
-// blev testet en tidsbomb: fixturens gamla plan (2026-06-24/25) passerade
-// 30-dagarsgränsen 2026-07-26 → det nyskapade arkivet raderades direkt av
-// trim-steget → "0 arkiv" och rött testfall trots korrekt produktkod. Genom att
-// alltid lägga gamla planen ett par dagar bakåt hålls arkivet inom fönstret
-// oavsett när sviten körs.
+// Datum RELATIVA till idag — aldrig hårdkodade, annars blir testet en tidsbomb
+// (den gamla arkivtrimningen på 30 dagar sänkte det en gång: fixturens frusna
+// datum passerade cutoffen och testet blev rött trots korrekt produktkod).
 function isoDaysAgo(n) {
   const d = new Date();
   d.setDate(d.getDate() - n);
@@ -283,22 +308,24 @@ function freshDbWithOldPlan() {
   assertEq(daysForPlan(db, 1), 2, "fel-path: gamla planens dagar är orörda");
 }
 
-// ─── Test 3: hela sekvensen → exakt en aktiv plan, och den har dagar ─────────
+// ─── Test 3: hela sekvensen (JS-vägen) → en aktiv plan, gamla dagarna kvar ────
 {
   const db = freshDbWithOldPlan();
   const newId = await savePlanToSupabase(NEW_PLAN, "h", db);
-  await archiveOldPlan(NEW_PLAN.startDate, "h", db);
+  await detachOldPlanDays("h", db);
   await activatePlan(newId, "h", db);
 
-  assertEq(activeCount(db), 1, "sekvens: exakt EN aktiv plan efter archive+activate");
+  assertEq(activeCount(db), 1, "sekvens: exakt EN aktiv plan efter detach+activate");
   const active = db._state.plans.find((p) => p.is_active);
   assertEq(active.id, newId, "sekvens: den aktiva planen är den nya");
   assertTrue(daysForPlan(db, newId) >= 1, "sekvens: den aktiva planen har dagar (aldrig tom aktiv plan)");
-  assertEq(daysForPlan(db, 1), 0, "sekvens: gamla planens dagar är arkiverade/borttagna");
-  assertEq(db._state.archives.length, 1, "sekvens: en arkiv-rad skapades för gamla planen");
+  assertEq(daysForPlan(db, 1), 0, "sekvens: inga dagar hänger kvar på den gamla planen");
+  assertEq(ownDays(db).length, 2, "sekvens: gamla planens båda dagar lever kvar som EGNA dagar");
+  assertTrue(hasDay(db, OLD_START) && hasDay(db, OLD_MID), "sekvens: exakt de gamla datumen finns kvar");
+  assertEq(db._state.archives.length, 0, "sekvens: ingenting arkiveras längre");
 }
 
-// ─── Test 4: activatePlanAtomic, RPC finns och lyckas ────────────────────────
+// ─── Test 4: activatePlanAtomic, RPC (migration 011) finns och lyckas ────────
 {
   const db = freshDbWithOldPlan();
   const newId = await savePlanToSupabase(NEW_PLAN, "h", db);
@@ -309,12 +336,32 @@ function freshDbWithOldPlan() {
   const active = db._state.plans.find((p) => p.is_active);
   assertEq(active.id, newId, "rpc-happy: den aktiva planen är den nya");
   assertTrue(daysForPlan(db, newId) >= 1, "rpc-happy: den aktiva planen har dagar");
-  assertEq(daysForPlan(db, 1), 0, "rpc-happy: gamla planens dagar är arkiverade/borttagna");
-  assertEq(db._state.archives.length, 1, "rpc-happy: en arkiv-rad skapades för gamla planen");
+  assertEq(daysForPlan(db, 1), 0, "rpc-happy: inga dagar hänger kvar på den gamla planen");
+  assertEq(ownDays(db).length, 2, "rpc-happy: gamla planens dagar bevarade som egna dagar");
+  assertEq(db._state.archives.length, 0, "rpc-happy: ingen arkiv-rad skapades");
 }
 
-// ─── Test 5: activatePlanAtomic, RPC SAKNAS → fallback till JS-tvåstegsvägen ──
-// (Detta är rollout-säkerheten: main måste fungera innan Joakim har kört SQL:en.)
+// ─── Test 5: activatePlanAtomic mot den GAMLA RPC:n (migration 001) ──────────
+// Rollout-säkerheten. Den gamla funktionen arkiverar och RADERAR gamla planens
+// dagar — men eftersom detachOldPlanDays körs FÖRE anropet finns inga rader kvar
+// med gamla plan_id, så den hittar ingenting att förstöra. Joakims bugg är alltså
+// borta redan vid deploy, utan att migration 011 behöver vara körd.
+{
+  const db = freshDbWithOldPlan();
+  db._state.rpcMode = "legacy";
+  const newId = await savePlanToSupabase(NEW_PLAN, "h", db);
+  const result = await activatePlanAtomic(newId, NEW_PLAN.startDate, "h", db);
+
+  assertTrue(result.usedRpc, "rpc-legacy: RPC-vägen kördes");
+  assertEq(activeCount(db), 1, "rpc-legacy: exakt EN aktiv plan");
+  assertEq(db._state.plans.find((p) => p.is_active).id, newId, "rpc-legacy: den aktiva planen är den nya");
+  assertEq(ownDays(db).length, 2, "rpc-legacy: gamla planens dagar överlevde den gamla funktionen");
+  assertTrue(hasDay(db, OLD_START) && hasDay(db, OLD_MID), "rpc-legacy: exakt de gamla datumen finns kvar");
+  assertEq(db._state.archives.length, 0, "rpc-legacy: den gamla funktionen hittade inget att arkivera");
+}
+
+// ─── Test 6: activatePlanAtomic, RPC SAKNAS → fallback till JS-aktivering ────
+// (main måste fungera innan Joakim har kört SQL:en.)
 {
   const db = freshDbWithOldPlan();
   db._state.rpcMode = "missing";
@@ -324,16 +371,21 @@ function freshDbWithOldPlan() {
   assertEq(result.usedRpc, false, "rpc-missing: activatePlanAtomic upptäcker saknad funktion och faller tillbaka");
   assertEq(activeCount(db), 1, "rpc-missing: exakt EN aktiv plan efter fallback");
   const active = db._state.plans.find((p) => p.is_active);
-  assertEq(active.id, newId, "rpc-missing: den aktiva planen är den nya (fallback fungerar som tidigare)");
+  assertEq(active.id, newId, "rpc-missing: den aktiva planen är den nya");
   assertTrue(daysForPlan(db, newId) >= 1, "rpc-missing: den aktiva planen har dagar");
-  assertEq(daysForPlan(db, 1), 0, "rpc-missing: gamla planens dagar är arkiverade/borttagna");
+  assertEq(ownDays(db).length, 2, "rpc-missing: gamla planens dagar bevarade som egna dagar");
 }
 
-// ─── Test 6: activatePlanAtomic, RPC kraschar MITT I → allt rullas tillbaka ───
-// Det här är den faktiska bugg-reproduktionen: utan atomicitet skulle ett fel
-// här ge NOLL aktiva planer (gammal redan deaktiverad/borttagen, ny ej aktiverad).
-// Med en riktig Postgres-transaktion (mockad via rpcMode "crash" — inget i
-// in-memory-staten muteras) ska den gamla planen vara HELT orörd.
+// ─── Test 7: activatePlanAtomic, RPC kraschar MITT I → inget går förlorat ────
+// Utan atomicitet skulle ett fel här ge NOLL aktiva planer (gammal redan
+// deaktiverad/borttagen, ny ej aktiverad). Transaktionen rullas tillbaka
+// (rpcMode "crash" muterar inget), så den gamla planen står kvar som aktiv.
+//
+// Detach:en har dock redan körts och ligger UTANFÖR transaktionen: den gamla
+// planens dagar är lösgjorda. Det är avsiktligt och ofarligt — ingen dag är
+// borta, de visas och går att redigera som egna dagar, och nästa generering
+// läker läget. Migration 011 flyttar in steget i transaktionen och stänger även
+// det glappet.
 {
   const db = freshDbWithOldPlan();
   db._state.rpcMode = "crash";
@@ -348,14 +400,38 @@ function freshDbWithOldPlan() {
   assertEq(activeCount(db), 1, "rpc-crash: exakt EN aktiv plan kvar (aldrig noll!) — den gamla");
   const active = db._state.plans.find((p) => p.is_active);
   assertEq(active.id, 1, "rpc-crash: gamla planen är fortfarande aktiv (transaktionen rullades tillbaka)");
-  assertEq(daysForPlan(db, 1), 2, "rpc-crash: gamla planens dagar är HELT intakta — inget förstördes");
-  assertEq(db._state.archives.length, 0, "rpc-crash: ingen arkiv-rad skapades (transaktionen committade aldrig)");
+  assertEq(ownDays(db).length, 2, "rpc-crash: INGEN dag förlorad — de gamla ligger kvar som egna dagar");
+  assertTrue(hasDay(db, OLD_START) && hasDay(db, OLD_MID), "rpc-crash: exakt de gamla datumen finns kvar");
+  assertEq(db._state.archives.length, 0, "rpc-crash: ingen arkiv-rad skapades");
   // Den nya planen finns kvar i databasen (inaktiv, från savePlanToSupabase) —
   // det är OK och förväntat: den kan aktiveras av ett nytt generate()-anrop.
   assertEq(db._state.plans.find((p) => p.id === newId)?.is_active, false, "rpc-crash: nya planen förblir INAKTIV, inte aktiverad halvvägs");
 }
 
-// ─── Test 7: isMissingRpcError känner igen PostgREST-felformerna ─────────────
+// ─── Test 8: detachOldPlanDays rör BARA den gamla planens rader ──────────────
+// Invariant #1: familjens egna dagar och den nya planens dagar får aldrig
+// påverkas av plan-bytet.
+{
+  const db = freshDbWithOldPlan();
+  db._state.mealDays.push({
+    plan_id: null, household_id: "h", date: isoDaysAgo(5),
+    recipe_id: 99, recipe_title_snapshot: "Familjens egen dag", saving: null,
+  });
+  const newId = await savePlanToSupabase(NEW_PLAN, "h", db);
+  const { detached } = await detachOldPlanDays("h", db);
+
+  assertEq(detached.length, 2, "detach: exakt gamla planens två dagar lösgjordes");
+  assertEq(detached.join(","), [OLD_START, OLD_MID].sort().join(","), "detach: rätt datum lösgjordes");
+  assertEq(daysForPlan(db, newId), 3, "detach: nya planens dagar är orörda");
+  assertTrue(hasDay(db, isoDaysAgo(5)), "detach: familjens egen dag är orörd");
+  assertEq(
+    db._state.mealDays.find((d) => d.date === isoDaysAgo(5)).recipe_title_snapshot,
+    "Familjens egen dag",
+    "detach: familjens egen dag har kvar sitt innehåll"
+  );
+}
+
+// ─── Test 9: isMissingRpcError känner igen PostgREST-felformerna ─────────────
 {
   assertTrue(isMissingRpcError({ code: "PGRST202" }), "isMissingRpcError: PGRST202-kod");
   assertTrue(isMissingRpcError({ message: "Could not find the function public.activate_plan_atomic" }), "isMissingRpcError: meddelandetext");

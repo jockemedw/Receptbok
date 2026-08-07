@@ -7,9 +7,7 @@ import { RETRO_WINDOW_DAYS } from "./_shared/constants.js";
 // dag. Generaliserad (Session 131): roterar FULLT innehåll (plan-recept, egna
 // receptdagar, anteckningar, inköpsrundstatus) över ALLA dagtyper i spannet —
 // tomma dagar deltar som hål som vandrar. Kräver ingen aktiv plan (familjen
-// planerar ofta helt manuellt). Fria dagar (blocked) är PINNADE vid sina datum;
-// arkiverade veckor får inte korsas (deras dagar bor i plan_archives, inte i
-// meal_days — en rotation över dem skulle skriva innehåll "under" arkivet).
+// planerar ofta helt manuellt). Fria dagar (blocked) är PINNADE vid sina datum.
 //
 // Datumen ligger fast — innehållet roteras → recept-/noterings-/planmängden är
 // oförändrad (invariant #1, verifieras av spanAfterInsert FÖRE skrivning) och
@@ -48,10 +46,10 @@ export default createSupabaseHandler(async (req, res) => {
   if (!date) return res.status(400).json({ error: "date saknas" });
   if (before === date) return res.status(400).json({ error: "Dagen kan inte flyttas till sin egen plats." });
 
-  // Retro-fönstret — samma gräns som swap-days: äldre än 14 dagar är historik.
+  // Retro-fönstret — samma gräns som swap-days (hela tidslinjens horisont bakåt).
   const minIso = new Date(Date.now() - RETRO_WINDOW_DAYS * 86400e3).toISOString().slice(0, 10);
   if (date < minIso || (before && before < minIso)) {
-    return res.status(400).json({ error: "Dagar äldre än två veckor är historik och kan inte ändras." });
+    return res.status(400).json({ error: "Dagen ligger längre bak än matsedeln sträcker sig och kan inte ändras." });
   }
 
   const householdId = await getHouseholdId();
@@ -92,17 +90,10 @@ export default createSupabaseHandler(async (req, res) => {
     spanEnd = last && last > date ? last : date;
   }
 
-  // Arkivvakt: arkiverade veckors dagar bor i plan_archives — spannet får inte
-  // överlappa dem (innehåll skulle hamna "under" arkivkorten i vyn).
-  const { data: archives, error: archErr } = await db
-    .from("plan_archives")
-    .select("start_date, end_date")
-    .eq("household_id", householdId);
-  if (archErr) throw new Error("Kunde inte läsa matsedeln — prova igen.");
-  const hitsArchive = (archives || []).some((a) => a.start_date <= spanEnd && a.end_date >= spanStart);
-  if (hitsArchive) {
-    return res.status(400).json({ error: "Historiska veckor ligger fast — flytten kan inte korsa en arkiverad matsedel." });
-  }
+  // Ingen arkivvakt längre (Session 137): en generering arkiverar inte bort den
+  // gamla planens dagar utan behåller dem som egna dagar i meal_days. Det finns
+  // alltså inga dagar som bara bor i plan_archives att rotera "under" — varje
+  // dag i spannet är en riktig rad som deltar i rotationen som vilken som helst.
 
   // Kontinuerligt spann med fullt innehåll (tomma datum = hål som vandrar)
   const entries = [];
