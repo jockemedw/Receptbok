@@ -628,16 +628,27 @@ export function categorize(name) {
   return "Skafferi";
 }
 
-function formatIngredient(amount, unit, name) {
-  if (amount === null) return name;
+// Samma dimension → gemensam basenhet FÖRE merge, så "1 kg" + "600 g" summerar
+// till EN rad i stället för att splittras på två enhetsnycklar (vikt → g,
+// volym → dl). Visningen uppgraderar tillbaka: ≥1000 g → kg, ≥10 dl → l.
+const UNIT_CONVERSION = {
+  kg: { to: "g", factor: 1000 },
+  l: { to: "dl", factor: 10 },
+  liter: { to: "dl", factor: 10 },
+  cl: { to: "dl", factor: 0.1 },
+  ml: { to: "dl", factor: 0.01 },
+};
+
+function qtyString(amount, unit) {
   amount = Math.round(amount * 100) / 100;
+  if (unit === "g" && amount >= 1000) { unit = "kg"; amount = Math.round(amount / 10) / 100; }
+  else if (unit === "dl" && amount >= 10) { unit = "l"; amount = Math.round(amount * 10) / 100; }
   const FRAC_DISPLAY = {
     0.5: "½", 0.25: "¼", 0.75: "¾", 1.5: "1½", 2.5: "2½",
     0.33: "⅓", 0.67: "⅔", 0.125: "⅛", 0.2: "⅕",
   };
   const amtStr = FRAC_DISPLAY[amount] ?? (Number.isInteger(amount) ? String(amount) : String(amount).replace(".", ","));
-  const qty = unit ? `${amtStr} ${unit}` : amtStr;
-  return `${name} (${qty})`;
+  return unit ? `${amtStr} ${unit}` : amtStr;
 }
 
 // ─── Portionsskalning (backlog #12) ─────────────────────────────────────────
@@ -677,11 +688,13 @@ export function buildShoppingList(selectedIds, allRecipes, opts = {}) {
     const baseServings = parseInt(recipe.servings, 10) || DEFAULT_SERVINGS;
     const factor = target ? target / baseServings : 1;
     for (const rawIng of recipe.ingredients || []) {
-      const { amount, unit, name } = parseIngredient(rawIng);
+      let { amount, unit, name } = parseIngredient(rawIng);
       const normalized = normalizeName(name);
       if (amount === null) {
         noAmount.set(normalized, normalized);
       } else {
+        const conv = UNIT_CONVERSION[unit];
+        if (conv) { amount *= conv.factor; unit = conv.to; }
         // F110: explicit "st" och enhetslöst (implicit styck) ska mötas i SAMMA
         // merge-nyckel — annars splittras "3 äpplen" + "2 st äpple" på två nycklar
         // och keysByName-deduppen nedan tömmer båda till noAmount (mängden tappas).
@@ -714,21 +727,26 @@ export function buildShoppingList(selectedIds, allRecipes, opts = {}) {
     if (name.includes(" eller ")) noAmount.delete(name);
   }
 
-  const keysByName = new Map();
-  for (const [key, item] of merged) {
-    if (!keysByName.has(item.name)) keysByName.set(item.name, []);
-    keysByName.get(item.name).push(key);
+  // Gruppéra per namn: samma vara med olika (okonverterbara) enheter visas som
+  // EN rad med alla mängder — "morot (900 g + 6 st)" — i stället för att som
+  // tidigare tappa alla mängder till bara namnet (morots-buggen, Session 138).
+  const byName = new Map();
+  for (const item of merged.values()) {
+    if (!byName.has(item.name)) byName.set(item.name, []);
+    byName.get(item.name).push(item);
   }
-  for (const [name, keys] of keysByName) {
-    if (keys.length > 1) {
-      for (const k of keys) merged.delete(k);
-      noAmount.set(name, name);
-    }
-  }
-
-  for (const { name, unit, amount, scaled } of merged.values()) {
-    const displayAmount = scaled ? friendlyRound(amount, unit) : amount;
-    categories[categorize(name)].push(formatIngredient(displayAmount, unit, name));
+  const DIMENSION_ORDER = { g: 0, "": 1, st: 1, dl: 2 };
+  for (const [name, items] of byName) {
+    const segs = items
+      .map(({ unit, amount, scaled }) => ({ unit, amount: scaled ? friendlyRound(amount, unit) : amount }))
+      .sort((a, b) =>
+        (DIMENSION_ORDER[a.unit ?? ""] ?? 3) - (DIMENSION_ORDER[b.unit ?? ""] ?? 3) ||
+        String(a.unit ?? "").localeCompare(String(b.unit ?? "")));
+    // I kombinerad visning får styck-segmentet explicit "st" ("6 st"), annars
+    // vore "900 g + 6" tvetydigt; ensam styckvara behåller dagens "äpple (5)".
+    const combined = segs.length > 1;
+    const qty = segs.map((s) => qtyString(s.amount, combined ? (s.unit ?? "st") : s.unit)).join(" + ");
+    categories[categorize(name)].push(`${name} (${qty})`);
   }
   for (const [normalized] of noAmount.entries()) {
     const alreadyCovered = [...merged.keys()].some((k) => k.startsWith(normalized + "||"));
