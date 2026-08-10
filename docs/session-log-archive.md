@@ -1,6 +1,26 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–136. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–137. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 137 — "Historisk kontra aktuell matsedel" är borta: en matsedel som inte börjat får aldrig låsas (datamuterande, SKARP; migration 011 väntar Joakim)
+
+Joakims rapport: *"Jag skapade två matsedlar efter varandra och sen första har inte börjat ännu. Eftersom det finns en nyare än dagens tolkas dock den aktuella som 'historisk' och jag kan inte redigera den. Jag ser inget behov av historiska kontra aktuella matsedlar som benämning."* På följdfrågan: *"Hanteringsmässigt ska det inte spela någon roll om dagen är passerad. Jag vill fortfarande kunna flytta recept framåt och bakåt."*
+
+**Orsak.** Vid plan-byte flyttade `archiveOldPlan` (och RPC:n i migration 001) **alla** kvarvarande dagar på den gamla planen till `plan_archives` och **raderade deras `meal_days`-rader**. Urvalet brydde sig inte om datum — bara om att planen inte längre var den aktiva. I UI:t var `isArchive` sedan ett rent skrivskydd: byt middag, byt/flytta dag, fri dag, ta bort dagen och "lägg på inköpslistan" föll alla bort, sheeten öppnade i läsläge och visade "📜 Historisk plan — bara för referens". En matsedel som låg helt i framtiden frystes alltså bara för att en nyare fanns.
+
+**Fixen tar bort begreppet ur datamodellen, inte bara ur texten.** `archiveOldPlan` är ersatt av **`detachOldPlanDays`**: den gamla planens kvarvarande dagar får `plan_id = null` och blir därmed **egna dagar** — exakt samma form som en dag familjen planerat själv, som per invariant #1 aldrig skrivs över av en generering och är fullt redigerbar på alla ytor. Ingenting arkiveras, ingenting raderas. Urvalet behöver inget datumfilter: `savePlanToSupabase`:s UPSERT på `(household_id, date)` har redan flyttat över `plan_id` för varje dag den nya planen täcker, så det som ligger kvar är per definition dagarna utanför dess spann.
+
+**Ordningen är själva rollout-tricket.** Detach:en körs **före** `activate_plan_atomic`. Då hittar även den **gamla** RPC:n (migration 001, som arkiverar och raderar) noll rader med gamla `plan_id` → dess båda destruktiva steg blir no-op:ar. Buggen är alltså borta vid deploy, utan att migration 011 behöver vara körd. Ett eget testfall (`rpcMode: "legacy"`) låser just det.
+
+**Passerat spelar ingen roll längre.** Retro-fönstret höjdes 14 → **45 dagar** (`RETRO_WINDOW_DAYS` + `retroWindowStartIso`, klient och server i synk) = samma horisont som tidslinjen visar bakåt. I hela den matsedel man faktiskt ser och kan trycka på hanteras en passerad dag nu precis som en kommande. Gränsen finns kvar som yttre skyddsräcke — utan den kan ett byte mot en flera år gammal dag dra den aktiva planens datumspann långt bak i historien (skälet bakom F024). **Arkivvakten i `/api/move-day` är borttagen** (det finns inga dagar som bara bor i arkivet att rotera "under"), och felmeddelandena säger inte längre "historik" utan *"Dagen ligger längre bak än matsedeln sträcker sig"*.
+
+**Språket.** "📜 Historisk plan — bara för referens" borttaget, arkivtoasten omskriven, chipen "Tidigare matsedel" → "Äldre planering" (syns bara för legacy-rader tills 011 körts). I `buildTimeline` vinner numera en **riktig rad alltid över en arkivrad** för samma datum — det stängde samtidigt en känd precedensbugg där en egen planering göms tyst bakom ett arkivkort.
+
+**Ändringens natur:** **datamuterande** (plan-bytet skriver `plan_id`). Hela sviten grön; plan-orchestration 39 → **54** med tre nya fall: gamla RPC:n kan inte längre förstöra något, detach rör bara den gamla planens rader (nya planens dagar och familjens egna dagar orörda), och vid krasch mitt i bytet går **ingen dag förlorad**. **styles v194/app v157/SW v108.**
+
+**⚠️ Kvar som kräver Joakim:** migration **`011_preserve_plan_days.sql`**. Del A flyttar in detach-steget i transaktionen (stänger glappet där processen kan dö mellan lösgörandet och aktiveringen). Del B är **engångsräddningen av din nuvarande låsta matsedel** — arkivrader som redan finns materialiseras till riktiga `meal_days`-rader. Utan den fixas alla *framtida* genereringar, men de dagar som redan låstes fast ligger kvar låsta. Management-API-tokenen avvisades (401) i den här sessionen, så SQL:en är **inte** körd och **inte** schemaverifierad mot live-databasen — kolumnlistan följer den som `restoreArchivedDays` redan skriver i produktion.
 
 ---
 

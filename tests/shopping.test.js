@@ -450,6 +450,41 @@ assertEq(normalizeName("citroner"), "citron", "normalize: citroner → citron (p
   assertFalse(Object.values(result).flat().some((s) => s.includes("­")), "F271: inget osynligt tecken kvar i utdatan");
 }
 
+// F311 (morots-buggen, Session 138): samma vara med olika enheter fick ALLA
+// mängder raderade och blev bara namnet ("morot"). Nu: samma dimension
+// konverteras och summeras (kg→g, l/cl/ml→dl); okonverterbara dimensioner
+// visas kombinerat på EN rad — mängder tappas aldrig.
+{
+  const recipes = makeRecipes({
+    50: ["500 g morötter"], 51: ["400 g morötter"], 52: ["4 morötter"], 53: ["2 morötter"],
+  });
+  const gron = buildShoppingList([50, 51, 52, 53], recipes).Grönsaker;
+  assertTrue(gron.includes("morot (900 g + 6 st)"), "F311: g-grupp + styck-grupp kombineras → 'morot (900 g + 6 st)'");
+  assertFalse(gron.includes("morot"), "F311: morot läggs ALDRIG till som bara namnet när mängder finns");
+}
+{
+  const recipes = makeRecipes({ 54: ["1 kg potatis"], 55: ["600 g potatis"] });
+  const gron = buildShoppingList([54, 55], recipes).Grönsaker;
+  assertTrue(gron.includes("potatis (1,6 kg)"), "F311: '1 kg' + '600 g' konverteras och summeras → 'potatis (1,6 kg)'");
+}
+{
+  const recipes = makeRecipes({ 56: ["1 liter mjölk"], 57: ["2 dl mjölk"] });
+  const mejeri = buildShoppingList([56, 57], recipes).Mejeri;
+  assertTrue(mejeri.includes("mjölk (1,2 l)"), "F311: '1 liter' + '2 dl' → 'mjölk (1,2 l)'");
+}
+{
+  const recipes = makeRecipes({ 58: ["500 g morötter", "2 dl rivna morötter"], 59: ["3 morötter"] });
+  const gron = buildShoppingList([58, 59], recipes).Grönsaker;
+  assertTrue(gron.includes("morot (500 g + 3 st + 2 dl)"), "F311: tre dimensioner → 'morot (500 g + 3 st + 2 dl)' (vikt, styck, volym)");
+}
+{
+  // Enkla rader ändras inte: kg round-trippar, ensam styckvara utan "st".
+  const recipes = makeRecipes({ 60: ["1 kg köttfärs", "3 äpplen"] });
+  const res = buildShoppingList([60], recipes);
+  assertTrue(res["Fisk & kött"].includes("köttfärs (1 kg)"), "F311: ensam '1 kg' visas fortfarande som '1 kg'");
+  assertTrue(res.Frukt.includes("äpple (3)"), "F311: ensam enhetslös styckvara behåller formatet 'äpple (3)'");
+}
+
 // ─── Slutrapport ──────────────────────────────────────────────────────────────
 const total = passed + failed;
 console.log(`\nPASS ${passed}/${total}${failed ? ` — ${failed} FAIL` : ""}`);
