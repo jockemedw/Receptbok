@@ -1260,7 +1260,10 @@ function sheetRecipeHtml(d) {
     <p class="dlx-sheet-sub">${sheetWhen(d)}</p>
     <p class="dlx-sheet-title">${esc(r.title)}</p>
     <div class="dlx-detail-head">
-      <span class="dlx-status ${r.tested ? 'tested' : 'untested'}">${r.tested ? '✓ Provat' : 'Ej provat'}</span>
+      <button type="button" class="dlx-status dlx-status-toggle ${r.tested ? 'tested' : 'untested'}"
+              onclick="dlxToggleTested(event, ${r.id})" aria-pressed="${r.tested ? 'true' : 'false'}"
+              title="${r.tested ? 'Tryck för att märka som oprövat' : 'Tryck när ni har lagat den — märker receptet som provat'}"
+        >${r.tested ? '✓ Provat' : 'Ej provat'}</button>
       <span class="dlx-detail-portions">${r.servings} portioner</span>
       <button type="button" class="dlx-cook-btn" onclick="dlxCloseSheet();openCookMode(${r.id})">${I.pot}<span>Börja laga</span></button>
     </div>
@@ -1275,6 +1278,49 @@ function sheetRecipeHtml(d) {
       </section>
     </div>
     ${notes}`;
+}
+
+// "Ej provat"-märket i receptkortet är en knapp: tryck när ni lagat rätten så
+// märks receptet som provat direkt här — utan omvägen via Recept-fliken.
+// Skriver samma kolumn (recipes.tested) som pillret i receptbläddraren och
+// synkar det kortet i DOM:en om Recept-fliken redan är renderad.
+window.dlxToggleTested = async function (ev, id) {
+  ev?.stopPropagation();
+  const btn = ev?.currentTarget;
+  const r = recipeById(id);
+  if (!r) return;
+  const next = !r.tested;
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
+  try {
+    const householdId = await window.getHouseholdId();
+    const { error } = await window.db
+      .from('recipes')
+      .update({ tested: next })
+      .eq('id', id)
+      .eq('household_id', householdId);
+    if (error) throw error;
+    r.tested = next;
+    syncRecipeCardTested(id, next);
+    renderSheet();
+    window.showToast?.(next ? `${r.title} är nu märkt som provad.` : `${r.title} är åter omärkt.`,
+      { type: 'success' });
+  } catch {
+    if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+    window.showToast?.('Kunde inte spara — prova igen.', { type: 'error' });
+  }
+};
+
+// Håll receptkortet i Recept-fliken i synk (samma DOM-uppdatering som
+// toggleTested i recipe-browser gör). Kortet finns bara om fliken renderats.
+function syncRecipeCardTested(id, tested) {
+  const card = document.querySelector(`.recipe-card[data-id="${id}"]`);
+  if (!card) return;
+  card.dataset.tested = tested;
+  const pill = card.querySelector('.pill-toggle');
+  if (pill) {
+    pill.className = `pill ${tested ? 'pill-tested' : 'pill-untested'} pill-toggle`;
+    pill.textContent = tested ? '✓ Provat' : 'Oprövat';
+  }
 }
 
 // Meny-vyn: dagens åtgärder — raduppsättningen följer samma regler som den

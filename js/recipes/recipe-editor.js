@@ -2,8 +2,80 @@
 // Läser state: RECIPES, editingId
 // Skriver state: RECIPES, editingId
 
-import { proteinLabel, timeStr, renderIngredient, renderDetailInner } from '../utils.js';
+import { proteinLabel, timeStr, renderIngredient, renderDetailInner, escapeHtml, jsStringAttr } from '../utils.js';
 import { recipeToRow } from '../data-mapper.js';
+
+// ── Taggväljare ───────────────────────────────────────────────────────────────
+// Knappen vid taggfältet fäller ut alla taggar som redan används i receptboken
+// (vanligast först). Fältet är fortfarande fritext — väljaren skriver bara i
+// det, så en helt ny tagg kan skrivas för hand som förut.
+let _tagPickerOpen = false;
+
+function tagsInField() {
+  return (document.getElementById('edit-tags')?.value || '')
+    .split(',').map(t => t.trim()).filter(Boolean);
+}
+
+function knownTags() {
+  const counts = new Map();
+  for (const r of window.RECIPES || []) {
+    for (const t of r.tags || []) {
+      const low = String(t).trim().toLowerCase();
+      if (!low) continue;
+      counts.set(low, (counts.get(low) || 0) + 1);
+    }
+  }
+  // Mest använda först — det är de man nästan alltid vill ha. Lika många
+  // användningar → bokstavsordning (svensk sortering).
+  return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'sv'));
+}
+
+function renderTagPicker() {
+  const panel = document.getElementById('editTagsPicker');
+  const btn   = document.getElementById('editTagsPickBtn');
+  if (!panel || !btn) return;
+  panel.hidden = !_tagPickerOpen;
+  btn.setAttribute('aria-expanded', _tagPickerOpen ? 'true' : 'false');
+  btn.classList.toggle('open', _tagPickerOpen);
+  if (!_tagPickerOpen) { panel.innerHTML = ''; return; }
+
+  const tags = knownTags();
+  if (!tags.length) {
+    panel.innerHTML = '<p class="tagpick-empty">Inga taggar används ännu — skriv en egen i fältet ovanför.</p>';
+    return;
+  }
+  const chosen = new Set(tagsInField().map(t => t.toLowerCase()));
+  panel.innerHTML = tags.map(([tag, count]) => {
+    const active = chosen.has(tag);
+    return `<button type="button" class="tagpick-chip${active ? ' active' : ''}"
+      aria-pressed="${active ? 'true' : 'false'}"
+      onclick="pickTag('${jsStringAttr(tag)}')">${escapeHtml(tag)}<span class="tagpick-count">${count}</span></button>`;
+  }).join('');
+}
+
+export function toggleTagPicker() {
+  _tagPickerOpen = !_tagPickerOpen;
+  renderTagPicker();
+}
+
+export function closeTagPicker() {
+  _tagPickerOpen = false;
+  renderTagPicker();
+}
+
+// Klick på en tagg lägger till den — eller tar bort den om den redan står i
+// fältet (så väljaren också går att ångra med).
+export function pickTag(tag) {
+  const field = document.getElementById('edit-tags');
+  if (!field) return;
+  const low = tag.toLowerCase();
+  const current = tagsInField();
+  const next = current.some(t => t.toLowerCase() === low)
+    ? current.filter(t => t.toLowerCase() !== low)
+    : current.concat(tag);
+  field.value = next.join(', ');
+  renderTagPicker();
+}
 
 export function openEditModal(event, id) {
   event.stopPropagation();
@@ -20,6 +92,7 @@ export function openEditModal(event, id) {
   document.getElementById('edit-notes').value        = r.notes || '';
   document.getElementById('editFeedback').textContent = '';
   document.getElementById('editSaveBtn').disabled    = false;
+  closeTagPicker();                                       // väljaren startar alltid ihopfälld
   const m = document.getElementById('editModal');
   m.style.display = 'block';
   requestAnimationFrame(() => m.classList.add('open'));   // mjuk fade-in (Session 120)
@@ -32,6 +105,7 @@ export function closeEditModal() {
   setTimeout(() => { if (!m.classList.contains('open')) m.style.display = 'none'; }, 200);
   document.body.style.overflow = '';
   window.editingId = null;
+  closeTagPicker();
   document.getElementById('editModalTitle').textContent = 'Redigera recept';
 }
 
@@ -197,6 +271,8 @@ export async function deleteRecipe() {
   }
 }
 
+window.toggleTagPicker       = toggleTagPicker;
+window.pickTag               = pickTag;
 window.openEditModal         = openEditModal;
 window.closeEditModal        = closeEditModal;
 window.handleModalOverlayClick = handleModalOverlayClick;
