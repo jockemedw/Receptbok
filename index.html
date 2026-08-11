@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm">
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=194">
+<link rel="stylesheet" href="css/styles.css?v=195">
 <style>/* tömd — CSS flyttad till css/styles.css */
 
 </style>
@@ -493,6 +493,11 @@
     <label>Tid (minuter)<input type="number" id="edit-time" min="1"></label>
     <label>Portioner<input type="number" id="edit-servings" min="1"></label>
     <label>Taggar (kommaseparerat)<input type="text" id="edit-tags" placeholder="vardag30, soppa, ..."></label>
+    <div class="tagpick">
+      <button type="button" class="tagpick-btn" id="editTagsPickBtn" onclick="toggleTagPicker()"
+              aria-expanded="false" aria-controls="editTagsPicker">🏷 Välj bland befintliga taggar</button>
+      <div class="tagpick-panel" id="editTagsPicker" hidden></div>
+    </div>
     <label>Ingredienser (en per rad)<textarea id="edit-ingredients" rows="8"></textarea></label>
     <label>Instruktioner (ett steg per rad)<textarea id="edit-instructions" rows="8"></textarea></label>
     <label>Noteringar<input type="text" id="edit-notes" placeholder="Tips, varianter..."></label>
@@ -658,6 +663,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=157"></script>
+<script type="module" src="js/app.js?v=158"></script>
 </body>
 </html>

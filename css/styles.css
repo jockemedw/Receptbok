@@ -3282,6 +3282,55 @@
     font-size: 0.9rem;
     min-height: 1.2em;
   }
+  /* ── Taggväljare i redigeringsmodalen ── */
+  .tagpick { margin: -0.5rem 0 0.85rem; }
+  .tagpick-btn {
+    background: none;
+    border: 1px solid rgba(92,61,30,0.2);
+    color: var(--lichen);
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    font-weight: 500;
+    border-radius: 8px;
+    padding: 0.45rem 0.8rem;
+    min-height: 44px;
+    cursor: pointer;
+  }
+  .tagpick-btn.open { border-color: var(--lichen); color: var(--lichen-deep); background: var(--moss-soft); }
+  @media (hover: hover) { .tagpick-btn:hover { background: rgba(92,61,30,0.06); } }
+  .tagpick-panel {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.6rem;
+    max-height: 190px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.6rem;
+    background: var(--paper);
+    border: 1px solid rgba(92,61,30,0.2);
+    border-radius: 8px;
+  }
+  .tagpick-panel[hidden] { display: none; }
+  .tagpick-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 38px;
+    padding: 0.3rem 0.7rem;
+    background: var(--linen);
+    border: 1px solid var(--stone);
+    border-radius: 999px;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    color: var(--forest);
+    cursor: pointer;
+  }
+  .tagpick-chip.active { background: var(--moss-soft); border-color: var(--lichen); color: var(--lichen-deep); font-weight: 600; }
+  .tagpick-chip:focus-visible { outline: 2px solid var(--lichen); outline-offset: 2px; }
+  .tagpick-count { font-size: 0.72rem; color: var(--text-muted); }
+  .tagpick-chip.active .tagpick-count { color: var(--lichen-deep); }
+  .tagpick-empty { margin: 0; font-size: 0.85rem; color: var(--text-muted); }
   /* ── Import bottom-sheet ── */
   .import-overlay.open {
     display: flex;
@@ -4397,6 +4446,25 @@ html.auth-required body {
 .dlx-status { font-size: 0.7rem; font-weight: 600; padding: 0.18rem 0.55rem; border-radius: 6px; }
 .dlx-status.tested { background: var(--moss-soft); color: var(--lichen-deep); }
 .dlx-status.untested { background: var(--clay); color: var(--rust-deep); }
+/* Märket är en knapp i dagens receptkort: tryck växlar provat/ej provat.
+   Egen padding + min-höjd så tumträffytan blir tillräcklig på mobil. */
+.dlx-status-toggle {
+  font-family: inherit;
+  border: 1px solid transparent;
+  min-height: 34px;
+  padding: 0.35rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.12s ease, filter 0.15s ease;
+}
+.dlx-status-toggle.untested { border-color: var(--rust); }
+.dlx-status-toggle:active { transform: scale(0.96); }
+.dlx-status-toggle:focus-visible { outline: 2px solid var(--lichen); outline-offset: 2px; }
+.dlx-status-toggle[disabled] { cursor: default; }
+@media (prefers-reduced-motion: reduce) {
+  .dlx-status-toggle { transition: none; }
+  .dlx-status-toggle:active { transform: none; }
+}
 .dlx-detail-portions { font-size: 0.75rem; color: var(--moss-muted); }
 .dlx-detail-cols { display: flex; flex-direction: column; gap: 1rem; }
 .dlx-detail-block h4 {

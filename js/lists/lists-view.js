@@ -408,6 +408,8 @@ function detailHtml(list) {
   const actionsHtml = `
     <div class="fl-actions">
       ${items.length ? `<button type="button" class="today-btn today-btn-quiet" onclick="flResetChecks()">↺ Nollställ bockarna</button>` : ''}
+      ${checkedCount ? `<button type="button" class="today-btn today-btn-quiet" onclick="flClearChecked()">Rensa avbockade</button>` : ''}
+      ${items.length ? `<button type="button" class="today-btn today-btn-quiet fl-btn-danger" onclick="flClearList()">Rensa lista</button>` : ''}
       ${_editMode ? `
         <button type="button" class="today-btn today-btn-quiet" onclick="flStartRename()">Byt namn</button>
         <button type="button" class="today-btn today-btn-quiet" onclick="flArchiveList()">Arkivera listan</button>` : ''}
@@ -850,6 +852,82 @@ export async function flResetChecks() {
   }
 }
 
+// ── "Rensa avbockade" / "Rensa lista" ────────────────────────────────────────
+// Skillnaden mot Nollställ: här försvinner RADERNA, inte bara bockarna. Därför
+// alltid en säkerhetsfråga först — och en Ångra-toast efteråt (raderna läggs
+// tillbaka med sitt gamla innehåll och sin gamla ordning, men får nya id:n).
+async function removeItems(items, doneMsg) {
+  const ids = items.map((i) => i.id);
+  const idSet = new Set(ids);
+  const backup = items.map((i) => ({ ...i }));
+  ids.forEach((id) => _pendingChecks.delete(id));   // ingen bock-skrivning mot borttagna rader
+  _allItems = _allItems.filter((i) => !idSet.has(i.id));
+  render();
+  try {
+    const { error } = await window.db.from('family_list_items').delete().in('id', ids);
+    if (error) throw error;
+    window.showToast?.(doneMsg, {
+      type: 'success',
+      action: { label: 'Ångra', onClick: () => restoreItems(backup) },
+    });
+  } catch {
+    _allItems = _allItems.concat(backup);
+    render();
+    window.showToast?.('Kunde inte rensa — prova igen.', { type: 'error' });
+  }
+}
+
+async function restoreItems(backup) {
+  try {
+    const { data, error } = await window.db.from('family_list_items')
+      .insert(backup.map((i) => ({
+        list_id: i.list_id, household_id: i.household_id,
+        text: i.text, checked: i.checked, sort_order: i.sort_order,
+      })))
+      .select();
+    if (error) throw error;
+    _allItems = _allItems.concat(data || []);
+    render();
+  } catch {
+    window.showToast?.('Kunde inte ångra — raderna får läggas till igen.', { type: 'error' });
+  }
+}
+
+export async function flClearChecked() {
+  const items = itemsOf(_openListId).filter((i) => i.checked && !isTemp(i.id));
+  const n = items.length;
+  if (!n) {
+    window.showToast?.('Inga avbockade rader att rensa.', { type: 'info' });
+    return;
+  }
+  const ok = await window.confirmDialog({
+    title: 'Rensa avbockade?',
+    message: `${n} ${n === 1 ? 'avbockad rad tas' : 'avbockade rader tas'} bort. Resten av listan ligger kvar.`,
+    confirmLabel: 'Rensa',
+    danger: true,
+  });
+  if (!ok) return;
+  await removeItems(items, `${n} ${n === 1 ? 'rad' : 'rader'} rensade`);
+}
+
+export async function flClearList() {
+  const items = itemsOf(_openListId).filter((i) => !isTemp(i.id));
+  const n = items.length;
+  if (!n) {
+    window.showToast?.('Listan är redan tom.', { type: 'info' });
+    return;
+  }
+  const list = _lists.find((l) => l.id === _openListId);
+  const ok = await window.confirmDialog({
+    title: 'Rensa hela listan?',
+    message: `Alla ${n} rader i "${list?.title || 'listan'}" tas bort. Listan finns kvar och går att fylla på igen.`,
+    confirmLabel: 'Rensa allt',
+    danger: true,
+  });
+  if (!ok) return;
+  await removeItems(items, `Listan rensad — ${n} ${n === 1 ? 'rad' : 'rader'} borttagna`);
+}
+
 // ── Listor: skapa / byt namn / arkivera / ta bort ───────────────────────────
 export function flShowCreate() {
   _showCreateForm = true;
@@ -1160,6 +1238,8 @@ window.flToggleItem     = flToggleItem;
 window.flAddItem        = flAddItem;
 window.flRemoveItem     = flRemoveItem;
 window.flResetChecks    = flResetChecks;
+window.flClearChecked   = flClearChecked;
+window.flClearList      = flClearList;
 window.flShowCreate     = flShowCreate;
 window.flCreateList     = flCreateList;
 window.flStartRename    = flStartRename;

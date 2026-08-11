@@ -1,6 +1,26 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–137. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–138. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 138 — Morots-buggen: inköpslistan tappade mängderna när samma vara hade olika enheter (datamuterande, SKARP; backend-only)
+
+Joakims rapport: *"I de senaste aktuella matsedlarna genererades endast ordet 'morot' ur recept som egentligen innehöll 500g+400g+4st+2st morötter."*
+
+**Orsak (reproducerad exakt).** I `buildShoppingList` (`api/_shared/shopping-builder.js`) merge-nycklas varje vara på `namn||enhet`. "500 g + 400 g morötter" blev nyckeln `morot||g` (900 g) och "4 + 2 morötter" nyckeln `morot||`(styck, 6 st) — och sedan raderade dedup-steget `keysByName` **alla** mängdgrupper så fort ett namn hade fler än en enhetsnyckel, och släppte ner varan som bara namnet. Ett medvetet men förlustbringande designval från pipelinens barndom — ju fler recept per vecka, desto oftare krockar enheterna.
+
+**Omfattning (korpusanalys).** Live-Supabase gick inte att nå (Management-API-tokenen ger fortfarande 401, samma som Session 137), så analysen kördes mot `docs/legacy/recipes-backup-2026-05-16.json` (264 recept) genom exakt samma parse+normalize-väg som produktionen: **80 varor** låg i riskzonen med ≥2 "stora" enhetsgrupper — bl.a. lök (st+dl), paprika (st+dl+burk+g), lax (g+st), potatis (g+st+kg), champinjoner, citron, kikärtor. Ren enhetskonvertering hade bara löst 3 av dem — konflikterna är tvärdimensionella (st vs vikt vs volym).
+
+**Fix i två delar (samma fil):**
+1. **Samma dimension konverteras till gemensam basenhet FÖRE merge** (ny `UNIT_CONVERSION`: kg→g, l/liter→dl, cl→dl, ml→dl) — "1 kg + 600 g potatis" summerar nu till en rad. Visningen uppgraderar tillbaka (≥1000 g → kg, ≥10 dl → l): `potatis (1,6 kg)`, och en ensam "1 kg"-rad round-trippar oförändrad.
+2. **Okonverterbara dimensioner visas kombinerat i stället för att raderas:** wipe-steget ersatt av gruppering per namn → EN rad med alla mängder, `morot (900 g + 6 st)`, sorterat vikt → styck → volym. Styck-segmentet får explicit "st" bara i kombinerad visning; ensam styckvara behåller `äpple (5)`. **Mängder tappas aldrig längre.**
+
+**Nedströms verifierat säkert:** alla fyra konsumenter av liststrängarna (`shopping-list.js`, `dispatch-preferences.js`, `dispatch-to-willys.js`, `shopping-store.js`) strippar bara `(...)`-suffixet för namnet, och dispatchens återparsning av det nya formatet ger rätt canon (verifierat: `"morot (900 g + 6 st)"` → `morot`).
+
+**Tester:** 5 nya F311-block i `tests/shopping.test.js` (Joakims exakta fall, kg+g-summering, l+dl, tre dimensioner, round-trip av enkla rader). Inget befintligt test låste det gamla wipe-beteendet. **Hela sviten grön** (alla 13 testfiler, inkl. dispatch 140 och shopping-store 65).
+
+**Ändringens natur:** datamuterande (listbygget ändrar vad som skrivs till `shopping_lists`), backend-only — **inga versionsbumpar behövs**. Fixen slår igenom **vid nästa list-ombygge** (generera, "Välj dagar", byt recept); en redan sparad lista ändras inte retroaktivt.
 
 ---
 
