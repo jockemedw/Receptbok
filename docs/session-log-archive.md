@@ -1,6 +1,20 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–138. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–139. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+---
+
+## Session 139 — Tre önskemål från Joakim: rensa-listan-knappar, provat-växling i dagens receptkort, taggväljare i receptredigeringen (datamuterande, SKARP, ej mobil-verifierad)
+
+Joakims lista: *(1) I listorna vill jag att du lägger till möjligheten att "Rensa avbockade" och "Rensa lista" (med säkerhetsfråga innan det genomförs). (2) Man ska kunna trycka på "Ej provat" direkt i dagens receptkort för att växla det till "Provat". (3) När man redigerar ett recept ska det läggas till en knapp vid tagg-fältet för att få upp en lista på alla befintliga taggar för att välja en av dessa. Även fritext ska finnas kvar.*
+
+**1 — Rensa avbockade / Rensa lista (`js/lists/lists-view.js`).** Två nya knappar i listdetaljens åtgärdsrad, bredvid det befintliga "↺ Nollställ bockarna". Skillnaden mot nollställningen är viktig och syns i texterna: nollställ tar bort **bockarna**, de nya tar bort **raderna**. *Rensa avbockade* visas bara när något är avbockat och tar bort just de raderna; *Rensa lista* visas när listan har rader och tömmer den helt (listan själv finns kvar — arkivering/borttagning är kvar där de var, i Ändra-läget). Båda går via `window.confirmDialog` med antalet i frågan ("3 avbockade rader tas bort. Resten av listan ligger kvar." / "Alla 12 rader i \"Packning fjällen\" tas bort. Listan finns kvar och går att fylla på igen."), och *Rensa lista* har `danger`-stil. Delad hjälpare `removeItems()` gör borttagningen optimistiskt (rader försvinner direkt, återställs i minnet om DB:t säger nej) och lägger en **Ångra-toast** som återinsätter raderna med text, bockläge och `sort_order` — samma mönster som radvis borttagning redan hade. Väntande bock-skrivningar (`_pendingChecks`) städas för raderade id:n så batchen aldrig försöker uppdatera borta rader.
+
+**2 — "Ej provat" som växlingsknapp (`js/weekly-plan/plan-viewer-deluxe.js`).** Statusmärket i dag-sheetens receptkort (`sheetRecipeHtml`) är nu en riktig knapp med `aria-pressed`. Ett tryck skriver `recipes.tested` i Supabase (hushållsfiltrerat, samma UPDATE som pillret i Recept-fliken), uppdaterar `window.RECIPES`, ritar om sheeten och bekräftar med en toast. Kortet i Recept-fliken hålls i synk i DOM:en (`syncRecipeCardTested`) om fliken redan är renderad. Misslyckas skrivningen rullas ingenting tillbaka i onödan — knappen låses upp igen och toasten säger "Kunde inte spara — prova igen." Ny CSS `.dlx-status-toggle`: 34 px min-höjd, ram runt "Ej provat", tryckfeedback som respekterar `prefers-reduced-motion`.
+
+**3 — Taggväljare i receptredigeringen (`js/recipes/recipe-editor.js` + `index.html`).** Under taggfältet ligger nu knappen **"🏷 Välj bland befintliga taggar"** som fäller ut alla taggar som faktiskt används i receptboken, **vanligast först** (antal i chipet). Ett tryck lägger till taggen i fältet — trycker man på en redan vald tagg tas den bort igen, så väljaren också går att ångra med. Fältet är oförändrat fritext: väljaren skriver bara i det, och en helt ny tagg skrivs för hand precis som förut. Väljaren startar alltid ihopfälld (nollställs i både `openEditModal` och `closeEditModal`, så importflödets "Nytt recept" också får den stängd). Panelen är scrollbar (max 190 px), chipsen 38 px höga.
+
+**Ändringens natur:** datamuterande (1 raderar listrader, 2 skriver `recipes.tested`; 3 är ren inmatningshjälp). **Frontend → versionerna bumpade: styles v195/app v158/SW v109.** Ingen migration, inga nya endpoints, `api/`-filantalet orört (12-gränsen). Hela testsviten grön (alla 13 filer, `node_modules` installerades för dispatch/cookies-testerna).
 
 ---
 
