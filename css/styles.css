@@ -36,10 +36,11 @@
     --p-flask: #c07a5a;
     --p-veg: #5e7a68;
 
-    /* Typografi: Newsreader (varm redaktionell serif) på alla rubriker sedan
-       Session 111. Historik: Playfair Display → Fraunces provades Session 108
-       (valdes bort) → Newsreader vald via mobil-jämförelse. */
-    --font-display: 'Newsreader', serif;
+    /* Typografi: Bricolage Grotesque (varm, karaktärsfull sans) på alla rubriker
+       sedan Session 140 — Joakim ville bort från serifer. Historik: Playfair
+       Display → Fraunces (Session 108, valdes bort) → Newsreader (Session 111)
+       → Bricolage Grotesque. */
+    --font-display: 'Bricolage Grotesque', sans-serif;
     --font-body: 'DM Sans', sans-serif;
     --on-accent: #fff;   /* text/ikon ovanpå rust/lichen-ytor */
     --on-deep: #f5f1e8;  /* text på ytor som är mörka i BÅDA teman (hero-gradienten) */
@@ -4041,7 +4042,7 @@ html.auth-required body {
   margin: 0 0 0.6rem;
   color: var(--on-deep);
 }
-/* Stats — redaktionella serif-siffror med hårfina avdelare */
+/* Stats — redaktionella display-siffror med hårfina avdelare */
 .dlx-stats {
   position: relative;
   display: flex;
@@ -4378,7 +4379,7 @@ html.auth-required body {
 .dlx-day-note svg { width: 15px; height: 15px; color: var(--moss-muted); }
 .dlx-day-note.muted { color: var(--lichen); font-weight: 500; }
 /* Liten markör för egen planering — ersätter den gamla "EGEN PLANERING"-texten.
-   Sitter inline före rättens namn (serif-titeln), dämpad så den inte konkurrerar. */
+   Sitter inline före rättens namn (display-titeln), dämpad så den inte konkurrerar. */
 .dlx-own { color: var(--moss-muted); opacity: 0.7; }
 .dlx-own svg { width: 14px; height: 14px; vertical-align: -0.12em; margin-right: 0.34rem; }
 /* Recept ur receptboken (gryt-ikon) får en mjuk grön ton — skiljer den från
