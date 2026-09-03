@@ -61,27 +61,57 @@ Det är 200–500 ms overhead per anrop innan `/api/skip-day` ens rört `meal_da
 
 ---
 
-## 2. Fas 0 — mätning (1 session, render-only)
+## 2. Fas 0 — mätning ✅ BYGGD (Session 141)
 
-Målet är en baslinje att jämföra mot, så att varje senare batch kan bevisas eller förkastas. Utan detta blir "känns snabbare" den enda måttstocken.
+Målet var en baslinje att jämföra mot, så att varje senare batch kan bevisas eller förkastas. Instrumenteringen och harnessen finns nu i koden; Joakims mobilmätning (0.2) och index-kontrollen (0.4) återstår.
 
-### 0.1 Instrumentering i appen (billig, permanent)
-`performance.mark()`/`measure()` i boot-kedjan: `boot:start`, `auth:ok`, `recipes:loaded`, `plan:loaded`, `today:first-render`, `today:complete`, samt mark/measure runt `loadShoppingTab`, `loadListsTab`, varje `apiFetch` (path + ms) och varje `renderDeluxe`/`renderTodayView`. Aktiveras med `?perf=1` och skrivs som `console.table` + en liten overlay-ruta längst ner (så Joakim kan läsa den på mobilen utan devtools). Filer: `js/app.js`, `js/supabase-client.js`, `js/ui/`-hjälpare (ny `perf.js`, ~40 rader).
+### 0.1 Instrumentering i appen ✅
+Ny modul **`js/ui/perf.js`**. Helt inert utan flaggan: inga observers registreras, ingen overlay byggs, och `window.perfMark`/`perfSpan` sätts inte ens (anropsställena använder `?.()` och blir no-ops). Slås på med **`?perf=1`**, av med `?perf=0` eller knappen *Stäng av*. Flaggan sparas i `localStorage` — annars går kallstart från hemskärmsikonen inte att mäta, eftersom manifestets `start_url` inte kan bära en query-parameter. Det är en device-lokal diagnostikflagga, inte delat familjeinnehåll.
 
-### 0.2 Mobilmätning (Joakim, 10 min)
-Tre scenarier, tre gånger vardera, på iPhone över wifi (den vanliga situationen) och en gång över 4G som kontrast, appen helt stängd emellan:
+Mäter: navigation timing (TTFB/DOM/DCL), resource timing (filer + byte), boot-milstolparna `js → auth → hushåll → recept → receptvy → idag → matsedel`, varje Supabase-fråga och `/api/`-anrop (styck + ms), spans för `render:Idag`, `render:Matsedel`, `flik:Inköp`, `flik:Listor`, `flikbyte:*`, samt scroll-jämnhet (bildrutor/hackiga rutor/värsta ruta) och långa uppgifter. Overlayen har **Kopiera** → hela rapporten som text, så siffrorna kan klistras in i en session utan devtools.
+
+Anropsställen (alla minimala): `js/app.js` (milstolpar), och en tunn perf-wrapper runt `renderTodayView`, `renderDeluxe`, `loadShoppingTab`, `loadListsTab` i respektive slice. `window.switchTab` wrappas sent i `boot()` så det YTTERSTA lagret mäts.
+
+### 0.2 Mobilmätning (Joakim, 10 min) — ÅTERSTÅR
+Öppna `https://receptbok-six.vercel.app/?perf=1` **en gång** på iPhonen; flaggan sitter kvar, så därefter går det att mäta kallstart från hemskärmsikonen. Tre scenarier, tre gånger vardera, över wifi (det vanliga) och en runda över 4G som kontrast, appen helt stängd emellan:
 1. Kallstart → Idag visar kvällens rätt.
 2. Flikbyte Idag → Inköp → Matsedel → Recept → Idag.
 3. En mutation: "Lägg till på listan" från dag-sheeten → toast.
-Läs av overlayen och skriv siffrorna i verifieringskön. Det här är den enda mätningen som säger sanningen om upplevd hastighet.
+4. Scrolla Recept-fliken en stund (mäter jank).
 
-### 0.3 Repeterbar lokal mätning (Claude)
-En Playwright-harness `tests/e2e/perf-smoke.mjs` som kör appen i headless Chromium mot **stubbad Supabase** (route-intercept av `*.supabase.co/rest/v1/*` och `/auth/v1/*` med sparad exempeldata) och rapporterar: antal requests, total överförd mängd, `performance.measure`-värdena ovan, long tasks > 50 ms, DOM-noder per flik. Körs med `node tests/e2e/perf-smoke.mjs` (samma "inga npm-scripts"-princip). Ger reproducerbara *relativa* siffror mellan commits, inte absolut mobiltid. Harnessen körs i både Chromium och WebKit (Playwright) eftersom familjens huvudenhet är iPhone. Lighthouse mot produktion utgår (beslut B4: inget testkonto).
+Tryck på pillret längst ner → **Kopiera** → klistra in i en session. *Nolla* nollställer räknarna mellan scenarierna. Det här är den enda mätningen som säger sanningen om upplevd hastighet.
 
-### 0.4 Datalagret (Claude, när Management-API-tokenen fungerar)
-Läsande SQL: index på `recipes(household_id)`, `meal_days(household_id)`, `meal_days(plan_id)`, `shopping_items(list_id)`, `shopping_lists(household_id, is_active)`, `plan_archives(household_id)`, `household_members(user_id)`, samt storleken på `recipes`-payloaden (`select *` idag). Migrationerna skapar bara index för `family_lists`/`family_list_items` och `meal_days.shopping_list_id` — övriga tabeller förlitar sig på vad Supabase-seeden råkade skapa. Saknas de är det en billig, idempotent migration (DDL → Joakims OK).
+### 0.3 Repeterbar lokal mätning ✅
+**`node tests/e2e/perf-smoke.mjs`** — kör appen i en riktig webbläsare mot en stubbad Supabase (`tests/e2e/fixtures/supabase-stub.js`, 260 recept + plan + 46 inköpsvaror + listor, datum relativa till idag). Beroendefri statisk server i skriptet; Playwright hämtas från projektet eller den globala installationen. Flaggor: `--browser=webkit`, `--latency=<ms>` (default 120 — modellerar nätverksrundan så seriella kedjor syns), `--json=<fil>`.
 
-**Acceptans för Fas 0:** baslinjesiffror i status.md för de tre scenarierna + harness grön i CI.
+Fyra mätscenarier (kallstart, flikrunda, flikrunda igen, varmstart) plus ett **skyddsnät**: appen laddas även *utan* `?perf=1` i en tom kontext och körningen failar om overlayen byggs, om `window.perfMark` finns, om sidan loggar fel eller om något försöker nå riktiga Supabase. Fliktiderna mäts **inifrån sidan** (capture-fas-klick → synlig yta); wall-clock runt Playwrights `click()` dög inte, den innehåller Playwrights egna actionability-väntor och blåste i ett tidigt utkast upp Inköp till 850 ms fast appen var klar på 375 ms.
+
+**WebKit-lanen finns men kan inte köras i molnmiljön** — bara Chromium-binären är förinstallerad, och harnessen avbryter med ett tydligt besked i stället för att ladda ner något. Kör `--browser=webkit` där binären finns; iPhone-sanningen kommer annars från 0.2.
+
+Baslinjen sparas i `docs/snapshots/perf-baseline.json` (`--json=docs/snapshots/perf-baseline.json`).
+
+### 0.4 Datalagret — ÅTERSTÅR (blockerad)
+Supabase Management-API:t svarar fortsatt `Unauthorized` från molnsessionen, så index-kontrollen är ogjord. `SUPABASE_ACCESS_TOKEN` behöver förnyas i miljön. Läsande SQL som ska köras: index på `recipes(household_id)`, `meal_days(household_id)`, `meal_days(plan_id)`, `shopping_items(list_id)`, `shopping_lists(household_id, is_active)`, `plan_archives(household_id)`, `household_members(user_id)`, samt storleken på `recipes`-payloaden. Migrationerna skapar bara index för `family_lists`/`family_list_items` och `meal_days.shopping_list_id`.
+
+### 0.5 Baslinje — uppmätt 2026-09-03 (Chromium, stub-latens 120 ms)
+
+Siffrorna är **relativa** (stubbad databas, desktop-CPU) — de jämför commit mot commit. Absolut mobiltid kommer från 0.2.
+
+| Mått | Baslinje | Kommentar |
+|---|---|---|
+| Databasfrågor vid kallstart | **11** | `household_members, recipes, households, weekly_plans, shopping_lists, plan_archives, meal_days×2, shopping_items, pricing_status, family_lists` |
+| Boot-kedjan | js 140 → auth 156 → **hushåll 277 → recept 398** → receptvy 417 → **idag 671** | Fyra tydliga trappsteg à ~120 ms = **fyra seriella nätverksrundor**. Med latens 0 blir hela kedjan 205 ms; med 240 ms blir den 1128 ms — kedjan är alltså nästan helt väntan. |
+| Requests vid kallstart | 31 (30 resurser) | Samma vid varmstart — `max-age=0` gör att inget återanvänds |
+| DOM-noder efter boot | 4382, varav **Recept-fliken 3405 (78 %)** | Byggs vid boot fast fliken är dold → åtgärd A4 |
+| Renderingar vid boot | `render:Idag ×2`, `render:Matsedel ×1` | Dubbelrenderingen av Idag bekräftad → åtgärd A6 |
+| Flikbyte Inköp | **385 ms till synligt · 4 frågor** | Tre seriella frågor (14 ms vid latens 0, 374 vid 120, 735 vid 240) |
+| Flikbyte Inköp **andra gången** | **382 ms · 4 frågor igen** | Inget återanvänds → precis premissen för åtgärd C1 |
+| Övriga flikbyten | 8–29 ms | Matsedel/Recept/Idag renderar ur minnet — de är redan snabba |
+| `render:Matsedel` under en flikrunda | **×10** | Tio omrenderingar på fem flikbyten → åtgärd A6/F2 |
+
+**Det mätningen ändrar i planen:** ingenting i prioriteringen — A (boot), C (flikbyten) och B (leverans) står kvar överst, nu med siffror bakom sig. Två saker skärps: A4 är större än väntat (78 % av DOM:en byggs för en dold flik), och Matsedel/Recept/Idag behöver *ingen* renderoptimering (8–29 ms) — F2 nedgraderas till "bara om mobilmätningen säger annat".
+
+**Acceptans för Fas 0:** ✅ instrumentering + harness i koden, baslinje sparad, hela testsviten grön. Kvar: Joakims mobilsiffror (0.2) och index-kontrollen (0.4). CI-gating av harnessen tas i Batch B, där CI ändå måste börja bygga.
 
 ---
 

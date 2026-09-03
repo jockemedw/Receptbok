@@ -311,7 +311,20 @@ function noPlanHtml() {
 
 // ── Huvudrendering ────────────────────────────────────────────────────────────
 
+// Perf-wrapper (mätning bakom ?perf=1) — renderingen själv ligger i
+// renderTodayViewInner. Interna anrop går via den här, så varje render räknas.
 export function renderTodayView() {
+  const end = window.perfSpan?.('render:Idag');
+  try {
+    return renderTodayViewInner();
+  } finally {
+    end?.();
+    // Milstolpe: första gången Idag renderats med riktig data.
+    if (window._todayReady) window.perfMarkOnce?.('idag');
+  }
+}
+
+function renderTodayViewInner() {
   const host = document.getElementById('todayView');
   if (!host) return;
 

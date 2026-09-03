@@ -1,6 +1,20 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–140. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–141. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+## Session 141 — Prestanda- och flödesplan: analys + prioriterad optimeringsplan (docs-only, inget i koden ändrat).
+
+Joakims önskemål: *"Jag vill göra hela appen mer responsiv och snabb och förbättra 'flowet' — gör en plan för analyser och optimering av koden för relevanta delar."*
+
+**Leverans: `docs/prestanda-plan-2026-09.md`.** Kodgenomgång av boot-vägen, flikbyten, mutationer, realtime, backend-handlern och leveransen av statiska filer (cache-headers och CDN-vattenfall uppmätta med `curl` mot live-deployen). **Huvuddiagnos:** kallstarten är seriell i fem nätverkssteg (skal → CSS+fonter → 27 omodulerade JS-filer + 8-filers Supabase-CDN-vattenfall → *alla recept* → planen i två inbäddade steg) innan Idag-fliken visar något; Inköp-fliken visar spinner + 4 frågor vid **varje** flikbyte; "lägg till på listan" från dag-sheeten kör 10 frågor; varje API-anrop betalar kallstart + en Auth-runda (`getUser`) + en hushållsfråga innan arbetet börjar; allt statiskt levereras med `max-age=0`. **Planen:** Fas 0 mätning (perf-overlay `?perf=1` + Playwright-harness mot stubbad Supabase + Joakims mobilsiffror) → Batch A boot-parallellisering → C flikbyten utan spinner → B leverans (byggsteg/hashade filer, självhostad Supabase-klient, fontbantning, SW-timeout) → D mutationer/realtime renderar från API-svar → E lokal JWT-verifiering + hushåll ur token → F/G renderhygien + skelett. 7–8 sessioner; A+C ger mest per timme. **Besluten togs i en intervju samma session** (avsnitt 5 i planen): esbuild-bundling ja, självhostad Supabase-klient ja, `jose` ja, mätning via stubbad Supabase + Joakims iPhone-siffror (inget testkonto), lazy-instruktioner nej, index-migration avgörs av Fas 0.4. Joakim upplever alla fyra områdena som sega; huvudenhet iPhone på wifi → Fas 0 mäter primärt iPhone/Safari över wifi och harnessen kör även WebKit. Nästa session: Fas 0.
+
+**Två bifynd:** (1) SW-precachen pekar på `styles.css?v=193` medan index använder v196 (fel version precachas — rättas i Batch B4). (2) Status-punkten "död klassisk veckovy-CSS kvar" under *Öppna utredningar* är inaktuell — `.week-day-card`/`.timeline-`/`.plan-group` har 0 träffar i `styles.css`; stryks i Batch F4. Supabase Management-API:t svarade `Unauthorized` i sessionen → index-kontrollen (Fas 0.4) är ogjord.
+
+**Ändringens natur:** docs-only. Inga versionsbumpar, inga tester berörda.
+
+**Kvar från tidigare:** Session 140:s fontbyte, Session 137:s migration 011, Session 136:s Hemköp-inloggning, Session 139:s tre önskemål, Session 135:s butiksval, Session 134:s dagväljare, Session 132:s inköpslista-fixar och Session 131:s rundor 2–8 väntar på skarp mobilkoll (se kön).
+
+---
 
 ## Session 140 — Seriferna är borta: Bricolage Grotesque ersätter Newsreader på alla rubriker (render-only, SKARP, ej mobil-verifierad).
 

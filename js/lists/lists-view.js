@@ -110,7 +110,17 @@ async function refreshData() {
   }
 }
 
+// Perf-wrapper (mätning bakom ?perf=1) — se js/ui/perf.js.
 export async function loadListsTab() {
+  const end = window.perfSpan?.('flik:Listor');
+  try {
+    return await loadListsTabInner();
+  } finally {
+    end?.();
+  }
+}
+
+async function loadListsTabInner() {
   const host = document.getElementById('listsContent');
   if (host && !host.innerHTML) {
     host.innerHTML = `${headingHtml('Listor')}<div class="no-data">Hämtar listorna…</div>`;

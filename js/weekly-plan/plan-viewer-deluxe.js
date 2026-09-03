@@ -849,7 +849,17 @@ function weekNoticeHtml(plan, pending, weekStart) {
   </button>`;
 }
 
+// Perf-wrapper (mätning bakom ?perf=1) — se js/ui/perf.js.
 export function renderDeluxe() {
+  const end = window.perfSpan?.('render:Matsedel');
+  try {
+    return renderDeluxeInner();
+  } finally {
+    end?.();
+  }
+}
+
+function renderDeluxeInner() {
   if (!ensureScaffold()) return;
   const host = document.getElementById('weekDeluxe');
   if (!host) return;
