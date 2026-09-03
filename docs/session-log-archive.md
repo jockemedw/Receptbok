@@ -1,6 +1,16 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–139. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–140. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+## Session 140 — Seriferna är borta: Bricolage Grotesque ersätter Newsreader på alla rubriker (render-only, SKARP, ej mobil-verifierad).
+
+Joakims önskemål: *"Jag vill ändra font på receptkorten mm. Alla fonter med serif ska bort. Välj något som passar in."*
+
+**Bytet var centralt.** All rubriktypografi (receptkortens titlar, hero-rubriker, sheet-rubriker, stats-siffror m.m.) går via en enda token `--font-display` i `css/styles.css`, som var appens enda serif (`'Newsreader', serif`). Den är nu **`'Bricolage Grotesque', sans-serif`** — en varm, karaktärsfull sans som behåller den redaktionella känslan mot DM Sans-brödtexten (som är kvar oförändrad som `--font-body`). Google Fonts-länken i `index.html` uppdaterad (Newsreader ut, Bricolage Grotesque 400/500/600/700 in — URL:en verifierad, 200 + rätt familj). Wordmarkens kursiva `em`-suffix renderas nu som syntetisk kursiv (Bricolage saknar äkta italic) — medvetet accepterat. Två vilseledande CSS-kommentarer som kallade rubrikerna "serif" omskrivna; fonthistoriken (Playfair → Fraunces → Newsreader → Bricolage) dokumenterad vid tokenen. Inga kvarvarande serif-referenser i skarp frontend-kod (grep-verifierat; `architecture.html`/extensionen var redan sans).
+
+**Ändringens natur:** render-only (bara CSS-token + fontlänk; ingen JS-logik rörd, inga tester berörda). **Frontend → versionerna bumpade: styles v196/SW v110** (app.js orörd, v158 kvar).
+
+**Kvar från tidigare:** Session 137:s migration 011 (engångsräddning av låst matsedel) väntar ditt OK; Session 136:s Hemköp-inloggning (PoC + `STORE_CRED_KEY` + migration 010), Session 139:s tre önskemål, Session 135:s butiksval, Session 134:s dagväljare, Session 132:s inköpslista-fixar och Session 131:s rundor 2–8 väntar fortfarande på skarp mobilkoll (se kön).
 
 ---
 
