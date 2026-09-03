@@ -931,7 +931,18 @@ export async function markRoundShopped() {
   }
 }
 
+// Perf-wrapper (mätning bakom ?perf=1) — mäter hela flikladdningen inkl. de
+// fyra frågorna, alltså exakt den spinnertid Joakim ser vid varje flikbyte.
 export async function loadShoppingTab() {
+  const end = window.perfSpan?.('flik:Inköp');
+  try {
+    return await loadShoppingTabInner();
+  } finally {
+    end?.();
+  }
+}
+
+async function loadShoppingTabInner() {
   document.getElementById('shopLoading').style.display  = '';
   document.getElementById('shopContent').style.display  = 'none';
   document.getElementById('shopNoData').style.display   = 'none';

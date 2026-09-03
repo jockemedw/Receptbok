@@ -1,6 +1,7 @@
 // Entry point — importerar alla moduler och startar appen.
 // Modulerna registrerar sina funktioner på window vid import.
 
+import './ui/perf.js';   // ?perf=1 → mätning (Fas 0). Inert utan flaggan.
 import './state.js';
 import './utils.js';
 import { isDbUnreachable, getLastDbError, DB_RESTING_MESSAGE } from './supabase-client.js';
@@ -29,6 +30,7 @@ import './weekly-plan/prisoptimera.js';
 async function init() {
   try {
     const householdId = await window.getHouseholdId();
+    window.perfMark?.('hushåll');
     if (!householdId) {
       // Pausad free-tier-databas ser ut som "hushåll saknas" — skilj på dem
       // så familjen får veta att det bara är att vänta, inte att något är trasigt.
@@ -44,11 +46,15 @@ async function init() {
     if (error) throw new Error(isDbUnreachable(error) ? DB_RESTING_MESSAGE : 'Kunde inte ladda recepten.');
     window.RECIPES     = rows.map(recipeFromRow);
     window._allRecipes = window.RECIPES;
+    window.perfMark?.('recept');
     document.getElementById('loadingState').style.display = 'none';
     document.getElementById('footerEl').textContent =
       `Receptboken · ${window.RECIPES.length} recept`;
     buildTagFilterUI();
     window.renderRecipeBrowser();
+    // Mäter kostnaden för att bygga Recept-fliken vid boot fast den är dold
+    // (åtgärd A4 i docs/prestanda-plan-2026-09.md ska kunna bevisas).
+    window.perfMark?.('receptvy');
     window.initDatePickers();
   } catch (err) {
     // F162: dela vilo-läget med Idag-vyn (default-flik) — den här katastrof-UI:n
@@ -271,9 +277,19 @@ document.getElementById('emptyState').addEventListener('click', e => {
 });
 
 async function boot() {
+  // Sent installerade perf-hooks: wrappar window.switchTab YTTERST, efter att
+  // premiumvyn och Idag-fliken lagt sina egna wrappers.
+  window.perfInstallLateHooks?.();
   await requireAuth();
+  window.perfMark?.('auth');
   await init();
-  window.loadWeeklyPlan();
+  // Planladdningen är medvetet inte awaitad (som förut) — vi hakar bara på för
+  // att markera när matsedelsdatat landat. Tvåargumentsformen håller ett
+  // avvisat löfte hanterat.
+  Promise.resolve(window.loadWeeklyPlan()).then(
+    () => window.perfMark?.('matsedel'),
+    () => window.perfMark?.('matsedel:fel'),
+  );
 
   // Deep-link via query param: ?tab=recept|vecka|shop|listor
   const tabParam = new URLSearchParams(window.location.search).get('tab');

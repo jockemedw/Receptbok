@@ -79,6 +79,7 @@
     --z-cook-overlay: 1100;  /* cook-overlay */
     --z-toast: 1200;         /* toastHost */
     --z-confirm: 1300;       /* confirm-overlay (över toasts) */
+    --z-perf: 9998;          /* perf-overlay (?perf=1) — över allt utom auth-gaten */
     --z-authgate: 9999;      /* auth-gate överst */
     --btn-forest: #3d5544;        /* mörkgröna CTA-knappar (ljusas i mörkt tema) */
     --btn-forest-strong: #2c3f33;
@@ -7060,3 +7061,74 @@ button.storepick-row:active { border-color: var(--lichen); background: var(--mos
   font-size: 0.85rem;
   cursor: pointer;
 }
+
+/* ── Perf-overlay (Fas 0-mätning, js/ui/perf.js) ─────────────────────────────
+   Syns BARA med ?perf=1 — modulen bygger inget element annars. Medvetet
+   neutral (systemfont, egna färger) så den inte kan förväxlas med app-UI, och
+   kompakt nog att läsas på en telefon. Ligger över allt utom auth-gaten.
+   Följer temat via tokens; ingen animation (ska aldrig störa det som mäts). */
+.perf-overlay {
+  position: fixed;
+  left: 8px;
+  bottom: calc(var(--bottom-nav-h, 0px) + 8px + env(safe-area-inset-bottom, 0px));
+  z-index: var(--z-perf);
+  max-width: min(94vw, 460px);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--forest);
+  pointer-events: none;
+}
+.perf-overlay > * { pointer-events: auto; }
+
+.perf-pill {
+  display: inline-block;
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--linen-card);
+  color: var(--forest);
+  font: inherit;
+  box-shadow: var(--shadow-card, 0 2px 8px rgba(0,0,0,.12));
+  cursor: pointer;
+}
+
+.perf-body {
+  margin-top: 6px;
+  padding: 8px 10px;
+  max-height: 52vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--linen-card);
+  box-shadow: var(--shadow-card, 0 2px 8px rgba(0,0,0,.12));
+}
+.perf-row {
+  display: grid;
+  grid-template-columns: 4.6em 1fr;
+  gap: 6px;
+  padding: 2px 0;
+  border-bottom: 1px solid var(--hairline, var(--border));
+}
+.perf-row:last-of-type { border-bottom: none; }
+.perf-key { color: var(--text-muted); }
+.perf-val { word-break: break-word; }
+
+.perf-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.perf-btn {
+  flex: 1;
+  min-height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--forest);
+  font: inherit;
+  cursor: pointer;
+}
+.perf-btn:active { background: var(--stone); }
