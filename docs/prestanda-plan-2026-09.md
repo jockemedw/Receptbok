@@ -69,14 +69,14 @@ Målet är en baslinje att jämföra mot, så att varje senare batch kan bevisas
 `performance.mark()`/`measure()` i boot-kedjan: `boot:start`, `auth:ok`, `recipes:loaded`, `plan:loaded`, `today:first-render`, `today:complete`, samt mark/measure runt `loadShoppingTab`, `loadListsTab`, varje `apiFetch` (path + ms) och varje `renderDeluxe`/`renderTodayView`. Aktiveras med `?perf=1` och skrivs som `console.table` + en liten overlay-ruta längst ner (så Joakim kan läsa den på mobilen utan devtools). Filer: `js/app.js`, `js/supabase-client.js`, `js/ui/`-hjälpare (ny `perf.js`, ~40 rader).
 
 ### 0.2 Mobilmätning (Joakim, 10 min)
-Tre scenarier, tre gånger vardera, på 4G med wifi av, appen helt stängd emellan:
+Tre scenarier, tre gånger vardera, på iPhone över wifi (den vanliga situationen) och en gång över 4G som kontrast, appen helt stängd emellan:
 1. Kallstart → Idag visar kvällens rätt.
 2. Flikbyte Idag → Inköp → Matsedel → Recept → Idag.
 3. En mutation: "Lägg till på listan" från dag-sheeten → toast.
 Läs av overlayen och skriv siffrorna i verifieringskön. Det här är den enda mätningen som säger sanningen om upplevd hastighet.
 
 ### 0.3 Repeterbar lokal mätning (Claude)
-En Playwright-harness `tests/e2e/perf-smoke.mjs` som kör appen i headless Chromium mot **stubbad Supabase** (route-intercept av `*.supabase.co/rest/v1/*` och `/auth/v1/*` med sparad exempeldata) och rapporterar: antal requests, total överförd mängd, `performance.measure`-värdena ovan, long tasks > 50 ms, DOM-noder per flik. Körs med `node tests/e2e/perf-smoke.mjs` (samma "inga npm-scripts"-princip). Ger reproducerbara *relativa* siffror mellan commits, inte absolut mobiltid. Lighthouse mot produktion kräver inloggning → **beslut B4**.
+En Playwright-harness `tests/e2e/perf-smoke.mjs` som kör appen i headless Chromium mot **stubbad Supabase** (route-intercept av `*.supabase.co/rest/v1/*` och `/auth/v1/*` med sparad exempeldata) och rapporterar: antal requests, total överförd mängd, `performance.measure`-värdena ovan, long tasks > 50 ms, DOM-noder per flik. Körs med `node tests/e2e/perf-smoke.mjs` (samma "inga npm-scripts"-princip). Ger reproducerbara *relativa* siffror mellan commits, inte absolut mobiltid. Harnessen körs i både Chromium och WebKit (Playwright) eftersom familjens huvudenhet är iPhone. Lighthouse mot produktion utgår (beslut B4: inget testkonto).
 
 ### 0.4 Datalagret (Claude, när Management-API-tokenen fungerar)
 Läsande SQL: index på `recipes(household_id)`, `meal_days(household_id)`, `meal_days(plan_id)`, `shopping_items(list_id)`, `shopping_lists(household_id, is_active)`, `plan_archives(household_id)`, `household_members(user_id)`, samt storleken på `recipes`-payloaden (`select *` idag). Migrationerna skapar bara index för `family_lists`/`family_list_items` och `meal_days.shopping_list_id` — övriga tabeller förlitar sig på vad Supabase-seeden råkade skapa. Saknas de är det en billig, idempotent migration (DDL → Joakims OK).
@@ -177,16 +177,19 @@ Total: **7–8 sessioner**. Batch A + C ger sannolikt den största märkbara ski
 
 ---
 
-## 5. Beslut som behövs från Joakim
+## 5. Beslut — tagna av Joakim 2026-09-03 (intervju i Session 141)
 
-- **B1 — Byggsteg eller inte.** (a) esbuild-bundling med hashade filnamn (rekommenderas; ändrar deploykonventionen, tar bort versionsbump-ritualen) eller (b) importmap + `?v=` utan byggsteg (behåller "allt körs med node", men 27 requests kvarstår vid varmstart tills cache slår in).
-- **B2 — Självhosta Supabase-klienten** i `vendor/` (pinnad version, uppdateras manuellt) i stället för jsdelivr-CDN. Rekommenderas — tar bort ett runtime-beroende på tredje part.
-- **B3 — Lokal JWT-verifiering:** `jose` som beroende i `api/` eller egen `crypto.subtle`-verifiering utan beroende. Rekommendation: `jose` (välbeprövad, liten).
-- **B4 — Testkonto för Lighthouse/Playwright mot produktion**, eller nöja sig med stubbad harness + Joakims mobilsiffror. Rekommendation: stub + mobil räcker; ett testkonto blir aktuellt först i M1.
-- **B5 — Index-migration** om Fas 0.4 hittar luckor (DDL → körs bara på ditt OK, som alltid).
-- **B6 — Lazy-ladda receptinstruktioner?** Skulle krympa boot-payloaden men ändrar sökningen (instruktioner ingår i sök idag). Rekommendation: **nej** tills mätningen visar att `recipes`-payloaden faktiskt är flaskhals — receptstrukturen är invariant #2 och sökbeteendet är inarbetat.
+| Beslut | Utfall | Konsekvens för planen |
+|---|---|---|
+| **B1 Byggsteg** | **Ja — esbuild-bundling** till hashad fil. | Batch B1 väg (a). Nytt `package.json`-devberoende, `buildCommand` i `vercel.json`, SW cache-först på hashade filer, versionsbump-ritualen försvinner (CLAUDE.md uppdateras när det är live). CI-workflowen ska köra bygget så en trasig bundle fångas före deploy. |
+| **B2 Supabase-klient** | **Ja — självhosta** pinnad version i `vendor/`. | Batch B2. Uppdateras manuellt; versionen loggas i status.md. |
+| **B3 JWT-verifiering** | **`jose` som beroende**, `getUser` kvar som fallback vid okänd `kid`. | Batch E1. |
+| **B4 Mätning** | **Stubbad Supabase + Joakims mobilsiffror.** Inget testkonto i produktion. | Fas 0.3 harness byggs; Lighthouse mot live utgår. |
+| **B5 Index-migration** | Öppet — avgörs av Fas 0.4 när Management-API-tokenen fungerar. | DDL bara på uttryckligt OK, som alltid. |
+| **B6 Lazy-ladda instruktioner** | **Nej** — sökningen i instruktionstext behålls. | Boot-payloaden mäts men rörs inte. |
+| **Start** | **Fas 0 mätning först**, i nästa session. | Ingen batch byggs utan baslinje. |
 
----
+**Joakims upplevelse (styr prioriteringen):** *allt fyra* känns segt — kallstart, flikbyten, tryck→svar och scroll/animationer. Mest använd enhet: **iPhone på wifi**. Det betyder att Fas 0.2 mäts primärt på iPhone/Safari över wifi (plus en 4G-runda som kontrast), och att Batch F3 (backdrop-filter, transitions) inte kan avfärdas som "bara Android" — Safari-profilen i harnessen (WebKit i Playwright) ska ingå.
 
 ## 6. Antaganden (explicita)
 
