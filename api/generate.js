@@ -1,7 +1,10 @@
 import { createSupabaseHandler } from "./_shared/handler.js";
 import { db, getHouseholdId } from "./_shared/supabase.js";
-import { fetchOffersFromWillys } from "./willys-offers.js";
-import { matchRecipe, buildDealCandidates } from "./_shared/willys-matcher.js";
+// Willys-modulerna importeras DYNAMISKT längre ner — de behövs bara när
+// optimize_prices är på, och genereringen är prisagnostisk sedan Session 121
+// (toggeln är borta ur UI:t). Att slippa dem vid import-tid gör funktionens
+// kallstart lättare, vilket är hela poängen med Batch E3
+// (docs/prestanda-plan-2026-09.md).
 import { selectRecipes, bucketBySaving, hasTure } from "./_shared/select-recipes.js";
 import { notifyAlert } from "./_shared/alert.js";
 
@@ -369,6 +372,8 @@ export default createSupabaseHandler(async (req, res) => {
       // Samma feed-klient som /api/willys-offers och dispatchen (ingen egen
       // URL-literal); butik styrs av WILLYS_STORE_ID precis som i dispatchen.
       const store = process.env.WILLYS_STORE_ID || "2160";
+      const { fetchOffersFromWillys } = await import("./willys-offers.js");
+      const { matchRecipe } = await import("./_shared/willys-matcher.js");
       const offers = await fetchOffersFromWillys(store, (url, opts) =>
         fetch(url, { ...opts, signal: AbortSignal.timeout(5000) }));
       if (offers.length === 0) pricingDegraded = true; // 200 men inget parsebart = trolig API-ändring
@@ -435,6 +440,9 @@ export default createSupabaseHandler(async (req, res) => {
   if (optimize_prices && savingsById) {
     const chosenIds = days.map((d) => d.recipeId).filter(Boolean);
     const recipeMap = new Map(filtered.map((r) => [r.id, r]));
+    // Redan laddad av blocket ovan (savingsById kan bara vara satt därifrån) —
+    // dynamisk import är cachad av runtimen, så detta kostar inget extra.
+    const { buildDealCandidates } = await import("./_shared/willys-matcher.js");
     const candidates = buildDealCandidates(savingsById, chosenIds, (id) => recipeMap.get(id));
     if (candidates.length) deals = { candidates };
   }

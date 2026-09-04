@@ -1,6 +1,6 @@
 # Prestanda- och flödesplan — Receptboken (2026-09)
 
-Plan för att göra appen snabbare och mer responsiv och förbättra "flowet" (tiden från tryck till att något syns). Bygger på en kodgenomgång i Session 141 av boot-vägen, flikbyten, mutationer, realtime, backend och leveransen av statiska filer. Fas 0 (mätning) är byggd och mobilmätningen gjord; batcharna A–G är ännu inte byggda.
+Plan för att göra appen snabbare och mer responsiv och förbättra "flowet" (tiden från tryck till att något syns). Bygger på en kodgenomgång i Session 141 av boot-vägen, flikbyten, mutationer, realtime, backend och leveransen av statiska filer. Fas 0 (mätning) och **Batch E (backend)** är byggda; A–D och F/G återstår.
 
 **Mätstatus:** avsnitt 1 är en kodgenomgång (storlekar och cache-headers uppmätta mot live-deployen med `curl`). **Avsnitt 0.5 är syntetiska siffror** från harnessen och **0.6 är Joakims riktiga iPhone** — det är 0.6 som styr prioriteringen i avsnitt 4. Index-/tabellkontrollen (0.4) är fortfarande ogjord: Supabase Management-API:t svarar `Unauthorized` från molnsessionen.
 
@@ -194,14 +194,24 @@ Störst effekt på kallstarten, lägst risk, inga schemaändringar.
 
 **Verifiering:** hela sviten + ett nytt testblock per ändrat svar-kontrakt; två-telefoners realtime-koll (finns redan i kön, F287).
 
-### Batch E — Backend-overhead per anrop (1 session, **D**) — **NU FÖRST EFTER FAS 0**
+### Batch E — Backend-overhead per anrop ✅ BYGGD (Session 141d, **D**)
 
-| # | Åtgärd | Fil(er) | Kommentar |
+Uppmätt utgångsläge (0.6): `/api/skip-day` 3 478 ms, `dispatch-to-willys` 2 883, `move-day` 2 700, `shopping` 1 561. Varje anrop betalade, i serie, tre saker innan endpointen började arbeta: Vercel-kallstart för just den funktionen, en Auth-runda (`getUser`) och en hushållsfråga.
+
+| # | Åtgärd | Fil(er) | Status |
 |---|---|---|---|
-| E1 | **Lokal JWT-verifiering** i `requireUser` i stället för `auth.getUser()`-rundan: verifiera signaturen mot projektets JWKS (`/auth/v1/.well-known/jwks.json`, cachad i modulminnet) eller JWT-secret via `jose`. Fail-closed som idag; `getUser` som fallback vid okänd `kid`. | `api/_shared/handler.js` | Sparar en nätverksrunda per anrop. Beslut B3 (nytt beroende `jose`, eller `crypto.subtle` utan beroende). |
-| E2 | **Hushåll ur token:** `getHouseholdId(userId)` slår `household_members` (indexerad, se 0.4) och cachas per `sub` i modulminnet (TTL några minuter). Löser samtidigt "första hushållet"-bristen (backlog #6) i förbifarten — eller förbered den utan att ändra beteendet för hushåll #1. | `api/_shared/supabase.js` | Rör alla endpoints → hela sviten. |
-| E3 | **Kallstartsvikt:** dynamisk `import()` av Willys-/Axfood-modulerna i `generate.js` och `deals.js` bara när reor faktiskt hämtas; kontrollera att inga endpoints importerar `dispatch`-klienterna i onödan. | `api/generate.js`, `api/deals.js` | Mindre bundle per funktion → snabbare kallstart. |
-| E4 | Mät i Fas 0: lägg `Server-Timing`-header (`auth;dur=…`, `db;dur=…`) i handlern så klientens perf-overlay kan visa backendens del. | `api/_shared/handler.js` | Render-only på klienten, header-only på servern. |
+| E1 | **Lokal JWT-verifiering.** Ny `api/_shared/auth.js` verifierar signaturen mot projektets publika nyckel (`<SUPABASE_URL>/auth/v1/.well-known/jwks.json`, ES256, publik, cache 600 s). JWKS memoiseras mellan varma anrop. `jose` ^6.2.11 som beroende. **Tar bort en hel nätverksrunda per anrop.** | `api/_shared/auth.js` (ny), `api/_shared/handler.js` | ✅ |
+| E2 | **Hushållet memoiseras** i modulscope. "Första hushållet" är en konstant för deployen, så den slås upp en gång per varm lambda i stället för vid varje anrop. Kommentar lämnad om att cachen måste nycklas per användare när backlog #6 (multi-tenant) byggs — `requireUser` lägger redan användaren på `req.user`. | `api/_shared/supabase.js` | ✅ |
+| E3 | **Lättare kallstart för `generate.js`:** Willys-modulerna (`willys-offers`, `willys-matcher`) importeras dynamiskt först när `optimize_prices` faktiskt är på. Genereringen är prisagnostisk sedan Session 121, så i normalfallet laddas de aldrig. `deals.js` lämnades orörd — båda dess vägar behöver modulerna, så lazy-laddning hade bara flyttat kostnaden. | `api/generate.js` | ✅ |
+| E4 | **`Server-Timing: auth;dur=<ms>`** på alla svar från båda handler-wrapparna → auth-kostnaden blir mätbar utifrån i stället för gissad. | `api/_shared/handler.js` | ✅ |
+
+**Säkerhetshållningen (invariant #4).** Den snabba vägen kan bara SLÄPPA IGENOM, aldrig avvisa på egen hand. Säger den lokala verifieringen "vet inte" — okänd nyckel, JWKS onåbar, annan algoritm, utgånget, fel issuer — faller `requireUser` tillbaka på den gamla `getUser`-vägen, som avgör. Ett fel i snabbvägen kostar därför latens, aldrig åtkomst. `algorithms` är låst till `["ES256","RS256"]`; utan den låsningen kan en angripare signera med HS256 och den publika nyckeln som hemlighet (alg-confusion) och bli godkänd. Issuer kontrolleras mot `SUPABASE_URL` så ett giltigt token från ett annat Supabase-projekt inte duger.
+
+**Känd avvägning — återkallning (funnen i säkerhetsgranskningen).** `getUser` såg levande serverstatus: en raderad, avstängd eller utloggad användares token avvisades direkt. Den lokala vägen är en ren signatur- och utgångskontroll, så ett **återkallat token fortsätter gälla tills det går ut av sig självt** — fönstret är projektets access-token-TTL (Supabase-default 1 h, men en dashboard-inställning som tyst vidgar fönstret om den höjs). Formuleringen "ett fel kostar latens, inte säkerhet" gäller alltså förfalskade tokens, inte återkallade. För familjens tre konton utan självregistrering är avvägningen **accepterad**; två billiga vägar finns om läget ändras: (a) kräv `getUser` på de destruktiva endpointsen (`discard-plan`, `skip-day action:delete`), (b) en liten deny-lista per varm lambda. **Måste omprövas vid M1**, när främmande hushåll registrerar sig och "ta bort medlem" behöver bita omedelbart. *Beslut för Joakim: bekräfta att access-token-TTL:n står på default 1 h i Supabase-dashboarden.*
+
+**Verifiering:** ny `tests/auth-verify.test.js` med 12 fall — giltigt token, utgånget, fel issuer, fel nyckel, **alg-confusion-angreppet**, saknad `sub`, `anon`-roll, skräp/fel typer, `issuerFromEnv`, samt `requireUser` utan header (401), med giltigt token (true + `req.user`) och med ogiltigt token (401 via reservvägen). Hela sviten grön. Dessutom verifierat mot **produktionens riktiga JWKS**: URL:en koden bygger returnerar 200 och projektets kid hittas, så snabbvägen fungerar skarpt (och inte bara i test).
+
+**Kvar att mäta:** effekten syns först skarpt. Kör `?perf=1` igen efter deploy och jämför `/api/`-raden mot 0.6.
 
 ### Batch F — Renderkostnad och CSS-hygien (½–1 session, R)
 
@@ -226,7 +236,7 @@ Skelett i stället för spinnrar överallt där data väntas (Inköp, Listor, da
 | Ordning | Batch | Sessioner | Typ | Varför här | Rollback |
 |---|---|---|---|---|---|
 | 1 | Fas 0 mätning ✅ | 1 | R | Klar | Overlay/harness är additivt |
-| 2 | **E backend** (JWT lokalt, hushåll ur token, lättare kallstart) | 1 | D | **3,5 s per tryck** — störst vinst i hela planen | `requireUser`-fallback till `getUser` kvar; revert per endpoint |
+| 2 | **E backend** ✅ BYGGD (Session 141d) | 1 | D | **3,5 s per tryck** — störst vinst i hela planen | `requireUser`-fallback till `getUser` kvar; revert per endpoint |
 | 3 | **A boot** (parallellisering, skelett FÖRE auth, A7 token-rundan, dubbelhämtningen) | 1 | R | 2,4 s till första middagen | Revert av PR; ingen data rörd |
 | 4 | C flikbyten | ½ | R | 273–414 ms varje besök på Inköp | Revert |
 | 5 | B leverans (byggsteg, självhostad klient, fonter, SW) | 1–1½ | R | 94 filer, `max-age=0` | Revert; SW-bump tvingar ny cache |

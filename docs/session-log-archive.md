@@ -1,6 +1,26 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–141. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–141c. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+## Session 141c — Mobilmätningen gjord: planen omprioriterad efter riktiga siffror (docs-only).
+
+Joakim körde perf-overlayen på sin iPhone (Safari, wifi, varm cache) och skickade rapporten. Fas 0 är därmed klar så när som på index-kontrollen.
+
+**Vad appen faktiskt gör på hans telefon.** Kallstart till att Idag visar kvällens middag: **2 401 ms**. Kedjan: js 568 → auth 1402 → hushåll 1402 → recept 2095 → receptvy 2107 → idag 2401. Två saker sticker ut i den: **auth kostar 834 ms**, varav en `/auth/v1/token`-runda på 817 ms (access-tokenens 1 h-TTL hade löpt ut → supabase-js förnyar den, och `requireAuth()` väntar in det innan något ritas — normalfall, inte kantfall), och **`recipes` hämtas två gånger** (814 ms totalt).
+
+**Den värsta siffran är inte kallstarten utan knapptrycken.** `/api/skip-day` **3 478 ms**, `/api/dispatch-to-willys` 2 883, `/api/move-day` 2 700, `/api/shopping` 1 561. Det är dubbelt så illa som hela kallstarten och matchar exakt de tre lagren i diagnosen: Vercel-kallstart per funktion + `requireUser`→`getUser`-runda + `getHouseholdId`-fråga, innan endpointen börjat arbeta. Siffrorna innehåller kallstart och kan inte skilja kall från varm — men med familjens låga trafik är kall det normala.
+
+**Två antaganden föll.** (a) **Scrollen är frisk** — 13 hackiga bildrutor av 1 349 (1 %), värst 45 ms. Batch F3 (backdrop-filter/transitions) är avförd som prioritet. (b) **Den dolda Recept-fliken kostar bara 12 ms** att bygga, inte hundratals som den syntetiska mätningen antydde; A4 nedgraderas från hastighet till DOM-hygien. Bekräftat blev däremot dubbelrenderingen (`render:Matsedel ×16`, `render:Idag ×6`), Inköp-flikens 273–414 ms per besök, och realtidsomladdningen (`meal_days` frågad 12 gånger).
+
+**Följd: ny ordning i planen.** Batch E (backend) flyttas från plats 6 till **plats 2** — den enskilt största vinsten. Sedan A (boot, nu med **A7** token-rundan och skelett *före* `requireAuth()`, samt **A8** dubbelhämtningen av recept), därefter C, B, D och till sist F/G utan F3. Totalt 6–7 sessioner i stället för 7–8.
+
+**Ändringens natur:** docs-only (`docs/prestanda-plan-2026-09.md` avsnitt 0.6 + omprioriterad ordning i avsnitt 4; rådata i verifieringskön). Inga versionsbumpar, inga tester berörda.
+
+**Nästa steg:** Batch E. Index-kontrollen (Fas 0.4) är fortfarande blockerad tills `SUPABASE_ACCESS_TOKEN` förnyas i molnmiljön.
+
+**Kvar från tidigare:** Session 140:s fontbyte, Session 137:s migration 011, Session 136:s Hemköp-inloggning, Session 139:s tre önskemål, Session 135:s butiksval, Session 134:s dagväljare, Session 132:s inköpslista-fixar och Session 131:s rundor 2–8 väntar på skarp mobilkoll (se kön).
+
+---
 
 ## Session 141 — Prestanda- och flödesplan: analys + prioriterad optimeringsplan (docs-only, inget i koden ändrat).
 
