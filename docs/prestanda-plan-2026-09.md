@@ -1,8 +1,8 @@
 # Prestanda- och flödesplan — Receptboken (2026-09)
 
-Plan för att göra appen snabbare och mer responsiv och förbättra "flowet" (tiden från tryck till att något syns). Bygger på en kodgenomgång i Session 141 av boot-vägen, flikbyten, mutationer, realtime, backend och leveransen av statiska filer. Inget är ännu ändrat i koden — det här är analys + prioriterad åtgärdslista med beslutspunkter.
+Plan för att göra appen snabbare och mer responsiv och förbättra "flowet" (tiden från tryck till att något syns). Bygger på en kodgenomgång i Session 141 av boot-vägen, flikbyten, mutationer, realtime, backend och leveransen av statiska filer. Fas 0 (mätning) är byggd och mobilmätningen gjord; batcharna A–G är ännu inte byggda.
 
-**Läs först: vad som INTE mättes.** Ingen mätning är gjord på en riktig mobil (Joakim har ingen lokal miljö, och molnsessionen kan inte logga in i appen). Storlekar, cache-headers och nätverksvattenfall är uppmätta mot live-deployen med `curl`; antalet databasfrågor är räknat i koden. Alla "förväntad effekt"-uppskattningar nedan är just uppskattningar tills Fas 0 ger siffror. Supabase Management-API:t svarade `Unauthorized` i sessionen, så index-/tabellkontrollen (Fas 0.4) är ogjord.
+**Mätstatus:** avsnitt 1 är en kodgenomgång (storlekar och cache-headers uppmätta mot live-deployen med `curl`). **Avsnitt 0.5 är syntetiska siffror** från harnessen och **0.6 är Joakims riktiga iPhone** — det är 0.6 som styr prioriteringen i avsnitt 4. Index-/tabellkontrollen (0.4) är fortfarande ogjord: Supabase Management-API:t svarar `Unauthorized` från molnsessionen.
 
 ---
 
@@ -111,7 +111,32 @@ Siffrorna är **relativa** (stubbad databas, desktop-CPU) — de jämför commit
 
 **Det mätningen ändrar i planen:** ingenting i prioriteringen — A (boot), C (flikbyten) och B (leverans) står kvar överst, nu med siffror bakom sig. Två saker skärps: A4 är större än väntat (78 % av DOM:en byggs för en dold flik), och Matsedel/Recept/Idag behöver *ingen* renderoptimering (8–29 ms) — F2 nedgraderas till "bara om mobilmätningen säger annat".
 
-**Acceptans för Fas 0:** ✅ instrumentering + harness i koden, baslinje sparad, hela testsviten grön. Kvar: Joakims mobilsiffror (0.2) och index-kontrollen (0.4). CI-gating av harnessen tas i Batch B, där CI ändå måste börja bygga.
+### 0.6 Mobilmätning på Joakims iPhone — 2026-09-04 ✅ (Safari, wifi, varm cache)
+
+Den enda mätning som säger sanningen om upplevd hastighet. Rådata i status.md:s verifieringskö.
+
+| Vad | Uppmätt | Tolkning |
+|---|---|---|
+| **Kallstart → Idag visar middagen** | **2 401 ms** | js 568 → **auth 1402 (+834)** → hushåll 1402 (+0) → recept 2095 (+693) → receptvy 2107 (+12) → idag 2401 (+294) |
+| **Tryck → svar (`/api/`-anrop)** | **skip-day 3 478 · dispatch 2 883 · move-day 2 700 · shopping 1 561 ms** | **Värsta siffran i hela mätningen.** Ett tryck på "hoppa över dagen" tar 3,5 sekunder. |
+| Auth vid boot | **834 ms**, varav en `/auth/v1/token`-runda på **817 ms** | Access-tokenen (1 h TTL) var utgången → supabase-js förnyar den, och `requireAuth()` väntar in det innan något annat startar. Normalfall, inte kantfall. |
+| Recept-hämtningen | 693 ms, och `recipes` frågades **2 gånger** (814 ms totalt) | En hämtning för mycket — ska rotorsakas i Batch A |
+| `meal_days` | **12 frågor**, 1 069 ms | Realtidsomladdningen (full `loadWeeklyPlan()` per event) → åtgärd D2 |
+| Bygga den dolda Recept-fliken | **12 ms** | Billigt i TID på riktig enhet — A4:s tidsvinst är liten (DOM-storleken kan ändå motivera den) |
+| Flikbyte Inköp | 273–414 ms, laddad 2 ggr | Bekräftar Batch C |
+| Renderingar | `render:Matsedel ×16`, `render:Idag ×6` | Dubbelrenderingen bekräftad på riktig enhet |
+| **Scroll** | **1 349 rutor, 13 hackiga (1 %), värst 45 ms** | **Scrollen är inte ett problem.** Batch F3 avförs som prioritet. |
+
+**Förbehåll:** en mätsession, i Safari (inte installerad PWA), med varm cache (16 kB överfört, 94 filer). API-siffrorna innehåller **Vercel-kallstart** — varje endpoint är en egen funktion och familjens trafik är låg, så första trycket mot varje endpoint betalar full kallstart. Mätningen kan inte skilja kall från varm; det gör den inte mindre sann för familjen, som nästan alltid är den som väcker funktionen.
+
+**Vad mätningen ändrar:**
+1. **Backend (Batch E) flyttas från plats 6 till plats 2.** 2,7–3,5 s per tryck är dubbelt så illa som hela kallstarten, och `requireUser`→`getUser` + `getHouseholdId` + kallstart är precis de tre lagren. Detta är den enskilt största vinsten i hela planen.
+2. **Auth-rundan blir en egen punkt i Batch A** (ny A7): boot står still i 834 ms på en token-förnyelse innan något ritas. Skelettet (A5) måste därför ritas *före* `requireAuth()`, inte efter.
+3. **Dubbelhämtningen av recept** (2 frågor) läggs till i A1.
+4. **F3 (scroll/backdrop-filter) avförs** — 99 % av bildrutorna håller budget. Kvar i F bara som städning om något annat ändå rörs.
+5. **A4 nedgraderas** från tidsvinst till DOM-hygien (12 ms, inte hundratals).
+
+**Acceptans för Fas 0:** ✅ KLAR — instrumentering + harness i koden, syntetisk baslinje sparad, **mobilmätningen gjord (0.6)**, hela testsviten grön. Kvar bara index-kontrollen (0.4), som är blockerad tills `SUPABASE_ACCESS_TOKEN` förnyas. CI-gating av harnessen tas i Batch B, där CI ändå måste börja bygga.
 
 ---
 
@@ -128,9 +153,12 @@ Störst effekt på kallstarten, lägst risk, inga schemaändringar.
 | A1 | Starta `loadWeeklyPlan()` **parallellt** med receptladdningen i `boot()` (båda behöver bara `householdId`). Idag-vyn renderar när planen finns; receptnamn/tider fylls på när recepten kommit (`recipeById` returnerar redan `null`-säkert). | `js/app.js` | Tar bort en hel nätverksrunda från kritiska vägen. |
 | A2 | **Bädda in** andra steget i PostgREST-frågan: `weekly_plans` med `meal_days(*)` och `shopping_lists` med `shopping_items(...)` i samma request (kräver att FK:erna `meal_days.plan_id → weekly_plans.id` och `shopping_items.list_id → shopping_lists.id` finns — verifieras i Fas 0.4; annars behåll två steg). | `plan-viewer.js` `loadActivePlanFromSupabase`, `loadShopSummaryFromSupabase` | Två rundor → en. |
 | A3 | Flytta `pricing_status` + fästa lappar in i samma `Promise.all` som planen i stället för "efter". | `today-view.js`, `plan-viewer.js` | En runda mindre efter första render. |
-| A4 | **Skjut upp** `renderRecipeBrowser()` + `buildTagFilterUI()` till första gången Recept-fliken öppnas (eller `requestIdleCallback` efter Idag renderats). | `js/app.js`, `js/ui/navigation.js` | Huvudtråden fri för Idag-renderingen; ~260 kort-strängar byggs inte i onödan. |
+| A4 | *(Nedgraderad efter 0.6: kostar bara 12 ms i tid — motiveras nu av DOM-storlek, inte hastighet.)* **Skjut upp** `renderRecipeBrowser()` + `buildTagFilterUI()` till första gången Recept-fliken öppnas (eller `requestIdleCallback` efter Idag renderats). | `js/app.js`, `js/ui/navigation.js` | Huvudtråden fri för Idag-renderingen; ~260 kort-strängar byggs inte i onödan. |
 | A5 | Rendera Idag-vyns **skelett** (datumrad + tom hero med skimmer) direkt vid `DOMContentLoaded`, innan auth ens svarat. | `today-view.js`, `styles.css` | Upplevd start: "appen är igång" på < 300 ms, även om datan tar 1 s. |
 | A6 | Ta bort dubbelrenderingen: låt `loadWeeklyPlan`-wrapparna bara sätta flaggor och kör en enda `renderDeluxe()`/`renderTodayView()` efter `renderWeeklyPlanData` (eller gör Idag-renderingen diffad som deluxe). | `plan-viewer-deluxe.js`, `today-view.js` | Halverar renderarbetet per planladdning; mindre fladder. |
+
+| A7 | **Token-förnyelsen blockerar boot** (uppmätt: 834 ms, varav 817 ms `/auth/v1/token`). Rita skelettet (A5) *före* `requireAuth()`, och undersök om plan-/recepthämtningen kan förberedas medan token förnyas. | `js/app.js`, `js/auth-gate.js`, `today-view.js` | Appen ser levande ut under den runda den ändå måste vänta på. |
+| A8 | **`recipes` hämtas två gånger** vid en normal session (uppmätt). Rotorsaka och ta bort den ena. | `js/app.js`, `js/recipes/recipe-browser.js` | ~700 ms och en runda mindre. |
 
 **Verifiering:** hela sviten grön, Playwright-harness visar färre requests/kortare `today:complete`, mobilkoll av scenario 1. Versionsbump app+SW.
 
@@ -166,7 +194,7 @@ Störst effekt på kallstarten, lägst risk, inga schemaändringar.
 
 **Verifiering:** hela sviten + ett nytt testblock per ändrat svar-kontrakt; två-telefoners realtime-koll (finns redan i kön, F287).
 
-### Batch E — Backend-overhead per anrop (1 session, **D**)
+### Batch E — Backend-overhead per anrop (1 session, **D**) — **NU FÖRST EFTER FAS 0**
 
 | # | Åtgärd | Fil(er) | Kommentar |
 |---|---|---|---|
@@ -181,7 +209,7 @@ Störst effekt på kallstarten, lägst risk, inga schemaändringar.
 |---|---|---|
 | F1 | **Förberäknad sökindex** per recept (`_haystack` = titel+protein+taggar+ingredienser+instruktioner i lowercase, byggd en gång i `recipeFromRow`-steget i `app.js`, inte i mappern) → `matchesSearch` blir en `includes`. | `recipe-browser.js`, `app.js` |
 | F2 | Diff-rendering av Idag-vyn per sektion (`setSec`-mönstret från deluxe) så realtime/plan-omladdning inte byter ut hela `#todayView`. | `today-view.js` |
-| F3 | CSS-audit på riktig enhet: de 4 `backdrop-filter`-ställena (ersätt med halvtransparent yta på `prefers-reduced-transparency` / äldre Android), `transition: all` på `.po-check svg` → explicita egenskaper, `will-change` bara under pågående animation. | `styles.css` |
+| F3 | ~~CSS-audit på riktig enhet~~ **AVFÖRD efter mätningen (0.6): 99 % av bildrutorna håller budget.** Kvarstår bara som städning om något annat ändå rörs: de 4 `backdrop-filter`-ställena (ersätt med halvtransparent yta på `prefers-reduced-transparency` / äldre Android), `transition: all` på `.po-check svg` → explicita egenskaper, `will-change` bara under pågående animation. | `styles.css` |
 | F4 | Stryk den inaktuella status-punkten om död klassisk CSS (den är redan borta) och ta bort de 8 oanvända klasserna (`dlx-day-tag`, `dlx-detail-custom`, `dlx-detail-empty`, `dlx-readonly`, `shop-progress-*`, `toast-error`, `toast-success`) efter manuell koll att de inte sätts dynamiskt. | `styles.css`, `docs/status.md` |
 | F5 | (Vid behov efter mätning) dela `styles.css` i kritisk + per-flik-del laddad med `media`/`rel=preload` — bara om Fas 0 visar att CSS-parsning syns i long tasks. | `styles.css`, `index.html` |
 
@@ -193,17 +221,19 @@ Skelett i stället för spinnrar överallt där data väntas (Inköp, Listor, da
 
 ## 4. Ordning, omfång och rollback
 
-| Ordning | Batch | Sessioner | Typ | Rollback |
-|---|---|---|---|---|
-| 1 | Fas 0 mätning | 1 | R | Overlay/harness är additivt |
-| 2 | A boot-parallellisering | 1 | R | Revert av PR; ingen data rörd |
-| 3 | C flikbyten | ½ | R | Revert |
-| 4 | B leverans (efter beslut B1–B2) | 1–1½ | R | Revert; SW-versionsbump tvingar ny cache |
-| 5 | D mutationer/realtime | 1 | D | Revert; svar-kontrakten bakåtkompatibla (nya fält, inga borttagna) |
-| 6 | E backend | 1 | D | `requireUser`-fallback till `getUser` kvar; revert per endpoint |
-| 7 | F + G rendering/flöde | 1 | R | Revert |
+**Omprioriterad 2026-09-04 efter mobilmätningen (0.6).** Backend flyttades från plats 6 till plats 2 — 2,7–3,5 s per knapptryck är appens värsta siffra, dubbelt så illa som hela kallstarten.
 
-Total: **7–8 sessioner**. Batch A + C ger sannolikt den största märkbara skillnaden per timme och kan gå live redan efter session 2–3.
+| Ordning | Batch | Sessioner | Typ | Varför här | Rollback |
+|---|---|---|---|---|---|
+| 1 | Fas 0 mätning ✅ | 1 | R | Klar | Overlay/harness är additivt |
+| 2 | **E backend** (JWT lokalt, hushåll ur token, lättare kallstart) | 1 | D | **3,5 s per tryck** — störst vinst i hela planen | `requireUser`-fallback till `getUser` kvar; revert per endpoint |
+| 3 | **A boot** (parallellisering, skelett FÖRE auth, A7 token-rundan, dubbelhämtningen) | 1 | R | 2,4 s till första middagen | Revert av PR; ingen data rörd |
+| 4 | C flikbyten | ½ | R | 273–414 ms varje besök på Inköp | Revert |
+| 5 | B leverans (byggsteg, självhostad klient, fonter, SW) | 1–1½ | R | 94 filer, `max-age=0` | Revert; SW-bump tvingar ny cache |
+| 6 | D mutationer/realtime | 1 | D | 12 `meal_days`-frågor | Revert; svar-kontrakten bakåtkompatibla |
+| 7 | F + G rendering/flöde (utan F3) | ½ | R | Scrollen är redan OK — bara render-hygien kvar | Revert |
+
+Total: **6–7 sessioner**. Batch E ensam bör ta ett tryck från 3,5 s till under 1 s.
 
 ---
 
