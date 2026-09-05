@@ -194,7 +194,7 @@ Störst effekt på kallstarten, lägst risk, inga schemaändringar.
 
 **Verifiering:** hela sviten + ett nytt testblock per ändrat svar-kontrakt; två-telefoners realtime-koll (finns redan i kön, F287).
 
-### Batch E — Backend-overhead per anrop ✅ BYGGD (Session 141d, **D**)
+### Batch E — Backend-overhead per anrop ✅ BYGGD & VERIFIERAD (Session 141d–e, **D**)
 
 Uppmätt utgångsläge (0.6): `/api/skip-day` 3 478 ms, `dispatch-to-willys` 2 883, `move-day` 2 700, `shopping` 1 561. Varje anrop betalade, i serie, tre saker innan endpointen började arbeta: Vercel-kallstart för just den funktionen, en Auth-runda (`getUser`) och en hushållsfråga.
 
@@ -211,7 +211,29 @@ Uppmätt utgångsläge (0.6): `/api/skip-day` 3 478 ms, `dispatch-to-willys` 2 8
 
 **Verifiering:** ny `tests/auth-verify.test.js` med 12 fall — giltigt token, utgånget, fel issuer, fel nyckel, **alg-confusion-angreppet**, saknad `sub`, `anon`-roll, skräp/fel typer, `issuerFromEnv`, samt `requireUser` utan header (401), med giltigt token (true + `req.user`) och med ogiltigt token (401 via reservvägen). Hela sviten grön. Dessutom verifierat mot **produktionens riktiga JWKS**: URL:en koden bygger returnerar 200 och projektets kid hittas, så snabbvägen fungerar skarpt (och inte bara i test).
 
-**Kvar att mäta:** effekten syns först skarpt. Kör `?perf=1` igen efter deploy och jämför `/api/`-raden mot 0.6.
+**UTFALL — mätt på Joakims iPhone 2026-09-05 16:46 (samma uppställning som 0.6):**
+
+| Endpoint | Före (0.6) | Efter | |
+|---|---|---|---|
+| `/api/shopping` | 1 561 ms | **179 ms** | **8,7× snabbare** |
+| `/api/dispatch-to-willys` | 2 883 ms | **708 ms** | **4× snabbare** |
+| `/api/swap-days` | — | 1 623 ms | ingen baslinje; sannolikt sessionens första (kalla) anrop mot just den funktionen |
+
+Det är de två direkt jämförbara endpointsen som bevisar batchen. Antalet databasfrågor föll också, 35 → 31, och `token`-raden (817 ms auth-refresh) saknas helt i den här mätningen.
+
+**Var ärlig om vad som INTE är Batch E:s förtjänst.** Klientens boot-kedja från js-start till "idag" gick 1 833 → 728 ms, men det beror mest på att access-tokenet fortfarande var färskt (auth 834 → 16 ms) — alltså tur med tajmingen, inte något batchen gjorde. Batch E rör bara serverkod som körs vid `/api/`-anrop.
+
+### ⚠️ Nytt fynd i samma mätning: 11,8 sekunder innan JavaScript ens startar
+
+`DOM 109 ms` men `js 11 758 ms` — DOM:en var interaktiv efter en tiondels sekund, sedan hände ingenting på **11,6 sekunder** innan första modulen kördes. Efter det var appen snabb (728 ms till färdig Idag-vy).
+
+**Det kan inte vara Batch E:** allt detta sker innan någon app-JS kört, alltså innan något `/api/`-anrop ens är möjligt.
+
+Två kandidater, går inte att skilja på ett enda mätvärde:
+1. **Leveransen av statiska filer** — 94 filer, samtliga med `Cache-Control: public, max-age=0, must-revalidate` (verifierat mot produktionen 2026-09-05), hämtade nät-först genom service workern *utan timeout*. Varje fil kräver en villkorlig runda. På ett trögt nät blir det precis den här sortens stall. **Det är exakt vad Batch B åtgärdar.**
+2. **Bakgrundad flik** — iOS Safari suspenderar en flik som inte är i förgrunden; öppnades länken och telefonen lades ifrån sig ser det ut precis så här.
+
+**Nästa mätning avgör:** en runda till med appen i förgrunden hela tiden. Reproduceras 11,8 s är kandidat 1 bekräftad och **Batch B flyttas före Batch A**.
 
 ### Batch F — Renderkostnad och CSS-hygien (½–1 session, R)
 
@@ -236,7 +258,7 @@ Skelett i stället för spinnrar överallt där data väntas (Inköp, Listor, da
 | Ordning | Batch | Sessioner | Typ | Varför här | Rollback |
 |---|---|---|---|---|---|
 | 1 | Fas 0 mätning ✅ | 1 | R | Klar | Overlay/harness är additivt |
-| 2 | **E backend** ✅ BYGGD (Session 141d) | 1 | D | **3,5 s per tryck** — störst vinst i hela planen | `requireUser`-fallback till `getUser` kvar; revert per endpoint |
+| 2 | **E backend** ✅ KLAR — verifierad 2026-09-05 (shopping 1 561→179 ms, dispatch 2 883→708 ms) | 1 | D | **3,5 s per tryck** — störst vinst i hela planen | `requireUser`-fallback till `getUser` kvar; revert per endpoint |
 | 3 | **A boot** (parallellisering, skelett FÖRE auth, A7 token-rundan, dubbelhämtningen) | 1 | R | 2,4 s till första middagen | Revert av PR; ingen data rörd |
 | 4 | C flikbyten | ½ | R | 273–414 ms varje besök på Inköp | Revert |
 | 5 | B leverans (byggsteg, självhostad klient, fonter, SW) | 1–1½ | R | 94 filer, `max-age=0` | Revert; SW-bump tvingar ny cache |
