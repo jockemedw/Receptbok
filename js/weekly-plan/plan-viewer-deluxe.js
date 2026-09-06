@@ -802,7 +802,7 @@ function modeBannerHtml() {
   const d = (window._timelineByDate || {})[move.from];
   const what = d ? (d.recipe || d.customRecipeTitle || d.customNote || (d.blocked ? 'Fri dag' : 'dagen')) : 'dagen';
   return `<div class="dlx-swap-banner">
-    <span>${I.move} Tryck på dagen dit <strong>${esc(what)}</strong> ska — även i en annan vecka</span>
+    <span>${I.move} Tryck på dagen dit <strong>${esc(what)}</strong> ska</span>
     <button onclick="dlxCancelMove()">Avbryt</button></div>`;
 }
 
