@@ -6566,8 +6566,10 @@ main#receptView {
    keyframe-animationen den och luckan öppnas inte förrän bursten spelat klart).
    Transformerna påverkar aldrig träffytan — hitTest läser layout-position
    (offsetTop), inte transformerad rect. */
-.dlx-days.dlx-drag-mode .dlx-nudge-up   { translate: 0 -14px; }
-.dlx-days.dlx-drag-mode .dlx-nudge-down { translate: 0 14px; }
+/* Luckan öppnas tydligt (2 × 24 px ≈ ett halvt kort) — det ska läsas som att
+   listan delar på sig och gör plats, inte som ett darr. */
+.dlx-days.dlx-drag-mode .dlx-nudge-up   { translate: 0 -24px; }
+.dlx-days.dlx-drag-mode .dlx-nudge-down { translate: 0 24px; }
 
 /* "Kläm in här"-sömmen — rust (appens CTA-färg), sitter mitt i den öppnade
    luckan med en mjuk glöd så den läses som "släpp här". */
@@ -6589,8 +6591,8 @@ main#receptView {
 .dlx-drop-line::before {
   content: '';
   position: absolute;
-  left: 0; right: 0; top: -1.5px;
-  height: 3px;
+  left: 0; right: 0; top: -2px;
+  height: 4px;
   border-radius: 2px;
   background: var(--rust);
   box-shadow: 0 0 10px -1px color-mix(in srgb, var(--rust) 65%, transparent);
@@ -6629,6 +6631,9 @@ main#receptView {
 }
 /* Över ett giltigt mål: tona ned ghosten så mål-ringen/insert-linjen läses igenom */
 .dlx-drag-float.over .dlx-drag-lift { opacity: 0.7; }
+/* Över en söm: ännu genomskinligare så den öppnade luckan + rust-linjen syns
+   under fingret — det är luckan som är budskapet, inte kortet. */
+.dlx-drag-float.seam .dlx-drag-lift { opacity: 0.5; }
 .dlx-drag-float .dlx-drag-lift > [class] { animation: none; }   /* ingen dlxFadeIn på klonen */
 /* Upplyft "hållet" kort — upprätt (iPhone lutar inte den lyfta ikonen), lätt
    förstorat med en djup mjuk skugga så det tydligt svävar över listan. */

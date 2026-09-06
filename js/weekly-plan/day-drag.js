@@ -47,8 +47,13 @@ const HOLD_SLOP = 8;          // px rörelse som bryter hållet (= svepets dödz
 // behålls tills fingret dragit sig undan ordentligt (EXIT > ENTER). Utan det
 // flippar målet insert↔swap vid varje darrning på bandkanten — grannarna
 // hoppade 14 px in och ut och det såg ut som frenetiskt skakande.
-const EDGE_BAND = 18;         // ± px för att FÅNGA en söm
-const EDGE_BAND_EXIT = 34;    // ± px innan en fångad söm SLÄPPER
+// Sömmen ska gå att träffa med tummen: bandet är upp till ±EDGE_BAND px men
+// aldrig mer än 30 % av det lägsta grannkortet, så kortets mitt (≥ 40 %) alltid
+// förblir "byt plats/flytta hit". Hysteres: en fångad söm hålls EDGE_HYST px
+// längre innan den släpper (annars flippar målet vid varje darrning).
+const EDGE_BAND = 26;         // max ± px för att FÅNGA en söm
+const EDGE_BAND_RATIO = 0.3;  // …men högst så här stor del av grannkortet
+const EDGE_HYST = 8;          // extra px innan en fångad söm SLÄPPER
 const SWAP_STICK = 10;        // px marginal innan ett fångat byt-mål släpper
 const FLY_MS = 200;           // landnings-/returflygningens längd (= CSS .landing-transition)
 const EDGE_W = 26;            // px vid skärmkanten som räknas som "byt vecka"-zon
@@ -140,12 +145,14 @@ function hitTest(ctx, items, yc, curr) {
   // Sömmar först — en REDAN FÅNGAD söm får ett bredare band (hysteres), så
   // små fingerdarrningar inte kastar målet fram och tillbaka.
   const isHeldSeam = (before) => curr?.kind === 'insert' && (curr.before || '') === (before || '');
+  const bandFor = (hA, hB, held) =>
+    Math.min(EDGE_BAND, Math.round(EDGE_BAND_RATIO * Math.min(hA || hB, hB || hA))) + (held ? EDGE_HYST : 0);
   for (let i = 0; i < items.length; i++) {
     const it = items[i];
     if (!ctx.insertBefores.has(it.date) || !it.h) continue;
     const prev = items[i - 1];
     const seam = prev ? (prev.top + prev.h + it.top) / 2 : it.top;
-    const band = isHeldSeam(it.date) ? EDGE_BAND_EXIT : EDGE_BAND;
+    const band = bandFor(prev?.h, it.h, isHeldSeam(it.date));
     if (Math.abs(yc - seam) <= band) {
       return { kind: 'insert', before: it.date, seam, above: prev?.el || null, below: it.el };
     }
@@ -154,7 +161,7 @@ function hitTest(ctx, items, yc, curr) {
     const le = items.find((it) => it.date === ctx.endAfter);
     if (le?.h) {
       const seam = le.top + le.h;
-      const band = isHeldSeam(null) ? EDGE_BAND_EXIT : EDGE_BAND;
+      const band = bandFor(le.h, le.h, isHeldSeam(null));
       if (Math.abs(yc - seam) <= band) {
         return { kind: 'insert', before: null, seam: seam + 3, above: le.el, below: null };
       }
@@ -393,7 +400,9 @@ function setHover(t) {
   // Över ett giltigt mål tonas ghosten ned så mål-markeringen (ring/insert-linje)
   // läses IGENOM det lyfta kortet i stället för att skymmas av det.
   d.ghost.wrap.classList.toggle('over', !!t);
+  d.ghost.wrap.classList.toggle('seam', t?.kind === 'insert');
   if (!t) return;
+  navigator.vibrate?.(t.kind === 'insert' ? 6 : 4);   // "klick" när målet fångas
   if (t.kind === 'swap') {
     t.el.classList.add('dlx-drag-over');
   } else {
