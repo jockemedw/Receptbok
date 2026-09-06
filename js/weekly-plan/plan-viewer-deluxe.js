@@ -518,28 +518,38 @@ function dlxMinSwapIso() {
   return retroWindowStartIso();
 }
 
-// ── Kläm in-zoner — generaliserade (Session 131), delas av tryck-flödet
-// (moveZoneCtx) och drag & släpp (day-drag.js via window.dlxInsertZones) ─────
-// En zon före varje INNEHÅLLSDAG (plan-recept, eget recept eller anteckning)
-// oavsett typ — /api/move-day roterar fullt innehåll över alla dagtyper och
-// tomma dagar deltar som hål som vandrar. Undantag: källan själv och dagen
-// direkt efter (no-op), arkiv/fria dagar, utanför retro-fönstret, samt zoner
-// vars spann mot källan korsar en arkiverad vecka (arkivet ligger fast).
+// ── Innehållsdagar + kläm in-zoner (delas med drag & släpp, day-drag.js) ────
+// EN modell (Session 142): en dag med innehåll är en plandag, en egen dag
+// (recept eller notering) ELLER en fri dag — alla flyttas, byts och kläms in
+// likadant. Bara arkivdagar (legacy plan_archives) och datum utanför retro-
+// fönstret står utanför.
 function dayHasContent(d) {
-  return !!d && !d.blocked && !d.isArchive &&
-    (!!d.recipeId || !!(d.isCustom && (d.customRecipeId || d.customRecipeTitle || d.customNote)));
+  return !!d && !d.isArchive &&
+    (!!d.recipeId || !!d.blocked || !!(d.isCustom && (d.customRecipeId || d.customRecipeTitle || d.customNote)));
 }
 
+// Kan dagen vara mål i flytta-läget / ta emot ett släpp? (Ej källan själv.)
+function canReceive(d, fromDate) {
+  return !!d && !d.isArchive && d.date !== fromDate && d.date >= dlxMinSwapIso();
+}
+
+// Korsar spannet källa↔mål en arkiverad vecka? (Arkivet ligger fast —
+// /api/day skulle behandla arkivdatumen som hål.)
+function crossesArchive(a, b) {
+  const tl = window._timelineByDate || {};
+  const [from, to] = a < b ? [a, b] : [b, a];
+  for (let cur = from; cur <= to; cur = addDaysIso(cur, 1)) {
+    if (tl[cur]?.isArchive) return true;
+  }
+  return false;
+}
+
+// Kläm in-zoner för drag & släpp: en söm före varje innehållsdag (oavsett typ)
+// utom källan, dagen direkt efter (no-op) och zoner som korsar arkivet; plus
+// slutzonen efter sista innehållsdagen.
 window.dlxInsertZones = function (srcDate) {
   const tl = window._timelineByDate || {};
   const minIso = dlxMinSwapIso();
-  const crossesArchive = (a, b) => {
-    const [from, to] = a < b ? [a, b] : [b, a];
-    for (let cur = from; cur <= to; cur = addDaysIso(cur, 1)) {
-      if (tl[cur]?.isArchive) return true;
-    }
-    return false;
-  };
   const nextDay = addDaysIso(srcDate, 1);
   const insertBefores = new Set();
   let lastContent = null;
@@ -555,22 +565,15 @@ window.dlxInsertZones = function (srcDate) {
   return { insertBefores, endAfter };
 };
 
-// Tilläggsklasser under pågående byt/flytta-läge: källa, giltigt mål eller
+// Tilläggsklasser under pågående flytta-läge: källa, giltigt mål eller
 // nedtonad. Beräknas i renderingen (state-driven) så markeringarna alltid
 // stämmer — även efter en re-render mitt i flödet.
-function modeCls(d, kind) {
-  const mode = window._dlxSwap || window._dlxMove;
+function modeCls(d) {
+  const mode = window._dlxMove;
   if (!mode) return '';
   if (d.date === mode.from) return ' dlx-swap-source' + (mode.pending ? ' dlx-busy' : '');
-  if (window._dlxMove) return ' dlx-dim';   // i flytta-läge är bara släppzonerna mål
-  const inWindow = d.date >= dlxMinSwapIso();
-  const eligible =
-    kind === 'recipe' ? (d.planId === 'active' && !d.isArchive && inWindow) :
-    kind === 'custom' ? (!d.isArchive && inWindow) :
-    kind === 'gap'    ? inWindow :
-    false;                                  // fri dag kan aldrig bytas
-  if (!eligible) return ' dlx-dim';
-  return ' dlx-swap-target' + (window._dlxSwap.pending === d.date ? ' dlx-busy' : '');
+  if (!canReceive(d, mode.from)) return ' dlx-dim';
+  return ' dlx-swap-target' + (mode.pending === d.date ? ' dlx-busy' : '');
 }
 
 function dayBadges(d) {
@@ -677,7 +680,7 @@ function emptyDayCard(d) {
   // öppnar egen-planering-editorn även för passerade dagar, så en tömd dag
   // aldrig blir en återvändsgränd (F: Joakims låsta måndag). Äldre än fönstret
   // är historik och förblir inert.
-  const clickable = d.date >= dlxMinSwapIso() || !!window._dlxSwap;
+  const clickable = d.date >= dlxMinSwapIso();
   const click = clickable ? `onclick="dlxDayClick('${d.date}', '${attr(d.day)}')"` : '';
   return `
     <article class="dlx-day gap slim${clickable ? '' : ' inert'}${modeCls(d, 'gap')}" data-date="${d.date}" ${click}>
@@ -760,19 +763,15 @@ function renderDaysDiff(host, days, { tonightHtml = '', tonightDate = null } = {
   // Blinkfritt: under en pågående operation (byt/flytta) eller ett aktivt drag
   // nollas kortens entré-animation, annars tonar varje utbytt kort in på nytt
   // (0,4 s) och läses som ett blink när bytet landar.
-  container.classList.toggle('dlx-quiet', !!(window._opBusy || window._dlxDragActive));
+  container.classList.toggle('dlx-quiet', !!(window._opBusy || window._dlxDragActive || window._dlxMove));
 
-  const zones = moveZoneCtx();                 // släppzoner i flytta-läge (annars null)
   const existing = new Map();
   container.querySelectorAll(':scope > .dlx-day-slot').forEach(el => existing.set(el.dataset.slot, el));
 
   const keep = new Set();
   let cursor = container.firstChild;           // markör: förväntad nod i denna position
   for (const d of days) {
-    let html = '';
-    if (zones?.set.has(d.date)) html += dropZone(d.date);
-    html += (tonightHtml && d.date === tonightDate) ? tonightHtml : renderDayCard(d);
-    if (zones?.endAfter === d.date) html += dropZone(null);
+    const html = (tonightHtml && d.date === tonightDate) ? tonightHtml : renderDayCard(d);
 
     let slot = existing.get(d.date);
     if (!slot) {
@@ -793,22 +792,18 @@ function renderDaysDiff(host, days, { tonightHtml = '', tonightDate = null } = {
   existing.forEach((el, date) => { if (!keep.has(date)) el.remove(); });
 }
 
-// Banner för pågående byt/flytta-läge — state-driven så den överlever re-renders.
-// OBS: bara INSTRUKTIONS-läget ("välj dag") renderas här. Under själva
-// skrivningen visas en helskärms-indikator i stället (dlxShowOpOverlay) — den
-// gamla busy-bannern kilades in ovanför dagslistan och knuffade layouten.
+// Banner för pågående flytta-läge — state-driven så den överlever re-renders
+// och veckobyten (svep vidare till nästa vecka och tryck där). OBS: bara
+// INSTRUKTIONS-läget renderas här. Under själva skrivningen visas en helskärms-
+// indikator i stället (dlxShowOpOverlay) så layouten aldrig hoppar.
 function modeBannerHtml() {
-  if (window._dlxSwap && !window._dlxSwap.pending) {
-    return `<div class="dlx-swap-banner">
-      <span>${I.swap} Välj dagen att byta med — recept, egen planering eller tom dag</span>
-      <button onclick="dlxCancelSwap()">Avbryt</button></div>`;
-  }
-  if (window._dlxMove && !window._dlxMove.pending) {
-    return `<div class="dlx-swap-banner">
-      <span>${I.move} Tryck på platsen dit dagen ska flyttas</span>
-      <button onclick="dlxCancelMove()">Avbryt</button></div>`;
-  }
-  return '';
+  const move = window._dlxMove;
+  if (!move || move.pending) return '';
+  const d = (window._timelineByDate || {})[move.from];
+  const what = d ? (d.recipe || d.customRecipeTitle || d.customNote || (d.blocked ? 'Fri dag' : 'dagen')) : 'dagen';
+  return `<div class="dlx-swap-banner">
+    <span>${I.move} Tryck på dagen dit <strong>${esc(what)}</strong> ska — även i en annan vecka</span>
+    <button onclick="dlxCancelMove()">Avbryt</button></div>`;
 }
 
 // ── Helskärms-indikator för pågående dag-operationer ─────────────────────────
@@ -933,31 +928,6 @@ window.dlxShuffle = async function (date, btn) {
   }
 };
 
-window.dlxFreeDay = async function (date, btn) {
-  if (window._opBusy) return;
-  window._opBusy = true;
-  if (btn) { btn.disabled = true; btn.classList.add('loading'); }
-  suppressEcho();
-  try {
-    const res = await window.apiFetch('/api/skip-day', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date, action: 'free' }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'fel');
-    suppressEcho();
-    rerender(data.weeklyPlan, data.shoppingList || window._lastShop);
-    dlxFlashDates([date]);
-    return true;   // sheeten (#15) toastar sitt eget kvitto vid lyckat resultat
-  } catch {
-    if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
-    dlxFlashError(date, 'Kunde inte göra dagen fri — prova igen.');
-    return false;
-  } finally {
-    window._opBusy = false;
-  }
-};
-
 function dlxFlashError(date, msg) {
   // [data-date] (inte .dlx-day) så även Ikväll-kortet träffas; utan utfälld
   // detalj (t.ex. åtgärd från sheeten) faller felet tillbaka på en toast.
@@ -968,13 +938,10 @@ function dlxFlashError(date, msg) {
   el.textContent = msg;
 }
 
-// ── Byt dag (swap) ────────────────────────────────────────────────────────────
-// State-driven: _dlxSwap = { from, pending } styr banner, mål-markeringar och
-// nedtonade kort via renderDeluxe/modeCls — inga imperativa DOM-patchar som
-// kan tappas vid re-render. window._opBusy spärrar parallella åtgärder (dubbel-tryck
-// eller två ändringar samtidigt = klassisk källa till trasiga planer).
-// Bor på window (state.js) så custom-days-vägen i plan-viewer.js delar
-// samma spärr (backlog #10) — inte två oberoende guards som kan korsa varandra.
+// ── Dagoperationer — /api/day, EN endpoint för allt som flyttar dagar ────────
+// window._opBusy spärrar parallella åtgärder (dubbeltryck eller två ändringar
+// samtidigt = klassisk källa till trasiga planer). Bor på window (state.js) så
+// custom-days-vägen i plan-viewer.js delar samma spärr.
 
 // Eko-dämpning: våra egna skrivningar triggar realtime-events som annars
 // orsakar en onödig full omhämtning sekunden efter (blinket). Svaret från
@@ -995,51 +962,66 @@ function dlxFlashDates(dates) {
   });
 }
 
-window.dlxStartSwap = function (fromDate) {
-  if (window._opBusy) return;
-  window._dlxMove = null;
-  window._dlxSwap = { from: fromDate, pending: null };
-  renderDeluxe();
-};
-
-window.dlxCancelSwap = function () {
-  if (window._dlxSwap?.pending) return;   // mitt i en skrivning — låt den landa
-  window._dlxSwap = null;
-  renderDeluxe();
-};
-
-// Avbryt pågående läge med Escape (mobil har Avbryt-knappen i bannern)
-document.addEventListener('keydown', (e) => {
-  if (e.key !== 'Escape') return;
-  if (window._dlxSheet) { window.dlxCloseSheet(); return; }
-  if (window._dlxSwap && !window._dlxSwap.pending) window.dlxCancelSwap();
-  if (window._dlxMove && !window._dlxMove.pending) window.dlxCancelMove();
-});
-
-// ── Flytta dag (kläm in mellan två dagar) ─────────────────────────────────────
-// Källdagen lyfts ur och kläms in på vald position; mellanliggande recept
-// roteras (datumen ligger fast). Släppzoner renderas mellan korten av
-// renderDaysDiff när _dlxMove är satt.
-
-// Zon-kontext för pågående flytt: vilka "före"-datum som får en släppzon,
-// och efter vilket kort slutzonen ("sist i planen") ligger.
-function moveZoneCtx() {
-  const from = window._dlxMove?.from;
-  if (!from) return null;
-  // Samma generaliserade zoner som drag & släpp — en implementation (ovan).
-  const zones = window.dlxInsertZones(from);
-  return { set: zones.insertBefores, endAfter: zones.endAfter };
+async function dayApi(body) {
+  const res = await window.apiFetch('/api/day', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  let data = {};
+  try { data = await res.json(); } catch { /* ingen JSON */ }
+  if (!res.ok) throw dlxServerError(data.error);
+  return data;
 }
 
-function dropZone(before) {
-  return `<button type="button" class="dlx-drop-zone" onclick="dlxPickMoveTarget('${before || ''}')">
-    <span>${I.move} Flytta hit</span>
-  </button>`;
+// Gemensam körning av en dagoperation: spärr, helskärms-indikator, eko-
+// dämpning, re-render av matsedel (+ inköpslista om servern byggde om den) och
+// glöd-kvitto. Returnerar svaret, eller null vid fel (toast visas här).
+async function runDayOp(body, { label, fallback, flash = null } = {}) {
+  if (window._opBusy) return null;
+  window._opBusy = true;
+  dlxShowOpOverlay(label || 'Sparar…');
+  suppressEcho();
+  try {
+    const data = await dayApi(body);
+    suppressEcho();
+    if (data.customDays) window._customDays = data.customDays;
+    if (!data.weeklyPlan && window._lastPlan?.days?.length) {
+      // Planen försvann (t.ex. sista plandagen togs bort) → hämta om allt.
+      await window.loadWeeklyPlan();
+    } else {
+      rerender(data.weeklyPlan || window._lastPlan, data.shoppingList || window._lastShop);
+    }
+    if (data.shoppingList) { window._preserveChecked = false; window.loadShoppingTab?.(); }
+    const dates = flash ? flash(data) : [];
+    if (dates.length) dlxFlashDates(dates);
+    return data;
+  } catch (e) {
+    window.showToast?.(dlxUserMessage(e, fallback || 'Kunde inte spara ändringen — prova igen.'), { type: 'error' });
+    return null;
+  } finally {
+    dlxHideOpOverlay();
+    window._opBusy = false;
+  }
 }
+
+// Var landade dagens innehåll efter en flytt? (för glöd-kvittot)
+function landedDate(movedId, from, fallback) {
+  if (movedId == null) return fallback;
+  const hit = Object.values(window._timelineByDate || {})
+    .find(x => x.date !== from && (x.recipeId === movedId || x.customRecipeId === movedId));
+  return hit ? hit.date : fallback;
+}
+
+// ── Flytta-läge — EN interaktion för alla flyttar ────────────────────────────
+// State-driven: _dlxMove = { from, pending } styr banner, mål-markeringar och
+// nedtonade kort via renderDeluxe/modeCls — inga imperativa DOM-patchar som
+// kan tappas vid re-render. Alla dagar i tidslinjen är mål (alla veckor, tomma
+// dagar, fria dagar, passerade dagar inom retro-fönstret):
+//   • tom dag        → innehållet flyttas dit direkt
+//   • upptagen dag   → val: byt plats, eller kläm in (dagarna emellan roterar)
 
 window.dlxStartMove = function (fromDate) {
   if (window._opBusy) return;
-  window._dlxSwap = null;
   window._dlxMove = { from: fromDate, pending: null };
   renderDeluxe();
 };
@@ -1050,128 +1032,88 @@ window.dlxCancelMove = function () {
   renderDeluxe();
 };
 
-window.dlxPickMoveTarget = async function (before) {
+// Avbryt pågående läge med Escape (mobil har Avbryt-knappen i bannern)
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (window._dlxSheet) { window.dlxCloseSheet(); return; }
+  if (window._dlxMove && !window._dlxMove.pending) window.dlxCancelMove();
+});
+
+async function dlxPickMoveTarget(toDate) {
   const move = window._dlxMove;
   if (!move || move.pending || window._opBusy) return;
-  const from = move.from;
-
-  // Omedelbar feedback: helskärms-indikator (se dlxPickSwapTarget)
-  window._opBusy = true;
-  move.pending = before || '__end__';
-  dlxShowOpOverlay('Flyttar dag…');
-  suppressEcho();
-
-  // Receptet som flyttas — för glöd-kvittot på landningsdagen efteråt
-  const movedId = (window._lastPlan?.days || []).find(x => x.date === from)?.recipeId ?? null;
-
-  try {
-    const res = await window.apiFetch('/api/move-day', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date: from, before: before || null }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw dlxServerError(data.error);
-    window._dlxMove = null;
-    suppressEcho();
-    // Egna dagar kan ha roterats till nya datum (generaliserad flytt) —
-    // spegla serverns customDays innan re-render (samma mönster som swap).
-    if (data.customDays) window._customDays = data.customDays;
-    rerender(data.weeklyPlan || window._lastPlan, window._lastShop);
-    const landed = movedId != null
-      ? (data.weeklyPlan?.days || []).find(x => x.recipeId === movedId && x.date !== from)?.date
-      : null;
-    dlxFlashDates(landed ? [landed] : [from]);
-  } catch (e) {
-    move.pending = null;
-    renderDeluxe();   // läget kvar — användaren kan välja en annan plats eller avbryta
-    window.showToast?.(dlxUserMessage(e, 'Kunde inte flytta dagen — prova igen.'), { type: 'error' });
-  } finally {
-    dlxHideOpOverlay();
-    window._opBusy = false;
-  }
-};
-
-async function dlxPickSwapTarget(toDate) {
-  const swap = window._dlxSwap;
-  if (!swap || swap.pending || window._opBusy) return;
-  if (toDate === swap.from) return;
+  if (toDate === move.from) return;
 
   // Förvalidera mot tidslinjen — begripligt besked direkt, ingen server-tur
-  const t = (window._timelineByDate || {})[toDate];
-  if (t) {
-    if (t.isArchive) { window.showToast?.('Den här dagen kan inte bytas — ladda om sidan och prova igen.', { type: 'info' }); return; }
-    if (t.blocked)   { window.showToast?.('Fria dagar kan inte bytas — ångra fri dag först.', { type: 'info' }); return; }
-  }
-  // Passerade dagar byts precis som kommande — hela tidslinjens horisont bakåt
-  // (samma gräns som servern, se retroWindowStartIso).
-  if (toDate < dlxMinSwapIso() || swap.from < dlxMinSwapIso()) {
+  const t = (window._timelineByDate || {})[toDate] || synthDay(toDate);
+  if (t.isArchive) { window.showToast?.('Den här dagen kan inte ändras — ladda om sidan och prova igen.', { type: 'info' }); return; }
+  if (toDate < dlxMinSwapIso() || move.from < dlxMinSwapIso()) {
     window.showToast?.('Dagen ligger längre bak än matsedeln sträcker sig och kan inte ändras.', { type: 'info' });
     return;
   }
+  if (!dayHasContent(t)) { await dlxCommitMove('swap', move.from, toDate); return; }
+  openChoiceSheet(move.from, toDate);
+}
 
-  // Omedelbar feedback: helskärms-indikator (ingen omrendering av listan — den
-  // gav både ett inkilat banner-kort och ett extra blink innan svaret kom).
-  window._opBusy = true;
-  swap.pending = toDate;
-  dlxShowOpOverlay('Byter dag…');
-  suppressEcho();
-
-  try {
-    const res = await window.apiFetch('/api/swap-days', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date1: swap.from, date2: toDate }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw dlxServerError(data.error);
-    window._dlxSwap = null;
-    suppressEcho();
-    // Egna anteckningar kan ha bytt datum → spegla det innan re-render.
-    if (data.customDays) window._customDays = data.customDays;
-    rerender(data.weeklyPlan || window._lastPlan, data.shoppingList || window._lastShop);
-    dlxFlashDates([swap.from, toDate]);
-  } catch (e) {
-    swap.pending = null;
-    renderDeluxe();   // läget kvar — användaren kan välja ett annat mål eller avbryta
-    window.showToast?.(dlxUserMessage(e, 'Kunde inte byta dagarna — prova igen.'), { type: 'error' });
-  } finally {
-    dlxHideOpOverlay();
-    window._opBusy = false;
+// Utför flytten. kind: 'swap' (byt plats / flytta till tom dag) eller 'insert'
+// (kläm in före `to`, null = sist). Läget städas vid lyckat resultat; vid fel
+// ligger det kvar så användaren kan välja en annan plats eller avbryta.
+async function dlxCommitMove(kind, from, to) {
+  const move = window._dlxMove;
+  if (move) move.pending = to || '__end__';
+  const src = (window._timelineByDate || {})[from];
+  const movedId = src ? (src.recipeId ?? src.customRecipeId ?? null) : null;
+  const body = kind === 'swap'
+    ? { action: 'swap', date: from, to }
+    : { action: 'insert', date: from, before: to || null };
+  const data = await runDayOp(body, {
+    label: kind === 'swap' ? 'Flyttar…' : 'Klämmer in…',
+    fallback: 'Kunde inte flytta dagen — prova igen.',
+    flash: () => kind === 'swap' ? [from, to] : [landedDate(movedId, from, to || from)],
+  });
+  if (data) {
+    window._dlxMove = null;
+    renderDeluxe();
+  } else if (window._dlxMove) {
+    window._dlxMove.pending = null;
+    renderDeluxe();
   }
+  return !!data;
 }
 
 // ── Drag & släpp (day-drag.js) — direktutförande med redan valt mål ──────────
-// Samma säkra vägar som tryck-flödena (swap-/move-läget): _opBusy-spärren,
-// pending-bannern, felhantering och glöd-kvittot återanvänds rakt av. Skillnad:
-// läget städas alltid efteråt så ett misslyckat drag aldrig lämnar användaren
-// i ett oväntat byt/flytta-läge.
+// Släpp PÅ ett kort = byt plats (eller flytta dit om det är tomt), släpp MELLAN
+// två kort = kläm in. Samma säkra väg som tryck-flödet; läget städas alltid
+// efteråt så ett misslyckat drag aldrig lämnar användaren i flytta-läget.
 window.dlxPerformSwap = async function (fromDate, toDate) {
   if (window._opBusy) return;
-  window._dlxMove = null;
-  window._dlxSwap = { from: fromDate, pending: null };
-  await dlxPickSwapTarget(toDate);
-  if (window._dlxSwap && !window._dlxSwap.pending) { window._dlxSwap = null; renderDeluxe(); }
+  window._dlxMove = { from: fromDate, pending: null };
+  await dlxCommitMove('swap', fromDate, toDate);
+  if (window._dlxMove) { window._dlxMove = null; renderDeluxe(); }
 };
 
 window.dlxPerformMove = async function (fromDate, before) {
   if (window._opBusy) return;
-  window._dlxSwap = null;
   window._dlxMove = { from: fromDate, pending: null };
-  await window.dlxPickMoveTarget(before || null);
-  if (window._dlxMove && !window._dlxMove.pending) { window._dlxMove = null; renderDeluxe(); }
+  await dlxCommitMove('insert', fromDate, before || null);
+  if (window._dlxMove) { window._dlxMove = null; renderDeluxe(); }
 };
 
 // ── Dag-sheeten (backlog #15, variant B — universellt interaktionsmönster) ───
 // Bottensheet som är ENDA vägen in i daginteraktionen: alla dagkort (recept,
 // egen planering, fri dag, tom dag, arkiv) öppnar sheeten vid tryck — inga
-// inline-utfällningar som knuffar layouten. Ren INRAMNING — all mutations-
-// logik återanvänds från befintliga, säkra flöden:
-//   Byt middag      → swap-days (byt plats, ok även på bekräftad plan) eller
-//                     replace-recipe (slumpa/välj själv, bara obekräftad plan)
-//   Äter ute/rester/fri dag → skip-day 'free' ("skjut planen →", receptet
-//                     sparas, inköpslistan rörs aldrig) + Ångra via unfreeDay
-//   Byt/Flytta dag  → befintliga swap-/move-lägena (banner + mål-markering)
+// inline-utfällningar som knuffar layouten. Ren INRAMNING — mutationerna går
+// via /api/day (runDayOp) eller befintliga flöden:
+//   Flytta middagen → flytta-läget (banner + mål-markering; tom dag = flytta
+//                     dit, upptagen dag = byt plats eller kläm in)
+//   Ingen middag    → /api/day push + notering ("Vi äter ute", "Rester" …):
+//                     middagen skjuts till nästa dag, inget går förlorat;
+//                     Ångra i kvitto-toasten = pull
+//   Dra ihop        → /api/day pull på tomma/fria/noteringsdagar
+//   Byt recept      → replace-recipe (slumpa/välj själv, plandagar)
 //   Editorer        → customDayEditorHtml/blockedDayEditorHtml renderas i
 //                     sheeten; deras spara-flöden stänger den via dlxCloseSheet
+//   Ta bort         → /api/day delete (danger-bekräftelse)
 //   Lägg till       → addManualItem (delade inköpslistan, kategori Övrigt)
 
 let _sheetAdded = [];   // varor tillagda i denna sheet-session (kvitto-chips)
@@ -1192,13 +1134,33 @@ function ensureSheetHost() {
   document.body.appendChild(sheet);
 }
 
-// Universell klick-router för ALLA dagkort: i byt dag-läge väljs dagen som mål
-// (dlxPickSwapTarget förvaliderar med begripliga besked), i flytta-läge är bara
-// släppzonerna klickbara — annars öppnas sheeten för dagen.
+// Universell klick-router för ALLA dagkort: i flytta-läge väljs dagen som mål
+// (dlxPickMoveTarget förvaliderar med begripliga besked) — annars öppnas
+// sheeten för dagen.
 window.dlxDayClick = function (date, dayName) {
-  if (window._dlxSwap) { dlxPickSwapTarget(date); return; }
-  if (window._dlxMove) return;
+  if (window._dlxMove) { dlxPickMoveTarget(date); return; }
   openDaySheet(date, dayName);
+};
+
+// Valsheet när flytta-målet redan har innehåll: byt plats eller kläm in.
+function openChoiceSheet(fromDate, toDate) {
+  const tl = window._timelineByDate || {};
+  ensureSheetHost();
+  window._dlxSheet = { date: fromDate, day: (tl[fromDate] || synthDay(fromDate)).day, view: 'flyttaval', to: toDate };
+  renderSheet();
+  requestAnimationFrame(() => {
+    document.getElementById('dlxSheetBackdrop')?.classList.add('open');
+    document.getElementById('dlxSheet')?.classList.add('open');
+  });
+  window.pushSheetHistory?.();
+}
+
+window.dlxChoiceGo = async function (kind) {
+  const s = window._dlxSheet;
+  if (!s || s.view !== 'flyttaval' || window._opBusy) return;
+  const { date: from, to } = s;
+  window.dlxCloseSheet();
+  await dlxCommitMove(kind, from, to);
 };
 
 function openDaySheet(date, day) {
@@ -1333,46 +1295,35 @@ function syncRecipeCardTested(id, tested) {
   }
 }
 
-// Meny-vyn: dagens åtgärder — raduppsättningen följer samma regler som den
-// gamla kortutfällningen (canReplace/canMove/isPast), plus Ikväll-extran.
-function sheetMenuHtml(d, s) {
+// Meny-vyn: dagens åtgärder. EN uppsättning regler för alla dagtyper:
+//   • Visa receptet / Redigera dagen / Byt recept — beroende på dagtyp
+//   • Flytta middagen — alla innehållsdagar inom retro-fönstret (även passerade)
+//   • Ingen middag — idag och framåt: middagen skjuts till nästa dag
+//   • Inköpsrundor, Lägg till på listan (idag), Ta bort dagen
+function sheetMenuHtml(d) {
   const isCustomRecipe = d.isCustom && d.customRecipeId;
   const r = recipeById(isCustomRecipe ? d.customRecipeId : d.recipeId);
   const title = isCustomRecipe ? d.customRecipeTitle : d.recipe;
   const sub = [r?.time ? `${r.time} min` : null, r ? PROTEIN_LABEL[r.protein] : null].filter(Boolean).join(' · ');
+  const inWindow = !d.isArchive && d.date >= dlxMinSwapIso();
 
   let rows = sheetRow("dlxSheetView('recept')", '', I.pot, 'Visa receptet', 'Ingredienser och steg — börja laga');
 
   if (isCustomRecipe) {
-    // Egen planering med recept: redigera (byt recept/notering) + byt/flytta dag
     rows += sheetRow("dlxSheetView('editor')", '', I.pencil, 'Redigera dagen', 'Byt recept, skriv notering eller ta bort');
-    if (!d.isArchive && d.date >= dlxMinSwapIso()) {
-      rows += sheetRow('dlxSheetStartSwap()', '', I.swap, 'Byt dag', 'Låt dagen byta plats med en annan dag');
-      rows += sheetRow('dlxSheetStartMove()', '', I.move, 'Flytta dag', 'Kläm in dagen mellan två andra dagar');
-    }
-  } else {
-    const active = d.planId === 'active' && !d.isArchive;
-    const canReplace = active && !window.planConfirmed;
-    const targets = sheetSwapTargets(s.date);
-    if (canReplace || targets.length) {
-      rows += sheetRow("dlxSheetView('byt')", 'rust', I.shuffle, 'Byt middag',
-        canReplace ? 'Ta en annan dag i veckan — eller ett nytt recept' : 'Ta en annan dag i veckan — listan påverkas inte');
-    }
-    if (active) {
-      rows += sheetRow('dlxSheetStartSwap()', '', I.swap, 'Byt dag', 'Låt dagen byta plats med en annan dag');
-      // Retro-planering: flytta går även på passerade dagar (omplanering i
-      // efterhand). Fri dag/äta ute gäller bara idag och framåt.
-      rows += sheetRow('dlxSheetStartMove()', '', I.move, 'Flytta dag', 'Kläm in dagen mellan två andra dagar');
-      if (!d.isPast) {
-        if (d.isToday) {
-          rows += sheetRow("dlxSheetFree('ute')", '', I.fork, 'Vi äter ute', 'Ingen matlagning — receptet sparas till senare');
-          rows += sheetRow("dlxSheetFree('rester')", 'ochre', I.leftovers, 'Rester ikväll', 'Töm kylskåpet — receptet sparas till senare');
-        } else {
-          rows += sheetRow("dlxSheetFree('fri')", '', I.free, 'Fri dag — skjut planen', 'Ingen middag den här dagen — receptet sparas till senare');
-        }
-      }
+  } else if (d.planId === 'active' && !d.isArchive && !d.isPast) {
+    rows += sheetRow("dlxSheetView('byt')", '', I.shuffle, 'Byt recept', 'Slumpa ett nytt — eller välj själv i receptboken');
+  }
+  if (inWindow) {
+    rows += sheetRow('dlxSheetStartMove()', 'rust', I.move, 'Flytta middagen',
+      'Till en annan dag — tom dag, byt plats eller kläm in');
+    if (!d.isPast) {
+      rows += sheetRow("dlxSheetView('ingen')", 'ochre', I.fork,
+        d.isToday ? 'Ikväll blir det inget' : 'Ingen middag den här dagen',
+        `${esc(title || 'Middagen')} skjuts till ${d.isToday ? 'i morgon' : 'nästa dag'} — inget går förlorat`);
     }
   }
+
   // Inköpsrundor: lägg dagens ingredienser på listan / lägg tillbaka / ta bort.
   // Gäller receptdagar (egna och aktiva planens) som inte är arkiv/passerade.
   const hasListRecipe = isCustomRecipe || (d.planId === 'active' && !!d.recipeId);
@@ -1393,9 +1344,7 @@ function sheetMenuHtml(d, s) {
   if (d.isToday) {
     rows += sheetRow("dlxSheetView('lista')", '', I.plus, 'Lägg till på listan', 'Något som saknas hemma?');
   }
-  // Ta bort dagen HELT — gäller både genererade plandagar och egna dagar.
-  // Danger-åtgärd sist i menyn; bekräftelsedialog i dlxSheetDeleteDay.
-  if (!d.isArchive && (isCustomRecipe || d.planId === 'active')) {
+  if (!d.isArchive) {
     rows += sheetRow('dlxSheetDeleteDay()', 'rust', I.trash, 'Ta bort dagen helt',
       'Dagen försvinner ur matsedeln — varor som inte är inhandlade tas bort från listan');
   }
@@ -1406,12 +1355,28 @@ function sheetMenuHtml(d, s) {
     ${rows}`;
 }
 
-function sheetSwapTargets(fromDate) {
-  // Retro-planering: även passerade plandagar (inom 14-dagarsfönstret) går att
-  // byta med — familjen planerar ofta om i efterhand.
-  const minIso = dlxMinSwapIso();
-  return (window._lastPlan?.days || []).filter(x =>
-    x.recipeId && !x.blocked && x.date !== fromDate && x.date >= minIso);
+// "Dra ihop" är meningsfullt på en tom/fri/noteringsdag som följs av innehåll.
+function canPull(d) {
+  if (!d || d.isArchive || d.date < dlxMinSwapIso()) return false;
+  if (d.recipeId || d.customRecipeId) return false;
+  const next = (window._timelineByDate || {})[addDaysIso(d.date, 1)];
+  return dayHasContent(next);
+}
+
+// Rader för "Ingen middag"-vyn — en notering per anledning; middagen skjuts.
+function noDinnerRows(d) {
+  const today = d.isToday;
+  let rows = sheetRow("dlxSheetNoDinner('Vi äter ute')", '', I.fork, 'Vi äter ute', 'Ingen matlagning');
+  rows += sheetRow(`dlxSheetNoDinner('${today ? 'Rester ikväll' : 'Rester'}')`, 'ochre', I.leftovers, today ? 'Rester ikväll' : 'Rester', 'Töm kylskåpet');
+  rows += sheetRow("dlxSheetNoDinner('Bortresta')", '', I.free, 'Bortresta', 'Ingen hemma den här dagen');
+  rows += `<p class="dlx-sheet-cap">Eller skriv själv</p>
+    <div class="dlx-sheet-addrow">
+      <input type="text" id="dlxNoDinnerNote" class="custom-note-input" maxlength="140"
+             placeholder="T.ex. pizza, kalas hos farmor…"
+             onkeydown="if(event.key==='Enter'){event.preventDefault();dlxSheetNoDinnerCustom()}">
+      <button type="button" class="dlx-sheet-addbtn" onclick="dlxSheetNoDinnerCustom()">Spara</button>
+    </div>`;
+  return rows;
 }
 
 function renderSheet() {
@@ -1422,36 +1387,48 @@ function renderSheet() {
   let body = '';
 
   if (s.view === 'meny') {
-    body = sheetMenuHtml(d, s);
+    body = sheetMenuHtml(d);
   } else if (s.view === 'recept') {
     body = sheetRecipeHtml(d);
   } else if (s.view === 'byt') {
-    const active = d.planId === 'active' && !d.isArchive;
-    const canReplace = active && !window.planConfirmed;
-    const targets = sheetSwapTargets(s.date);
-    const withWhom = d.isToday ? 'ikväll' : `den ${d.dayNum} ${MONTH_NAMES_SHORT[d.month]}`;
-    let rows = '';
-    if (canReplace) {
-      rows += sheetRow('dlxSheetShuffle()', 'rust', I.shuffle, 'Slumpa nytt recept', 'Appen väljer — de senaste veckornas rätter undviks');
-      rows += sheetRow('dlxSheetPick()', '', I.pencil, 'Välj själv i receptboken', 'Bläddra bland alla recept');
-    }
-    if (targets.length) {
-      rows += `<p class="dlx-sheet-cap">${canReplace ? 'Eller ta en annan dags middag' : 'Ta en annan dags middag — inköpslistan påverkas inte'}</p>`;
-      rows += targets.map(t => {
-        const tl = (window._timelineByDate || {})[t.date];
-        const when = tl ? `${tl.day} ${tl.dayNum} ${MONTH_NAMES_SHORT[tl.month]}` : t.date;
-        return sheetRow(`dlxSheetSwap('${t.date}')`, '', I.swap, esc(t.recipe || ''), `${esc(when)} · byter plats med ${withWhom}`);
-      }).join('');
-    }
-    if (!rows) rows = `<p class="dlx-sheet-empty">Matsedeln är bekräftad och har inga fler receptdagar att byta med.</p>`;
+    // Byt recept på en plandag. Servern (replace-recipe) bygger om inköpslistan
+    // om dagen ligger på den — redan inhandlade dagar rörs inte.
+    const onList = isOnListDay(d) || isShoppedDay(d);
+    let rows = sheetRow('dlxSheetShuffle()', 'rust', I.shuffle, 'Slumpa nytt recept', 'Appen väljer — de senaste veckornas rätter undviks');
+    rows += sheetRow('dlxSheetPick()', '', I.pencil, 'Välj själv i receptboken', 'Bläddra bland alla recept');
     body = `
       <button type="button" class="dlx-sheet-back" onclick="dlxSheetView('meny')">‹ Tillbaka</button>
-      <p class="dlx-sheet-title">Byt middag</p>
+      <p class="dlx-sheet-title">Byt recept</p>
+      <p class="dlx-sheet-sub">${sheetWhen(d)} · ${esc(d.recipe || '')}${onList ? ' · inköpslistan uppdateras' : ''}</p>
+      ${rows}`;
+  } else if (s.view === 'ingen') {
+    body = `
+      <button type="button" class="dlx-sheet-back" onclick="dlxSheetView('meny')">‹ Tillbaka</button>
+      <p class="dlx-sheet-title">${d.isToday ? 'Ikväll blir det inget' : 'Ingen middag den här dagen'}</p>
+      <p class="dlx-sheet-sub">${esc(d.recipe || d.customRecipeTitle || 'Middagen')} skjuts till ${d.isToday ? 'i morgon' : 'nästa dag'} och dagarna efter flyttas ett steg — inget går förlorat. Går att ångra.</p>
+      ${noDinnerRows(d)}`;
+  } else if (s.view === 'flyttaval') {
+    const tl = window._timelineByDate || {};
+    const src = tl[s.date] || synthDay(s.date);
+    const dst = tl[s.to] || synthDay(s.to);
+    const name = (x) => x.recipe || x.customRecipeTitle || x.customNote || (x.blocked ? 'Fri dag' : 'dagen');
+    const when = (x) => `${x.day.toLowerCase()} ${x.dayNum} ${MONTH_NAMES_SHORT[x.month]}`;
+    let rows = sheetRow("dlxChoiceGo('swap')", '', I.swap, 'Byt plats',
+      `${esc(name(src))} → ${esc(when(dst))} · ${esc(name(dst))} → ${esc(when(src))}`);
+    const insertOk = s.to !== addDaysIso(s.date, 1) && !crossesArchive(s.date, s.to);
+    if (insertOk) {
+      rows += sheetRow("dlxChoiceGo('insert')", '', I.move, `Kläm in före ${esc(name(dst))}`,
+        s.to > s.date ? 'Dagarna emellan flyttas ett steg bakåt' : 'Dagarna emellan flyttas ett steg framåt');
+    }
+    body = `
+      <p class="dlx-sheet-sub">${esc(when(dst))} har redan ${esc(name(dst))}</p>
+      <p class="dlx-sheet-title">Flytta ${esc(name(src))}</p>
       ${rows}`;
   } else if (s.view === 'editor') {
     // Egen planering-/fri dag-/tom dag-editorn — samma editor-HTML som förut,
     // nu i sheeten. Spara-flödena i plan-viewer.js stänger sheeten vid lyckat
-    // resultat (dlxCloseSheet-anrop i success-vägarna).
+    // resultat (dlxCloseSheet-anrop i success-vägarna). Ovanför: flytta/dra
+    // ihop-raderna som gäller dagen (samma regler som receptdagar).
     const isCustomRecipe = d.isCustom && d.customRecipeId;
     const inner = (d.blocked && !d.isCustom)
       ? window.blockedDayEditorHtml(d.date, d.day)
@@ -1459,10 +1436,20 @@ function renderSheet() {
     const backBtn = isCustomRecipe
       ? `<button type="button" class="dlx-sheet-back" onclick="dlxSheetView('meny')">‹ Tillbaka</button>`
       : '';
-    const swapBtn = (d.isCustom && !isCustomRecipe && d.customNote && !d.isArchive && d.date >= dlxMinSwapIso())
-      ? `<div class="dlx-actions"><button class="dlx-act" onclick="dlxSheetStartSwap()">${I.swap}<span>Byt dag</span></button><button class="dlx-act" onclick="dlxSheetStartMove()">${I.move}<span>Flytta dag</span></button></div>`
-      : '';
-    body = `${backBtn}<div class="dlx-sheet-editor">${inner}</div>${swapBtn}`;
+    let actions = '';
+    if (!isCustomRecipe && dayHasContent(d) && d.date >= dlxMinSwapIso()) {
+      actions += sheetRow('dlxSheetStartMove()', 'rust', I.move, 'Flytta dagen', 'Till en annan dag — byt plats eller kläm in');
+    }
+    if (!isCustomRecipe && canPull(d)) {
+      actions += sheetRow('dlxSheetPull()', '', I.swap, 'Dra ihop matsedeln',
+        dayHasContent(d) ? 'Markeringen tas bort och dagarna efter flyttas ett steg tillbaka' : 'Dagarna efter flyttas ett steg tillbaka');
+    }
+    // Åtgärdsraderna läggs direkt under editorns dag-rubrik (samma plats som
+    // menyraderna i receptdagarnas sheet), före noterings-/receptvalen.
+    const withActions = actions
+      ? inner.replace('<div class="custom-options">', `<div class="dlx-sheet-actions">${actions}</div><div class="custom-options">`)
+      : inner;
+    body = `${backBtn}<div class="dlx-sheet-editor">${withActions}</div>`;
   } else if (s.view === 'lista') {
     const chips = _sheetAdded.length
       ? `<div class="dlx-sheet-added">${_sheetAdded.map(x => `<span>${esc(x)}</span>`).join('')}</div>`
@@ -1490,15 +1477,7 @@ window.dlxSheetView = function (view) {
   if (view === 'lista') document.getElementById('dlxSheetItemInput')?.focus();
 };
 
-// Byt dag / Flytta dag — stäng sheeten och gå in i befintligt läge (banner +
-// mål-markeringar). Samma flöden som förut, bara ny ingång.
-window.dlxSheetStartSwap = function () {
-  const s = window._dlxSheet;
-  if (!s) return;
-  window.dlxCloseSheet();
-  window.dlxStartSwap(s.date);
-};
-
+// Flytta — stäng sheeten och gå in i flytta-läget (banner + mål-markeringar).
 window.dlxSheetStartMove = function () {
   const s = window._dlxSheet;
   if (!s) return;
@@ -1520,41 +1499,59 @@ window.dlxSheetPick = function () {
   window.enterReplaceMode(s.date, s.day);
 };
 
-// Byt plats med en annan receptdag — samma väg som "Byt dag"-flödet, men målet
-// är redan valt så swap-läget aldrig syns. Vid fel städas läget (toast visas
-// av dlxPickSwapTarget) så användaren inte lämnas i ett oväntat byt dag-läge.
-window.dlxSheetSwap = async function (toDate) {
+// Ingen middag → /api/day push + notering: middagen skjuts till nästa dag,
+// allt efter flyttas ett steg fram till närmaste lediga dag (även över
+// plangränsen). Inköpslistan rörs inte. Ångra-knapp i kvitto-toasten (= pull).
+window.dlxSheetNoDinner = async function (note) {
   const s = window._dlxSheet;
   if (!s || window._opBusy) return;
+  const d = (window._timelineByDate || {})[s.date] || {};
+  const title = d.recipe || d.customRecipeTitle || 'Middagen';
+  const isToday = !!d.isToday;
   window.dlxCloseSheet();
-  window._dlxMove = null;
-  window._dlxSwap = { from: s.date, pending: null };
-  await dlxPickSwapTarget(toDate);
-  if (!window._dlxSwap) {
-    window.showToast?.('Middagarna har bytt plats.', { type: 'success' });
-  } else if (!window._dlxSwap.pending) {
-    window._dlxSwap = null;
-    renderDeluxe();
-  }
+  const data = await runDayOp({ action: 'push', date: s.date, note }, {
+    label: 'Gör plats…',
+    fallback: 'Kunde inte flytta middagen — prova igen.',
+    flash: (res) => [s.date, res.movedTo].filter(Boolean),
+  });
+  if (!data) return;
+  window.showToast?.(`${note} — ${title} flyttas till ${isToday ? 'i morgon' : 'nästa dag'}.`, {
+    type: 'success',
+    action: { label: 'Ångra', onClick: () => runDayOp({ action: 'pull', date: s.date }, {
+      label: 'Ångrar…', fallback: 'Kunde inte ångra — öppna dagen och välj "Dra ihop matsedeln".',
+      flash: () => [s.date],
+    }) },
+  });
 };
 
-// Vi äter ute / Rester ikväll / Fri dag → skip-day free ("skjut planen →"):
-// receptet flyttas till slutet av matsedeln, inköpslistan rörs inte.
-// Ångra-knapp i kvitto-toasten.
-window.dlxSheetFree = async function (kind) {
+window.dlxSheetNoDinnerCustom = function () {
+  const input = document.getElementById('dlxNoDinnerNote');
+  const note = (input?.value || '').trim();
+  if (!note) { input?.focus(); return; }
+  window.dlxSheetNoDinner(note);
+};
+
+// Dra ihop → /api/day pull: markören (tom/fri/notering) tas bort och dagarna
+// efter flyttas ett steg tillbaka. Noteringar bekräftas eftersom texten går.
+window.dlxSheetPull = async function () {
   const s = window._dlxSheet;
   if (!s || window._opBusy) return;
-  const recipeTitle = (window._lastPlan?.days || []).find(x => x.date === s.date)?.recipe || 'Receptet';
-  window.dlxCloseSheet();
-  const ok = await window.dlxFreeDay(s.date, null);
-  if (ok) {
-    const msg = kind === 'rester'
-      ? `Rester ikväll — ${recipeTitle} flyttas till slutet av matsedeln.`
-      : kind === 'ute'
-        ? `Ni äter ute ikväll — ${recipeTitle} flyttas till slutet av matsedeln.`
-        : `Dagen är fri — ${recipeTitle} flyttas till slutet av matsedeln.`;
-    window.showToast?.(msg, { type: 'success', action: { label: 'Ångra', onClick: () => window.unfreeDay(s.date) } });
+  const d = (window._timelineByDate || {})[s.date] || {};
+  if (d.customNote) {
+    const ok = await window.confirmDialog({
+      title: 'Dra ihop matsedeln?',
+      message: `Noteringen "${d.customNote}" tas bort och dagarna efter ${s.day.toLowerCase()} flyttas ett steg tillbaka.`,
+      confirmLabel: 'Dra ihop',
+      danger: true,
+    });
+    if (!ok) return;
   }
+  window.dlxCloseSheet();
+  await runDayOp({ action: 'pull', date: s.date }, {
+    label: 'Drar ihop…',
+    fallback: 'Kunde inte dra ihop matsedeln — prova igen.',
+    flash: () => [s.date],
+  });
 };
 
 // Inköpsrundor: lägg dagens ingredienser på listan (custom-dag eller
@@ -1599,13 +1596,13 @@ window.dlxSheetRemoveFromList = function () {
 };
 
 // Ta bort dagen HELT (även genererade plandagar) — danger-bekräftelse, sedan
-// /api/skip-day action:delete. Servern städar inköpslistan (o-inhandlade
-// varor) och räknar om planens datumspann; tömd plan deaktiveras.
+// /api/day delete. Servern städar inköpslistan (o-inhandlade varor) och
+// räknar om planens datumspann; tömd plan deaktiveras.
 window.dlxSheetDeleteDay = async function () {
   const s = window._dlxSheet;
   if (!s || window._opBusy) return;
   const d = (window._timelineByDate || {})[s.date] || {};
-  const what = d.recipe || d.customRecipeTitle || d.customNote || null;
+  const what = d.recipe || d.customRecipeTitle || d.customNote || (d.blocked ? 'Fri dag' : null);
   const ok = await window.confirmDialog({
     title: 'Ta bort dagen helt?',
     message: `${s.day}${what ? ` (${what})` : ''} försvinner ur matsedeln. Varor som inte är inhandlade tas bort från inköpslistan.`,
@@ -1613,32 +1610,16 @@ window.dlxSheetDeleteDay = async function () {
     danger: true,
   });
   if (!ok) return;
-  window._opBusy = true;
-  try {
-    const res = await window.apiFetch('/api/skip-day', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date: s.date, action: 'delete' }),
-    });
-    let data = {};
-    try { data = await res.json(); } catch { /* ingen JSON */ }
-    if (!res.ok) throw Object.assign(new Error(data.error || ''), { serverMsg: data.error });
-    window.dlxCloseSheet();
-    window._planMutateUntil = Date.now() + 4000;   // dämpa realtids-ekot
-    if (data.shoppingList) {
-      window._preserveChecked = false;
-      window.loadShoppingTab?.();
-    }
-    await window.loadWeeklyPlan();
-    if (data.listStale) {
-      window.showToast?.('Dagen är borttagen, men inköpslistan kunde inte uppdateras — ladda om och prova igen.', { type: 'error' });
-    } else {
-      window.showToast?.('Dagen är borttagen ur matsedeln.', { type: 'success' });
-    }
-  } catch (e) {
-    window.showToast?.(e?.serverMsg || 'Kunde inte ta bort dagen — prova igen.', { type: 'error' });
-  } finally {
-    window._opBusy = false;
+  window.dlxCloseSheet();
+  const data = await runDayOp({ action: 'delete', date: s.date }, {
+    label: 'Tar bort…',
+    fallback: 'Kunde inte ta bort dagen — prova igen.',
+  });
+  if (!data) return;
+  if (data.listStale) {
+    window.showToast?.('Dagen är borttagen, men inköpslistan kunde inte uppdateras — ladda om och prova igen.', { type: 'error' });
+  } else {
+    window.showToast?.('Dagen är borttagen ur matsedeln.', { type: 'success' });
   }
 };
 

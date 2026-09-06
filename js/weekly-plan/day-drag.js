@@ -1,7 +1,8 @@
 // Drag & släpp av dagar i matsedeln (Session 131) — långtryck på ett dagkort
 // lyfter det (övriga flyttbara kort jigglar kort, iOS-hemskärmskänsla), dra och släpp:
-//   • på ett annat kort  → dagarna byter plats (samma väg som "Byt dag" → /api/swap-days)
-//   • mellan två kort    → dagen kläms in där (samma väg som "Flytta dag" → /api/move-day)
+//   • på ett annat kort  → dagarna byter plats, eller flyttas dit om det är tomt
+//                          (/api/day swap — samma väg som "Flytta middagen" i sheeten)
+//   • mellan två kort    → dagen kläms in där (/api/day insert)
 //   • vid skärmkanten    → vila fingret där → veckan glider över (iPhone-hemskärmen:
 //                          dra en app till kanten för att byta sida) och dagen kan
 //                          släppas i föregående/nästa vecka.
@@ -11,7 +12,8 @@
 // felhantering, samma pending-banner och glöd-kvitto. Inga nya endpoints, ingen
 // egen serverkod. Tryck-flödena i dag-sheeten ("Byt dag"/"Flytta dag") finns
 // kvar som tangentbordsnåbar väg — draget är ett snabbare alternativ, inte en
-// ersättning.
+// ersättning. EN modell (Session 142): plandagar, egna dagar, noteringar och
+// fria dagar dras och tas emot likadant.
 //
 // ── PRESTANDA (Session 131, jank-passet) ────────────────────────────────────
 // Målet är 60 fps på mobil: NOLL layout-läsningar och noll onödiga DOM-
@@ -67,28 +69,28 @@ function daysContainer() {
   return document.querySelector('#weekDeluxe .dlx-days');
 }
 
-// ── Behörighet — speglar modeCls/dlxPickSwapTarget-reglerna i plan-viewer-deluxe ──
-// Källa: valfri INNEHÅLLSDAG — aktiva planens receptdagar eller egen planering
-// (recept eller anteckning). Aldrig arkiv eller fria dagar.
+// ── Behörighet — speglar modeCls/canReceive-reglerna i plan-viewer-deluxe ────
+// Källa: valfri INNEHÅLLSDAG — plandag, egen planering (recept eller
+// anteckning) eller fri dag. Aldrig arkiv.
 // Retro-planering: passerade dagar får dras och tas emot — familjen planerar
-// ofta om i efterhand — men bara inom retro-fönstret (14 dagar, samma som
-// servern). Äldre = historik.
+// ofta om i efterhand — men bara inom retro-fönstret (samma som servern).
+// Äldre = historik.
 //
 // Billig förkoll som körs vid VARJE pointerdown på ett kort (även rena tryck) —
 // därför bara map-uppslag, inga loopar över tidslinjen.
 function canDragFrom(srcDate) {
   const tl = window._timelineByDate || {};
   const src = tl[srcDate];
-  if (!src || src.isArchive || src.blocked || srcDate < retroWindowStartIso()) return null;
-  const srcIsPlan = !!src.recipeId && !src.isCustom && src.planId === 'active';
-  const srcIsCustom = !!src.isCustom && !!(src.customRecipeId || src.customRecipeTitle || src.customNote);
-  return (srcIsPlan || srcIsCustom) ? src : null;
+  if (!src || src.isArchive || srcDate < retroWindowStartIso()) return null;
+  const hasContent = !!src.recipeId || !!src.blocked ||
+    (!!src.isCustom && !!(src.customRecipeId || src.customRecipeTitle || src.customNote));
+  return hasContent ? src : null;
 }
 
 // Full kontext — byggs BARA vid aktivering (dlxInsertZones går igenom hela
 // tidslinjen; det ska inte belasta vanliga tryck).
-// Byt-mål: icke-arkiv, icke-fri dag — recept kräver aktiv plan.
-// Kläm in-zoner: före varje innehållsdag oavsett typ (/api/move-day roterar
+// Byt-mål: alla icke-arkivdagar inom retro-fönstret (tomma dagar = flytta dit).
+// Kläm in-zoner: före varje innehållsdag oavsett typ (/api/day insert roterar
 // fullt innehåll över alla dagtyper; tomma dagar är hål som vandrar).
 function dragContext(srcDate) {
   if (!canDragFrom(srcDate)) return null;
@@ -98,10 +100,7 @@ function dragContext(srcDate) {
   const canSwap = (date) => {
     if (date === srcDate || date < minIso) return false;
     const d = tl[date];
-    if (!d) return true;                                  // tom dag utanför horisonten
-    if (d.isArchive || d.blocked) return false;           // arkiv & fria dagar rörs aldrig
-    if (d.recipeId && !d.isCustom) return d.planId === 'active';
-    return true;                                          // egen dag eller tom dag
+    return !d || !d.isArchive;                            // arkiv rörs aldrig
   };
 
   const zones = window.dlxInsertZones?.(srcDate) || { insertBefores: new Set(), endAfter: null };
@@ -483,7 +482,7 @@ function cancelHold() {
 document.addEventListener('pointerdown', (e) => {
   if (_drag || _hold) return;                                   // en gest i taget
   if (e.pointerType === 'mouse' && e.button !== 0) return;
-  if (window._opBusy || window._dlxSwap || window._dlxMove || window._dlxSheet) return;
+  if (window._opBusy || window._dlxMove || window._dlxSheet) return;
   if (window._dlxWeekAnimBusy) return;                          // mitt i veckoglid
   if (e.target.closest('button, a, input, textarea, select')) return;
   const card = e.target.closest('#weekDeluxe .dlx-day-slot > [data-date]');

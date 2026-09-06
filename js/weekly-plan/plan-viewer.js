@@ -159,7 +159,11 @@ function buildTimeline(plan, archive, customDays) {
     const dow = cur.getDay();
     const entry = byDate.get(iso) || {};
     const custom = customEntries[iso];
-    const isCustom = !!custom && !entry.recipeId;
+    // En plan_id-lös rad som BARA är en fri dag (ingen notering, inget recept)
+    // renderas som fri dag — inte som tom egen planering (Session 142: fria
+    // dagar flyttas som vilket innehåll som helst och kan lämna sin plan).
+    const customFreeOnly = !!custom && custom.blocked && !custom.note && !custom.recipeId && !custom.recipeTitle;
+    const isCustom = !!custom && !entry.recipeId && !customFreeOnly;
     // Inköpsrundor: dagens rundstatus — från plan-dagen eller custom-dagen.
     const shoppedAt = entry.shoppedAt || custom?.shoppedAt || null;
     const dayListId = entry.listId || custom?.listId || null;
@@ -178,7 +182,7 @@ function buildTimeline(plan, archive, customDays) {
       recipeId: entry.recipeId || null,
       saving: entry.saving || null,
       savingMatches: entry.savingMatches || null,
-      blocked: !!(entry.blocked && !entry.recipeId),
+      blocked: !!((entry.blocked && !entry.recipeId) || (customFreeOnly && !entry.recipeId)),
       planId: entry.planId || null,
       planLabel: entry.planLabel || null,
       planColorIndex: entry.planColorIndex ?? null,
@@ -229,6 +233,8 @@ async function loadCustomDays() {
         note:        row.custom_note || '',
         recipeId:    row.recipe_id ?? null,
         recipeTitle: row.recipe_title_snapshot || '',
+        // Fri dag som lämnat sin plan (Session 137 detach / flyttad fri dag)
+        blocked:     row.blocked === true,
         // Inköpsrundor (migration 009) — saknas kolumnerna blir de undefined → null
         shoppedAt:   row.shopped_at ?? null,
         listId:      row.shopping_list_id ?? null,
@@ -501,44 +507,10 @@ function updateLastPlanDay(date, recipeId, recipe) {
   }
 }
 
-// ── Fri dag (gör fri / ångra fri) ────────────────────────────────────────────
-
-async function modifyDay(date, action) {
-  if (window._opBusy) return;   // delad spärr med premiumvyn (backlog #10)
-  window._opBusy = true;
-  try {
-    const res = await window.apiFetch('/api/skip-day', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ date, action }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw serverError(data.error);
-
-    // Fri dag-editorn bor i dag-sheeten → stäng den vid lyckat resultat.
-    window.dlxCloseSheet?.();
-
-    // Re-rendera planen. Fri dag/ångra ändrar inte receptmängden → ingen ny
-    // inköpslista skickas; återanvänd senaste shop-summering så ingrediens-
-    // förhandsvisningen på veckovyn inte blankas.
-    const shop = data.shoppingList || window._lastShop || null;
-    renderWeeklyPlanData(data.weeklyPlan, shop);
-
-    // Uppdatera inköpslistan bara om servern skickade en ny
-    if (data.shoppingList && window.renderShoppingData) {
-      window.renderShoppingData(data.shoppingList);
-    }
-  } catch (e) {
-    const actionMsg = { free: 'göra fri', unfree: 'ångra fri dag på' };
-    const fallback = `Kunde inte ${actionMsg[action] || 'ändra'} dagen — prova igen.`;
-    window.showToast?.(userFacingMessage(e, fallback), { type: 'error' });
-  } finally {
-    window._opBusy = false;
-  }
-}
-
-export function freeDay(date) { return modifyDay(date, 'free'); }
-export function unfreeDay(date) { return modifyDay(date, 'unfree'); }
+// ── Fri dag ──────────────────────────────────────────────────────────────────
+// Att göra/ångra fri dag är sedan Session 142 vanliga dagoperationer i
+// dag-sheeten (plan-viewer-deluxe.js → /api/day push/pull). Här bor bara
+// editorn för en befintlig fri dag.
 
 // Editor-HTML för en fri dag — renderas inline i premiumvyns utfällda kort
 // (samma mönster som customDayEditorHtml). Knapparna kallar globala
@@ -547,15 +519,6 @@ export function blockedDayEditorHtml(dateIso, dayName) {
   const dateLabel = fmtShort(dateIso);
   const todayIso = fmtIso(new Date());
   const isPast = dateIso < todayIso;
-
-  // På passerade fri-dagar är "Ångra fri dag" meningslöst (kan inte skjuta
-  // planen från en redan förbrukad dag). Bara notering-fältet visas.
-  const unfreeBtn = isPast ? '' : `
-      <button type="button" class="custom-option" onclick="unfreeDay('${dateIso}')">
-        <span class="custom-option-icon" aria-hidden="true">${ICON_CALENDAR}</span>
-        <span class="custom-option-label">Ångra fri dag — skjut ihop matsedeln</span>
-        <span class="custom-option-chev" aria-hidden="true">›</span>
-      </button>`;
   const notePlaceholder = isPast
     ? 'T.ex. rester, åt ute, beställde hem…'
     : 'T.ex. pizza, rester, äter ute…';
@@ -565,7 +528,7 @@ export function blockedDayEditorHtml(dateIso, dayName) {
       <div class="custom-day-title">${dayName}</div>
       <div class="custom-day-sub">${dateLabel} · Fri dag</div>
     </div>
-    <div class="custom-options">${unfreeBtn}
+    <div class="custom-options">
       <div class="custom-option custom-option-note">
         <div class="custom-option-head">
           <span class="custom-option-icon" aria-hidden="true">${ICON_NOTE}</span>
@@ -1028,8 +991,8 @@ export async function clearCustomDay(dateIso) {
 }
 
 // ── Städa övergivna interaktionslägen vid flikbyte (F259) ───────────────────
-// enterReplaceMode/enterCustomPickMode och deluxe-vyns byt/flytta-läge
-// (_dlxSwap/_dlxMove) stänger av realtime-plansynken (subscribeMealDays ovan)
+// enterReplaceMode/enterCustomPickMode och deluxe-vyns flytta-läge
+// (_dlxMove) stänger av realtime-plansynken (subscribeMealDays ovan)
 // så länge de hänger kvar. Ett flikbyte utan uttryckligt Avbryt lämnade
 // tidigare läget beväpnat resten av sessionen. Wrappar window.switchTab
 // (samma mönster som today-view.js/plan-viewer-deluxe.js) så städningen sker
@@ -1044,7 +1007,6 @@ function installSwitchTabCleanup() {
       if (window.customPickMode) exitCustomPickMode();
     }
     if (tab !== 'vecka') {
-      window.dlxCancelSwap?.();
       window.dlxCancelMove?.();
     }
     reloadIfStale();   // F231: fånga upp ev. missat event från städningen ovan
@@ -1059,7 +1021,6 @@ window.enterReplaceMode    = enterReplaceMode;
 window.exitReplaceMode     = exitReplaceMode;
 window.selectRecipeForDay  = selectRecipeForDay;
 window.updateLastPlanDay   = updateLastPlanDay;
-window.freeDay             = freeDay;
 window.openSavingPopover   = openSavingPopover;
 window.closeSavingPopover  = closeSavingPopover;
 window.confirmPlan         = confirmPlan;
@@ -1069,7 +1030,6 @@ window.loadWeeklyPlan      = loadWeeklyPlan;
 window.customDayEditorHtml = customDayEditorHtml;
 window.saveCustomDay       = saveCustomDay;
 window.clearCustomDay      = clearCustomDay;
-window.unfreeDay           = unfreeDay;
 window.convertBlockedToCustom = convertBlockedToCustom;
 window.enterCustomPickMode = enterCustomPickMode;
 window.exitCustomPickMode  = exitCustomPickMode;

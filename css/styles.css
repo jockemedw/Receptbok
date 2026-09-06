@@ -4596,7 +4596,8 @@ html.auth-required body {
   font-size: 0.82rem;
   font-weight: 500;
 }
-.dlx-swap-banner span { display: inline-flex; align-items: center; gap: 0.45rem; }
+.dlx-swap-banner span { display: inline-flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; }
+.dlx-swap-banner strong { font-weight: 700; }
 .dlx-swap-banner svg { width: 16px; height: 16px; }
 .dlx-swap-banner button {
   border: none;
@@ -5690,6 +5691,7 @@ main#receptView {
 }
 .dlx-sheet-row:hover, .dlx-sheet-row:active { background: var(--linen); }
 .dlx-sheet-row + .dlx-sheet-row { border-top: 1px solid var(--stone); }
+.dlx-sheet-actions { margin: -0.5rem 0 0.75rem; }
 .dlx-sheet-ic {
   width: 38px;
   height: 38px;
