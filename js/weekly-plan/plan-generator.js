@@ -343,7 +343,10 @@ export async function generatePlan() {
         if (cd.data) {
           const entries = {};
           for (const row of cd.data) {
-            entries[row.date] = { note: row.custom_note || '', recipeId: row.recipe_id ?? null, recipeTitle: row.recipe_title_snapshot || '' };
+            entries[row.date] = {
+              note: row.custom_note || '', recipeId: row.recipe_id ?? null, recipeTitle: row.recipe_title_snapshot || '',
+              blocked: row.blocked === true, shoppedAt: row.shopped_at ?? null, listId: row.shopping_list_id ?? null,
+            };
           }
           customDays = { entries };
         }

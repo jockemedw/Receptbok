@@ -1,6 +1,24 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–141c. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–141e. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+## Session 141e — Batch E verifierad skarpt (8,7× på inköpsanropet) + nytt fynd: 11,8 s innan JS startar (docs-only).
+
+Joakim körde `?perf=1` igen efter deployen. **Batch E är bevisad** på de två endpoints som går att jämföra direkt mot 0.6-mätningen: `/api/shopping` **1 561 → 179 ms (8,7×)** och `/api/dispatch-to-willys` **2 883 → 708 ms (4×)**. `/api/swap-days` låg på 1 623 ms men saknar baslinje — sannolikt sessionens första, kalla anrop mot just den funktionen. Databasfrågorna föll 35 → 31, och `token`-raden (auth-refreshen på 817 ms) saknas helt.
+
+**Vad som INTE är batchens förtjänst.** Klientens boot-kedja från js-start till Idag gick 1 833 → 728 ms, men det beror mest på att access-tokenet fortfarande var färskt (auth 834 → 16 ms) — tur med tajmingen, inte något Batch E gjorde. Batch E rör bara serverkod som körs vid `/api/`-anrop.
+
+**Nytt fynd, större än det vi just fixade.** Samma mätning: `DOM 109 ms` men `js 11 758 ms`. DOM:en var interaktiv efter en tiondels sekund, sedan hände **ingenting på 11,6 sekunder** innan första modulen kördes. Därefter var appen snabb. Det kan omöjligt vara Batch E — allt sker innan någon app-JS kört och därmed innan något `/api/`-anrop är möjligt. Två kandidater som inte går att skilja på ett enda mätvärde: **(a)** leveransen av statiska filer — 94 filer, samtliga `Cache-Control: public, max-age=0, must-revalidate` (verifierat mot produktion samma dag), hämtade nät-först genom service workern utan timeout, alltså en villkorlig runda per fil; det är precis vad Batch B åtgärdar. **(b)** en bakgrundad flik som iOS Safari suspenderat under laddningen.
+
+**Nästa mätning avgör:** en runda till med appen i förgrunden hela tiden. Reproduceras 11,8 s är kandidat (a) bekräftad och **Batch B flyttas före Batch A**.
+
+**Ändringens natur:** docs-only (utfallet infört i planens Batch E-avsnitt + nytt underavsnitt om fyndet). Ingen kod rörd, inga versionsbumpar.
+
+**Väntar fortfarande på dig:** bekräfta att access-token-TTL:n står på 3 600 s i Supabase-dashboarden, och besked om jag ska täppa till den oautentiserade dispatch-POST:en (se Kända buggar).
+
+**Kvar från tidigare:** Session 140:s fontbyte, Session 137:s migration 011, Session 136:s Hemköp-inloggning, Session 139:s tre önskemål, Session 135:s butiksval, Session 134:s dagväljare, Session 132:s inköpslista-fixar och Session 131:s rundor 2–8 väntar på skarp mobilkoll (se kön).
+
+Session 8–141c i `docs/session-log-archive.md`. Full git-historik: `git log --oneline`.
 
 ## Session 141c — Mobilmätningen gjord: planen omprioriterad efter riktiga siffror (docs-only).
 
