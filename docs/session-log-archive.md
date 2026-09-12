@@ -1,6 +1,18 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–143. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–144. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+## Session 144 — Etapp A byggd + R02/R03/R08: tio Codex-fynd åtgärdade via workflow (datamuterande, SKARP, ej mobil-verifierad).
+
+Joakim: "skriv en billig plan för åtgärd av så många prioriterade fel som möjligt i workflow" → "Kör". Planen: nio filmässigt disjunkta rättningar som parallella Sonnet-/Haiku-agenter i samma arbetsträd (inga worktrees), en adversariell granskare på hela diffen, R02 av Claude inline (hade reproduktionen), versionsbump/commit/PR centralt. Flaggorna `r01` och `zoom` lämnades AV — R01 och R13-zoom väntar fortfarande på uttryckligt OK. Utfall: 10 agenter, 0 fel, ≈720 k subagent-tokens, 7 min.
+
+**Granskarens fyra anmärkningar och vad som gjordes:** (1) SW: `networkPromise` låg utanför `event.waitUntil` → tillagt, annars kunde bakgrundshämtningen avbrytas när timeouten vann. (2) cook-mode: faktor 1 tappade fetstilen → `parseQty` returnerar nu `qtyText` (mängden exakt som i receptet) och `ingLineHtml` wrappar den i `<b class="cook-qty">`. (3) `generate.js` fanns inte i fixlistan → det är R02 (denna ruta). (4) Listor återlade hela snapshotten → gruppvis som Inköp. **Eget fynd i granskningen:** agentens engelska ord var delsträngar — `ham` träffade *champinjoner* och *hamburgare*, `cod` *avocado* → `\b`-helord + fyra nya testfall; `nötfärs` tillagt i kött-lexikonet.
+
+**R02 (invariant #1), av Claude:** `activatePlanAtomic` faller tillbaka på JS-aktivering av den NYA planen när RPC:n finns men kraschar (den gamla är redan tom efter upsert + detach — att låta den stå kvar aktiv = tom matsedel). `activatePlan` slår på ny först, stänger av övriga med `.neq('id', planId)` (mocken fick `neq`). Test 7 omskrivet (nya planen aktiv med dagar, gamla bevarade som egna) + **test 7b med överlappande datum** — fallet sviten aldrig testat. Reproduktionen från Session 143 ger nu `aktivPlanId 101, dagarPåAktivPlan 2`.
+
+**Övrigt rättat (agenterna):** R04/R05 `lists-view.js`, R05 `shopping-list.js` (läser `{error}` per grupp — postgrest-js kastar inte), R06 `replace-recipe.js` (täckningsstyrt, `confirmed_at`-villkoret och helplans-fallbacken borta), R10 `cook-mode.js` + `tests/cook-mode-qty.test.js`, R03/R08 `shopping-store.js` + test 4b/6b, R11 `import-recipe.js` (klassar om efter `postProcessForeignRecipe`, `guessProtein` exporterad), R12 `window._importSeasons`, T01 `@2.116.0` pinnad (CDN verifierad 200), R14 4 s nät-timeout i SW. **app v163 / SW v116**, styles orörd. Hela sviten 15/15 (ny testfil).
+
+**Kvar:** R01 + R13-zoom (säg ja → körs på en minut via samma workflowskript med flaggorna), R07, R09, R13-tangentbord, R14 precache-härledning, T02, T03. roadmap.html uppdaterad med åtgärdat-badges.
 
 ## Session 143 — Codex-rapporten granskad, åtgärdsplan och projektroadmap som webbsida (`roadmap.html`, render-only + SW-fix, SKARP, ej mobil-verifierad).
 
