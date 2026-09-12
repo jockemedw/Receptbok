@@ -161,6 +161,7 @@ export function openImportPreview(recipe) {
   document.getElementById('edit-ingredients').value          = (recipe.ingredients || []).join('\n');
   document.getElementById('edit-instructions').value         = (recipe.instructions || []).join('\n');
   document.getElementById('edit-notes').value                = recipe.notes || '';
+  window._importSeasons                                       = recipe.seasons || [];
   document.getElementById('editFeedback').textContent        = '';
   document.getElementById('editSaveBtn').disabled            = false;
   const m = document.getElementById('editModal');

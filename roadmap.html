@@ -188,7 +188,7 @@
 <div class="top"><div class="top-inner">
   <p class="wordmark"><a href="./">Recept<em>boken</em></a> · projektsida</p>
   <h1>Roadmap &amp; åtgärdsplan</h1>
-  <p class="meta">Uppdaterad 2026-09-12 · Session 143 · appkod <code>31a8b8c</code> · granskning av Codex-rapporten (GPT-5.6 Sol) samt projektets samlade backlog</p>
+  <p class="meta">Uppdaterad 2026-09-12 · Session 144 · appkod <code>31a8b8c</code> → etapp A byggd · granskning av Codex-rapporten (GPT-5.6 Sol) samt projektets samlade backlog</p>
 </div></div>
 
 <nav class="nav" aria-label="Sektioner"><ul>
@@ -213,14 +213,14 @@
   <div class="tiles">
     <div class="tile"><div class="n">14 / 14</div><div class="l">fynd bekräftade i koden — inget avfärdat</div></div>
     <div class="tile"><div class="n rust">3</div><div class="l">reproducerade av Claude med egna körningar (R02, R05, R10)</div></div>
-    <div class="tile"><div class="n">2</div><div class="l">fynd omprioriterade uppåt, 4 nedåt mot Codex</div></div>
+    <div class="tile"><div class="n lichen">10 / 14</div><div class="l">fynd åtgärdade i Session 144 (R02–R06, R08, R10–R12, R14-timeout)</div></div>
     <div class="tile"><div class="n lichen">14 / 14</div><div class="l">testfiler gröna på aktuell kod</div></div>
   </div>
 
   <div class="prose">
     <p><strong>Domen.</strong> Rapporten är hederlig och håller: den skiljer kodläsning från körda reproduktioner, och den överdriver inte webbläsarmätningarna. Ingen punkt är påhittad. Men prioriteringen behöver justeras på två håll. Två fynd är <em>allvarligare</em> än rapporten säger: <strong>R02</strong> bryter appens hårdaste regel (en matsedel får aldrig försvinna) i det vanligaste fallet — att generera om innevarande vecka — och testsviten som skulle fånga det testar aldrig överlappande datum. <strong>R05</strong> tappar bockar i inköpslistan så fort telefonen tappar täckningen i butiken, och koden som skulle rädda dem kan inte nås: Supabase-klienten returnerar nätfel som ett vanligt svar i stället för att kasta.</p>
     <p>Tre fynd är däremot <em>mindre</em> akuta för ett hushåll med två telefoner än rapporten antyder — R07, R08 och tangentbordsdelen av R13 — och där är Codex föreslagna lösningar (transaktioner, låsning, versionsnummer) större än problemet kräver just nu.</p>
-    <p><strong>Vad det betyder i praktiken.</strong> Etapp A nedan är fem små, väl avgränsade rättningar som tar under en session tillsammans. Etapp B är en riktig ombyggnad av hur en ny matsedel skrivs till databasen. Först därefter är det klokt att bygga nya funktioner — och nästan alla produktförslag Codex lägger högst är i själva verket buggfixarna i A och B sedda från användarens håll.</p>
+    <p><strong>Läget efter Session 144.</strong> Etapp A är byggd, liksom R02, R03 och R08 ur etapp B — allt via en workflow med nio parallella Sonnet-agenter, en adversariell granskare och Claude inline på R02 (≈0,7 Mtok). Kvar av fynden: R01 och R13-zoom (väntar ditt OK), R07 (dubblettskydd), R09 (M1), tangentbord och precache-härledning. Inget är mobilverifierat ännu. Först därefter är det klokt att bygga nya funktioner — och nästan alla produktförslag Codex lägger högst är i själva verket buggfixarna i A och B sedda från användarens håll.</p>
   </div>
 </section>
 
@@ -233,7 +233,7 @@
     <div class="stage now">
       <div class="letter">A</div>
       <div class="card">
-        <h3>Små, säkra rättningar <span class="b b-next">Nästa session</span></h3>
+        <h3>Små, säkra rättningar <span class="b b-ok">Byggd Session 144 — väntar mobilverifiering</span></h3>
         <p><strong>R04</strong> anteckningar som säger "Sparad" utan att vara det · <strong>R05</strong> tappade bockar (läs <code>error</code>, återlägg i kön) · <strong>R01</strong> inloggningskrav på butiksendpointen · <strong>R10</strong> mängder som ändras utan skalning · <strong>R06</strong> receptbyte styrt av listtäckning i stället för bekräftelse · <strong>T01-delen</strong> pinna Supabase-klienten till exakt version · <strong>R13-zoom</strong> ta bort zoomspärren (kräver Joakims omprövning, se <a href="#beslut">beslut</a>).</p>
         <p class="done-when"><b>Klart när:</b> ett misslyckat anrop aldrig visas som sparat; nätfel i inköpslistan ger toast och retry; <code>/api/dispatch-to-willys</code> svarar 401 utan token men extensionens väg fungerar; matlagningsläget visar råraden vid oförändrade portioner; regressionstest för varje punkt.</p>
       </div>
@@ -242,7 +242,7 @@
     <div class="stage">
       <div class="letter">B</div>
       <div class="card">
-        <h3>Gemensam dataintegritet <span class="b b-wait">Efter A</span></h3>
+        <h3>Gemensam dataintegritet <span class="b b-ok">R02 · R03 · R08 byggda S144</span> <span class="b b-wait">R07 + baseline kvar</span></h3>
         <p><strong>R02</strong> generering får aldrig lämna en aktiv plan utan dagar — nya dagar skrivs på ett sätt som inte rör gamla planens rader förrän bytet är gjort, och test 7 utökas med överlappande datum · <strong>R03</strong> "Vi har handlat" görs idempotent (konvertera först, stämpla sist) · <strong>R08</strong> felkontroll på deaktiveringen + databasregel om högst en aktiv lista · <strong>R07</strong> dubblettskydd efter delete-fel i dagoperationerna · <strong>T02</strong> schema-baseline exporterad från live.</p>
         <p class="done-when"><b>Klart när:</b> injicerat fel i varje skrivsteg lämnar databasen i ett begripligt läge; regenerering av samma vecka med RPC-krasch behåller den gamla matsedeln; ett nytt "Vi har handlat"-anrop efter fel slutför rundan utan dubbel effekt.</p>
       </div>
@@ -284,7 +284,7 @@
 
   <details class="f" open>
     <summary><span class="id">R02</span><span class="t">Misslyckad ny matsedel kan lämna den aktiva planen utan dagar</span>
-      <span class="tags"><span class="b b-p1">P1 — högst</span><span class="b b-rep">reproducerat av Claude</span><span class="b b-known">känd som F219/F232</span></span></summary>
+      <span class="tags"><span class="b b-ok">åtgärdat S144</span><span class="b b-p1">P1 — högst</span><span class="b b-rep">reproducerat av Claude</span><span class="b b-known">känd som F219/F232</span></span></summary>
     <div class="body">
       <dl>
         <dt>Var</dt><dd><code>api/generate.js</code> rad 155–178 (upsert av dagar) och 233–249 (aktivering)</dd>
@@ -298,7 +298,7 @@
 
   <details class="f" open>
     <summary><span class="id">R05</span><span class="t">Bockningar tappas vid nätfel — och retry-koden kan inte nås</span>
-      <span class="tags"><span class="b b-p1">P1 — uppgraderad</span><span class="b b-rep">bekräftat i bibliotekets källkod</span></span></summary>
+      <span class="tags"><span class="b b-ok">åtgärdat S144</span><span class="b b-p1">P1 — uppgraderad</span><span class="b b-rep">bekräftat i bibliotekets källkod</span></span></summary>
     <div class="body">
       <dl>
         <dt>Var</dt><dd><code>js/shopping/shopping-list.js</code> rad 491–509 (<code>flushPendingChecks</code>) och <code>js/lists/lists-view.js</code> rad 556–575</dd>
@@ -311,7 +311,7 @@
 
   <details class="f">
     <summary><span class="id">R06</span><span class="t">Receptbyte gör inköpslistan fel för de dagar familjen valt</span>
-      <span class="tags"><span class="b b-p1">P1</span><span class="b b-known">kodläsning — bekräftad</span></span></summary>
+      <span class="tags"><span class="b b-ok">åtgärdat S144</span><span class="b b-p1">P1</span><span class="b b-known">kodläsning — bekräftad</span></span></summary>
     <div class="body">
       <dl>
         <dt>Var</dt><dd><code>api/replace-recipe.js</code> rad 134 (villkor <code>plan.confirmed_at</code>) och 155 (<code>[...coverDates, date]</code>)</dd>
@@ -336,7 +336,7 @@
 
   <details class="f">
     <summary><span class="id">R04</span><span class="t">Anteckning visar "Sparad" efter ett misslyckat försök</span>
-      <span class="tags"><span class="b b-p1">P1 — trivial</span><span class="b b-known">kodläsning — bekräftad</span></span></summary>
+      <span class="tags"><span class="b b-ok">åtgärdat S144</span><span class="b b-p1">P1 — trivial</span><span class="b b-known">kodläsning — bekräftad</span></span></summary>
     <div class="body">
       <dl>
         <dt>Var</dt><dd><code>js/lists/lists-view.js</code> rad 1138–1140</dd>
@@ -348,7 +348,7 @@
 
   <details class="f">
     <summary><span class="id">R10</span><span class="t">Matlagningsläget ändrar mängder utan att portionerna ändrats</span>
-      <span class="tags"><span class="b b-p2">P2 — trivial</span><span class="b b-rep">reproducerat av Claude</span></span></summary>
+      <span class="tags"><span class="b b-ok">åtgärdat S144</span><span class="b b-p2">P2 — trivial</span><span class="b b-rep">reproducerat av Claude</span></span></summary>
     <div class="body">
       <dl>
         <dt>Var</dt><dd><code>js/ui/cook-mode.js</code> rad 59–70 (<code>fmtQty</code>) och 79–85 (<code>ingLineHtml</code> körs alltid, även vid faktor 1)</dd>
@@ -360,7 +360,7 @@
 
   <details class="f">
     <summary><span class="id">R03</span><span class="t">"Vi har handlat" kan fastna halvvägs och inte repareras</span>
-      <span class="tags"><span class="b b-p2">P2</span><span class="b b-known">kodläsning — bekräftad</span></span></summary>
+      <span class="tags"><span class="b b-ok">åtgärdat S144</span><span class="b b-p2">P2</span><span class="b b-known">kodläsning — bekräftad</span></span></summary>
     <div class="body">
       <dl>
         <dt>Var</dt><dd><code>api/_shared/shopping-store.js</code> rad 348–389 (<code>markRoundShopped</code>)</dd>
@@ -385,7 +385,7 @@
 
   <details class="f">
     <summary><span class="id">R08</span><span class="t">Byte av aktiv inköpslista är inte sammanhållet</span>
-      <span class="tags"><span class="b b-p2">P2 — nedgraderad</span><span class="b b-known">kodläsning — bekräftad</span></span></summary>
+      <span class="tags"><span class="b b-ok">åtgärdat S144</span><span class="b b-p2">P2 — nedgraderad</span><span class="b b-known">kodläsning — bekräftad</span></span></summary>
     <div class="body">
       <dl>
         <dt>Var</dt><dd><code>api/_shared/shopping-store.js</code> rad 177–179 — deaktiveringens <code>error</code> läses inte</dd>
@@ -409,7 +409,7 @@
 
   <details class="f">
     <summary><span class="id">R11</span><span class="t">Utländska recept kan klassas som vegetariska</span>
-      <span class="tags"><span class="b b-p2">P2</span><span class="b b-known">känd som F115</span></span></summary>
+      <span class="tags"><span class="b b-ok">åtgärdat S144</span><span class="b b-p2">P2</span><span class="b b-known">känd som F115</span></span></summary>
     <div class="body">
       <dl>
         <dt>Var</dt><dd><code>api/import-recipe.js</code> rad 249 (klassning före översättning), 389–395 (<code>guessProtein</code>: svenska ord, <code>vegetarisk</code> som fallback)</dd>
@@ -421,7 +421,7 @@
 
   <details class="f">
     <summary><span class="id">R12</span><span class="t">Säsonger från importen når aldrig receptet</span>
-      <span class="tags"><span class="b b-p2">P2 — lätt</span><span class="b b-known">känd som F278</span></span></summary>
+      <span class="tags"><span class="b b-ok">åtgärdat S144</span><span class="b b-p2">P2 — lätt</span><span class="b b-known">känd som F278</span></span></summary>
     <div class="body">
       <dl>
         <dt>Var</dt><dd>Gemini-prompten ber om <code>seasons</code> (<code>import-recipe.js</code> rad 20), men <code>js/recipes/recipe-import.js</code> rad 153 för inte vidare fältet och <code>recipe-editor.js</code> rad 158 hårdkodar <code>seasons: []</code></dd>
@@ -444,13 +444,13 @@
 
   <details class="f">
     <summary><span class="id">R14</span><span class="t">Service workern kan cacha en felsida och väntar obegränsat på nätet</span>
-      <span class="tags"><span class="b b-p2">P2</span><span class="b b-known">känd — F137/F254, Batch B</span></span></summary>
+      <span class="tags"><span class="b b-ok">timeout åtgärdad S144</span><span class="b b-p2">P2</span><span class="b b-known">känd — F137/F254, Batch B</span></span></summary>
     <div class="body">
       <dl>
         <dt>Var</dt><dd><code>service-worker.js</code> rad 50–57: navigeringssvar cachas utan <code>res.ok</code> (JS-vägen kontrollerar det); precache anger <code>styles.css?v=197</code> medan <code>index.html</code> begär v199</dd>
         <dt>Claudes tillägg</dt><dd>Navigeringsgrenen skrev <em>varje</em> navigeringssvar till cache-nyckeln <code>./index.html</code> — även undersidor som den här. Rättat i Session 143 (SW v115): bara startsidan, bara lyckade svar.</dd>
       </dl>
-      <div class="fix"><b>Kvar:</b> nätväntan med timeout och härledd precache-version. Tas i Batch B (byggsteg) där versionsritualen ändå försvinner.</div>
+      <div class="fix"><b>Kvar:</b> härledd precache-version (nätväntan har 4 s timeout sedan S144). Tas i Batch B (byggsteg) där versionsritualen ändå försvinner.</div>
     </div>
   </details>
 </section>
@@ -459,7 +459,7 @@
 <section id="drift">
   <h2>Utveckling och drift — T01–T03</h2>
   <div class="card">
-    <h3>T01 · Reproducerbara installationer <span class="b b-p1">Delvis akut</span></h3>
+    <h3>T01 · Reproducerbara installationer <span class="b b-ok">klienten pinnad S144</span> <span class="b b-p2">lockfil/CI kvar</span></h3>
     <p>Allt stämmer: caret-intervall i <code>package.json</code>, ignorerad lockfil, <code>npm install</code> i CI, och <code>node --check</code> bara på <code>js/app.js</code> (som inte följer importer). <strong>Den skarpaste punkten underskattas:</strong> frontend laddar Supabase-klienten med flytande <code>@2</code> från jsDelivr. Ett brytande släpp eller en CDN-incident slår ut appen för familjen utan att någon rört koden — och det finns ingen lokal testmiljö att felsöka i. Pinnad version är en enradsändring med bäst riskreduktion per minut i hela rapporten. Beslutet att självhosta klienten är redan taget (prestandaplanens B2).</p>
   </div>
   <div class="card">
@@ -549,6 +549,7 @@
   <h2>Verifieringskö — skarp kod som inte setts på mobil</h2>
   <p class="lede">Joakim har ingen lokal testmiljö; UI verifieras på iPhone mot live. Kön har vuxit till över trettio poster sedan Session 107. Det är ett problem i sig (T03): ju längre kön, desto svårare att veta vilken ändring som orsakade vad. Förslag: verifiera de fem översta i en enda tio-minuterssession och stryk resten som "sett i förbigående".</p>
   <ul class="q">
+    <li><span class="s">144</span><span>Etapp A + R02/R03/R08: anteckningar (Sparad bara efter kvitto), bockar överlever nätfel i Inköp och Listor, matlagningsläget visar råmängder vid oförändrade portioner, receptbyte rör listan bara om dagen ligger på den, Vi har handlat är omkörbar, import klassar protein efter översättning, säsonger följer med importen, Supabase-klienten pinnad 2.116.0, SW nät-timeout 4 s <span class="v">app v163 · SW v116 · styles v199 oförändrad</span></span></li>
     <li><span class="s">143</span><span>Roadmap-sidan (den här) i ljust och mörkt · SW v115 skriver inte över startsidans cache vid besök på undersidor</span></li>
     <li><span class="s">142</span><span>Dagoperationerna ombyggda — Flytta middagen, Ingen middag + Ångra, Dra ihop, Byt recept, drag &amp; släpp mot <code>/api/day</code> <span class="v">styles v199 · app v162 · SW v114</span></span></li>
     <li><span class="s">141d</span><span>Batch E backend-avlastning — <span class="v">verifierad 2026-09-05: shopping 1 561 → 179 ms</span></span></li>

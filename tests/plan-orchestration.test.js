@@ -73,6 +73,7 @@ function makeMockDb(initial = {}) {
     if (kind === "lt") return row[col] < val;
     if (kind === "in") return val.includes(row[col]);
     if (kind === "not") return row[col] != null; // bara not(col,"is",null) används
+    if (kind === "neq") return row[col] !== val;
     return true;
   });
 
@@ -85,6 +86,7 @@ function makeMockDb(initial = {}) {
       delete() { this.op = "delete"; return this; },
       select() { this.wantSelect = true; return this; },
       eq(c, v) { this.filters.push(["eq", c, v]); return this; },
+      neq(c, v) { this.filters.push(["neq", c, v]); return this; },
       lt(c, v) { this.filters.push(["lt", c, v]); return this; },
       in(c, v) { this.filters.push(["in", c, v]); return this; },
       not(c) { this.filters.push(["not", c]); return this; },
@@ -376,36 +378,55 @@ function freshDbWithOldPlan() {
   assertEq(ownDays(db).length, 2, "rpc-missing: gamla planens dagar bevarade som egna dagar");
 }
 
-// ─── Test 7: activatePlanAtomic, RPC kraschar MITT I → inget går förlorat ────
-// Utan atomicitet skulle ett fel här ge NOLL aktiva planer (gammal redan
-// deaktiverad/borttagen, ny ej aktiverad). Transaktionen rullas tillbaka
-// (rpcMode "crash" muterar inget), så den gamla planen står kvar som aktiv.
-//
-// Detach:en har dock redan körts och ligger UTANFÖR transaktionen: den gamla
-// planens dagar är lösgjorda. Det är avsiktligt och ofarligt — ingen dag är
-// borta, de visas och går att redigera som egna dagar, och nästa generering
-// läker läget. Migration 011 flyttar in steget i transaktionen och stänger även
-// det glappet.
+// ─── Test 7: activatePlanAtomic, RPC kraschar MITT I → nya planen tas i bruk ─
+// Transaktionen rullas tillbaka (rpcMode "crash" muterar inget), men UPSERT:en
+// i savePlanToSupabase och detach:en har redan körts: den gamla planen är TOM.
+// Att låta den stå kvar som aktiv ger en tom matsedel (Codex R02, Session 144).
+// Rätt läge är därför att aktivera den nya planen i JS — den har alla dagar.
 {
   const db = freshDbWithOldPlan();
   db._state.rpcMode = "crash";
   const newId = await savePlanToSupabase(NEW_PLAN, "h", db);
 
-  let threw = false;
-  try {
-    await activatePlanAtomic(newId, NEW_PLAN.startDate, "h", db);
-  } catch { threw = true; }
+  const result = await activatePlanAtomic(newId, NEW_PLAN.startDate, "h", db);
 
-  assertTrue(threw, "rpc-crash: activatePlanAtomic kastar vidare (inte en \"saknad funktion\"-typ av fel)");
-  assertEq(activeCount(db), 1, "rpc-crash: exakt EN aktiv plan kvar (aldrig noll!) — den gamla");
+  assertEq(result.recovered, true, "rpc-crash: kastar inte — återhämtar sig via JS-aktivering");
+  assertEq(activeCount(db), 1, "rpc-crash: exakt EN aktiv plan (aldrig noll, aldrig två)");
   const active = db._state.plans.find((p) => p.is_active);
-  assertEq(active.id, 1, "rpc-crash: gamla planen är fortfarande aktiv (transaktionen rullades tillbaka)");
+  assertEq(active.id, newId, "rpc-crash: den NYA planen är aktiv — den som har dagarna");
+  assertTrue(daysForPlan(db, newId) >= 1, "rpc-crash: den aktiva planen har dagar (invariant #1)");
   assertEq(ownDays(db).length, 2, "rpc-crash: INGEN dag förlorad — de gamla ligger kvar som egna dagar");
   assertTrue(hasDay(db, OLD_START) && hasDay(db, OLD_MID), "rpc-crash: exakt de gamla datumen finns kvar");
   assertEq(db._state.archives.length, 0, "rpc-crash: ingen arkiv-rad skapades");
-  // Den nya planen finns kvar i databasen (inaktiv, från savePlanToSupabase) —
-  // det är OK och förväntat: den kan aktiveras av ett nytt generate()-anrop.
-  assertEq(db._state.plans.find((p) => p.id === newId)?.is_active, false, "rpc-crash: nya planen förblir INAKTIV, inte aktiverad halvvägs");
+}
+
+// ─── Test 7b: samma krasch när nya planen ÖVERLAPPAR den gamla (regenerering
+// av innevarande vecka — det vanligaste verkliga fallet). Före Session 144 var
+// sviten grön bara för att fixturen aldrig överlappade: UPSERT:en hade då
+// flyttat båda datumen till den inaktiva nya planen och den gamla stod kvar som
+// aktiv med NOLL dagar (reproducerat av Claude 2026-09-12).
+{
+  const D0 = isoDaysAgo(0), D1 = isoDaysAgo(-1);
+  const db = makeMockDb({
+    plans: [{ id: 1, household_id: "h", start_date: D0, end_date: D1, is_active: true }],
+    mealDays: [
+      { plan_id: 1, household_id: "h", date: D0, recipe_id: 11, recipe_title_snapshot: "Gammal1", saving: null },
+      { plan_id: 1, household_id: "h", date: D1, recipe_id: 12, recipe_title_snapshot: "Gammal2", saving: null },
+    ],
+  });
+  db._state.rpcMode = "crash";
+  const OVERLAP = { generated: D0, startDate: D0, endDate: D1, days: [
+    { date: D0, day: "A", recipe: "Ny1", recipeId: 2 },
+    { date: D1, day: "B", recipe: "Ny2", recipeId: 3 },
+  ] };
+  const newId = await savePlanToSupabase(OVERLAP, "h", db);
+  await activatePlanAtomic(newId, OVERLAP.startDate, "h", db);
+
+  assertEq(activeCount(db), 1, "överlapp+crash: exakt EN aktiv plan");
+  const active = db._state.plans.find((p) => p.is_active);
+  assertEq(active.id, newId, "överlapp+crash: den nya planen är aktiv");
+  assertEq(daysForPlan(db, active.id), 2, "överlapp+crash: den aktiva planen har båda dagarna — aldrig en tom matsedel");
+  assertEq(ownDays(db).length, 0, "överlapp+crash: inga lösa egna dagar — de gamla ersattes legitimt av de nya");
 }
 
 // ─── Test 8: detachOldPlanDays rör BARA den gamla planens rader ──────────────

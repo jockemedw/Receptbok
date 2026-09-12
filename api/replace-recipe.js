@@ -127,31 +127,19 @@ export default createSupabaseHandler(async (req, res) => {
   ]);
   if (mdErr || histErr) throw mdErr || histErr;
 
-  // Bygg om inköpslistan om planen är bekräftad (Session 130, inköpsrundor):
-  // täckningen = aktiva listans o-inhandlade dagar + den utbytta dagen. Redan
-  // inhandlade dagar inkluderas ALDRIG — ett mitt-i-veckan-byte lägger alltså
-  // inte tillbaka måndagens redan köpta varor, och övriga bockar överlever.
-  if (plan.confirmed_at) {
-    const activeList = await getActiveList(householdId);
-    let coverDates = activeList
-      ? unshoppedDates(await fetchCoverage(householdId, activeList.id))
-      : [];
+  // Bygg om inköpslistan bara om den utbytta dagen redan ligger på listans
+  // o-inhandlade täckning (Session 134, manuellt dagval): listan ska spegla
+  // exakt de dagar familjen valt att handla för — varken mer eller mindre.
+  // Ligger dagen inte på listan (eller finns ingen aktiv lista) rör vi den inte.
+  const activeList = await getActiveList(householdId);
+  const coverDates = activeList
+    ? unshoppedDates(await fetchCoverage(householdId, activeList.id))
+    : [];
 
-    // Fallback (lista från före migration 009/backfillen saknar dagkoppling):
-    // planens o-inhandlade receptdagar — exakt det gamla beteendet.
-    if (!coverDates.length) {
-      const { data: allMealDays, error: mealErr } = await db
-        .from("meal_days")
-        .select("date, shopped_at")
-        .eq("plan_id", plan.id)
-        .not("recipe_id", "is", null);
-      if (mealErr) throw new Error("Receptet byttes, men inköpslistan kunde inte byggas om — ladda om och prova igen.");
-      coverDates = (allMealDays || []).filter((d) => !d.shopped_at).map((d) => d.date);
-    }
-
+  if (coverDates.includes(date)) {
     const { shoppingList } = await rebuildActiveList({
       householdId,
-      coverDates: [...new Set([...coverDates, date])],
+      coverDates,
       span: { startDate: plan.start_date, endDate: plan.end_date },
       recipes: allRecipes,
     });

@@ -190,10 +190,13 @@ export async function savePlanToSupabase(weeklyPlan, householdId, database = db)
 // aktiva planer och slå på den nya i ett svep. Eftersom dagarna redan sitter har
 // en aktiv plan alltid sitt innehåll.
 export async function activatePlan(planId, householdId, database = db) {
-  await database.from("weekly_plans").update({ is_active: false })
-    .eq("household_id", householdId).eq("is_active", true);
+  // Slå på den nya FÖRST, stäng av de andra SEN. Dör processen mellan stegen
+  // finns två aktiva planer (varav den nya har dagar) — aldrig noll (Session 144).
   const { error } = await database.from("weekly_plans").update({ is_active: true }).eq("id", planId);
   if (error) throw error;
+  const { error: offErr } = await database.from("weekly_plans").update({ is_active: false })
+    .eq("household_id", householdId).eq("is_active", true).neq("id", planId);
+  if (offErr) throw offErr;
 }
 
 // True om felet betyder "funktionen finns inte i Postgres ännu" — dvs SQL-filen
@@ -218,11 +221,12 @@ export function isMissingRpcError(error) {
 // gamla versionen arkiverar och raderar rader med gamla plan_id, och sådana
 // finns inte kvar när detach:en har körts → båda stegen blir no-op:ar.
 //
-// Kvarvarande (litet) glapp om processen dör exakt MELLAN detach och aktivering:
-// den gamla planen står kvar som aktiv men utan dagar. Ingenting går förlorat —
-// dagarna finns kvar som egna dagar och syns och går att redigera i matsedeln —
-// och en ny generering läker läget. Migration 011 flyttar in detach-steget i
-// transaktionen och stänger även det glappet.
+// Kraschar RPC:n (nätfel mitt i, timeout) är läget INTE ofarligt (Codex R02,
+// Session 144): savePlanToSupabase:s UPSERT har redan flyttat överlappande datum
+// till den nya planen och detach:en har lösgjort resten — den gamla planen är
+// alltså tom men står kvar som aktiv → tom matsedel. Det enda läget som uppfyller
+// invariant #1 är att ta den nya planen (som har alla dagar) i bruk i JS. Först
+// om även det misslyckas kastas felet vidare.
 //
 // Rollout-säkerhet: RPC:n finns bara i Postgres när Joakim manuellt har kört
 // SQL-filen i Supabase SQL Editor (inget migrationsverktyg i det här projektet).
@@ -242,7 +246,17 @@ export async function activatePlanAtomic(newPlanId, startDate, householdId, data
   });
   if (!error) return { usedRpc: true };
 
-  if (!isMissingRpcError(error)) throw error;
+  if (!isMissingRpcError(error)) {
+    // RPC:n finns men kraschade — se filhuvudet: den gamla planen är redan tom.
+    console.error("activatePlanAtomic: RPC:n misslyckades, aktiverar nya planen i JS", error);
+    try {
+      await activatePlan(newPlanId, householdId, database);
+    } catch (fallbackErr) {
+      console.error("activatePlanAtomic: JS-aktiveringen misslyckades också", fallbackErr);
+      throw error;
+    }
+    return { usedRpc: false, recovered: true };
+  }
 
   // Fallback: RPC:n är inte upplagd i Supabase än — aktivera i JS så
   // produktionen aldrig går sönder.
@@ -452,11 +466,13 @@ export default createSupabaseHandler(async (req, res) => {
   }
 
   // Skriv nya planen + alla dagar (inaktiv). Glappar dag-skrivningen kastas det
-  // här och den gamla aktiva planen är fortfarande orörd — användaren behåller
-  // sin matsedel i stället för att få en tom.
+  // här; plan-raden städas bort och den gamla planen är orörd — användaren
+  // behåller sin matsedel. OBS: lyckas dag-skrivningen har överlappande datum
+  // redan bytt ägare till den nya planen (UPSERT på household_id+date), så
+  // aktiveringen nedan MÅSTE lyckas på något sätt — se activatePlanAtomic.
   const newPlanId = await savePlanToSupabase(weeklyPlan, householdId);
   // Först nu, när dagarna sitter: byt aktiv plan atomärt (RPC, med JS-fallback
-  // — se activatePlanAtomic ovan).
+  // både när RPC:n saknas och när den kraschar — se activatePlanAtomic ovan).
   await activatePlanAtomic(newPlanId, start_date, householdId);
   await saveHistoryToSupabase(days, householdId);
 

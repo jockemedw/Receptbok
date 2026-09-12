@@ -2,7 +2,7 @@
 // SUPABASE_URL + publishable key är medvetet hårdkodade — anon-nivån
 // skyddas av RLS (sektion 3 i 2026-05-16-supabase-migration-design.md).
 
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/+esm';
 
 const SUPABASE_URL = 'https://zqeznveicagqwblltvsa.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_aB6kIJA9j4fyGZ7Df_GEZQ_rDeHjZ5x';

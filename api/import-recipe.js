@@ -282,7 +282,7 @@ async function postProcessForeignRecipe(recipe, apiKey) {
 
   if (!result) return recipe;
 
-  return {
+  const converted = {
     ...recipe,
     title: typeof result.title === "string" && result.title ? result.title : recipe.title,
     ingredients: Array.isArray(result.ingredients) && result.ingredients.length
@@ -292,6 +292,14 @@ async function postProcessForeignRecipe(recipe, apiKey) {
       ? result.instructions
       : recipe.instructions,
   };
+
+  // R11: protein/taggar gissades på originalspråket innan översättningen — gissa
+  // om på det konverterade (svenska) receptet så t.ex. "chicken" inte tyst blir
+  // "vegetarisk" bara för att guessProtein såg titel/ingredienser före konvertering.
+  converted.protein = guessProtein(converted.title, converted.ingredients);
+  converted.tags    = buildTags(converted.time, converted.protein);
+
+  return converted;
 }
 
 // ── Foto-import ─────────────────────────────────────────────────────────────
@@ -386,12 +394,15 @@ async function callGemini(parts, apiKey) {
 
 // ── Hjälpfunktioner ─────────────────────────────────────────────────────────
 
-function guessProtein(title, ingredients) {
+export function guessProtein(title, ingredients) {
   const text = (title + " " + ingredients.join(" ")).toLowerCase();
-  if (/lax|torsk|fisk|räk|sej|tonfisk|laxfilé|fiskfilé|fiskpinnar/.test(text)) return "fisk";
-  if (/kyckling|kycklingfilé|kycklingbröst/.test(text)) return "kyckling";
-  if (/fläsk|bacon|skinka|kotlett|revbensspjäll|sidfläsk/.test(text)) return "fläsk";
-  if (/nötkött|biff|köttfärs|köttbullar|lamm|hjort|entrecôte/.test(text)) return "kött";
+  // Engelska ord matchas som HELA ord (\b) — "ham" får inte träffa champinjoner
+  // eller hamburgare, "cod" inte avocado. De svenska mönstren är delsträngar som
+  // förut (kycklingfilé, laxfilé …).
+  if (/lax|torsk|fisk|räk|sej|tonfisk|fiskpinnar|\b(salmon|cod|shrimps?|prawns?|tuna|haddock)\b/.test(text)) return "fisk";
+  if (/kyckling|\bchicken\b/.test(text)) return "kyckling";
+  if (/fläsk|bacon|skinka|kotlett|revbensspjäll|\b(pork|ham)\b/.test(text)) return "fläsk";
+  if (/nötkött|nötfärs|biff|köttfärs|köttbullar|lamm|hjort|entrecôte|\b(beef|mince|minced|lamb|steaks?)\b/.test(text)) return "kött";
   return "vegetarisk";
 }
 

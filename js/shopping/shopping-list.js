@@ -495,10 +495,30 @@ async function flushPendingChecks() {
   const checkedIds   = entries.filter(([, v]) => v).map(([id]) => id);
   const uncheckedIds = entries.filter(([, v]) => !v).map(([id]) => id);
   try {
-    const ps = [];
-    if (checkedIds.length)   ps.push(window.db.from('shopping_items').update({ checked: true  }).in('id', checkedIds));
-    if (uncheckedIds.length) ps.push(window.db.from('shopping_items').update({ checked: false }).in('id', uncheckedIds));
-    await Promise.all(ps);
+    const results = await Promise.all([
+      checkedIds.length
+        ? window.db.from('shopping_items').update({ checked: true }).in('id', checkedIds)
+        : null,
+      uncheckedIds.length
+        ? window.db.from('shopping_items').update({ checked: false }).in('id', uncheckedIds)
+        : null,
+    ]);
+    // postgrest-js resolvar (kastar inte) även vid nätverksfel — svaret är
+    // {error: ...} istället för ett kastat exception. Läs felet per grupp så
+    // vi bara lägger tillbaka de id:n vars skrivning faktiskt misslyckades.
+    const [checkedRes, uncheckedRes] = results;
+    let anyFailed = false;
+    if (checkedRes?.error) {
+      anyFailed = true;
+      for (const id of checkedIds) if (!_pendingChecks.has(id)) _pendingChecks.set(id, true);
+    }
+    if (uncheckedRes?.error) {
+      anyFailed = true;
+      for (const id of uncheckedIds) if (!_pendingChecks.has(id)) _pendingChecks.set(id, false);
+    }
+    if (anyFailed) {
+      window.showToast?.('Kunde inte spara bockningen — kolla nätet och prova igen.', { type: 'error' });
+    }
   } catch {
     // Lägg tillbaka de misslyckade skrivningarna så nästa bockning (av
     // valfri vara) försöker igen — men klobba inte en nyare växling som

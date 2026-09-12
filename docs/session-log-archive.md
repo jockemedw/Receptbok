@@ -1,6 +1,20 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–142. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–143. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+## Session 143 — Codex-rapporten granskad, åtgärdsplan och projektroadmap som webbsida (`roadmap.html`, render-only + SW-fix, SKARP, ej mobil-verifierad).
+
+Joakim lät Codex (GPT-5.6 Sol, "Astra") göra en bred kod- och produktgranskning och pushade paketet till `docs/review-2026-09-12/` (rapport, läsanvisning, browser-results, tio skärmbilder). Uppdraget till Claude: granska självständigt, bemöt varje punkt, gör en åtgärdsplan och sammanställ allt — inklusive projektets befintliga todo/roadmap — som en undersida på webben.
+
+**Granskningen.** Alla 14 fynd kontrollerade mot koden på `31a8b8c` (appkoden oförändrad sedan rapporten), hela testsviten körd (14/14 gröna efter `npm install`). Inget avfärdat. Tre fynd reproducerade med egna körningar av den riktiga koden: **R02** (mock ur `plan-orchestration.test.js` med ÖVERLAPPANDE datum + `rpcMode: crash` → `aktivPlanId 1, dagarPåAktivPlan 0, egnaDagar 0` — invariant #1 bruten; sviten test 7 överlappar aldrig datum och missar därför det vanligaste fallet, regenerering av samma vecka), **R05** (läst i `node_modules/@supabase/postgrest-js/src/PostgrestBuilder.ts:290–300`: utan `.throwOnError()` resolvar även NÄTFEL som `{error}` → `catch`-blocket med retry i `shopping-list.js:491` nås aldrig; det typiska felfallet i butiken, inte ett hörnfall), **R10** (`fmtQty` vid faktor 1: 0,1 kg → 0,25 kg, 0,3 kg → 0,25 kg, 0,7 dl → 0,75 dl). Avvikelser mot Codex: R02 och R05 uppgraderade; R07, R08 och R13-tangentbord nedgraderade (transaktioner/advisory locks/versionsnummer är större än problemet för ett hushåll med två telefoner); produktförslag 1 och 8 är i själva verket buggfixarna R04–R05 resp. R11–R12; förslag 10 (ändringshistorik + versionsbunden ångra) är det mest överdimensionerade. T01:s skarpaste punkt underskattas av Codex: flytande `@2` från jsDelivr kan slå ut appen utan kodändring — pinna nu (B2-beslutet finns redan).
+
+**Sidan.** `roadmap.html` i repo-roten (samma mönster som `architecture.html`), appens tokens + Bricolage/DM Sans, ljust/mörkt via `prefers-color-scheme` och `data-theme`, touch-targets ≥44 px, `noindex`. Sektioner: Läget · Åtgärdsplan A–E med "klart när" · Fynd R01–R14 som `<details>` med bevisnivå, fil:rad, avvikelse mot Codex och minsta åtgärd · T01–T03 · Produktförslagen (Codex ordning mot Claudes) · **Väntar på Joakims beslut** (åtta punkter) · Projektets samlade roadmap (etapper, prestandabatchar, Fas 2/5, familjehubb, M0–M5, backlog #5–#19, nattauditen, tillgänglighet) · Verifieringskön komprimerad · Källor. Headless-verifierad (Chromium 390×844, båda teman): ingen horisontell overflow, alla nav-ankare finns, noll JS-fel (bara Google Fonts blockerad i sandboxen).
+
+**SW v115 (enda kodändringen i appen).** Navigeringsgrenen gjorde `c.put('./index.html', copy)` för VARJE navigering — ett besök på `roadmap.html`/`architecture.html` skulle ha gjort roadmapen till offline-startsida. Nu: bara när `pathname` slutar på `/` eller `/index.html` (fungerar även under GitHub Pages-prefixet), bara vid `res.ok` (Codex R14), och cache-skrivningen ligger i `event.waitUntil`. Precache-CSS synkad 197 → 199 (versionsdriften Codex påpekade). Ingen styles-/app-bump: `css/`/`js/` orörda.
+
+**Beslut jag tog utan att fråga:** (1) sidan ligger i repo-roten och är publik som resten av repot — R01 beskrivs utan exploateringsdetaljer; (2) ingen länk från appens UI (nås via URL, som `architecture.html`); (3) ingen kodrättning av fynden — överlämningen bad uttryckligen om granskning, inte implementation.
+
+**Nästa:** Joakims svar på de åtta beslutspunkterna, sedan etapp A (under en session).
 
 ## Session 142 — Dagoperationerna ombyggda från grunden: en modell, en endpoint, en interaktion (datamuterande, SKARP, ej mobil-verifierad).
 
