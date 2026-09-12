@@ -11,12 +11,12 @@
 //
 // CACHE_VERSION bumpas när precache-listan ändras — gamla cachar städas i activate.
 
-const CACHE_VERSION = 'receptbok-v114';
+const CACHE_VERSION = 'receptbok-v115';
 
 const PRECACHE = [
   './',
   './index.html',
-  './css/styles.css?v=197',
+  './css/styles.css?v=199',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -47,13 +47,19 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;   // Supabase, fonter m.m. → orörda
   if (url.pathname.includes('/api/')) return;        // API:t cachas aldrig
 
-  // Navigeringar: nätet först, cache bara som offline-fallback
+  // Navigeringar: nätet först, cache bara som offline-fallback.
+  // Bara STARTSIDAN får bli offline-fallback, och bara ett lyckat svar —
+  // undersidor (roadmap.html, architecture.html) och 5xx-sidor skrev annars
+  // över den cachade index.html (Session 143, Codex R14).
   if (req.mode === 'navigate') {
+    const isStart = url.pathname.endsWith('/') || url.pathname.endsWith('/index.html');
     event.respondWith(
       fetch(req)
         .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE_VERSION).then((c) => c.put('./index.html', copy));
+          if (res.ok && isStart) {
+            const copy = res.clone();
+            event.waitUntil(caches.open(CACHE_VERSION).then((c) => c.put('./index.html', copy)));
+          }
           return res;
         })
         .catch(() => caches.match('./index.html'))

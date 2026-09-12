@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#7a9482">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1d2721">
+<meta name="robots" content="noindex">
+<title>Receptboken — Roadmap & åtgärdsplan</title>
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* Samma tokens som css/styles.css — sidan ska kännas som en del av appen. */
+  :root {
+    --linen: #f5f1e8; --linen-card: #fdfcf8; --paper: #ffffff; --stone: #e9e3d6;
+    --lichen: #7a9482; --lichen-deep: #5e7a68; --moss-soft: #e4ebe3;
+    --forest: #3d5544; --forest-deep: #2c3f33; --ink-soft: #6b7a6e;
+    --rust: #b05f3f; --rust-deep: #98492c; --clay: #f3e4dc;
+    --ochre: #c89a3e; --ochre-deep: #8a6818; --ochre-soft: #f4ead3;
+    --line: rgba(61,85,68,0.14);
+    --shadow: 0 2px 18px rgba(44,56,41,0.08);
+    --font-display: 'Bricolage Grotesque', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --font-body: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --linen: #1d2721; --linen-card: #263229; --paper: #2b3830; --stone: #303e34;
+      --forest: #e6e0d2; --forest-deep: #f0ebe0; --ink-soft: #aab5a9;
+      --lichen-deep: #9dbca6; --moss-soft: #33422f;
+      --rust: #cd825e; --rust-deep: #dd9a77; --clay: #3a322c;
+      --ochre: #d4a851; --ochre-deep: #cfa242; --ochre-soft: #3d3626;
+      --line: rgba(230,224,210,0.14);
+      --shadow: 0 2px 18px rgba(0,0,0,0.28);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --linen: #1d2721; --linen-card: #263229; --paper: #2b3830; --stone: #303e34;
+    --forest: #e6e0d2; --forest-deep: #f0ebe0; --ink-soft: #aab5a9;
+    --lichen-deep: #9dbca6; --moss-soft: #33422f;
+    --rust: #cd825e; --rust-deep: #dd9a77; --clay: #3a322c;
+    --ochre: #d4a851; --ochre-deep: #cfa242; --ochre-soft: #3d3626;
+    --line: rgba(230,224,210,0.14);
+    --shadow: 0 2px 18px rgba(0,0,0,0.28);
+    color-scheme: dark;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    margin: 0; background: var(--linen); color: var(--forest);
+    font-family: var(--font-body); font-size: 16px; line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: var(--lichen-deep); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+  a:hover { color: var(--rust); }
+  h1, h2, h3, h4 { font-family: var(--font-display); color: var(--forest); letter-spacing: -0.01em; line-height: 1.15; margin: 0; }
+  p { margin: 0 0 0.9rem; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 0.86em; background: var(--stone); padding: 0.05em 0.35em; border-radius: 5px; }
+  strong { font-weight: 600; }
+
+  /* Header i appens gröna band */
+  .top {
+    background: var(--lichen); color: var(--linen);
+    padding: max(1.1rem, env(safe-area-inset-top)) 1rem 1.3rem;
+  }
+  .top-inner { max-width: 980px; margin: 0 auto; }
+  .wordmark { font-family: var(--font-display); font-size: 1.05rem; font-weight: 600; margin: 0; }
+  .wordmark em { font-style: normal; color: var(--ochre); }
+  .wordmark a { color: inherit; text-decoration: none; }
+  .top h1 { color: var(--linen); font-size: clamp(1.6rem, 5vw, 2.3rem); margin-top: 0.6rem; }
+  .top .meta { color: rgba(245,241,232,0.85); font-size: 0.9rem; margin-top: 0.45rem; }
+  .top .meta code { background: rgba(0,0,0,0.18); color: inherit; }
+
+  /* Klibbig sektionsnav */
+  .nav {
+    position: sticky; top: 0; z-index: 5; background: var(--linen);
+    border-bottom: 1px solid var(--line);
+    overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav ul { display: flex; gap: 0.35rem; list-style: none; margin: 0; padding: 0.4rem 1rem; max-width: 980px; margin-inline: auto; }
+  .nav a {
+    display: inline-flex; align-items: center; white-space: nowrap; padding: 0 0.9rem; min-height: 44px;
+    border-radius: 999px; background: var(--linen-card); border: 1px solid var(--line);
+    color: var(--forest); font-size: 0.86rem; font-weight: 500; text-decoration: none;
+  }
+  .nav a:hover { border-color: var(--lichen); color: var(--lichen-deep); }
+
+  main { max-width: 980px; margin: 0 auto; padding: 1.25rem 1rem 4rem; }
+  section { margin-top: 2.4rem; scroll-margin-top: 64px; }
+  section > h2 { font-size: clamp(1.35rem, 4vw, 1.7rem); margin-bottom: 0.35rem; }
+  .lede { color: var(--ink-soft); font-size: 1rem; margin-bottom: 1.1rem; max-width: 70ch; }
+  .prose { max-width: 72ch; }
+  .prose p + p { margin-top: 0; }
+
+  .card {
+    background: var(--linen-card); border: 1px solid var(--line); border-radius: 16px;
+    padding: 1rem 1.1rem; box-shadow: var(--shadow);
+  }
+  .card + .card { margin-top: 0.8rem; }
+  .card h3 { font-size: 1.08rem; margin-bottom: 0.35rem; }
+
+  /* Statistikrutor */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.7rem; margin: 0.4rem 0 1.2rem; }
+  .tile { background: var(--linen-card); border: 1px solid var(--line); border-radius: 14px; padding: 0.85rem 0.95rem; }
+  .tile .n { font-family: var(--font-display); font-size: 1.9rem; font-weight: 600; line-height: 1; color: var(--forest); }
+  .tile .n.rust { color: var(--rust); }
+  .tile .n.lichen { color: var(--lichen-deep); }
+  .tile .l { font-size: 0.82rem; color: var(--ink-soft); margin-top: 0.35rem; }
+
+  /* Badges */
+  .b { display: inline-block; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.02em; padding: 0.15em 0.55em; border-radius: 999px; vertical-align: middle; white-space: nowrap; }
+  .b-p1 { background: var(--rust); color: #fff; }
+  .b-p2 { background: var(--ochre-soft); color: var(--ochre-deep); border: 1px solid var(--ochre); }
+  .b-p3 { background: var(--stone); color: var(--ink-soft); }
+  .b-ok { background: var(--moss-soft); color: var(--lichen-deep); border: 1px solid var(--lichen); }
+  .b-rep { background: var(--clay); color: var(--rust-deep); border: 1px solid var(--rust); }
+  .b-known { background: var(--stone); color: var(--forest); }
+  .b-next { background: var(--rust); color: #fff; }
+  .b-wait { background: var(--ochre-soft); color: var(--ochre-deep); border: 1px solid var(--ochre); }
+  .b-later { background: var(--stone); color: var(--ink-soft); }
+
+  /* Etapper */
+  .stages { display: grid; gap: 0.8rem; }
+  .stage { display: grid; grid-template-columns: 2.6rem 1fr; gap: 0.8rem; }
+  .stage .letter {
+    font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; color: var(--lichen);
+    width: 2.6rem; height: 2.6rem; border-radius: 12px; background: var(--moss-soft);
+    display: grid; place-items: center;
+  }
+  .stage.now .letter { background: var(--rust); color: #fff; }
+  .stage h3 { display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center; }
+  .stage .done-when { font-size: 0.9rem; color: var(--ink-soft); margin-top: 0.4rem; }
+  .stage .done-when b { color: var(--forest); font-weight: 600; }
+
+  /* Fyndlista */
+  details.f { background: var(--linen-card); border: 1px solid var(--line); border-radius: 14px; margin-top: 0.6rem; box-shadow: var(--shadow); }
+  details.f > summary {
+    list-style: none; cursor: pointer; padding: 0.85rem 1rem; display: grid;
+    grid-template-columns: auto 1fr; gap: 0.3rem 0.7rem; align-items: baseline; min-height: 44px;
+  }
+  details.f > summary::-webkit-details-marker { display: none; }
+  details.f > summary .id { font-family: var(--font-display); font-weight: 700; color: var(--lichen-deep); font-size: 0.95rem; }
+  details.f > summary .t { font-weight: 600; }
+  details.f > summary .tags { grid-column: 2; display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  details.f > summary::after { content: '›'; grid-column: 2; grid-row: 1; justify-self: end; color: var(--ink-soft); font-size: 1.3rem; line-height: 1; transform: rotate(90deg); transition: transform 0.15s; }
+  details.f[open] > summary::after { transform: rotate(-90deg); }
+  details.f .body { padding: 0 1rem 1rem; border-top: 1px solid var(--line); }
+  details.f .body dl { display: grid; grid-template-columns: max-content 1fr; gap: 0.35rem 0.9rem; margin: 0.8rem 0 0; font-size: 0.94rem; }
+  details.f .body dt { color: var(--ink-soft); font-weight: 500; }
+  details.f .body dd { margin: 0; }
+  details.f .body .fix { margin-top: 0.8rem; padding: 0.7rem 0.85rem; border-left: 3px solid var(--rust); background: var(--clay); border-radius: 0 10px 10px 0; font-size: 0.94rem; }
+  details.f .body .fix b { color: var(--rust-deep); }
+  @media (max-width: 480px) { details.f .body dl { grid-template-columns: 1fr; gap: 0.1rem 0; } details.f .body dt { margin-top: 0.5rem; } }
+
+  /* Tabeller */
+  .tw { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--line); border-radius: 14px; background: var(--linen-card); }
+  table { border-collapse: collapse; width: 100%; font-size: 0.92rem; min-width: 560px; }
+  th, td { text-align: left; vertical-align: top; padding: 0.6rem 0.8rem; border-bottom: 1px solid var(--line); }
+  th { font-family: var(--font-display); font-weight: 600; color: var(--lichen-deep); font-size: 0.82rem; letter-spacing: 0.03em; text-transform: uppercase; background: var(--linen); position: sticky; top: 0; }
+  tr:last-child td { border-bottom: 0; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  /* Beslutslista */
+  .decide { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.6rem; }
+  .decide li { background: var(--linen-card); border: 1px solid var(--line); border-left: 4px solid var(--ochre); border-radius: 12px; padding: 0.75rem 0.95rem; }
+  .decide li b { display: block; margin-bottom: 0.15rem; }
+  .decide li span { color: var(--ink-soft); font-size: 0.93rem; }
+
+  /* Verifieringskö */
+  .q { display: grid; gap: 0.4rem; margin: 0; padding: 0; list-style: none; }
+  .q li { display: grid; grid-template-columns: 4.2rem 1fr; gap: 0.6rem; padding: 0.45rem 0; border-bottom: 1px dashed var(--line); font-size: 0.93rem; }
+  .q li .s { font-family: var(--font-display); font-weight: 600; color: var(--lichen-deep); }
+  .q li .v { color: var(--ink-soft); font-size: 0.82rem; }
+
+  .note { font-size: 0.9rem; color: var(--ink-soft); margin-top: 0.8rem; }
+  footer { max-width: 980px; margin: 0 auto; padding: 1.5rem 1rem 3rem; color: var(--ink-soft); font-size: 0.85rem; border-top: 1px solid var(--line); }
+  footer a { color: inherit; }
+</style>
+</head>
+<body>
+
+<div class="top"><div class="top-inner">
+  <p class="wordmark"><a href="./">Recept<em>boken</em></a> · projektsida</p>
+  <h1>Roadmap &amp; åtgärdsplan</h1>
+  <p class="meta">Uppdaterad 2026-09-12 · Session 143 · appkod <code>31a8b8c</code> · granskning av Codex-rapporten (GPT-5.6 Sol) samt projektets samlade backlog</p>
+</div></div>
+
+<nav class="nav" aria-label="Sektioner"><ul>
+  <li><a href="#laget">Läget</a></li>
+  <li><a href="#plan">Åtgärdsplan</a></li>
+  <li><a href="#fynd">Fynd R01–R14</a></li>
+  <li><a href="#drift">Drift T01–T03</a></li>
+  <li><a href="#produkt">Produkt</a></li>
+  <li><a href="#beslut">Väntar på Joakim</a></li>
+  <li><a href="#roadmap">Projektets roadmap</a></li>
+  <li><a href="#verif">Verifieringskö</a></li>
+  <li><a href="#kallor">Källor</a></li>
+</ul></nav>
+
+<main>
+
+<!-- ───────────────────────────── LÄGET ───────────────────────────── -->
+<section id="laget">
+  <h2>Läget i en minut</h2>
+  <p class="lede">Codex granskade appen 2026-09-12 och lämnade 14 fel-/riskgrupper, tre driftförslag och tolv produktförslag. Claude (Fable 5.1) har kontrollerat varje påstående mot koden, kört testsviten och byggt egna reproduktioner där rapporten bara hade kodläsning.</p>
+
+  <div class="tiles">
+    <div class="tile"><div class="n">14 / 14</div><div class="l">fynd bekräftade i koden — inget avfärdat</div></div>
+    <div class="tile"><div class="n rust">3</div><div class="l">reproducerade av Claude med egna körningar (R02, R05, R10)</div></div>
+    <div class="tile"><div class="n">2</div><div class="l">fynd omprioriterade uppåt, 4 nedåt mot Codex</div></div>
+    <div class="tile"><div class="n lichen">14 / 14</div><div class="l">testfiler gröna på aktuell kod</div></div>
+  </div>
+
+  <div class="prose">
+    <p><strong>Domen.</strong> Rapporten är hederlig och håller: den skiljer kodläsning från körda reproduktioner, och den överdriver inte webbläsarmätningarna. Ingen punkt är påhittad. Men prioriteringen behöver justeras på två håll. Två fynd är <em>allvarligare</em> än rapporten säger: <strong>R02</strong> bryter appens hårdaste regel (en matsedel får aldrig försvinna) i det vanligaste fallet — att generera om innevarande vecka — och testsviten som skulle fånga det testar aldrig överlappande datum. <strong>R05</strong> tappar bockar i inköpslistan så fort telefonen tappar täckningen i butiken, och koden som skulle rädda dem kan inte nås: Supabase-klienten returnerar nätfel som ett vanligt svar i stället för att kasta.</p>
+    <p>Tre fynd är däremot <em>mindre</em> akuta för ett hushåll med två telefoner än rapporten antyder — R07, R08 och tangentbordsdelen av R13 — och där är Codex föreslagna lösningar (transaktioner, låsning, versionsnummer) större än problemet kräver just nu.</p>
+    <p><strong>Vad det betyder i praktiken.</strong> Etapp A nedan är fem små, väl avgränsade rättningar som tar under en session tillsammans. Etapp B är en riktig ombyggnad av hur en ny matsedel skrivs till databasen. Först därefter är det klokt att bygga nya funktioner — och nästan alla produktförslag Codex lägger högst är i själva verket buggfixarna i A och B sedda från användarens håll.</p>
+  </div>
+</section>
+
+<!-- ───────────────────────────── ÅTGÄRDSPLAN ───────────────────────────── -->
+<section id="plan">
+  <h2>Åtgärdsplan i etapper</h2>
+  <p class="lede">Ordningen är riskreduktion per timme. Etapp A och B går före all ny funktionalitet. Varje etapp har ett tydligt "klart när" så att den går att stänga.</p>
+
+  <div class="stages">
+    <div class="stage now">
+      <div class="letter">A</div>
+      <div class="card">
+        <h3>Små, säkra rättningar <span class="b b-next">Nästa session</span></h3>
+        <p><strong>R04</strong> anteckningar som säger "Sparad" utan att vara det · <strong>R05</strong> tappade bockar (läs <code>error</code>, återlägg i kön) · <strong>R01</strong> inloggningskrav på butiksendpointen · <strong>R10</strong> mängder som ändras utan skalning · <strong>R06</strong> receptbyte styrt av listtäckning i stället för bekräftelse · <strong>T01-delen</strong> pinna Supabase-klienten till exakt version · <strong>R13-zoom</strong> ta bort zoomspärren (kräver Joakims omprövning, se <a href="#beslut">beslut</a>).</p>
+        <p class="done-when"><b>Klart när:</b> ett misslyckat anrop aldrig visas som sparat; nätfel i inköpslistan ger toast och retry; <code>/api/dispatch-to-willys</code> svarar 401 utan token men extensionens väg fungerar; matlagningsläget visar råraden vid oförändrade portioner; regressionstest för varje punkt.</p>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="letter">B</div>
+      <div class="card">
+        <h3>Gemensam dataintegritet <span class="b b-wait">Efter A</span></h3>
+        <p><strong>R02</strong> generering får aldrig lämna en aktiv plan utan dagar — nya dagar skrivs på ett sätt som inte rör gamla planens rader förrän bytet är gjort, och test 7 utökas med överlappande datum · <strong>R03</strong> "Vi har handlat" görs idempotent (konvertera först, stämpla sist) · <strong>R08</strong> felkontroll på deaktiveringen + databasregel om högst en aktiv lista · <strong>R07</strong> dubblettskydd efter delete-fel i dagoperationerna · <strong>T02</strong> schema-baseline exporterad från live.</p>
+        <p class="done-when"><b>Klart när:</b> injicerat fel i varje skrivsteg lämnar databasen i ett begripligt läge; regenerering av samma vecka med RPC-krasch behåller den gamla matsedeln; ett nytt "Vi har handlat"-anrop efter fel slutför rundan utan dubbel effekt.</p>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="letter">C</div>
+      <div class="card">
+        <h3>Daglig användbarhet <span class="b b-later">Efter B</span></h3>
+        <p>Inköpsfliken visar senast hämtad lista direkt och uppdaterar i bakgrunden (prestandaplanens Batch C) · tydliga middagsstatusar på listan (Ej vald / På listan / Inhandlad) · <strong>R14</strong> service workern cachar bara lyckade svar och precache-versionen härleds i stället för att skrivas för hand · <strong>R11–R12</strong> importkvalitet: protein klassas efter översättning, säsonger följer med till editorn.</p>
+        <p class="done-when"><b>Klart när:</b> inget helfliksspinner vid återbesök på Inköp; "Chicken Alfredo" importeras som kyckling; en 5xx-sida kan inte bli offline-startsidan.</p>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="letter">D</div>
+      <div class="card">
+        <h3>Första nya familjevärdet <span class="b b-later">Efter C</span></h3>
+        <p><strong>Återanvänd en bra vecka</strong> (namngiven mall, förhandsgranska, applicera på nya datum) · därefter <strong>favoriter</strong> i enklaste form (gärna igen / okej / hoppa över) som viktar urvalet utan att ta bort variationen. Restkopplingar ("laga dubbelt tisdag → torsdag") kräver att receptschemat öppnas — eget beslut.</p>
+        <p class="done-when"><b>Klart när:</b> familjen kan spara och återanvända en vecka på färre steg än en ny slumpning; ett "hoppa över"-recept dyker inte upp igen inom rimlig tid.</p>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="letter">E</div>
+      <div class="card">
+        <h3>Externa hushåll (M1) <span class="b b-later">När Joakim säger till</span></h3>
+        <p><strong>R09</strong> hushåll härleds från inloggad användare i backend (backlog #5–#6) · onboarding · allergen-/uteslutningsfilter · butiksgångordning · magisk länk. Blockeras av A + B: en vänfamilj ska inte bjudas in till en app där en misslyckad generering kan tömma deras matsedel.</p>
+        <p class="done-when"><b>Klart när:</b> två hushåll kan inte se eller ändra varandras data genom någon skrivande endpoint; en ny familj klarar första veckan utan hjälp av utvecklaren.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────────────────────── FYND ───────────────────────────── -->
+<section id="fynd">
+  <h2>Fynd R01–R14 — bekräftade mot koden</h2>
+  <p class="lede">Varje fynd har en bevisnivå: <span class="b b-known">kodläsning</span> betyder att felet syns i källkoden men inte har körts; <span class="b b-rep">reproducerat</span> betyder att Claude fått felet att inträffa i en isolerad körning av den riktiga koden. Prioriteten är Claudes, inte Codex — avvikelser förklaras.</p>
+
+  <details class="f" open>
+    <summary><span class="id">R02</span><span class="t">Misslyckad ny matsedel kan lämna den aktiva planen utan dagar</span>
+      <span class="tags"><span class="b b-p1">P1 — högst</span><span class="b b-rep">reproducerat av Claude</span><span class="b b-known">känd som F219/F232</span></span></summary>
+    <div class="body">
+      <dl>
+        <dt>Var</dt><dd><code>api/generate.js</code> rad 155–178 (upsert av dagar) och 233–249 (aktivering)</dd>
+        <dt>Vad händer</dt><dd>Nya dagar skrivs med <em>upsert på (hushåll, datum)</em> innan den nya planen aktiverats. Täcker nya planen samma datum som den gamla byter raderna ägare till en plan som ännu är inaktiv. Kraschar aktiveringen därefter står den gamla planen kvar som aktiv — utan dagar. Klienten läser dagar via aktiv plans id, så matsedeln blir tom.</dd>
+        <dt>Claudes bevis</dt><dd>Egen körning mot testsvitens minnesdatabas med överlappande datum och simulerad RPC-krasch: <code>aktivPlanId 1 · dagarPåAktivPlan 0 · egnaDagar 0 · dagarPåNyaInaktivaPlanen 2</code>. Dessutom: sviten test 7 ("RPC kraschar → inget går förlorat") är grön bara för att fixturen använder datum som inte överlappar — det vanligaste verkliga fallet, att generera om innevarande vecka, testas inte alls.</dd>
+        <dt>Avvikelse mot Codex</dt><dd>Codex kallar det känt. Det stämmer, men den falska tryggheten i testsviten är ny och gör fyndet mer akut: koden har en kommentar som påstår att "den gamla planen är orörd", vilket är fel.</dd>
+      </dl>
+      <div class="fix"><b>Minsta åtgärd:</b> lösgör den gamla planens dagar (detach) <em>före</em> upserten, eller skriv nya dagar via RPC:n som redan finns. Utöka test 7 med överlappande datum så det aldrig regresserar. Full transaktion med samtidighetsskydd (Codex förslag) kan vänta.</div>
+    </div>
+  </details>
+
+  <details class="f" open>
+    <summary><span class="id">R05</span><span class="t">Bockningar tappas vid nätfel — och retry-koden kan inte nås</span>
+      <span class="tags"><span class="b b-p1">P1 — uppgraderad</span><span class="b b-rep">bekräftat i bibliotekets källkod</span></span></summary>
+    <div class="body">
+      <dl>
+        <dt>Var</dt><dd><code>js/shopping/shopping-list.js</code> rad 491–509 (<code>flushPendingChecks</code>) och <code>js/lists/lists-view.js</code> rad 556–575</dd>
+        <dt>Vad händer</dt><dd>Inköpslistan gör <code>await Promise.all(ps)</code> utan att läsa <code>error</code> i svaren. Supabase-klienten (<code>@supabase/postgrest-js</code>, <code>PostgrestBuilder.ts</code> rad 290–300) fångar <em>även nätverksfel</em> och returnerar dem som <code>{ error }</code> — den kastar bara om <code>.throwOnError()</code> satts. Alltså går flödet aldrig in i <code>catch</code>: kön är redan tömd, ingen toast visas, inget nytt försök görs. Familjelistorna kollar felet men återlägger inte de misslyckade posterna.</dd>
+        <dt>Avvikelse mot Codex</dt><dd>Codex resonerar utifrån dokumentationen och beskriver ett DB-fel. Att även nätfel resolvar gör det till det <em>typiska</em> felfallet — dålig täckning i butiken — inte ett hörnfall. Därför P1, inte "delvis nytt".</dd>
+      </dl>
+      <div class="fix"><b>Minsta åtgärd:</b> läs <code>error</code> på varje resultat; återlägg bara de misslyckade id:na i kön utan att skriva över en nyare växling; visa osparad status. Gör familjelistornas flush symmetrisk med inköpslistans.</div>
+    </div>
+  </details>
+
+  <details class="f">
+    <summary><span class="id">R06</span><span class="t">Receptbyte gör inköpslistan fel för de dagar familjen valt</span>
+      <span class="tags"><span class="b b-p1">P1</span><span class="b b-known">kodläsning — bekräftad</span></span></summary>
+    <div class="body">
+      <dl>
+        <dt>Var</dt><dd><code>api/replace-recipe.js</code> rad 134 (villkor <code>plan.confirmed_at</code>) och 155 (<code>[...coverDates, date]</code>)</dd>
+        <dt>Vad händer</dt><dd>Sedan Session 134 väljer familjen manuellt vilka dagar listan ska täcka; bekräftelsen styr inte längre listan. Men receptbytet bygger fortfarande om listan bara om planen är bekräftad, och lägger alltid till den utbytta dagen. Två fel: byte på en obekräftad plan uppdaterar inte listan (gamla ingredienser står kvar), och byte på en dag som inte valts läggs ändå till.</dd>
+      </dl>
+      <div class="fix"><b>Minsta åtgärd:</b> avgör ombyggnad på om dagen ligger i listans täckning. Täckt dag → bygg om. Otäckt dag → rör inte listan. Redan inhandlad dag → erbjud val i UI:t. Testmatris bekräftad/obekräftad × täckt/otäckt/inhandlad.</div>
+    </div>
+  </details>
+
+  <details class="f">
+    <summary><span class="id">R01</span><span class="t">Butiksendpointen saknar inloggningskrav på vanlig GET/POST</span>
+      <span class="tags"><span class="b b-p1">P1 — billig</span><span class="b b-known">känd sedan Session 141d, GET-delen ny</span></span></summary>
+    <div class="body">
+      <dl>
+        <dt>Var</dt><dd><code>api/dispatch-to-willys.js</code> — <code>requireUser</code> sitter bara på <code>save-/clear-credentials</code>; <code>js/shopping/dispatch-ui.js</code> rad 28 och 218 använder rå <code>fetch</code></dd>
+        <dt>Vad händer</dt><dd>Filen wrappas medvetet inte av handler-wrappern (kommentaren i koden förklarar varför). Konsekvensen är att korgfyllning och statusläsning går utan token. Bryter invariant #4. Ingen skarp exploatering har gjorts.</dd>
+        <dt>Varför det är billigt</dt><dd>Två rader på servern efter att refresh-cookies- och GET-vägarna redan hanterats, plus byte av två klientanrop till <code>apiFetch</code>. Extensionens väg (delad hemlighet) rörs inte.</dd>
+      </dl>
+      <div class="fix"><b>Minsta åtgärd:</b> JWT-krav på GET och dispatch-POST, klientanropen via <code>apiFetch</code>. Testa 401 utan token och att extensionvägen är oförändrad. Väntar Joakims OK sedan Session 141d.</div>
+    </div>
+  </details>
+
+  <details class="f">
+    <summary><span class="id">R04</span><span class="t">Anteckning visar "Sparad" efter ett misslyckat försök</span>
+      <span class="tags"><span class="b b-p1">P1 — trivial</span><span class="b b-known">kodläsning — bekräftad</span></span></summary>
+    <div class="body">
+      <dl>
+        <dt>Var</dt><dd><code>js/lists/lists-view.js</code> rad 1138–1140</dd>
+        <dt>Vad händer</dt><dd><code>note.title</code>/<code>note.body</code> sätts i den lokala modellen <em>före</em> databasanropet och återställs inte vid fel. Nästa sparförsök jämför formuläret mot den redan ändrade modellen, ser "ingen skillnad" och skriver "Sparad" utan att anropa databasen.</dd>
+      </dl>
+      <div class="fix"><b>Minsta åtgärd:</b> uppdatera modellen först efter lyckat svar (eller återställ i <code>catch</code>). Tre rader. Status ska vara Sparar / Sparad / Kunde inte spara — aldrig en gissning från lokal likhet.</div>
+    </div>
+  </details>
+
+  <details class="f">
+    <summary><span class="id">R10</span><span class="t">Matlagningsläget ändrar mängder utan att portionerna ändrats</span>
+      <span class="tags"><span class="b b-p2">P2 — trivial</span><span class="b b-rep">reproducerat av Claude</span></span></summary>
+    <div class="body">
+      <dl>
+        <dt>Var</dt><dd><code>js/ui/cook-mode.js</code> rad 59–70 (<code>fmtQty</code>) och 79–85 (<code>ingLineHtml</code> körs alltid, även vid faktor 1)</dd>
+        <dt>Claudes bevis</dt><dd>Egen körning av de faktiska funktionerna vid faktor 1: <code>0,1 kg → 0,25 kg</code> · <code>0,3 kg kött → 0,25 kg</code> · <code>0,1 l → 0,25 l</code> · <code>0,7 dl → 0,75 dl</code>. Unicode-bråk (<code>½ dl</code>) tolkas inte alls och skalas därför aldrig.</dd>
+      </dl>
+      <div class="fix"><b>Minsta åtgärd:</b> visa råraden när faktorn är 1; ta bort 0,25-golvet för kg och liter; normalisera ½/¼/¾ i parsern.</div>
+    </div>
+  </details>
+
+  <details class="f">
+    <summary><span class="id">R03</span><span class="t">"Vi har handlat" kan fastna halvvägs och inte repareras</span>
+      <span class="tags"><span class="b b-p2">P2</span><span class="b b-known">kodläsning — bekräftad</span></span></summary>
+    <div class="body">
+      <dl>
+        <dt>Var</dt><dd><code>api/_shared/shopping-store.js</code> rad 348–389 (<code>markRoundShopped</code>)</dd>
+        <dt>Vad händer</dt><dd>Dagarna stämplas som inhandlade före konverteringen av obockade receptvaror till egna tillägg. Misslyckas konverteringen finns stämpeln kvar; nästa anrop hittar inga oinhandlade dagar och returnerar tidigt. De obockade varorna kan då tappas vid nästa ombyggnad.</dd>
+      </dl>
+      <div class="fix"><b>Minsta åtgärd:</b> kasta om ordningen — konvertera först (idempotent), stämpla sist. Då fungerar ett nytt försök utan transaktion.</div>
+    </div>
+  </details>
+
+  <details class="f">
+    <summary><span class="id">R07</span><span class="t">Dagflyttningar saknar skydd mot samtidiga telefoner och delfel</span>
+      <span class="tags"><span class="b b-p2">P2 — nedgraderad</span><span class="b b-known">kodläsning — bekräftad</span></span></summary>
+    <div class="body">
+      <dl>
+        <dt>Var</dt><dd><code>api/day.js</code> rad 68–85 (<code>writeDiff</code>: upsert, sedan separat delete)</dd>
+        <dt>Vad händer</dt><dd>Läs → beräkna → skriv utan versionskontroll. Misslyckas delete efter lyckad upsert kan samma middag ligga på två datum. Två enheter som räknar från samma gamla läge inom samma sekund kan skriva över varandra.</dd>
+        <dt>Avvikelse mot Codex</dt><dd>Kodläget stämmer. Men "två telefoner flyttar dagar samtidigt" är sällsynt i ett hushåll, och advisory locks kräver samordning i alla skrivvägar och är svåra att felsöka utan lokal testmiljö. Ett dubblettskydd räcker nu; versionskontroll är rätt först vid externa hushåll.</dd>
+      </dl>
+      <div class="fix"><b>Minsta åtgärd:</b> vid delete-fel: läs om och rensa dubbletten, eller använd en enda RPC för upsert + delete. Fullt konfliktskydd i etapp E.</div>
+    </div>
+  </details>
+
+  <details class="f">
+    <summary><span class="id">R08</span><span class="t">Byte av aktiv inköpslista är inte sammanhållet</span>
+      <span class="tags"><span class="b b-p2">P2 — nedgraderad</span><span class="b b-known">kodläsning — bekräftad</span></span></summary>
+    <div class="body">
+      <dl>
+        <dt>Var</dt><dd><code>api/_shared/shopping-store.js</code> rad 177–179 — deaktiveringens <code>error</code> läses inte</dd>
+        <dt>Vad händer</dt><dd>Ny lista skapas inaktiv, varor skrivs, gamla deaktiveras, nya aktiveras, dagpekare uppdateras — fem steg. Ordningen är förnuftig (aktivera sist), men om deaktiveringen tyst misslyckas finns två aktiva listor och "första aktiva" blir slumpmässig.</dd>
+      </dl>
+      <div class="fix"><b>Minsta åtgärd:</b> kontrollera felet + ett partiellt unikt index (<code>is_active = true</code> per hushåll) som gör två aktiva listor omöjliga på databasnivå. Inspektera dubbletter i live först. Full transaktion är överarbete.</div>
+    </div>
+  </details>
+
+  <details class="f">
+    <summary><span class="id">R09</span><span class="t">Backend kopplar inte inloggad användare till rätt hushåll</span>
+      <span class="tags"><span class="b b-p3">P3 nu · P1 före hushåll #2</span><span class="b b-known">känd — backlog #5–#6</span></span></summary>
+    <div class="body">
+      <dl>
+        <dt>Var</dt><dd><code>api/_shared/supabase.js</code> rad 39–50: "första hushållet", memoiserat globalt, <code>req.user</code> används inte</dd>
+        <dt>Vad händer</dt><dd>Latent i en-hushållsdrift. Service-role kringgår RLS, så frontendens hushållsfilter hjälper inte i backend. Kommentaren i koden beskriver redan rätt fix (cache nycklad per användare).</dd>
+      </dl>
+      <div class="fix"><b>Minsta åtgärd:</b> ingen förrän M1 — men blockerande då. Härled hushåll från verifierad användare + medlemskap, neka saknat medlemskap, testa två isolerade hushåll genom alla skrivande endpoints.</div>
+    </div>
+  </details>
+
+  <details class="f">
+    <summary><span class="id">R11</span><span class="t">Utländska recept kan klassas som vegetariska</span>
+      <span class="tags"><span class="b b-p2">P2</span><span class="b b-known">känd som F115</span></span></summary>
+    <div class="body">
+      <dl>
+        <dt>Var</dt><dd><code>api/import-recipe.js</code> rad 249 (klassning före översättning), 389–395 (<code>guessProtein</code>: svenska ord, <code>vegetarisk</code> som fallback)</dd>
+        <dt>Vad händer</dt><dd>"Chicken Alfredo" med "2 chicken breasts" blir <code>vegetarisk</code>. Det är ett positivt påstående som styr proteinbalansen i urvalet — och blir en säkerhetsfråga den dag allergi-/uteslutningsfilter införs.</dd>
+      </dl>
+      <div class="fix"><b>Minsta åtgärd:</b> klassa efter översättningen, lägg till engelska ord, och gör proteinvalet tydligt i importgranskningen. Okänd ingrediens är inte belägg för vegetariskt.</div>
+    </div>
+  </details>
+
+  <details class="f">
+    <summary><span class="id">R12</span><span class="t">Säsonger från importen når aldrig receptet</span>
+      <span class="tags"><span class="b b-p2">P2 — lätt</span><span class="b b-known">känd som F278</span></span></summary>
+    <div class="body">
+      <dl>
+        <dt>Var</dt><dd>Gemini-prompten ber om <code>seasons</code> (<code>import-recipe.js</code> rad 20), men <code>js/recipes/recipe-import.js</code> rad 153 för inte vidare fältet och <code>recipe-editor.js</code> rad 158 hårdkodar <code>seasons: []</code></dd>
+      </dl>
+      <div class="fix"><b>Minsta åtgärd:</b> för vidare importutkastets metadata till förhandsgranskningen och exponera säsongsfältet i editorn. Kräver ingen schemaändring.</div>
+    </div>
+  </details>
+
+  <details class="f">
+    <summary><span class="id">R13</span><span class="t">Zoom är avstängd; dagkorten saknar tangentbordsåtkomst</span>
+      <span class="tags"><span class="b b-p2">Zoom P2 · tangentbord P3</span><span class="b b-known">känd — tillgänglighetsutredningen</span></span></summary>
+    <div class="body">
+      <dl>
+        <dt>Var</dt><dd><code>index.html</code> rad 5 (<code>user-scalable=no, maximum-scale=1.0</code>); <code>plan-viewer-deluxe.js</code> rad 607, 636, 651, 667, 684 renderar <code>&lt;article onclick&gt;</code> utan <code>role</code>/<code>tabindex</code> — bara rad 376 har det</dd>
+        <dt>Avvikelse mot Codex</dt><dd>WCAG-argumentet stämmer (1.4.4). För familjens touch-användning är tangentbordsdelen lågt prioriterad; zoomspärren märks däremot direkt av den som vill förstora text och är en rad att ta bort. Joakim valde i juni att låta den ligga — beslutet bör tas om.</dd>
+      </dl>
+      <div class="fix"><b>Minsta åtgärd:</b> ta bort zoomspärren nu (om Joakim säger ja). Tangentbordsåtkomst på dagkorten i etapp E.</div>
+    </div>
+  </details>
+
+  <details class="f">
+    <summary><span class="id">R14</span><span class="t">Service workern kan cacha en felsida och väntar obegränsat på nätet</span>
+      <span class="tags"><span class="b b-p2">P2</span><span class="b b-known">känd — F137/F254, Batch B</span></span></summary>
+    <div class="body">
+      <dl>
+        <dt>Var</dt><dd><code>service-worker.js</code> rad 50–57: navigeringssvar cachas utan <code>res.ok</code> (JS-vägen kontrollerar det); precache anger <code>styles.css?v=197</code> medan <code>index.html</code> begär v199</dd>
+        <dt>Claudes tillägg</dt><dd>Navigeringsgrenen skrev <em>varje</em> navigeringssvar till cache-nyckeln <code>./index.html</code> — även undersidor som den här. Rättat i Session 143 (SW v115): bara startsidan, bara lyckade svar.</dd>
+      </dl>
+      <div class="fix"><b>Kvar:</b> nätväntan med timeout och härledd precache-version. Tas i Batch B (byggsteg) där versionsritualen ändå försvinner.</div>
+    </div>
+  </details>
+</section>
+
+<!-- ───────────────────────────── DRIFT ───────────────────────────── -->
+<section id="drift">
+  <h2>Utveckling och drift — T01–T03</h2>
+  <div class="card">
+    <h3>T01 · Reproducerbara installationer <span class="b b-p1">Delvis akut</span></h3>
+    <p>Allt stämmer: caret-intervall i <code>package.json</code>, ignorerad lockfil, <code>npm install</code> i CI, och <code>node --check</code> bara på <code>js/app.js</code> (som inte följer importer). <strong>Den skarpaste punkten underskattas:</strong> frontend laddar Supabase-klienten med flytande <code>@2</code> från jsDelivr. Ett brytande släpp eller en CDN-incident slår ut appen för familjen utan att någon rört koden — och det finns ingen lokal testmiljö att felsöka i. Pinnad version är en enradsändring med bäst riskreduktion per minut i hela rapporten. Beslutet att självhosta klienten är redan taget (prestandaplanens B2).</p>
+  </div>
+  <div class="card">
+    <h3>T02 · Databasens grundschema saknas i migrationsserien <span class="b b-p2">P2</span></h3>
+    <p>Bekräftat bokstavligen: <code>db/migrations/</code> 001–011 skapar inte <code>recipes</code>, <code>weekly_plans</code>, <code>meal_days</code> eller <code>shopping_lists</code>. Databasen kan inte återskapas från repot. Inte en bugg, men en återställningsrisk — exportera en baseline (tabeller, RLS, index, RPC:er) från live innan externa hushåll. Aldrig genom att köra migrationer mot produktion.</p>
+  </div>
+  <div class="card">
+    <h3>T03 · En statuskälla och testfall för förlorad data <span class="b b-p2">P2</span></h3>
+    <p>Stämmer. <code>docs/status.md</code> bär både gamla instruktioner och nya lägen, och digestens "inga öppna obeslutade" motsägs av dispatch-luckan längre ned. Den här sidan är svaret: fynden får stabila id:n och en plats; status.md pekar hit i stället för att bli en tredje sanning. Testinvesteringen ska gå till kontrakt familjen märker: misslyckad skrivning, retry, dubbla anrop, två samtidiga användare.</p>
+  </div>
+</section>
+
+<!-- ───────────────────────────── PRODUKT ───────────────────────────── -->
+<section id="produkt">
+  <h2>Produktförslagen — Codex ordning mot Claudes</h2>
+  <p class="lede">Codex tolv förslag är kloka, men två av de tre högst rankade är i själva verket buggfixarna i etapp A och B sedda från användarens håll. Den verkliga funktionslistan är kortare.</p>
+
+  <div class="tw"><table>
+    <thead><tr><th>Förslag</th><th>Codex</th><th>Claude</th><th>Varför</th></tr></thead>
+    <tbody>
+      <tr><td>Tydlig och ärlig sparstatus</td><td class="num">1</td><td class="num">— (= R04+R05)</td><td>Levereras av etapp A. Inte en funktion.</td></tr>
+      <tr><td>Inköpslista med tydliga middagsstatusar</td><td class="num">2</td><td class="num">2</td><td>Faller till stor del ut ur R06-fixen. Resten är UI i etapp C.</td></tr>
+      <tr><td>Snabbare återbesök till Inköp</td><td class="num">6</td><td class="num">1</td><td>Fliken ni öppnar oftast av alla; daglig friktion. Redan planerad (Batch C), liten.</td></tr>
+      <tr><td>Återanvänd en bra vecka</td><td class="num">5</td><td class="num">3</td><td>Löser "vi vill ha den där veckan igen" i ett steg. Mer verklig nytta än favoriter.</td></tr>
+      <tr><td>Familjefavoriter "laga igen"</td><td class="num">3</td><td class="num">4</td><td>Viktar bara slumpen. Kräver öppnat receptschema (invariant #2).</td></tr>
+      <tr><td>Lunchlådor och rester som planval</td><td class="num">4</td><td class="num">6</td><td>M/L och kräver relationsfält i schemat. Vänta.</td></tr>
+      <tr><td>"Använd det vi har" utan lager</td><td class="num">7</td><td class="num">5</td><td>Deterministisk matchning finns redan (skafferiläget). Rimlig liten första version.</td></tr>
+      <tr><td>Import med kvalitetskontroll</td><td class="num">8</td><td class="num">= R11+R12</td><td>Etapp C.</td></tr>
+      <tr><td>Butikens ordning + återkommande varor</td><td class="num">9</td><td class="num">7</td><td>M1-gap G5. Bra, men efter A–C.</td></tr>
+      <tr><td>Ändringshistorik och säker Ångra</td><td class="num">10</td><td class="num">Skjuts</td><td>Den mest överdimensionerade posten just nu. Kräver R02/R07 först.</td></tr>
+      <tr><td>Planera efter tid och villkor</td><td class="num">11</td><td class="num">8</td><td>Bra avgränsning; manuell generering behålls.</td></tr>
+      <tr><td>Enkel start för nytt hushåll</td><td class="num">12</td><td class="num">= M1</td><td>Etapp E.</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="prose" style="margin-top:1rem">
+    <p><strong>Om kalender och monetisering.</strong> Codex har rätt att skjuta full kalenderintegration tills de delade flödena är stabila. M1 (externa hushåll) förutsätter R09, och R09 förutsätter i praktiken etapp A och B. App Store, AI i genereringen och näringsfunktioner ligger kvar där de låg: uppskjutna.</p>
+    <p><strong>En sak Codex bara nämner i förbigående.</strong> Veckoheron visar "sparat" redan för ett <em>förslag</em>, summerat från <code>saving</code> (<code>plan-viewer-deluxe.js</code> rad 404–441). Det är en prognos på reor ni kanske inte handlar, presenterad som en verklig besparing. Byt ordet till "beräknat" innan appen visas för någon utanför familjen.</p>
+  </div>
+</section>
+
+<!-- ───────────────────────────── BESLUT ───────────────────────────── -->
+<section id="beslut">
+  <h2>Väntar på Joakims beslut</h2>
+  <p class="lede">Inget av detta byggs autonomt. Punkterna är samlade här så att de inte begravs i sessionsloggen.</p>
+  <ul class="decide">
+    <li><b>R01 — JWT-krav på butiksendpointen</b><span>Öppen sedan Session 141d. Två rader. Repot är publikt, så luckan står beskriven i klartext — bör stängas snarast.</span></li>
+    <li><b>R13 — tillåt zoom</b><span>Joakim valde i juni att låta zoomspärren ligga. Codex och Claude rekommenderar båda att ta bort den. En rad i <code>index.html</code>.</span></li>
+    <li><b>Migration 011 (bevara plandagar i RPC:n)</b><span>SQL-filen finns sedan Session 137, körs bara på uttrycklig uppmaning. Är den körd? R02-fixen i etapp B beror på svaret.</span></li>
+    <li><b>Receptschemat</b><span>Favoriter/betyg, restkopplingar och käll-URL vid import kräver alla nya fält i <code>recipes</code> (invariant #2). Ett samlat beslut är bättre än tre små.</span></li>
+    <li><b>Offlinekö i telefonen?</b><span>Codex antyder en beständig lokal kö. Det strider mot regeln om delat innehåll. Claudes linje: nej — korrekta kvittenser och kvarhållet osparat utkast räcker (etapp A).</span></li>
+    <li><b>Batch B före Batch A?</b><span>Mätningen 2026-09-05 visade 11,8 s innan JavaScript startade. En mätning till med appen i förgrunden avgör ordningen i prestandaplanen.</span></li>
+    <li><b>Hemköp-inloggningen (Session 136)</b><span>Skarp kod, men fungerar inte förrän tre steg gjorts av Joakim (se status.md). Alternativt: ta bort tills det behövs.</span></li>
+    <li><b>Supabase security advisor — två WARN</b><span><code>function_search_path_mutable</code> (billig, idempotent SQL) och läckta-lösenord-skyddet (dashboardinställning). Båda blir viktiga vid M1.</span></li>
+  </ul>
+</section>
+
+<!-- ───────────────────────────── PROJEKTETS ROADMAP ───────────────────────────── -->
+<section id="roadmap">
+  <h2>Projektets samlade roadmap</h2>
+  <p class="lede">Sammanställt från <code>docs/status.md</code>, <code>docs/app-analys-backlog.md</code>, <code>docs/prestanda-plan-2026-09.md</code> och <code>docs/monetisering-roadmap-2026-07.md</code>. Klara faser: 1, 3, 4, 6, 7, 8 samt P0-backlogen.</p>
+
+  <h3 style="margin:1.2rem 0 0.5rem">Faser och plattform</h3>
+  <div class="tw"><table>
+    <thead><tr><th>Spår</th><th>Status</th><th>Nästa steg</th></tr></thead>
+    <tbody>
+      <tr><td>Etapp A–E (denna sida)</td><td><span class="b b-next">Nästa</span></td><td>A: fem små rättningar. B: dataintegritet. Före all ny funktionalitet.</td></tr>
+      <tr><td>Prestandaplan 2026-09</td><td>Fas 0 + Batch E klara</td><td>Batch A (boot) eller B (leverans, byggsteg) — avgörs av en mätning till. Därefter C (flikbyten), D (mutationer), F/G.</td></tr>
+      <tr><td>Fas 2 — familjelärande</td><td>Öppen</td><td>2A analysera data · 2B viktning · 2C favoriter. Etapp D, efter schemabeslut.</td></tr>
+      <tr><td>Familjehubben</td><td>P1 listor + P2 anteckningar + Cozi L1–L3 byggda</td><td>P3 kalender (iCal-proxy, agendarad) — skjuts enligt Codex/Claude tills A–C är klara. L5 dra-ordning ej beställd.</td></tr>
+      <tr><td>Fas 5 / M0–M5 — Middagsveckan</td><td>M0 beslutat; kvar: domänköp</td><td>M1 = etapp E (tenancy #5–#6, onboarding, allergenfilter, bilder, magisk länk, gångordning). M2 betalningsvilja → M3 Stripe → M5 partnerskap. M4 App Store uppskjuten.</td></tr>
+      <tr><td>Backlog #5–#6 tenancy</td><td>Öppna</td><td>Butikscookies gist → Supabase/RLS (#5), hushåll via JWT (#6 = R09).</td></tr>
+      <tr><td>Backlog #16–#19</td><td>Öppna</td><td>#16 favoriter · #17 receptbilder + käll-URL · #18 take-away/gäster som dagtyper · #19 förklara grindarna.</td></tr>
+      <tr><td>Nattauditen 2026-07-12</td><td>2 P0 + 48 P1 + 235 P2, batch 1–13 åtgärdade</td><td>Restlista i <code>docs/qc-night/audit-atgardslista-2026-07.md</code>.</td></tr>
+      <tr><td>Tillgänglighetsutredningen</td><td>Öppen</td><td>Zoom (R13) · <code>aria-current</code> på flikar · rust-CTA:er 4,09:1 → <code>--rust-deep</code> · <code>aria-live</code> på statusfält.</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3 style="margin:1.4rem 0 0.5rem">Vad som medvetet skjuts upp</h3>
+  <div class="prose">
+    <p>Full kalender/Outlook-integration, App Store (M4), AI i genereringen, näringsberäkning, automatisk kylskåpsinventering, ändringshistorik med versionsbunden ångra, och beständig offlinekö. Alla har mindre omedelbar familjenytta än etapp A–D, och flera kräver beslut som inte är fattade.</p>
+  </div>
+</section>
+
+<!-- ───────────────────────────── VERIFIERINGSKÖ ───────────────────────────── -->
+<section id="verif">
+  <h2>Verifieringskö — skarp kod som inte setts på mobil</h2>
+  <p class="lede">Joakim har ingen lokal testmiljö; UI verifieras på iPhone mot live. Kön har vuxit till över trettio poster sedan Session 107. Det är ett problem i sig (T03): ju längre kön, desto svårare att veta vilken ändring som orsakade vad. Förslag: verifiera de fem översta i en enda tio-minuterssession och stryk resten som "sett i förbigående".</p>
+  <ul class="q">
+    <li><span class="s">143</span><span>Roadmap-sidan (den här) i ljust och mörkt · SW v115 skriver inte över startsidans cache vid besök på undersidor</span></li>
+    <li><span class="s">142</span><span>Dagoperationerna ombyggda — Flytta middagen, Ingen middag + Ångra, Dra ihop, Byt recept, drag &amp; släpp mot <code>/api/day</code> <span class="v">styles v199 · app v162 · SW v114</span></span></li>
+    <li><span class="s">141d</span><span>Batch E backend-avlastning — <span class="v">verifierad 2026-09-05: shopping 1 561 → 179 ms</span></span></li>
+    <li><span class="s">141b</span><span>Perf-overlayen <code>?perf=1</code> <span class="v">styles v197 · app v159 · SW v111</span></span></li>
+    <li><span class="s">140</span><span>Rubrikfont utan serifer (Bricolage Grotesque) <span class="v">styles v196 · SW v110</span></span></li>
+    <li><span class="s">139</span><span>Rensa-knappar, provat-växling, taggväljare <span class="v">styles v195 · app v158 · SW v109</span></span></li>
+    <li><span class="s">138</span><span>Inköpslistans mängder vid blandade enheter <span class="v">backend-only</span></span></li>
+    <li><span class="s">137</span><span>Matsedlar låses inte längre — detach av gamla plandagar <span class="v">styles v194 · app v157 · SW v108 · migration 011 ej bekräftat körd</span></span></li>
+    <li><span class="s">136</span><span>Hemköp med lösenord i appen <span class="v">fungerar inte förrän tre steg gjorts av Joakim</span></span></li>
+    <li><span class="s">135</span><span>Hemköp som andra butik <span class="v">styles v191 · app v154 · SW v105</span></span></li>
+    <li><span class="s">134</span><span>Manuellt dagurval till inköpslistan <span class="v">styles v188 · app v151 · SW v102</span></span></li>
+    <li><span class="s">130–132</span><span>Inköpsrundor (migration 009 körd), inköpslistans fixar, drag &amp; släpp-uppföljningar</span></li>
+    <li><span class="s">107–129</span><span>Dag-sheeten (grundflöde ✅), Idag-fliken, designinförandet, Listor + anteckningar, veckoscopad Matsedel, poler-svep 1–8, auditens batch 3–13 <span class="v">delvis verifierade; detaljer i status.md</span></span></li>
+  </ul>
+</section>
+
+<!-- ───────────────────────────── KÄLLOR ───────────────────────────── -->
+<section id="kallor">
+  <h2>Källor och underlag</h2>
+  <div class="prose">
+    <p><a href="https://github.com/jockemedw/Receptbok/blob/main/docs/review-2026-09-12/rapport.md">Codex huvudrapport</a> med verifieringsprotokoll och skärmbilder · <a href="https://github.com/jockemedw/Receptbok/blob/main/docs/review-2026-09-12/LAS-MIG-CLAUDE.md">överlämningen till Claude</a> · <a href="https://github.com/jockemedw/Receptbok/blob/main/docs/status.md">status.md</a> (rörlig status, verifieringskö i full detalj) · <a href="https://github.com/jockemedw/Receptbok/blob/main/docs/app-analys-backlog.md">app-analys-backlog</a> (#1–#28) · <a href="https://github.com/jockemedw/Receptbok/blob/main/docs/prestanda-plan-2026-09.md">prestandaplanen</a> · <a href="https://github.com/jockemedw/Receptbok/blob/main/docs/monetisering-roadmap-2026-07.md">monetiseringsroadmapen</a> · <a href="https://github.com/jockemedw/Receptbok/blob/main/docs/konkurrens-funktionsanalys-2026-07.md">funktionsgap G1–G18</a> · <a href="architecture.html">systemarkitektur</a>.</p>
+    <p class="note">Bevisnivåer på den här sidan: <em>kodläsning</em> = felet syns i källkoden på angiven rad; <em>reproducerat</em> = Claude fick felet att inträffa i en isolerad körning av den riktiga koden mot testsvitens minnesdatabas; <em>bibliotekets källkod</em> = beteendet läst direkt i det installerade paketets källa. Ingenting har verifierats mot produktionsdatabasen, och ingen kod har ändrats som del av granskningen utöver service worker-rättningen i Session 143.</p>
+  </div>
+</section>
+
+</main>
+
+<footer>Receptboken · projektsida som uppdateras av Claude Code efter varje större session · <a href="./">tillbaka till appen</a></footer>
+
+</body>
+</html>
