@@ -105,6 +105,7 @@ export function closeEditModal() {
   setTimeout(() => { if (!m.classList.contains('open')) m.style.display = 'none'; }, 200);
   document.body.style.overflow = '';
   window.editingId = null;
+  window._importSeasons = null;
   closeTagPicker();
   document.getElementById('editModalTitle').textContent = 'Redigera recept';
 }
@@ -155,7 +156,7 @@ export async function saveRecipe() {
     try {
       const householdId = await window.getHouseholdId();
       const nextId = Math.max(...window.RECIPES.map(r => r.id), 0) + 1;
-      const newRecipe = { ...formData, id: nextId, tested: false, seasons: [] };
+      const newRecipe = { ...formData, id: nextId, tested: false, seasons: window._importSeasons || [] };
       const { data, error } = await window.db
         .from('recipes')
         .insert(recipeToRow(newRecipe, householdId))

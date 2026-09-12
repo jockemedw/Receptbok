@@ -559,20 +559,32 @@ async function flushPendingChecks() {
   _pendingChecks.clear();
   const toCheck = entries.filter(([, v]) => v).map(([id]) => id);
   const toUncheck = entries.filter(([, v]) => !v).map(([id]) => id);
+  // Skrivningarna görs gruppvis; bara den grupp som faktiskt misslyckades
+  // läggs tillbaka i kön (samma regel som inköpslistans flushPendingChecks) —
+  // utan att klobba en nyare växling som hunnit ske under anropet.
+  const requeue = (ids, value) => {
+    for (const id of ids) if (!_pendingChecks.has(id)) _pendingChecks.set(id, value);
+  };
+  let anyFailed = false;
   try {
     if (toCheck.length) {
       const { error } = await window.db.from('family_list_items')
         .update({ checked: true }).in('id', toCheck);
-      if (error) throw error;
+      if (error) { anyFailed = true; requeue(toCheck, true); }
     }
     if (toUncheck.length) {
       const { error } = await window.db.from('family_list_items')
         .update({ checked: false }).in('id', toUncheck);
-      if (error) throw error;
+      if (error) { anyFailed = true; requeue(toUncheck, false); }
     }
   } catch {
-    window.showToast?.('Kunde inte spara bockarna — prova igen.', { type: 'error' });
+    // Kastat undantag (inte ett {error}-svar) — vi vet inte vilken grupp som
+    // hann skrivas, så båda läggs tillbaka. Idempotent, kostar bara en extra rond.
+    anyFailed = true;
+    requeue(toCheck, true);
+    requeue(toUncheck, false);
   }
+  if (anyFailed) window.showToast?.('Kunde inte spara bockarna — prova igen.', { type: 'error' });
 }
 
 // ── Rader: lägg till / ta bort ───────────────────────────────────────────────
@@ -1137,12 +1149,12 @@ export async function flSaveNote() {
   const title = titleEl.value.trim() || 'Utan rubrik';
   const body = bodyEl.value;
   if (note.title === title && note.body === body) { setNoteStatus('Sparad'); return; }
-  note.title = title;
-  note.body = body;
   try {
     const { error } = await window.db.from('family_lists')
       .update({ title, body }).eq('id', note.id);
     if (error) throw error;
+    note.title = title;
+    note.body = body;
     setNoteStatus('Sparad');
   } catch {
     setNoteStatus('Kunde inte spara');

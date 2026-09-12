@@ -47,6 +47,8 @@ function makeMockDb(initial = {}) {
     archives: (initial.archives || []).map((a) => ({ ...a })),
     seq: 1000,
     failItemsInsert: false,
+    failConvertUpdate: false,
+    failDeactivateUpdate: false,
   };
 
   const tableOf = (name) =>
@@ -102,6 +104,12 @@ function makeMockDb(initial = {}) {
           return { data: single ? inserted[0] : inserted, error: null };
         }
         if (this.op === "update") {
+          if (this.table === "shopping_items" && state.failConvertUpdate && this.payload?.source === "manual") {
+            return { data: null, error: { message: "simulerat konverteringsfel" } };
+          }
+          if (this.table === "shopping_lists" && state.failDeactivateUpdate && this.payload?.is_active === false) {
+            return { data: null, error: { message: "simulerat deaktiveringsfel" } };
+          }
           const hit = rows.filter((r) => matches(r, this.filters));
           hit.forEach((r) => Object.assign(r, this.payload));
           return { data: hit, error: null };
@@ -218,6 +226,26 @@ const itemNamed = (db, listId, prefix) =>
   assertEq(active.map((l) => l.id), [first.listId], "säkerhetsordning: gamla listan fortfarande (enda) aktiva");
 }
 
+// ── 4b. rebuildActiveList: deaktiveringsfel kastar, nya listan aktiveras inte ─
+{
+  const db = makeMockDb({
+    mealDays: [day("2026-07-20", { recipe_id: 1 })],
+    recipes: RECIPES,
+  });
+  const first = await rebuildActiveList({
+    householdId: HH, coverDates: ["2026-07-20"], recipes: RECIPES, database: db,
+  });
+  db._state.failDeactivateUpdate = true;
+  let threw = false;
+  try {
+    await rebuildActiveList({ householdId: HH, coverDates: ["2026-07-20"], recipes: RECIPES, database: db });
+  } catch { threw = true; }
+  db._state.failDeactivateUpdate = false;
+  assertTrue(threw, "deaktiveringsfel: rebuildActiveList kastar");
+  const active = db._state.lists.filter((l) => l.is_active);
+  assertEq(active.map((l) => l.id), [first.listId], "deaktiveringsfel: gamla listan fortfarande (enda) aktiva");
+}
+
 // ── 6. markRoundShopped: stämpel + konvertering till Egna tillägg ────────────
 {
   const db = makeMockDb({
@@ -241,6 +269,33 @@ const itemNamed = (db, listId, prefix) =>
   // Dubbeltryck: inga o-inhandlade dagar kvar → no-op
   const again = await markRoundShopped(HH, db);
   assertEq(again.shoppedDates, [], "mark_shopped: dubbeltryck är en no-op");
+}
+
+// ── 6b. markRoundShopped: konverteringsfel sätter inga stämplar; nästa anrop går igenom ─
+{
+  const db = makeMockDb({
+    mealDays: [day("2026-07-20", { recipe_id: 1 }), day("2026-07-21", { recipe_id: 2 })],
+    recipes: RECIPES,
+  });
+  const { listId } = await rebuildActiveList({
+    householdId: HH, coverDates: ["2026-07-20", "2026-07-21"], recipes: RECIPES, database: db,
+  });
+
+  db._state.failConvertUpdate = true;
+  let threw = false;
+  try {
+    await markRoundShopped(HH, db);
+  } catch { threw = true; }
+  assertTrue(threw, "konverteringsfel: markRoundShopped kastar");
+  assertTrue(db._state.mealDays.every((d) => !d.shopped_at), "konverteringsfel: inga dagar stämplade");
+  assertTrue(itemNamed(db, listId, "torsk").source === "recipe", "konverteringsfel: varorna orörda");
+
+  // Ett nytt anrop (utan felinjektion) ska nu slutföra hela rundan.
+  db._state.failConvertUpdate = false;
+  const retried = await markRoundShopped(HH, db);
+  assertEq(retried.shoppedDates, ["2026-07-20", "2026-07-21"], "konverteringsfel: nytt anrop stämplar båda dagarna");
+  assertTrue(db._state.mealDays.every((d) => !!d.shopped_at), "konverteringsfel: nytt anrop satte stämplarna");
+  assertTrue(itemNamed(db, listId, "torsk").source === "manual", "konverteringsfel: nytt anrop konverterade varorna");
 }
 
 // ── 7. Hela mitt-i-veckan-scenariot (spärren) ────────────────────────────────

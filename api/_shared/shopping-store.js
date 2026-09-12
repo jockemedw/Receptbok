@@ -173,8 +173,9 @@ export async function rebuildActiveList({
     if (itemsErr) throw itemsErr;
   }
 
-  await database.from("shopping_lists").update({ is_active: false })
+  const { error: deactErr } = await database.from("shopping_lists").update({ is_active: false })
     .eq("household_id", householdId).eq("is_active", true);
+  if (deactErr) throw new Error("Kunde inte stänga den gamla inköpslistan — prova igen.");
   const { error: actErr } = await database.from("shopping_lists")
     .update({ is_active: true }).eq("id", newList.id);
   if (actErr) throw actErr;
@@ -353,25 +354,23 @@ export async function markRoundShopped(householdId, database = db) {
   const dates = unshoppedDates(coverage);
   if (!dates.length) return { shoppedDates: [], converted: 0 };
 
-  const { error: stampErr } = await database
-    .from("meal_days")
-    .update({ shopped_at: new Date().toISOString() })
-    .eq("household_id", householdId)
-    .eq("shopping_list_id", list.id)
-    .is("shopped_at", null);
-  if (stampErr) throw new Error("Kunde inte markera dagarna som inhandlade — prova igen.");
-
   // Obockade receptvaror → Egna tillägg (Joakims beslut: inget tappas).
-  // Skafferivaror ("har hemma") hoppas över — de ska inte återuppstå som egna
-  // tillägg. Misslyckas pantry-läsningen behandlas skafferiet som tomt (hellre
-  // en överlevande vara för mycket än en tyst borttappad).
+  // Görs FÖRE stämplingen (Session-fynd R03+R08): konverteringen är idempotent
+  // — redan konverterade varor har source='manual' och matchar inte frågan
+  // nedan igen — så en misslyckad läsning/konvertering ska inte lämna dagarna
+  // stämplade som inhandlade. Är de stämplade utan att varorna hann konverteras
+  // ger nästa ombyggnad ({shoppedDates: [], converted: 0} på ett nytt anrop)
+  // ingen ny chans, för spärren är redan satt. Skafferivaror ("har hemma")
+  // hoppas över — de ska inte återuppstå som egna tillägg. Misslyckas
+  // pantry-läsningen behandlas skafferiet som tomt (hellre en överlevande vara
+  // för mycket än en tyst borttappad).
   const { data: items, error: itemsErr } = await database
     .from("shopping_items")
     .select("id, name")
     .eq("list_id", list.id)
     .eq("source", "recipe")
     .eq("checked", false);
-  if (itemsErr) throw new Error("Dagarna markerades, men varorna kunde inte flyttas till Egna tillägg — ladda om och prova igen.");
+  if (itemsErr) throw new Error("Kunde inte flytta varorna till Egna tillägg — prova igen.");
 
   let pantry = new Set();
   const { data: pantryRows, error: pantryErr } = await database
@@ -386,8 +385,16 @@ export async function markRoundShopped(householdId, database = db) {
       .from("shopping_items")
       .update({ source: "manual" })
       .in("id", toConvert.map((i) => i.id));
-    if (convErr) throw new Error("Dagarna markerades, men varorna kunde inte flyttas till Egna tillägg — ladda om och prova igen.");
+    if (convErr) throw new Error("Kunde inte flytta varorna till Egna tillägg — prova igen.");
   }
+
+  const { error: stampErr } = await database
+    .from("meal_days")
+    .update({ shopped_at: new Date().toISOString() })
+    .eq("household_id", householdId)
+    .eq("shopping_list_id", list.id)
+    .is("shopped_at", null);
+  if (stampErr) throw new Error("Varorna flyttades till Egna tillägg, men dagarna kunde inte markeras som inhandlade — ladda om och prova igen.");
 
   return { shoppedDates: dates, converted: toConvert.length };
 }

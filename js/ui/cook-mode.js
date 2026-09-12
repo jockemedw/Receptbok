@@ -41,26 +41,38 @@ function progressLabel(done, total) {
 // Ren visningsskalning: raden i receptet rörs aldrig, bara siffran på skärmen.
 // Rader utan tolkbar mängd (skafferivaror, "salt och peppar") lämnas orörda.
 const QTY_UNITS = 'kg|hg|g|l|dl|cl|ml|msk|tsk|krm|st|påsar|påse|burkar|burk|klyftor|klyfta|kvistar|kvist|skivor|skiva|bitar|bit|krukor|kruka|förp\\.?';
-const LEAD_RE  = new RegExp(`^(\\d+(?:[.,]\\d+)?)\\s*(${QTY_UNITS})?(?=\\s)\\s+(.+)$`, 'i');
+const FRAC_VAL = { '¼': 0.25, '½': 0.5, '¾': 0.75 };
+const LEAD_RE  = new RegExp(`^(\\d+(?:[.,]\\d+)?)?\\s*([¼½¾])?\\s*(${QTY_UNITS})?(?=\\s)\\s+(.+)$`, 'i');
 const PAREN_RE = new RegExp(`^(.+?)\\s*\\((\\d+(?:[.,]\\d+)?)\\s*(${QTY_UNITS})?\\)$`, 'i');
 
 function parseQty(raw) {
   const t = String(raw || '').trim();
   let m = t.match(LEAD_RE);
-  if (m) return { kind: 'lead', num: parseFloat(m[1].replace(',', '.')), unit: m[2] || '', rest: m[3] };
+  if (m && (m[1] || m[2])) {
+    const whole = m[1] ? parseFloat(m[1].replace(',', '.')) : 0;
+    const frac = m[2] ? FRAC_VAL[m[2]] : 0;
+    // qtyText = mängden exakt som den står i receptet — visas orörd vid faktor 1
+    return { kind: 'lead', num: whole + frac, unit: m[3] || '', rest: m[4], qtyText: t.slice(0, t.length - m[4].length).trim() };
+  }
   m = t.match(PAREN_RE);
-  if (m) return { kind: 'paren', num: parseFloat(m[2].replace(',', '.')), unit: m[3] || '', rest: m[1] };
+  if (m) return { kind: 'paren', num: parseFloat(m[2].replace(',', '.')), unit: m[3] || '', rest: m[1], qtyText: `${m[2]}${m[3] ? ' ' + m[3] : ''}` };
   return null;
 }
 
-// Vänlig avrundning (samma anda som inköpslistans #12): g/ml heltal,
-// övriga enheter kvartsprecision. Styck visas som blandat bråk (1½).
+// Vänlig avrundning (samma anda som inköpslistans #12): mängd-/volymenheter
+// (kg/l/dl/cl/ml/g) visas exakt skalade (upp till två decimaler, sv-SE,
+// utan onödiga nollor) — inget kvarts-golv. Övriga (msk/tsk/krm) behåller
+// kvartsprecision. Styck-artade enheter visas som blandat bråk (1½).
 const FRAC = { 0.25: '¼', 0.5: '½', 0.75: '¾' };
+const EXACT_UNITS = new Set(['kg', 'l', 'dl', 'cl', 'ml', 'g']);
 function fmtQty(value, unit) {
   const u = unit.toLowerCase();
-  if (u === 'g' || u === 'ml') return `${Math.max(1, Math.round(value))} ${unit}`;
+  if (EXACT_UNITS.has(u)) {
+    const s = Number(value.toFixed(2)).toLocaleString('sv-SE', { maximumFractionDigits: 2 });
+    return `${s} ${unit}`;
+  }
   const q = Math.max(0.25, Math.round(value * 4) / 4);
-  if (u === 'kg' || u === 'l' || u === 'dl' || u === 'cl' || u === 'msk' || u === 'tsk' || u === 'krm') {
+  if (u === 'msk' || u === 'tsk' || u === 'krm') {
     const s = (Math.round(q * 100) / 100).toLocaleString('sv-SE');
     return `${s} ${unit}`;
   }
@@ -77,7 +89,9 @@ let _cookServings = 4;
 function ingLineHtml(entry, factor) {
   const { raw, parsed } = entry;
   if (!parsed) return escapeHtml(raw);
-  const qty = `<b class="cook-qty${factor !== 1 ? ' scaled' : ''}">${fmtQty(parsed.num * factor, parsed.unit)}</b>`;
+  // Faktor 1: receptets egen mängdtext, oförändrad (R10) — men fortfarande fetstilt.
+  const qtyStr = factor === 1 ? parsed.qtyText : fmtQty(parsed.num * factor, parsed.unit);
+  const qty = `<b class="cook-qty${factor !== 1 ? ' scaled' : ''}">${escapeHtml(qtyStr)}</b>`;
   return parsed.kind === 'lead'
     ? `${qty} ${escapeHtml(parsed.rest)}`
     : `${escapeHtml(parsed.rest)} (${qty})`;

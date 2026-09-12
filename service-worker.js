@@ -11,7 +11,7 @@
 //
 // CACHE_VERSION bumpas när precache-listan ändras — gamla cachar städas i activate.
 
-const CACHE_VERSION = 'receptbok-v115';
+const CACHE_VERSION = 'receptbok-v116';
 
 const PRECACHE = [
   './',
@@ -53,17 +53,33 @@ self.addEventListener('fetch', (event) => {
   // över den cachade index.html (Session 143, Codex R14).
   if (req.mode === 'navigate') {
     const isStart = url.pathname.endsWith('/') || url.pathname.endsWith('/index.html');
-    event.respondWith(
-      fetch(req)
-        .then((res) => {
-          if (res.ok && isStart) {
-            const copy = res.clone();
-            event.waitUntil(caches.open(CACHE_VERSION).then((c) => c.put('./index.html', copy)));
-          }
-          return res;
-        })
-        .catch(() => caches.match('./index.html'))
-    );
+    const networkPromise = fetch(req)
+      .then((res) => {
+        if (res.ok && isStart) {
+          const copy = res.clone();
+          event.waitUntil(caches.open(CACHE_VERSION).then((c) => c.put('./index.html', copy)));
+        }
+        return res;
+      })
+      .catch(() => caches.match('./index.html'));
+    // Håll eventet vid liv tills nätsvaret kommit även när timeouten vinner —
+    // annars kan webbläsaren avbryta bakgrundshämtningen och cache-uppdateringen
+    // ovan uteblir tyst på just det sega nät den är till för. Löftet kan inte
+    // avvisas (catch ovan), så detta blockerar aldrig.
+    event.waitUntil(networkPromise);
+
+    // Om nätet inte svarar inom 4 s: visa cachad startsida direkt (om den finns)
+    // medan nätsvaret fortsätter i bakgrunden — annars vänta kvar på nätet.
+    const timeoutPromise = new Promise((resolve) => {
+      setTimeout(() => {
+        caches.match('./index.html').then((cached) => {
+          if (cached) resolve(cached);
+          // Ingen cache — låt networkPromise avgöra (resolve aldrig här).
+        });
+      }, 4000);
+    });
+
+    event.respondWith(Promise.race([networkPromise, timeoutPromise]));
     return;
   }
 
