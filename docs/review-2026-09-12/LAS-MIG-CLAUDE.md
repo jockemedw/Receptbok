@@ -41,6 +41,10 @@ Miljön var Edge via Playwright, 390 × 844 CSS-pixlar, syntetisk Supabase-data 
 
 **Använd inte siffrorna som iPhone-mätning eller bevis för produktionscache/offlinefunktion.** Harnessens generiska varmstartsrubrik antyder service worker, men den var blockerad i denna körning. Den verkliga typografin, Safari, mobilens suspendering och skarp tvåenhetssynk är inte verifierade.
 
+## Senare besked: förenklingar önskas
+
+Läs även [förenklingsrapporten](forenklingsrapport.md), som beskriver sju önskade åtgärder F01–F07, föreslagen ordning och kriterier för när de är klara. Joakims besked, ordagrant: "Spara rapporten - allt låter som åtgärder jag vill lösa". Detta dokumenterar önskad inriktning; åtgärderna är ännu inte genomförda.
+
 ## Produktbedömningen är lika viktig som buggarna
 
 Joakims ursprungliga mål var framför allt förslag på förbättringar och nya funktioner. Bedöm därför även rapportens produktprioriteringar, inte bara felkatalogen.
