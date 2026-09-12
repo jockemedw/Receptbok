@@ -1,0 +1,403 @@
+{
+  "environment": "Edge desktop engine, mobile viewport 390x844, service workers blocked, synthetic Supabase 120ms, stub fonts",
+  "results": {
+    "kallstart": {
+      "nav": {
+        "ttfb": 9,
+        "domInteractive": 17,
+        "dcl": 75
+      },
+      "resources": 31,
+      "resourceBytes": 722208,
+      "marks": [
+        {
+          "name": "js",
+          "t": 55
+        },
+        {
+          "name": "auth",
+          "t": 75
+        },
+        {
+          "name": "hushåll",
+          "t": 202
+        },
+        {
+          "name": "recept",
+          "t": 327
+        },
+        {
+          "name": "receptvy",
+          "t": 338
+        },
+        {
+          "name": "idag",
+          "t": 595
+        },
+        {
+          "name": "matsedel",
+          "t": 595
+        }
+      ],
+      "report": "Receptboken perf — 2026-09-12 09:50:10 · webbläsare\nNät: TTFB 9 ms · DOM 17 ms · DCL 75 ms\nFiler: 61 st · minst 1406 kB överfört\nStart: js 55 · auth 75 · hushåll 202 · recept 327 · receptvy 338 · idag 595 · matsedel 595 (ms från start)\nRender/flikar: render:Matsedel ×1 senast 1 max 1 · render:Idag ×2 senast 1 max 1",
+      "stubQueries": 11,
+      "stubByTable": {
+        "household_members": 1,
+        "recipes": 1,
+        "households": 1,
+        "weekly_plans": 1,
+        "shopping_lists": 1,
+        "plan_archives": 1,
+        "meal_days": 2,
+        "shopping_items": 1,
+        "pricing_status": 1,
+        "family_lists": 1
+      },
+      "channels": [
+        "meal_days:00000000-0000-4000-8000-000000000001"
+      ],
+      "domNodes": 4382,
+      "views": {
+        "idag": 75,
+        "matsedel": 206,
+        "recept": 3405,
+        "inkop": 16,
+        "listor": 0
+      },
+      "spans": {
+        "render:Matsedel": {
+          "count": 1,
+          "last": 1,
+          "max": 1
+        },
+        "render:Idag": {
+          "count": 2,
+          "last": 1,
+          "max": 1
+        }
+      },
+      "networkRequests": 32
+    },
+    "flikar": {
+      "timings": [
+        {
+          "tab": "shop",
+          "ms": 386,
+          "frågor": 4,
+          "laddning": "×1 max 375 ms"
+        },
+        {
+          "tab": "vecka",
+          "ms": 11,
+          "frågor": 0,
+          "laddning": "—"
+        },
+        {
+          "tab": "recept",
+          "ms": 6,
+          "frågor": 0,
+          "laddning": "—"
+        },
+        {
+          "tab": "listor",
+          "ms": 6,
+          "frågor": 2,
+          "laddning": "×1 max 246 ms"
+        },
+        {
+          "tab": "idag",
+          "ms": 6,
+          "frågor": 1,
+          "laddning": "—"
+        }
+      ],
+      "nav": {
+        "ttfb": 9,
+        "domInteractive": 17,
+        "dcl": 75
+      },
+      "resources": 33,
+      "resourceBytes": 722904,
+      "marks": [
+        {
+          "name": "js",
+          "t": 55
+        },
+        {
+          "name": "auth",
+          "t": 75
+        },
+        {
+          "name": "hushåll",
+          "t": 202
+        },
+        {
+          "name": "recept",
+          "t": 327
+        },
+        {
+          "name": "receptvy",
+          "t": 338
+        },
+        {
+          "name": "idag",
+          "t": 595
+        },
+        {
+          "name": "matsedel",
+          "t": 595
+        }
+      ],
+      "report": "Receptboken perf — 2026-09-12 09:50:13 · webbläsare\nNät: TTFB 9 ms · DOM 17 ms · DCL 75 ms\nFiler: 61 st · minst 1406 kB överfört\nStart: js 55 · auth 75 · hushåll 202 · recept 327 · receptvy 338 · idag 595 · matsedel 595 (ms från start)\nAPI: 2 st — /api/dispatch-to-willys 3, /api/shopping 2\nRender/flikar: render:Matsedel ×6 senast 0 max 1 · render:Idag ×4 senast 0 max 1 · flikbyte:shop ×1 senast 2 max 2 · flik:Inköp ×1 senast 375 max 375 · flikbyte:vecka ×1 senast 10 max 10 · flikbyte:recept ×1 senast 3 max 3 · flikbyte:listor ×1 senast 2 max 2 · flik:Listor ×1 senast 246 max 246 · flikbyte:idag ×1 senast 1 max 1",
+      "stubQueries": 18,
+      "stubByTable": {
+        "household_members": 1,
+        "recipes": 1,
+        "households": 1,
+        "weekly_plans": 1,
+        "shopping_lists": 2,
+        "plan_archives": 1,
+        "meal_days": 3,
+        "shopping_items": 2,
+        "pricing_status": 1,
+        "family_lists": 3,
+        "pantry_items": 1,
+        "family_list_items": 1
+      },
+      "channels": [
+        "meal_days:00000000-0000-4000-8000-000000000001",
+        "shopping_lists:00000000-0000-4000-8000-000000000001",
+        "shopping_items:list-0001",
+        "family_lists:00000000-0000-4000-8000-000000000001"
+      ],
+      "domNodes": 5191,
+      "views": {
+        "idag": 75,
+        "matsedel": 206,
+        "recept": 3405,
+        "inkop": 775,
+        "listor": 50
+      },
+      "spans": {
+        "render:Matsedel": {
+          "count": 6,
+          "last": 0,
+          "max": 1
+        },
+        "render:Idag": {
+          "count": 4,
+          "last": 0,
+          "max": 1
+        },
+        "flikbyte:shop": {
+          "count": 1,
+          "last": 2,
+          "max": 2
+        },
+        "flik:Inköp": {
+          "count": 1,
+          "last": 375,
+          "max": 375
+        },
+        "flikbyte:vecka": {
+          "count": 1,
+          "last": 10,
+          "max": 10
+        },
+        "flikbyte:recept": {
+          "count": 1,
+          "last": 3,
+          "max": 3
+        },
+        "flikbyte:listor": {
+          "count": 1,
+          "last": 2,
+          "max": 2
+        },
+        "flik:Listor": {
+          "count": 1,
+          "last": 246,
+          "max": 246
+        },
+        "flikbyte:idag": {
+          "count": 1,
+          "last": 1,
+          "max": 1
+        }
+      }
+    },
+    "flikarAndraRundan": {
+      "timings": [
+        {
+          "tab": "shop",
+          "ms": 375,
+          "frågor": 4,
+          "laddning": "×2 max 375 ms"
+        },
+        {
+          "tab": "vecka",
+          "ms": 7,
+          "frågor": 0,
+          "laddning": "—"
+        },
+        {
+          "tab": "recept",
+          "ms": 7,
+          "frågor": 0,
+          "laddning": "—"
+        },
+        {
+          "tab": "listor",
+          "ms": 6,
+          "frågor": 2,
+          "laddning": "×2 max 246 ms"
+        },
+        {
+          "tab": "idag",
+          "ms": 6,
+          "frågor": 1,
+          "laddning": "—"
+        }
+      ],
+      "stubQueries": 7,
+      "spans": {
+        "render:Matsedel": {
+          "count": 11,
+          "last": 0,
+          "max": 1
+        },
+        "render:Idag": {
+          "count": 6,
+          "last": 1,
+          "max": 1
+        },
+        "flikbyte:shop": {
+          "count": 2,
+          "last": 1,
+          "max": 2
+        },
+        "flik:Inköp": {
+          "count": 2,
+          "last": 368,
+          "max": 375
+        },
+        "flikbyte:vecka": {
+          "count": 2,
+          "last": 2,
+          "max": 10
+        },
+        "flikbyte:recept": {
+          "count": 2,
+          "last": 2,
+          "max": 3
+        },
+        "flikbyte:listor": {
+          "count": 2,
+          "last": 2,
+          "max": 2
+        },
+        "flik:Listor": {
+          "count": 2,
+          "last": 244,
+          "max": 246
+        },
+        "flikbyte:idag": {
+          "count": 2,
+          "last": 1,
+          "max": 1
+        }
+      }
+    },
+    "varmstart": {
+      "nav": {
+        "ttfb": 3,
+        "domInteractive": 12,
+        "dcl": 45
+      },
+      "resources": 31,
+      "resourceBytes": 722208,
+      "marks": [
+        {
+          "name": "js",
+          "t": 43
+        },
+        {
+          "name": "auth",
+          "t": 45
+        },
+        {
+          "name": "hushåll",
+          "t": 45
+        },
+        {
+          "name": "recept",
+          "t": 166
+        },
+        {
+          "name": "receptvy",
+          "t": 173
+        },
+        {
+          "name": "idag",
+          "t": 429
+        },
+        {
+          "name": "matsedel",
+          "t": 429
+        }
+      ],
+      "report": "Receptboken perf — 2026-09-12 09:50:18 · webbläsare\nNät: TTFB 3 ms · DOM 12 ms · DCL 45 ms\nFiler: 61 st · minst 1406 kB överfört\nStart: js 43 · auth 45 · hushåll 45 · recept 166 · receptvy 173 · idag 429 · matsedel 429 (ms från start)\nRender/flikar: render:Matsedel ×1 senast 1 max 1 · render:Idag ×2 senast 1 max 1",
+      "stubQueries": 10,
+      "stubByTable": {
+        "recipes": 1,
+        "households": 1,
+        "weekly_plans": 1,
+        "shopping_lists": 1,
+        "plan_archives": 1,
+        "meal_days": 2,
+        "shopping_items": 1,
+        "pricing_status": 1,
+        "family_lists": 1
+      },
+      "channels": [
+        "meal_days:00000000-0000-4000-8000-000000000001"
+      ],
+      "domNodes": 4382,
+      "views": {
+        "idag": 75,
+        "matsedel": 206,
+        "recept": 3405,
+        "inkop": 16,
+        "listor": 0
+      },
+      "spans": {
+        "render:Matsedel": {
+          "count": 1,
+          "last": 1,
+          "max": 1
+        },
+        "render:Idag": {
+          "count": 2,
+          "last": 1,
+          "max": 1
+        }
+      },
+      "networkRequests": 32
+    },
+    "utanFlagga": {
+      "overlay": false,
+      "perfMark": "undefined",
+      "fel": []
+    },
+    "fel": [],
+    "apiAnrop": [
+      "/api/dispatch-to-willys",
+      "/api/shopping",
+      "/api/dispatch-to-willys",
+      "/api/dispatch-to-willys",
+      "/api/shopping",
+      "/api/dispatch-to-willys"
+    ],
+    "supabaseLackage": []
+  }
+}
