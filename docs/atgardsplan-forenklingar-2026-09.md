@@ -34,7 +34,7 @@ Astras föreslagna ordning behålls i sak; här är den omsatt i projektets term
 storlek, mutationsklass och beslutspunkter. R-arbetet (etapp A–E i `roadmap.html`)
 löper parallellt och trängs inte undan.
 
-### F-etapp 1 — byggs direkt: F05 *(S · render-only · inget beslut behövs)*
+### F-etapp 1 — byggs direkt: F05 *(S · render-only · inget beslut behövs)* — **BYGGD Session 146** (app v164/SW v117, väntar mobilverifiering)
 
 Ta bort startbekräftelsen i `handlaModeFabClick` — kundvagns-FAB:en växlar läget med ett
 tryck åt båda hållen. Läget förblir en vy-preferens i minnet (nollställs vid omladdning),

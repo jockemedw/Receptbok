@@ -1,6 +1,16 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–144. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–145. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+## Session 145 — Åtgärdsplan för Astras förenklingsrapport F01–F07 (docs + roadmap.html, render-only, SKARP).
+
+Astra/Codex sparade en uppföljningsrapport (`docs/review-2026-09-12/forenklingsrapport.md`, commit `631c43b`): sju områden där appen bär regler från en äldre veckogenerator — F01 dagens ursprung styr åtgärderna · F02 bekräftelsens oklara betydelse · F03 "Vi äter ute" skjuter schemat utan val · F04 inköpsstatusarnas mekanik läcker · F05 startdialog för handla-läget · F06 wrap()-lager över `switchTab`/`loadWeeklyPlan` · F07 preferenser via GitHub-JSON. Joakims besked ordagrant: "Spara rapporten - allt låter som åtgärder jag vill lösa". Uppdrag: skriv en åtgärdsplan för alla punkter.
+
+**Verifiering:** alla sju kontrollerade mot koden EFTER Session 144 — samtliga gäller fortfarande (rapporten skrevs mot `31a8b8c`; R03/R06/R08-fixarna gjorde grunden säkrare men löste ingen F-punkt). Belägg per punkt i planens verifieringstabell.
+
+**Planen** (`docs/atgardsplan-forenklingar-2026-09.md` + sektion i `roadmap.html`): **F-etapp 1** = F05 direkt (S, render-only, inget beslut). **F-etapp 2** = fem beslutsfrågor till Joakim (tillagda i roadmap-sidans beslutslista): F02-lagring (rekommendation: förslag som JSON-kolumn på `weekly_plans` + apply-RPC — atomär per konstruktion, löser R02-klassen strukturellt), "Använd förslaget" som språk, "Spara till senare" byggs inte (rekommendation — täcks av "flytta till valt datum"), `carried_over_at`-kolumn på `shopping_items`, F07 buntas med backlog #5 + GITHUB_PAT-avveckling. **F-etapp 3** = F02 → F01 (steg 1 render-only enhetliga dag-sheet-åtgärder; steg 2 plan som metadata — kartlägg `plan_id`-beroenden först). Kräver att S144-fixarna mobilverifierats först. **F-etapp 4** = F03 (tre uttryckliga val i "Ingen middag"-sheeten, R07 bakas in — samma kod) + F04 (märkning + gruppering "Kvar sedan förra rundan"). **F-etapp 5** = F06 stegvis via liten `notifyDataChanged()` när F3 ändå rör filerna, F07 fristående. Samspel: produktetapp D väntar på F-etapp 3; utredningen "flera levande matsedlar" (S134) löses av F01 steg 2.
+
+Inga appfiler rörda → inga versionsbumpar, ingen mobilverifiering behövdes för sessionen (roadmap.html precachas inte av SW:n).
 
 ## Session 144 — Etapp A byggd + R02/R03/R08: tio Codex-fynd åtgärdade via workflow (datamuterande, SKARP, ej mobil-verifierad).
 
