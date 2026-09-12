@@ -521,7 +521,7 @@
   </table></div>
 
   <div class="prose" style="margin-top:1rem">
-    <p><strong>Ordningen.</strong> F05 kräver inget beslut och byggs direkt. F01+F02 är modellbeslut som tas tillsammans (fem frågor i beslutslistan nedan) och byggs som F-etapp 3 — men först efter att Session 144-fixarna mobilverifierats, så att ombygget inte staplas på o-verifierad kod. F03/F04 följer modellen; F06 tas stegvis i filer som ändå rörs; F07 kan gå när som helst ihop med #5-migrationen. Produktetapp D (veckomall, favoriter) bör vänta på F-etapp 3 — annars byggs den på en modell som görs om direkt efteråt. Den öppna utredningen "flera levande matsedlar" (Session 134) löses av F01 steg 2 och stängs då.</p>
+    <p><strong>Ordningen.</strong> F05 är byggd. De fem modellbesluten för F01+F02 m.fl. är <strong>fattade 2026-09-12</strong> (alla enligt rekommendationen — se beslutslistan nedan); F-etapp 3 byggs efter att Session 144-fixarna mobilverifierats, så att ombygget inte staplas på o-verifierad kod. F03/F04 följer modellen; F06 tas stegvis i filer som ändå rörs; F07 kan gå när som helst ihop med #5-migrationen. Produktetapp D (veckomall, favoriter) bör vänta på F-etapp 3 — annars byggs den på en modell som görs om direkt efteråt. Den öppna utredningen "flera levande matsedlar" (Session 134) löses av F01 steg 2 och stängs då.</p>
     <p><strong>"Spara till senare" byggs inte</strong> (F03): det vore ännu ett dolt tillstånd — precis det förenklingsrapporten vill bort från. "Flytta till valt datum" täcker behovet.</p>
   </div>
 </section>
@@ -539,11 +539,7 @@
     <li><b>Batch B före Batch A?</b><span>Mätningen 2026-09-05 visade 11,8 s innan JavaScript startade. En mätning till med appen i förgrunden avgör ordningen i prestandaplanen.</span></li>
     <li><b>Hemköp-inloggningen (Session 136)</b><span>Skarp kod, men fungerar inte förrän tre steg gjorts av Joakim (se status.md). Alternativt: ta bort tills det behövs.</span></li>
     <li><b>Supabase security advisor — två WARN</b><span><code>function_search_path_mutable</code> (billig, idempotent SQL) och läckta-lösenord-skyddet (dashboardinställning). Båda blir viktiga vid M1.</span></li>
-    <li><b>F02 — förslagslagringen</b><span>Förslag som JSON-kolumn på <code>weekly_plans</code> + apply-RPC (rekommenderas — atomär per konstruktion) eller egen tabell? Migration → ditt OK.</span></li>
-    <li><b>F02 — språket</b><span>Får "Använd förslaget" ersätta "Bekräfta matsedeln" i UI:t?</span></li>
-    <li><b>F03 — "Spara till senare"</b><span>Rekommendation: byggs inte — "flytta till valt datum" täcker behovet utan ett nytt dolt tillstånd. Bekräfta.</span></li>
-    <li><b>F04 — märkningskolumnen</b><span>OK till nullable <code>carried_over_at</code> på <code>shopping_items</code> (liten idempotent migration) så "kvar sedan förra rundan" går att skilja från äkta egna tillägg?</span></li>
-    <li><b>F07 — migrationspaketet</b><span>OK att bunta preferens-flytten med backlog #5 (cookies → Supabase) och därefter avveckla <code>GITHUB_PAT</code>-vägen?</span></li>
+    <li><b>✅ F-besluten 1–5 — FATTADE 2026-09-12</b><span>Alla fem enligt rekommendationen (interaktivt, Session 146): F02 = JSON-kolumn på <code>weekly_plans</code> + apply-RPC · "Använd förslaget" ersätter "Bekräfta matsedeln" · F03 "Spara till senare" byggs inte · F04 <code>carried_over_at</code>-kolumnen ja · F07 buntas med backlog #5, GITHUB_PAT-vägen avvecklas efteråt. Migrationerna körs fortfarande bara på uttryckligt klartecken i den session som kör dem. F-etapp 3 startar efter mobilverifieringen av Session 144.</span></li>
   </ul>
 </section>
 

@@ -141,15 +141,18 @@ Därefter avvecklas `api/_shared/github.js` + `GITHUB_PAT` (sista konsumenten) o
 - **Öppna utredningen "flera levande matsedlar"** (status.md, Session 134) *löses* av
   F01 steg 2: när datumets middag är grundmodellen finns ingen "gammal plan" att låsa.
 
-## Beslut som behövs innan bygget (F-etapp 2)
+## Beslut — FATTADE av Joakim 2026-09-12 (interaktivt, Session 146)
 
-1. **F02-lagring:** förslag som JSON-kolumn på `weekly_plans` + apply-RPC
-   *(rekommenderas — minst yta, atomär per konstruktion)*, eller egen tabell?
-   Kräver migration → ditt OK enligt migrationsregeln.
-2. **F02-språk:** får "Använd förslaget" ersätta "Bekräfta matsedeln" i UI:t?
-3. **F03:** bekräfta att *"Spara till senare" inte byggs* — "flytta till valt datum" täcker det.
-4. **F04:** OK till kolumnen `carried_over_at` på `shopping_items` (liten idempotent migration)?
-5. **F07:** OK att bunta med backlog #5 i ett migrationspaket, och att `GITHUB_PAT`-vägen
-   avvecklas när preferenserna flyttat?
+Alla fem enligt rekommendationen:
 
-F-etapp 1 (F05) kräver inget beslut och byggs på nästa "kör".
+1. **F02-lagring:** förslag som **JSON-kolumn på `weekly_plans` + apply-RPC**. Migrationen
+   skrivs som idempotent fil i `db/migrations/` och körs på klartecken i den sessionen
+   (migrationsregeln gäller fortfarande — beslutet här är inriktningen, inte körningen).
+2. **F02-språk:** **"Använd förslaget"** ersätter "Bekräfta matsedeln".
+3. **F03:** **"Spara till senare" byggs inte** — "flytta till valt datum" täcker behovet.
+4. **F04:** **Ja** till kolumnen `carried_over_at` på `shopping_items`.
+5. **F07:** **Ja** — buntas med backlog #5 i ett migrationspaket; `GITHUB_PAT`-/gist-vägarna
+   avvecklas när båda flyttat (repo-JSON-filerna raderas inte utan separat OK).
+
+**F-etapp 2 är därmed klar.** Nästa steg är F-etapp 3 (F02 → F01) — startvillkoret som
+återstår är mobilverifieringen av Session 144-fixarna (kön i `docs/status.md`).
