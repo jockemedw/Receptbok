@@ -1312,18 +1312,15 @@ export function copyShoppingList() {
   });
 }
 
-// Rund handla-läge-knapp (FAB över plusset). Start kräver en bekräftelse —
-// avstängning sker direkt (man är klar, ingen fråga behövs).
-export async function handlaModeFabClick() {
-  if (!window._handlaMode) {
-    const ok = await window.confirmDialog({
-      title: 'Starta handla-läge?',
-      message: 'Medan ni handlar sjunker bockade varor ner under strecket "I korgen" så listan alltid visar det som är kvar att plocka. Tryck på kundvagnen igen när ni är klara.',
-      confirmLabel: 'Starta',
-    });
-    if (!ok) return;
-  }
+// Rund handla-läge-knapp (FAB över plusset). Ett tryck på, ett tryck av —
+// ingen bekräftelse (F05): sorteringen är direkt reversibel och rör ingen data.
+// En kort toast vid start ersätter den gamla dialogens förklaring.
+export function handlaModeFabClick() {
+  const starting = !window._handlaMode;
   toggleHandlaMode();
+  if (starting) {
+    window.showToast?.('Handla-läge — bockade varor lägger sig under "I korgen". Tryck på kundvagnen igen när ni är klara.');
+  }
 }
 
 // ── Flytande + : lägg till egen vara (ersätter gamla sektionen längst ner) ───
