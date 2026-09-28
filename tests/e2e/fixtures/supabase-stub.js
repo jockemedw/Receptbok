@@ -34,7 +34,10 @@ function note(table, op) {
 const iso = (d) => d.toISOString().slice(0, 10);
 const addDays = (base, n) => { const d = new Date(base); d.setDate(d.getDate() + n); return d; };
 const TODAY = new Date();
-const MONDAY = addDays(TODAY, -((TODAY.getDay() + 6) % 7));
+// window.__planOffset (dagar, sätts av harnessen via addInitScript) flyttar
+// planen och de egna dagarna framåt — t.ex. 7 = planen ligger nästa vecka.
+const PLAN_OFFSET = Number(window.__planOffset) || 0;
+const MONDAY = addDays(TODAY, -((TODAY.getDay() + 6) % 7) + PLAN_OFFSET);
 
 const PROTEINS = ['fisk', 'kyckling', 'kött', 'fläsk', 'vegetarisk'];
 const TYPES = ['soppa', 'pasta', 'wok', 'ugn', 'sallad', 'gryta', 'ramen'];
@@ -179,6 +182,9 @@ const TABLES = {
   family_list_items: FAMILY_LIST_ITEMS,
   recipe_history: [],
 };
+// Harnessens API-stubbar (t.ex. /api/replace-recipe) speglar serverns skrivning
+// hit, så en senare omhämtning ser samma tillstånd som API-svaret.
+window.__stubTables = TABLES;
 
 // ── Frågebyggare (thenable, som PostgREST) ───────────────────────────────────
 
@@ -272,12 +278,19 @@ class Query {
 }
 
 // ── Realtime-kanaler (ingen websocket — bara ytan) ───────────────────────────
+// Handlers som registreras via channel().on('postgres_changes', {table}, cb)
+// sparas, så ett scenario kan spela upp ett event med window.__stubEmit.
+
+const handlers = [];
 
 function makeChannel(name) {
   stats.channels.push(name);
   const ch = {
     name,
-    on() { return ch; },
+    on(type, filter, cb) {
+      if (typeof cb === 'function') handlers.push({ channel: name, type, table: filter?.table || null, cb });
+      return ch;
+    },
     subscribe(cb) { if (typeof cb === 'function') setTimeout(() => cb('SUBSCRIBED'), 0); return ch; },
     unsubscribe() { return Promise.resolve('ok'); },
   };
@@ -303,6 +316,18 @@ const auth = {
     if (typeof cb === 'function') setTimeout(() => cb('INITIAL_SESSION', SESSION), 0);
     return { data: { subscription: { unsubscribe() {} } } };
   },
+};
+
+// Spela upp ett postgres_changes-event för tabellen. Returnerar antal handlers
+// som fick eventet (0 = ingen lyssnar — scenariot bör rapportera det).
+window.__stubEmit = (table, payload = {}) => {
+  let n = 0;
+  for (const h of handlers) {
+    if (h.table !== table) continue;
+    n++;
+    h.cb({ schema: 'public', table, eventType: 'UPDATE', new: {}, old: {}, ...payload });
+  }
+  return n;
 };
 
 export function createClient() {
