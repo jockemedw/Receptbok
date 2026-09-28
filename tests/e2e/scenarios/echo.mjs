@@ -17,6 +17,8 @@
 //      listans rad-id.
 //   f) indikator: dagoperation — snabbt svar visar ingen helskärmsslöja, långsamt
 //      visar den efter ~250 ms (skärmdumpar i ljust/mörkt med --shots).
+//   g) gammalListtäckning: en dagoperation efter listombygget får inte lägga
+//      tillbaka e):s gamla täckning (coveredDates) eller nollställa bockningar.
 //
 // Failar (exitkod 1) på JS-fel, läckta Supabase-anrop och brutna förväntningar.
 
@@ -236,6 +238,42 @@ export async function run({ args, browserName = 'chromium', latency = 120 }) {
     };
     out.indikator = { slöjaEfterMs: await overlayRun(apiLatency, null) };
     check(out.indikator.slöjaEfterMs == null || out.indikator.slöjaEfterMs >= 230, 'f) slöjan visades före 250 ms');
+
+    // g) gammalListtäckning: efter listombygget (e) flyttar en dagoperation
+    //    eDays middag (och dess listpekare) till en annan dag utan att bygga om
+    //    listan. Klienten får INTE återanvända e):s gamla coveredDates och sätta
+    //    tillbaka pekaren på eDay — och bockningen från e) ska ligga kvar.
+    {
+      const target = await page.evaluate(({ eDay, c }) => {
+        const T = window.__stubTables;
+        const rows = T.meal_days.filter((r) => r.plan_id != null);
+        const from = rows.find((r) => r.date === eDay);
+        const to = rows.find((r) => r.date !== eDay && r.date !== c && !r.shopping_list_id && !r.shopped_at && r.recipe_id != null);
+        if (!from || !to) return null;
+        // Som swap i day-ops: hela innehållet (inkl. listpekaren) byter datum.
+        const keys = ['recipe_id', 'recipe_title_snapshot', 'shopping_list_id', 'saving', 'saving_matches', 'locked', 'blocked', 'shopped_at'];
+        const tmp = Object.fromEntries(keys.map((k) => [k, from[k]]));
+        for (const k of keys) { from[k] = to[k]; to[k] = tmp[k]; }
+        return to.date;
+      }, { eDay, c });
+      const g = { flyttadTill: target };
+      if (target) {
+        await overlayRun(0, null);   // en dagoperation (stubben svarar med databasens läge, utan shoppingList)
+        const st = await page.evaluate(({ eDay, target, key }) => ({
+          eDayListId: window._lastPlan.days.find((d) => d.date === eDay)?.listId ?? null,
+          målListId: window._lastPlan.days.find((d) => d.date === target)?.listId ?? null,
+          dbEDay: window.__stubTables.meal_days.find((r) => r.date === eDay && r.plan_id != null)?.shopping_list_id ?? null,
+          dbMål: window.__stubTables.meal_days.find((r) => r.date === target && r.plan_id != null)?.shopping_list_id ?? null,
+          eDayPåListan: !!window._timelineByDate?.[eDay]?.onList,
+          bockKvar: !!window._checkedItems?.[key],
+        }), { eDay, target, key: e.bockadNyckel });
+        Object.assign(g, st);
+        check(st.eDayListId === st.dbEDay && st.målListId === st.dbMål, 'g) gammal listtäckning skrevs över dagoperationens läge');
+        check(!st.eDayPåListan, 'g) den flyttade dagen visar fortfarande "på listan"');
+        check(st.bockKvar, 'g) bockningen från e) försvann efter dagoperationen');
+      }
+      out.gammalListtäckning = g;
+    }
     if (shots) {
       const { mkdir } = await import('node:fs/promises');
       await mkdir(shots, { recursive: true });

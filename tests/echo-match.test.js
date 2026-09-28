@@ -33,8 +33,8 @@ function assertEq(actual, expected, desc) {
 
 const plan = () => ({
   days: [
-    { date: "2026-09-28", recipeId: 3, blocked: false, shoppedAt: null, listId: "L1" },
-    { date: "2026-09-29", recipeId: 7, blocked: false, shoppedAt: "2026-09-27T10:00:00+00:00", listId: "L0" },
+    { date: "2026-09-28", recipe: "T", recipeId: 3, locked: false, saving: 0, savingMatches: [], blocked: false, shoppedAt: null, listId: "L1" },
+    { date: "2026-09-29", recipe: "T", recipeId: 7, blocked: false, shoppedAt: "2026-09-27T10:00:00+00:00", listId: "L0" },
     { date: "2026-09-30", recipeId: null, blocked: true, shoppedAt: null, listId: null },
   ],
 });
@@ -57,7 +57,7 @@ const customRow = (over = {}) => ({
 // ── 1. Exakt eko ─────────────────────────────────────────────────────────────
 {
   assertEq(mealDayRowMatches(planRow(), plan(), custom()), true, "plandag: exakt eko känns igen");
-  assertEq(mealDayRowMatches(planRow({ date: "2026-09-30", recipe_id: null, blocked: true, shopping_list_id: null }), plan(), custom()),
+  assertEq(mealDayRowMatches(planRow({ date: "2026-09-30", recipe_id: null, recipe_title_snapshot: null, blocked: true, shopping_list_id: null }), plan(), custom()),
     true, "fri plandag: exakt eko känns igen");
   assertEq(mealDayRowMatches(customRow(), plan(), custom()), true, "egen dag (notering): exakt eko känns igen");
   assertEq(mealDayRowMatches(customRow({ date: "2026-10-06", recipe_id: 42, custom_note: null, shopping_list_id: "L1" }), plan(), custom()),
@@ -73,6 +73,24 @@ const customRow = (over = {}) => ({
   assertEq(mealDayRowMatches(customRow({ custom_note: "Tacos" }), plan(), custom()), false, "ändrad notering → omhämtning");
   assertEq(mealDayRowMatches(customRow({ date: "2026-10-07" }), plan(), custom()), false, "okänd egen dag → omhämtning");
   assertEq(mealDayRowMatches(planRow({ date: "2026-12-01" }), plan(), custom()), false, "plandag utanför lokal plan → omhämtning");
+}
+
+// ── 2b. Extrafält (jämförs när eventet bär dem) ─────────────────────────────
+{
+  assertEq(mealDayRowMatches(planRow({ locked: true }), plan(), custom()), false, "låst av partnern → omhämtning");
+  assertEq(mealDayRowMatches(planRow({ saving: 25 }), plan(), custom()), false, "ny besparing → omhämtning");
+  assertEq(mealDayRowMatches(planRow({ saving_matches: [{ n: "x" }] }), plan(), custom()), false, "nya besparingsträffar → omhämtning");
+  assertEq(mealDayRowMatches(planRow({ recipe_title_snapshot: "Annat" }), plan(), custom()), false, "ändrad rätt-titel → omhämtning");
+  assertEq(mealDayRowMatches(planRow({ saving: null, saving_matches: null }), plan(), custom()), true, "lokal 0/[] = serverns null (ingen besparing)");
+  const pm = plan();
+  pm.days[0].savingMatches = [{ name: "lax", kr: 20 }];
+  pm.days[0].saving = 20;
+  assertEq(mealDayRowMatches(planRow({ saving: 20, saving_matches: [{ kr: 20, name: "lax" }] }), pm, custom()), true,
+    "besparingsträffar: jsonb-omsorterade nycklar → träff");
+  const withId = { ...plan(), id: "P" };
+  assertEq(mealDayRowMatches(planRow(), withId, custom()), true, "samma plan-id → träff");
+  assertEq(mealDayRowMatches(planRow({ plan_id: "P2" }), withId, custom()), false, "ny plan (annat plan_id) → omhämtning");
+  assertEq(mealDayRowMatches(customRow({ recipe_title_snapshot: "Ny" }), plan(), custom()), false, "egen dag: ändrad titel → omhämtning");
 }
 
 // ── 3. Saknade fält = okänt ─────────────────────────────────────────────────

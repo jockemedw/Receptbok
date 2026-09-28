@@ -955,9 +955,13 @@ function weekRecipeIds() {
   return (window._lastPlan?.days || []).map(d => d.recipeId).filter(id => id != null);
 }
 
-function rerender(plan, shop) {
-  window.renderWeeklyPlanData(plan, shop, false, window._planArchive, window._customDays);
-  if (shop && window.renderShoppingData) window.renderShoppingData(shop);
+// freshShop = inköpslistan ur DETTA API-svar (eller inget). Bara ett färskt
+// svar får ritas/adopteras av Inköp-fliken — ett återanvänt _lastShop bär
+// gammal täckning och skulle flytta "på listan"-pekare tillbaka till dagar som
+// inte längre ligger på listan (flytt/byte bygger inte om listan).
+function rerender(plan, freshShop = null) {
+  window.renderWeeklyPlanData(plan, freshShop || window._lastShop, false, window._planArchive, window._customDays);
+  if (freshShop && window.renderShoppingData) window.renderShoppingData(freshShop);
 }
 
 // Nyss utbytta recept per datum (bara i minnet, denna session) — skickas som
@@ -1088,7 +1092,7 @@ window.dlxShuffle = async function (date) {
     suppressEcho();
     _pendingDates.delete(date);
     _shufflingDates.delete(date);
-    rerender(window._lastPlan, data.shoppingList || window._lastShop);
+    rerender(window._lastPlan, data.shoppingList || null);
     dlxFlashDates([date]);
   } catch (e) {
     window.showToast?.(dlxUserMessage(e, 'Kunde inte byta recept — prova igen.'), { type: 'error' });
@@ -1113,7 +1117,7 @@ async function shuffleOptimistic(date, day, cand) {
   window.suppressPlanEcho?.();
   window.updateLastPlanDay(date, cand.id, cand.title);
   _pendingDates.add(date);
-  rerender(window._lastPlan, window._lastShop);
+  rerender(window._lastPlan);
   dlxFlashDates([date]);
   try {
     const res = await window.apiFetch('/api/replace-recipe', {
@@ -1130,7 +1134,7 @@ async function shuffleOptimistic(date, day, cand) {
     if (changed) window.updateLastPlanDay(date, data.recipeId, data.recipe);
     _pendingDates.delete(date);
     if (changed || data.shoppingList) {
-      rerender(window._lastPlan, data.shoppingList || window._lastShop);
+      rerender(window._lastPlan, data.shoppingList || null);
       if (changed) dlxFlashDates([date]);
     }
   } catch (e) {
@@ -1139,7 +1143,7 @@ async function shuffleOptimistic(date, day, cand) {
     if (d && d.recipeId === cand.id) Object.assign(d, snapshot);
     _shufflePreviews.delete(date);
     _pendingDates.delete(date);
-    rerender(window._lastPlan, window._lastShop);
+    rerender(window._lastPlan);
     window.showToast?.(dlxUserMessage(e, 'Kunde inte byta recept — prova igen.'), { type: 'error' });
   } finally {
     window.dlxSetPending(date, false);
@@ -1220,7 +1224,7 @@ async function runDayOp(body, { label, fallback, flash = null } = {}) {
     } else {
       // rerender ritar även inköpslistan ur svaret (renderShoppingData tar över
       // nya listans id:n) — ingen separat omladdning av Inköp-fliken.
-      rerender(data.weeklyPlan || window._lastPlan, data.shoppingList || window._lastShop);
+      rerender(data.weeklyPlan || window._lastPlan, data.shoppingList || null);
     }
     const dates = flash ? flash(data) : [];
     if (dates.length) dlxFlashDates(dates);

@@ -380,6 +380,7 @@ async function loadActivePlanFromSupabase(householdId) {
     .eq('plan_id', wp.id)
     .order('date');
   return {
+    id:          wp.id,   // för realtime-ekokontrollen (plan_id-värdet)
     generated:   wp.generated_at,
     startDate:   wp.start_date,
     endDate:     wp.end_date,
@@ -481,6 +482,17 @@ function rerenderPlan() {
   renderWeeklyPlanData(window._lastPlan || null, window._lastShop || null, false, window._planArchive, window._customDays);
 }
 
+// _lastShop är matsedelns vy av inköpslistan och återanvänds vid senare
+// omritningar. Ögonblicksfälten ur ett API-svar (täckning, rad-id:n, bockar)
+// gäller bara just det svaret — sparas de och återanvänds skulle gammal
+// täckning skrivas över färskare läge. Rensa bort dem.
+function planShopView(shop) {
+  if (!shop || typeof shop !== 'object') return shop || null;
+  if (!('coveredDates' in shop || 'itemIds' in shop || 'checkedItems' in shop)) return shop;
+  const { coveredDates, itemIds, checkedItems, ...rest } = shop;
+  return rest;
+}
+
 // Ett API-svar med ombyggd inköpslista (listId + coveredDates): spegla serverns
 // täckningspekare lokalt så "på listan"-chipsen stämmer direkt — och så att
 // realtime-ekona för pekarna känns igen som egna (ingen omhämtning). Anropas
@@ -495,7 +507,7 @@ export function applyShopListToPlan(shop) {
   window._activeShopListId = shop.listId;
   // rerenderPlan läser listId ur _lastShop — annars skulle det gamla id:t
   // skrivas tillbaka. API-formen är samma som runDayOp redan ritar med.
-  if (idChanged) window._lastShop = shop;
+  if (idChanged) window._lastShop = planShopView(shop);
   if ((changed || idChanged) && (window._lastPlan || window._customDays)) rerenderPlan();
   return changed || idChanged;
 }
@@ -912,7 +924,7 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
   window._planArchive = archiveData;
   window._customDays = customData;
   window._lastPlan = plan;
-  window._lastShop = shop;
+  window._lastShop = planShopView(shop);
   // Aktiva inköpslistans id (för "på listan"-chipsen). API-payloads och
   // Supabase-summeringen bär listId; äldre/återanvända payloads utan fältet
   // behåller senast kända id i stället för att blanka chipsen.

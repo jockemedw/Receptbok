@@ -28,6 +28,42 @@ const sameId = (a, b) => {
   return String(a) === String(b);
 };
 
+// Besparing: lokalt nollställs ett utbytt recept till 0/[] medan servern
+// skriver null — båda betyder "ingen besparing".
+const noSaving = (v) => v == null || v === 0;
+function sameSaving(a, b) {
+  if (noSaving(a) || noSaving(b)) return noSaving(a) && noSaving(b);
+  return Number(a) === Number(b);
+}
+const noMatches = (v) => v == null || (Array.isArray(v) && v.length === 0);
+function sameMatches(a, b) {
+  if (noMatches(a) || noMatches(b)) return noMatches(a) && noMatches(b);
+  try { return stableJson(a) === stableJson(b); } catch { return false; }
+}
+// jsonb sorterar om objektnycklar — jämför med sorterade nycklar.
+function stableJson(v) {
+  if (Array.isArray(v)) return `[${v.map(stableJson).join(',')}]`;
+  if (v && typeof v === 'object') {
+    return `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${stableJson(v[k])}`).join(',')}}`;
+  }
+  return JSON.stringify(v ?? null);
+}
+const sameText = (a, b) => (norm(a) || '') === (norm(b) || '');
+
+// Extrafält som bara jämförs när eventet bär dem (realtime skickar hela raden).
+// Skiljer de sig är det en ändring vi inte gjort → ingen träff.
+function extrasMatch(row, local, { titleKey, planId }) {
+  if (has(row, 'recipe_title_snapshot') && !sameText(row.recipe_title_snapshot, local[titleKey])) return false;
+  if (planId === undefined) return true;   // egen dag: övriga fält finns inte lokalt
+  // Planens id finns bara när planen lästs direkt ur Supabase; saknas det
+  // lokalt går plan_id-värdet inte att jämföra (nollskillnaden är redan koll).
+  if (planId != null && !sameId(row.plan_id, planId)) return false;
+  if (has(row, 'locked') && (row.locked === true) !== (local.locked === true)) return false;
+  if (has(row, 'saving') && !sameSaving(row.saving, local.saving)) return false;
+  if (has(row, 'saving_matches') && !sameMatches(row.saving_matches, local.savingMatches)) return false;
+  return true;
+}
+
 // row: payload.new från postgres_changes (INSERT/UPDATE).
 // plan: window._lastPlan ({ days: [{ date, recipeId, blocked, shoppedAt, listId }] }).
 // customDays: window._customDays ({ entries: { [date]: { note, recipeId, blocked, shoppedAt, listId } } }).
@@ -46,7 +82,8 @@ export function mealDayRowMatches(row, plan, customDays) {
     return sameId(row.recipe_id, planDay.recipeId)
       && (row.blocked === true) === (planDay.blocked === true)
       && sameInstant(row.shopped_at, planDay.shoppedAt)
-      && sameId(row.shopping_list_id, planDay.listId);
+      && sameId(row.shopping_list_id, planDay.listId)
+      && extrasMatch(row, planDay, { titleKey: 'recipe', planId: plan?.id ?? null });
   }
 
   // Egen dag (plan_id NULL). Datumet får inte samtidigt vara en lokal plandag.
@@ -56,7 +93,8 @@ export function mealDayRowMatches(row, plan, customDays) {
     && (row.blocked === true) === (custom.blocked === true)
     && (norm(row.custom_note) || '') === (custom.note || '')
     && sameInstant(row.shopped_at, custom.shoppedAt)
-    && sameId(row.shopping_list_id, custom.listId);
+    && sameId(row.shopping_list_id, custom.listId)
+    && extrasMatch(row, custom, { titleKey: 'recipeTitle', planId: undefined });
 }
 
 // Speglar serverns steg 5 i rebuildActiveList (api/_shared/shopping-store.js)
