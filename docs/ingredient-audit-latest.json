@@ -1,18 +1,18 @@
 {
-  "date": "2026-06-07",
-  "source": "fil: docs/qc-night/recipe-final-20260607.json",
-  "recipes": 262,
-  "totalLines": 3788,
+  "date": "2026-09-28",
+  "source": "fil: /tmp/claude-0/sp/recipes.json",
+  "recipes": 156,
+  "totalLines": 2188,
   "sevCount": {
     "P0": 0,
-    "P1": 12,
-    "P2": 661
+    "P1": 13,
+    "P2": 374
   },
   "classCount": {
-    "C1 okänt namn (ej canon)": 390,
-    "C4 beskrivande brus": 312,
-    "C3 flera ingredienser/rad": 7,
-    "C2 saknad mängd": 8
+    "C1 okänt namn (ej canon)": 218,
+    "C4 beskrivande brus": 175,
+    "C2 saknad mängd": 10,
+    "C3 flera ingredienser/rad": 4
   },
-  "nonCanonUnique": 323
+  "nonCanonUnique": 196
 }
