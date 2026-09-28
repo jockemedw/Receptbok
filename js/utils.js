@@ -62,10 +62,20 @@ export function fmtIso(date) {
   return `${y}-${m}-${d}`;
 }
 
+// Svensk sortering (å/ä/ö efter z). EN delad Collator — localeCompare(…, 'sv')
+// bygger upp sorteringsreglerna på nytt vid varje jämförelse, vilket syntes
+// som tiotals ms i boot-profilen när recept och kategorier sorteras.
+const SV_COLLATOR = new Intl.Collator('sv');
+export const svCompare = SV_COLLATOR.compare;
+
+// Cachad formatterare: toLocaleDateString skapar en ny formatterare per anrop.
+// Samma locale + options → byte-identisk utdata ("6 juli" → "6 juli").
+const SHORT_DATE_FMT = new Intl.DateTimeFormat('sv-SE', { day: 'numeric', month: 'short' });
+
 export function fmtShort(isoStr) {
   if (!isoStr) return '';
   const d = new Date(isoStr + 'T12:00:00');
-  return d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'short' });
+  return SHORT_DATE_FMT.format(d);
 }
 
 export function daysBetween(startIso, endIso) {
@@ -224,4 +234,5 @@ window.timeStr          = timeStr;
 window.renderIngredient = renderIngredient;
 window.fmtIso           = fmtIso;
 window.fmtShort         = fmtShort;
+window.svCompare        = svCompare;
 window.getHolidayName   = getHolidayName;

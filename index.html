@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/+esm">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=199">
+<link rel="stylesheet" href="css/styles.css?v=200">
 <style>/* tömd — CSS flyttad till css/styles.css */
 
 </style>
@@ -70,13 +70,13 @@
 </div>
 
 <main id="receptView" style="display:none">
-  <div class="replace-banner" id="replaceBanner">
-    Väljer recept till <strong id="replaceBannerDay"></strong> — tryck på ett recept nedan
-    <button class="replace-banner-cancel" onclick="exitReplaceMode()">Avbryt</button>
+  <div class="replace-banner" id="replaceBanner" role="status">
+    <span class="replace-banner-text">Välj recept till <strong id="replaceBannerDay"></strong><span class="replace-banner-help">Tryck för att välja · › visar receptet</span></span>
+    <button type="button" class="replace-banner-cancel" onclick="exitReplaceMode()">Avbryt</button>
   </div>
-  <div class="custom-pick-banner" id="customPickBanner">
-    Välj recept till <strong id="customPickBannerDay"></strong> — tryck på ett recept nedan
-    <button class="replace-banner-cancel" onclick="exitCustomPickMode()">Avbryt</button>
+  <div class="custom-pick-banner" id="customPickBanner" role="status">
+    <span class="replace-banner-text">Välj recept till <strong id="customPickBannerDay"></strong><span class="replace-banner-help">Tryck för att välja · › visar receptet</span></span>
+    <button type="button" class="replace-banner-cancel" onclick="exitCustomPickMode()">Avbryt</button>
   </div>
   <div class="content-heading">
     <h2 class="content-heading-title">Recept</h2>
@@ -188,10 +188,10 @@
       <div class="settings-inner">
 
         <!-- Portionsskalning (backlog #12) — visas när migration 003 är körd -->
-        <div class="setting-row" id="servingsRow" style="display:none">
+        <div class="setting-row setting-row-stepper" id="servingsRow" style="display:none">
           <label class="setting-label">
             Vi är … portioner
-            <span class="setting-sublabel">Inköpslistans mängder skalas hit (recepten är 4 port.)</span>
+            <span class="setting-sublabel">Skalar inköpslistan</span>
           </label>
           <div class="setting-control">
             <div class="stepper">
@@ -206,7 +206,7 @@
 
         <hr class="setting-divider" id="servingsDivider" style="display:none">
 
-        <div class="setting-row">
+        <div class="setting-row setting-row-stepper">
           <label class="setting-label">
             Oprövade recept
             <span class="setting-sublabel">Max antal nya recept i planen</span>
@@ -224,7 +224,7 @@
 
         <hr class="setting-divider">
 
-        <div class="setting-row">
+        <div class="setting-row setting-row-stepper">
           <label class="setting-label">
             Vegetariska dagar
             <span class="setting-sublabel">Antal dagar utan kött/fisk</span>
@@ -242,7 +242,7 @@
 
         <hr class="setting-divider">
 
-        <div class="setting-row">
+        <div class="setting-row setting-row-stepper">
           <label class="setting-label">
             Ture-dagar
             <span class="setting-sublabel">Antal dagar med barnvänliga recept</span>
@@ -585,7 +585,7 @@
     <p class="wiz-sub">Inköpslistan läggs i din varukorg hos butiken du väljer. Du betalar själv i butikens kassa.</p>
     <div class="storepick-body" id="shopStoreBody"></div>
     <div class="daypick-foot">
-      <button type="button" class="btn-secondary" data-sheet-close="shopStoreSheet">Avbryt</button>
+      <button type="button" class="daypick-cancel" data-sheet-close="shopStoreSheet">Avbryt</button>
     </div>
   </div>
 </div>
@@ -663,6 +663,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=164"></script>
+<script type="module" src="js/app.js?v=165"></script>
 </body>
 </html>

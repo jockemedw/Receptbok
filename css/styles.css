@@ -91,6 +91,16 @@
     --color-success-dark: var(--lichen-deep);
     --color-danger: var(--rust-deep);
 
+    /* Typskala — minsta läsbara steg är --fs-xs (12px). Inget brödtext-snäpp under det. */
+    --fs-xs: 0.75rem;
+    --fs-sm: 0.8125rem;
+    --fs-base: 1rem;
+    --fs-lg: 1.25rem;
+    --lh-body: 1.45;
+    /* Segmentväljare (Handla/Kopiera lista): aktiv del ska vara den LJUSARE ytan i båda teman */
+    --seg-track: var(--border);
+    --seg-active: var(--paper);
+    --seg-active-text: var(--lichen-deep);
     --bottom-nav-h: 0px;
   }
 
@@ -122,6 +132,7 @@
       --shadow-sm: 0 1px 5px rgba(0,0,0,.3);
       --shadow-md: 0 3px 14px rgba(0,0,0,.35);
       --btn-forest: #44604f; --btn-forest-strong: #557262;
+      --seg-track: var(--linen-card); --seg-active: var(--birch-soft); --seg-active-text: var(--forest-deep);
     }
   }
   :root[data-theme="dark"] {
@@ -142,6 +153,7 @@
       --shadow-sm: 0 1px 5px rgba(0,0,0,.3);
       --shadow-md: 0 3px 14px rgba(0,0,0,.35);
       --btn-forest: #44604f; --btn-forest-strong: #557262;
+      --seg-track: var(--linen-card); --seg-active: var(--birch-soft); --seg-active-text: var(--forest-deep);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -608,7 +620,7 @@
 
   .bs-group-title {
     font-family: var(--font-body);
-    font-size: 0.72rem;
+    font-size: var(--fs-xs);
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -781,7 +793,7 @@
   }
 
   .plan-day-name {
-    font-size: 0.68rem;
+    font-size: var(--fs-xs);
     text-transform: uppercase;
     letter-spacing: 0.07em;
     color: var(--text-muted);
@@ -812,7 +824,7 @@
     top: env(safe-area-inset-top, 0);
     background: var(--linen);
     margin: 0 -1rem 0.55rem;
-    padding: 0.55rem 1rem 0.5rem;
+    padding: 0.55rem 1.25rem 0.5rem;   /* texten i linje med sidrubriken, inte skärmkanten */
     font-family: var(--font-display);
     font-size: 0.95rem;
     font-weight: 500;
@@ -911,16 +923,28 @@
   }
 
   .recipe-card.recipe-card-new {
-    animation: newRecipePulse 2.5s ease-out;
     border-color: var(--lichen-deep);
     box-shadow: 0 0 0 3px var(--moss-soft);
   }
+  /* Nytt-recept-pulsen: en statisk ring på ::after som bara tonar ut och
+     krymper (opacity/transform — ingen box-shadow-animation, som ritar om
+     kortet varje bildruta). ::before är upptagen av färgryggen; ringen ligger
+     innanför kanten eftersom kortet klipper (overflow + content-visibility). */
+  .recipe-card.recipe-card-new::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 5px rgba(122,158,126,0.45);
+    pointer-events: none;
+    opacity: 0;
+    animation: newRecipePulse 2.5s ease-out;
+  }
 
   @keyframes newRecipePulse {
-    0%   { box-shadow: 0 0 0 0 rgba(122,158,126,0.5); }
-    30%  { box-shadow: 0 0 0 8px rgba(122,158,126,0.25); }
-    70%  { box-shadow: 0 0 0 4px rgba(122,158,126,0.15); }
-    100% { box-shadow: 0 0 0 3px var(--moss-soft); }
+    0%   { opacity: 0; }
+    30%  { opacity: 1; }
+    100% { opacity: 0; }
   }
 
   .card-header {
@@ -933,12 +957,14 @@
   }
 
   .recipe-num {
-    font-size: 0.72rem;
+    font-size: var(--fs-xs);
     color: var(--text-muted);
     min-width: 1.5rem;
     opacity: 0.5;
     font-weight: 300;
   }
+  /* Mobil: det interna id-numret är brus — ge titeln bredden i stället. */
+  @media (max-width: 599px) { .recipe-num { display: none; } }
 
   .card-info { flex: 1; min-width: 0; }
 
@@ -958,7 +984,7 @@
   }
 
   .pill {
-    font-size: 0.7rem;
+    font-size: 0.78rem;
     padding: 0.2rem 0.55rem;
     border-radius: 4px;
     font-weight: 500;
@@ -1028,7 +1054,7 @@
   }
 
   .detail-section h3 {
-    font-size: 0.7rem;
+    font-size: var(--fs-xs);
     text-transform: uppercase;
     letter-spacing: 0.1em;
     color: var(--text-muted);
@@ -1063,7 +1089,7 @@
   }
 
   .ingredients-list li.group-header {
-    font-size: 0.68rem;
+    font-size: var(--fs-xs);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--text-muted);
@@ -1112,7 +1138,7 @@
 
   .steps-list li::before {
     content: counter(step);
-    font-size: 0.7rem;
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: white;
     background: var(--lichen);
@@ -1259,7 +1285,7 @@
     left: 16px;
     align-self: flex-start;
     margin-bottom: 4px;
-    font-size: 0.72rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     color: var(--lichen-deep);
     white-space: nowrap;
@@ -1274,7 +1300,7 @@
     right: 6px;
     background: var(--rust);
     color: white;
-    font-size: 0.58rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     letter-spacing: 0.08em;
     padding: 2px 6px;
@@ -1458,7 +1484,7 @@
 
   .week-day-saving {
     margin-top: 0.25rem;
-    font-size: 0.74rem;
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--color-success-dark, var(--lichen-deep));
     letter-spacing: 0.01em;
@@ -1516,7 +1542,7 @@
   }
   .saving-row-main { flex: 1; min-width: 0; }
   .saving-canon {
-    font-size: 0.72rem;
+    font-size: var(--fs-xs);
     font-weight: 600;
     color: var(--text-muted);
     text-transform: uppercase;
@@ -1530,7 +1556,7 @@
     border-radius: 999px;
     background: var(--ochre, #c89a3e);
     color: var(--on-accent);
-    font-size: 0.62rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     letter-spacing: 0.02em;
     text-transform: none;
@@ -1543,7 +1569,7 @@
     border-radius: 999px;
     background: rgba(92,61,30,0.12);
     color: var(--text-muted);
-    font-size: 0.62rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     letter-spacing: 0.02em;
     text-transform: none;
@@ -1608,7 +1634,9 @@
   .deals-head h2 { margin: 0; display: flex; align-items: center; gap: 0.4rem; }
   .deals-head .modal-close {
     background: none; border: none; font-size: 1.6rem; line-height: 1;
-    color: var(--text-muted); cursor: pointer; padding: 0 0.3rem;
+    color: var(--text-muted); cursor: pointer; padding: 0;
+    width: 44px; height: 44px; flex-shrink: 0; margin-right: -0.6rem;
+    display: inline-flex; align-items: center; justify-content: center;
   }
   .deal-intro { margin: 0.2rem 0 0.9rem; font-size: 0.86rem; color: var(--text-muted); }
   .deals-body {
@@ -1623,10 +1651,10 @@
     display: flex; align-items: center; gap: 0.4rem;
   }
   .deal-count {
-    font-size: 0.72rem; font-weight: 700; color: var(--text-muted);
+    font-size: var(--fs-xs); font-weight: 700; color: var(--text-muted);
     background: rgba(92,61,30,0.08); border-radius: 999px; padding: 0.05rem 0.45rem;
   }
-  .deal-section-sub { margin: 0 0 0.7rem; font-size: 0.8rem; color: var(--text-muted); }
+  .deal-section-sub { margin: 0 0 0.7rem; font-size: 0.8rem; line-height: var(--lh-body); color: var(--text-muted); }
   .deal-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.7rem; }
   .deal-card {
     border: 1px solid rgba(92,61,30,0.14);
@@ -1641,7 +1669,7 @@
     width: 100%; text-align: left; background: none; border: none; font: inherit;
     cursor: pointer; padding: 0; -webkit-appearance: none; appearance: none;
   }
-  .deal-matchcount { font-size: 0.72rem; color: var(--text-muted); }
+  .deal-matchcount { font-size: var(--fs-xs); color: var(--text-muted); }
   .deal-chev {
     display: inline-block; transition: transform 0.18s ease; color: var(--text-muted);
     font-weight: 400; margin-left: 0.15rem;
@@ -1651,7 +1679,7 @@
   .deal-meta { display: flex; gap: 0.4rem; align-items: center; margin-top: 0.25rem; flex-wrap: wrap; }
   .deal-when, .deal-time { font-size: 0.78rem; color: var(--text-muted); }
   .deal-chip {
-    font-size: 0.72rem; font-weight: 600; padding: 0.05rem 0.45rem; border-radius: 999px;
+    font-size: var(--fs-xs); font-weight: 600; padding: 0.05rem 0.45rem; border-radius: 999px;
     color: var(--on-accent); background: var(--chip, var(--lichen));
   }
   .deal-saving {
@@ -1660,7 +1688,7 @@
   }
   .deal-matches { margin: 0.6rem 0 0.7rem; }
   .deal-bytin-btn {
-    width: 100%; padding: 0.5rem; border: 1px solid var(--rust, #b05f3f); border-radius: 9px;
+    width: 100%; min-height: 44px; padding: 0.5rem; border: 1px solid var(--rust, #b05f3f); border-radius: 9px;
     background: none; color: var(--rust, #b05f3f); font-weight: 700; font-size: 0.88rem; cursor: pointer;
   }
   .deal-bytin-btn.active, .deal-bytin-btn:active { background: var(--rust, #b05f3f); color: var(--on-accent); }
@@ -1669,12 +1697,12 @@
   .deal-day-hint { margin: 0 0 0.45rem; font-size: 0.82rem; color: var(--text-muted); }
   .deal-day-chips { display: flex; flex-direction: column; gap: 0.4rem; }
   .deal-day-chip {
-    text-align: left; padding: 0.5rem 0.65rem; border: 1px solid rgba(92,61,30,0.16);
-    border-radius: 9px; background: var(--paper); cursor: pointer; display: flex; flex-direction: column; gap: 0.1rem;
+    text-align: left; min-height: 44px; padding: 0.5rem 0.65rem; border: 1px solid var(--border);
+    border-radius: 9px; background: var(--paper); color: var(--forest); font: inherit; cursor: pointer; display: flex; flex-direction: column; gap: 0.1rem;
   }
   .deal-day-chip:active { border-color: var(--rust, #b05f3f); }
   .deal-day-chip.is-loading { opacity: 0.6; pointer-events: none; }
-  .deal-day-when { font-weight: 700; font-size: 0.86rem; }
+  .deal-day-when { font-weight: 700; font-size: 0.86rem; color: var(--forest); }
   .deal-day-cur { font-size: 0.76rem; color: var(--text-muted); }
 
   /* Hero-statistiken blir tryckbar när fynd finns */
@@ -2002,7 +2030,7 @@
     color: var(--text-muted);
   }
   .day-toggle-abbr {
-    font-size: 0.6rem;
+    font-size: var(--fs-xs);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--text-muted);
@@ -2018,7 +2046,7 @@
   }
 
   .week-day-name {
-    font-size: 0.68rem;
+    font-size: var(--fs-xs);
     text-transform: uppercase;
     letter-spacing: 0.07em;
     color: var(--text-muted);
@@ -2054,7 +2082,7 @@
   }
 
   .week-day-time {
-    font-size: 0.62rem;
+    font-size: var(--fs-xs);
     color: var(--text-muted);
     margin-top: 3px;
     letter-spacing: 0.02em;
@@ -2182,6 +2210,7 @@
     border: 1.5px solid var(--birch);
     color: var(--forest);
     border-radius: 8px;
+    min-height: 44px;
     padding: 0.55rem 1.1rem;
     font-family: var(--font-body);
     font-size: 0.9rem;
@@ -2242,6 +2271,7 @@
     font-family: var(--font-body);
     font-size: 0.9rem;
     font-weight: 600;
+    min-height: 44px;
     padding: 0.6rem 1rem;
     cursor: pointer;
   }
@@ -2300,7 +2330,7 @@
   }
 
   .date-label {
-    font-size: 0.72rem;
+    font-size: var(--fs-xs);
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--text-muted);
@@ -2308,11 +2338,12 @@
   }
 
   .date-input {
+    min-height: 44px;
     padding: 0.6rem 0.75rem;
     border: 1.5px solid var(--border);
     border-radius: 8px;
     font-family: var(--font-body);
-    font-size: 0.9rem;
+    font-size: 1rem;
     color: var(--forest);
     background: var(--paper);
     cursor: pointer;
@@ -2416,14 +2447,17 @@
   }
 
   .setting-label {
-    font-size: 0.82rem;
+    font-size: 0.95rem;
+    line-height: 1.3;
     color: var(--forest);
-    font-weight: 500;
+    font-weight: 600;
     flex: 1;
+    min-width: 0;
   }
 
   .setting-sublabel {
-    font-size: 0.72rem;
+    font-size: var(--fs-sm);
+    line-height: var(--lh-body);
     color: var(--text-muted);
     font-weight: 400;
     display: block;
@@ -2438,11 +2472,13 @@
 
   .setting-num {
     width: 3.8rem;
+    min-height: 44px;
     padding: 0.4rem 0.5rem;
     border: 1.5px solid var(--border);
     border-radius: 6px;
+    background: var(--linen-card);   /* tokens → rätt yta i båda teman (inte UA-grått) */
     font-family: var(--font-body);
-    font-size: 0.9rem;
+    font-size: 1rem;
     color: var(--forest);
     text-align: center;
     outline: none;
@@ -2452,8 +2488,29 @@
   .setting-num:focus { border-color: var(--rust); }
 
   .setting-unit {
-    font-size: 0.78rem;
+    font-size: var(--fs-sm);
     color: var(--text-muted);
+  }
+
+  /* Guiden (steg 2) ligger alltid utfälld — ingen maxhöjd som klipper raderna. */
+  #settingsPanel.open { max-height: none; }
+  #planSheet .settings-inner { padding: 0.9rem 0.9rem; }
+
+  /* Smala skärmar: etikett överst, stepparen på egen rad under — annars bryts
+     etiketten på 4–5 rader och enheten ("dagar") trillar ut ur kortet. */
+  @media (max-width: 420px) {
+    .setting-row-stepper {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 0.5rem;
+    }
+    .setting-row-stepper .setting-control { gap: 0.6rem; }
+    .setting-row-stepper .stepper {
+      display: grid;
+      grid-template-columns: 44px 3rem 44px;
+      gap: 0.4rem;
+    }
+    .setting-row-stepper .stepper .setting-num { width: 3rem; }
   }
 
   .setting-divider {
@@ -2478,8 +2535,8 @@
     background: var(--stone);
     border: 1.5px solid var(--border);
     color: var(--text-muted);
-    padding: 0.55rem 0.95rem;   /* touch-vänligt: ≥40px höjd */
-    min-height: 2.5rem;
+    padding: 0.55rem 0.95rem;   /* touch-vänligt: ≥44px höjd */
+    min-height: 44px;
     border-radius: 20px;
     font-size: 0.82rem;
     cursor: pointer;
@@ -2540,7 +2597,7 @@
     border-radius: 50%;
     background: var(--clay);
     color: var(--rust);
-    font-size: 0.72rem;
+    font-size: var(--fs-xs);
     font-weight: 700;
     font-style: italic;
     cursor: help;
@@ -2575,70 +2632,102 @@
     visibility: visible;
   }
 
+  /* Välj-knappen i väljläget — tydlig pill, ≥44px hög. Hela kortets rubrik
+     väljer också (cardHeaderTap), knappen är den synliga signalen. */
   .select-btn {
     display: none;
-    position: relative;      /* för osynlig träffyta nedan */
     background: var(--rust);
     color: var(--on-accent);
     border: none;
-    border-radius: 6px;
-    padding: 0.25rem 0.65rem;
-    font-size: 0.78rem;
+    border-radius: 999px;
+    min-height: 44px;
+    min-width: 64px;
+    padding: 0 1rem;
+    font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
     flex-shrink: 0;
     align-self: center;
   }
-  .select-btn:hover { opacity: 0.88; }
-  /* Osynlig ≥44px träffyta utan att växa layouten (Session 120) */
-  .select-btn::after { content: ''; position: absolute; inset: -11px -8px; }
-  #receptView.replace-mode .select-btn,
-  #receptView.custom-pick-mode .select-btn { display: inline-block; }
-
-  .replace-banner {
-    display: none;
-    align-items: center;
-    gap: 0.75rem;
-    background: var(--clay);
-    border: 1.5px solid var(--rust);
-    border-radius: 10px;
-    padding: 0.7rem 1rem;
-    margin-bottom: 1rem;
-    font-size: 0.88rem;
-    color: var(--lichen);
+  .select-btn:active { opacity: 0.8; }
+  @media (hover: hover) {
+    .select-btn:hover { opacity: 0.88; }
   }
-  #receptView.replace-mode .replace-banner { display: flex; }
-  .replace-banner strong { color: var(--rust); }
+  #receptView.replace-mode .select-btn,
+  #receptView.custom-pick-mode .select-btn { display: inline-flex; align-items: center; justify-content: center; }
+  /* I väljläget: ingen utfällnings-chevron, och "provat"-pillen är bara
+     information (trycket går till kortet, som väljer receptet). */
+  /* I väljläget väljer rubriken receptet; chevronen blir en egen ≥44px
+     tryckyta som fäller ut kortet (kolla ingredienser innan man väljer). */
+  #receptView.replace-mode .card-chevron,
+  #receptView.custom-pick-mode .card-chevron {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 44px; min-height: 44px; margin: -0.4rem -0.5rem -0.4rem 0;
+    border-radius: 10px; opacity: 0.7; cursor: pointer;
+  }
+  #receptView.replace-mode .card-chevron:active,
+  #receptView.custom-pick-mode .card-chevron:active { background: var(--stone); }
+  #receptView.replace-mode .pill-toggle,
+  #receptView.custom-pick-mode .pill-toggle { pointer-events: none; }
+  #receptView.replace-mode .card-header,
+  #receptView.custom-pick-mode .card-header { gap: 0.6rem; padding-right: 0.8rem; }
+  #receptView.replace-mode .card-header:active,
+  #receptView.custom-pick-mode .card-header:active { background: var(--clay); }
 
+  /* Väljbannern — sticky under headern, en rad text + en hjälprad, Avbryt ≥44px */
+  .replace-banner,
   .custom-pick-banner {
     display: none;
     align-items: center;
     gap: 0.75rem;
+    position: sticky;
+    top: calc(var(--header-h, 56px) + 6px);
+    z-index: var(--z-banner);
     background: var(--clay);
     border: 1.5px solid var(--rust);
     border-radius: 10px;
-    padding: 0.7rem 1rem;
+    padding: 0.75rem 1rem;
     margin-bottom: 1rem;
-    font-size: 0.88rem;
-    color: var(--lichen);
+    font-size: 0.95rem;
+    line-height: 1.35;
+    color: var(--forest);
+    /* Linne-"kjol" uppåt täcker glipan mot headern när listan scrollar under */
+    box-shadow: 0 -7px 0 0 var(--linen), var(--shadow-sm);
   }
+  #receptView.replace-mode .replace-banner,
   #receptView.custom-pick-mode .custom-pick-banner { display: flex; }
-  .custom-pick-banner strong { color: var(--rust); }
+  .replace-banner-text { flex: 1; min-width: 0; }
+  .replace-banner strong,
+  .custom-pick-banner strong { color: var(--rust); font-weight: 700; }
+  .replace-banner-help {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
   .replace-banner-cancel {
-    margin-left: auto;
-    position: relative;
+    flex-shrink: 0;
+    min-height: 44px;
     background: none;
     border: 1.5px solid var(--rust);
-    border-radius: 6px;
+    border-radius: 999px;
     color: var(--rust);
-    padding: 0.2rem 0.65rem;
-    font-size: 0.82rem;
+    padding: 0 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
   }
-  /* Osynlig ≥44px träffyta (Session 120) */
-  .replace-banner-cancel::after { content: ''; position: absolute; inset: -11px; }
+  .replace-banner-cancel:active { background: var(--linen-card); }
+  /* Väljläget är ett fokuserat läge: import (+), sortera och filter skymmer
+     korten och hör inte hemma där — sök och "till toppen" finns kvar. Headern
+     döljs inte vid scroll och grupprubrikerna är inte sticky, så bannern är
+     det enda som följer med (inga glipor/överlapp mellan sticky-lager). */
+  body.pick-mode #fabImport,
+  body.pick-mode #openSortBtn,
+  body.pick-mode #openFilterBtn { display: none !important; }
+  body.pick-mode header.header-hidden { transform: none; }
+  body.pick-mode .recipe-section-header { position: static; }
 
   .settings-warning {
     font-size: 0.75rem;
@@ -2695,7 +2784,7 @@
   .shop-mode-bar {
     display: flex;
     gap: 0;
-    background: var(--border);
+    background: var(--seg-track);
     border-radius: 10px;
     padding: 3px;
     margin-bottom: 1rem;
@@ -2705,6 +2794,7 @@
     background: transparent;
     border: none;
     border-radius: 8px;
+    min-height: 40px;   /* + barens 3px padding → ≥44px träffyta */
     padding: 0.5rem 1rem;
     font-family: var(--font-body);
     font-size: 0.85rem;
@@ -2714,9 +2804,10 @@
     transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);   /* var 'all' (Session 120) */
   }
   .shop-mode-btn.active {
-    background: var(--paper);
-    color: var(--lichen);
-    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    background: var(--seg-active);
+    color: var(--seg-active-text);
+    font-weight: 600;
+    box-shadow: var(--shadow-sm);
   }
   .shop-clear-btn {
     display: block;
@@ -2796,6 +2887,9 @@
     margin: 0 auto;
   }
   #shopView.visible { display: block; }
+  /* Samma sidluft som övriga flikar — korten ska inte nudda skärmkanten.
+     (#shopNoData/#shopLoading har redan 1rem sidled via .no-data.) */
+  #shopContent { padding: 0 1rem; }
 
   /* ── INGREDIENT PREVIEW (veckovyn) ── */
   .ingredient-section-header {
@@ -2974,7 +3068,7 @@
   .shopping-item.pantry .item-checkbox { border-style: dashed; background: transparent; }
   .pantry-tag {
     flex-shrink: 0;
-    font-size: 0.68rem;
+    font-size: var(--fs-xs);
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -3146,7 +3240,7 @@
     gap: 0.7rem;
     margin: 1.1rem 0 0.7rem;
     color: var(--text-muted);
-    font-size: 0.72rem;
+    font-size: var(--fs-xs);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -3330,7 +3424,7 @@
   }
   .tagpick-chip.active { background: var(--moss-soft); border-color: var(--lichen); color: var(--lichen-deep); font-weight: 600; }
   .tagpick-chip:focus-visible { outline: 2px solid var(--lichen); outline-offset: 2px; }
-  .tagpick-count { font-size: 0.72rem; color: var(--text-muted); }
+  .tagpick-count { font-size: var(--fs-xs); color: var(--text-muted); }
   .tagpick-chip.active .tagpick-count { color: var(--lichen-deep); }
   .tagpick-empty { margin: 0; font-size: 0.85rem; color: var(--text-muted); }
   /* ── Import bottom-sheet ── */
@@ -3533,7 +3627,9 @@
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: rgba(194,82,43,0.82);
+    /* Tät, lätt genomskinlig rost i stället för backdrop-filter: oskärpan
+       ritade om allt bakom knappen vid varje scrollruta (hack på mobil). */
+    background: color-mix(in srgb, var(--rust) 90%, transparent);
     color: var(--on-accent);
     border: none;
     font-size: 1.8rem;
@@ -3541,8 +3637,6 @@
     cursor: pointer;
     box-shadow: 0 3px 10px rgba(0,0,0,0.22);
     z-index: var(--z-fab);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
     transition: background 0.15s, transform 0.15s;
     display: none;
   }
@@ -3553,7 +3647,7 @@
   body:has(.bottom-sheet.open) .fab-import { display: none; }
   .fab-import:active { transform: scale(0.93); }
   @media (hover: hover) {
-    .fab-import:hover { background: rgba(194,82,43,1); }
+    .fab-import:hover { background: var(--rust); }
   }
 
   @media (max-width: 400px) {
@@ -3645,6 +3739,7 @@
   align-items: center;
   gap: 0.4rem;
   width: 100%;
+  min-height: 44px;
   padding: 0.6rem 0;
   margin-top: 0.8rem;
   background: none;
@@ -3757,6 +3852,7 @@
   gap: 0.4rem;
   width: 100%;
   margin-top: 0.6rem;
+  min-height: 44px;
   padding: 0.7rem 1.2rem;
   background: transparent;
   color: var(--forest);
@@ -3815,7 +3911,7 @@
   border-radius: 14px;
   color: var(--text-muted);
   font-family: var(--font-body);
-  font-size: 0.7rem;
+  font-size: var(--fs-xs);
   font-weight: 500;
   letter-spacing: 0.01em;
   cursor: pointer;
@@ -4031,7 +4127,8 @@ html.auth-required body {
 }
 /* ── Pager: hela veckovyn (hero + dagslista) är svepytan för veckoväxlingen ── */
 .dlx-pager { overflow: hidden; touch-action: pan-y; overscroll-behavior-x: contain; }
-.dlx-pane  { will-change: transform; }
+/* will-change sätts av JS (plan-viewer-deluxe.js) bara under svep/glid —
+   permanent höll det hela veckopanelen som ett eget lager i minnet. */
 
 .dlx-hero-title {
   position: relative;
@@ -4066,7 +4163,7 @@ html.auth-required body {
 .dlx-stat-saving .dlx-stat-num { color: #ecd9a4; }
 .dlx-stat-lbl {
   margin-top: 0.24rem;
-  font-size: 0.6rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -4093,7 +4190,7 @@ html.auth-required body {
   display: inline-flex;
   align-items: center;
   gap: 0.32rem;
-  font-size: 0.7rem;
+  font-size: var(--fs-xs);
   color: rgba(245,241,232,0.78);
 }
 .dlx-legend-dot { width: 8px; height: 8px; border-radius: 50%; }
@@ -4122,7 +4219,7 @@ html.auth-required body {
   border-radius: 12px;
   color: rgba(245,241,232,0.45);
   font-family: inherit;
-  font-size: 0.7rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
   letter-spacing: 0.03em;
   cursor: pointer;
@@ -4142,19 +4239,25 @@ html.auth-required body {
   min-height: 44px;
 }
 .dlx-rail-week {
-  font-size: 0.72rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--ochre-deep);
+  color: var(--ochre);   /* heron är mörk i båda teman — ochre-deep blev för dov i ljust tema */
   white-space: nowrap;
+}
+/* Smala skärmar: rälsen (‹ v.39 · VECKA 40 · FÖRSLAG · v.41 ›) ska få plats utan att krocka. */
+@media (max-width: 360px) {
+  .dlx-rail-side { padding: 0 0.4rem; }
+  .dlx-rail-week { letter-spacing: 0.06em; }
+  .dlx-rail-badge { letter-spacing: 0.03em; padding: 0.18rem 0.45rem; }
 }
 /* Statusmärke — dov punkt + ord (lugnare än en fylld pill) */
 .dlx-rail-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.32rem;
-  font-size: 0.6rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -4182,7 +4285,7 @@ html.auth-required body {
   border-radius: 999px;
   color: #ecc9b0;
   font-family: inherit;
-  font-size: 0.68rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
@@ -4297,7 +4400,7 @@ html.auth-required body {
   line-height: 1.05;
 }
 .dlx-day-dow {
-  font-size: 0.7rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -4309,7 +4412,7 @@ html.auth-required body {
 .dlx-day-date { display: flex; flex-direction: column; line-height: 1; }
 .dlx-day-num { font-size: 1.15rem; font-weight: 700; color: var(--forest); }
 .dlx-day-mon {
-  font-size: 0.6rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -4318,7 +4421,7 @@ html.auth-required body {
 }
 .dlx-day-flags { display: flex; flex-direction: column; gap: 0.2rem; margin-top: 0.25rem; }
 .dlx-day-flag {
-  font-size: 0.58rem;
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -4334,7 +4437,7 @@ html.auth-required body {
   flex: 0 0 auto;
   align-self: center;
   margin-left: 0.4rem;
-  font-size: 0.62rem;
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.01em;
   padding: 0.16rem 0.5rem;
@@ -4355,7 +4458,7 @@ html.auth-required body {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
-  font-size: 0.66rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -4396,7 +4499,7 @@ html.auth-required body {
 
 .dlx-day-meta { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.28rem; }
 .dlx-chip {
-  font-size: 0.68rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
   padding: 0.16rem 0.5rem;
   border-radius: 6px;
@@ -4409,7 +4512,7 @@ html.auth-required body {
   display: inline-flex;
   align-items: center;
   gap: 0.28rem;
-  font-size: 0.72rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--lichen-deep);
   background: var(--moss-soft);
@@ -4445,7 +4548,7 @@ html.auth-required body {
   justify-content: space-between;
   padding: 0.75rem 0 0.6rem;
 }
-.dlx-status { font-size: 0.7rem; font-weight: 600; padding: 0.18rem 0.55rem; border-radius: 6px; }
+.dlx-status { font-size: var(--fs-xs); font-weight: 600; padding: 0.18rem 0.55rem; border-radius: 6px; }
 .dlx-status.tested { background: var(--moss-soft); color: var(--lichen-deep); }
 .dlx-status.untested { background: var(--clay); color: var(--rust-deep); }
 /* Märket är en knapp i dagens receptkort: tryck växlar provat/ej provat.
@@ -4511,7 +4614,7 @@ html.auth-required body {
   background: var(--moss-soft);
   color: var(--lichen-deep);
   border-radius: 50%;
-  font-size: 0.72rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
 }
 .dlx-notes {
@@ -4589,31 +4692,59 @@ html.auth-required body {
   justify-content: space-between;
   gap: 0.6rem;
   margin: 0 1rem 0.8rem;
-  padding: 0.6rem 0.9rem;
-  background: var(--lichen);
-  color: var(--on-accent);
+  padding: 0.5rem 0.5rem 0.5rem 0.9rem;
+  /* Mörkare grön yta (btn-forest ljusas själv i mörkt tema) → vit text når
+     god kontrast i båda lägena; lichen + vit 13 px var för blekt. */
+  background: var(--btn-forest);
+  color: #fff;
   border-radius: 12px;
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   font-weight: 500;
+  line-height: 1.3;
 }
-.dlx-swap-banner span { display: inline-flex; align-items: center; gap: 0.45rem; flex-wrap: wrap; }
-.dlx-swap-banner strong { font-weight: 700; }
-.dlx-swap-banner svg { width: 16px; height: 16px; }
+/* Rad 1: instruktionen. Rad 2: rättens namn (ellips) — aldrig ett ensamt "ska". */
+.dlx-swap-banner .dlx-swap-txt { display: block; flex: 1; min-width: 0; }
+.dlx-swap-banner strong {
+  display: block;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dlx-swap-banner .dlx-swap-ic { display: inline-flex; flex: none; }
+.dlx-swap-banner svg { width: 18px; height: 18px; }
 .dlx-swap-banner button {
+  flex: none;
+  min-height: 44px;
   border: none;
-  background: rgba(255,255,255,0.22);
-  color: var(--on-accent);
+  background: rgba(255,255,255,0.18);
+  color: #fff;
   font-family: inherit;
-  font-size: 0.78rem;
+  font-size: 0.9rem;
   font-weight: 600;
-  padding: 0.32rem 0.75rem;
+  padding: 0 1rem;
   border-radius: 999px;
   cursor: pointer;
 }
+.dlx-swap-banner button:active { background: rgba(255,255,255,0.3); }
 .dlx-swap-source { box-shadow: 0 0 0 2px var(--rust) inset; border-color: var(--rust) !important; }
-.dlx-swap-target { border-color: var(--lichen) !important; border-style: dashed; animation: dlxPulse 1.8s ease-in-out infinite; }
+.dlx-swap-target { border-color: var(--lichen) !important; border-style: dashed; }
 .dlx-swap-target:hover { box-shadow: 0 0 0 2px var(--lichen) inset; }
-@keyframes dlxPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(122,148,130,0.4); } 50% { box-shadow: 0 0 0 5px rgba(122,148,130,0); } }
+/* Mottagarpulsen: statisk ring på ::after som andas i opacitet — kompositorn
+   sköter den, ingen omritning av kortet per bildruta (box-shadow-animation
+   gjorde det). Innanför kanten eftersom dagkorten klipper (overflow: hidden). */
+.dlx-swap-target::after,
+.dlx-drop-zone::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 3px rgba(122,148,130,0.45);
+  pointer-events: none;
+  opacity: 0;
+  animation: dlxPulse 1.8s ease-in-out infinite;
+}
+@keyframes dlxPulse { 0%,100% { opacity: 0; } 50% { opacity: 1; } }
 
 /* ── Större skärmar: lufta ut hero-stats och detalj-kolumner ── */
 @media (min-width: 680px) {
@@ -4797,7 +4928,7 @@ body.cook-open { overflow: hidden; }
 .cook-head-info { flex: 1; min-width: 0; }
 .cook-eyebrow {
   display: block;
-  font-size: 0.72rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -4903,7 +5034,7 @@ body.cook-open { overflow: hidden; }
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.7rem;
+  font-size: var(--fs-xs);
   transition: background 0.15s, border-color 0.15s;
 }
 .cook-ing.done { color: var(--moss-muted); text-decoration: line-through; }
@@ -5033,13 +5164,14 @@ body.cook-open { overflow: hidden; }
   align-items: center;
   gap: 0.4rem;
   margin-left: auto;
-  background: var(--lichen-deep);
+  min-height: 44px;
+  background: var(--rust);
   color: var(--on-accent);
   border: none;
   border-radius: 999px;
-  padding: 0.5rem 0.95rem;
+  padding: 0.5rem 1.1rem;
   font-family: inherit;
-  font-size: 0.82rem;
+  font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -5054,8 +5186,9 @@ body.cook-open { overflow: hidden; }
 }
 .step-btn {
   position: relative;
-  width: 2.4rem;
-  height: 2.4rem;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
   border-radius: 50%;
   border: 1.5px solid var(--birch-soft);
   background: var(--linen-card);
@@ -5070,8 +5203,7 @@ body.cook-open { overflow: hidden; }
   user-select: none;
   transition: background 0.15s, border-color 0.15s;
 }
-/* Osynlig ≥44px träffyta (Session 120) */
-.step-btn::after { content: ''; position: absolute; inset: -3px; }
+/* Knappen är själv 44×44 — ingen extra träffyta behövs. */
 .step-btn:active { background: var(--moss-soft); border-color: var(--lichen); }
 /* Göm webbläsarens egna spinners — stepparna ersätter dem */
 .stepper .setting-num::-webkit-outer-spin-button,
@@ -5129,7 +5261,7 @@ body.cook-open { overflow: hidden; }
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  font-size: 0.72rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -5145,6 +5277,7 @@ body.cook-open { overflow: hidden; }
 }
 .dlx-tonight-sub {
   font-size: 0.82rem;
+  line-height: var(--lh-body);
   color: var(--moss-muted);
 }
 
@@ -5168,7 +5301,7 @@ body.cook-open { overflow: hidden; }
 
 /* Gemensam eyebrow + rubrik + länk */
 .today-eyebrow {
-  font-size: 0.7rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
   letter-spacing: 0.13em;
   text-transform: uppercase;
@@ -5292,7 +5425,7 @@ body.cook-open { overflow: hidden; }
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 0.74rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--lichen-deep);
   background: var(--moss-soft);
@@ -5385,7 +5518,7 @@ body.cook-open { overflow: hidden; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.today-tomorrow-meta { display: block; font-size: 0.8rem; color: var(--moss-muted); margin-top: 3px; }
+.today-tomorrow-meta { display: block; font-size: 0.8rem; line-height: var(--lh-body); color: var(--moss-muted); margin-top: 3px; }
 .today-tomorrow-empty-title { color: var(--moss-muted); font-weight: 600; }
 .today-tomorrow-chev { flex: none; color: var(--birch); }
 .today-tomorrow-chev svg { width: 20px; height: 20px; }
@@ -5430,7 +5563,7 @@ body.cook-open { overflow: hidden; }
   box-shadow: 0 0 0 2.5px var(--linen-card), 0 0 0 4.5px var(--p, var(--rust));
 }
 .today-thread-day {
-  font-size: 0.68rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
   letter-spacing: 0.06em;
   color: var(--moss-muted);
@@ -5490,7 +5623,7 @@ body.cook-open { overflow: hidden; }
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  animation: dlxPulse 1.8s ease-in-out infinite;
+  position: relative;   /* bär puls-ringen (::after, se .dlx-swap-target) */
 }
 .dlx-drop-zone svg { width: 1.1em; height: 1.1em; }
 .dlx-drop-zone:active { background: var(--lichen); color: var(--on-accent); }
@@ -5568,14 +5701,77 @@ body.cook-open { overflow: hidden; }
   50% { opacity: 0.55; }
 }
 
-/* Glöd-kvitto: berörda dagar lyser till efter en lyckad åtgärd */
-.dlx-flash {
+/* Glöd-kvitto: berörda dagar lyser till efter en lyckad åtgärd. Glöden (ring +
+   mossgrön ton) bor på ::after och tonar bara ut i opacitet — ingen
+   box-shadow/bakgrunds-animation som ritar om kortet varje bildruta. Kortets
+   egen animation stängs av under kvittot (som förut, när glöden ersatte den):
+   ingen entré-intoning eller väntar-puls samtidigt. isolation → ::after kan
+   ligga UNDER kortets innehåll (z-index -1) men över kortets bakgrund. */
+.dlx-flash,
+.dlx-day.dlx-flash {   /* .dlx-day.dlx-flash slår .dlx-day.is-past (animation-name) */
+  animation: none;
+  isolation: isolate;
+}
+.dlx-flash::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--moss-soft);
+  box-shadow: inset 0 0 0 3px var(--lichen);
+  pointer-events: none;
+  opacity: 0;
   animation: dlxFlashGlow 1.4s ease both;
 }
 @keyframes dlxFlashGlow {
-  0%   { box-shadow: 0 0 0 3px var(--lichen); background-color: var(--moss-soft); }
-  60%  { box-shadow: 0 0 0 3px rgba(122,148,130,0.35); }
-  100% { box-shadow: 0 0 0 0 rgba(122,148,130,0); }
+  0%   { opacity: 1; }
+  60%  { opacity: 0.4; }
+  100% { opacity: 0; }
+}
+
+/* Optimistiskt val (Välj själv): receptet visas direkt, kortet andas svagt
+   tills servern bekräftat. Bara opacitet — ingen rörelse vid reduced motion. */
+.dlx-pending { cursor: progress; }
+@media (prefers-reduced-motion: no-preference) {
+  .dlx-pending,
+  .dlx-day.dlx-pending { animation: dlxPendingPulse 1.2s ease-in-out infinite; }
+}
+@keyframes dlxPendingPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.dlx-pending.dlx-flash,
+.dlx-day.dlx-pending.dlx-flash { animation: none; }
+
+/* Slumpa utan förhandsval: titelraden säger vad som händer tills servern
+   svarat. Gamla titeln göms (behåller radhöjden), texten läggs ovanpå.
+   Färgen via tokens → rätt i både ljust och mörkt tema. */
+.dlx-shuffling :is(.dlx-day-recipe, .dlx-tonight-title) { position: relative; color: transparent; }
+.dlx-shuffling :is(.dlx-day-recipe, .dlx-tonight-title) > * { visibility: hidden; }
+.dlx-shuffling :is(.dlx-day-recipe, .dlx-tonight-title)::after {
+  content: 'Slumpar nytt recept…';
+  position: absolute;
+  inset: 0;
+  color: var(--moss-muted);
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .dlx-shuffling :is(.dlx-day-recipe, .dlx-tonight-title)::after {
+    background: linear-gradient(90deg, var(--moss-muted) 0 35%, var(--lichen) 50%, var(--moss-muted) 65% 100%);
+    background-size: 250% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: dlxShuffleShimmer 1.4s linear infinite;
+  }
+}
+@keyframes dlxShuffleShimmer {
+  from { background-position: 100% 0; }
+  to { background-position: 0 0; }
 }
 
 /* ═══ Session 107 — Ikväll-sheeten: kvällens snabbåtgärder (backlog #15, variant B) ═══ */
@@ -5602,9 +5798,14 @@ body.cook-open { overflow: hidden; }
   background: var(--linen-card);
   border-radius: 22px 22px 0 0;
   box-shadow: 0 -10px 40px rgba(44, 63, 51, 0.25);
-  padding: 0.5rem 1rem calc(1.1rem + env(safe-area-inset-bottom, 0px));
-  max-height: 78vh;
-  overflow-y: auto;
+  padding: 0.5rem 0 calc(1.1rem + env(safe-area-inset-bottom, 0px));
+  /* Grepp + stängkryss står still; bara .dlx-sheet-scroll scrollar. Höjden
+     räcker upp till headern så en lång meny inte klipps på små skärmar. */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: calc(100vh - var(--header-h, 56px) - 12px);
+  max-height: calc(100dvh - var(--header-h, 56px) - 12px);
   transform: translateY(105%);
   transition: transform var(--dur-sheet) var(--ease-out);   /* enhetlig sheet-kurva (Session 120) */
 }
@@ -5656,47 +5857,151 @@ main#receptView {
 .dlx-sheet-grip {
   width: 40px;
   height: 4px;
+  flex: none;
   border-radius: 999px;
   background: var(--birch-soft);
   margin: 0.35rem auto 0.75rem;
 }
-.dlx-sheet-title {
+.dlx-sheet-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 1rem 0.25rem;
+}
+/* Scroll-ledtråd: nederkanten tonas ut när det finns mer under (JS sätter
+   .has-more utifrån scrollpositionen). */
+.dlx-sheet.has-more::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(1.1rem + env(safe-area-inset-bottom, 0px));
+  height: 36px;
+  background: linear-gradient(to bottom, transparent, var(--linen-card));
+  pointer-events: none;
+}
+/* Stängkryss — samma form som dagväljarens (.daypick-close). */
+.dlx-sheet-close {
+  position: absolute;
+  top: 0.85rem;   /* i höjd med Tillbaka-knappen */
+  right: 0.35rem;
+  z-index: 1;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
-  gap: 0.45rem;
+  justify-content: center;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.dlx-sheet-close svg { width: 20px; height: 20px; }
+.dlx-sheet-close:active { background: var(--stone); }
+
+/* Rubrik: datumrad → titel → en metarad. */
+.dlx-sheet-head { margin: 0 0.2rem 0.9rem; }
+/* Första rubriken delar höjd med krysset — håll texten fri från det. */
+.dlx-sheet-scroll > .dlx-sheet-head:first-child,
+.dlx-sheet-scroll > .dlx-sheet-editor:first-child .dlx-sheet-head { padding-right: 2.6rem; }
+.dlx-sheet-eyebrow {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--moss-muted);
+  margin: 0 0 0.2rem;
+}
+.dlx-sheet-title {
   font-family: var(--font-display);
-  font-size: 1.05rem;
+  font-size: 1.2rem;
+  line-height: 1.25;
   font-weight: 700;
   color: var(--forest-deep);
-  margin: 0 0.2rem 0.15rem;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
 }
-.dlx-sheet-title svg { width: 17px; height: 17px; color: var(--rust); flex: none; }
 .dlx-sheet-sub {
-  font-size: 0.78rem;
+  font-size: 0.875rem;
+  line-height: 1.4;
   color: var(--moss-muted);
-  margin: 0 0.2rem 0.6rem;
+  margin: 0.25rem 0 0;
+}
+
+/* Primärparet sida vid sida: Visa receptet (fylld) + Byt recept (kontur). */
+.dlx-sheet-primary {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 0.6rem;
+  margin: 0 0 0.75rem;
+}
+.dlx-sheet-pbtn {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.6rem;
+  border: 1.5px solid var(--rust);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--rust-deep);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: transform var(--dur-fast) var(--ease-spring);
+}
+.dlx-sheet-pbtn.fill { background: var(--rust); color: var(--on-accent); }
+.dlx-sheet-pbtn svg { width: 18px; height: 18px; flex: none; }
+.dlx-sheet-pbtn:active { transform: scale(0.97); }
+@media (max-width: 360px) { .dlx-sheet-pbtn svg { display: none; } }
+
+/* En radlista: 48 px rader, avdelare som insatt hårlinje (inte en ram på en
+   rundad rad — den böjde sig i hörnen). */
+.dlx-sheet-list,
+.dlx-sheet-editor .custom-options { display: block; margin: 0 0 0.25rem; }
+.dlx-sheet-list > * + *,
+.dlx-sheet-editor .custom-options > * + * { position: relative; }
+.dlx-sheet-list > * + *::before,
+.dlx-sheet-editor .custom-options > * + *::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: calc(0.6rem + 34px + 0.8rem);
+  right: 0.6rem;
+  height: 1px;
+  background: var(--stone);
+  pointer-events: none;
 }
 .dlx-sheet-row {
   display: flex;
   align-items: center;
   gap: 0.8rem;
   width: 100%;
+  min-height: 48px;
   border: 0;
   background: transparent;
-  border-radius: 14px;
-  padding: 0.7rem 0.6rem;
+  border-radius: 12px;
+  padding: 0.45rem 0.6rem;
   cursor: pointer;
   text-align: left;
   font-family: inherit;
+  color: inherit;
 }
-.dlx-sheet-row:hover, .dlx-sheet-row:active { background: var(--linen); }
-.dlx-sheet-row + .dlx-sheet-row { border-top: 1px solid var(--stone); }
-.dlx-sheet-actions { margin: -0.5rem 0 0.75rem; }
+.dlx-sheet-row:active { background: var(--linen); }
+@media (hover: hover) { .dlx-sheet-row:hover { background: var(--linen); } }
 .dlx-sheet-ic {
-  width: 38px;
-  height: 38px;
+  width: 34px;
+  height: 34px;
   flex: none;
-  border-radius: 12px;
+  border-radius: 10px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -5706,21 +6011,64 @@ main#receptView {
 .dlx-sheet-ic svg { width: 18px; height: 18px; }
 .dlx-sheet-ic.rust { background: var(--clay); color: var(--rust-deep); }
 .dlx-sheet-ic.ochre { background: color-mix(in srgb, var(--ochre) 20%, var(--paper)); color: var(--ochre-deep); }
-.dlx-sheet-txt { display: flex; flex-direction: column; min-width: 0; }
-.dlx-sheet-t { font-weight: 600; font-size: 0.92rem; color: var(--forest-deep); }
-.dlx-sheet-d { font-size: 0.75rem; color: var(--moss-muted); margin-top: 0.1rem; }
-.dlx-sheet-back {
+.dlx-sheet-txt { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.dlx-sheet-t { font-weight: 600; font-size: 0.95rem; line-height: 1.25; color: var(--forest-deep); }
+.dlx-sheet-d {
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  color: var(--moss-muted);
+  margin-top: 0.1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Destruktiv åtgärd — sist, avskild, rost-färgad textknapp. */
+.dlx-sheet-dangerzone {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.6rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--stone);
+}
+.dlx-sheet-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  padding: 0.5rem 1rem;
   border: 0;
+  border-radius: 10px;
+  background: none;
+  color: var(--rust-deep);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dlx-sheet-danger svg { width: 17px; height: 17px; }
+.dlx-sheet-danger:active { background: var(--clay); }
+
+.dlx-sheet-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  min-height: 44px;
+  margin: -0.4rem 0 0.2rem -0.45rem;
+  padding: 0 0.75rem 0 0.3rem;
+  border: 0;
+  border-radius: 10px;
   background: none;
   color: var(--lichen-deep);
   font-family: inherit;
-  font-size: 0.8rem;
-  font-weight: 500;
+  font-size: 0.9rem;
+  font-weight: 600;
   cursor: pointer;
-  padding: 0.15rem 0.2rem 0.45rem;
 }
+.dlx-sheet-back svg { width: 18px; height: 18px; }
+.dlx-sheet-back:active { background: var(--linen); }
 .dlx-sheet-cap {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -5728,42 +6076,58 @@ main#receptView {
   margin: 0.8rem 0.2rem 0.25rem;
 }
 .dlx-sheet-empty {
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   color: var(--moss-muted);
   margin: 0.4rem 0.2rem 0.6rem;
 }
 .dlx-sheet-addrow { display: flex; gap: 0.5rem; margin: 0.4rem 0 0.2rem; }
-.dlx-sheet-addrow .custom-note-input { flex: 1; min-width: 0; width: auto; }
+/* 16 px i fälten — mindre text får iOS att zooma in vid fokus. */
+.dlx-sheet .custom-note-input {
+  flex: 1;
+  min-width: 0;
+  width: auto;
+  min-height: 44px;
+  font-size: 16px;
+}
 .dlx-sheet-addbtn {
+  min-height: 44px;
   border: 0;
   background: var(--rust);
   color: var(--on-accent);
-  border-radius: 8px;
-  padding: 0.55rem 0.95rem;
+  border-radius: 10px;
+  padding: 0 1rem;
   font-family: inherit;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
   flex: none;
 }
-.dlx-sheet-addbtn:hover { background: var(--rust-deep); }
+@media (hover: hover) { .dlx-sheet-addbtn:hover { background: var(--rust-deep); } }
 .dlx-sheet-addbtn:disabled { opacity: 0.6; }
+/* Utfällbar notering: raden visas, fältet fälls ut på tryck. */
+.dlx-note-exp .dlx-sheet-addrow { display: none; margin: 0 0 0.5rem; padding: 0 0.6rem; }
+.dlx-note-exp.open .dlx-sheet-addrow { display: flex; }
 .dlx-sheet-added { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.55rem; }
 .dlx-sheet-added span {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   background: var(--moss-soft);
   color: var(--forest);
   border-radius: 999px;
-  padding: 0.18rem 0.6rem;
+  padding: 0.2rem 0.65rem;
 }
 .dlx-sheet-added span::before { content: "✓ "; color: var(--lichen-deep); }
 /* Editorer (egen planering/fri dag) i sheeten — sheeten är redan en ljus panel,
    nollställ editorns egen panel-bakgrund/ram precis som .dlx-detail-custom gör. */
-.dlx-sheet-editor .detail-inner { background: transparent; border-top: none; padding: 0.2rem 0.1rem 0; }
+.dlx-sheet-editor .detail-inner { display: block; background: transparent; border-top: none; padding: 0; }
 /* Receptvyn i sheeten återanvänder .dlx-detail-*-klasserna — ge blocken luft. */
-.dlx-sheet .dlx-detail-head { margin: 0.5rem 0.1rem 0.8rem; }
+.dlx-sheet .dlx-detail-head { margin: 0 0.1rem 0.8rem; padding-top: 0; gap: 0.5rem; }
+@media (max-width: 360px) { .dlx-sheet .dlx-cook-btn svg { display: none; } }
+.dlx-sheet .dlx-status-toggle { min-height: 44px; font-size: 0.8125rem; padding: 0.4rem 0.8rem; }
+.dlx-sheet .dlx-detail-portions { font-size: 0.8125rem; }
+.dlx-sheet .dlx-step-num { font-size: 0.75rem; }
 .dlx-sheet .dlx-detail-cols { margin: 0 0.1rem; }
 .dlx-sheet .dlx-notes { margin: 0.8rem 0.1rem 0; }
+.dlx-sheet .dlx-mini-btn { min-height: 44px; }
 
 /* ── LISTOR-FLIKEN (P1 Familjehubben — gemensamma listor, js/lists/) ── */
 #listsView {
@@ -5966,7 +6330,7 @@ main#receptView {
 }
 .fl-note-empty { font-style: italic; }
 .fl-archived-kind {
-  font-size: 0.72rem;
+  font-size: var(--fs-xs);
   font-weight: 500;
   color: var(--text-muted);
   border: 1px solid var(--hairline);
@@ -6086,6 +6450,7 @@ main#receptView {
   font-size: 0.85rem;
   color: var(--lichen-deep);
   cursor: pointer;
+  min-height: 44px;
   padding: 0.6rem 1.1rem;
 }
 .fl-quickadd-form {
@@ -6125,6 +6490,9 @@ main#receptView {
   font-size: 0.88rem;
   color: var(--lichen-deep);
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
   padding: 0.4rem 0.25rem;
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -6232,11 +6600,12 @@ main#receptView {
 
 /* ═══ Prisoptimera — reor-först-flöde (Session 121) ═══════════════════════════ */
 /* Entré-knapp i Matsedel-rubriken */
-#weekView .content-heading { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+#weekView .content-heading,
+#shopView .content-heading { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
 .prisopt-btn {
   display: inline-flex; align-items: center; gap: 0.4rem; flex-shrink: 0;
   background: var(--rust); color: var(--on-accent); border: none; border-radius: 999px;
-  padding: 0.5rem 0.9rem; font-family: var(--font-body); font-size: 0.82rem; font-weight: 600;
+  min-height: 44px; padding: 0 1rem; font-family: var(--font-body); font-size: 0.82rem; font-weight: 600;
   cursor: pointer; box-shadow: 0 2px 10px rgba(181,106,76,.22);
   transition: background var(--dur-fast,.15s) var(--ease-standard), transform var(--dur-fast,.15s);
 }
@@ -6251,12 +6620,12 @@ main#receptView {
   margin-top: 0.85rem;
 }
 .wiz-alt-or {
-  font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase;
+  font-size: var(--fs-xs); letter-spacing: 0.06em; text-transform: uppercase;
   color: var(--stone, #9a8f7d);
 }
 .wiz-prisopt {
   display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem;
-  width: 100%; padding: 0.7rem 0.9rem;
+  width: 100%; min-height: 44px; padding: 0.7rem 0.9rem;
   background: color-mix(in srgb, var(--rust) 10%, var(--linen-card));
   color: var(--rust);
   border: 1px solid color-mix(in srgb, var(--rust) 28%, var(--linen-card));
@@ -6307,7 +6676,7 @@ main#receptView {
 
 .po-intro { font-size: 0.86rem; color: var(--text-muted); line-height: 1.5; margin: 0.2rem 0.3rem 1rem; }
 .po-intro strong { color: var(--forest); font-weight: 600; }
-.po-eyebrow { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.66rem; text-transform: uppercase; letter-spacing: .12em; color: var(--text-muted); font-weight: 600; margin: 0 0.3rem 0.55rem; }
+.po-eyebrow { display: flex; justify-content: space-between; align-items: baseline; font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: .12em; color: var(--text-muted); font-weight: 600; margin: 0 0.3rem 0.55rem; }
 .po-eyebrow .po-cnt { color: var(--lichen-deep); }
 
 /* Ingrediensgrupper */
@@ -6333,7 +6702,7 @@ main#receptView {
 .po-grp.sel .po-check svg { opacity: 1; transform: scale(1); }
 .po-grp-main { flex: 1; min-width: 0; cursor: pointer; }
 .po-grp-name { font-family: var(--font-display); font-size: 1.02rem; color: var(--forest); font-weight: 500; line-height: 1.2; }
-.po-grp-sub { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+.po-grp-sub { font-size: var(--fs-xs); line-height: var(--lh-body); color: var(--text-muted); margin-top: 2px; }
 .po-grp-save { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--rust); font-size: 0.92rem; white-space: nowrap; cursor: pointer; }
 .po-grp-chev { color: var(--text-muted); font-size: 1.15rem; opacity: .55; transition: transform var(--dur-base,.2s); cursor: pointer; }
 .po-grp.open .po-grp-chev { transform: rotate(90deg); opacity: 1; color: var(--rust); }
@@ -6343,12 +6712,12 @@ main#receptView {
 .po-prod:last-child { border-bottom: none; }
 .po-prod-main { flex: 1; min-width: 0; }
 .po-prod-name { font-size: 0.82rem; color: var(--text, var(--forest)); line-height: 1.25; }
-.po-prod-brand { font-size: 0.68rem; color: var(--text-muted); margin-top: 1px; }
+.po-prod-brand { font-size: var(--fs-xs); color: var(--text-muted); margin-top: 1px; }
 .po-prod-price { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .po-p-now { color: var(--lichen-deep); font-weight: 700; font-size: 0.84rem; }
-.po-p-was { color: var(--text-muted); font-size: 0.68rem; text-decoration: line-through; margin-left: 4px; }
-.po-p-save { display: block; color: var(--rust); font-size: 0.7rem; font-weight: 600; margin-top: 1px; }
-.po-loyal, .po-bulk { display: inline-block; font-size: 0.58rem; padding: 1px 6px; border-radius: 5px; font-weight: 600; margin-left: 6px; vertical-align: 1px; }
+.po-p-was { color: var(--text-muted); font-size: var(--fs-xs); text-decoration: line-through; margin-left: 4px; }
+.po-p-save { display: block; color: var(--rust); font-size: var(--fs-xs); font-weight: 600; margin-top: 1px; }
+.po-loyal, .po-bulk { display: inline-block; font-size: var(--fs-xs); padding: 1px 6px; border-radius: 5px; font-weight: 600; margin-left: 6px; vertical-align: 1px; }
 .po-loyal { background: var(--moss-soft); color: var(--lichen-deep); }
 .po-bulk { background: var(--clay); color: var(--rust); }
 
@@ -6372,8 +6741,8 @@ main#receptView {
 .po-rcard-main { flex: 1; min-width: 0; }
 .po-rtitle { font-family: var(--font-display); font-size: 1.04rem; color: var(--forest); font-weight: 500; line-height: 1.25; }
 .po-rmeta { display: flex; gap: 0.4rem; margin-top: 0.35rem; flex-wrap: wrap; align-items: center; }
-.po-chip { font-size: 0.64rem; padding: 2px 8px; border-radius: 20px; font-weight: 600; background: var(--clay); color: var(--rust); }
-.po-rtime, .po-rmatch { font-size: 0.72rem; color: var(--text-muted); }
+.po-chip { font-size: var(--fs-xs); padding: 2px 8px; border-radius: 20px; font-weight: 600; background: var(--clay); color: var(--rust); }
+.po-rtime, .po-rmatch { font-size: var(--fs-xs); color: var(--text-muted); }
 .po-rsave { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--rust); font-size: 0.98rem; white-space: nowrap; display: flex; align-items: center; gap: 0.3rem; }
 .po-rsave .icon { width: 1em; height: 1em; }
 .po-rchev { color: var(--text-muted); opacity: .5; font-size: 1.05rem; transition: transform var(--dur-base,.2s); }
@@ -6383,10 +6752,10 @@ main#receptView {
 .po-mrow { display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 1px solid var(--birch-soft); }
 .po-mrow:last-child { border-bottom: none; }
 .po-m-can { font-size: 0.82rem; color: var(--text, var(--forest)); }
-.po-m-prod { font-size: 0.68rem; color: var(--text-muted); margin-top: 1px; }
-.po-m-price { font-size: 0.68rem; margin-top: 1px; font-variant-numeric: tabular-nums; }
+.po-m-prod { font-size: var(--fs-xs); color: var(--text-muted); margin-top: 1px; }
+.po-m-price { font-size: var(--fs-xs); margin-top: 1px; font-variant-numeric: tabular-nums; }
 .po-m-save { color: var(--rust); font-weight: 700; font-size: 0.8rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
-.po-addbtn { display: block; margin: 0 0.85rem 0.8rem; width: calc(100% - 1.7rem); border: 1.5px solid var(--rust); background: transparent; color: var(--rust); font-weight: 600; font-family: var(--font-body); padding: 0.55rem; border-radius: 10px; cursor: pointer; font-size: 0.85rem; transition: background var(--dur-fast,.15s); }
+.po-addbtn { display: block; margin: 0 0.85rem 0.8rem; width: calc(100% - 1.7rem); border: 1.5px solid var(--rust); background: transparent; color: var(--rust); font-weight: 600; font-family: var(--font-body); min-height: 44px; padding: 0.55rem; border-radius: 10px; cursor: pointer; font-size: 0.85rem; transition: background var(--dur-fast,.15s); }
 .po-addbtn:active { background: var(--clay); }
 .po-addbtn.active { background: var(--clay); }
 .po-daypick { padding: 0 0.85rem 0.85rem; }
@@ -6398,9 +6767,9 @@ main#receptView {
 .po-daychip:active { transform: scale(0.97); }
 .po-daychip.is-loading { opacity: .6; }
 .po-dc-when { font-size: 0.8rem; color: var(--forest); font-weight: 600; display: block; }
-.po-dc-cur { font-size: 0.66rem; color: var(--text-muted); display: block; margin-top: 1px; }
+.po-dc-cur { font-size: var(--fs-xs); color: var(--text-muted); display: block; margin-top: 1px; }
 .po-noplan { font-size: 0.8rem; color: var(--text-muted); font-style: italic; }
-.po-foot { font-size: 0.68rem; color: var(--text-muted); line-height: 1.5; padding: 0.6rem 0.5rem 0.5rem; text-align: center; }
+.po-foot { font-size: var(--fs-xs); color: var(--text-muted); line-height: 1.5; padding: 0.6rem 0.5rem 0.5rem; text-align: center; }
 
 /* ═══ Session 131 — Drag & släpp av dagar (långtryck → wiggle → dra) ═══ */
 /* Gestlagret bor i js/weekly-plan/day-drag.js. Långtryck lyfter ett dagkort,
@@ -6413,9 +6782,11 @@ main#receptView {
    dagkortens entré-animation (dlxFadeIn/dlxFadeInDim) spelas om varje gång ett
    kort remountas → 0,4 s intoning = synligt blink när ett byte landar. Här
    nollas bara VARAKTIGHETEN, inte animationen: slutrutan (fill: both) bär
-   dämpningen av passerade/arkiverade dagar och måste finnas kvar. */
-.dlx-days.dlx-quiet .dlx-day,
-.dlx-days.dlx-quiet .dlx-tonight { animation-duration: 0.001ms !important; }
+   dämpningen av passerade/arkiverade dagar och måste finnas kvar.
+   Undantag: väntar-pulsen (.dlx-pending) och glöd-kvittot (.dlx-flash) är
+   själva beskeden om att något sparas/har sparats — de får spela ut. */
+.dlx-days.dlx-quiet .dlx-day:not(.dlx-pending):not(.dlx-flash),
+.dlx-days.dlx-quiet .dlx-tonight:not(.dlx-pending):not(.dlx-flash) { animation-duration: 0.001ms !important; }
 
 /* ── Helskärms-indikator under en pågående dag-operation ────────────────────
    Ersätter det gamla "Byter dag…"-kortet som kilades in ovanför dagslistan och
@@ -6428,9 +6799,9 @@ main#receptView {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Bara en tonad slöja — ingen backdrop-filter: oskärpan tvingade mobilen att
+     rita om hela sidan varje bildruta medan åtgärden pågick (hack). */
   background: color-mix(in srgb, var(--forest-deep, #2c3f33) 28%, transparent);
-  backdrop-filter: blur(1.5px);
-  -webkit-backdrop-filter: blur(1.5px);
   opacity: 0;
   transition: opacity 0.09s var(--ease-standard);
 }
@@ -6692,7 +7063,7 @@ main#receptView {
 .dlx-drag-edge.arming .dlx-edge-chev { transform: scale(1.45); }
 .dlx-edge-week {
   position: relative;
-  font-size: 0.6rem;
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.02em;
   color: var(--forest);
@@ -6758,7 +7129,7 @@ main#receptView {
   padding: 1.5rem 0.5rem;
 }
 .daypick-week {
-  font-size: 0.72rem;
+  font-size: var(--fs-xs);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -6817,9 +7188,9 @@ main#receptView {
   gap: 0.2rem;
 }
 .daypick-chip {
-  font-size: 0.63rem;
+  font-size: var(--fs-xs);
   font-weight: 700;
-  letter-spacing: 0.03em;
+  letter-spacing: 0;
   border-radius: 999px;
   padding: 0.14rem 0.45rem;
   white-space: nowrap;
@@ -7009,7 +7380,7 @@ button.storepick-row:active { border-color: var(--lichen); background: var(--mos
 }
 .storepick-account {
   display: block;
-  font-size: 0.72rem;
+  font-size: var(--fs-xs);
   font-weight: 400;
   color: var(--text-muted);
   margin-top: 0.1rem;

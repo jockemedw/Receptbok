@@ -16,7 +16,7 @@
 // selectRecipes/bucketBySaving/hasTure bröts ut till api/_shared/select-recipes.js
 // (en ren modul utan Supabase-beroenden) så att testet kör EXAKT samma kod som
 // api/generate.js använder — ingen drift-benägen inline-kopia längre.
-import { selectRecipes, bucketBySaving, hasTure, byLongestAgo, recencyWeight } from "../api/_shared/select-recipes.js";
+import { selectRecipes, bucketBySaving, hasTure, byLongestAgo, recencyWeight, pickReplacementOrder, chooseRandomConfirm } from "../api/_shared/select-recipes.js";
 import { buildRecipeUsage } from "../api/_shared/history.js";
 
 // ─── Testinfrastruktur ────────────────────────────────────────────────────────
@@ -537,6 +537,105 @@ const DEFAULT_CONSTRAINTS = {
   assertTrue(recentIds.has(5), "usage: recept på egen dag blockerar trots saknad historik");
   assertEq(usedOn["4"], "2026-09-16", "usage: senaste datum (planerad dag) vinner över gammal historik");
   assertTrue(recentIds.has(4), "usage: recept 4 nyligen använt via dagen 09-16");
+}
+
+// Test 21 — pickReplacementOrder (Slumpa): samma sort, kaskad, excludeIds.
+{
+  // Seedad rng (mulberry32) — deterministiska körningar.
+  const seeded = (seed) => () => {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const R = (id, protein, tested, tags = ["vardag30"]) => ({ id, title: `R${id}`, protein, tested, tags });
+  const MONDAY = "2026-04-20";
+  const current = R(1, "kyckling", true);
+  const pool = [
+    current,
+    R(2, "kyckling", true),       // nivå 1: testad + exakt protein
+    R(3, "kött", true),           // nivå 2: testad + samma klass
+    R(4, "fisk", false),          // nivå 3: otestad icke-veg
+    R(5, "vegetarisk", false),    // nivå 4
+    R(6, "vegetarisk", true),     // nivå 4 (annan klass)
+    R(7, "kyckling", true, ["helg60"]), // fel dagtagg
+  ];
+  // Massor av aldrig lagade otestade veg — det som tidigare dominerade.
+  for (let i = 100; i < 140; i++) pool.push(R(i, "vegetarisk", false));
+
+  const opts = (extra = {}) => ({ current, date: MONDAY, rng: seeded(42), today: "2026-04-20", ...extra });
+  const byId = Object.fromEntries(pool.map((r) => [r.id, r]));
+
+  let order = pickReplacementOrder(pool, opts());
+  assertEq(order[0], 2, "slumpa: testad kyckling ersätts av testad kyckling när sådan finns");
+  assertEq(order[1], 3, "slumpa: därefter testad icke-veg (samma klass)");
+  assertEq(order[2], 4, "slumpa: därefter samma klass oavsett testad");
+  assertFalse(order.includes(1), "slumpa: nuvarande recept returneras aldrig");
+
+  order = pickReplacementOrder(pool, opts({ excludeIds: [2] }));
+  assertEq(order[0], 3, "slumpa: excludeIds hålls borta — nivå 2 tar över");
+  assertEq(order[order.length - 1], 2, "slumpa: exkluderat recept hamnar bara i sista utvägen");
+
+  order = pickReplacementOrder(pool, opts({ excludeIds: [2, 3, 4] }));
+  const first = byId[order[0]];
+  assertEq(first.protein === "vegetarisk", true, "slumpa: tomma nivåer 1–3 → nivå 4 (klassen släpps)");
+
+  // Veckans recept och nyligen använda hoppas över.
+  order = pickReplacementOrder(pool, opts({ weekIds: [2], recentIds: new Set([3]) }));
+  assertEq(order[0], 4, "slumpa: veckans och nyligen använda recept hoppas över");
+
+  // Proteintaket: två kyckling i veckan → testad kött före kyckling.
+  order = pickReplacementOrder(pool, opts({ proteinCount: { kyckling: 2 } }));
+  assertEq(order[0], 3, "slumpa: proteintaket respekteras inom nivån");
+
+  // Vegetarisk nuvarande → vegetarisk ersättare.
+  const vegCur = R(50, "vegetarisk", true);
+  order = pickReplacementOrder([...pool, vegCur], opts({ current: vegCur }));
+  assertEq(byId[order[0]]?.protein, "vegetarisk", "slumpa: vegetarisk ersätts av vegetarisk");
+  assertEq(order[0], 6, "slumpa: testad veg ersätts av testad veg");
+
+  // Helg: helg60-taggen gäller.
+  order = pickReplacementOrder(pool, opts({ date: "2026-04-25" }));
+  assertEq(order[0], 7, "slumpa: helgdag väljer helg60-recept");
+
+  // Allt nyligen/exkluderat → sista utvägen ger ändå ett recept (inte nuvarande).
+  const small = [current, R(2, "kyckling", true), R(3, "kött", true)];
+  order = pickReplacementOrder(small, opts({ recentIds: new Set([2, 3]), excludeIds: [2, 3] }));
+  assertEq(order.length, 2, "slumpa: sista utvägen ignorerar historik/exkludering");
+  assertFalse(order.includes(1), "slumpa: sista utvägen returnerar aldrig nuvarande");
+
+  // Utan känt nuvarande recept: vanlig pool (tagg + tak).
+  order = pickReplacementOrder(pool, opts({ current: null }));
+  assertTrue(order.length > 0 && byId[order[0]].tags.includes("vardag30"), "slumpa: utan nuvarande recept → taggmatchad kandidat");
+
+  // 1000 seedade val från en blandad pool: testad andel = 1.0 så länge nivå 1–2 finns.
+  const mixed = [current];
+  for (let i = 200; i < 205; i++) mixed.push(R(i, i % 2 ? "kött" : "kyckling", true));
+  for (let i = 300; i < 360; i++) mixed.push(R(i, i % 3 ? "vegetarisk" : "fisk", false));
+  const usedOn = { 200: "2026-04-01", 201: "2026-03-10" };
+  const rng = seeded(7);
+  let testedPicks = 0, nonVeg = 0;
+  const seen = new Set();
+  for (let i = 0; i < 1000; i++) {
+    const [id] = pickReplacementOrder(mixed, { current, date: MONDAY, usedOn, rng, today: "2026-04-20" });
+    const r = mixed.find((x) => x.id === id);
+    if (r.tested) testedPicks++;
+    if (r.protein !== "vegetarisk") nonVeg++;
+    seen.add(id);
+  }
+  assertEq(testedPicks / 1000, 1, "slumpa: testad andel 1.0 för testad rätt när nivå 1 finns");
+  assertEq(nonVeg / 1000, 1, "slumpa: icke-veg andel 1.0 för kycklingrätt");
+  assertTrue(seen.size > 1, "slumpa: fortfarande variation inom nivån");
+}
+
+// Test 22 — chooseRandomConfirm: förhandskandidaten godtas bara om den är i poolen.
+{
+  assertEq(chooseRandomConfirm([5, 8, 3], 8), 8, "confirm: kandidat i poolen godtas");
+  assertEq(chooseRandomConfirm([5, 8, 3], "3"), 3, "confirm: sträng-id tvingas till heltal");
+  assertEq(chooseRandomConfirm([5, 8, 3], 42), 5, "confirm: utanför poolen → serverns förstaval");
+  assertEq(chooseRandomConfirm([5, 8, 3], null), 5, "confirm: ingen kandidat → förstaval");
+  assertEq(chooseRandomConfirm([], 8), null, "confirm: tom pool → null");
+  assertEq(chooseRandomConfirm(undefined, 8), null, "confirm: saknad pool → null");
 }
 
 // ─── Slutrapport ──────────────────────────────────────────────────────────────

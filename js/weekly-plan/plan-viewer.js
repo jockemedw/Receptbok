@@ -3,10 +3,12 @@
 // Skriver state: planConfirmed, isSnapping, scrollUpAccum
 
 import { fmtIso, fmtShort, PROTEIN_COLOR, getHolidayName, isoWeekNumber, escapeHtml, jsStringAttr, retroWindowStartIso } from '../utils.js';
+import { mealDayRowMatches, applyListCoverage } from './echo-match.js';
 
 const ICON_COIN = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 7.5v9 M9.5 9.7c.6-.7 1.5-1 2.5-1s2 .3 2.4 1c.5.8 0 1.7-1 2-.7.2-2.7.3-3.4.7-.9.4-1.4 1.3-.9 2.1.5.7 1.6 1 2.5 1s1.9-.3 2.5-1"/></svg>';
 const ICON_POT = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13c0-3.5 3.5-6 8-6s8 2.5 8 6"/><path d="M3 13h18"/><path d="M5.5 13v2c0 1.5 1 2.5 2.5 2.5h8c1.5 0 2.5-1 2.5-2.5v-2"/><path d="M11 4.5c0-.8.5-1.5 1-1.5s1 .7 1 1.5"/></svg>';
 const ICON_NOTE = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h11l3 3v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><path d="M8 11h8 M8 14h8 M8 17h5"/></svg>';
+const ICON_TRASH = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4l.8-12"/><path d="M10 11v6 M14 11v6"/></svg>';
 const ICON_CALENDAR = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>';
 
 // Fel som kastas med en känd svensk server-text flaggas userFacing → catch-
@@ -32,35 +34,167 @@ let _planChannel = null;
 // markerar nu planen som "stale" i stället och hämtar om så snart läget
 // avslutas (se exitReplaceMode/exitCustomPickMode och switchTab-städningen
 // nedan) eller ekofönstret löper ut.
-function markPlanStale() {
+//
+// Radnivå-eko: varje stale-markering minns eventets rad (senaste per datum).
+// När omhämtningen väl ska köras jämförs raderna igen mot det lokala läget —
+// ekot från en egen skrivning kan komma FÖRE API-svaret, och när svaret sedan
+// landat stämmer raden. Då behövs ingen omhämtning alls. DELETE och rader utan
+// datum går inte att jämföra → "okänt" → omhämtning som förut.
+const _staleRows = new Map();   // datum → payload.new
+let _staleUnknown = false;
+
+function markPlanStale(payload) {
   window._planStale = true;
+  const row = payload?.new;
+  if (payload && payload.eventType !== 'DELETE' && row && typeof row.date === 'string') _staleRows.set(row.date, row);
+  else _staleUnknown = true;
 }
 
-function reloadIfStale() {
-  if (!window._planStale) return;
+function clearPlanStale() {
   window._planStale = false;
+  _staleRows.clear();
+  _staleUnknown = false;
+}
+
+// Stämmer eventets rad redan med planen/egna dagarna i minnet?
+function isKnownRow(payload) {
+  if (!payload || payload.eventType === 'DELETE') return false;
+  return mealDayRowMatches(payload.new, window._lastPlan, window._customDays);
+}
+
+// Optimistiska receptval (Välj själv) som väntar på serversvar. Under tiden
+// får en stale-omhämtning INTE köras — den skulle läsa det gamla läget ur
+// databasen och "blinka tillbaka" det nya receptet. Omhämtningen sker i
+// stället när svaret landat (se finishOptimistic nedan).
+let _optimisticInFlight = 0;
+
+function reloadIfStale() {
+  if (_optimisticInFlight > 0) return;
+  if (!window._planStale) return;
+  const allKnown = !_staleUnknown && _staleRows.size > 0
+    && [..._staleRows.values()].every((row) => mealDayRowMatches(row, window._lastPlan, window._customDays));
+  clearPlanStale();
+  if (allKnown) return;   // bara våra egna ekon — vyn visar redan rätt läge
   window.loadWeeklyPlan();
+}
+
+// Eko-dämpning FÖRE en egen skrivning: realtime-eventet från vår egen ändring
+// kan komma medan anropet pågår — sätt fönstret innan fetch, inte efter svaret.
+// Delas av alla vägar som byter recept (Välj själv, reor, prisoptimera).
+export function suppressPlanEcho(ms = 4000) {
+  window._planMutateUntil = Math.max(window._planMutateUntil || 0, Date.now() + ms);
+}
+
+// Delad spärr (window._opBusy) för receptbyten: en ändring i taget. Returnerar
+// false (och säger till) om en tidigare ändring fortfarande sparas.
+export function takeOpLock() {
+  if (window._opBusy) {
+    window.showToast?.('Vänta – förra ändringen sparas fortfarande.');
+    return false;
+  }
+  window._opBusy = true;
+  return true;
+}
+
+// Bakgrundssparning (optimistiskt val): för användaren ser ändringen redan
+// klar ut, men spärren hålls tills servern svarat. Nästa åtgärd (Slumpa,
+// flytta, nytt val …) ska då VÄNTA IN sparningen och sedan köras — aldrig
+// tyst tappas ("random-väljaren buggar").
+let _bgSave = null;   // Promise som löses när bakgrundssparningen släppt spärren
+
+function beginBgSave() {
+  let done;
+  _bgSave = new Promise((resolve) => { done = resolve; });
+  return () => { _bgSave = null; done(); };
+}
+
+export function opBgSaving() {
+  return !!(window._opBusy && _bgSave);
+}
+
+// Synkron förkoll för knappar/gester: true = stoppa (och säg till varför).
+// Under en bakgrundssparning släpps åtgärden fram — den köar i acquireOpLock.
+export function opBlocked() {
+  if (!window._opBusy || _bgSave) return false;
+  window.showToast?.('Vänta – förra ändringen sparas fortfarande.');
+  return true;
+}
+
+// Ta spärren; pågår en bakgrundssparning väntas den in först.
+export async function acquireOpLock() {
+  while (window._opBusy && _bgSave) {
+    try { await _bgSave; } catch { /* sparningen hanterar sina egna fel */ }
+  }
+  return takeOpLock();
+}
+
+function beginOptimistic() {
+  _optimisticInFlight++;
+  suppressPlanEcho();
+}
+
+// Samma bakgrundssparnings-mönster för andra optimistiska vägar (Slumpa med
+// förhandsval i premiumvyn). Anropas EFTER att spärren tagits; returnerar
+// avslutet som släpper spärren, löser köade åtgärder och hanterar ekot.
+// done({ failed: true }) = sparningen gav fel → planen hämtas om (se finishOptimistic).
+export function beginOptimisticSave() {
+  const endBgSave = beginBgSave();
+  beginOptimistic();
+  return ({ failed = false } = {}) => {
+    window._opBusy = false;
+    endBgSave();
+    finishOptimistic({ failed });
+  };
+}
+
+// Svaret har landat: förläng ekofönstret (ekot kan komma strax efter svaret)
+// och hämta om först när fönstret löpt ut, om ett event markerat planen stale.
+//
+// failed: sparningen gav fel och dagen rullades tillbaka. Servern kan ändå ha
+// hunnit skriva (replace-recipe skriver meal_days FÖRE historik/listbygget, och
+// mobilnätet kan tappa svaret efter commit). Ekot av den skrivningen stämde med
+// det optimistiska läget och svaldes av isKnownRow — det kommer inte igen. Hämta
+// därför alltid om planen direkt, så vyn visar databasens faktiska läge.
+function finishOptimistic({ failed = false } = {}) {
+  _optimisticInFlight = Math.max(0, _optimisticInFlight - 1);
+  suppressPlanEcho();
+  if (failed) {
+    markPlanStale(null);   // okänd rad → reloadIfStale hämtar alltid om
+    setTimeout(reloadIfStale, 50);
+    return;
+  }
+  if (window._planStale) {
+    setTimeout(reloadIfStale, Math.max(0, (window._planMutateUntil || 0) - Date.now()) + 50);
+  }
 }
 
 function subscribeMealDays(householdId) {
   if (_planChannel) return; // redan prenumererar
   _planChannel = window.db
     .channel(`meal_days:${householdId}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'meal_days', filter: `household_id=eq.${householdId}` }, () => {
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'meal_days', filter: `household_id=eq.${householdId}` }, (payload) => {
+      // Radnivå-eko: raden stämmer redan med det vi visar (vårt eget eko efter
+      // ett API-svar) → inget att hämta. Skiljer den sig (partnerns ändring,
+      // eller ekot kom före svaret) körs de vanliga vägarna nedan.
+      if (isKnownRow(payload)) return;
       // Inköpsrundor: partnerns "Vi har handlat"/add_day syns i Inköp-flikens
       // täckningsrad utan omladdning (billig, egen hämtning — ingen plan-reload).
       window.refreshShopCoverage?.();
       // Ladda inte om direkt om användaren är mitt i en interaktion — men
       // tappa inte eventet: markera planen som stale (F231).
-      if (window.replaceMode || window.customPickMode) { markPlanStale(); return; }
-      if (window._dlxSwap || window._dlxMove) { markPlanStale(); return; }   // premiumvyns byt/flytta-läge
+      if (window.replaceMode || window.customPickMode) { markPlanStale(payload); return; }
+      if (window._dlxSwap || window._dlxMove) { markPlanStale(payload); return; }   // premiumvyns byt/flytta-läge
       // Eko-dämpning: våra egna skrivningar har redan uppdaterat vyn från
       // API-svaret — hoppa över omhämtningen som annars orsakar ett blink.
       // Men fönstret är tidsbaserat och dämpar därför även partnerns
       // samtidiga skrivningar — schemalägg en uppskjuten omhämtning när
       // fönstret löper ut ifall eventet faktiskt var partnerns.
+      // Ett optimistiskt val väntar fortfarande på servern (t.ex. kallstart
+      // längre än ekofönstret): en omhämtning nu skulle läsa det gamla receptet
+      // och skriva över valet. finishOptimistic hämtar om när svaret landat.
+      if (_optimisticInFlight > 0) { markPlanStale(payload); return; }
       if (window._planMutateUntil && Date.now() < window._planMutateUntil) {
-        markPlanStale();
+        markPlanStale(payload);
         setTimeout(reloadIfStale, (window._planMutateUntil - Date.now()) + 50);
         return;
       }
@@ -259,6 +393,7 @@ async function loadActivePlanFromSupabase(householdId) {
     .eq('plan_id', wp.id)
     .order('date');
   return {
+    id:          wp.id,   // för realtime-ekokontrollen (plan_id-värdet)
     generated:   wp.generated_at,
     startDate:   wp.start_date,
     endDate:     wp.end_date,
@@ -308,31 +443,126 @@ async function loadShopSummaryFromSupabase(householdId) {
 
 // ── Replace-läge ─────────────────────────────────────────────────────────────
 
+// Väljläget (Välj själv / egen dag): body-klass döljer import-knappen (+) som
+// annars skymmer korten, och gamla felrader från tidigare försök städas bort.
+function setPickChrome(on) {
+  document.body.classList.toggle('pick-mode', !!on);
+  document.querySelectorAll('#replaceBanner .replace-err, #customPickBanner .replace-err')
+    .forEach(el => el.remove());
+}
+
 export function enterReplaceMode(date, dayName) {
   window.dlxCloseSheet?.();   // lämna dag-sheeten när vi navigerar till receptboken
+  window.customPickMode = null;
   window.replaceMode = { date, dayName };
   document.getElementById('replaceBannerDay').textContent = dayName;
-  document.getElementById('receptView').classList.add('replace-mode');
+  const rv = document.getElementById('receptView');
+  rv.classList.remove('custom-pick-mode');
+  rv.classList.add('replace-mode');
+  setPickChrome(true);
   window.switchTab('recept');
 }
 
-export function exitReplaceMode() {
+export function exitReplaceMode({ reload = true } = {}) {
   window.replaceMode = null;
   document.getElementById('receptView').classList.remove('replace-mode');
-  reloadIfStale();   // F231: hämta om ifall vi missade ett event under läget
+  setPickChrome(!!window.customPickMode);
+  if (reload) reloadIfStale();   // F231: hämta om ifall vi missade ett event under läget
 }
 
+// Efter ett val: visa Matsedel på RÄTT vecka (dagen kan ligga en annan vecka
+// än den innevarande) med dagen i bild, glöd-kvitto och ev. väntar-markering.
+function showPickedDay(date, { pending = false } = {}) {
+  window.switchTab('vecka');
+  if (window.dlxAfterPick) window.dlxAfterPick(date, { pending });
+  else window.dlxWeekGoto?.(date);
+}
+
+// /api/shopping-svar (add_day/remove_day): rita nya listan direkt ur svaret
+// (id:n, bockar, "på listan"-chips) i stället för att ladda om Inköp-fliken.
+async function adoptShopResponse(res) {
+  let data = {};
+  try { data = await res.json(); } catch { /* ingen JSON */ }
+  if (data.shoppingList && window.renderShoppingData) {
+    window.renderShoppingData(data.shoppingList);
+  } else {
+    window._preserveChecked = false;
+    window.refreshShoppingTab?.();
+  }
+}
+
+function rerenderPlan() {
+  renderWeeklyPlanData(window._lastPlan || null, window._lastShop || null, false, window._planArchive, window._customDays);
+}
+
+// _lastShop är matsedelns vy av inköpslistan och återanvänds vid senare
+// omritningar. Ögonblicksfälten ur ett API-svar (täckning, rad-id:n, bockar)
+// gäller bara just det svaret — sparas de och återanvänds skulle gammal
+// täckning skrivas över färskare läge. Rensa bort dem.
+function planShopView(shop) {
+  if (!shop || typeof shop !== 'object') return shop || null;
+  if (!('coveredDates' in shop || 'itemIds' in shop || 'checkedItems' in shop)) return shop;
+  const { coveredDates, itemIds, checkedItems, ...rest } = shop;
+  return rest;
+}
+
+// Föregående aktiva listans id — behövs av applyShopListToPlan, eftersom
+// premiumvyns rerender(plan, shop) hinner sätta det nya id:t (via
+// renderWeeklyPlanData) innan renderShoppingData → applyShopListToPlan körs.
+let _prevActiveShopListId = null;
+function setActiveShopListId(id) {
+  const cur = window._activeShopListId ?? null;
+  if (cur !== (id ?? null)) _prevActiveShopListId = cur;
+  window._activeShopListId = id ?? null;
+}
+
+// Ett API-svar med ombyggd inköpslista (listId + coveredDates): spegla serverns
+// täckningspekare lokalt så "på listan"-chipsen stämmer direkt — och så att
+// realtime-ekona för pekarna känns igen som egna (ingen omhämtning). Anropas
+// från renderShoppingData. Ritar bara om planen om något faktiskt ändrats.
+export function applyShopListToPlan(shop) {
+  if (!shop?.listId) return false;
+  const cur = window._activeShopListId || null;
+  // Serverns steg 5 nollar pekare till listan som var aktiv FÖRE ombygget.
+  const oldListId = cur !== shop.listId ? cur : (_prevActiveShopListId || null);
+  const changed = applyListCoverage(window._lastPlan, window._customDays, {
+    listId: shop.listId, coveredDates: shop.coveredDates, oldListId,
+  });
+  const idChanged = cur !== shop.listId;
+  setActiveShopListId(shop.listId);
+  _prevActiveShopListId = null;   // förbrukad — ett upprepat svar ska inte nolla igen
+  // rerenderPlan läser listId ur _lastShop — annars skulle det gamla id:t
+  // skrivas tillbaka. API-formen är samma som runDayOp redan ritar med.
+  if (idChanged) window._lastShop = planShopView(shop);
+  if ((changed || idChanged) && (window._lastPlan || window._customDays)) rerenderPlan();
+  return changed || idChanged;
+}
+
+// Välj själv: tryck på ett receptkort → matsedeln visar receptet DIREKT
+// (optimistiskt), sparningen sker i bakgrunden. Misslyckas den återställs
+// dagen och en toast förklarar. Servern (/api/replace-recipe) är oförändrad.
 export async function selectRecipeForDay(event, recipeId, title) {
-  event.stopPropagation();
+  event?.stopPropagation?.();
   if (window.customPickMode) {
     return selectRecipeForCustomDay(event, recipeId, title);
   }
   if (!window.replaceMode) return;
+  if (!(await acquireOpLock())) return;
+  if (!window.replaceMode) { window._opBusy = false; return; }   // avbröts medan vi väntade
   const { date } = window.replaceMode;
+  const endBgSave = beginBgSave();
 
-  const btn = event.currentTarget;
-  btn.disabled    = true;
-  btn.textContent = 'Sparar…';
+  const day = window._lastPlan?.days?.find(d => d.date === date);
+  const snapshot = day
+    ? { recipe: day.recipe, recipeId: day.recipeId, saving: day.saving, savingMatches: day.savingMatches }
+    : null;
+
+  let failed = false;
+  beginOptimistic();
+  updateLastPlanDay(date, recipeId, title);
+  exitReplaceMode({ reload: false });
+  rerenderPlan();
+  showPickedDay(date, { pending: true });
 
   try {
     const res = await window.apiFetch('/api/replace-recipe', {
@@ -344,8 +574,7 @@ export async function selectRecipeForDay(event, recipeId, title) {
     try { data = await res.json(); } catch { /* ingen JSON */ }
     if (!res.ok) throw serverError(data.error);
 
-    updateLastPlanDay(date, recipeId, title);
-    window._planMutateUntil = Date.now() + 4000;   // dämpa realtids-ekot, se suppressEcho() i plan-viewer-deluxe.js
+    window.dlxSetPending?.(date, false);
     if (data.shoppingList) {
       window.renderIngredientPreview(
         data.shoppingList.recipeItems || null,
@@ -354,20 +583,19 @@ export async function selectRecipeForDay(event, recipeId, title) {
       );
       if (window.renderShoppingData) window.renderShoppingData(data.shoppingList);
     }
-    exitReplaceMode();
-    renderWeeklyPlanData(window._lastPlan || null, window._lastShop || null, false, window._planArchive, window._customDays);
-    window.switchTab('vecka');
   } catch (err) {
-    btn.disabled    = false;
-    btn.textContent = 'Välj';
-    const banner = document.getElementById('replaceBanner');
-    if (!banner.querySelector('.replace-err')) {
-      const e = document.createElement('span');
-      e.className  = 'replace-err';
-      e.style.cssText = 'color:var(--rust);font-size:0.8rem';
-      e.textContent   = userFacingMessage(err, 'Kunde inte spara — prova igen.');
-      banner.insertBefore(e, banner.querySelector('.replace-banner-cancel'));
-    }
+    // Återställ dagen — men bara om ingen annan hunnit ändra den under tiden.
+    const d = window._lastPlan?.days?.find(x => x.date === date);
+    if (d && snapshot && d.recipeId === recipeId) Object.assign(d, snapshot);
+    window.dlxSetPending?.(date, false);
+    rerenderPlan();
+    if (document.body.dataset.activeTab === 'vecka') window.dlxWeekGoto?.(date);
+    window.showToast?.(userFacingMessage(err, 'Kunde inte byta recept — prova igen.'), { type: 'error' });
+    failed = true;
+  } finally {
+    window._opBusy = false;
+    endBgSave();
+    finishOptimistic({ failed });
   }
 }
 
@@ -381,31 +609,43 @@ export function enterCustomPickMode(dateIso, dayName) {
   if (label) label.textContent = `${dayName} ${fmtShort(dateIso)}`;
   document.getElementById('receptView').classList.remove('replace-mode');
   document.getElementById('receptView').classList.add('custom-pick-mode');
+  setPickChrome(true);
   window.switchTab('recept');
 }
 
-export function exitCustomPickMode() {
+export function exitCustomPickMode({ reload = true } = {}) {
   window.customPickMode = null;
   document.getElementById('receptView').classList.remove('custom-pick-mode');
-  reloadIfStale();   // F231: hämta om ifall vi missade ett event under läget
+  setPickChrome(!!window.replaceMode);
+  if (reload) reloadIfStale();   // F231: hämta om ifall vi missade ett event under läget
 }
 
+// Egen dag: samma optimistiska mönster — dagen visas direkt, skrivningen mot
+// meal_days (plan_id NULL, oförändrad logik) sker i bakgrunden.
 export async function selectRecipeForCustomDay(event, recipeId, title) {
-  event.stopPropagation();
+  event?.stopPropagation?.();
   if (!window.customPickMode) return;
-  if (window._opBusy) return;   // delad spärr med premiumvyn (backlog #10)
-  window._opBusy = true;
+  if (!(await acquireOpLock())) return;   // delad spärr med premiumvyn (backlog #10)
+  if (!window.customPickMode) { window._opBusy = false; return; }   // avbröts medan vi väntade
   const { date } = window.customPickMode;
+  const endBgSave = beginBgSave();
 
-  const btn = event.currentTarget;
-  btn.disabled = true;
-  btn.textContent = 'Sparar…';
+  const prevCustomDays = window._customDays;
+  const existing = (prevCustomDays?.entries || {})[date] || {};
+  const updatedEntries = { ...(prevCustomDays?.entries || {}), [date]: { ...existing, note: existing.note || '', recipeId, recipeTitle: title } };
+
+  let failed = false;
+  beginOptimistic();
+  window._customDays = { ...(prevCustomDays || {}), entries: updatedEntries };
+  exitCustomPickMode({ reload: false });
+  rerenderPlan();
+  showPickedDay(date, { pending: true });
 
   try {
     const householdId = await window.getHouseholdId();
-    const existing = (window._customDays?.entries || {})[date] || {};
-    const { data: row } = await window.db
+    const { data: row, error: readErr } = await window.db
       .from('meal_days').select('plan_id').eq('household_id', householdId).eq('date', date).maybeSingle();
+    if (readErr) throw readErr;
     let dbErr;
     if (row && row.plan_id == null) {
       ({ error: dbErr } = await window.db.from('meal_days')
@@ -418,11 +658,10 @@ export async function selectRecipeForCustomDay(event, recipeId, title) {
       // Dagen tillhör nu en aktiv plan (t.ex. genererad från en annan enhet
       // medan sheeten var öppen) — skriv aldrig över plan-dagar (invariant #1).
       // Utan denna gren föll koden tyst igenom till "sparat"-vägen (F042).
-      dbErr = new Error('Dagen ingår nu i en matsedel — kunde inte spara.');
+      dbErr = serverError('Dagen ingår nu i en matsedel — kunde inte spara.');
     }
     if (dbErr) throw dbErr;
-    const updatedEntries = { ...(window._customDays?.entries || {}), [date]: { ...existing, note: existing.note || '', recipeId, recipeTitle: title } };
-    window._customDays = { entries: updatedEntries };
+    window.dlxSetPending?.(date, false);
 
     // Låg dagen redan på inköpslistan (inköpsrundor)? Då gäller listans varor
     // det GAMLA receptet — bygg om via add_day så listan speglar det nya.
@@ -434,34 +673,38 @@ export async function selectRecipeForCustomDay(event, recipeId, title) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'add_day', date }),
         });
-        if (res.ok) { window._preserveChecked = false; window.loadShoppingTab?.(); }
+        if (res.ok) {
+          // Servern (add_day) nollar dagens shopped_at — spegla det lokalt så
+          // ekot känns igen som eget (annars full omhämtning av planen).
+          const entry = window._customDays?.entries?.[date];
+          const wasShopped = !!entry?.shoppedAt;
+          if (wasShopped) entry.shoppedAt = null;
+          await adoptShopResponse(res);
+          if (wasShopped) rerenderPlan();
+        }
         else window.showToast?.('Receptet sparades, men inköpslistan kunde inte uppdateras — öppna dagen och välj "Lägg ingredienser på inköpslistan".', { type: 'error' });
       } catch {
         window.showToast?.('Receptet sparades, men inköpslistan kunde inte uppdateras — öppna dagen och välj "Lägg ingredienser på inköpslistan".', { type: 'error' });
       }
     }
-    exitCustomPickMode();
-    renderWeeklyPlanData(
-      window._lastPlan || null,
-      window._lastShop || null,
-      false,
-      window._planArchive,
-      window._customDays
-    );
-    window.switchTab('vecka');
   } catch (e) {
-    btn.disabled = false;
-    btn.textContent = 'Välj';
-    const banner = document.getElementById('customPickBanner');
-    if (banner && !banner.querySelector('.replace-err')) {
-      const err = document.createElement('span');
-      err.className = 'replace-err';
-      err.style.cssText = 'color:var(--rust);font-size:0.8rem';
-      err.textContent = 'Kunde inte spara — prova igen.';
-      banner.insertBefore(err, banner.querySelector('.replace-banner-cancel'));
+    // Återställ den egna dagen — bara om ingen annan hunnit ändra den under tiden.
+    const cur = window._customDays?.entries?.[date];
+    if (cur && cur.recipeId === recipeId) {
+      const entries = { ...(window._customDays.entries || {}) };
+      if (prevCustomDays?.entries?.[date]) entries[date] = prevCustomDays.entries[date];
+      else delete entries[date];
+      window._customDays = { ...window._customDays, entries };
     }
+    window.dlxSetPending?.(date, false);
+    rerenderPlan();
+    if (document.body.dataset.activeTab === 'vecka') window.dlxWeekGoto?.(date);
+    window.showToast?.(userFacingMessage(e, 'Kunde inte spara receptet — prova igen.'), { type: 'error' });
+    failed = true;
   } finally {
     window._opBusy = false;
+    endBgSave();
+    finishOptimistic({ failed });
   }
 }
 
@@ -523,32 +766,48 @@ export function blockedDayEditorHtml(dateIso, dayName) {
     ? 'T.ex. rester, åt ute, beställde hem…'
     : 'T.ex. pizza, rester, äter ute…';
 
+  // Samma radgrammatik som dag-sheetens övriga vyer: rubrik, EN radlista
+  // (noteringen fälls ut på plats), destruktiv åtgärd sist.
   return `<div class="detail-inner custom-day-editor">
-    <div class="custom-day-header">
-      <div class="custom-day-title">${dayName}</div>
-      <div class="custom-day-sub">${dateLabel} · Fri dag</div>
-    </div>
+    ${editorHeadHtml(dayName, dateLabel, 'Fri dag', '')}
     <div class="custom-options">
-      <div class="custom-option custom-option-note">
-        <div class="custom-option-head">
-          <span class="custom-option-icon" aria-hidden="true">${ICON_NOTE}</span>
-          <span class="custom-option-label">Skriv egen notering</span>
-        </div>
-        <input type="text" id="blockedDayNote" class="custom-note-input" maxlength="140"
-               placeholder="${notePlaceholder}">
-        <button type="button" class="custom-note-save" onclick="convertBlockedToCustom('${dateIso}')">Spara notering</button>
-      </div>
+      ${noteRowHtml('blockedDayNote', '', notePlaceholder, `convertBlockedToCustom('${dateIso}')`, false)}
     </div>
-    <button type="button" class="custom-day-remove" onclick="dlxSheetDeleteDay()">Ta bort dagen helt</button>
+    <div class="dlx-sheet-dangerzone"><button type="button" class="dlx-sheet-danger" onclick="dlxSheetDeleteDay()">${ICON_TRASH}<span>Ta bort dagen helt</span></button></div>
   </div>`;
+}
+
+// Rubrik i editorerna — samma form som dag-sheetens sheetHead (plan-viewer-deluxe.js).
+function editorHeadHtml(dayName, dateLabel, title, meta) {
+  return `<div class="dlx-sheet-head">
+      <p class="dlx-sheet-eyebrow">${escapeHtml(dayName || '')} · ${escapeHtml(dateLabel)}</p>
+      <h2 class="dlx-sheet-title">${escapeHtml(title)}</h2>
+      ${meta ? `<p class="dlx-sheet-sub">${escapeHtml(meta)}</p>` : ''}
+    </div>`;
+}
+
+// Noteringsrad som fälls ut till ett fält + Spara vid tryck (dlxExpandNote).
+// Fältets id och .custom-note-save läses av spara-flödena — behåll dem.
+function noteRowHtml(inputId, value, placeholder, saveCall, hasNote) {
+  return `<div class="dlx-note-exp">
+      <button type="button" class="dlx-sheet-row" aria-expanded="false" onclick="dlxExpandNote(this)">
+        <span class="dlx-sheet-ic">${ICON_NOTE}</span>
+        <span class="dlx-sheet-txt"><span class="dlx-sheet-t">${hasNote ? 'Ändra noteringen' : 'Skriv en notering'}</span></span>
+      </button>
+      <div class="dlx-sheet-addrow">
+        <input type="text" id="${inputId}" class="custom-note-input" maxlength="140"
+               placeholder="${placeholder}" aria-label="Notering" value="${value}"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();${saveCall}}">
+        <button type="button" class="dlx-sheet-addbtn custom-note-save" onclick="${saveCall}">Spara</button>
+      </div>
+    </div>`;
 }
 window.blockedDayEditorHtml = blockedDayEditorHtml;
 
 export async function convertBlockedToCustom(dateIso) {
   const note = document.getElementById('blockedDayNote')?.value?.trim();
   if (!note) return;
-  if (window._opBusy) return;   // delad spärr med premiumvyn (backlog #10)
-  window._opBusy = true;
+  if (!(await acquireOpLock())) return;   // delad spärr med premiumvyn (backlog #10)
   try {
     await postCustomDays('set', [dateIso], note);
     window.dlxCloseSheet?.();   // editorn bor i dag-sheeten
@@ -720,12 +979,12 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
   window._planArchive = archiveData;
   window._customDays = customData;
   window._lastPlan = plan;
-  window._lastShop = shop;
+  window._lastShop = planShopView(shop);
   // Aktiva inköpslistans id (för "på listan"-chipsen). API-payloads och
   // Supabase-summeringen bär listId; äldre/återanvända payloads utan fältet
   // behåller senast kända id i stället för att blanka chipsen.
-  if (shop && shop.listId) window._activeShopListId = shop.listId;
-  else if (!shop) window._activeShopListId = null;
+  if (shop && shop.listId) setActiveShopListId(shop.listId);
+  else if (!shop) setActiveShopListId(null);
 
   if (!hasActivePlan && !(archiveData.plans && archiveData.plans.length) && !Object.keys(customData.entries || {}).length) {
     document.getElementById('weekLoading').style.display = 'none';
@@ -802,6 +1061,7 @@ export async function loadWeeklyPlan() {
     document.getElementById('weekLoading').style.display = 'none';
     const hasAnything = (plan?.days?.length) || (archive?.plans?.length) || Object.keys(customDays.entries || {}).length;
     if (!hasAnything) { document.getElementById('weekNoData').style.display = ''; return; }
+    window.dlxDropShufflePreviews?.();   // omläst plan → förhandsvalen kan vara inaktuella
     renderWeeklyPlanData(plan, shop, false, archive, customDays);
     subscribeMealDays(householdId);
   } catch {
@@ -832,40 +1092,30 @@ export function customDayEditorHtml(dateIso, dayName) {
   // inom retro-fönstret (logga vad ni faktiskt åt / planera om i efterhand).
   // Äldre än fönstret är historik. "Starta matsedel" förblir framtid-only.
   const pickRecipeOption = dateIso >= retroWindowStartIso() ? `
-    <button type="button" class="custom-option" onclick="enterCustomPickMode('${dateIso}', '${escDayName}')">
-      <span class="custom-option-icon" aria-hidden="true">${ICON_POT}</span>
-      <span class="custom-option-label">Välj recept ur receptboken</span>
-      <span class="custom-option-chev" aria-hidden="true">›</span>
+    <button type="button" class="dlx-sheet-row" onclick="enterCustomPickMode('${dateIso}', '${escDayName}')">
+      <span class="dlx-sheet-ic">${ICON_POT}</span>
+      <span class="dlx-sheet-txt"><span class="dlx-sheet-t">${existing?.recipeId ? 'Välj ett annat recept' : 'Välj recept ur receptboken'}</span></span>
     </button>` : '';
 
-  const noteOption = `
-    <div class="custom-option custom-option-note">
-      <div class="custom-option-head">
-        <span class="custom-option-icon" aria-hidden="true">${ICON_NOTE}</span>
-        <span class="custom-option-label">Egen notering</span>
-      </div>
-      <input type="text" id="customDayNote" class="custom-note-input" maxlength="140"
-             placeholder="T.ex. pizza, rester, äter ute…"
-             value="${noteValue}">
-      <button type="button" class="custom-note-save" onclick="saveCustomDay('${dateIso}')">Spara notering</button>
-    </div>`;
+  const noteOption = noteRowHtml('customDayNote', noteValue, 'T.ex. pizza, rester, äter ute…',
+    `saveCustomDay('${dateIso}')`, !!note);
 
   const planOption = !isPastDay ? `
-    <button type="button" class="custom-option" onclick="startPlanFromDate('${dateIso}')">
-      <span class="custom-option-icon" aria-hidden="true">${ICON_CALENDAR}</span>
-      <span class="custom-option-label">Starta matsedel från denna dag</span>
-      <span class="custom-option-chev" aria-hidden="true">›</span>
+    <button type="button" class="dlx-sheet-row" onclick="startPlanFromDate('${dateIso}')">
+      <span class="dlx-sheet-ic">${ICON_CALENDAR}</span>
+      <span class="dlx-sheet-txt"><span class="dlx-sheet-t">Starta matsedel från denna dag</span><span class="dlx-sheet-d">Genererar nya middagar härifrån</span></span>
     </button>` : '';
 
   const removeBtn = hasExisting
-    ? `<button type="button" class="custom-day-remove" onclick="clearCustomDay('${dateIso}')">Ta bort markering</button>`
+    ? `<div class="dlx-sheet-dangerzone"><button type="button" class="dlx-sheet-danger" onclick="clearCustomDay('${dateIso}')">${ICON_TRASH}<span>Ta bort markering</span></button></div>`
     : '';
 
+  // Titel: dagens innehåll (recept/notering) — annars "Tom dag".
+  const title = existing?.recipeTitle || note || 'Tom dag';
+  const meta = hasExisting ? 'Egen planering' : '';
+
   return `<div class="detail-inner custom-day-editor">
-    <div class="custom-day-header">
-      <div class="custom-day-title">${dayName}</div>
-      <div class="custom-day-sub">${dateLabel}${hasExisting ? ' · egen planering' : ''}</div>
-    </div>
+    ${editorHeadHtml(dayName, dateLabel, title, meta)}
     <div class="custom-options">
       ${pickRecipeOption}
       ${noteOption}
@@ -914,7 +1164,7 @@ async function postCustomDays(action, dates, note) {
 }
 
 export async function saveCustomDay(dateIso) {
-  if (window._opBusy) return;   // delad spärr med premiumvyn (backlog #10)
+  if (opBlocked()) return;   // delad spärr med premiumvyn (backlog #10)
   const input = document.getElementById('customDayNote');
   const note = (input?.value || '').trim();
   const hasExisting = !!(window._customDays?.entries || {})[dateIso];
@@ -922,7 +1172,7 @@ export async function saveCustomDay(dateIso) {
   // convertBlockedToCustom). Annars skapades en innehållslös custom-dag som
   // genereringen sedan permanent hoppar över (F255).
   if (!note && !hasExisting) return;
-  window._opBusy = true;
+  if (!(await acquireOpLock())) return;
   const btn = document.querySelector('.custom-note-save');
   if (btn) { btn.disabled = true; btn.textContent = 'Sparar…'; }
   try {
@@ -939,7 +1189,7 @@ export async function saveCustomDay(dateIso) {
       window._customDays
     );
   } catch (e) {
-    if (btn) { btn.disabled = false; btn.textContent = 'Spara notering'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Spara'; }
     const editor = document.querySelector('.custom-day-editor');
     if (editor && !editor.querySelector('.custom-save-err')) {
       const err = document.createElement('p');
@@ -954,8 +1204,7 @@ export async function saveCustomDay(dateIso) {
 }
 
 export async function clearCustomDay(dateIso) {
-  if (window._opBusy) return;   // delad spärr med premiumvyn (backlog #10)
-  window._opBusy = true;
+  if (!(await acquireOpLock())) return;   // delad spärr med premiumvyn (backlog #10)
   try {
     // Låg dagens ingredienser på inköpslistan (inköpsrundor)? Plocka bort dem
     // FÖRE raderingen (remove_day kräver att dagen finns i täckningen).
@@ -967,7 +1216,7 @@ export async function clearCustomDay(dateIso) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'remove_day', date: dateIso }),
         });
-        if (res.ok) { window._preserveChecked = false; window.loadShoppingTab?.(); }
+        if (res.ok) await adoptShopResponse(res);
         else window.showToast?.('Dagen tas bort, men inköpslistan kunde inte uppdateras — ladda om och prova igen.', { type: 'error' });
       } catch {
         window.showToast?.('Dagen tas bort, men inköpslistan kunde inte uppdateras — ladda om och prova igen.', { type: 'error' });
@@ -1021,6 +1270,12 @@ window.enterReplaceMode    = enterReplaceMode;
 window.exitReplaceMode     = exitReplaceMode;
 window.selectRecipeForDay  = selectRecipeForDay;
 window.updateLastPlanDay   = updateLastPlanDay;
+window.suppressPlanEcho    = suppressPlanEcho;
+window.takeOpLock          = takeOpLock;
+window.acquireOpLock       = acquireOpLock;
+window.beginOptimisticSave = beginOptimisticSave;
+window.opBlocked           = opBlocked;
+window.opBgSaving          = opBgSaving;
 window.openSavingPopover   = openSavingPopover;
 window.closeSavingPopover  = closeSavingPopover;
 window.confirmPlan         = confirmPlan;
@@ -1035,3 +1290,4 @@ window.enterCustomPickMode = enterCustomPickMode;
 window.exitCustomPickMode  = exitCustomPickMode;
 window.selectRecipeForCustomDay = selectRecipeForCustomDay;
 window.startPlanFromDate   = startPlanFromDate;
+window.applyShopListToPlan = applyShopListToPlan;

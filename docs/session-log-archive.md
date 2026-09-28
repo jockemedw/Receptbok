@@ -1,6 +1,16 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–147. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–148. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+## Session 148 — Receptvalet: poolanalys mot livedata + tre fixar mot upprepning (datamuterande, SKARP, ej live-verifierad)
+
+`SUPABASE_ACCESS_TOKEN` fungerar igen (401:an från S147 är borta). **Livedata (hushåll "Familjen"):** 156 recept, 33 testade (32 valbara). Testade icke-veg: fisk 8, kyckling 5, fläsk 1, kött 1 — med Ture-dagar på reserveras 5 av dem → bara **10 testade icke-veg för vanliga dagar**, den enda delpool som faktiskt är trång. Veg 17 och Ture 10 räcker. `recipe_history` 70 rader. Genereringar sker var 3–5:e vecka (1/8, 24/8, 28/9) → 14-dagarsfönstret var i praktiken TOMT vid varje generering: S147:s uttömda-delpool-scenario uppstod inte i verkligheten. **Faktisk upprepning:** ren slump ur liten pool utan minne bortom 14 dagar (simulering: två 6-dagarsplaner delade ~1,5 rätter).
+
+**Fixar:** (1) **"Längst sedan"-viktning alltid** — `recencyWeight` + `weightedOrder` (Efraimidis–Spirakis) i `select-recipes.js`, horisont 90 dagar (nyss lagat = 0,1 → 1 vid 90 d), kombinerad med säsongsvikten; även "slumpa" i `replace-recipe.js`. Simulerat överlapp 1,45 → 0,81. (2) **Planerade dagar räknas som användning** — ny `fetchRecipeUsage`/`buildRecipeUsage` i `api/_shared/history.js` slår ihop historiken med `meal_days` (senaste 90 d + framåt): recept på **egna dagar** (skrevs aldrig till historiken) och dagflyttar täcks nu. (3) **Spökrader städas** — `pruneOrphanHistory` raderar historikrader med `used_on >= idag` vars recept inte ligger på någon dag framåt (ersatt utkast, bortslumpad rätt, raderad dag); körs efter generering, slumpa och dag-delete (best effort). Läsningen ignorerar spökrader oavsett. Idag fanns 18 historikrader men 6 genererade dagar — 12 spökrader från utkastet 19:04 + slumpningar.
+
+**Återkallad hypotes:** analysen påstod att oprövade-kvoten "nästan alltid" hamnade på veg-dagar. Simulering mot gamla koden visade jämn fördelning (0,33 ≈ 2/6) → ingen ändring gjord. Testsvit 15/15 grön (test 19 recency, test 20 usage). Endast backend → inga versionsbumpar. **Datamuterande:** raderar historikrader (inte schema).
+
+**Uppföljning samma session ("kör allt du föreslår"):** (1) Live-verifiering: spökstädningen och slumpa fungerar skarpt (se kön). (2) **`db/schema-baseline.sql`** — ögonblicksbild av produktionsschemat (tabeller, constraints, index, 46 RLS-policies, funktioner, triggrar, realtime) hämtad via pg_catalog. (3) **Ingrediensaudit mot livedata** (export via Management-API:t — service-nyckeln finns inte i miljön): 156 recept, P0 0 · P1 13 · P2 374 (juni: 673 problemrader) → `docs/ingredient-audit-2026-09-28.md`. **Ej gjort:** migration 011 — körningen via API:t stoppades av miljöns behörighetsspärr ("Modify Shared Resources"); Claude försökte inte kringgå den. Radering av spökrader behövdes inte (appen hade redan städat). Migration 010 och F02/F04-migrationerna kördes inte (villkorade, ej beställda). Nytt fynd: slumpa ignorerar oprövade-inställningen (Kända buggar).
 
 ## Session 147 — Receptvalet upprepade nyss lagade recept: fallback-buggen rättad (datamuterande, SKARP, ej live-verifierad)
 

@@ -313,7 +313,16 @@ function noPlanHtml() {
 
 // Perf-wrapper (mätning bakom ?perf=1) — renderingen själv ligger i
 // renderTodayViewInner. Interna anrop går via den här, så varje render räknas.
+// Dold Idag-flik ritas inte om: varje planuppdatering (byte, realtime-eko)
+// skulle annars bygga om hela #todayView i bakgrunden medan man står på
+// Matsedeln. switchTab('idag')-kroken nedan ritar alltid om vid besök, så
+// vyn är aktuell när den syns igen.
+function todayVisible() {
+  return !!document.getElementById('todayView')?.classList.contains('visible');
+}
+
 export function renderTodayView() {
+  if (!todayVisible()) return;
   const end = window.perfSpan?.('render:Idag');
   try {
     return renderTodayViewInner();
@@ -401,7 +410,7 @@ window.todayAddItem = async function () {
   const item = input?.value.trim();
   if (!item) { input?.focus(); return; }
   try {
-    if (!window._shopManualItems && window.loadShoppingTab) await window.loadShoppingTab();
+    if ((!window._shopManualItems || window._shopDirty) && window.loadShoppingTab) await window.loadShoppingTab();
   } catch { /* addManualItem ger begripligt fel nedan */ }
   await window.addManualItem('todayAddInput', 'todayAddBtn');
   if (input && input.value === '') {
@@ -438,7 +447,16 @@ function installHooks() {
   // Kollar prisstatus + pinnade lappar först när loadWeeklyPlan (och därmed
   // auth+household) är klar — bådadera är hushållsskopad data som kräver en
   // inloggad session.
-  wrap('loadWeeklyPlan', { async: true, onAfter: () => { checkPricingStatus(); checkPinnedNotes(); } });
+  // Pinnade lappar hämtas bara vid första planladdningen med Idag synlig
+  // (boot) och sedan vid varje Idag-besök (switchTab-kroken) — inte vid varje
+  // realtime-omladdning av planen. Prisstatusen läses en gång per sidladdning.
+  let bootNotesChecked = false;
+  wrap('loadWeeklyPlan', { async: true, onAfter: () => {
+    checkPricingStatus();
+    if (bootNotesChecked || !todayVisible()) return;
+    bootNotesChecked = true;
+    checkPinnedNotes();
+  } });
   const origSwitch = window.switchTab;
   if (typeof origSwitch === 'function' && !origSwitch.__todayWrapped) {
     const wrappedSwitch = function (tab) {

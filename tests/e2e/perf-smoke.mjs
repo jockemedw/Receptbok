@@ -12,133 +12,31 @@
 //   node tests/e2e/perf-smoke.mjs --browser=webkit      # kräver webkit-binären
 //   node tests/e2e/perf-smoke.mjs --latency=0            # bara klientarbete
 //   node tests/e2e/perf-smoke.mjs --json=docs/snapshots/perf-baseline.json
+//   node tests/e2e/perf-smoke.mjs --scenario=swap        # byt recept + realtime-eko
+//        (se tests/e2e/scenarios/swap.mjs för flaggor: --api-latency, --plan-offset)
+//   node tests/e2e/perf-smoke.mjs --scenario=echo        # egna ekon, partnerändringar, listombygge, indikator
 //
 // Playwright hämtas från den GLOBALA installationen om projektet saknar den
 // (repot har medvetet nästan inga beroenden). Webbläsarbinärer förväntas ligga
 // i PLAYWRIGHT_BROWSERS_PATH; saknas den valda binären avbryts körningen med
 // ett tydligt besked i stället för att försöka ladda ner något.
 
-import { createServer } from 'node:http';
-import { readFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { execSync } from 'node:child_process';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
+import {
+  ROOT, parseArgs, startServer, loadPlaywright, withRoutes, collectErrors,
+} from './harness.mjs';
 
 // ── Argument ─────────────────────────────────────────────────────────────────
 
-const args = new Map(
-  process.argv.slice(2).map((a) => {
-    const m = a.match(/^--([^=]+)(?:=(.*))?$/);
-    return m ? [m[1], m[2] ?? 'true'] : [a, 'true'];
-  }),
-);
+const args = parseArgs();
 const BROWSER = args.get('browser') || 'chromium';
 const LATENCY = Number(args.get('latency') ?? 120);
 const JSON_OUT = args.get('json') || null;
 const KEEP = args.get('keep') === 'true';
-
-// ── Statisk server (beroendefri) ─────────────────────────────────────────────
-
-const MIME = {
-  '.html': 'text/html; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.mjs': 'text/javascript; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.webmanifest': 'application/manifest+json',
-  '.png': 'image/png',
-  '.svg': 'image/svg+xml',
-  '.woff2': 'font/woff2',
-};
-
-function startServer() {
-  const server = createServer(async (req, res) => {
-    try {
-      const url = new URL(req.url, 'http://localhost');
-      let rel = decodeURIComponent(url.pathname);
-      if (rel === '/' || rel.endsWith('/')) rel += 'index.html';
-      const file = path.join(ROOT, rel);
-      // Ingen väg utanför repot.
-      if (!file.startsWith(ROOT)) { res.writeHead(403).end('nej'); return; }
-      const body = await readFile(file);
-      res.writeHead(200, {
-        'Content-Type': MIME[path.extname(file)] || 'application/octet-stream',
-        // Samma headers som produktionen (mätningen ska likna verkligheten).
-        'Cache-Control': 'public, max-age=0, must-revalidate',
-      }).end(body);
-    } catch {
-      res.writeHead(404).end('saknas');
-    }
-  });
-  return new Promise((resolve) => {
-    server.listen(0, '127.0.0.1', () => resolve({ server, port: server.address().port }));
-  });
-}
-
-// ── Playwright-upplösning ────────────────────────────────────────────────────
-
-async function loadPlaywright() {
-  const tries = ['playwright', '@playwright/test'];
-  try {
-    const globalRoot = execSync('npm root -g', { encoding: 'utf8' }).trim();
-    if (globalRoot) tries.push(path.join(globalRoot, 'playwright', 'index.js'));
-  } catch { /* npm saknas → nöj dig med de vanliga */ }
-  for (const spec of tries) {
-    try {
-      const mod = await import(spec);
-      // Playwright är CJS — named exports finns ibland bara på default.
-      const api = mod.chromium ? mod : mod.default;
-      if (api?.chromium) return api;
-    } catch { /* nästa */ }
-  }
-  throw new Error(
-    'Playwright hittades inte. Installera i projektet (npm i -D playwright) eller globalt (npm i -g playwright).',
-  );
-}
+const SCENARIO = args.get('scenario') || null;
 
 // ── Mätning av ett scenario ──────────────────────────────────────────────────
-
-const SUPABASE_ESM = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-
-async function withRoutes(page, counters) {
-  const stubBody = await readFile(path.join(ROOT, 'tests/e2e/fixtures/supabase-stub.js'), 'utf8');
-
-  await page.route(SUPABASE_ESM, (route) =>
-    route.fulfill({ status: 200, contentType: 'text/javascript; charset=utf-8', body: stubBody }));
-
-  // Fonter: tom CSS → deterministiskt och offline. Fontnedladdningarnas vikt
-  // mäts separat i planen (curl mot produktionen), inte här.
-  await page.route('https://fonts.googleapis.com/**', (route) =>
-    route.fulfill({ status: 200, contentType: 'text/css', body: '/* stub */' }));
-  await page.route('https://fonts.gstatic.com/**', (route) => route.abort());
-
-  // Egna API-anrop: svar med SAMMA form som de riktiga endpointsen, annars
-  // mäter vi appen i ett läge den aldrig är i på riktigt.
-  await page.route('**/api/**', (route) => {
-    const req = route.request();
-    const url = new URL(req.url());
-    counters.apiCalls.push(url.pathname);
-    let action = null;
-    try { action = JSON.parse(req.postData() || '{}').action || null; } catch { /* GET */ }
-
-    let body = {};
-    if (url.pathname.includes('dispatch-to-willys')) {
-      body = { featureAvailable: false, stores: [] };
-    } else if (action === 'get_preferences') {
-      body = { blockedBrands: [], preferOrganic: {}, preferSwedish: {} };
-    }
-    return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
-  });
-
-  // Ska aldrig träffas — stubben går inte på nätet. Larmar om det läcker.
-  await page.route('**/*.supabase.co/**', (route) => {
-    counters.leaks.push(route.request().url());
-    return route.abort();
-  });
-}
 
 async function readMetrics(page) {
   return page.evaluate(() => {
@@ -271,15 +169,7 @@ async function run() {
 
     page.on('request', () => { counters.requests++; });
     const errors = [];
-    page.on('pageerror', (e) => {
-      const where = String(e.stack || '').split('\n')[1] || '';
-      errors.push(`${e.message || e}${where ? ` @${where.trim()}` : ''}`);
-    });
-    page.on('console', (m) => {
-      if (m.type() !== 'error') return;
-      const loc = m.location();
-      errors.push(`${m.text()}${loc?.url ? ` @${loc.url.split('/').pop()}:${loc.lineNumber}` : ''}`);
-    });
+    collectErrors(page, errors);
 
     // ── Scenario 1: kallstart ────────────────────────────────────────────────
     const coldRequests0 = counters.requests;
@@ -442,7 +332,17 @@ function report(r) {
   console.log('');
 }
 
-run().catch((e) => {
+// --scenario=<namn> kör ett fristående scenario (tests/e2e/scenarios/<namn>.mjs)
+// i stället för standardrundan.
+const main = SCENARIO
+  ? async () => {
+    if (!/^[a-z0-9-]+$/.test(SCENARIO)) throw new Error(`Ogiltigt scenarionamn: ${SCENARIO}`);
+    const mod = await import(`./scenarios/${SCENARIO}.mjs`);
+    await mod.run({ args, browserName: BROWSER, latency: LATENCY });
+  }
+  : run;
+
+main().catch((e) => {
   console.error(e);
   process.exitCode = 1;
 });
