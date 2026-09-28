@@ -11,15 +11,51 @@ import { weightedSaving } from "./willys-matcher.js";
 
 export const SAVING_THRESHOLD = 10;
 
+// "Längst sedan"-viktning, ALLTID (Session 148). Tidigare var ordningen inom
+// poolen ren slump bortom 14-dagarsfönstret — med ~10 testade icke-veg-recept och
+// matsedlar var 3–5:e vecka delade två 6-dagarsplaner i snitt ~1,5 rätter
+// (simulering; ~0,8 med viktningen). Nu väger ett recept mindre ju närmare i
+// tiden det lagades: aldrig lagat = 1, annars linjärt från RECENCY_FLOOR upp
+// till 1 vid RECENCY_HORIZON_DAYS dagar.
+export const RECENCY_HORIZON_DAYS = 90;
+const RECENCY_FLOOR = 0.1;
+
+export function isoToday() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+export function recencyWeight(usedOnDate, today = isoToday()) {
+  if (!usedOnDate) return 1;
+  const days = (new Date(today + "T12:00:00") - new Date(usedOnDate + "T12:00:00")) / 864e5;
+  if (days <= 0) return RECENCY_FLOOR;
+  return Math.min(1, Math.max(RECENCY_FLOOR, days / RECENCY_HORIZON_DAYS));
+}
+
+function seasonWeight(r, currentSeason) {
+  if (!currentSeason) return 1;
+  const seasons = r.seasons || [];
+  if (seasons.length === 0) return 1;
+  return seasons.includes(currentSeason) ? 2 : 0.5;
+}
+
+// Viktad slumpordning utan återläggning (Efraimidis–Spirakis: nyckel = u^(1/w)).
+// Ett recept med vikt 2 hamnar före ett med vikt 1 i 2 av 3 fall.
+export function weightedOrder(list, weightOf) {
+  return list
+    .map((r) => ({ r, key: Math.pow(Math.random(), 1 / Math.max(weightOf(r), 1e-6)) }))
+    .sort((a, b) => b.key - a.key)
+    .map((x) => x.r);
+}
+
 // Prioriterar in rea-recept i matsedeln. Tröskeln mäts på VÄRDEVIKTAD besparing
 // (weightedSaving) i stället för rå kr — så att ett recept vars besparing bara är
 // billig vitlök/lök inte trycks in, medan dyra protein-/färskvarureor lyfts.
-export function bucketBySaving(pool, savingsById, currentSeason = null) {
-  // Säsongsvikta INOM varje besparings-bucket i stället för att omsortera hela
-  // poolen efteråt — annars kastar säsongsviktningen bort rea-först-ordningen när
-  // både optimize_prices och säsongsvikt är på. Rea-recept ligger fortfarande
-  // först (buckets konkateneras high→low); säsongen styr bara ordningen inom.
-  const order = (arr) => (currentSeason ? applySeasonWeight(arr, currentSeason) : shuffle(arr));
+export function bucketBySaving(pool, savingsById, currentSeason = null, usedOn = {}, today = isoToday()) {
+  // Säsong och "längst sedan" viktas INOM varje besparings-bucket i stället för
+  // att omsortera hela poolen efteråt — rea-recept ligger fortfarande först
+  // (buckets konkateneras high→low); vikterna styr bara ordningen inom.
+  const order = (arr) => weightedOrder(arr, (r) =>
+    seasonWeight(r, currentSeason) * recencyWeight(usedOn[r.id], today));
   if (!savingsById) return order(pool);
   const high = [], low = [];
   for (const r of pool) {
@@ -29,20 +65,6 @@ export function bucketBySaving(pool, savingsById, currentSeason = null) {
     else low.push(r);
   }
   return [...order(high), ...order(low)];
-}
-
-function applySeasonWeight(pool, currentSeason) {
-  if (!currentSeason) return pool;
-  const weighted = pool.map((r) => {
-    const seasons = r.seasons || [];
-    let weight;
-    if (seasons.length === 0) weight = 1;
-    else if (seasons.includes(currentSeason)) weight = 2;
-    else weight = 0.5;
-    return { r, sort: Math.random() * weight };
-  });
-  weighted.sort((a, b) => b.sort - a.sort);
-  return weighted.map((w) => w.r);
 }
 
 export const hasTure = (r) => (r.tags || []).some((t) => t.toLowerCase() === "ture");
@@ -57,7 +79,7 @@ export function byLongestAgo(list, usedOn = {}) {
   });
 }
 
-export function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), usedOn = {}, savingsById = null, currentSeason = null) {
+export function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), usedOn = {}, savingsById = null, currentSeason = null, today = isoToday()) {
   const MAX_PER_PROTEIN = 2;
 
   const fresh = recipes.filter((r) => !recentIds.has(r.id));
@@ -76,8 +98,8 @@ export function selectRecipes(recipes, dayList, constraints, recentIds = new Set
   const lastResort = byLongestAgo(recipes, usedOn);
   if (pool.length === 0) pool = recipes;
 
-  const weekdayPool = bucketBySaving(pool.filter((r) => r.tags.includes("vardag30")), savingsById, currentSeason);
-  const weekendPool = bucketBySaving(pool.filter((r) => r.tags.includes("helg60")), savingsById, currentSeason);
+  const weekdayPool = bucketBySaving(pool.filter((r) => r.tags.includes("vardag30")), savingsById, currentSeason, usedOn, today);
+  const weekendPool = bucketBySaving(pool.filter((r) => r.tags.includes("helg60")), savingsById, currentSeason, usedOn, today);
 
   const tureCount = constraints.ture_days;
   const shuffledIndices = shuffle(dayList.map((_, i) => i));

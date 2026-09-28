@@ -16,7 +16,8 @@
 // selectRecipes/bucketBySaving/hasTure bröts ut till api/_shared/select-recipes.js
 // (en ren modul utan Supabase-beroenden) så att testet kör EXAKT samma kod som
 // api/generate.js använder — ingen drift-benägen inline-kopia längre.
-import { selectRecipes, bucketBySaving, hasTure, byLongestAgo } from "../api/_shared/select-recipes.js";
+import { selectRecipes, bucketBySaving, hasTure, byLongestAgo, recencyWeight } from "../api/_shared/select-recipes.js";
+import { buildRecipeUsage } from "../api/_shared/history.js";
 
 // ─── Testinfrastruktur ────────────────────────────────────────────────────────
 let passed = 0;
@@ -494,6 +495,48 @@ const DEFAULT_CONSTRAINTS = {
     firsts.add(ids[1]);
   }
   assertEq(firsts.size, 2, "byLongestAgo: lika datum kommer i slumpad ordning");
+}
+
+// Test 19 — "längst sedan" viktar alltid, även när poolen inte är uttömd.
+{
+  assertEq(recencyWeight(null, "2026-04-21"), 1, "recencyWeight: aldrig använd = 1");
+  assertEq(recencyWeight("2026-04-21", "2026-04-21"), 0.1, "recencyWeight: i dag = golv");
+  assertEq(recencyWeight("2026-01-21", "2026-04-21"), 1, "recencyWeight: ≥90 dagar = 1");
+  const recipes = [
+    { id: 1, title: "Nyss", protein: "fisk", tags: ["vardag30"], tested: true, ingredients: [] },
+    { id: 2, title: "Aldrig", protein: "fisk", tags: ["vardag30"], tested: true, ingredients: [] },
+  ];
+  const usedOn = { 1: "2026-04-03" }; // 18 dagar före → utanför 14-dagarsfönstret
+  let neverUsed = 0;
+  for (let i = 0; i < 400; i++) {
+    const [d] = selectRecipes(recipes, VECKA.slice(0, 1), DEFAULT_CONSTRAINTS, new Set(), usedOn, null, null, "2026-04-21");
+    if (d.recipeId === 2) neverUsed++;
+  }
+  assertTrue(neverUsed > 260, `recency: aldrig lagat recept väljs oftare än nyss lagat (${neverUsed}/400)`);
+}
+
+// Test 20 — buildRecipeUsage: egna dagar räknas, spökrader ignoreras.
+{
+  const today = "2026-09-28", cutoff = "2026-09-14";
+  const history = [
+    { recipe_id: 1, used_on: "2026-09-20" }, // lagad förra veckan → nyligen
+    { recipe_id: 2, used_on: "2026-09-28" }, // spökrad: inte planerad någonstans
+    { recipe_id: 3, used_on: "2026-10-02" }, // planerad → giltig
+    { recipe_id: 4, used_on: "2026-08-01" }, // gammal
+  ];
+  const planned = [
+    { recipe_id: 3, date: "2026-10-02" },
+    { recipe_id: 5, date: "2026-10-05" }, // egen dag, saknar historikrad
+    { recipe_id: 4, date: "2026-09-16" }, // flyttad/egen dag nyligen → senare datum vinner
+  ];
+  const { usedOn, recentIds } = buildRecipeUsage(history, planned, today, cutoff);
+  assertTrue(recentIds.has(1), "usage: lagad för 8 dagar sedan är nyligen använd");
+  assertFalse(recentIds.has(2), "usage: spökrad (ej planerad) blockerar inte");
+  assertEq(usedOn["2"], undefined, "usage: spökrad ger ingen usedOn");
+  assertTrue(recentIds.has(3), "usage: planerad plandag blockerar");
+  assertTrue(recentIds.has(5), "usage: recept på egen dag blockerar trots saknad historik");
+  assertEq(usedOn["4"], "2026-09-16", "usage: senaste datum (planerad dag) vinner över gammal historik");
+  assertTrue(recentIds.has(4), "usage: recept 4 nyligen använt via dagen 09-16");
 }
 
 // ─── Slutrapport ──────────────────────────────────────────────────────────────

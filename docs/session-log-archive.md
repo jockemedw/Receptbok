@@ -1,6 +1,12 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–146. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–147. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+## Session 147 — Receptvalet upprepade nyss lagade recept: fallback-buggen rättad (datamuterande, SKARP, ej live-verifierad)
+
+Joakim: "väljaren är biased mot recept vi nyligen lagat — jag får hela tiden samma". **Grundorsak** (`api/_shared/select-recipes.js`): påfyllningen med "längst sedan" styrdes av om de *färska* recepten räckte **totalt** — inte per dagtyp. Var en delpool uttömd (alla testade veg-, helg- eller Ture-recept använda inom 14 dagar) föll `pick()` till sista utvägen, som loopade `recipes` i **databasordning** inklusive nyss använda → samma recept vann varje gång. Simulering (40 testade recept, 4 veg, 2 veg-dagar/vecka): samma veg-rätt i 10 av 10 matsedlar i rad. **Fix:** ny `byLongestAgo()` (slump + stabil sortering på `usedOn`, aldrig använda först) används både för påfyllningen och för sista utvägen. **Sekundärt:** `used_on` sparades som *genereringsdatum* → en rätt sist i en lång matsedel släpptes fri dagar efter att den ätits. Nu sparas matdagens datum i `generate.js` (`saveHistoryToSupabase`) och `replace-recipe.js`. Fönstret (14 dagar, `>= cutoff`) exkluderar därmed även framtida planerade rätter. Befintliga historikrader behåller sina gamla datum — självläker inom 14 dagar. Känd kvarvarande nyans: dagflytt (`day.js`) uppdaterar inte `used_on` (liten drift, medvetet orört).
+
+Test 17 (uttömd veg-pool → längst sedan, röd 30/30 mot gammal kod) + test 18 (`byLongestAgo`). Testsvit 15/15 grön. Endast backend → inga versionsbumpar. Livedata ej kontrollerad: `SUPABASE_ACCESS_TOKEN` gav 401 i sessionen.
 
 ## Session 146 — F05 byggd: handla-lägets startdialog borttagen (render-only, SKARP, ej mobil-verifierad)
 

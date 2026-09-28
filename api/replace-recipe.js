@@ -1,6 +1,7 @@
 import { createSupabaseHandler } from "./_shared/handler.js";
 import { db, getHouseholdId } from "./_shared/supabase.js";
-import { shuffle } from "./_shared/history.js";
+import { fetchRecipeUsage, pruneOrphanHistory } from "./_shared/history.js";
+import { weightedOrder, recencyWeight } from "./_shared/select-recipes.js";
 import { getActiveList, fetchCoverage, unshoppedDates, rebuildActiveList } from "./_shared/shopping-store.js";
 
 export default createSupabaseHandler(async (req, res) => {
@@ -44,20 +45,10 @@ export default createSupabaseHandler(async (req, res) => {
     picked = allRecipes.find((r) => r.id === parseInt(newRecipeId, 10));
     if (!picked) return res.status(404).json({ error: "Receptet hittades inte." });
   } else {
-    // Hämta historik för att undvika nyligen använda recept
-    const { data: histRows } = await db
-      .from("recipe_history")
-      .select("recipe_id, used_on")
-      .eq("household_id", householdId);
-
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() - 14);
-    const cutoffStr = cutoff.toISOString().slice(0, 10);
-    const recentIds = new Set(
-      (histRows || [])
-        .filter((r) => r.used_on >= cutoffStr)
-        .map((r) => r.recipe_id)
-    );
+    // Historik + alla planerade dagar (även egna) — samma källa som generate.js.
+    const { recentIds, usedOn } = await fetchRecipeUsage(db, householdId);
+    // "Längst sedan"-viktad slumpordning i stället för ren slump (Session 148).
+    const shuffle = (list) => weightedOrder(list, (r) => recencyWeight(usedOn[r.id]));
 
     const weekSet = new Set(weekRecipeIds.filter((id) => id !== currentRecipeId));
     const dow = new Date(date + "T12:00:00").getDay();
@@ -90,8 +81,6 @@ export default createSupabaseHandler(async (req, res) => {
     if (!pool.length) pool = shuffle(base.filter((r) => (proteinCount[r.protein] || 0) < MAX_PROTEIN));
     if (!pool.length) pool = shuffle(base);
     if (!pool.length) {
-      const usedOn = {};
-      (histRows || []).forEach((r) => { usedOn[r.recipe_id] = r.used_on; });
       pool = allRecipes
         .filter((r) => r.id !== currentRecipeId && !weekSet.has(r.id))
         .sort((a, b) => (usedOn[a.id] || "0000-00-00") < (usedOn[b.id] || "0000-00-00") ? -1 : 1);
@@ -124,6 +113,8 @@ export default createSupabaseHandler(async (req, res) => {
     ),
   ]);
   if (mdErr || histErr) throw mdErr || histErr;
+  // Den utbytta rätten lagas inte längre den dagen — släpp dess historikrad.
+  await pruneOrphanHistory(db, householdId);
 
   // Bygg om inköpslistan bara om den utbytta dagen redan ligger på listans
   // o-inhandlade täckning (Session 134, manuellt dagval): listan ska spegla

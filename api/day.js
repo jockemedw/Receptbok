@@ -7,6 +7,7 @@ import {
 } from "./_shared/day-ops.js";
 import { RETRO_WINDOW_DAYS } from "./_shared/constants.js";
 import { getActiveList, fetchCoverage, unshoppedDates, rebuildActiveList } from "./_shared/shopping-store.js";
+import { pruneOrphanHistory } from "./_shared/history.js";
 
 // ALLA dagoperationer i matsedeln — en endpoint, en modell (Session 142).
 // Ersätter move-day, swap-days och skip-day. En dag är en rad i meal_days;
@@ -259,6 +260,8 @@ export default createSupabaseHandler(async (req, res) => {
   if (!srcRow) return bad(res, "Dagen finns inte i matsedeln.", 404);
   const { error: delErr } = await db.from("meal_days").delete().eq("household_id", householdId).eq("date", date);
   if (delErr) throw new Error("Kunde inte ta bort dagen — prova igen.");
+  // En borttagen rätt lagas inte — släpp dess historikrad (best effort).
+  if (srcRow.recipe_id != null) await pruneOrphanHistory(db, householdId);
 
   // Låg dagens varor på aktiva listan (o-inhandlade)? Bygg om listan utan dem.
   // Misslyckas ombygget är dagen ändå borttagen — flagga så klienten kan säga
