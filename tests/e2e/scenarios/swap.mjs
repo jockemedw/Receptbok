@@ -136,7 +136,113 @@ function timings({ tap, samples }, { newTitle, oldTitle }) {
   };
 }
 
-const replaceCalls = (counters) => counters.api.filter((c) => c.path.endsWith('/api/replace-recipe')).length;
+// Skrivande byten — förhandsval (preview) och uppvärmning räknas inte.
+const replaceCalls = (counters) => counters.api.filter((c) =>
+  c.path.endsWith('/api/replace-recipe') && c.method === 'POST' && !c.body?.preview).length;
+const previewCalls = (counters) => counters.api.filter((c) =>
+  c.path.endsWith('/api/replace-recipe') && c.body?.preview === true).length;
+
+// Slumpa med förhandsval (P5): sheeten hämtar kandidater i bakgrunden, trycket
+// visar nya rätten direkt. Mäter också: andra Slumpa tar nästa kandidat, dubbel-
+// tryck under sparningen köar (tappas inte), fel → återställning + toast,
+// avvisad kandidat → serverns val ersätter.
+const toastText = (page) => page.evaluate(() => document.querySelector('.toast')?.textContent?.trim() || null);
+const waitIdle = (page, ms) => page.waitForFunction(() => !window._opBusy, null, { timeout: ms }).catch(() => {});
+
+async function tapShuffleMeasured(page, date, apiLatency) {
+  const oldTitle = await dayRecipe(page, date);
+  await startSampler(page, date, apiLatency + 3000);
+  await page.locator('#dlxSheet .dlx-sheet-row', { hasText: 'Slumpa' }).first().click();
+  await page.waitForTimeout(250);
+  const shownTitle = await dayRecipe(page, date);
+  const t = timings(await readSampler(page), { newTitle: shownTitle !== oldTitle ? shownTitle : null, oldTitle });
+  return { oldTitle, shownTitle, ...t };
+}
+
+async function scenarioShufflePrefetch(page, date, { apiLatency, counters }) {
+  const out = {};
+  // (1) Förhandsval hinner landa → direkt titel.
+  const p0 = previewCalls(counters);
+  await openByt(page, date);
+  await page.waitForTimeout(apiLatency + 300);
+  out.förhandsvalAnrop = previewCalls(counters) - p0;
+  const r0 = replaceCalls(counters);
+  const first = await tapShuffleMeasured(page, date, apiLatency);
+  await waitIdle(page, apiLatency + 3000);
+  const afterFirst = await dayRecipe(page, date);
+  out.första = { msTillNyTitelSynlig: first.msTillNyTitelSynlig, msTillVäntarläge: first.msTillVäntarläge,
+    visadTitelBlevKvar: afterFirst === first.shownTitle, gammalTitelBlinkadeTillbaka: first.gammalTitelBlinkadeTillbaka };
+  // (2) Andra Slumpa direkt (utan ny väntan) → nästa kandidat, annan rätt.
+  await openByt(page, date);
+  const second = await tapShuffleMeasured(page, date, apiLatency);
+  await waitIdle(page, apiLatency + 3000);
+  out.andra = { msTillNyTitelSynlig: second.msTillNyTitelSynlig,
+    annanÄnFörsta: second.shownTitle !== first.shownTitle && second.shownTitle !== first.oldTitle };
+  out.replaceAnrop = replaceCalls(counters) - r0;
+
+  // (3) Dubbeltryck under bakgrundssparningen → andra trycket köar och körs.
+  await openByt(page, date);
+  await page.waitForTimeout(apiLatency + 300);
+  const r1 = replaceCalls(counters);
+  const before = await dayRecipe(page, date);
+  await page.locator('#dlxSheet .dlx-sheet-row', { hasText: 'Slumpa' }).first().click();
+  await page.evaluate((d) => { window.dlxShuffle(d); }, date);   // returnera inte löftet — det köar
+  await page.waitForTimeout(100);
+  const pendingDirekt = await page.evaluate((d) => !!document.querySelector(`#weekDeluxe article[data-date="${d}"].dlx-pending`), date);
+  await page.waitForFunction(() => !window._opBusy, null, { timeout: apiLatency * 3 + 4000 }).catch(() => {});
+  await page.waitForTimeout(200);
+  out.dubbeltryck = { replaceAnrop: replaceCalls(counters) - r1, pendingDirekt, bytt: (await dayRecipe(page, date)) !== before };
+
+  // (4) Upptagen (vanlig dagoperation pågår, ingen bakgrundssparning) → toast.
+  await page.evaluate(() => { window._opBusy = true; });
+  await page.evaluate((d) => { window.dlxShuffle(d); }, date);
+  await page.waitForTimeout(150);
+  out.upptagenToast = await toastText(page);
+  await page.evaluate(() => { window._opBusy = false; });
+  await page.waitForTimeout(3500);   // låt toasten försvinna
+
+  // (5) Fel efter optimistisk visning → återställning + toast.
+  await openByt(page, date);
+  await page.waitForTimeout(apiLatency + 300);
+  const failOld = await dayRecipe(page, date);
+  counters.failReplace = true;
+  const f = await tapShuffleMeasured(page, date, apiLatency);
+  await waitIdle(page, apiLatency + 3000);
+  await page.waitForTimeout(150);
+  counters.failReplace = false;
+  out.fel = { msTillNyTitelSynlig: f.msTillNyTitelSynlig, återställd: (await dayRecipe(page, date)) === failOld,
+    toast: await toastText(page),
+    kvarMarkerad: await page.evaluate((d) => !!document.querySelector(`#weekDeluxe article[data-date="${d}"].dlx-pending`), date) };
+  await page.waitForTimeout(3500);
+
+  // (6) Servern avvisar kandidaten → serverns val ersätter den visade.
+  await openByt(page, date);
+  await page.waitForTimeout(apiLatency + 300);
+  await page.evaluate(() => { window.__stubRejectCandidate = true; });
+  const rj = await tapShuffleMeasured(page, date, apiLatency);
+  await waitIdle(page, apiLatency + 3000);
+  await page.evaluate(() => { window.__stubRejectCandidate = false; });
+  const finalTitle = await dayRecipe(page, date);
+  const stub = await page.evaluate((d) => window.__stubTables.meal_days.find((r) => r.date === d && r.plan_id != null)?.recipe_title_snapshot, date);
+  out.avvisadKandidat = { visadFörst: rj.shownTitle, slutlig: finalTitle, sammaSomServern: finalTitle === stub };
+  return out;
+}
+
+// Slumpa utan förhandsval: skärmdump av väntar-läget (ljust + mörkt).
+async function shotShuffling(page, date, file, apiLatency) {
+  await page.evaluate(() => window.dlxDropShufflePreviews?.());
+  await page.evaluate((d) => { window.dlxShuffle(d); }, date);
+  await page.waitForTimeout(120);
+  const el = page.locator(`#weekDeluxe article[data-date="${date}"]`).first();
+  await el.scrollIntoViewIfNeeded().catch(() => {});
+  await page.screenshot({ path: file });
+  const info = await page.evaluate((d) => {
+    const a = document.querySelector(`#weekDeluxe article[data-date="${d}"]`);
+    return { shuffling: a?.classList.contains('dlx-shuffling'), ariaBusy: a?.getAttribute('aria-busy') };
+  }, date);
+  await waitIdle(page, apiLatency + 3000);
+  return info;
+}
 
 // ── Delscenarier ─────────────────────────────────────────────────────────────
 
@@ -396,6 +502,17 @@ export async function run({ args, browserName = 'chromium', latency = 120 }) {
         out.väljSjälvPuls = await scenarioPendingVisible(page, manualTarget, { apiLatency, counters });
         out.väljSjälvSedanSlumpa = await scenarioPickThenShuffle(page, manualTarget, await pickTarget(page, 2), { apiLatency, counters });
         out.väljSjälvKikaPåRecept = await scenarioChevronPeek(page, manualTarget, { counters });
+        out.slumpaFörhandsval = await scenarioShufflePrefetch(page, target, { apiLatency, counters });
+        const shotDir = args.get('shots');
+        if (shotDir && planOffset === offsets[0]) {
+          const { mkdir } = await import('node:fs/promises');
+          await mkdir(shotDir, { recursive: true });
+          out.skärmdumpLjus = await shotShuffling(page, target, path.join(shotDir, 'shuffling-light.png'), apiLatency);
+          await page.emulateMedia({ colorScheme: 'dark' });
+          await page.waitForTimeout(200);
+          out.skärmdumpMörk = await shotShuffling(page, target, path.join(shotDir, 'shuffling-dark.png'), apiLatency);
+          await page.emulateMedia({ colorScheme: 'light' });
+        }
       }
       out.apiAnrop = counters.api.map((c) => `${c.method} ${c.path}${c.action ? ` ${c.action}` : ''}`);
       result[key] = out;

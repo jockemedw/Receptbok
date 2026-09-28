@@ -104,6 +104,19 @@ function beginOptimistic() {
   suppressPlanEcho();
 }
 
+// Samma bakgrundssparnings-mönster för andra optimistiska vägar (Slumpa med
+// förhandsval i premiumvyn). Anropas EFTER att spärren tagits; returnerar
+// avslutet som släpper spärren, löser köade åtgärder och hanterar ekot.
+export function beginOptimisticSave() {
+  const endBgSave = beginBgSave();
+  beginOptimistic();
+  return () => {
+    window._opBusy = false;
+    endBgSave();
+    finishOptimistic();
+  };
+}
+
 // Svaret har landat: förläng ekofönstret (ekot kan komma strax efter svaret)
 // och hämta om först när fönstret löpt ut, om ett event markerat planen stale.
 function finishOptimistic() {
@@ -917,6 +930,7 @@ export async function loadWeeklyPlan() {
     document.getElementById('weekLoading').style.display = 'none';
     const hasAnything = (plan?.days?.length) || (archive?.plans?.length) || Object.keys(customDays.entries || {}).length;
     if (!hasAnything) { document.getElementById('weekNoData').style.display = ''; return; }
+    window.dlxDropShufflePreviews?.();   // omläst plan → förhandsvalen kan vara inaktuella
     renderWeeklyPlanData(plan, shop, false, archive, customDays);
     subscribeMealDays(householdId);
   } catch {
@@ -1138,6 +1152,7 @@ window.updateLastPlanDay   = updateLastPlanDay;
 window.suppressPlanEcho    = suppressPlanEcho;
 window.takeOpLock          = takeOpLock;
 window.acquireOpLock       = acquireOpLock;
+window.beginOptimisticSave = beginOptimisticSave;
 window.opBlocked           = opBlocked;
 window.opBgSaving          = opBgSaving;
 window.openSavingPopover   = openSavingPopover;

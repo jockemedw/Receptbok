@@ -5625,6 +5625,36 @@ body.cook-open { overflow: hidden; }
 .dlx-pending.dlx-flash,
 .dlx-day.dlx-pending.dlx-flash { animation: dlxFlashGlow 1.4s ease both; }
 
+/* Slumpa utan förhandsval: titelraden säger vad som händer tills servern
+   svarat. Gamla titeln göms (behåller radhöjden), texten läggs ovanpå.
+   Färgen via tokens → rätt i både ljust och mörkt tema. */
+.dlx-shuffling :is(.dlx-day-recipe, .dlx-tonight-title) { position: relative; color: transparent; }
+.dlx-shuffling :is(.dlx-day-recipe, .dlx-tonight-title) > * { visibility: hidden; }
+.dlx-shuffling :is(.dlx-day-recipe, .dlx-tonight-title)::after {
+  content: 'Slumpar nytt recept…';
+  position: absolute;
+  inset: 0;
+  color: var(--moss-muted);
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .dlx-shuffling :is(.dlx-day-recipe, .dlx-tonight-title)::after {
+    background: linear-gradient(90deg, var(--moss-muted) 0 35%, var(--lichen) 50%, var(--moss-muted) 65% 100%);
+    background-size: 250% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: dlxShuffleShimmer 1.4s linear infinite;
+  }
+}
+@keyframes dlxShuffleShimmer {
+  from { background-position: 100% 0; }
+  to { background-position: 0 0; }
+}
+
 /* ═══ Session 107 — Ikväll-sheeten: kvällens snabbåtgärder (backlog #15, variant B) ═══ */
 .dlx-sheet-backdrop {
   position: fixed;

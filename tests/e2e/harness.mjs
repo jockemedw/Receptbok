@@ -128,6 +128,7 @@ export async function withRoutes(page, counters, { apiLatency = 0 } = {}) {
     // servern byggt om listan; utelämnas här). Skrivningen speglas i stubbens
     // tabeller så en senare omhämtning ser samma tillstånd.
     if (url.pathname.endsWith('/api/replace-recipe')) {
+      if (method === 'OPTIONS') return route.fulfill({ status: 200, body: '' });   // uppvärmning
       if (method !== 'POST') return json(route, 405, { error: 'Metod ej tillåten' });
       await sleep(apiLatency);
       // counters.failReplace = true → simulera serverfel (inget skrivs i stubben).
@@ -136,13 +137,29 @@ export async function withRoutes(page, counters, { apiLatency = 0 } = {}) {
         const T = window.__stubTables;
         const row = T.meal_days.find((r) => r.date === b.date && r.plan_id != null);
         if (!row) return { status: 404, body: { error: 'Dagen hittades inte i veckoplanen.' } };
+        const taken = new Set([...(b.weekRecipeIds || []), b.currentRecipeId, ...(b.excludeIds || [])]
+          .filter((x) => x != null).map(Number));
+        // Förhandsval (preview): bara läsning — tre kandidater, inget skrivs.
+        if (b.preview === true) {
+          const pool = T.recipes.filter((r) => !taken.has(r.id));
+          const start = (100 + seq * 7) % Math.max(1, pool.length);
+          const candidates = [0, 1, 2].map((i) => pool[(start + i) % pool.length])
+            .filter((r, i, arr) => r && arr.findIndex((x) => x.id === r.id) === i)
+            .map((r) => ({ id: r.id, title: r.title }));
+          return { status: 200, body: { candidates } };
+        }
         let rec;
-        if (b.newRecipeId != null) {
+        if (b.random === true && b.newRecipeId != null) {
+          // Slumpa med förhandsval: kandidaten godtas om den fortfarande är ledig
+          // (window.__stubRejectCandidate = true → servern väljer själv).
+          const ok = !taken.has(Number(b.newRecipeId)) && !window.__stubRejectCandidate;
+          const pool = T.recipes.filter((r) => !taken.has(r.id));
+          rec = ok ? T.recipes.find((r) => r.id === Number(b.newRecipeId)) : pool[(100 + seq * 7) % pool.length];
+        } else if (b.newRecipeId != null) {
           rec = T.recipes.find((r) => r.id === Number(b.newRecipeId));
           if (!rec) return { status: 404, body: { error: 'Receptet hittades inte.' } };
         } else {
           // Deterministisk "slump": första lediga recept efter en löpande offset.
-          const taken = new Set([...(b.weekRecipeIds || []), b.currentRecipeId].filter((x) => x != null));
           const pool = T.recipes.filter((r) => !taken.has(r.id));
           rec = pool[(100 + seq * 7) % pool.length];
         }
@@ -159,6 +176,7 @@ export async function withRoutes(page, counters, { apiLatency = 0 } = {}) {
     // /api/day — bara POST. Minimal giltig form (se buildResponse i api/day.js):
     // oförändrad plan + egna dagar, noop — stubben roterar inga dagar.
     if (url.pathname.endsWith('/api/day')) {
+      if (method === 'OPTIONS') return route.fulfill({ status: 200, body: '' });   // uppvärmning
       if (method !== 'POST') return json(route, 405, { error: 'Metod ej tillåten' });
       await sleep(apiLatency);
       const out = await page.evaluate(() => {

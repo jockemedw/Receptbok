@@ -94,6 +94,16 @@ export async function apiFetch(path, options = {}) {
   return fetch(path, { ...options, headers });
 }
 
+// Tillbaka till appen (mobilen väckt, flik bytt): låt Supabase förnya en
+// utgången token i bakgrunden NU, så nästa tryck (t.ex. Slumpa) inte först
+// väntar på en tokenrunda i apiFetch. Fel sväljs — nästa anrop försöker igen.
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'visible') return;
+    try { auth.getSession().catch(() => {}); } catch { /* tyst */ }
+  });
+}
+
 auth.onAuthStateChange((event) => {
   if (event === 'SIGNED_OUT') {
     clearHouseholdCache();

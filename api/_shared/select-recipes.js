@@ -147,6 +147,18 @@ export function pickReplacementOrder(recipes, {
   return order;
 }
 
+// Slumpa med förhandsval (preview): klienten har redan visat en kandidat ur
+// en tidigare preview. Servern räknar om den ordnade poolen (samma filter som
+// ovan) och godtar kandidaten bara om den fortfarande är tillåten — annars
+// (t.ex. om veckan ändrats under tiden) tar den sitt eget förstaval. null =
+// inget tillgängligt recept alls.
+export function chooseRandomConfirm(poolIds, requestedId) {
+  const order = poolIds || [];
+  const req = requestedId == null ? NaN : parseInt(requestedId, 10);
+  if (!Number.isNaN(req) && order.includes(req)) return req;
+  return order.length ? order[0] : null;
+}
+
 export function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), usedOn = {}, savingsById = null, currentSeason = null, today = isoToday()) {
   const MAX_PER_PROTEIN = 2;
 

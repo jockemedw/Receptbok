@@ -1,7 +1,7 @@
 import { createSupabaseHandler } from "./_shared/handler.js";
 import { db, getHouseholdId, fetchTargetServings } from "./_shared/supabase.js";
 import { buildRecipeUsage, isoDaysAgo, orphanHistoryIds, pruneOrphanHistory } from "./_shared/history.js";
-import { pickReplacementOrder } from "./_shared/select-recipes.js";
+import { pickReplacementOrder, chooseRandomConfirm } from "./_shared/select-recipes.js";
 import { getActiveList, rebuildActiveList } from "./_shared/shopping-store.js";
 
 // Receptbyte (Slumpa / välj själv / Byt in från Veckans fynd).
@@ -20,11 +20,21 @@ import { getActiveList, rebuildActiveList } from "./_shared/shopping-store.js";
 //      körs parallellt med listombygget — de rör olika tabeller.
 // Säkerhetsordningen i rebuildActiveList (ny lista inaktiv → varor → stäng
 // gamla → aktivera nya) är orörd.
+//
+// LÄGEN (P5 — Slumpa ska kännas omedelbar):
+//   - Välj själv / Byt in:  { date, newRecipeId }            → skriver just det receptet.
+//   - Slumpa:               { date, currentRecipeId, … }     → servern väljer och skriver.
+//   - Förhandsval:          { date, preview: true, … }       → ENBART läsning. Svarar
+//     { candidates: [{id, title}] } (högst 3) ur samma ordnade pool. Inga skrivningar.
+//   - Slumpa med förhandsval: { date, newRecipeId, random: true, … } → servern räknar
+//     om poolen; kandidaten skrivs om den fortfarande är tillåten, annars serverns
+//     eget förstaval. Svaret säger vad som faktiskt skrevs (som vanlig Slumpa).
 
 // Plandagarna ligger alltid nära den bytta dagen; fönstret tar med marginal
 // även en plan som började långt innan dagens 90-dagars användningsfönster.
 const USAGE_LOOKBACK_DAYS = 90;
 const PLAN_MARGIN_DAYS = 62;
+const PREVIEW_CANDIDATES = 3;
 
 function shiftIso(iso, days) {
   const d = new Date(iso + "T12:00:00Z");
@@ -35,7 +45,11 @@ function shiftIso(iso, days) {
 // Kärnan, injicerbar för tester (samma mönster som generate.js). Returnerar
 // { status, body } — handlern nedan skickar svaret.
 export async function replaceRecipe({ database = db, householdId, body = {}, rng = Math.random }) {
-  const { date, currentRecipeId: rawCurrentId, weekRecipeIds: rawWeekIds = [], newRecipeId, saving, savingMatches, excludeIds: rawExcludeIds } = body || {};
+  const { date, currentRecipeId: rawCurrentId, weekRecipeIds: rawWeekIds = [], newRecipeId: rawNewId, saving, savingMatches, excludeIds: rawExcludeIds } = body || {};
+  const preview = body?.preview === true;
+  // random + newRecipeId = Slumpa där klienten redan visat en förhandskandidat.
+  const random = preview || body?.random === true || !rawNewId;
+  const newRecipeId = preview ? null : rawNewId;
   if (!date) return { status: 400, body: { error: "date saknas" } };
 
   // Recept-id från DB är heltal — tvinga inkommande id till heltal så exkluderingen
@@ -96,7 +110,7 @@ export async function replaceRecipe({ database = db, householdId, body = {}, rng
   const historyRows = hist.error ? null : (hist.data || []);
   let picked;
 
-  if (newRecipeId) {
+  if (!random) {
     picked = allRecipes.find((r) => r.id === parseInt(newRecipeId, 10));
     if (!picked) return { status: 404, body: { error: "Receptet hittades inte." } };
   } else {
@@ -120,14 +134,21 @@ export async function replaceRecipe({ database = db, householdId, body = {}, rng
       recentIds, usedOn, proteinCount, date, excludeIds, rng,
     });
     if (!order.length) return { status: 409, body: { error: "Inga tillgängliga recept att byta till." } };
-    picked = byId.get(order[0]);
+    // Förhandsval: bara läsning — inga skrivningar, ingen städning, inget ombygge.
+    if (preview) {
+      const candidates = order.slice(0, PREVIEW_CANDIDATES)
+        .map((id) => byId.get(id)).map((r) => ({ id: r.id, title: r.title }));
+      return { status: 200, body: { candidates } };
+    }
+    // Förhandskandidaten skrivs bara om den fortfarande är tillåten.
+    picked = byId.get(chooseRandomConfirm(order, newRecipeId));
   }
 
   // Vid "Byt in" från Veckans fynd skickas receptets besparing med så den
   // behålls; vid vanligt slumpbyte saknas den → nollställs (priserna gäller
   // bara det specifika receptet).
-  const keepSaving = newRecipeId && typeof saving === "number" ? saving : null;
-  const keepMatches = newRecipeId && Array.isArray(savingMatches) ? savingMatches : null;
+  const keepSaving = !random && typeof saving === "number" ? saving : null;
+  const keepMatches = !random && Array.isArray(savingMatches) ? savingMatches : null;
 
   // Ligger dagen på aktiva listan? Efter bytet är dagen alltid o-inhandlad
   // (shopped_at nollas nedan), så pekaren avgör — samma svar som förr gavs av

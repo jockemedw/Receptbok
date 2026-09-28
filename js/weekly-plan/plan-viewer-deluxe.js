@@ -891,6 +891,9 @@ function renderDeluxeInner() {
 // Receptet visas direkt; tills servern svarat pulserar kortet svagt och är
 // aria-busy. State-driven (Set) så markeringen överlever diff-renderingar.
 const _pendingDates = new Set();
+// Slumpa utan förhandsval: titelraden visar "Slumpar nytt recept…" tills
+// servern svarat (CSS-driven, så omritningar inte skriver över den).
+const _shufflingDates = new Set();
 
 function applyPendingMarks(host) {
   host.querySelectorAll('article.dlx-pending').forEach(el => {
@@ -900,8 +903,12 @@ function applyPendingMarks(host) {
       el.removeAttribute('aria-busy');
     }
   });
+  host.querySelectorAll('article.dlx-shuffling').forEach(el => {
+    if (!_shufflingDates.has(el.dataset.date)) el.classList.remove('dlx-shuffling');
+  });
   for (const date of _pendingDates) {
     host.querySelectorAll(`article[data-date="${date}"]`).forEach(el => {
+      el.classList.toggle('dlx-shuffling', _shufflingDates.has(date));
       if (el.classList.contains('dlx-pending')) return;
       el.style.animationDuration = '';   // ev. settle från förra kvittot — låt pulsen gå
       el.classList.add('dlx-pending');
@@ -958,56 +965,186 @@ function rerender(plan, shop) {
 const shuffledAway = new Map();
 const SHUFFLE_EXCLUDE_MAX = 10;
 
-window.dlxShuffle = async function (date, btn) {
-  if (window.opBlocked?.()) return;
-  if (btn) { btn.disabled = true; btn.classList.add('loading'); }
-  // Kortet andas direkt — även när vi först väntar in en bakgrundssparning.
-  window.dlxSetPending(date, true);
-  if (!(await acquireOp())) {
-    window.dlxSetPending(date, false);
-    if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
-    return;
+function rememberShuffledAway(date, recipeId) {
+  if (recipeId == null) return;
+  const prev = (shuffledAway.get(date) || []).filter(id => id !== recipeId);
+  shuffledAway.set(date, [...prev, recipeId].slice(-SHUFFLE_EXCLUDE_MAX));
+}
+
+// ── Förhandsval för Slumpa (P5) ──────────────────────────────────────────────
+// När dag-sheeten visar en receptdag frågar vi servern i bakgrunden vilka
+// recept Slumpa skulle välja (preview — bara läsning, inga skrivningar). Trycket
+// på Slumpa kan då visa nya rätten DIREKT; servern bekräftar (eller byter till
+// sitt eget val om kandidaten hunnit bli otillåten) i bakgrunden. Servern är
+// fortfarande sanningen och valet samma deterministiska filter + slump.
+// Cachen gäller per datum och för det recept dagen hade när frågan ställdes.
+const _shufflePreviews = new Map();   // date → { forId, candidates, at, pending }
+const PREVIEW_TTL_MS = 5 * 60 * 1000;
+
+window.dlxDropShufflePreviews = function () { _shufflePreviews.clear(); };
+
+function canShuffleDay(d) {
+  return !!d && d.planId === 'active' && !d.isArchive && !d.isPast && !d.isCustom && d.recipeId != null;
+}
+
+function prefetchShuffle(date) {
+  const day = window._lastPlan?.days?.find(x => x.date === date);
+  if (!day?.recipeId || !window.apiFetch) return;
+  const hit = _shufflePreviews.get(date);
+  if (hit && hit.forId === day.recipeId && Date.now() - hit.at < PREVIEW_TTL_MS
+      && (hit.pending || hit.candidates.length)) return;
+  const entry = { forId: day.recipeId, candidates: [], at: Date.now(), pending: true };
+  _shufflePreviews.set(date, entry);
+  window.apiFetch('/api/replace-recipe', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      date, preview: true,
+      currentRecipeId: day.recipeId,
+      weekRecipeIds: weekRecipeIds(),
+      excludeIds: shuffledAway.get(date) || [],
+    }),
+  })
+    .then(res => (res.ok ? res.json() : null))
+    .then(data => {
+      if (_shufflePreviews.get(date) !== entry) return;   // inaktuell fråga
+      entry.candidates = (data?.candidates || []).filter(c => c && c.id != null && c.title);
+    })
+    .catch(() => { /* förhandsval är en bonus — Slumpa fungerar utan */ })
+    .finally(() => {
+      entry.pending = false;
+      if (_shufflePreviews.get(date) === entry && !entry.candidates.length) _shufflePreviews.delete(date);
+    });
+}
+
+// Första kandidaten som fortfarande går att använda för dagens läge (samma
+// recept som när frågan ställdes, inte redan i veckan, inte nyss utbytt).
+function peekCandidate(date, day) {
+  const hit = _shufflePreviews.get(date);
+  if (!hit || !day || hit.forId !== day.recipeId || Date.now() - hit.at > PREVIEW_TTL_MS) return null;
+  const taken = new Set([...weekRecipeIds(), ...(shuffledAway.get(date) || [])]);
+  hit.candidates = hit.candidates.filter(c => !taken.has(c.id));
+  return hit.candidates[0] || null;
+}
+
+// Efter ett lyckat slumpbyte: kvarvarande kandidater gäller nu för nya
+// receptet (nästa Slumpa tar kandidat 2), och det använda receptet stryks
+// från andra dagars förhandsval (det ligger ju i veckan nu).
+function consumeCandidate(date, usedId, newCurrentId) {
+  for (const [d, hit] of _shufflePreviews) {
+    hit.candidates = hit.candidates.filter(c => c.id !== usedId && c.id !== newCurrentId);
+    if (d === date) hit.forId = newCurrentId;
   }
+}
+
+// Värm funktionerna vid avsikt (sheeten öppnas): OPTIONS besvaras av
+// handlern (createSupabaseHandler) med 200 innan auth/databas — det enda
+// syftet är att starta en kall serverless-instans innan trycket. (OPTIONS i
+// stället för GET: samma effekt men inget 405 i konsolen.) Högst en gång per
+// minut och endpoint.
+const _warmedAt = {};
+function warmEndpoints() {
+  const now = Date.now();
+  for (const path of ['/api/replace-recipe', '/api/day']) {
+    if (now - (_warmedAt[path] || 0) < 60000) continue;
+    _warmedAt[path] = now;
+    try { fetch(path, { method: 'OPTIONS' }).catch(() => {}); } catch { /* tyst */ }
+  }
+}
+
+window.dlxShuffle = async function (date) {
+  if (opBlocked()) return;   // säger själv till (toast) — trycket tappas aldrig tyst
+  // Kortet (även Ikväll-kortet) markeras direkt — även medan vi väntar in en
+  // bakgrundssparning.
+  window.dlxSetPending(date, true);
+  if (!(await acquireOp())) { window.dlxSetPending(date, false); return; }
   const day = window._lastPlan?.days?.find(d => d.date === date);
+  if (!day) { window.dlxSetPending(date, false); window._opBusy = false; return; }
+
+  // Förhandsval finns → visa nya rätten nu, spara i bakgrunden.
+  const cand = peekCandidate(date, day);
+  if (cand && window.beginOptimisticSave) return shuffleOptimistic(date, day, cand);
+
+  // Inget förhandsval ännu: tydligt väntar-läge i titelraden tills servern svarat.
+  _shufflingDates.add(date);
+  window.dlxSetPending(date, true);
   suppressEcho();
   try {
     const res = await window.apiFetch('/api/replace-recipe', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         date,
-        currentRecipeId: day?.recipeId || undefined,
+        currentRecipeId: day.recipeId ?? undefined,
         weekRecipeIds: weekRecipeIds(),
         excludeIds: shuffledAway.get(date) || [],
       }),
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'fel');
-    if (day?.recipeId != null) {
-      const prev = (shuffledAway.get(date) || []).filter(id => id !== day.recipeId);
-      shuffledAway.set(date, [...prev, day.recipeId].slice(-SHUFFLE_EXCLUDE_MAX));
-    }
+    let data = {};
+    try { data = await res.json(); } catch { /* ingen JSON */ }
+    if (!res.ok) throw dlxServerError(data.error);
+    rememberShuffledAway(date, day.recipeId);
+    consumeCandidate(date, data.recipeId, data.recipeId);
+    _shufflePreviews.delete(date);   // förhandsvalet gällde förra receptet
     window.updateLastPlanDay(date, data.recipeId, data.recipe);
     suppressEcho();
     _pendingDates.delete(date);
+    _shufflingDates.delete(date);
     rerender(window._lastPlan, data.shoppingList || window._lastShop);
     dlxFlashDates([date]);
-  } catch {
-    if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
-    dlxFlashError(date, 'Kunde inte byta recept — prova igen.');
+  } catch (e) {
+    window.showToast?.(dlxUserMessage(e, 'Kunde inte byta recept — prova igen.'), { type: 'error' });
   } finally {
+    _shufflingDates.delete(date);
     window.dlxSetPending(date, false);
     window._opBusy = false;
   }
 };
 
-function dlxFlashError(date, msg) {
-  // [data-date] (inte .dlx-day) så även Ikväll-kortet träffas; utan utfälld
-  // detalj (t.ex. åtgärd från sheeten) faller felet tillbaka på en toast.
-  const detail = document.querySelector(`#weekDeluxe [data-date="${date}"] .dlx-detail`);
-  if (!detail) { window.showToast?.(msg, { type: 'error' }); return; }
-  let el = detail.querySelector('.dlx-err');
-  if (!el) { el = document.createElement('p'); el.className = 'dlx-err'; detail.appendChild(el); }
-  el.textContent = msg;
+async function shuffleOptimistic(date, day, cand) {
+  const done = window.beginOptimisticSave();   // spärren hålls; nästa åtgärd köar
+  const snapshot = { recipe: day.recipe, recipeId: day.recipeId, saving: day.saving, savingMatches: day.savingMatches };
+  // Veckans id:n och exkluderingen tas FÖRE den optimistiska ändringen, annars
+  // skulle kandidaten själv räknas som "redan i veckan" av servern.
+  const payload = {
+    date, newRecipeId: cand.id, random: true,
+    currentRecipeId: day.recipeId ?? undefined,
+    weekRecipeIds: weekRecipeIds(),
+    excludeIds: shuffledAway.get(date) || [],
+  };
+  window.suppressPlanEcho?.();
+  window.updateLastPlanDay(date, cand.id, cand.title);
+  _pendingDates.add(date);
+  rerender(window._lastPlan, window._lastShop);
+  dlxFlashDates([date]);
+  try {
+    const res = await window.apiFetch('/api/replace-recipe', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    let data = {};
+    try { data = await res.json(); } catch { /* ingen JSON */ }
+    if (!res.ok) throw dlxServerError(data.error);
+    rememberShuffledAway(date, snapshot.recipeId);
+    consumeCandidate(date, cand.id, data.recipeId);
+    const d = window._lastPlan?.days?.find(x => x.date === date);
+    const changed = d && d.recipeId === cand.id && data.recipeId != null && data.recipeId !== cand.id;
+    if (changed) window.updateLastPlanDay(date, data.recipeId, data.recipe);
+    _pendingDates.delete(date);
+    if (changed || data.shoppingList) {
+      rerender(window._lastPlan, data.shoppingList || window._lastShop);
+      if (changed) dlxFlashDates([date]);
+    }
+  } catch (e) {
+    // Återställ dagen — men bara om ingen annan hunnit ändra den under tiden.
+    const d = window._lastPlan?.days?.find(x => x.date === date);
+    if (d && d.recipeId === cand.id) Object.assign(d, snapshot);
+    _shufflePreviews.delete(date);
+    _pendingDates.delete(date);
+    rerender(window._lastPlan, window._lastShop);
+    window.showToast?.(dlxUserMessage(e, 'Kunde inte byta recept — prova igen.'), { type: 'error' });
+  } finally {
+    window.dlxSetPending(date, false);
+    done();
+  }
 }
 
 // ── Dagoperationer — /api/day, EN endpoint för allt som flyttar dagar ────────
@@ -1072,6 +1209,7 @@ async function runDayOp(body, { label, fallback, flash = null } = {}) {
     const data = await dayApi(body);
     suppressEcho();
     if (data.customDays) window._customDays = data.customDays;
+    _shufflePreviews.clear();   // dagarna har flyttats — förhandsvalen gäller inte längre
     if (!data.weeklyPlan && window._lastPlan?.days?.length) {
       // Planen försvann (t.ex. sista plandagen togs bort) → hämta om allt.
       await window.loadWeeklyPlan();
@@ -1275,6 +1413,9 @@ function openDaySheet(date, day) {
     document.getElementById('dlxSheet')?.classList.add('open');
   });
   window.pushSheetHistory?.();   // F196: Android/PWA-bakåtknapp ska stänga sheeten
+  // Avsikt: värm endpoints och hämta Slumpa-förhandsval medan familjen läser menyn.
+  warmEndpoints();
+  if (view === 'meny' && canShuffleDay(d)) prefetchShuffle(date);
 }
 
 window.dlxCloseSheet = function () {
@@ -1560,6 +1701,7 @@ function renderSheet() {
 window.dlxSheetView = function (view) {
   if (!window._dlxSheet) return;
   window._dlxSheet.view = view;
+  if (view === 'byt') prefetchShuffle(window._dlxSheet.date);
   renderSheet();
   if (view === 'lista') document.getElementById('dlxSheetItemInput')?.focus();
 };
@@ -1576,7 +1718,7 @@ window.dlxSheetShuffle = function () {
   const s = window._dlxSheet;
   if (!s) return;
   window.dlxCloseSheet();
-  window.dlxShuffle(s.date, null);
+  window.dlxShuffle(s.date);
 };
 
 window.dlxSheetPick = function () {

@@ -16,7 +16,7 @@
 // selectRecipes/bucketBySaving/hasTure bröts ut till api/_shared/select-recipes.js
 // (en ren modul utan Supabase-beroenden) så att testet kör EXAKT samma kod som
 // api/generate.js använder — ingen drift-benägen inline-kopia längre.
-import { selectRecipes, bucketBySaving, hasTure, byLongestAgo, recencyWeight, pickReplacementOrder } from "../api/_shared/select-recipes.js";
+import { selectRecipes, bucketBySaving, hasTure, byLongestAgo, recencyWeight, pickReplacementOrder, chooseRandomConfirm } from "../api/_shared/select-recipes.js";
 import { buildRecipeUsage } from "../api/_shared/history.js";
 
 // ─── Testinfrastruktur ────────────────────────────────────────────────────────
@@ -626,6 +626,16 @@ const DEFAULT_CONSTRAINTS = {
   assertEq(testedPicks / 1000, 1, "slumpa: testad andel 1.0 för testad rätt när nivå 1 finns");
   assertEq(nonVeg / 1000, 1, "slumpa: icke-veg andel 1.0 för kycklingrätt");
   assertTrue(seen.size > 1, "slumpa: fortfarande variation inom nivån");
+}
+
+// Test 22 — chooseRandomConfirm: förhandskandidaten godtas bara om den är i poolen.
+{
+  assertEq(chooseRandomConfirm([5, 8, 3], 8), 8, "confirm: kandidat i poolen godtas");
+  assertEq(chooseRandomConfirm([5, 8, 3], "3"), 3, "confirm: sträng-id tvingas till heltal");
+  assertEq(chooseRandomConfirm([5, 8, 3], 42), 5, "confirm: utanför poolen → serverns förstaval");
+  assertEq(chooseRandomConfirm([5, 8, 3], null), 5, "confirm: ingen kandidat → förstaval");
+  assertEq(chooseRandomConfirm([], 8), null, "confirm: tom pool → null");
+  assertEq(chooseRandomConfirm(undefined, 8), null, "confirm: saknad pool → null");
 }
 
 // ─── Slutrapport ──────────────────────────────────────────────────────────────

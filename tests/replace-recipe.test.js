@@ -348,6 +348,85 @@ for (const seed of [1, 7, 42, 99, 1234]) {
   assertEq(r.status, 404, "ingen aktiv plan → 404");
 }
 
+// ── 7. Förhandsval (preview) skriver ALDRIG ──────────────────────────────────
+// Räknar skrivande anrop (insert/update/upsert/delete) i mocken.
+function countWrites(db) {
+  const orig = db.from;
+  const w = { n: 0 };
+  db.from = (table) => {
+    const b = orig(table);
+    for (const op of ["insert", "update", "upsert", "delete"]) {
+      const f = b[op];
+      b[op] = function (...a) { w.n++; return f.apply(this, a); };
+    }
+    return b;
+  };
+  return w;
+}
+for (const onList of [true, false]) {
+  const fx = fixture({ onList });
+  const db = makeMockDb(fx);
+  const writes = countWrites(db);
+  const body = { date: T(1), currentRecipeId: 2, weekRecipeIds: [1, 2, 3, 5], preview: true };
+  const res = await replaceRecipe({ database: db, householdId: HH, body, rng: seeded(42) });
+  assertEq(res.status, 200, `preview (${onList ? "på" : "av"} listan): 200`);
+  assertEq(writes.n, 0, `preview (${onList ? "på" : "av"} listan): noll skrivande anrop`);
+  assertEq(db._state, makeMockDb(fx)._state, `preview (${onList ? "på" : "av"} listan): DB orörd`);
+  const c = res.body.candidates || [];
+  assertTrue(c.length >= 1 && c.length <= 3, "preview: 1–3 kandidater");
+  assertTrue(c.every((x) => typeof x.id === "number" && typeof x.title === "string"), "preview: {id, title}");
+  assertTrue(c.every((x) => ![1, 2, 3, 5].includes(x.id)), "preview: aldrig nuvarande eller veckans recept");
+  // Samma seed → preview:ns förstaval = vad vanlig Slumpa skulle skriva.
+  const plain = await replaceRecipe({ database: makeMockDb(fx), householdId: HH,
+    body: { date: T(1), currentRecipeId: 2, weekRecipeIds: [1, 2, 3, 5] }, rng: seeded(42) });
+  assertEq(c[0].id, plain.body.recipeId, "preview: förstakandidaten = Slumpas val (samma slump)");
+  // preview vinner även om newRecipeId råkar skickas med — fortfarande ingen skrivning.
+  const db2 = makeMockDb(fx);
+  const w2 = countWrites(db2);
+  await replaceRecipe({ database: db2, householdId: HH, body: { ...body, newRecipeId: 6 }, rng: seeded(1) });
+  assertEq(w2.n, 0, "preview med newRecipeId: noll skrivande anrop");
+}
+{
+  // Blockerad dag / fel dag i preview → samma felkoder, inga skrivningar.
+  const db = makeMockDb(fixture());
+  const w = countWrites(db);
+  const blocked = await replaceRecipe({ database: db, householdId: HH, body: { date: T(3), preview: true } });
+  assertEq(blocked.status, 400, "preview: blockerad dag avvisas");
+  const own = await replaceRecipe({ database: db, householdId: HH, body: { date: T(4), preview: true } });
+  assertEq(own.status, 404, "preview: egen dag avvisas");
+  assertEq(w.n, 0, "preview felvägar: noll skrivande anrop");
+}
+
+// ── 8. Slumpa med förhandsval (random: true + newRecipeId) ───────────────────
+{
+  const fx = fixture({ onList: false });
+  const base = { date: T(1), currentRecipeId: 2, weekRecipeIds: [1, 2, 3, 5] };
+  // Tillåten kandidat → den skrivs, besparing nollas som vid Slumpa.
+  const db = makeMockDb(fx);
+  const ok = await replaceRecipe({ database: db, householdId: HH,
+    body: { ...base, newRecipeId: 8, random: true, saving: 99, savingMatches: [{ name: "x" }] }, rng: seeded(5) });
+  assertEq(ok.status, 200, "förhandsval: 200");
+  assertEq(ok.body.recipeId, 8, "förhandsval: tillåten kandidat skrivs");
+  assertEq(ok.body.saving, null, "förhandsval: besparing nollas (som Slumpa)");
+  assertEq(ok.body.savingMatches, null, "förhandsval: savingMatches nollas");
+  const row = db._state.meal_days.find((d) => d.date === T(1));
+  assertEq([row.recipe_id, row.saving], [8, null], "förhandsval: meal_days fick kandidaten");
+  // Otillåten kandidat (redan i veckan) → serverns eget val = vanlig Slumpa.
+  const bad = await replaceRecipe({ database: makeMockDb(fx), householdId: HH,
+    body: { ...base, newRecipeId: 3, random: true }, rng: seeded(11) });
+  const plain = await replaceRecipe({ database: makeMockDb(fx), householdId: HH, body: base, rng: seeded(11) });
+  assertTrue(bad.body.recipeId !== 3, "förhandsval: veckans recept avvisas");
+  assertEq(bad.body.recipeId, plain.body.recipeId, "förhandsval: fallback = serverns förstaval");
+  // Nuvarande recept som kandidat → avvisas också.
+  const cur = await replaceRecipe({ database: makeMockDb(fx), householdId: HH,
+    body: { ...base, newRecipeId: 2, random: true }, rng: seeded(11) });
+  assertTrue(cur.body.recipeId !== 2, "förhandsval: nuvarande recept avvisas");
+  // Okänt id → också serverns val (inte 404 som Välj själv).
+  const unk = await replaceRecipe({ database: makeMockDb(fx), householdId: HH,
+    body: { ...base, newRecipeId: 999, random: true }, rng: seeded(11) });
+  assertEq([unk.status, unk.body.recipeId], [200, plain.body.recipeId], "förhandsval: okänt id → serverns val");
+}
+
 if (failed > 0) console.log(failures.join("\n\n"));
 console.log(`${passed} passerade, ${failed} failade.`);
 if (failed > 0) process.exit(1);
