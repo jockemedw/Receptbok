@@ -899,6 +899,11 @@ function rerender(plan, shop) {
   if (shop && window.renderShoppingData) window.renderShoppingData(shop);
 }
 
+// Nyss utbytta recept per datum (bara i minnet, denna session) — skickas som
+// excludeIds så Slumpa inte pendlar tillbaka till rätten man just bytte bort.
+const shuffledAway = new Map();
+const SHUFFLE_EXCLUDE_MAX = 10;
+
 window.dlxShuffle = async function (date, btn) {
   if (window._opBusy) return;
   window._opBusy = true;
@@ -912,10 +917,15 @@ window.dlxShuffle = async function (date, btn) {
         date,
         currentRecipeId: day?.recipeId || undefined,
         weekRecipeIds: weekRecipeIds(),
+        excludeIds: shuffledAway.get(date) || [],
       }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'fel');
+    if (day?.recipeId != null) {
+      const prev = (shuffledAway.get(date) || []).filter(id => id !== day.recipeId);
+      shuffledAway.set(date, [...prev, day.recipeId].slice(-SHUFFLE_EXCLUDE_MAX));
+    }
     window.updateLastPlanDay(date, data.recipeId, data.recipe);
     suppressEcho();
     rerender(window._lastPlan, data.shoppingList || window._lastShop);

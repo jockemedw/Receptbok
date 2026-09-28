@@ -1,17 +1,21 @@
 import { createSupabaseHandler } from "./_shared/handler.js";
 import { db, getHouseholdId } from "./_shared/supabase.js";
 import { fetchRecipeUsage, pruneOrphanHistory } from "./_shared/history.js";
-import { weightedOrder, recencyWeight } from "./_shared/select-recipes.js";
+import { pickReplacementOrder } from "./_shared/select-recipes.js";
 import { getActiveList, fetchCoverage, unshoppedDates, rebuildActiveList } from "./_shared/shopping-store.js";
 
 export default createSupabaseHandler(async (req, res) => {
-  const { date, currentRecipeId: rawCurrentId, weekRecipeIds: rawWeekIds = [], newRecipeId, saving, savingMatches } = req.body || {};
+  const { date, currentRecipeId: rawCurrentId, weekRecipeIds: rawWeekIds = [], newRecipeId, saving, savingMatches, excludeIds: rawExcludeIds } = req.body || {};
   if (!date) return res.status(400).json({ error: "date saknas" });
 
   // Recept-id från DB är heltal — tvinga inkommande id till heltal så exkluderingen
   // (nuvarande recept + veckans övriga) håller även om klienten skickar strängar.
   const currentRecipeId = rawCurrentId == null ? null : parseInt(rawCurrentId, 10);
   const weekRecipeIds = (rawWeekIds || []).map((id) => parseInt(id, 10)).filter((id) => !Number.isNaN(id));
+  // Nyss utbytta recept samma dag (klientens session) — hålls borta vid Slumpa
+  // så bytet inte pendlar A→X→A. Högst 10, bara heltal.
+  const excludeIds = (Array.isArray(rawExcludeIds) ? rawExcludeIds : [])
+    .map((id) => parseInt(id, 10)).filter((id) => !Number.isNaN(id)).slice(0, 10);
 
   const householdId = await getHouseholdId();
 
@@ -47,13 +51,6 @@ export default createSupabaseHandler(async (req, res) => {
   } else {
     // Historik + alla planerade dagar (även egna) — samma källa som generate.js.
     const { recentIds, usedOn } = await fetchRecipeUsage(db, householdId);
-    // "Längst sedan"-viktad slumpordning i stället för ren slump (Session 148).
-    const shuffle = (list) => weightedOrder(list, (r) => recencyWeight(usedOn[r.id]));
-
-    const weekSet = new Set(weekRecipeIds.filter((id) => id !== currentRecipeId));
-    const dow = new Date(date + "T12:00:00").getDay();
-    const isWeekend = dow === 0 || dow === 6;
-    const requiredTag = isWeekend ? "helg60" : "vardag30";
 
     const { data: planDays } = await db
       .from("meal_days")
@@ -68,25 +65,16 @@ export default createSupabaseHandler(async (req, res) => {
         if (r) proteinCount[r.protein] = (proteinCount[r.protein] || 0) + 1;
       }
     }
-    const MAX_PROTEIN = 2;
 
-    const base = allRecipes.filter((r) =>
-      r.id !== currentRecipeId && !weekSet.has(r.id) && !recentIds.has(r.id)
-    );
-
-    let pool = shuffle(base.filter((r) =>
-      (r.tags || []).includes(requiredTag) && (proteinCount[r.protein] || 0) < MAX_PROTEIN
-    ));
-    if (!pool.length) pool = shuffle(base.filter((r) => (r.tags || []).includes(requiredTag)));
-    if (!pool.length) pool = shuffle(base.filter((r) => (proteinCount[r.protein] || 0) < MAX_PROTEIN));
-    if (!pool.length) pool = shuffle(base);
-    if (!pool.length) {
-      pool = allRecipes
-        .filter((r) => r.id !== currentRecipeId && !weekSet.has(r.id))
-        .sort((a, b) => (usedOn[a.id] || "0000-00-00") < (usedOn[b.id] || "0000-00-00") ? -1 : 1);
-    }
-    if (!pool.length) return res.status(409).json({ error: "Inga tillgängliga recept att byta till." });
-    picked = pool[0];
+    // Kaskaden (samma sort → släpp krav i tur och ordning) bor i en ren
+    // funktion i select-recipes.js så den kan testas och återanvändas.
+    const order = pickReplacementOrder(allRecipes, {
+      current: allRecipes.find((r) => r.id === currentRecipeId) || null,
+      weekIds: weekRecipeIds.filter((id) => id !== currentRecipeId),
+      recentIds, usedOn, proteinCount, date, excludeIds,
+    });
+    if (!order.length) return res.status(409).json({ error: "Inga tillgängliga recept att byta till." });
+    picked = allRecipes.find((r) => r.id === order[0]);
   }
 
   // Vid "Byt in" från Veckans fynd skickas receptets besparing med så den
