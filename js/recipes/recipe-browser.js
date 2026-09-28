@@ -2,7 +2,7 @@
 // Läser state: RECIPES, groupBy, isSnapping, scrollUpAccum
 // Skriver state: isSnapping, scrollUpAccum
 
-import { proteinLabel, timeStr, renderDetailInner, escapeHtml, jsStringAttr, PROTEIN_COLOR } from '../utils.js';
+import { proteinLabel, timeStr, renderDetailInner, escapeHtml, jsStringAttr, PROTEIN_COLOR, svCompare } from '../utils.js';
 
 // ── Grupperingsdefinitioner ───────────────────────────────────────────────────
 // Varje grupp är en lista av sektioner. Sektionerna utvärderas i ordning;
@@ -233,7 +233,7 @@ export function renderRecipeBrowser() {
     if (bucket) bucket.recipes.push(r);
   }
   for (const b of buckets) {
-    b.recipes.sort((a, b) => a.title.localeCompare(b.title, 'sv'));
+    b.recipes.sort((a, b) => svCompare(a.title, b.title));
   }
   const nonEmpty = buckets.filter(b => b.recipes.length > 0);
 

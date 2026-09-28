@@ -3,7 +3,7 @@
 
 import './ui/perf.js';   // ?perf=1 → mätning (Fas 0). Inert utan flaggan.
 import './state.js';
-import './utils.js';
+import { svCompare } from './utils.js';
 import { isDbUnreachable, getLastDbError, DB_RESTING_MESSAGE } from './supabase-client.js';
 import { requireAuth } from './auth-gate.js';
 import { recipeFromRow } from './data-mapper.js';
@@ -224,7 +224,7 @@ function buildTagFilterUI() {
       counts[low] = (counts[low] || 0) + 1;
     }
   }
-  const sorted = Object.entries(counts).sort((a, b) => a[0].localeCompare(b[0], 'sv'));
+  const sorted = Object.entries(counts).sort((a, b) => svCompare(a[0], b[0]));
   if (sorted.length === 0) return;
 
   const container = document.getElementById('tagFilterChecks');

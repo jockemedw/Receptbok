@@ -163,12 +163,22 @@ let _dlxAnimBusy = false;
 function prefersReducedMotion() {
   return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 }
+// will-change bara medan panelen faktiskt rör sig (svep/glid) — permanent
+// höll det hela veckopanelen som ett eget kompositorlager i minnet.
+let _paneIdleTimer = 0;
+function paneMoving(pane, on, idleAfterMs = 0) {
+  clearTimeout(_paneIdleTimer);
+  if (on) { pane.style.willChange = 'transform, opacity'; return; }
+  _paneIdleTimer = setTimeout(() => { pane.style.willChange = ''; }, idleAfterMs);
+}
+
 function animateWeekChange(dir, apply) {
   const pane = document.getElementById('weekDeluxe');
   if (!pane || prefersReducedMotion()) { apply(); renderDeluxe(); return; }
   if (_dlxAnimBusy) return;
   _dlxAnimBusy = true;
   window._dlxWeekAnimBusy = true;   // day-drag.js: starta inget långtryck mitt i glidet
+  paneMoving(pane, true);
   pane.style.transition = 'transform 0.14s ease-in, opacity 0.14s ease-in';
   pane.style.transform = `translateX(${dir * -56}px)`;
   pane.style.opacity = '0';
@@ -181,7 +191,7 @@ function animateWeekChange(dir, apply) {
     pane.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
     pane.style.transform = 'translateX(0)';
     pane.style.opacity = '1';
-    setTimeout(() => { _dlxAnimBusy = false; window._dlxWeekAnimBusy = false; }, 210);
+    setTimeout(() => { _dlxAnimBusy = false; window._dlxWeekAnimBusy = false; paneMoving(pane, false); }, 210);
   }, 145);
 }
 
@@ -246,6 +256,7 @@ function installSwipe(pager, pane) {
     if (mode !== 'h') return;                                            // vertikal scroll får leva
     e.preventDefault();
     const resist = dlxCanStep(dx < 0 ? 1 : -1) ? 0.55 : 0.18;           // gummiband vid kant
+    paneMoving(pane, true);
     pane.style.transition = 'none';
     pane.style.transform = `translateX(${dx * resist}px)`;
     pane.style.opacity = String(1 - Math.min(Math.abs(dx) / 900, 0.25));
@@ -261,6 +272,7 @@ function installSwipe(pager, pane) {
     pane.style.transition = 'transform 0.18s ease-out, opacity 0.18s ease-out';   // fjädra tillbaka
     pane.style.transform = 'translateX(0)';
     pane.style.opacity = '1';
+    paneMoving(pane, false, 200);
   }, { passive: true });
 
   // Desktop: horisontellt scrollhjul/trackpad.
@@ -500,11 +512,15 @@ function buildHero(weekDays, weekStart, plan, pending) {
 }
 
 // "6–12 juli" (samma månad) / "29 juni – 5 juli" (över månadsskifte).
+// Cachade formatterare (toLocaleDateString bygger en ny per anrop) — samma
+// locale + options, så utdatan är byte-identisk.
+const HERO_DAY_MONTH_FMT = new Intl.DateTimeFormat('sv-SE', { day: 'numeric', month: 'long' });
+const HERO_MONTH_FMT = new Intl.DateTimeFormat('sv-SE', { month: 'long' });
 function heroDateRange(startIso, endIso) {
   const s = new Date(startIso + 'T12:00:00'), e = new Date(endIso + 'T12:00:00');
-  const long = (d) => d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'long' });
+  const long = (d) => HERO_DAY_MONTH_FMT.format(d);
   if (s.getMonth() === e.getMonth()) {
-    return `${s.getDate()}–${e.getDate()} ${e.toLocaleDateString('sv-SE', { month: 'long' })}`;
+    return `${s.getDate()}–${e.getDate()} ${HERO_MONTH_FMT.format(e)}`;
   }
   return `${long(s)} – ${long(e)}`;
 }
@@ -760,13 +776,16 @@ function renderDaysDiff(host, days, { tonightHtml = '', tonightDate = null } = {
     container.className = 'dlx-days';
     sec.appendChild(container);
   }
-  // Blinkfritt: under en pågående operation (byt/flytta) eller ett aktivt drag
-  // nollas kortens entré-animation, annars tonar varje utbytt kort in på nytt
-  // (0,4 s) och läses som ett blink när bytet landar.
-  container.classList.toggle('dlx-quiet', !!(window._opBusy || window._dlxDragActive || window._dlxMove));
-
   const existing = new Map();
   container.querySelectorAll(':scope > .dlx-day-slot').forEach(el => existing.set(el.dataset.slot, el));
+
+  // Blinkfritt: under en pågående operation (byt/flytta), ett aktivt drag, ett
+  // veckoglid (panelen glider redan — korten ska inte dessutom tona in) och en
+  // omladdning av en redan visad vecka (realtime/omhämtning) nollas kortens
+  // entré-animation, annars tonar varje utbytt kort in på nytt (0,4 s) och
+  // läses som ett blink. Första visningen och en ny generering tonar som förut.
+  container.classList.toggle('dlx-quiet', !!(window._opBusy || window._dlxDragActive || window._dlxMove
+    || _dlxAnimBusy || (_quietReload && existing.size > 0)));
 
   const keep = new Set();
   let cursor = container.firstChild;           // markör: förväntad nod i denna position
@@ -1911,6 +1930,9 @@ window.dlxSheetAdd = async function () {
 // - renderWeeklyPlanData: genereringsväg + våra egna deluxe-åtgärder (window.*)
 // - loadWeeklyPlan: första laddning (boot) + realtime-omladdning
 // - switchTab: säkerhetsnät när man öppnar fliken Matsedeln
+// Sann medan loadWeeklyPlan-omladdningen ritar om (se dlx-quiet i renderDaysDiff).
+let _quietReload = false;
+
 function wrapSync(name, { async = false } = {}) {
   const orig = window[name];
   if (typeof orig !== 'function' || orig.__dlxWrapped) return;
@@ -1918,7 +1940,9 @@ function wrapSync(name, { async = false } = {}) {
   if (async) {
     wrapped = async function (...args) {
       const r = await orig.apply(this, args);
+      _quietReload = true;
       try { renderDeluxe(); } catch (e) { console.error('renderDeluxe', e); }
+      finally { _quietReload = false; }
       return r;
     };
   } else {

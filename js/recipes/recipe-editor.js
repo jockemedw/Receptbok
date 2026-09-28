@@ -2,7 +2,7 @@
 // Läser state: RECIPES, editingId
 // Skriver state: RECIPES, editingId
 
-import { proteinLabel, timeStr, renderIngredient, renderDetailInner, escapeHtml, jsStringAttr } from '../utils.js';
+import { proteinLabel, timeStr, renderIngredient, renderDetailInner, escapeHtml, jsStringAttr, svCompare } from '../utils.js';
 import { recipeToRow } from '../data-mapper.js';
 
 // ── Taggväljare ───────────────────────────────────────────────────────────────
@@ -27,7 +27,7 @@ function knownTags() {
   }
   // Mest använda först — det är de man nästan alltid vill ha. Lika många
   // användningar → bokstavsordning (svensk sortering).
-  return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'sv'));
+  return [...counts.entries()].sort((a, b) => b[1] - a[1] || svCompare(a[0], b[0]));
 }
 
 function renderTagPicker() {

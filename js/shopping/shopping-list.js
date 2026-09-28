@@ -2,7 +2,7 @@
 // Läser state: _shopListId, _shopItemIds, _checkedItems, _checkedSaveTimer, _shopRecipeItems, _shopManualItems
 // Skriver state: _shopListId, _shopItemIds, _checkedItems, _checkedSaveTimer, _shopRecipeItems, _shopManualItems
 
-import { CAT_ICONS, escapeHtml, fmtIso, fmtShort } from '../utils.js';
+import { CAT_ICONS, escapeHtml, fmtIso, fmtShort, svCompare } from '../utils.js';
 
 // Kanonisk kategoriordning (samma som inköpslistan byggs i) — håller ordningen
 // stabil oavsett i vilken ordning DB-raderna råkar komma tillbaka.
@@ -13,7 +13,7 @@ function sortCategories(cats) {
     if (ia !== -1 && ib !== -1) return ia - ib;
     if (ia !== -1) return -1;
     if (ib !== -1) return 1;
-    return a.localeCompare(b, 'sv');
+    return svCompare(a, b);
   });
 }
 

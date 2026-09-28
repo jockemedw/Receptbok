@@ -911,16 +911,28 @@
   }
 
   .recipe-card.recipe-card-new {
-    animation: newRecipePulse 2.5s ease-out;
     border-color: var(--lichen-deep);
     box-shadow: 0 0 0 3px var(--moss-soft);
   }
+  /* Nytt-recept-pulsen: en statisk ring på ::after som bara tonar ut och
+     krymper (opacity/transform — ingen box-shadow-animation, som ritar om
+     kortet varje bildruta). ::before är upptagen av färgryggen; ringen ligger
+     innanför kanten eftersom kortet klipper (overflow + content-visibility). */
+  .recipe-card.recipe-card-new::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 5px rgba(122,158,126,0.45);
+    pointer-events: none;
+    opacity: 0;
+    animation: newRecipePulse 2.5s ease-out;
+  }
 
   @keyframes newRecipePulse {
-    0%   { box-shadow: 0 0 0 0 rgba(122,158,126,0.5); }
-    30%  { box-shadow: 0 0 0 8px rgba(122,158,126,0.25); }
-    70%  { box-shadow: 0 0 0 4px rgba(122,158,126,0.15); }
-    100% { box-shadow: 0 0 0 3px var(--moss-soft); }
+    0%   { opacity: 0; }
+    30%  { opacity: 1; }
+    100% { opacity: 0; }
   }
 
   .card-header {
@@ -3565,7 +3577,9 @@
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: rgba(194,82,43,0.82);
+    /* Tät, lätt genomskinlig rost i stället för backdrop-filter: oskärpan
+       ritade om allt bakom knappen vid varje scrollruta (hack på mobil). */
+    background: color-mix(in srgb, var(--rust) 90%, transparent);
     color: var(--on-accent);
     border: none;
     font-size: 1.8rem;
@@ -3573,8 +3587,6 @@
     cursor: pointer;
     box-shadow: 0 3px 10px rgba(0,0,0,0.22);
     z-index: var(--z-fab);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
     transition: background 0.15s, transform 0.15s;
     display: none;
   }
@@ -3585,7 +3597,7 @@
   body:has(.bottom-sheet.open) .fab-import { display: none; }
   .fab-import:active { transform: scale(0.93); }
   @media (hover: hover) {
-    .fab-import:hover { background: rgba(194,82,43,1); }
+    .fab-import:hover { background: var(--rust); }
   }
 
   @media (max-width: 400px) {
@@ -4063,7 +4075,8 @@ html.auth-required body {
 }
 /* ── Pager: hela veckovyn (hero + dagslista) är svepytan för veckoväxlingen ── */
 .dlx-pager { overflow: hidden; touch-action: pan-y; overscroll-behavior-x: contain; }
-.dlx-pane  { will-change: transform; }
+/* will-change sätts av JS (plan-viewer-deluxe.js) bara under svep/glid —
+   permanent höll det hela veckopanelen som ett eget lager i minnet. */
 
 .dlx-hero-title {
   position: relative;
@@ -4643,9 +4656,23 @@ html.auth-required body {
   cursor: pointer;
 }
 .dlx-swap-source { box-shadow: 0 0 0 2px var(--rust) inset; border-color: var(--rust) !important; }
-.dlx-swap-target { border-color: var(--lichen) !important; border-style: dashed; animation: dlxPulse 1.8s ease-in-out infinite; }
+.dlx-swap-target { border-color: var(--lichen) !important; border-style: dashed; }
 .dlx-swap-target:hover { box-shadow: 0 0 0 2px var(--lichen) inset; }
-@keyframes dlxPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(122,148,130,0.4); } 50% { box-shadow: 0 0 0 5px rgba(122,148,130,0); } }
+/* Mottagarpulsen: statisk ring på ::after som andas i opacitet — kompositorn
+   sköter den, ingen omritning av kortet per bildruta (box-shadow-animation
+   gjorde det). Innanför kanten eftersom dagkorten klipper (overflow: hidden). */
+.dlx-swap-target::after,
+.dlx-drop-zone::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 3px rgba(122,148,130,0.45);
+  pointer-events: none;
+  opacity: 0;
+  animation: dlxPulse 1.8s ease-in-out infinite;
+}
+@keyframes dlxPulse { 0%,100% { opacity: 0; } 50% { opacity: 1; } }
 
 /* ── Större skärmar: lufta ut hero-stats och detalj-kolumner ── */
 @media (min-width: 680px) {
@@ -5522,7 +5549,7 @@ body.cook-open { overflow: hidden; }
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  animation: dlxPulse 1.8s ease-in-out infinite;
+  position: relative;   /* bär puls-ringen (::after, se .dlx-swap-target) */
 }
 .dlx-drop-zone svg { width: 1.1em; height: 1.1em; }
 .dlx-drop-zone:active { background: var(--lichen); color: var(--on-accent); }
@@ -5600,15 +5627,33 @@ body.cook-open { overflow: hidden; }
   50% { opacity: 0.55; }
 }
 
-/* Glöd-kvitto: berörda dagar lyser till efter en lyckad åtgärd */
+/* Glöd-kvitto: berörda dagar lyser till efter en lyckad åtgärd. Glöden (ring +
+   mossgrön ton) bor på ::after och tonar bara ut i opacitet — ingen
+   box-shadow/bakgrunds-animation som ritar om kortet varje bildruta. Kortets
+   egen animation stängs av under kvittot (som förut, när glöden ersatte den):
+   ingen entré-intoning eller väntar-puls samtidigt. isolation → ::after kan
+   ligga UNDER kortets innehåll (z-index -1) men över kortets bakgrund. */
 .dlx-flash,
 .dlx-day.dlx-flash {   /* .dlx-day.dlx-flash slår .dlx-day.is-past (animation-name) */
+  animation: none;
+  isolation: isolate;
+}
+.dlx-flash::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: var(--moss-soft);
+  box-shadow: inset 0 0 0 3px var(--lichen);
+  pointer-events: none;
+  opacity: 0;
   animation: dlxFlashGlow 1.4s ease both;
 }
 @keyframes dlxFlashGlow {
-  0%   { box-shadow: 0 0 0 3px var(--lichen); background-color: var(--moss-soft); }
-  60%  { box-shadow: 0 0 0 3px rgba(122,148,130,0.35); }
-  100% { box-shadow: 0 0 0 0 rgba(122,148,130,0); }
+  0%   { opacity: 1; }
+  60%  { opacity: 0.4; }
+  100% { opacity: 0; }
 }
 
 /* Optimistiskt val (Välj själv): receptet visas direkt, kortet andas svagt
@@ -5623,7 +5668,7 @@ body.cook-open { overflow: hidden; }
   50% { opacity: 0.7; }
 }
 .dlx-pending.dlx-flash,
-.dlx-day.dlx-pending.dlx-flash { animation: dlxFlashGlow 1.4s ease both; }
+.dlx-day.dlx-pending.dlx-flash { animation: none; }
 
 /* Slumpa utan förhandsval: titelraden säger vad som händer tills servern
    svarat. Gamla titeln göms (behåller radhöjden), texten läggs ovanpå.
