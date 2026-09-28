@@ -16,7 +16,7 @@
 // selectRecipes/bucketBySaving/hasTure bröts ut till api/_shared/select-recipes.js
 // (en ren modul utan Supabase-beroenden) så att testet kör EXAKT samma kod som
 // api/generate.js använder — ingen drift-benägen inline-kopia längre.
-import { selectRecipes, bucketBySaving, hasTure } from "../api/_shared/select-recipes.js";
+import { selectRecipes, bucketBySaving, hasTure, byLongestAgo } from "../api/_shared/select-recipes.js";
 
 // ─── Testinfrastruktur ────────────────────────────────────────────────────────
 let passed = 0;
@@ -455,6 +455,45 @@ const DEFAULT_CONSTRAINTS = {
       assertTrue(result[j].date >= result[j - 1].date, `ture-helg iter ${i}: datumordning bevarad`);
     }
   }
+}
+
+// Test 17 — uttömd delpool (veg) ska ge "längst sedan", inte databasordning.
+// Bugg: poolen räckte totalt, men alla veg-recept var nyligen använda → sista
+// utvägen loopade `recipes` i id-ordning och valde samma nyss lagade veg-rätt
+// varje gång (samma matsedel om och om igen).
+{
+  const mk = (id, protein, tags) => ({ id, title: `R${id}`, protein, tags, tested: true, ingredients: [] });
+  const recipes = [
+    mk(1, "vegetarisk", ["vardag30"]), // lagad igår
+    mk(2, "vegetarisk", ["vardag30"]), // lagad för 3 dagar sedan
+    mk(3, "vegetarisk", ["vardag30"]), // lagad för 12 dagar sedan (längst sedan)
+    mk(4, "kyckling", ["vardag30"]), mk(5, "fisk", ["vardag30"]),
+    mk(6, "kött", ["vardag30"]),     mk(7, "fläsk", ["vardag30"]),
+    mk(8, "fisk", ["helg60"]),       mk(9, "kött", ["helg60"]),
+    mk(10, "kyckling", ["helg60"]),  mk(11, "fläsk", ["vardag30"]), // färska ≥ 7 → ingen påfyllning
+  ];
+  const usedOn = { 1: "2026-04-20", 2: "2026-04-18", 3: "2026-04-09" };
+  const recentIds = new Set([1, 2, 3]);
+  const constraints = { ...DEFAULT_CONSTRAINTS, vegetarian_days: 1 };
+  for (let i = 0; i < 30; i++) {
+    const result = selectRecipes(recipes, VECKA, constraints, recentIds, usedOn);
+    const vegIds = result.map((d) => d.recipeId).filter((id) => id <= 3);
+    assertEq(vegIds.join(","), "3", `uttömd veg-pool iter ${i}: längst sedan lagade veg-rätten väljs`);
+  }
+}
+
+// Test 18 — byLongestAgo: aldrig använda först, sedan äldst; lika datum slumpas
+{
+  const list = [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }];
+  const usedOn = { 1: "2026-04-20", 2: "2026-04-01", 3: "2026-04-01" };
+  const firsts = new Set();
+  for (let i = 0; i < 50; i++) {
+    const ids = byLongestAgo(list, usedOn).map((r) => r.id);
+    assertEq(ids[0], 4, `byLongestAgo iter ${i}: aldrig använd först`);
+    assertEq(ids[3], 1, `byLongestAgo iter ${i}: senast använd sist`);
+    firsts.add(ids[1]);
+  }
+  assertEq(firsts.size, 2, "byLongestAgo: lika datum kommer i slumpad ordning");
 }
 
 // ─── Slutrapport ──────────────────────────────────────────────────────────────

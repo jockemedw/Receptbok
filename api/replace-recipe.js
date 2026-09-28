@@ -100,8 +100,6 @@ export default createSupabaseHandler(async (req, res) => {
     picked = pool[0];
   }
 
-  const today = new Date().toISOString().slice(0, 10);
-
   // Vid "Byt in" från Veckans fynd skickas receptets besparing med så den
   // behålls; vid vanligt slumpbyte saknas den → nollställs (priserna gäller
   // bara det specifika receptet).
@@ -121,7 +119,7 @@ export default createSupabaseHandler(async (req, res) => {
       shopped_at: null,
     }).eq("household_id", householdId).eq("date", date),
     db.from("recipe_history").upsert(
-      { household_id: householdId, recipe_id: picked.id, used_on: today },
+      { household_id: householdId, recipe_id: picked.id, used_on: date }, // dagen den äts (se generate.js)
       { onConflict: "household_id,recipe_id" }
     ),
   ]);
