@@ -58,9 +58,9 @@ export function __resetHouseholdCache() {
 // db/migrations/003_target_servings.sql — saknas den (migration ej körd) eller
 // är värdet orimligt returneras null, vilket betyder "ingen skalning" (exakt
 // samma inköpslista som före Fas #12).
-export async function fetchTargetServings(householdId) {
+export async function fetchTargetServings(householdId, database = db) {
   try {
-    const { data, error } = await db
+    const { data, error } = await database
       .from("households")
       .select("target_servings")
       .eq("id", householdId)

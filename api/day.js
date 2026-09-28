@@ -171,8 +171,8 @@ export default createSupabaseHandler(async (req, res) => {
   }
 
   const householdId = await getHouseholdId();
-  const plan = await readActivePlan(householdId);
-  const rows = await readRows(householdId);
+  // Oberoende läsningar → en nätverksrunda i stället för två.
+  const [plan, rows] = await Promise.all([readActivePlan(householdId), readRows(householdId)]);
   const byDate = new Map(rows.map((r) => [r.date, r]));
   const srcRow = byDate.get(date) || null;
   const srcContent = srcRow ? fullContent(srcRow) : null;
@@ -260,8 +260,9 @@ export default createSupabaseHandler(async (req, res) => {
   if (!srcRow) return bad(res, "Dagen finns inte i matsedeln.", 404);
   const { error: delErr } = await db.from("meal_days").delete().eq("household_id", householdId).eq("date", date);
   if (delErr) throw new Error("Kunde inte ta bort dagen — prova igen.");
-  // En borttagen rätt lagas inte — släpp dess historikrad (best effort).
-  if (srcRow.recipe_id != null) await pruneOrphanHistory(db, householdId);
+  // En borttagen rätt lagas inte — släpp dess historikrad (best effort, kastar
+  // aldrig). Rör bara recipe_history → körs parallellt med listombygget nedan.
+  const prune = srcRow.recipe_id != null ? pruneOrphanHistory(db, householdId) : null;
 
   // Låg dagens varor på aktiva listan (o-inhandlade)? Bygg om listan utan dem.
   // Misslyckas ombygget är dagen ändå borttagen — flagga så klienten kan säga
@@ -285,5 +286,6 @@ export default createSupabaseHandler(async (req, res) => {
       listStale = true;
     }
   }
+  await prune;
   return res.status(200).json(await buildResponse(householdId, plan, { shoppingList, listStale }));
 });

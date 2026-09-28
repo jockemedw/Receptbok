@@ -20,8 +20,9 @@
 
 import {
   rebuildActiveList, setCoveredDays, markRoundShopped, getActiveList, fetchCoverage,
-  unshoppedDates, pantryKey,
+  unshoppedDates, pantryKey, shopItemIdsFromRows,
 } from "../api/_shared/shopping-store.js";
+import { readFileSync } from "node:fs";
 
 let passed = 0, failed = 0;
 const failures = [];
@@ -67,6 +68,7 @@ function makeMockDb(initial = {}) {
     if (kind === "lte") return row[col] <= val;
     if (kind === "is") return val === null ? row[col] == null : row[col] === val;
     if (kind === "not-is") return val === null ? row[col] != null : row[col] !== val;
+    if (kind === "not-in") return !val.includes(row[col]);
     return true;
   });
 
@@ -81,7 +83,12 @@ function makeMockDb(initial = {}) {
       gte(c, v) { this.filters.push(["gte", c, v]); return this; },
       lte(c, v) { this.filters.push(["lte", c, v]); return this; },
       is(c, v) { this.filters.push(["is", c, v]); return this; },
-      not(c, _op, v) { this.filters.push(["not-is", c, v]); return this; },
+      not(c, op, v) {
+        // PostgREST-listformen: not(col, "in", '("a","b")')
+        if (op === "in") this.filters.push(["not-in", c, String(v).replace(/^\(|\)$/g, "").split(",").map((x) => x.replace(/^"|"$/g, ""))]);
+        else this.filters.push(["not-is", c, v]);
+        return this;
+      },
       order() { return this; },
       limit() { return this; },
       single() { return Promise.resolve(this._exec(true)); },
@@ -454,6 +461,93 @@ const itemNamed = (db, listId, prefix) =>
   // Datum som varken finns i meal_days eller arkivet rapporteras som skippat
   const nope = await setCoveredDays({ householdId: HH, dates: ["2026-07-20", "2030-01-01"], database: db });
   assertEq(nope.skipped, ["2030-01-01"], "arkiv: okänt datum hoppas över, inte återskapas");
+}
+
+// ── P3: förlästa värden ger EXAKT samma slutläge som omläsningsvägen ─────────
+// replace-recipe.js skickar in dayRows/oldList/existingItems/targetServings som
+// den redan läst. Samma indata ⇒ samma DB-slutläge och samma svar, men färre
+// läsningar.
+{
+  const seed = () => {
+    const d = makeMockDb({
+      mealDays: [
+        day("2026-07-20", { recipe_id: 1 }),
+        day("2026-07-21", { recipe_id: 2 }),
+        day("2026-07-22", { recipe_id: 3, blocked: true }),
+        day("2026-07-23", { recipe_id: 3, shopping_list_id: 50 }), // föll ur täckningen
+      ],
+      lists: [{ id: 50, household_id: HH, is_active: true, start_date: "2026-07-20", end_date: "2026-07-26", recipe_items_moved_at: "2026-07-19" }],
+      items: [
+        { id: 60, list_id: 50, category: "Fisk & kött", name: "torsk (400 g)", source: "recipe", checked: true, position: 0 },
+        { id: 61, list_id: 50, category: "Övrigt", name: "blöjor", source: "manual", checked: true, position: 1 },
+        { id: 62, list_id: 50, category: "Övrigt", name: "tvål", source: "manual", checked: false, position: 0 },
+      ],
+      recipes: HH_RECIPES,
+    });
+    let calls = 0;
+    const from = d.from;
+    d.from = (t) => { calls++; return from(t); };
+    d.calls = () => calls;
+    return d;
+  };
+  const cover = ["2026-07-20", "2026-07-21", "2026-07-22"];
+  const a = seed();
+  const ra = await rebuildActiveList({ householdId: HH, coverDates: cover, recipes: RECIPES, database: a });
+  const b = seed();
+  const oldList = await getActiveList(HH, b);
+  const existing = b._state.items.filter((i) => i.list_id === 50).map(({ name, checked, source, position }) => ({ name, checked, source, position }));
+  const before = b.calls();
+  const rb = await rebuildActiveList({
+    householdId: HH, coverDates: cover, recipes: RECIPES, database: b,
+    dayRows: b._state.mealDays.map((r) => ({ ...r })), oldList, existingItems: existing, targetServings: null,
+  });
+  const strip = (x) => JSON.stringify(x._state);
+  assertEq(strip(b), strip(a), "förlästa värden: identiskt DB-slutläge som omläsningsvägen");
+  assertEq(rb.shoppingList, ra.shoppingList, "förlästa värden: identiskt svar");
+  assertEq(ra.shoppingList.coveredDates, ["2026-07-20", "2026-07-21"], "förlästa värden: blockerad dag filtreras även i minnet");
+  assertTrue(b.calls() - before <= 7, `förlästa värden: högst 7 anrop i ombygget (var ${b.calls() - before})`);
+  assertTrue(a.calls() >= b.calls() - before + 4, "förlästa värden: omläsningsvägen gör minst 4 anrop fler");
+  const d23 = b._state.mealDays.find((r) => r.date === "2026-07-23");
+  assertEq(d23.shopping_list_id, null, "förlästa värden: dag som föll ur täckningen nollas (parallell uppdatering)");
+  const d20 = b._state.mealDays.find((r) => r.date === "2026-07-20");
+  assertEq(d20.shopping_list_id, rb.listId, "förlästa värden: byggdag pekar på nya listan");
+
+  // itemIds i svaret = exakt de nya radernas id under klientens nycklar.
+  const ids = rb.shoppingList.itemIds;
+  const newItems = b._state.items.filter((i) => i.list_id === rb.listId);
+  assertEq(Object.keys(ids).length, newItems.length, "itemIds: en nyckel per ny rad");
+  assertEq(ids["manual::blöjor"], newItems.find((i) => i.name === "blöjor").id, "itemIds: manuell vara nycklas manual::namn");
+  const torsk = newItems.find((i) => i.name.startsWith("torsk"));
+  assertEq(ids[`recipe::${torsk.category}::${torsk.position}`], torsk.id, "itemIds: receptvara nycklas recipe::kategori::index");
+  assertEq(rb.shoppingList.listId, rb.listId, "itemIds: listId följer med i svaret");
+}
+
+// ── P3: shopItemIdsFromRows ≡ klientens buildShopState (paritet) ─────────────
+// Plockar ut den RIKTIGA funktionen ur js/shopping/shopping-list.js och kör den
+// med stubbar — nycklarna måste vara identiska, annars pekar bockar/borttag
+// på fel rad när klienten använder serverns itemIds direkt.
+{
+  const src = readFileSync(new URL("../js/shopping/shopping-list.js", import.meta.url), "utf8");
+  const start = src.indexOf("function buildShopState(");
+  const end = src.indexOf("\n}\n", start) + 3;
+  assertTrue(start > 0 && end > start, "paritet: buildShopState hittades i klientkoden");
+  const buildShopState = new Function(
+    "sortCategories",
+    `let _itemPos; const _pendingChecks = new Map();\n${src.slice(start, end)}\nreturn buildShopState;`
+  )((cats) => cats.slice().sort());
+  const rows = [
+    { id: 11, category: "Mejeri", name: "grädde (4 dl)", source: "recipe", checked: false, position: 1 },
+    { id: 10, category: "Mejeri", name: "mjölk (1 l)", source: "recipe", checked: true, position: 0 },
+    { id: 12, category: "Grönsaker", name: "gurka (1 st)", source: "recipe", checked: false, position: 0 },
+    { id: 13, category: "Mejeri", name: "smör", source: "recipe", checked: false, position: 5 },
+    { id: 20, category: "Övrigt", name: "tvål", source: "manual", checked: false, position: 1 },
+    { id: 21, category: "Övrigt", name: "blöjor", source: "manual", checked: true, position: 0 },
+  ];
+  const client = buildShopState({}, rows).itemIds;
+  const server = shopItemIdsFromRows(rows);
+  const sortObj = (o) => Object.fromEntries(Object.entries(o).sort(([x], [y]) => (x < y ? -1 : 1)));
+  assertEq(sortObj(server), sortObj(client), "paritet: serverns itemIds = klientens buildShopState-nycklar");
+  assertEq(shopItemIdsFromRows([]), {}, "paritet: tomma rader → tomt objekt");
 }
 
 // ── pantryKey-paritet ────────────────────────────────────────────────────────

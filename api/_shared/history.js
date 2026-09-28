@@ -62,20 +62,40 @@ export async function fetchRecipeUsage(database, householdId, { windowDays = 14,
   return buildRecipeUsage(hist.data || [], planned.data || [], today, isoDaysAgo(windowDays));
 }
 
+// Ren funktion (testbar): vilka recept-id i historiken är spökrader?
+// historyRows = recipe_history-rader (recipe_id, used_on), plannedRows =
+// meal_days-rader (recipe_id, date). Spökrad = used_on >= today men receptet
+// ligger inte på någon dag från today och framåt.
+export function orphanHistoryIds(historyRows = [], plannedRows = [], today = isoDaysAgo(0)) {
+  const plannedIds = new Set(plannedRows
+    .filter((d) => d.recipe_id != null && d.date >= today)
+    .map((d) => d.recipe_id));
+  return historyRows
+    .filter((h) => h.recipe_id != null && h.used_on >= today)
+    .map((h) => h.recipe_id)
+    .filter((id) => !plannedIds.has(id));
+}
+
 // Städar spökrader: historik med used_on >= i dag vars recept inte ligger på
 // någon dag från i dag och framåt (ersatt utkast, bortslumpad rätt, raderad dag).
 // Best effort — ett fel här får aldrig fälla själva genereringen/bytet.
-export async function pruneOrphanHistory(database, householdId) {
+//
+// `orphans` (valfri): anroparen har redan räknat ut spökraderna ur rader den
+// läst (replace-recipe.js) → bara DELETE:n körs, inga två extra läsrundor.
+// Utan den läses historik + planerade dagar som förr (generate.js, day.js).
+export async function pruneOrphanHistory(database, householdId, { orphans: known } = {}) {
   try {
     const today = isoDaysAgo(0);
-    const [hist, planned] = await Promise.all([
-      database.from("recipe_history").select("recipe_id").eq("household_id", householdId).gte("used_on", today),
-      database.from("meal_days").select("recipe_id").eq("household_id", householdId)
-        .not("recipe_id", "is", null).gte("date", today),
-    ]);
-    if (hist.error || planned.error) return { pruned: 0 };
-    const plannedIds = new Set((planned.data || []).map((d) => d.recipe_id));
-    const orphans = (hist.data || []).map((h) => h.recipe_id).filter((id) => !plannedIds.has(id));
+    let orphans = known;
+    if (!Array.isArray(orphans)) {
+      const [hist, planned] = await Promise.all([
+        database.from("recipe_history").select("recipe_id, used_on").eq("household_id", householdId).gte("used_on", today),
+        database.from("meal_days").select("recipe_id, date").eq("household_id", householdId)
+          .not("recipe_id", "is", null).gte("date", today),
+      ]);
+      if (hist.error || planned.error) return { pruned: 0 };
+      orphans = orphanHistoryIds(hist.data || [], planned.data || [], today);
+    }
     if (!orphans.length) return { pruned: 0 };
     const { error } = await database.from("recipe_history").delete()
       .eq("household_id", householdId).gte("used_on", today).in("recipe_id", orphans);

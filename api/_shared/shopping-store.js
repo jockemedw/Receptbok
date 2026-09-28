@@ -64,6 +64,19 @@ export function unshoppedDates(coverage) {
 //  - recipes: recept-array om anroparen redan hämtat dem (annars hämtas de här).
 //  - database: injicerbar för tester (samma mönster som generate.js).
 //
+// Förlästa värden (valfria, Session-perf P3): en anropare som redan har läst
+// något skickar in det så ombygget slipper läsa om det — varje läsning är en
+// nätverksrunda. Utelämnat (undefined) = läs som förr. OBS: null är ett giltigt
+// värde för oldList (ingen aktiv lista) och targetServings (ingen skalning).
+//  - dayRows: [{date, recipe_id}] för coverDates, redan filtrerade på
+//    recipe_id != null och blocked != true.
+//  - targetServings: hushållets portionsmål (fetchTargetServings).
+//  - oldList: nuvarande aktiva lista (getActiveList) eller null.
+//  - existingItems: oldLists varor [{name, checked, source, position}].
+//
+// Svaret bär även itemIds (varunyckel → shopping_items.id, samma nycklar som
+// klientens window._shopItemIds) så klienten kan visa listan utan omladdning.
+//
 // Bevaras över ombyggnaden: manuella varor + deras bockar (som tidigare) och —
 // NYTT — receptvarors bockar vid exakt namnmatch. En mängdändrad vara
 // ("grädde (2 dl)" → "grädde (4 dl)") blir obockad, vilket är rätt: mer ska köpas.
@@ -74,12 +87,22 @@ export async function rebuildActiveList({
   stampMovedAt = false,
   recipes = null,
   database = db,
+  dayRows: knownDayRows,
+  targetServings: knownTargetServings,
+  oldList: knownOldList,
+  existingItems: knownExistingItems,
 }) {
   const wanted = [...new Set(coverDates || [])].sort();
 
   // 1) Dagarna som ska täckas. blocked kan vara null på custom-dagar → "is not true".
   let dayRows = [];
-  if (wanted.length) {
+  if (knownDayRows !== undefined) {
+    const wantedSet = new Set(wanted);
+    dayRows = (knownDayRows || [])
+      .filter((r) => wantedSet.has(r.date) && r.recipe_id != null && r.blocked !== true)
+      .map((r) => ({ date: r.date, recipe_id: r.recipe_id }))
+      .sort((a, b) => (a.date < b.date ? -1 : 1));
+  } else if (wanted.length) {
     const { data, error } = await database
       .from("meal_days")
       .select("date, recipe_id")
@@ -104,20 +127,26 @@ export async function rebuildActiveList({
     if (recErr) throw new Error("Kunde inte läsa recepten — prova igen.");
     allRecipes = recData || [];
   }
-  const targetServings = await fetchTargetServings(householdId);
+  const targetServings = knownTargetServings !== undefined
+    ? knownTargetServings
+    : await fetchTargetServings(householdId, database);
 
   const shoppingCategories = buildShoppingList(recipeIds, allRecipes, { targetServings });
 
   // 3) Befintlig aktiv lista: manuella varor + bockar, och receptvarors bockar.
-  const oldList = await getActiveList(householdId, database);
+  const oldList = knownOldList !== undefined ? knownOldList : await getActiveList(householdId, database);
   const manualRows = [];
   const oldRecipeChecked = {};
   if (oldList) {
-    const { data: existingItems, error: eiErr } = await database
-      .from("shopping_items")
-      .select("name, checked, source, position")
-      .eq("list_id", oldList.id);
-    if (eiErr) throw new Error("Kunde inte läsa nuvarande inköpslista — prova igen.");
+    let existingItems = knownExistingItems;
+    if (existingItems === undefined) {
+      const { data, error: eiErr } = await database
+        .from("shopping_items")
+        .select("name, checked, source, position")
+        .eq("list_id", oldList.id);
+      if (eiErr) throw new Error("Kunde inte läsa nuvarande inköpslista — prova igen.");
+      existingItems = data;
+    }
     for (const item of existingItems || []) {
       if (item.source === "manual") manualRows.push(item);
       else if (item.source === "recipe" && item.checked === true) oldRecipeChecked[item.name] = true;
@@ -168,9 +197,12 @@ export async function rebuildActiveList({
     if (checked) checkedItems[`manual::${row.name}`] = true;
   });
 
+  let itemIds = {};
   if (itemRows.length > 0) {
-    const { error: itemsErr } = await database.from("shopping_items").insert(itemRows);
+    const { data: inserted, error: itemsErr } = await database.from("shopping_items")
+      .insert(itemRows).select("id, category, name, position, source, checked");
     if (itemsErr) throw itemsErr;
+    itemIds = shopItemIdsFromRows(inserted || []);
   }
 
   const { error: deactErr } = await database.from("shopping_lists").update({ is_active: false })
@@ -180,28 +212,34 @@ export async function rebuildActiveList({
     .update({ is_active: true }).eq("id", newList.id);
   if (actErr) throw actErr;
 
-  // 5) Täckningspekare: byggdagarna pekar på nya listan.
-  if (buildDates.length) {
-    const { error: covErr } = await database
-      .from("meal_days")
-      .update({ shopping_list_id: newList.id })
-      .eq("household_id", householdId)
-      .in("date", buildDates);
-    if (covErr) throw new Error("Listan byggdes, men dagkopplingen kunde inte sparas — ladda om och prova igen.");
-  }
-  // O-inhandlade dagar som föll ur täckningen (pekar kvar på gamla listan) nollas.
-  // Byggdagarna pekar redan på nya listan, så inget datumfilter behövs.
-  // Inhandlade dagar behåller sin gamla pekare (historik, stör inget — täckning
-  // läses alltid via aktiva listans id). Kosmetisk städning → fel loggas bara.
-  if (oldList && oldList.id !== newList.id) {
-    const { error: clrErr } = await database
-      .from("meal_days")
-      .update({ shopping_list_id: null })
-      .eq("household_id", householdId)
-      .eq("shopping_list_id", oldList.id)
-      .is("shopped_at", null);
-    if (clrErr) console.error("rebuildActiveList: kunde inte nolla gamla täckningspekare", clrErr);
-  }
+  // 5) Täckningspekare: byggdagarna pekar på nya listan, och o-inhandlade dagar
+  //    som föll ur täckningen (pekar kvar på gamla listan) nollas. Nollningen
+  //    undantar byggdagarna uttryckligen → de två uppdateringarna rör garanterat
+  //    olika rader och körs parallellt (en nätverksrunda i stället för två).
+  //    Inhandlade dagar behåller sin gamla pekare (historik, stör inget —
+  //    täckning läses alltid via aktiva listans id).
+  const [covRes, clrRes] = await Promise.all([
+    buildDates.length
+      ? database.from("meal_days")
+        .update({ shopping_list_id: newList.id })
+        .eq("household_id", householdId)
+        .in("date", buildDates)
+      : null,
+    oldList && oldList.id !== newList.id
+      ? (() => {
+        let q = database.from("meal_days")
+          .update({ shopping_list_id: null })
+          .eq("household_id", householdId)
+          .eq("shopping_list_id", oldList.id)
+          .is("shopped_at", null);
+        if (buildDates.length) q = q.not("date", "in", `(${buildDates.map((d) => `"${d}"`).join(",")})`);
+        return q;
+      })()
+      : null,
+  ]);
+  if (covRes?.error) throw new Error("Listan byggdes, men dagkopplingen kunde inte sparas — ladda om och prova igen.");
+  // Kosmetisk städning → fel loggas bara.
+  if (clrRes?.error) console.error("rebuildActiveList: kunde inte nolla gamla täckningspekare", clrRes.error);
 
   return {
     listId: newList.id,
@@ -214,9 +252,31 @@ export async function rebuildActiveList({
       recipeItemsMovedAt: movedAt,
       manualItems,
       checkedItems,
+      itemIds,
       coveredDates: buildDates,
     },
   };
+}
+
+// Ren funktion: insatta shopping_items-rader → { varunyckel: rad-id }.
+// SPEGLAR buildShopState i js/shopping/shopping-list.js exakt (testat för
+// paritet): receptvaror nycklas recipe::<kategori>::<index efter sortering på
+// position inom kategorin>, egna varor manual::<namn>.
+export function shopItemIdsFromRows(rows) {
+  const recipeRows = {};
+  const manualRows = [];
+  for (const row of rows || []) {
+    if (row.source === "recipe") (recipeRows[row.category] ||= []).push(row);
+    else if (row.source === "manual") manualRows.push(row);
+  }
+  const itemIds = {};
+  for (const [cat, list] of Object.entries(recipeRows)) {
+    list.slice().sort((a, b) => a.position - b.position)
+      .forEach((row, idx) => { itemIds[`recipe::${cat}::${idx}`] = row.id; });
+  }
+  manualRows.slice().sort((a, b) => a.position - b.position)
+    .forEach((row) => { itemIds[`manual::${row.name}`] = row.id; });
+  return itemIds;
 }
 
 // Manuellt dagurval (Session 134) — familjen väljer själv vilka dagar
