@@ -67,6 +67,38 @@ export function takeOpLock() {
   return true;
 }
 
+// Bakgrundssparning (optimistiskt val): för användaren ser ändringen redan
+// klar ut, men spärren hålls tills servern svarat. Nästa åtgärd (Slumpa,
+// flytta, nytt val …) ska då VÄNTA IN sparningen och sedan köras — aldrig
+// tyst tappas ("random-väljaren buggar").
+let _bgSave = null;   // Promise som löses när bakgrundssparningen släppt spärren
+
+function beginBgSave() {
+  let done;
+  _bgSave = new Promise((resolve) => { done = resolve; });
+  return () => { _bgSave = null; done(); };
+}
+
+export function opBgSaving() {
+  return !!(window._opBusy && _bgSave);
+}
+
+// Synkron förkoll för knappar/gester: true = stoppa (och säg till varför).
+// Under en bakgrundssparning släpps åtgärden fram — den köar i acquireOpLock.
+export function opBlocked() {
+  if (!window._opBusy || _bgSave) return false;
+  window.showToast?.('Vänta – förra ändringen sparas fortfarande.');
+  return true;
+}
+
+// Ta spärren; pågår en bakgrundssparning väntas den in först.
+export async function acquireOpLock() {
+  while (window._opBusy && _bgSave) {
+    try { await _bgSave; } catch { /* sparningen hanterar sina egna fel */ }
+  }
+  return takeOpLock();
+}
+
 function beginOptimistic() {
   _optimisticInFlight++;
   suppressPlanEcho();
@@ -99,6 +131,10 @@ function subscribeMealDays(householdId) {
       // Men fönstret är tidsbaserat och dämpar därför även partnerns
       // samtidiga skrivningar — schemalägg en uppskjuten omhämtning när
       // fönstret löper ut ifall eventet faktiskt var partnerns.
+      // Ett optimistiskt val väntar fortfarande på servern (t.ex. kallstart
+      // längre än ekofönstret): en omhämtning nu skulle läsa det gamla receptet
+      // och skriva över valet. finishOptimistic hämtar om när svaret landat.
+      if (_optimisticInFlight > 0) { markPlanStale(); return; }
       if (window._planMutateUntil && Date.now() < window._planMutateUntil) {
         markPlanStale();
         setTimeout(reloadIfStale, (window._planMutateUntil - Date.now()) + 50);
@@ -396,8 +432,10 @@ export async function selectRecipeForDay(event, recipeId, title) {
     return selectRecipeForCustomDay(event, recipeId, title);
   }
   if (!window.replaceMode) return;
-  if (!takeOpLock()) return;
+  if (!(await acquireOpLock())) return;
+  if (!window.replaceMode) { window._opBusy = false; return; }   // avbröts medan vi väntade
   const { date } = window.replaceMode;
+  const endBgSave = beginBgSave();
 
   const day = window._lastPlan?.days?.find(d => d.date === date);
   const snapshot = day
@@ -439,6 +477,7 @@ export async function selectRecipeForDay(event, recipeId, title) {
     window.showToast?.(userFacingMessage(err, 'Kunde inte byta recept — prova igen.'), { type: 'error' });
   } finally {
     window._opBusy = false;
+    endBgSave();
     finishOptimistic();
   }
 }
@@ -469,8 +508,10 @@ export function exitCustomPickMode({ reload = true } = {}) {
 export async function selectRecipeForCustomDay(event, recipeId, title) {
   event?.stopPropagation?.();
   if (!window.customPickMode) return;
-  if (!takeOpLock()) return;   // delad spärr med premiumvyn (backlog #10)
+  if (!(await acquireOpLock())) return;   // delad spärr med premiumvyn (backlog #10)
+  if (!window.customPickMode) { window._opBusy = false; return; }   // avbröts medan vi väntade
   const { date } = window.customPickMode;
+  const endBgSave = beginBgSave();
 
   const prevCustomDays = window._customDays;
   const existing = (prevCustomDays?.entries || {})[date] || {};
@@ -535,6 +576,7 @@ export async function selectRecipeForCustomDay(event, recipeId, title) {
     window.showToast?.(userFacingMessage(e, 'Kunde inte spara receptet — prova igen.'), { type: 'error' });
   } finally {
     window._opBusy = false;
+    endBgSave();
     finishOptimistic();
   }
 }
@@ -621,8 +663,7 @@ window.blockedDayEditorHtml = blockedDayEditorHtml;
 export async function convertBlockedToCustom(dateIso) {
   const note = document.getElementById('blockedDayNote')?.value?.trim();
   if (!note) return;
-  if (window._opBusy) return;   // delad spärr med premiumvyn (backlog #10)
-  window._opBusy = true;
+  if (!(await acquireOpLock())) return;   // delad spärr med premiumvyn (backlog #10)
   try {
     await postCustomDays('set', [dateIso], note);
     window.dlxCloseSheet?.();   // editorn bor i dag-sheeten
@@ -988,7 +1029,7 @@ async function postCustomDays(action, dates, note) {
 }
 
 export async function saveCustomDay(dateIso) {
-  if (window._opBusy) return;   // delad spärr med premiumvyn (backlog #10)
+  if (opBlocked()) return;   // delad spärr med premiumvyn (backlog #10)
   const input = document.getElementById('customDayNote');
   const note = (input?.value || '').trim();
   const hasExisting = !!(window._customDays?.entries || {})[dateIso];
@@ -996,7 +1037,7 @@ export async function saveCustomDay(dateIso) {
   // convertBlockedToCustom). Annars skapades en innehållslös custom-dag som
   // genereringen sedan permanent hoppar över (F255).
   if (!note && !hasExisting) return;
-  window._opBusy = true;
+  if (!(await acquireOpLock())) return;
   const btn = document.querySelector('.custom-note-save');
   if (btn) { btn.disabled = true; btn.textContent = 'Sparar…'; }
   try {
@@ -1028,8 +1069,7 @@ export async function saveCustomDay(dateIso) {
 }
 
 export async function clearCustomDay(dateIso) {
-  if (window._opBusy) return;   // delad spärr med premiumvyn (backlog #10)
-  window._opBusy = true;
+  if (!(await acquireOpLock())) return;   // delad spärr med premiumvyn (backlog #10)
   try {
     // Låg dagens ingredienser på inköpslistan (inköpsrundor)? Plocka bort dem
     // FÖRE raderingen (remove_day kräver att dagen finns i täckningen).
@@ -1097,6 +1137,9 @@ window.selectRecipeForDay  = selectRecipeForDay;
 window.updateLastPlanDay   = updateLastPlanDay;
 window.suppressPlanEcho    = suppressPlanEcho;
 window.takeOpLock          = takeOpLock;
+window.acquireOpLock       = acquireOpLock;
+window.opBlocked           = opBlocked;
+window.opBgSaving          = opBgSaving;
 window.openSavingPopover   = openSavingPopover;
 window.closeSavingPopover  = closeSavingPopover;
 window.confirmPlan         = confirmPlan;

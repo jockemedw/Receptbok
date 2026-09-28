@@ -175,7 +175,7 @@ export function dealBytIn(recipeId, btnEl) {
 export async function dealConfirmDay(recipeId, date, btnEl) {
   const cand = window._weeklyDeals?.candidates?.find((c) => c.recipeId === recipeId);
   if (!cand) return;
-  if (window.takeOpLock && !window.takeOpLock()) return;   // delad spärr — en ändring i taget
+  if (window.acquireOpLock && !(await window.acquireOpLock())) return;   // delad spärr — väntar in ev. bakgrundssparning
 
   btnEl.disabled = true;
   btnEl.classList.add('is-loading');

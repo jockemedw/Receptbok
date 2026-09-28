@@ -278,6 +278,74 @@ async function scenarioDoubleTap(page, date, { apiLatency, counters }) {
   return { replaceAnrop: replaceCalls(counters) - r0, planensTitel: (await dayRecipe(page, date)) === card.title ? 'ny' : 'oförändrad' };
 }
 
+// Pulsen syns på riktigt: under bakgrundssparningen ska dagkortet ha en
+// verklig (inte nollad) animation och opaciteten faktiskt variera.
+async function scenarioPendingVisible(page, date, { apiLatency }) {
+  const card = await enterPick(page, date);
+  if (!card) return { fel: 'inget kort' };
+  await page.locator(`#recipeGrid .recipe-card[data-id="${card.id}"] .card-title`).first().click();
+  const probe = await page.evaluate(({ date, ms }) => new Promise((resolve) => {
+    const t0 = performance.now();
+    let minOp = 1; const seen = {};
+    const tick = () => {
+      const el = document.querySelector(`#weekDeluxe article[data-date="${date}"]`);
+      if (el && el.classList.contains('dlx-pending')) {
+        const cs = getComputedStyle(el);
+        seen[cs.animationName] = cs.animationDuration;
+        if (cs.animationName === 'dlxPendingPulse') minOp = Math.min(minOp, Number(cs.opacity));
+      }
+      if (performance.now() - t0 < ms) requestAnimationFrame(tick);
+      else resolve({ animationer: seen, minOpacitetUnderPuls: Math.round(minOp * 100) / 100 });
+    };
+    requestAnimationFrame(tick);
+  }), { date, ms: Math.max(200, apiLatency - 150) });
+  await page.waitForFunction(() => !window._opBusy, null, { timeout: apiLatency + 3000 }).catch(() => {});
+  return probe;
+}
+
+// Välj själv och DIREKT därefter Slumpa på en annan dag: Slumpa ska köa bakom
+// bakgrundssparningen och köras — inte tappas tyst.
+async function scenarioPickThenShuffle(page, date, otherDate, { apiLatency, counters }) {
+  const card = await enterPick(page, date);
+  if (!card || !otherDate) return { fel: 'inget kort/ingen annan dag' };
+  const otherOld = await dayRecipe(page, otherDate);
+  const r0 = replaceCalls(counters);
+  await page.locator(`#recipeGrid .recipe-card[data-id="${card.id}"] .card-title`).first().click();
+  await page.waitForTimeout(200);
+  const busyVidSlumpa = await page.evaluate(() => !!window._opBusy);
+  await openByt(page, otherDate);
+  await page.locator('#dlxSheet .dlx-sheet-row', { hasText: 'Slumpa' }).first().click();
+  const pulsDirekt = await page.evaluate((d) => !!document.querySelector(`#weekDeluxe article[data-date="${d}"].dlx-pending`), otherDate);
+  await page.waitForFunction(({ d, old }) => {
+    const r = window._lastPlan?.days?.find((x) => x.date === d)?.recipe;
+    return r && r !== old && !window._opBusy;
+  }, { d: otherDate, old: otherOld }, { timeout: apiLatency * 2 + 4000 }).catch(() => {});
+  return {
+    spärrVidSlumpa: busyVidSlumpa, pulsDirekt,
+    replaceAnrop: replaceCalls(counters) - r0,
+    valtRecept: (await dayRecipe(page, date)) === card.title ? 'nytt' : 'oförändrat',
+    slumpadDag: (await dayRecipe(page, otherDate)) !== otherOld ? 'bytt' : 'oförändrad',
+  };
+}
+
+// Chevronen i väljläget fäller ut kortet (kolla receptet) utan att välja.
+async function scenarioChevronPeek(page, date, { counters }) {
+  const card = await enterPick(page, date);
+  if (!card) return { fel: 'inget kort' };
+  const r0 = replaceCalls(counters);
+  const chev = page.locator(`#recipeGrid .recipe-card[data-id="${card.id}"] .card-chevron`).first();
+  const box = await chev.boundingBox();
+  await chev.click();
+  await page.waitForTimeout(150);
+  const res = await page.evaluate((id) => ({
+    utfällt: !!document.querySelector(`#recipeGrid .recipe-card[data-id="${id}"].open`),
+    kvarIVäljläge: !!window.replaceMode,
+  }), card.id);
+  await page.evaluate(() => { window.exitReplaceMode?.(); window.switchTab?.('vecka'); });
+  await page.waitForTimeout(200);
+  return { ...res, replaceAnrop: replaceCalls(counters) - r0, tryckyta: box ? `${Math.round(box.width)}x${Math.round(box.height)}` : null };
+}
+
 // ── Körning ──────────────────────────────────────────────────────────────────
 
 export async function run({ args, browserName = 'chromium', latency = 120 }) {
@@ -325,6 +393,9 @@ export async function run({ args, browserName = 'chromium', latency = 120 }) {
         out.väljSjälv = await scenarioManual(page, manualTarget, { apiLatency, counters });
         out.väljSjälvFel = await scenarioFailure(page, manualTarget, { apiLatency, counters });
         out.väljSjälvDubbeltryck = await scenarioDoubleTap(page, manualTarget, { apiLatency, counters });
+        out.väljSjälvPuls = await scenarioPendingVisible(page, manualTarget, { apiLatency, counters });
+        out.väljSjälvSedanSlumpa = await scenarioPickThenShuffle(page, manualTarget, await pickTarget(page, 2), { apiLatency, counters });
+        out.väljSjälvKikaPåRecept = await scenarioChevronPeek(page, manualTarget, { counters });
       }
       out.apiAnrop = counters.api.map((c) => `${c.method} ${c.path}${c.action ? ` ${c.action}` : ''}`);
       result[key] = out;

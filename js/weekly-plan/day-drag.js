@@ -491,7 +491,9 @@ function cancelHold() {
 document.addEventListener('pointerdown', (e) => {
   if (_drag || _hold) return;                                   // en gest i taget
   if (e.pointerType === 'mouse' && e.button !== 0) return;
-  if (window._opBusy || window._dlxMove || window._dlxSheet) return;
+  // Under en bakgrundssparning (optimistiskt val) får draget starta — släppet
+  // köar i runDayOp tills sparningen landat. Annars: en ändring i taget.
+  if ((window._opBusy && !window.opBgSaving?.()) || window._dlxMove || window._dlxSheet) return;
   if (window._dlxWeekAnimBusy) return;                          // mitt i veckoglid
   if (e.target.closest('button, a, input, textarea, select')) return;
   const card = e.target.closest('#weekDeluxe .dlx-day-slot > [data-date]');

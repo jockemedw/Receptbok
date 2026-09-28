@@ -292,7 +292,7 @@ export async function poConfirmDay(recipeId, date, btnEl) {
     if (!ok) return;
   }
 
-  if (window.takeOpLock && !window.takeOpLock()) return;   // delad spärr — en ändring i taget
+  if (window.acquireOpLock && !(await window.acquireOpLock())) return;   // delad spärr — väntar in ev. bakgrundssparning
   btnEl.disabled = true;
   btnEl.classList.add('is-loading');
   window.suppressPlanEcho?.();   // dämpa realtids-ekot redan FÖRE anropet

@@ -114,7 +114,8 @@ export function renderCard(r) {
     </div>
     <button type="button" class="select-btn" tabindex="-1"
             onclick="selectRecipeForDay(event,${r.id},'${jsStringAttr(r.title)}')">Välj</button>
-    <span class="card-chevron">›</span>
+    <span class="card-chevron" role="button" aria-label="Visa receptet"
+          onclick="cardChevronTap(event, this.closest('.recipe-card'))">›</span>
   </div>
   <div class="recipe-detail">
     <div class="detail-inner"></div>
@@ -144,6 +145,13 @@ export function cardHeaderTap(event, card) {
     return;
   }
   toggleCard(card);
+}
+
+// Chevronen fäller alltid ut/ihop kortet — även i väljläget, där resten av
+// rubriken väljer receptet. Så går det att kolla ingredienser innan man väljer.
+export function cardChevronTap(event, card) {
+  event?.stopPropagation?.();
+  if (card) toggleCard(card);
 }
 
 export function toggleCard(card) {
@@ -327,6 +335,7 @@ export async function toggleTested(event, id) {
 window.renderCard          = renderCard;
 window.toggleCard          = toggleCard;
 window.cardHeaderTap       = cardHeaderTap;
+window.cardChevronTap      = cardChevronTap;
 window.renderRecipeBrowser = renderRecipeBrowser;
 window.setGroupBy          = setGroupBy;
 window.jumpToRecipe        = jumpToRecipe;

@@ -2601,8 +2601,16 @@
   #receptView.custom-pick-mode .select-btn { display: inline-flex; align-items: center; justify-content: center; }
   /* I väljläget: ingen utfällnings-chevron, och "provat"-pillen är bara
      information (trycket går till kortet, som väljer receptet). */
+  /* I väljläget väljer rubriken receptet; chevronen blir en egen ≥44px
+     tryckyta som fäller ut kortet (kolla ingredienser innan man väljer). */
   #receptView.replace-mode .card-chevron,
-  #receptView.custom-pick-mode .card-chevron { display: none; }
+  #receptView.custom-pick-mode .card-chevron {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 44px; min-height: 44px; margin: -0.4rem -0.5rem -0.4rem 0;
+    border-radius: 10px; opacity: 0.7; cursor: pointer;
+  }
+  #receptView.replace-mode .card-chevron:active,
+  #receptView.custom-pick-mode .card-chevron:active { background: var(--stone); }
   #receptView.replace-mode .pill-toggle,
   #receptView.custom-pick-mode .pill-toggle { pointer-events: none; }
   #receptView.replace-mode .card-header,
@@ -5593,7 +5601,8 @@ body.cook-open { overflow: hidden; }
 }
 
 /* Glöd-kvitto: berörda dagar lyser till efter en lyckad åtgärd */
-.dlx-flash {
+.dlx-flash,
+.dlx-day.dlx-flash {   /* .dlx-day.dlx-flash slår .dlx-day.is-past (animation-name) */
   animation: dlxFlashGlow 1.4s ease both;
 }
 @keyframes dlxFlashGlow {
@@ -5606,13 +5615,15 @@ body.cook-open { overflow: hidden; }
    tills servern bekräftat. Bara opacitet — ingen rörelse vid reduced motion. */
 .dlx-pending { cursor: progress; }
 @media (prefers-reduced-motion: no-preference) {
-  .dlx-pending { animation: dlxPendingPulse 1.2s ease-in-out infinite; }
+  .dlx-pending,
+  .dlx-day.dlx-pending { animation: dlxPendingPulse 1.2s ease-in-out infinite; }
 }
 @keyframes dlxPendingPulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
 }
-.dlx-pending.dlx-flash { animation: dlxFlashGlow 1.4s ease both; }
+.dlx-pending.dlx-flash,
+.dlx-day.dlx-pending.dlx-flash { animation: dlxFlashGlow 1.4s ease both; }
 
 /* ═══ Session 107 — Ikväll-sheeten: kvällens snabbåtgärder (backlog #15, variant B) ═══ */
 .dlx-sheet-backdrop {
@@ -6449,9 +6460,11 @@ main#receptView {
    dagkortens entré-animation (dlxFadeIn/dlxFadeInDim) spelas om varje gång ett
    kort remountas → 0,4 s intoning = synligt blink när ett byte landar. Här
    nollas bara VARAKTIGHETEN, inte animationen: slutrutan (fill: both) bär
-   dämpningen av passerade/arkiverade dagar och måste finnas kvar. */
-.dlx-days.dlx-quiet .dlx-day,
-.dlx-days.dlx-quiet .dlx-tonight { animation-duration: 0.001ms !important; }
+   dämpningen av passerade/arkiverade dagar och måste finnas kvar.
+   Undantag: väntar-pulsen (.dlx-pending) och glöd-kvittot (.dlx-flash) är
+   själva beskeden om att något sparas/har sparats — de får spela ut. */
+.dlx-days.dlx-quiet .dlx-day:not(.dlx-pending):not(.dlx-flash),
+.dlx-days.dlx-quiet .dlx-tonight:not(.dlx-pending):not(.dlx-flash) { animation-duration: 0.001ms !important; }
 
 /* ── Helskärms-indikator under en pågående dag-operation ────────────────────
    Ersätter det gamla "Byter dag…"-kortet som kilades in ovanför dagslistan och

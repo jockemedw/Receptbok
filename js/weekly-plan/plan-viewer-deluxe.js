@@ -895,16 +895,26 @@ const _pendingDates = new Set();
 function applyPendingMarks(host) {
   host.querySelectorAll('article.dlx-pending').forEach(el => {
     if (!_pendingDates.has(el.dataset.date)) {
+      settleEntryAnim(el);
       el.classList.remove('dlx-pending');
       el.removeAttribute('aria-busy');
     }
   });
   for (const date of _pendingDates) {
     host.querySelectorAll(`article[data-date="${date}"]`).forEach(el => {
+      if (el.classList.contains('dlx-pending')) return;
+      el.style.animationDuration = '';   // ev. settle från förra kvittot — låt pulsen gå
       el.classList.add('dlx-pending');
       el.setAttribute('aria-busy', 'true');
     });
   }
+}
+
+// När en tillfällig animation (puls/glöd) tas bort faller kortet tillbaka på
+// entré-animationen (dlxFadeIn), som då spelas om = ett blink från opacitet 0.
+// Nolla varaktigheten på just det kortet (slutrutan med ev. dämpning behålls).
+function settleEntryAnim(el) {
+  el.style.animationDuration = '0.001ms';
 }
 
 window.dlxSetPending = function (date, on) {
@@ -949,9 +959,15 @@ const shuffledAway = new Map();
 const SHUFFLE_EXCLUDE_MAX = 10;
 
 window.dlxShuffle = async function (date, btn) {
-  if (window._opBusy) return;
-  window._opBusy = true;
+  if (window.opBlocked?.()) return;
   if (btn) { btn.disabled = true; btn.classList.add('loading'); }
+  // Kortet andas direkt — även när vi först väntar in en bakgrundssparning.
+  window.dlxSetPending(date, true);
+  if (!(await acquireOp())) {
+    window.dlxSetPending(date, false);
+    if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
+    return;
+  }
   const day = window._lastPlan?.days?.find(d => d.date === date);
   suppressEcho();
   try {
@@ -972,12 +988,14 @@ window.dlxShuffle = async function (date, btn) {
     }
     window.updateLastPlanDay(date, data.recipeId, data.recipe);
     suppressEcho();
+    _pendingDates.delete(date);
     rerender(window._lastPlan, data.shoppingList || window._lastShop);
     dlxFlashDates([date]);
   } catch {
     if (btn) { btn.disabled = false; btn.classList.remove('loading'); }
     dlxFlashError(date, 'Kunde inte byta recept — prova igen.');
   } finally {
+    window.dlxSetPending(date, false);
     window._opBusy = false;
   }
 };
@@ -1004,13 +1022,28 @@ function suppressEcho() {
   window._planMutateUntil = Date.now() + 4000;
 }
 
+// Ta den delade spärren; pågår en bakgrundssparning (optimistiskt val) väntas
+// den in i stället för att trycket tappas tyst. Fallback om plan-viewer inte
+// laddats: gammal synkron spärr.
+async function acquireOp() {
+  if (window.acquireOpLock) return window.acquireOpLock();
+  if (window._opBusy) return false;
+  window._opBusy = true;
+  return true;
+}
+const opBlocked = () => (window.opBlocked ? window.opBlocked() : !!window._opBusy);
+
 // Kort glöd-markering på berörda dagar efter en lyckad åtgärd — kvitto för ögat.
 function dlxFlashDates(dates) {
   requestAnimationFrame(() => {
     for (const date of dates) {
       document.querySelectorAll(`#weekDeluxe [data-date="${date}"]`).forEach(el => {
+        el.style.animationDuration = '';
         el.classList.add('dlx-flash');
-        setTimeout(() => el.classList.remove('dlx-flash'), 1400);
+        setTimeout(() => {
+          if (!el.classList.contains('dlx-pending')) settleEntryAnim(el);
+          el.classList.remove('dlx-flash');
+        }, 1400);
       });
     }
   });
@@ -1031,9 +1064,9 @@ async function dayApi(body) {
 // dämpning, re-render av matsedel (+ inköpslista om servern byggde om den) och
 // glöd-kvitto. Returnerar svaret, eller null vid fel (toast visas här).
 async function runDayOp(body, { label, fallback, flash = null } = {}) {
-  if (window._opBusy) return null;
-  window._opBusy = true;
-  dlxShowOpOverlay(label || 'Sparar…');
+  if (opBlocked()) return null;
+  dlxShowOpOverlay(label || 'Sparar…');   // syns direkt, även medan vi köar
+  if (!(await acquireOp())) { dlxHideOpOverlay(); return null; }
   suppressEcho();
   try {
     const data = await dayApi(body);
@@ -1075,7 +1108,7 @@ function landedDate(movedId, from, fallback) {
 //   • upptagen dag   → val: byt plats, eller kläm in (dagarna emellan roterar)
 
 window.dlxStartMove = function (fromDate) {
-  if (window._opBusy) return;
+  if (opBlocked()) return;
   window._dlxMove = { from: fromDate, pending: null };
   renderDeluxe();
 };
@@ -1095,7 +1128,7 @@ document.addEventListener('keydown', (e) => {
 
 async function dlxPickMoveTarget(toDate) {
   const move = window._dlxMove;
-  if (!move || move.pending || window._opBusy) return;
+  if (!move || move.pending || opBlocked()) return;
   if (toDate === move.from) return;
 
   // Förvalidera mot tidslinjen — begripligt besked direkt, ingen server-tur
@@ -1140,14 +1173,14 @@ async function dlxCommitMove(kind, from, to) {
 // två kort = kläm in. Samma säkra väg som tryck-flödet; läget städas alltid
 // efteråt så ett misslyckat drag aldrig lämnar användaren i flytta-läget.
 window.dlxPerformSwap = async function (fromDate, toDate) {
-  if (window._opBusy) return;
+  if (opBlocked()) return;
   window._dlxMove = { from: fromDate, pending: null };
   await dlxCommitMove('swap', fromDate, toDate);
   if (window._dlxMove) { window._dlxMove = null; renderDeluxe(); }
 };
 
 window.dlxPerformMove = async function (fromDate, before) {
-  if (window._opBusy) return;
+  if (opBlocked()) return;
   window._dlxMove = { from: fromDate, pending: null };
   await dlxCommitMove('insert', fromDate, before || null);
   if (window._dlxMove) { window._dlxMove = null; renderDeluxe(); }
@@ -1211,7 +1244,7 @@ function openChoiceSheet(fromDate, toDate) {
 
 window.dlxChoiceGo = async function (kind) {
   const s = window._dlxSheet;
-  if (!s || s.view !== 'flyttaval' || window._opBusy) return;
+  if (!s || s.view !== 'flyttaval' || opBlocked()) return;
   const { date: from, to } = s;
   window.dlxCloseSheet();
   await dlxCommitMove(kind, from, to);
@@ -1558,7 +1591,7 @@ window.dlxSheetPick = function () {
 // plangränsen). Inköpslistan rörs inte. Ångra-knapp i kvitto-toasten (= pull).
 window.dlxSheetNoDinner = async function (note) {
   const s = window._dlxSheet;
-  if (!s || window._opBusy) return;
+  if (!s || opBlocked()) return;
   const d = (window._timelineByDate || {})[s.date] || {};
   const title = d.recipe || d.customRecipeTitle || 'Middagen';
   const isToday = !!d.isToday;
@@ -1589,7 +1622,7 @@ window.dlxSheetNoDinnerCustom = function () {
 // efter flyttas ett steg tillbaka. Noteringar bekräftas eftersom texten går.
 window.dlxSheetPull = async function () {
   const s = window._dlxSheet;
-  if (!s || window._opBusy) return;
+  if (!s || opBlocked()) return;
   const d = (window._timelineByDate || {})[s.date] || {};
   if (d.customNote) {
     const ok = await window.confirmDialog({
@@ -1613,8 +1646,8 @@ window.dlxSheetPull = async function () {
 // en dags ingredienser. Servern bygger om listan; vi hämtar om båda vyerna.
 async function sheetListAction(action, successMsg) {
   const s = window._dlxSheet;
-  if (!s || window._opBusy) return;
-  window._opBusy = true;
+  if (!s || opBlocked()) return;
+  if (!(await acquireOp())) return;
   try {
     const res = await window.apiFetch('/api/shopping', {
       method: 'POST',
@@ -1654,7 +1687,7 @@ window.dlxSheetRemoveFromList = function () {
 // räknar om planens datumspann; tömd plan deaktiveras.
 window.dlxSheetDeleteDay = async function () {
   const s = window._dlxSheet;
-  if (!s || window._opBusy) return;
+  if (!s || opBlocked()) return;
   const d = (window._timelineByDate || {})[s.date] || {};
   const what = d.recipe || d.customRecipeTitle || d.customNote || (d.blocked ? 'Fri dag' : null);
   const ok = await window.confirmDialog({
