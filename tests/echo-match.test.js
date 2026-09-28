@@ -129,16 +129,35 @@ const customRow = (over = {}) => ({
 {
   const p = plan();
   const c = custom();
-  const changed = applyListCoverage(p, c, { listId: "L2", coveredDates: ["2026-09-28", "2026-10-05"] });
+  const changed = applyListCoverage(p, c, { listId: "L2", coveredDates: ["2026-09-28", "2026-10-05"], oldListId: "L1" });
   assertEq(changed, true, "täckning: något ändrades");
   assertEq(p.days.map((d) => d.listId), ["L2", "L0", null], "täckning: byggdag → ny lista, inhandlad dag orörd, fri dag orörd");
   assertEq(c.entries["2026-10-05"].listId, "L2", "täckning: egen dag i täckningen pekar på nya listan");
   assertEq(c.entries["2026-10-06"].listId, null, "täckning: o-inhandlad dag utanför täckningen nollas");
-  assertEq(applyListCoverage(p, c, { listId: "L2", coveredDates: ["2026-09-28", "2026-10-05"] }), false, "täckning: idempotent");
+  assertEq(applyListCoverage(p, c, { listId: "L2", coveredDates: ["2026-09-28", "2026-10-05"], oldListId: "L1" }), false, "täckning: idempotent");
   assertEq(applyListCoverage(p, c, { listId: "L3" }), false, "täckning: utan coveredDates görs inget");
   assertEq(p.days[0].listId, "L2", "täckning: utan coveredDates orört");
   // Ekot från servern känns sedan igen som eget.
   assertEq(mealDayRowMatches(planRow({ shopping_list_id: "L2" }), p, c), true, "täckning → serverns pekar-eko känns igen");
+}
+
+// ── 7. applyListCoverage nollar bara pekare till FÖREGÅENDE aktiva lista ────
+{
+  // Som servern (rebuildActiveList steg 5): bara dagar som pekar på oldList.id
+  // nollas — en dag som pekar på en tredje, äldre lista rörs inte.
+  const p = plan();
+  const c = custom();
+  c.entries["2026-10-06"].listId = "L-äldre";
+  applyListCoverage(p, c, { listId: "L2", coveredDates: ["2026-09-28"], oldListId: "L1" });
+  assertEq(c.entries["2026-10-06"].listId, "L-äldre", "täckning: dag på tredje lista rörs inte");
+  const p2 = plan();
+  const c2 = custom();
+  applyListCoverage(p2, c2, { listId: "L2", coveredDates: ["2026-09-28"] });
+  assertEq(c2.entries["2026-10-06"].listId, "L1", "täckning: okänd föregående lista → ingen nollning");
+  const p3 = plan();
+  const c3 = custom();
+  applyListCoverage(p3, c3, { listId: "L1", coveredDates: ["2026-09-28"], oldListId: "L1" });
+  assertEq(c3.entries["2026-10-06"].listId, "L1", "täckning: samma lista som förut → ingen nollning");
 }
 
 // ── Resultat ──────────────────────────────────────────────────────────────────

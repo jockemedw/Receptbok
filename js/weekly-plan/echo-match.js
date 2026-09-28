@@ -99,18 +99,22 @@ export function mealDayRowMatches(row, plan, customDays) {
 
 // Speglar serverns steg 5 i rebuildActiveList (api/_shared/shopping-store.js)
 // lokalt efter ett API-svar med ny lista: byggdagarna pekar på nya listan och
-// o-inhandlade dagar som pekade på en annan (den gamla aktiva) lista nollas.
+// o-inhandlade dagar som pekade på den FÖREGÅENDE aktiva listan (oldListId)
+// nollas — exakt som servern, som bara nollar pekare till oldList.id. Dagar
+// som pekar på en tredje, äldre lista rörs inte (servern rör dem inte heller).
+// Okänt oldListId (null) eller samma id som nya listan → ingen nollning.
 // Muterar plan.days / customDays.entries på plats; returnerar true om något
 // ändrades. Utan coveredDates görs inget (okänd täckning → låt ekot avgöra).
 // Gissar vi fel på någon rad avviker serverns eko → planen hämtas om som förut.
-export function applyListCoverage(plan, customDays, { listId, coveredDates }) {
+export function applyListCoverage(plan, customDays, { listId, coveredDates, oldListId = null }) {
   if (!listId || !Array.isArray(coveredDates)) return false;
   const covered = new Set(coveredDates);
+  const clearOld = oldListId != null && String(oldListId) !== String(listId);
   let changed = false;
   const fix = (d, date) => {
     if (covered.has(date)) {
       if (d.listId !== listId) { d.listId = listId; changed = true; }
-    } else if (d.listId != null && d.listId !== listId && !d.shoppedAt) {
+    } else if (clearOld && d.listId != null && String(d.listId) === String(oldListId) && !d.shoppedAt) {
       d.listId = null; changed = true;
     }
   };

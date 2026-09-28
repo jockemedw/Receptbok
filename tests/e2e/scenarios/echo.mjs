@@ -19,6 +19,10 @@
 //      visar den efter ~250 ms (skärmdumpar i ljust/mörkt med --shots).
 //   g) gammalListtäckning: en dagoperation efter listombygget får inte lägga
 //      tillbaka e):s gamla täckning (coveredDates) eller nollställa bockningar.
+//   h) ekoSedanFel: Slumpa (med förhandsval) → servern skriver raden, ekot
+//      kommer (och känns igen som eget) → sedan svarar servern ändå 500. Dagen
+//      rullas tillbaka lokalt, men databasen har det nya receptet → planen ska
+//      hämtas om så vyn visar databasens läge (inte fastna på det gamla).
 //
 // Failar (exitkod 1) på JS-fel, läckta Supabase-anrop och brutna förväntningar.
 
@@ -274,6 +278,38 @@ export async function run({ args, browserName = 'chromium', latency = 120 }) {
       }
       out.gammalListtäckning = g;
     }
+    // h) eko, sedan 500 från servern
+    {
+      await waitWindowOut(page);
+      const hDay = a;
+      const oldId = await page.evaluate((d) => window._lastPlan.days.find((x) => x.date === d).recipeId, hDay);
+      await openSheet(page, hDay);
+      await page.locator('#dlxSheet .dlx-sheet-row', { hasText: 'Byt recept' }).first().click();
+      await page.waitForTimeout(apiLatency + 300);   // förhandsvalet hinner landa → optimistiska vägen
+      counters.failReplaceAfterWrite = true;
+      const q0 = await page.evaluate(() => window.__stub.queries.length);
+      await page.locator('#dlxSheet .dlx-sheet-row', { hasText: 'Slumpa' }).first().click();
+      await page.waitForFunction(({ d, oldId }) =>
+        window.__stubTables.meal_days.find((r) => r.date === d && r.plan_id != null).recipe_id !== oldId,
+      { d: hDay, oldId }, { timeout: 10000, polling: 5 });
+      const optimistisk = await page.evaluate(({ d, oldId }) => window._lastPlan.days.find((x) => x.date === d).recipeId !== oldId, { d: hDay, oldId });
+      await emitRow(page, hDay);
+      await page.waitForFunction(() => !window._opBusy, null, { timeout: apiLatency * 3 + 4000 }).catch(() => {});
+      counters.failReplaceAfterWrite = false;
+      await page.waitForTimeout(latency * 4 + 600);
+      const h = await page.evaluate(({ d, q0 }) => ({
+        visat: window._lastPlan.days.find((x) => x.date === d)?.recipeId ?? null,
+        databas: window.__stubTables.meal_days.find((r) => r.date === d && r.plan_id != null)?.recipe_id ?? null,
+        planOmhämtad: window.__stub.queries.slice(q0).some((q) => q.table === 'weekly_plans'),
+        toast: document.querySelector('.toast')?.textContent?.trim() || null,
+      }), { d: hDay, q0 });
+      h.optimistisk = optimistisk;
+      out.ekoSedanFel = h;
+      check(optimistisk, 'h) Slumpa tog inte den optimistiska vägen (inget förhandsval)');
+      check(h.planOmhämtad && h.visat === h.databas, 'h) eko + serverfel: vyn visar inte databasens recept');
+      await page.waitForTimeout(3500);   // låt toasten försvinna
+    }
+
     if (shots) {
       const { mkdir } = await import('node:fs/promises');
       await mkdir(shots, { recursive: true });
@@ -294,11 +330,12 @@ export async function run({ args, browserName = 'chromium', latency = 120 }) {
     server.close();
   }
 
-  out.fel = errors;
+  // Webbläsarens egen logg av det AVSIKTLIGA 500-svaret i h) är inget appfel.
+  out.fel = errors.filter((e) => !/status of 500 .*@replace-recipe/.test(e));
   out.supabaseLackage = counters.leaks;
   out.bruttaFörväntningar = expect;
   console.log(JSON.stringify(out, null, 2));
-  if (errors.length || counters.leaks.length || expect.length) {
+  if (out.fel.length || counters.leaks.length || expect.length) {
     console.error('\nFEL: se "fel", "supabaseLackage" och "bruttaFörväntningar" ovan.');
     process.exitCode = 1;
   }

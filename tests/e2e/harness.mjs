@@ -95,6 +95,9 @@ const json = (route, status, body) =>
 // counters: { apiCalls: [pathname], api: [{method, path, action, body, t}], leaks: [url] }
 // opts.apiLatency: fördröjning (ms) för de skrivande stubbarna (replace-recipe, day).
 // counters.failReplace (sätts när som helst): /api/replace-recipe svarar 500.
+// counters.failReplaceAfterWrite: skrivningen görs (som när replace-recipe har
+// committat meal_days men historik/listbygget sedan felar), och efter ytterligare
+// apiLatency svarar endpointen ändå 500 — ekot hinner alltså komma före felet.
 export async function withRoutes(page, counters, { apiLatency = 0 } = {}) {
   counters.apiCalls ||= [];
   counters.api ||= [];
@@ -220,6 +223,10 @@ export async function withRoutes(page, counters, { apiLatency = 0 } = {}) {
         }
         return { status: 200, body: reply };
       }, { b: body || {}, seq: pickSeq++ });
+      if (counters.failReplaceAfterWrite && out.status === 200 && !body?.preview) {
+        await sleep(apiLatency);
+        return json(route, 500, { error: 'Kunde inte byta recept just nu.' });
+      }
       return json(route, out.status, out.body);
     }
 

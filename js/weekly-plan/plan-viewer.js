@@ -135,21 +135,33 @@ function beginOptimistic() {
 // Samma bakgrundssparnings-mönster för andra optimistiska vägar (Slumpa med
 // förhandsval i premiumvyn). Anropas EFTER att spärren tagits; returnerar
 // avslutet som släpper spärren, löser köade åtgärder och hanterar ekot.
+// done({ failed: true }) = sparningen gav fel → planen hämtas om (se finishOptimistic).
 export function beginOptimisticSave() {
   const endBgSave = beginBgSave();
   beginOptimistic();
-  return () => {
+  return ({ failed = false } = {}) => {
     window._opBusy = false;
     endBgSave();
-    finishOptimistic();
+    finishOptimistic({ failed });
   };
 }
 
 // Svaret har landat: förläng ekofönstret (ekot kan komma strax efter svaret)
 // och hämta om först när fönstret löpt ut, om ett event markerat planen stale.
-function finishOptimistic() {
+//
+// failed: sparningen gav fel och dagen rullades tillbaka. Servern kan ändå ha
+// hunnit skriva (replace-recipe skriver meal_days FÖRE historik/listbygget, och
+// mobilnätet kan tappa svaret efter commit). Ekot av den skrivningen stämde med
+// det optimistiska läget och svaldes av isKnownRow — det kommer inte igen. Hämta
+// därför alltid om planen direkt, så vyn visar databasens faktiska läge.
+function finishOptimistic({ failed = false } = {}) {
   _optimisticInFlight = Math.max(0, _optimisticInFlight - 1);
   suppressPlanEcho();
+  if (failed) {
+    markPlanStale(null);   // okänd rad → reloadIfStale hämtar alltid om
+    setTimeout(reloadIfStale, 50);
+    return;
+  }
   if (window._planStale) {
     setTimeout(reloadIfStale, Math.max(0, (window._planMutateUntil || 0) - Date.now()) + 50);
   }
@@ -493,18 +505,31 @@ function planShopView(shop) {
   return rest;
 }
 
+// Föregående aktiva listans id — behövs av applyShopListToPlan, eftersom
+// premiumvyns rerender(plan, shop) hinner sätta det nya id:t (via
+// renderWeeklyPlanData) innan renderShoppingData → applyShopListToPlan körs.
+let _prevActiveShopListId = null;
+function setActiveShopListId(id) {
+  const cur = window._activeShopListId ?? null;
+  if (cur !== (id ?? null)) _prevActiveShopListId = cur;
+  window._activeShopListId = id ?? null;
+}
+
 // Ett API-svar med ombyggd inköpslista (listId + coveredDates): spegla serverns
 // täckningspekare lokalt så "på listan"-chipsen stämmer direkt — och så att
 // realtime-ekona för pekarna känns igen som egna (ingen omhämtning). Anropas
 // från renderShoppingData. Ritar bara om planen om något faktiskt ändrats.
 export function applyShopListToPlan(shop) {
   if (!shop?.listId) return false;
-  const oldListId = window._activeShopListId || null;
+  const cur = window._activeShopListId || null;
+  // Serverns steg 5 nollar pekare till listan som var aktiv FÖRE ombygget.
+  const oldListId = cur !== shop.listId ? cur : (_prevActiveShopListId || null);
   const changed = applyListCoverage(window._lastPlan, window._customDays, {
-    listId: shop.listId, coveredDates: shop.coveredDates,
+    listId: shop.listId, coveredDates: shop.coveredDates, oldListId,
   });
-  const idChanged = oldListId !== shop.listId;
-  window._activeShopListId = shop.listId;
+  const idChanged = cur !== shop.listId;
+  setActiveShopListId(shop.listId);
+  _prevActiveShopListId = null;   // förbrukad — ett upprepat svar ska inte nolla igen
   // rerenderPlan läser listId ur _lastShop — annars skulle det gamla id:t
   // skrivas tillbaka. API-formen är samma som runDayOp redan ritar med.
   if (idChanged) window._lastShop = planShopView(shop);
@@ -531,6 +556,7 @@ export async function selectRecipeForDay(event, recipeId, title) {
     ? { recipe: day.recipe, recipeId: day.recipeId, saving: day.saving, savingMatches: day.savingMatches }
     : null;
 
+  let failed = false;
   beginOptimistic();
   updateLastPlanDay(date, recipeId, title);
   exitReplaceMode({ reload: false });
@@ -564,10 +590,11 @@ export async function selectRecipeForDay(event, recipeId, title) {
     rerenderPlan();
     if (document.body.dataset.activeTab === 'vecka') window.dlxWeekGoto?.(date);
     window.showToast?.(userFacingMessage(err, 'Kunde inte byta recept — prova igen.'), { type: 'error' });
+    failed = true;
   } finally {
     window._opBusy = false;
     endBgSave();
-    finishOptimistic();
+    finishOptimistic({ failed });
   }
 }
 
@@ -606,6 +633,7 @@ export async function selectRecipeForCustomDay(event, recipeId, title) {
   const existing = (prevCustomDays?.entries || {})[date] || {};
   const updatedEntries = { ...(prevCustomDays?.entries || {}), [date]: { ...existing, note: existing.note || '', recipeId, recipeTitle: title } };
 
+  let failed = false;
   beginOptimistic();
   window._customDays = { ...(prevCustomDays || {}), entries: updatedEntries };
   exitCustomPickMode({ reload: false });
@@ -644,7 +672,15 @@ export async function selectRecipeForCustomDay(event, recipeId, title) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'add_day', date }),
         });
-        if (res.ok) await adoptShopResponse(res);
+        if (res.ok) {
+          // Servern (add_day) nollar dagens shopped_at — spegla det lokalt så
+          // ekot känns igen som eget (annars full omhämtning av planen).
+          const entry = window._customDays?.entries?.[date];
+          const wasShopped = !!entry?.shoppedAt;
+          if (wasShopped) entry.shoppedAt = null;
+          await adoptShopResponse(res);
+          if (wasShopped) rerenderPlan();
+        }
         else window.showToast?.('Receptet sparades, men inköpslistan kunde inte uppdateras — öppna dagen och välj "Lägg ingredienser på inköpslistan".', { type: 'error' });
       } catch {
         window.showToast?.('Receptet sparades, men inköpslistan kunde inte uppdateras — öppna dagen och välj "Lägg ingredienser på inköpslistan".', { type: 'error' });
@@ -663,10 +699,11 @@ export async function selectRecipeForCustomDay(event, recipeId, title) {
     rerenderPlan();
     if (document.body.dataset.activeTab === 'vecka') window.dlxWeekGoto?.(date);
     window.showToast?.(userFacingMessage(e, 'Kunde inte spara receptet — prova igen.'), { type: 'error' });
+    failed = true;
   } finally {
     window._opBusy = false;
     endBgSave();
-    finishOptimistic();
+    finishOptimistic({ failed });
   }
 }
 
@@ -928,8 +965,8 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
   // Aktiva inköpslistans id (för "på listan"-chipsen). API-payloads och
   // Supabase-summeringen bär listId; äldre/återanvända payloads utan fältet
   // behåller senast kända id i stället för att blanka chipsen.
-  if (shop && shop.listId) window._activeShopListId = shop.listId;
-  else if (!shop) window._activeShopListId = null;
+  if (shop && shop.listId) setActiveShopListId(shop.listId);
+  else if (!shop) setActiveShopListId(null);
 
   if (!hasActivePlan && !(archiveData.plans && archiveData.plans.length) && !Object.keys(customData.entries || {}).length) {
     document.getElementById('weekLoading').style.display = 'none';

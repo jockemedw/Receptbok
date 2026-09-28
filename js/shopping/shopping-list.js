@@ -1403,6 +1403,43 @@ export async function shopAddSubmit() {
   }
 }
 
+// Väntande (ej flushade) bockar som varunamn → önskat värde, för nuvarande lista.
+function pendingChecksByName() {
+  if (!_pendingChecks.size) return null;
+  const byName = new Map();
+  for (const [key, id] of Object.entries(window._shopItemIds || {})) {
+    if (!_pendingChecks.has(id)) continue;
+    const name = itemNameForKey(key, window._shopRecipeItems);
+    if (name != null) byName.set(key.startsWith('manual::') ? `m:${name}` : `r:${name}`, _pendingChecks.get(id));
+  }
+  return byName.size ? byName : null;
+}
+
+function itemNameForKey(key, recipeItems) {
+  if (key.startsWith('manual::')) return key.slice('manual::'.length);
+  const m = key.match(/^recipe::(.+)::(\d+)$/);
+  if (!m) return null;
+  return recipeItems?.[m[1]]?.[parseInt(m[2], 10)] ?? null;
+}
+
+// Lägg över väntande bockar på nya listans rader (samma varunamn) och köa dem
+// för skrivning dit. Gamla listans id:n släpps — den listan är inaktiv nu.
+function carryPendingChecks(byName, shop, recipeItemsData) {
+  _pendingChecks.clear();
+  for (const [key, id] of Object.entries(shop.itemIds || {})) {
+    const name = itemNameForKey(key, recipeItemsData);
+    if (name == null) continue;
+    const tag = key.startsWith('manual::') ? `m:${name}` : `r:${name}`;
+    if (!byName.has(tag)) continue;
+    const v = byName.get(tag);
+    window._checkedItems[key] = v;
+    if (v) window._checkSeq[key] = window._checkSeqNext++;
+    else delete window._checkSeq[key];
+    _pendingChecks.set(id, v);
+  }
+  if (_pendingChecks.size) scheduleCheckedSave();
+}
+
 // Renderar ett shop-objekt från API-svar (receptbyte, dagoperationer, reor …).
 // Bär svaret listId + itemIds (rebuildActiveList) tar klienten över den nya
 // listan direkt: id-kartan, bockarna och realtime-kanalen byts, så en bockning
@@ -1418,9 +1455,14 @@ export function renderShoppingData(shop) {
   if (adopt) {
     _shopLoadSeq++;   // en pågående omladdning kan ha läst läget före ombygget — låt den inte rita
     const listChanged = window._shopListId !== shop.listId;
+    // Bockar som ännu inte flushats hör till GAMLA listans rader — servern
+    // kopierade bara de bockar som redan låg i databasen. Plocka ut dem (per
+    // varunamn) innan id-kartan byts, så de inte tappas på nya listan.
+    const carried = listChanged ? pendingChecksByName() : null;
     window._shopListId = shop.listId;
     window._shopItemIds = { ...shop.itemIds };
     window._checkedItems = { ...(shop.checkedItems || {}) };
+    if (carried) carryPendingChecks(carried, shop, recipeItemsData);
     // Positioner enligt serverns skrivning: receptvaror = index i kategorin,
     // egna varor = index i listan (samma som buildShopState läser tillbaka).
     _itemPos = new Map();

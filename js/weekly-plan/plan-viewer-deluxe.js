@@ -1105,6 +1105,7 @@ window.dlxShuffle = async function (date) {
 
 async function shuffleOptimistic(date, day, cand) {
   const done = window.beginOptimisticSave();   // spärren hålls; nästa åtgärd köar
+  let failed = false;
   const snapshot = { recipe: day.recipe, recipeId: day.recipeId, saving: day.saving, savingMatches: day.savingMatches };
   // Veckans id:n och exkluderingen tas FÖRE den optimistiska ändringen, annars
   // skulle kandidaten själv räknas som "redan i veckan" av servern.
@@ -1145,9 +1146,10 @@ async function shuffleOptimistic(date, day, cand) {
     _pendingDates.delete(date);
     rerender(window._lastPlan);
     window.showToast?.(dlxUserMessage(e, 'Kunde inte byta recept — prova igen.'), { type: 'error' });
+    failed = true;   // servern kan ha hunnit spara → done hämtar om planen
   } finally {
     window.dlxSetPending(date, false);
-    done();
+    done({ failed });
   }
 }
 
