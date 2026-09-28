@@ -188,10 +188,10 @@
       <div class="settings-inner">
 
         <!-- Portionsskalning (backlog #12) — visas när migration 003 är körd -->
-        <div class="setting-row" id="servingsRow" style="display:none">
+        <div class="setting-row setting-row-stepper" id="servingsRow" style="display:none">
           <label class="setting-label">
             Vi är … portioner
-            <span class="setting-sublabel">Inköpslistans mängder skalas hit (recepten är 4 port.)</span>
+            <span class="setting-sublabel">Skalar inköpslistan</span>
           </label>
           <div class="setting-control">
             <div class="stepper">
@@ -206,7 +206,7 @@
 
         <hr class="setting-divider" id="servingsDivider" style="display:none">
 
-        <div class="setting-row">
+        <div class="setting-row setting-row-stepper">
           <label class="setting-label">
             Oprövade recept
             <span class="setting-sublabel">Max antal nya recept i planen</span>
@@ -224,7 +224,7 @@
 
         <hr class="setting-divider">
 
-        <div class="setting-row">
+        <div class="setting-row setting-row-stepper">
           <label class="setting-label">
             Vegetariska dagar
             <span class="setting-sublabel">Antal dagar utan kött/fisk</span>
@@ -242,7 +242,7 @@
 
         <hr class="setting-divider">
 
-        <div class="setting-row">
+        <div class="setting-row setting-row-stepper">
           <label class="setting-label">
             Ture-dagar
             <span class="setting-sublabel">Antal dagar med barnvänliga recept</span>
@@ -585,7 +585,7 @@
     <p class="wiz-sub">Inköpslistan läggs i din varukorg hos butiken du väljer. Du betalar själv i butikens kassa.</p>
     <div class="storepick-body" id="shopStoreBody"></div>
     <div class="daypick-foot">
-      <button type="button" class="btn-secondary" data-sheet-close="shopStoreSheet">Avbryt</button>
+      <button type="button" class="daypick-cancel" data-sheet-close="shopStoreSheet">Avbryt</button>
     </div>
   </div>
 </div>
