@@ -7,6 +7,7 @@ import { db, getHouseholdId } from "./_shared/supabase.js";
 // (docs/prestanda-plan-2026-09.md).
 import { selectRecipes, bucketBySaving, hasTure } from "./_shared/select-recipes.js";
 import { notifyAlert } from "./_shared/alert.js";
+import { fetchRecipeUsage, pruneOrphanHistory } from "./_shared/history.js";
 
 function getCurrentSeason(dateStr) {
   const month = new Date(dateStr).getMonth() + 1;
@@ -63,29 +64,6 @@ async function fetchRecipes(householdId) {
     seasons: r.seasons || [],
     servings: r.servings ?? null,
   }));
-}
-
-async function fetchHistory(householdId) {
-  const { data } = await db
-    .from("recipe_history")
-    .select("recipe_id, used_on")
-    .eq("household_id", householdId);
-  const usedOn = {};
-  for (const row of (data || [])) {
-    usedOn[String(row.recipe_id)] = row.used_on;
-  }
-  return { usedOn };
-}
-
-function recentlyUsedIds(history, days = 14) {
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - days);
-  const cutoffStr = cutoff.toISOString().slice(0, 10);
-  const ids = new Set();
-  for (const [id, date] of Object.entries(history.usedOn || {})) {
-    if (date >= cutoffStr) ids.add(parseInt(id, 10));
-  }
-  return ids;
 }
 
 // Lösgör den gamla planens kvarvarande dagar från planen — de blir EGNA dagar
@@ -316,9 +294,10 @@ export default createSupabaseHandler(async (req, res) => {
   };
 
   const householdId = await getHouseholdId();
-  const [allRecipes, historyData, customRows] = await Promise.all([
+  const [allRecipes, usage, customRows] = await Promise.all([
     fetchRecipes(householdId),
-    fetchHistory(householdId),
+    // Historik + alla planerade dagar (även egna) — se api/_shared/history.js.
+    fetchRecipeUsage(db, householdId),
     // Dagar familjen redan planerat SJÄLVA (custom days, plan_id = null) i
     // intervallet. De får ALDRIG skrivas över av genereringen (hård regel) — och
     // deras meal_days-rad ligger redan på (household_id, date), så en insert skulle
@@ -348,7 +327,7 @@ export default createSupabaseHandler(async (req, res) => {
     }
   }
 
-  const recentIds = recentlyUsedIds(historyData);
+  const { recentIds, usedOn } = usage;
   const allDays = buildDayList(start_date, end_date);
   const blockedSet = new Set(blocked_dates);
   // Blockerade OCH egen-planerade (custom) dagar utesluts ur receptvalet.
@@ -430,7 +409,7 @@ export default createSupabaseHandler(async (req, res) => {
   }
 
   const currentSeason = season_weight ? getCurrentSeason(start_date) : null;
-  const selectedDays = selectRecipes(filtered, activeDays, constraints, recentIds, historyData.usedOn || {}, savingsById, currentSeason);
+  const selectedDays = selectRecipes(filtered, activeDays, constraints, recentIds, usedOn, savingsById, currentSeason);
 
   const days = allDays
     // Egen-planerade dagar hoppas över helt — de har redan sin meal_days-rad och
@@ -477,6 +456,9 @@ export default createSupabaseHandler(async (req, res) => {
   // både när RPC:n saknas och när den kraschar — se activatePlanAtomic ovan).
   await activatePlanAtomic(newPlanId, start_date, householdId);
   await saveHistoryToSupabase(days, householdId);
+  // Ett ersatt utkast/en överskriven vecka lämnar annars sina recept som
+  // "använda" i historiken fast de aldrig lagas (Session 148).
+  await pruneOrphanHistory(db, householdId);
 
   // Inköpslistan rörs INTE här (Session 134). Genereringen skapar bara
   // matsedeln; ingredienserna går till listan i ett separat, helt manuellt steg
