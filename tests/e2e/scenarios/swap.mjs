@@ -79,7 +79,7 @@ async function openByt(page, date) {
   await gotoWeekOf(page, date);
   await page.locator(`#weekDeluxe [data-date="${date}"]`).first().click();
   await page.waitForSelector('#dlxSheet.open', { timeout: 5000 });
-  await page.locator('#dlxSheet .dlx-sheet-row', { hasText: 'Byt recept' }).first().click();
+  await page.locator('#dlxSheet .dlx-sheet-pbtn', { hasText: 'Byt recept' }).first().click();
   await page.locator('#dlxSheet .dlx-sheet-row', { hasText: 'Slumpa' }).first().waitFor({ timeout: 5000 });
 }
 

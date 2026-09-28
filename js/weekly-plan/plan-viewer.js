@@ -8,6 +8,7 @@ import { mealDayRowMatches, applyListCoverage } from './echo-match.js';
 const ICON_COIN = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 7.5v9 M9.5 9.7c.6-.7 1.5-1 2.5-1s2 .3 2.4 1c.5.8 0 1.7-1 2-.7.2-2.7.3-3.4.7-.9.4-1.4 1.3-.9 2.1.5.7 1.6 1 2.5 1s1.9-.3 2.5-1"/></svg>';
 const ICON_POT = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13c0-3.5 3.5-6 8-6s8 2.5 8 6"/><path d="M3 13h18"/><path d="M5.5 13v2c0 1.5 1 2.5 2.5 2.5h8c1.5 0 2.5-1 2.5-2.5v-2"/><path d="M11 4.5c0-.8.5-1.5 1-1.5s1 .7 1 1.5"/></svg>';
 const ICON_NOTE = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h11l3 3v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><path d="M8 11h8 M8 14h8 M8 17h5"/></svg>';
+const ICON_TRASH = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4l.8-12"/><path d="M10 11v6 M14 11v6"/></svg>';
 const ICON_CALENDAR = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>';
 
 // Fel som kastas med en känd svensk server-text flaggas userFacing → catch-
@@ -765,24 +766,41 @@ export function blockedDayEditorHtml(dateIso, dayName) {
     ? 'T.ex. rester, åt ute, beställde hem…'
     : 'T.ex. pizza, rester, äter ute…';
 
+  // Samma radgrammatik som dag-sheetens övriga vyer: rubrik, EN radlista
+  // (noteringen fälls ut på plats), destruktiv åtgärd sist.
   return `<div class="detail-inner custom-day-editor">
-    <div class="custom-day-header">
-      <div class="custom-day-title">${dayName}</div>
-      <div class="custom-day-sub">${dateLabel} · Fri dag</div>
-    </div>
+    ${editorHeadHtml(dayName, dateLabel, 'Fri dag', '')}
     <div class="custom-options">
-      <div class="custom-option custom-option-note">
-        <div class="custom-option-head">
-          <span class="custom-option-icon" aria-hidden="true">${ICON_NOTE}</span>
-          <span class="custom-option-label">Skriv egen notering</span>
-        </div>
-        <input type="text" id="blockedDayNote" class="custom-note-input" maxlength="140"
-               placeholder="${notePlaceholder}">
-        <button type="button" class="custom-note-save" onclick="convertBlockedToCustom('${dateIso}')">Spara notering</button>
-      </div>
+      ${noteRowHtml('blockedDayNote', '', notePlaceholder, `convertBlockedToCustom('${dateIso}')`, false)}
     </div>
-    <button type="button" class="custom-day-remove" onclick="dlxSheetDeleteDay()">Ta bort dagen helt</button>
+    <div class="dlx-sheet-dangerzone"><button type="button" class="dlx-sheet-danger" onclick="dlxSheetDeleteDay()">${ICON_TRASH}<span>Ta bort dagen helt</span></button></div>
   </div>`;
+}
+
+// Rubrik i editorerna — samma form som dag-sheetens sheetHead (plan-viewer-deluxe.js).
+function editorHeadHtml(dayName, dateLabel, title, meta) {
+  return `<div class="dlx-sheet-head">
+      <p class="dlx-sheet-eyebrow">${escapeHtml(dayName || '')} · ${escapeHtml(dateLabel)}</p>
+      <h2 class="dlx-sheet-title">${escapeHtml(title)}</h2>
+      ${meta ? `<p class="dlx-sheet-sub">${escapeHtml(meta)}</p>` : ''}
+    </div>`;
+}
+
+// Noteringsrad som fälls ut till ett fält + Spara vid tryck (dlxExpandNote).
+// Fältets id och .custom-note-save läses av spara-flödena — behåll dem.
+function noteRowHtml(inputId, value, placeholder, saveCall, hasNote) {
+  return `<div class="dlx-note-exp">
+      <button type="button" class="dlx-sheet-row" aria-expanded="false" onclick="dlxExpandNote(this)">
+        <span class="dlx-sheet-ic">${ICON_NOTE}</span>
+        <span class="dlx-sheet-txt"><span class="dlx-sheet-t">${hasNote ? 'Ändra noteringen' : 'Skriv en notering'}</span></span>
+      </button>
+      <div class="dlx-sheet-addrow">
+        <input type="text" id="${inputId}" class="custom-note-input" maxlength="140"
+               placeholder="${placeholder}" aria-label="Notering" value="${value}"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();${saveCall}}">
+        <button type="button" class="dlx-sheet-addbtn custom-note-save" onclick="${saveCall}">Spara</button>
+      </div>
+    </div>`;
 }
 window.blockedDayEditorHtml = blockedDayEditorHtml;
 
@@ -1074,40 +1092,30 @@ export function customDayEditorHtml(dateIso, dayName) {
   // inom retro-fönstret (logga vad ni faktiskt åt / planera om i efterhand).
   // Äldre än fönstret är historik. "Starta matsedel" förblir framtid-only.
   const pickRecipeOption = dateIso >= retroWindowStartIso() ? `
-    <button type="button" class="custom-option" onclick="enterCustomPickMode('${dateIso}', '${escDayName}')">
-      <span class="custom-option-icon" aria-hidden="true">${ICON_POT}</span>
-      <span class="custom-option-label">Välj recept ur receptboken</span>
-      <span class="custom-option-chev" aria-hidden="true">›</span>
+    <button type="button" class="dlx-sheet-row" onclick="enterCustomPickMode('${dateIso}', '${escDayName}')">
+      <span class="dlx-sheet-ic">${ICON_POT}</span>
+      <span class="dlx-sheet-txt"><span class="dlx-sheet-t">${existing?.recipeId ? 'Välj ett annat recept' : 'Välj recept ur receptboken'}</span></span>
     </button>` : '';
 
-  const noteOption = `
-    <div class="custom-option custom-option-note">
-      <div class="custom-option-head">
-        <span class="custom-option-icon" aria-hidden="true">${ICON_NOTE}</span>
-        <span class="custom-option-label">Egen notering</span>
-      </div>
-      <input type="text" id="customDayNote" class="custom-note-input" maxlength="140"
-             placeholder="T.ex. pizza, rester, äter ute…"
-             value="${noteValue}">
-      <button type="button" class="custom-note-save" onclick="saveCustomDay('${dateIso}')">Spara notering</button>
-    </div>`;
+  const noteOption = noteRowHtml('customDayNote', noteValue, 'T.ex. pizza, rester, äter ute…',
+    `saveCustomDay('${dateIso}')`, !!note);
 
   const planOption = !isPastDay ? `
-    <button type="button" class="custom-option" onclick="startPlanFromDate('${dateIso}')">
-      <span class="custom-option-icon" aria-hidden="true">${ICON_CALENDAR}</span>
-      <span class="custom-option-label">Starta matsedel från denna dag</span>
-      <span class="custom-option-chev" aria-hidden="true">›</span>
+    <button type="button" class="dlx-sheet-row" onclick="startPlanFromDate('${dateIso}')">
+      <span class="dlx-sheet-ic">${ICON_CALENDAR}</span>
+      <span class="dlx-sheet-txt"><span class="dlx-sheet-t">Starta matsedel från denna dag</span><span class="dlx-sheet-d">Genererar nya middagar härifrån</span></span>
     </button>` : '';
 
   const removeBtn = hasExisting
-    ? `<button type="button" class="custom-day-remove" onclick="clearCustomDay('${dateIso}')">Ta bort markering</button>`
+    ? `<div class="dlx-sheet-dangerzone"><button type="button" class="dlx-sheet-danger" onclick="clearCustomDay('${dateIso}')">${ICON_TRASH}<span>Ta bort markering</span></button></div>`
     : '';
 
+  // Titel: dagens innehåll (recept/notering) — annars "Tom dag".
+  const title = existing?.recipeTitle || note || 'Tom dag';
+  const meta = hasExisting ? 'Egen planering' : '';
+
   return `<div class="detail-inner custom-day-editor">
-    <div class="custom-day-header">
-      <div class="custom-day-title">${dayName}</div>
-      <div class="custom-day-sub">${dateLabel}${hasExisting ? ' · egen planering' : ''}</div>
-    </div>
+    ${editorHeadHtml(dayName, dateLabel, title, meta)}
     <div class="custom-options">
       ${pickRecipeOption}
       ${noteOption}
@@ -1181,7 +1189,7 @@ export async function saveCustomDay(dateIso) {
       window._customDays
     );
   } catch (e) {
-    if (btn) { btn.disabled = false; btn.textContent = 'Spara notering'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Spara'; }
     const editor = document.querySelector('.custom-day-editor');
     if (editor && !editor.querySelector('.custom-save-err')) {
       const err = document.createElement('p');

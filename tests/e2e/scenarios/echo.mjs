@@ -62,7 +62,7 @@ async function openSheet(page, date) {
 async function shuffle(page, date, { onWrite = null } = {}) {
   const oldId = await page.evaluate((d) => window._lastPlan.days.find((x) => x.date === d).recipeId, date);
   await openSheet(page, date);
-  await page.locator('#dlxSheet .dlx-sheet-row', { hasText: 'Byt recept' }).first().click();
+  await page.locator('#dlxSheet .dlx-sheet-pbtn', { hasText: 'Byt recept' }).first().click();
   await page.locator('#dlxSheet .dlx-sheet-row', { hasText: 'Slumpa' }).first().click();
   if (onWrite) {
     // Servern har skrivit raden (stubben speglar) — spela upp ekot DIREKT.
@@ -284,7 +284,7 @@ export async function run({ args, browserName = 'chromium', latency = 120 }) {
       const hDay = a;
       const oldId = await page.evaluate((d) => window._lastPlan.days.find((x) => x.date === d).recipeId, hDay);
       await openSheet(page, hDay);
-      await page.locator('#dlxSheet .dlx-sheet-row', { hasText: 'Byt recept' }).first().click();
+      await page.locator('#dlxSheet .dlx-sheet-pbtn', { hasText: 'Byt recept' }).first().click();
       await page.waitForTimeout(apiLatency + 300);   // förhandsvalet hinner landa → optimistiska vägen
       counters.failReplaceAfterWrite = true;
       const q0 = await page.evaluate(() => window.__stub.queries.length);
