@@ -264,11 +264,13 @@ export async function activatePlanAtomic(newPlanId, startDate, householdId, data
   return { usedRpc: false };
 }
 
+// used_on = dagen rätten ÄTS, inte genereringsdagen. Med genereringsdatum
+// släpptes en rätt som låg sist i en lång matsedel fri för nytt val redan dagar
+// efter att den lagats (14-dagarsfönstret räknades från genereringen).
 async function saveHistoryToSupabase(days, householdId) {
-  const today = new Date().toISOString().slice(0, 10);
   const rows = days
     .filter((d) => d.recipeId)
-    .map((d) => ({ household_id: householdId, recipe_id: d.recipeId, used_on: today }));
+    .map((d) => ({ household_id: householdId, recipe_id: d.recipeId, used_on: d.date }));
   if (!rows.length) return;
   await db.from("recipe_history").upsert(rows, { onConflict: "household_id,recipe_id" });
 }

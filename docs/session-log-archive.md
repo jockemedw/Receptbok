@@ -1,6 +1,14 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–145. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–146. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+## Session 146 — F05 byggd: handla-lägets startdialog borttagen (render-only, SKARP, ej mobil-verifierad)
+
+Joakim: "Kör" på F-etapp 1 i förenklingsplanen. `handlaModeFabClick` (`js/shopping/shopping-list.js`) frågade "Starta handla-läge?" via `confirmDialog` vid varje start — en liten, direkt reversibel sorteringsändring bakom ett återkommande godkännande (Astras F05). Nu: ett tryck växlar läget åt båda hållen; vid start visas en kort toast som bär dialogens förklaring ("bockade varor lägger sig under I korgen — tryck på kundvagnen igen när ni är klara"), avstängning är tyst. Funktionen blev synkron (callern är fire-and-forget `onclick`). Läget är oförändrat en vy-preferens i minnet; bockar, dagtäckning och inhandlat-status rörs inte.
+
+Kringdokumentation: F05-raden i `roadmap.html` märkt byggd, F-etapp 1 i `docs/atgardsplan-forenklingar-2026-09.md` uppdaterad. **app v164 / SW v117** (styles orörd — ingen CSS ändrad). Testsvit 15/15 grön (fem testfiler kräver `npm install` i färsk miljö — inget nytt).
+
+**F-etapp 2 klar samma session:** de fem beslutsfrågorna ställdes interaktivt och Joakim svarade på alla — samtliga enligt rekommendationen (F02 JSON-kolumn + apply-RPC · "Använd förslaget" · "Spara till senare" byggs inte · `carried_over_at` ja · F07 buntas med #5, GITHUB_PAT avvecklas efteråt). Besluten bokförda i åtgärdsplanen och roadmap-sidans beslutslista; migrationskörningar kräver fortfarande uttryckligt klartecken per session. **Nästa F-steg: F-etapp 3 (F02→F01)** — startvillkoret som återstår är mobilverifieringen av S144-fixarna. R01 + R13-zoom väntar separat OK.
 
 ## Session 145 — Åtgärdsplan för Astras förenklingsrapport F01–F07 (docs + roadmap.html, render-only, SKARP).
 

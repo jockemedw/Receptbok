@@ -47,6 +47,16 @@ function applySeasonWeight(pool, currentSeason) {
 
 export const hasTure = (r) => (r.tags || []).some((t) => t.toLowerCase() === "ture");
 
+// "Längst sedan använt" först: aldrig använda (saknar usedOn) först, sedan
+// äldst datum. Slumpas FÖRE den stabila sorteringen så att lika datum (en hel
+// matsedels recept delar ofta datum) inte alltid kommer i databasordning.
+export function byLongestAgo(list, usedOn = {}) {
+  return shuffle(list).sort((a, b) => {
+    const da = usedOn[a.id] ?? "", dbv = usedOn[b.id] ?? "";
+    return da < dbv ? -1 : da > dbv ? 1 : 0;
+  });
+}
+
 export function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), usedOn = {}, savingsById = null, currentSeason = null) {
   const MAX_PER_PROTEIN = 2;
 
@@ -56,12 +66,14 @@ export function selectRecipes(recipes, dayList, constraints, recentIds = new Set
     pool = fresh;
   } else {
     const needed = dayList.length - fresh.length;
-    const oldest = recipes
-      .filter((r) => recentIds.has(r.id))
-      .sort((a, b) => (usedOn[a.id] ?? "") < (usedOn[b.id] ?? "") ? -1 : 1)
+    const oldest = byLongestAgo(recipes.filter((r) => recentIds.has(r.id)), usedOn)
       .slice(0, needed);
     pool = [...fresh, ...oldest];
   }
+  // Sista utvägen när en delpool (veg, helg, Ture, testade) är uttömd trots att
+  // poolen totalt räckte. Tidigare loopades `recipes` i databasordning — då vann
+  // samma nyss lagade recept varje gång. Nu: längst sedan använt först.
+  const lastResort = byLongestAgo(recipes, usedOn);
   if (pool.length === 0) pool = recipes;
 
   const weekdayPool = bucketBySaving(pool.filter((r) => r.tags.includes("vardag30")), savingsById, currentSeason);
@@ -118,14 +130,14 @@ export function selectRecipes(recipes, dayList, constraints, recentIds = new Set
       if (!underUntestedLimit(r)) continue;
       return r;
     }
-    for (const r of recipes) {
+    for (const r of lastResort) {
       if (usedIds.has(r.id)) continue;
       if (!tureOk(r)) continue;
       if (!vegOk(r)) continue;
       if (!underUntestedLimit(r)) continue;
       return r;
     }
-    for (const r of recipes) {
+    for (const r of lastResort) {
       if (usedIds.has(r.id)) continue;
       if (!tureOk(r)) continue;
       if (!vegOk(r)) continue;
