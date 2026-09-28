@@ -242,9 +242,11 @@ export async function saveShoppingDayPick() {
 
     closeShoppingDayPicker();
     window._planMutateUntil = Date.now() + 4000;   // dämpa realtids-ekot
-    window._preserveChecked = false;
-    window.loadShoppingTab?.();      // Inköp-fliken: nya listan + täckningsraden
-    await window.loadWeeklyPlan?.(); // Matsedeln: "på listan"-chipsen
+    // Inköp-fliken: nya listan ritas direkt ur svaret (switchTab nedan
+    // uppdaterar den sedan tyst, utan spinner).
+    if (data.shoppingList && window.renderShoppingData) window.renderShoppingData(data.shoppingList);
+    else window._preserveChecked = false;
+    await window.loadWeeklyPlan?.(); // Matsedeln: "på listan"-chipsen + ev. återlagda dagar
 
     const n = (data.coveredDates || dates).length;
     const skipped = (data.skipped || []).length;

@@ -25,6 +25,7 @@ const _pendingChecks = new Map(); // shopping_items.id → önskat checked-värd
 
 // ── Realtime-prenumeration för inköpsvaror ────────────────────────────────────
 let _shopChannel = null;
+let _shopChannelListId = null;   // listan _shopChannel lyssnar på
 // Household-scopad kanal (F038): fångar när AKTIV lista byts ut helt på en
 // annan enhet (nytt recept väljs / ny matsedel genereras) — _shopChannel ovan
 // är bunden till ett enskilt list-id och hör aldrig av sig om den listan
@@ -38,6 +39,7 @@ function unsubscribeShoppingItems() {
     window.db.removeChannel(_shopChannel);
     _shopChannel = null;
   }
+  _shopChannelListId = null;
 }
 
 function unsubscribeShoppingLists() {
@@ -69,15 +71,19 @@ function subscribeShoppingLists(householdId) {
         const otherListActivated = newRow?.is_active === true && newRow.id !== currentId;
         if (ownListDeactivated || otherListActivated) {
           window._preserveChecked = false;
-          loadShoppingTab();
+          refreshShoppingTab();
         }
       })
     .subscribe();
 }
 
 function subscribeShoppingItems(listId) {
+  // Redan kopplad till samma lista → behåll kanalen (varje omladdning
+  // prenumererade tidigare om, även när listan inte bytts).
+  if (_shopChannel && listId && _shopChannelListId === listId) return;
   unsubscribeShoppingItems();
   if (!listId) return;
+  _shopChannelListId = listId;
   // F252: en mobil i fickan suspenderas av OS:et och websocketen dör —
   // supabase-js re-joinar kanalen vid uppvakning men spelar INTE upp missade
   // events. Utan den här flaggan skulle lokal state kunna vara flera minuter
@@ -93,16 +99,16 @@ function subscribeShoppingItems(listId) {
         // Riktad uppdatering i minnet (bock, namn, ordning) — ingen omladdning.
         // Går raden inte att placera (okänt id → vår state är gammal) faller vi
         // tillbaka på en full omladdning.
-        if (!applyRemoteUpdate(newRow)) { window._preserveChecked = false; loadShoppingTab(); }
+        if (!applyRemoteUpdate(newRow)) { window._preserveChecked = false; refreshShoppingTab(); }
       } else if (eventType === 'DELETE') {
         // Borttagen vara → ta bort på plats (bevarar ordning, ingen omladdning).
         // Lokala borttagningar är redan hanterade → då blir detta en no-op.
         if (oldRow?.id != null) applyRemovalById(oldRow.id);
-        else { window._preserveChecked = false; loadShoppingTab(); }
+        else { window._preserveChecked = false; refreshShoppingTab(); }
       } else {
         // Ny vara eller manuell vara ändrad → ladda om
         window._preserveChecked = false;
-        loadShoppingTab();
+        refreshShoppingTab();
       }
     })
     .subscribe((status) => {
@@ -111,7 +117,7 @@ function subscribeShoppingItems(listId) {
       } else if (status === 'SUBSCRIBED' && sawDisconnect) {
         sawDisconnect = false;
         window._preserveChecked = false;
-        loadShoppingTab();
+        refreshShoppingTab();
       }
     });
 }
@@ -962,10 +968,36 @@ export async function loadShoppingTab() {
   }
 }
 
+// Bakgrundsuppdatering (realtime-event, API-svar som ändrat listan): syns inte
+// Inköp-fliken markeras den bara som inaktuell (window._shopDirty) — fliken
+// laddas alltid om vid nästa besök (navigation.js), och vägar som behöver
+// listan medan den är dold (Idag/dag-sheetens "lägg till") laddar då först.
+// Syns fliken uppdateras den tyst (utan spinner, se nedan).
+export function refreshShoppingTab() {
+  if (document.body.dataset.activeTab !== 'shop') {
+    window._shopDirty = true;
+    return Promise.resolve();
+  }
+  return loadShoppingTab();
+}
+
+// Löpnummer: bara den senast startade laddningen får rita (snabba följd-
+// laddningar kan annars landa i fel ordning och rita en äldre lista sist).
+let _shopLoadSeq = 0;
+
 async function loadShoppingTabInner() {
-  document.getElementById('shopLoading').style.display  = '';
-  document.getElementById('shopContent').style.display  = 'none';
-  document.getElementById('shopNoData').style.display   = 'none';
+  const seq = ++_shopLoadSeq;
+  const stale = () => seq !== _shopLoadSeq;
+  window._shopDirty = false;
+  // Stale-while-revalidate: visas redan en lista, låt den stå kvar medan vi
+  // hämtar — ingen spinner-blink vid flikbyte eller efter en ändring.
+  const contentEl = document.getElementById('shopContent');
+  const quiet = !!window._shopListId && contentEl.style.display !== 'none';
+  if (!quiet) {
+    document.getElementById('shopLoading').style.display  = '';
+    contentEl.style.display                                = 'none';
+    document.getElementById('shopNoData').style.display    = 'none';
+  }
   try {
     const householdId = await window.getHouseholdId();
     // F038: household-scopad kanal som upptäcker när AKTIV lista byts ut helt
@@ -997,7 +1029,7 @@ async function loadShoppingTabInner() {
 
     // Inköpsrundor (migration 009): vilka middagar listan täcker. Saknas
     // kolumnen (migrationen ej körd) blir det tyst en tom täckning.
-    window._shopCoverage = [];
+    let coverage = [];
     if (list) {
       const { data: covRows, error: covErr } = await window.db
         .from('meal_days')
@@ -1005,19 +1037,23 @@ async function loadShoppingTabInner() {
         .eq('household_id', householdId)
         .eq('shopping_list_id', list.id)
         .order('date');
-      if (!covErr) window._shopCoverage = covRows || [];
+      if (!covErr) coverage = covRows || [];
     }
 
+    if (stale()) return;   // en senare laddning (eller ett API-svar) har tagit över
+    window._shopCoverage = coverage;
     const hasRecipeItems = !!(list?.recipe_items_moved_at && items.some(i => i.source === 'recipe'));
     const hasManual      = items.some(i => i.source === 'manual');
 
     document.getElementById('shopLoading').style.display = 'none';
     if (!hasRecipeItems && !hasManual) {
+      contentEl.style.display = 'none';
       document.getElementById('shopNoData').style.display = '';
       unsubscribeShoppingItems();
       return;
     }
-    document.getElementById('shopContent').style.display = '';
+    document.getElementById('shopNoData').style.display = 'none';
+    contentEl.style.display = '';
     if (typeof window.initDispatchUI === 'function') window.initDispatchUI();
 
     const preserveChecked = window._preserveChecked === true;
@@ -1032,7 +1068,11 @@ async function loadShoppingTabInner() {
     renderFullShoppingList(hasRecipeItems ? state.recipeItems : null, state.manualItems);
     renderShopCoverage();
   } catch {
+    if (stale()) return;
     document.getElementById('shopLoading').style.display = 'none';
+    // Tyst uppdatering som misslyckas (t.ex. tappat nät) → behåll listan som
+    // visas i stället för att byta den mot "ingen lista".
+    if (quiet) return;
     document.getElementById('shopNoData').style.display  = '';
     unsubscribeShoppingItems();
   }
@@ -1363,14 +1403,52 @@ export async function shopAddSubmit() {
   }
 }
 
-// Renderar ett shop-objekt från API-svar (används av plan-viewer efter skip/block)
+// Renderar ett shop-objekt från API-svar (receptbyte, dagoperationer, reor …).
+// Bär svaret listId + itemIds (rebuildActiveList) tar klienten över den nya
+// listan direkt: id-kartan, bockarna och realtime-kanalen byts, så en bockning
+// skrivs till NYA listans rader — tidigare hamnade den på den gamla, nu
+// inaktiva listan tills ett eko råkade ladda om fliken.
 export function renderShoppingData(shop) {
+  if (!shop) return;
   const recipeItemsData = shop.recipeItems || shop.categories || null;
   const hasRecipe = shop.recipeItemsMovedAt &&
     recipeItemsData && Object.values(recipeItemsData).some(v => v.length > 0);
   const hasManual = (shop.manualItems || []).length > 0;
-  if (!hasRecipe && !hasManual) return;
-  if (shop.checkedItems) window._checkedItems = shop.checkedItems;
+  const adopt = !!(shop.listId && shop.itemIds);
+  if (adopt) {
+    _shopLoadSeq++;   // en pågående omladdning kan ha läst läget före ombygget — låt den inte rita
+    const listChanged = window._shopListId !== shop.listId;
+    window._shopListId = shop.listId;
+    window._shopItemIds = { ...shop.itemIds };
+    window._checkedItems = { ...(shop.checkedItems || {}) };
+    // Positioner enligt serverns skrivning: receptvaror = index i kategorin,
+    // egna varor = index i listan (samma som buildShopState läser tillbaka).
+    _itemPos = new Map();
+    for (const [key, id] of Object.entries(shop.itemIds)) {
+      const rm = key.match(/::(\d+)$/);
+      if (key.startsWith('recipe::') && rm) _itemPos.set(id, parseInt(rm[1], 10));
+    }
+    (shop.manualItems || []).forEach((name, idx) => {
+      const id = shop.itemIds[`manual::${name}`];
+      if (id != null) _itemPos.set(id, idx);
+    });
+    subscribeShoppingItems(shop.listId);   // no-op om kanalen redan gäller listan
+    // Täckningsraden hör till listan — hämta den för nya listan (en billig fråga).
+    if (listChanged) refreshShopCoverage();
+  } else if (shop.checkedItems) {
+    window._checkedItems = shop.checkedItems;
+  }
+  // Matsedelns "på listan"-chips följer nya listan direkt (och egna realtime-
+  // ekon för täckningspekarna känns igen → ingen omhämtning av planen).
+  window.applyShopListToPlan?.(shop);
+  if (!hasRecipe && !hasManual) {
+    if (adopt) {
+      document.getElementById('shopLoading').style.display = 'none';
+      document.getElementById('shopContent').style.display = 'none';
+      document.getElementById('shopNoData').style.display  = '';
+    }
+    return;
+  }
   renderFullShoppingList(hasRecipe ? recipeItemsData : null, shop.manualItems || []);
   document.getElementById('shopLoading').style.display = 'none';
   document.getElementById('shopNoData').style.display  = 'none';
@@ -1397,6 +1475,7 @@ window.clearPickedItems   = clearPickedItems;
 window.copyShoppingList   = copyShoppingList;
 window.addManualItem      = addManualItem;
 window.loadShoppingTab    = loadShoppingTab;
+window.refreshShoppingTab = refreshShoppingTab;
 window.renderShoppingData = renderShoppingData;
 window.markRoundShopped   = markRoundShopped;
 window.refreshShopCoverage = refreshShopCoverage;

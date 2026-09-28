@@ -63,8 +63,7 @@ export async function moveToShoppingList() {
     btn.dataset.movedAt = today;
     btn.textContent     = 'Flytta till inköpslista →';
     btn.disabled        = false;
-    window.switchTab('shop');
-    if (window.loadShoppingTab) window.loadShoppingTab();
+    window.switchTab('shop');   // laddar Inköp-fliken (navigation.js) — ingen extra laddning här
   } catch {
     window.showToast('Kunde inte flytta varorna — prova igen.', { type: 'error' });
     btn.textContent = 'Flytta till inköpslista →';

@@ -14,6 +14,7 @@
 //   node tests/e2e/perf-smoke.mjs --json=docs/snapshots/perf-baseline.json
 //   node tests/e2e/perf-smoke.mjs --scenario=swap        # byt recept + realtime-eko
 //        (se tests/e2e/scenarios/swap.mjs för flaggor: --api-latency, --plan-offset)
+//   node tests/e2e/perf-smoke.mjs --scenario=echo        # egna ekon, partnerändringar, listombygge, indikator
 //
 // Playwright hämtas från den GLOBALA installationen om projektet saknar den
 // (repot har medvetet nästan inga beroenden). Webbläsarbinärer förväntas ligga

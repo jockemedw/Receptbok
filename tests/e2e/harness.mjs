@@ -165,10 +165,60 @@ export async function withRoutes(page, counters, { apiLatency = 0 } = {}) {
         }
         row.recipe_id = rec.id;
         row.recipe_title_snapshot = rec.title;
-        return {
-          status: 200,
-          body: { recipe: rec.title, recipeId: rec.id, saving: row.saving ?? null, savingMatches: row.saving_matches ?? null },
-        };
+        const reply = { recipe: rec.title, recipeId: rec.id, saving: row.saving ?? null, savingMatches: row.saving_matches ?? null };
+        // window.__stubReplaceShop = true → servern "bygger om" inköpslistan som
+        // rebuildActiveList: ny lista med nya rad-id:n, gamla avaktiveras,
+        // täckningspekarna flyttas — och svaret bär listId/itemIds/coveredDates.
+        if (window.__stubReplaceShop) {
+          const old = T.shopping_lists.find((l) => l.is_active);
+          const listId = `list-${String(T.shopping_lists.length + 1).padStart(4, '0')}`;
+          const covered = [...new Set([
+            ...T.meal_days.filter((r) => old && r.shopping_list_id === old.id && !r.shopped_at).map((r) => r.date),
+            b.date,
+          ])].sort();
+          const oldItems = old ? T.shopping_items.filter((i) => i.list_id === old.id) : [];
+          const recipeItems = {};
+          const checkedItems = {};
+          const itemIds = {};
+          const manualItems = [];
+          let n = 0;
+          const byCat = {};
+          for (const it of oldItems.filter((i) => i.source === 'recipe').sort((a, c) => a.position - c.position)) {
+            (byCat[it.category] ||= []).push(it);
+          }
+          for (const [cat, list] of Object.entries(byCat)) {
+            recipeItems[cat] = [];
+            list.forEach((it, pos) => {
+              const id = `${listId}-it-${n++}`;
+              T.shopping_items.push({ ...it, id, list_id: listId, position: pos });
+              recipeItems[cat].push(it.name);
+              itemIds[`recipe::${cat}::${pos}`] = id;
+              if (it.checked) checkedItems[`recipe::${cat}::${pos}`] = true;
+            });
+          }
+          oldItems.filter((i) => i.source === 'manual').sort((a, c) => a.position - c.position).forEach((it, idx) => {
+            const id = `${listId}-it-${n++}`;
+            T.shopping_items.push({ ...it, id, list_id: listId, position: idx });
+            manualItems.push(it.name);
+            itemIds[`manual::${it.name}`] = id;
+            if (it.checked) checkedItems[`manual::${it.name}`] = true;
+          });
+          T.shopping_lists.forEach((l) => { l.is_active = false; });
+          T.shopping_lists.push({ id: listId, household_id: old?.household_id, is_active: true,
+            recipe_items_moved_at: old?.recipe_items_moved_at || new Date().toISOString(), created_at: new Date().toISOString() });
+          const changedDates = [];
+          for (const r of T.meal_days) {
+            if (covered.includes(r.date)) { r.shopping_list_id = listId; changedDates.push(r.date); }
+            else if (old && r.shopping_list_id === old.id && !r.shopped_at) { r.shopping_list_id = null; changedDates.push(r.date); }
+          }
+          window.__stubLastRebuild = { oldListId: old?.id || null, listId, changedDates };
+          reply.shoppingList = {
+            listId, generated: new Date().toISOString().slice(0, 10), startDate: covered[0], endDate: covered[covered.length - 1],
+            recipeItems, recipeItemsMovedAt: old?.recipe_items_moved_at || null, manualItems, checkedItems, itemIds,
+            coveredDates: covered,
+          };
+        }
+        return { status: 200, body: reply };
       }, { b: body || {}, seq: pickSeq++ });
       return json(route, out.status, out.body);
     }

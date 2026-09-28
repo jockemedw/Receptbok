@@ -401,7 +401,7 @@ window.todayAddItem = async function () {
   const item = input?.value.trim();
   if (!item) { input?.focus(); return; }
   try {
-    if (!window._shopManualItems && window.loadShoppingTab) await window.loadShoppingTab();
+    if ((!window._shopManualItems || window._shopDirty) && window.loadShoppingTab) await window.loadShoppingTab();
   } catch { /* addManualItem ger begripligt fel nedan */ }
   await window.addManualItem('todayAddInput', 'todayAddBtn');
   if (input && input.value === '') {

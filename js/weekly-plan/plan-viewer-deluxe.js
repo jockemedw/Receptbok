@@ -1200,10 +1200,14 @@ async function dayApi(body) {
 // Gemensam körning av en dagoperation: spärr, helskärms-indikator, eko-
 // dämpning, re-render av matsedel (+ inköpslista om servern byggde om den) och
 // glöd-kvitto. Returnerar svaret, eller null vid fel (toast visas här).
+// Indikatorn visas först om åtgärden (inkl. ev. kö bakom en bakgrunds-
+// sparning) fortfarande pågår efter OP_OVERLAY_DELAY_MS — snabba svar ska
+// kännas omedelbara, inte blinka en helskärmsslöja.
+const OP_OVERLAY_DELAY_MS = 250;
 async function runDayOp(body, { label, fallback, flash = null } = {}) {
   if (opBlocked()) return null;
-  dlxShowOpOverlay(label || 'Sparar…');   // syns direkt, även medan vi köar
-  if (!(await acquireOp())) { dlxHideOpOverlay(); return null; }
+  const overlayTimer = setTimeout(() => dlxShowOpOverlay(label || 'Sparar…'), OP_OVERLAY_DELAY_MS);
+  if (!(await acquireOp())) { clearTimeout(overlayTimer); dlxHideOpOverlay(); return null; }
   suppressEcho();
   try {
     const data = await dayApi(body);
@@ -1214,9 +1218,10 @@ async function runDayOp(body, { label, fallback, flash = null } = {}) {
       // Planen försvann (t.ex. sista plandagen togs bort) → hämta om allt.
       await window.loadWeeklyPlan();
     } else {
+      // rerender ritar även inköpslistan ur svaret (renderShoppingData tar över
+      // nya listans id:n) — ingen separat omladdning av Inköp-fliken.
       rerender(data.weeklyPlan || window._lastPlan, data.shoppingList || window._lastShop);
     }
-    if (data.shoppingList) { window._preserveChecked = false; window.loadShoppingTab?.(); }
     const dates = flash ? flash(data) : [];
     if (dates.length) dlxFlashDates(dates);
     return data;
@@ -1224,6 +1229,7 @@ async function runDayOp(body, { label, fallback, flash = null } = {}) {
     window.showToast?.(dlxUserMessage(e, fallback || 'Kunde inte spara ändringen — prova igen.'), { type: 'error' });
     return null;
   } finally {
+    clearTimeout(overlayTimer);
     dlxHideOpOverlay();
     window._opBusy = false;
   }
@@ -1801,15 +1807,32 @@ async function sheetListAction(action, successMsg) {
     if (!res.ok) throw Object.assign(new Error(data.error || ''), { serverMsg: data.error });
     window.dlxCloseSheet();
     window._planMutateUntil = Date.now() + 4000;   // dämpa realtids-ekot
-    window._preserveChecked = false;
-    window.loadShoppingTab?.();      // Inköp-fliken: nya listan + täckningsrad
-    await window.loadWeeklyPlan();   // Matsedeln: chips + rundstatus
-    window.showToast?.(successMsg, { type: 'success' });
+    window.showToast?.(successMsg, { type: 'success' });   // kvittot först — uppdateringen sker bakom
+    if (data.shoppingList && window.renderShoppingData) {
+      // "Lägg tillbaka" en inhandlad dag: servern nollade spärren före ombygget.
+      if (action === 'add_day') clearShoppedLocally(s.date);
+      // Nya listan + täckningspekarna ritas direkt ur svaret (chips på
+      // Matsedeln via applyShopListToPlan). Ekona från servern känns då igen
+      // som egna; avviker något hämtar realtime-vägen om planen som förut.
+      window.renderShoppingData(data.shoppingList);
+    } else {
+      window._preserveChecked = false;
+      window.refreshShoppingTab?.();
+      window.loadWeeklyPlan();       // Matsedeln: chips + rundstatus
+    }
   } catch (e) {
     window.showToast?.(e?.serverMsg || 'Kunde inte uppdatera inköpslistan — prova igen.', { type: 'error' });
   } finally {
     window._opBusy = false;
   }
+}
+
+// Nollar en dags "inhandlad"-stämpel i minnet (plan- eller egen dag).
+function clearShoppedLocally(date) {
+  const d = (window._lastPlan?.days || []).find(x => x.date === date);
+  if (d) d.shoppedAt = null;
+  const c = window._customDays?.entries?.[date];
+  if (c) c.shoppedAt = null;
 }
 
 window.dlxSheetAddToList = function () {
@@ -1859,10 +1882,11 @@ window.dlxSheetAdd = async function () {
   const input = document.getElementById('dlxSheetItemInput');
   const item = input?.value.trim();
   if (!item) { input?.focus(); return; }
-  // Inköpsfliken kanske aldrig öppnats denna session → ladda listan först
+  // Inköpsfliken kanske aldrig öppnats denna session (eller är inaktuell
+  // sedan en ändring medan den var dold) → ladda listan först
   // så addManualItem har ett list-id att skriva mot.
   try {
-    if (!window._shopListId && window.loadShoppingTab) await window.loadShoppingTab();
+    if ((!window._shopListId || window._shopDirty) && window.loadShoppingTab) await window.loadShoppingTab();
   } catch { /* addManualItem ger begripligt fel nedan */ }
   await window.addManualItem('dlxSheetItemInput', 'dlxSheetItemBtn');
   if (input && input.value === '') {

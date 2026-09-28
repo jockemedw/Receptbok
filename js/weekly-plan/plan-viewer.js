@@ -3,6 +3,7 @@
 // Skriver state: planConfirmed, isSnapping, scrollUpAccum
 
 import { fmtIso, fmtShort, PROTEIN_COLOR, getHolidayName, isoWeekNumber, escapeHtml, jsStringAttr, retroWindowStartIso } from '../utils.js';
+import { mealDayRowMatches, applyListCoverage } from './echo-match.js';
 
 const ICON_COIN = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 7.5v9 M9.5 9.7c.6-.7 1.5-1 2.5-1s2 .3 2.4 1c.5.8 0 1.7-1 2-.7.2-2.7.3-3.4.7-.9.4-1.4 1.3-.9 2.1.5.7 1.6 1 2.5 1s1.9-.3 2.5-1"/></svg>';
 const ICON_POT = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13c0-3.5 3.5-6 8-6s8 2.5 8 6"/><path d="M3 13h18"/><path d="M5.5 13v2c0 1.5 1 2.5 2.5 2.5h8c1.5 0 2.5-1 2.5-2.5v-2"/><path d="M11 4.5c0-.8.5-1.5 1-1.5s1 .7 1 1.5"/></svg>';
@@ -32,8 +33,32 @@ let _planChannel = null;
 // markerar nu planen som "stale" i stället och hämtar om så snart läget
 // avslutas (se exitReplaceMode/exitCustomPickMode och switchTab-städningen
 // nedan) eller ekofönstret löper ut.
-function markPlanStale() {
+//
+// Radnivå-eko: varje stale-markering minns eventets rad (senaste per datum).
+// När omhämtningen väl ska köras jämförs raderna igen mot det lokala läget —
+// ekot från en egen skrivning kan komma FÖRE API-svaret, och när svaret sedan
+// landat stämmer raden. Då behövs ingen omhämtning alls. DELETE och rader utan
+// datum går inte att jämföra → "okänt" → omhämtning som förut.
+const _staleRows = new Map();   // datum → payload.new
+let _staleUnknown = false;
+
+function markPlanStale(payload) {
   window._planStale = true;
+  const row = payload?.new;
+  if (payload && payload.eventType !== 'DELETE' && row && typeof row.date === 'string') _staleRows.set(row.date, row);
+  else _staleUnknown = true;
+}
+
+function clearPlanStale() {
+  window._planStale = false;
+  _staleRows.clear();
+  _staleUnknown = false;
+}
+
+// Stämmer eventets rad redan med planen/egna dagarna i minnet?
+function isKnownRow(payload) {
+  if (!payload || payload.eventType === 'DELETE') return false;
+  return mealDayRowMatches(payload.new, window._lastPlan, window._customDays);
 }
 
 // Optimistiska receptval (Välj själv) som väntar på serversvar. Under tiden
@@ -45,7 +70,10 @@ let _optimisticInFlight = 0;
 function reloadIfStale() {
   if (_optimisticInFlight > 0) return;
   if (!window._planStale) return;
-  window._planStale = false;
+  const allKnown = !_staleUnknown && _staleRows.size > 0
+    && [..._staleRows.values()].every((row) => mealDayRowMatches(row, window._lastPlan, window._customDays));
+  clearPlanStale();
+  if (allKnown) return;   // bara våra egna ekon — vyn visar redan rätt läge
   window.loadWeeklyPlan();
 }
 
@@ -131,14 +159,18 @@ function subscribeMealDays(householdId) {
   if (_planChannel) return; // redan prenumererar
   _planChannel = window.db
     .channel(`meal_days:${householdId}`)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'meal_days', filter: `household_id=eq.${householdId}` }, () => {
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'meal_days', filter: `household_id=eq.${householdId}` }, (payload) => {
+      // Radnivå-eko: raden stämmer redan med det vi visar (vårt eget eko efter
+      // ett API-svar) → inget att hämta. Skiljer den sig (partnerns ändring,
+      // eller ekot kom före svaret) körs de vanliga vägarna nedan.
+      if (isKnownRow(payload)) return;
       // Inköpsrundor: partnerns "Vi har handlat"/add_day syns i Inköp-flikens
       // täckningsrad utan omladdning (billig, egen hämtning — ingen plan-reload).
       window.refreshShopCoverage?.();
       // Ladda inte om direkt om användaren är mitt i en interaktion — men
       // tappa inte eventet: markera planen som stale (F231).
-      if (window.replaceMode || window.customPickMode) { markPlanStale(); return; }
-      if (window._dlxSwap || window._dlxMove) { markPlanStale(); return; }   // premiumvyns byt/flytta-läge
+      if (window.replaceMode || window.customPickMode) { markPlanStale(payload); return; }
+      if (window._dlxSwap || window._dlxMove) { markPlanStale(payload); return; }   // premiumvyns byt/flytta-läge
       // Eko-dämpning: våra egna skrivningar har redan uppdaterat vyn från
       // API-svaret — hoppa över omhämtningen som annars orsakar ett blink.
       // Men fönstret är tidsbaserat och dämpar därför även partnerns
@@ -147,9 +179,9 @@ function subscribeMealDays(householdId) {
       // Ett optimistiskt val väntar fortfarande på servern (t.ex. kallstart
       // längre än ekofönstret): en omhämtning nu skulle läsa det gamla receptet
       // och skriva över valet. finishOptimistic hämtar om när svaret landat.
-      if (_optimisticInFlight > 0) { markPlanStale(); return; }
+      if (_optimisticInFlight > 0) { markPlanStale(payload); return; }
       if (window._planMutateUntil && Date.now() < window._planMutateUntil) {
-        markPlanStale();
+        markPlanStale(payload);
         setTimeout(reloadIfStale, (window._planMutateUntil - Date.now()) + 50);
         return;
       }
@@ -432,8 +464,40 @@ function showPickedDay(date, { pending = false } = {}) {
   else window.dlxWeekGoto?.(date);
 }
 
+// /api/shopping-svar (add_day/remove_day): rita nya listan direkt ur svaret
+// (id:n, bockar, "på listan"-chips) i stället för att ladda om Inköp-fliken.
+async function adoptShopResponse(res) {
+  let data = {};
+  try { data = await res.json(); } catch { /* ingen JSON */ }
+  if (data.shoppingList && window.renderShoppingData) {
+    window.renderShoppingData(data.shoppingList);
+  } else {
+    window._preserveChecked = false;
+    window.refreshShoppingTab?.();
+  }
+}
+
 function rerenderPlan() {
   renderWeeklyPlanData(window._lastPlan || null, window._lastShop || null, false, window._planArchive, window._customDays);
+}
+
+// Ett API-svar med ombyggd inköpslista (listId + coveredDates): spegla serverns
+// täckningspekare lokalt så "på listan"-chipsen stämmer direkt — och så att
+// realtime-ekona för pekarna känns igen som egna (ingen omhämtning). Anropas
+// från renderShoppingData. Ritar bara om planen om något faktiskt ändrats.
+export function applyShopListToPlan(shop) {
+  if (!shop?.listId) return false;
+  const oldListId = window._activeShopListId || null;
+  const changed = applyListCoverage(window._lastPlan, window._customDays, {
+    listId: shop.listId, coveredDates: shop.coveredDates,
+  });
+  const idChanged = oldListId !== shop.listId;
+  window._activeShopListId = shop.listId;
+  // rerenderPlan läser listId ur _lastShop — annars skulle det gamla id:t
+  // skrivas tillbaka. API-formen är samma som runDayOp redan ritar med.
+  if (idChanged) window._lastShop = shop;
+  if ((changed || idChanged) && (window._lastPlan || window._customDays)) rerenderPlan();
+  return changed || idChanged;
 }
 
 // Välj själv: tryck på ett receptkort → matsedeln visar receptet DIREKT
@@ -568,7 +632,7 @@ export async function selectRecipeForCustomDay(event, recipeId, title) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'add_day', date }),
         });
-        if (res.ok) { window._preserveChecked = false; window.loadShoppingTab?.(); }
+        if (res.ok) await adoptShopResponse(res);
         else window.showToast?.('Receptet sparades, men inköpslistan kunde inte uppdateras — öppna dagen och välj "Lägg ingredienser på inköpslistan".', { type: 'error' });
       } catch {
         window.showToast?.('Receptet sparades, men inköpslistan kunde inte uppdateras — öppna dagen och välj "Lägg ingredienser på inköpslistan".', { type: 'error' });
@@ -1095,7 +1159,7 @@ export async function clearCustomDay(dateIso) {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'remove_day', date: dateIso }),
         });
-        if (res.ok) { window._preserveChecked = false; window.loadShoppingTab?.(); }
+        if (res.ok) await adoptShopResponse(res);
         else window.showToast?.('Dagen tas bort, men inköpslistan kunde inte uppdateras — ladda om och prova igen.', { type: 'error' });
       } catch {
         window.showToast?.('Dagen tas bort, men inköpslistan kunde inte uppdateras — ladda om och prova igen.', { type: 'error' });
@@ -1169,3 +1233,4 @@ window.enterCustomPickMode = enterCustomPickMode;
 window.exitCustomPickMode  = exitCustomPickMode;
 window.selectRecipeForCustomDay = selectRecipeForCustomDay;
 window.startPlanFromDate   = startPlanFromDate;
+window.applyShopListToPlan = applyShopListToPlan;

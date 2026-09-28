@@ -6507,9 +6507,9 @@ main#receptView {
   display: flex;
   align-items: center;
   justify-content: center;
+  /* Bara en tonad slöja — ingen backdrop-filter: oskärpan tvingade mobilen att
+     rita om hela sidan varje bildruta medan åtgärden pågick (hack). */
   background: color-mix(in srgb, var(--forest-deep, #2c3f33) 28%, transparent);
-  backdrop-filter: blur(1.5px);
-  -webkit-backdrop-filter: blur(1.5px);
   opacity: 0;
   transition: opacity 0.09s var(--ease-standard);
 }

@@ -19,7 +19,9 @@ const HH = '00000000-0000-4000-8000-000000000001';
 const USER = '00000000-0000-4000-8000-0000000000aa';
 
 // ── Statistik som harnessen läser av ─────────────────────────────────────────
-const stats = { queries: [], byTable: {}, channels: [] };
+// writes: skrivningar med filter (för scenarier som kontrollerar VILKA rader
+// en åtgärd skriver till, t.ex. att en bockning träffar nya listans id:n).
+const stats = { queries: [], byTable: {}, channels: [], writes: [] };
 window.__stub = stats;
 
 function note(table, op) {
@@ -243,6 +245,11 @@ class Query {
     const all = TABLES[this.table] || [];
 
     if (this._write) {
+      stats.writes.push({
+        table: this.table, op: this._write.op, t: Math.round(performance.now()),
+        patch: this._write.patch ?? null,
+        filters: this.filters.map(([col, op, val]) => ({ col, op, val })),
+      });
       // Skrivningar behövs bara för att inte krascha; harnessen är läsbaserad.
       const hit = all.filter((r) => this.matches(r));
       if (this._write.op === 'update') hit.forEach((r) => Object.assign(r, this._write.patch));
