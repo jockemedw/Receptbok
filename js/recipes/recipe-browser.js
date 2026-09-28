@@ -99,8 +99,8 @@ export function renderCard(r) {
      data-tested="${r.tested}"
      data-time="${r.time || 999}">
   <div class="card-header" role="button" tabindex="0"
-       onclick="toggleCard(this.closest('.recipe-card'))"
-       onkeydown="if(event.target===this&&(event.key==='Enter'||event.key===' ')){event.preventDefault();toggleCard(this.closest('.recipe-card'))}">
+       onclick="cardHeaderTap(event, this.closest('.recipe-card'))"
+       onkeydown="if(event.target===this&&(event.key==='Enter'||event.key===' ')){event.preventDefault();cardHeaderTap(event, this.closest('.recipe-card'))}">
     <div class="recipe-num">${r.id}</div>
     <div class="card-info">
       <div class="card-title">${escapeHtml(r.title)}</div>
@@ -112,7 +112,7 @@ export function renderCard(r) {
               onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTested(event, ${r.id})}">${r.tested ? '✓ Provat' : 'Oprövat'}</span>
       </div>
     </div>
-    <button class="select-btn"
+    <button type="button" class="select-btn" tabindex="-1"
             onclick="selectRecipeForDay(event,${r.id},'${jsStringAttr(r.title)}')">Välj</button>
     <span class="card-chevron">›</span>
   </div>
@@ -131,6 +131,19 @@ function ensureDetail(card) {
   if (!r) return;
   inner.innerHTML = renderDetailInner(r);
   inner.dataset.rendered = '1';
+}
+
+// Väljläge (Välj själv / egen dag): ett tryck var som helst på kortets rubrik
+// VÄLJER receptet — det är vad bannern lovar. Annars fälls kortet ut som vanligt.
+export function cardHeaderTap(event, card) {
+  if (!card) return;
+  if (window.replaceMode || window.customPickMode) {
+    const id = Number(card.dataset.id);
+    const r  = window.RECIPES?.find(x => x.id === id);
+    if (r) window.selectRecipeForDay(event, id, r.title);
+    return;
+  }
+  toggleCard(card);
 }
 
 export function toggleCard(card) {
@@ -282,6 +295,9 @@ export function jumpToRecipe(title) {
 }
 
 export async function toggleTested(event, id) {
+  // I väljläget är pillen bara information — trycket går vidare till kortet
+  // (som väljer receptet) i stället för att av misstag ändra "provat".
+  if (window.replaceMode || window.customPickMode) return;
   event.stopPropagation();
   const pill = event.currentTarget;
   pill.style.opacity = '0.5';
@@ -310,6 +326,7 @@ export async function toggleTested(event, id) {
 
 window.renderCard          = renderCard;
 window.toggleCard          = toggleCard;
+window.cardHeaderTap       = cardHeaderTap;
 window.renderRecipeBrowser = renderRecipeBrowser;
 window.setGroupBy          = setGroupBy;
 window.jumpToRecipe        = jumpToRecipe;

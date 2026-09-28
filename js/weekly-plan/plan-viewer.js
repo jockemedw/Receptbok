@@ -36,10 +36,50 @@ function markPlanStale() {
   window._planStale = true;
 }
 
+// Optimistiska receptval (Välj själv) som väntar på serversvar. Under tiden
+// får en stale-omhämtning INTE köras — den skulle läsa det gamla läget ur
+// databasen och "blinka tillbaka" det nya receptet. Omhämtningen sker i
+// stället när svaret landat (se finishOptimistic nedan).
+let _optimisticInFlight = 0;
+
 function reloadIfStale() {
+  if (_optimisticInFlight > 0) return;
   if (!window._planStale) return;
   window._planStale = false;
   window.loadWeeklyPlan();
+}
+
+// Eko-dämpning FÖRE en egen skrivning: realtime-eventet från vår egen ändring
+// kan komma medan anropet pågår — sätt fönstret innan fetch, inte efter svaret.
+// Delas av alla vägar som byter recept (Välj själv, reor, prisoptimera).
+export function suppressPlanEcho(ms = 4000) {
+  window._planMutateUntil = Math.max(window._planMutateUntil || 0, Date.now() + ms);
+}
+
+// Delad spärr (window._opBusy) för receptbyten: en ändring i taget. Returnerar
+// false (och säger till) om en tidigare ändring fortfarande sparas.
+export function takeOpLock() {
+  if (window._opBusy) {
+    window.showToast?.('Vänta – förra ändringen sparas fortfarande.');
+    return false;
+  }
+  window._opBusy = true;
+  return true;
+}
+
+function beginOptimistic() {
+  _optimisticInFlight++;
+  suppressPlanEcho();
+}
+
+// Svaret har landat: förläng ekofönstret (ekot kan komma strax efter svaret)
+// och hämta om först när fönstret löpt ut, om ett event markerat planen stale.
+function finishOptimistic() {
+  _optimisticInFlight = Math.max(0, _optimisticInFlight - 1);
+  suppressPlanEcho();
+  if (window._planStale) {
+    setTimeout(reloadIfStale, Math.max(0, (window._planMutateUntil || 0) - Date.now()) + 50);
+  }
 }
 
 function subscribeMealDays(householdId) {
@@ -308,31 +348,67 @@ async function loadShopSummaryFromSupabase(householdId) {
 
 // ── Replace-läge ─────────────────────────────────────────────────────────────
 
+// Väljläget (Välj själv / egen dag): body-klass döljer import-knappen (+) som
+// annars skymmer korten, och gamla felrader från tidigare försök städas bort.
+function setPickChrome(on) {
+  document.body.classList.toggle('pick-mode', !!on);
+  document.querySelectorAll('#replaceBanner .replace-err, #customPickBanner .replace-err')
+    .forEach(el => el.remove());
+}
+
 export function enterReplaceMode(date, dayName) {
   window.dlxCloseSheet?.();   // lämna dag-sheeten när vi navigerar till receptboken
+  window.customPickMode = null;
   window.replaceMode = { date, dayName };
   document.getElementById('replaceBannerDay').textContent = dayName;
-  document.getElementById('receptView').classList.add('replace-mode');
+  const rv = document.getElementById('receptView');
+  rv.classList.remove('custom-pick-mode');
+  rv.classList.add('replace-mode');
+  setPickChrome(true);
   window.switchTab('recept');
 }
 
-export function exitReplaceMode() {
+export function exitReplaceMode({ reload = true } = {}) {
   window.replaceMode = null;
   document.getElementById('receptView').classList.remove('replace-mode');
-  reloadIfStale();   // F231: hämta om ifall vi missade ett event under läget
+  setPickChrome(!!window.customPickMode);
+  if (reload) reloadIfStale();   // F231: hämta om ifall vi missade ett event under läget
 }
 
+// Efter ett val: visa Matsedel på RÄTT vecka (dagen kan ligga en annan vecka
+// än den innevarande) med dagen i bild, glöd-kvitto och ev. väntar-markering.
+function showPickedDay(date, { pending = false } = {}) {
+  window.switchTab('vecka');
+  if (window.dlxAfterPick) window.dlxAfterPick(date, { pending });
+  else window.dlxWeekGoto?.(date);
+}
+
+function rerenderPlan() {
+  renderWeeklyPlanData(window._lastPlan || null, window._lastShop || null, false, window._planArchive, window._customDays);
+}
+
+// Välj själv: tryck på ett receptkort → matsedeln visar receptet DIREKT
+// (optimistiskt), sparningen sker i bakgrunden. Misslyckas den återställs
+// dagen och en toast förklarar. Servern (/api/replace-recipe) är oförändrad.
 export async function selectRecipeForDay(event, recipeId, title) {
-  event.stopPropagation();
+  event?.stopPropagation?.();
   if (window.customPickMode) {
     return selectRecipeForCustomDay(event, recipeId, title);
   }
   if (!window.replaceMode) return;
+  if (!takeOpLock()) return;
   const { date } = window.replaceMode;
 
-  const btn = event.currentTarget;
-  btn.disabled    = true;
-  btn.textContent = 'Sparar…';
+  const day = window._lastPlan?.days?.find(d => d.date === date);
+  const snapshot = day
+    ? { recipe: day.recipe, recipeId: day.recipeId, saving: day.saving, savingMatches: day.savingMatches }
+    : null;
+
+  beginOptimistic();
+  updateLastPlanDay(date, recipeId, title);
+  exitReplaceMode({ reload: false });
+  rerenderPlan();
+  showPickedDay(date, { pending: true });
 
   try {
     const res = await window.apiFetch('/api/replace-recipe', {
@@ -344,8 +420,7 @@ export async function selectRecipeForDay(event, recipeId, title) {
     try { data = await res.json(); } catch { /* ingen JSON */ }
     if (!res.ok) throw serverError(data.error);
 
-    updateLastPlanDay(date, recipeId, title);
-    window._planMutateUntil = Date.now() + 4000;   // dämpa realtids-ekot, se suppressEcho() i plan-viewer-deluxe.js
+    window.dlxSetPending?.(date, false);
     if (data.shoppingList) {
       window.renderIngredientPreview(
         data.shoppingList.recipeItems || null,
@@ -354,20 +429,17 @@ export async function selectRecipeForDay(event, recipeId, title) {
       );
       if (window.renderShoppingData) window.renderShoppingData(data.shoppingList);
     }
-    exitReplaceMode();
-    renderWeeklyPlanData(window._lastPlan || null, window._lastShop || null, false, window._planArchive, window._customDays);
-    window.switchTab('vecka');
   } catch (err) {
-    btn.disabled    = false;
-    btn.textContent = 'Välj';
-    const banner = document.getElementById('replaceBanner');
-    if (!banner.querySelector('.replace-err')) {
-      const e = document.createElement('span');
-      e.className  = 'replace-err';
-      e.style.cssText = 'color:var(--rust);font-size:0.8rem';
-      e.textContent   = userFacingMessage(err, 'Kunde inte spara — prova igen.');
-      banner.insertBefore(e, banner.querySelector('.replace-banner-cancel'));
-    }
+    // Återställ dagen — men bara om ingen annan hunnit ändra den under tiden.
+    const d = window._lastPlan?.days?.find(x => x.date === date);
+    if (d && snapshot && d.recipeId === recipeId) Object.assign(d, snapshot);
+    window.dlxSetPending?.(date, false);
+    rerenderPlan();
+    if (document.body.dataset.activeTab === 'vecka') window.dlxWeekGoto?.(date);
+    window.showToast?.(userFacingMessage(err, 'Kunde inte byta recept — prova igen.'), { type: 'error' });
+  } finally {
+    window._opBusy = false;
+    finishOptimistic();
   }
 }
 
@@ -381,31 +453,40 @@ export function enterCustomPickMode(dateIso, dayName) {
   if (label) label.textContent = `${dayName} ${fmtShort(dateIso)}`;
   document.getElementById('receptView').classList.remove('replace-mode');
   document.getElementById('receptView').classList.add('custom-pick-mode');
+  setPickChrome(true);
   window.switchTab('recept');
 }
 
-export function exitCustomPickMode() {
+export function exitCustomPickMode({ reload = true } = {}) {
   window.customPickMode = null;
   document.getElementById('receptView').classList.remove('custom-pick-mode');
-  reloadIfStale();   // F231: hämta om ifall vi missade ett event under läget
+  setPickChrome(!!window.replaceMode);
+  if (reload) reloadIfStale();   // F231: hämta om ifall vi missade ett event under läget
 }
 
+// Egen dag: samma optimistiska mönster — dagen visas direkt, skrivningen mot
+// meal_days (plan_id NULL, oförändrad logik) sker i bakgrunden.
 export async function selectRecipeForCustomDay(event, recipeId, title) {
-  event.stopPropagation();
+  event?.stopPropagation?.();
   if (!window.customPickMode) return;
-  if (window._opBusy) return;   // delad spärr med premiumvyn (backlog #10)
-  window._opBusy = true;
+  if (!takeOpLock()) return;   // delad spärr med premiumvyn (backlog #10)
   const { date } = window.customPickMode;
 
-  const btn = event.currentTarget;
-  btn.disabled = true;
-  btn.textContent = 'Sparar…';
+  const prevCustomDays = window._customDays;
+  const existing = (prevCustomDays?.entries || {})[date] || {};
+  const updatedEntries = { ...(prevCustomDays?.entries || {}), [date]: { ...existing, note: existing.note || '', recipeId, recipeTitle: title } };
+
+  beginOptimistic();
+  window._customDays = { ...(prevCustomDays || {}), entries: updatedEntries };
+  exitCustomPickMode({ reload: false });
+  rerenderPlan();
+  showPickedDay(date, { pending: true });
 
   try {
     const householdId = await window.getHouseholdId();
-    const existing = (window._customDays?.entries || {})[date] || {};
-    const { data: row } = await window.db
+    const { data: row, error: readErr } = await window.db
       .from('meal_days').select('plan_id').eq('household_id', householdId).eq('date', date).maybeSingle();
+    if (readErr) throw readErr;
     let dbErr;
     if (row && row.plan_id == null) {
       ({ error: dbErr } = await window.db.from('meal_days')
@@ -418,11 +499,10 @@ export async function selectRecipeForCustomDay(event, recipeId, title) {
       // Dagen tillhör nu en aktiv plan (t.ex. genererad från en annan enhet
       // medan sheeten var öppen) — skriv aldrig över plan-dagar (invariant #1).
       // Utan denna gren föll koden tyst igenom till "sparat"-vägen (F042).
-      dbErr = new Error('Dagen ingår nu i en matsedel — kunde inte spara.');
+      dbErr = serverError('Dagen ingår nu i en matsedel — kunde inte spara.');
     }
     if (dbErr) throw dbErr;
-    const updatedEntries = { ...(window._customDays?.entries || {}), [date]: { ...existing, note: existing.note || '', recipeId, recipeTitle: title } };
-    window._customDays = { entries: updatedEntries };
+    window.dlxSetPending?.(date, false);
 
     // Låg dagen redan på inköpslistan (inköpsrundor)? Då gäller listans varor
     // det GAMLA receptet — bygg om via add_day så listan speglar det nya.
@@ -440,28 +520,22 @@ export async function selectRecipeForCustomDay(event, recipeId, title) {
         window.showToast?.('Receptet sparades, men inköpslistan kunde inte uppdateras — öppna dagen och välj "Lägg ingredienser på inköpslistan".', { type: 'error' });
       }
     }
-    exitCustomPickMode();
-    renderWeeklyPlanData(
-      window._lastPlan || null,
-      window._lastShop || null,
-      false,
-      window._planArchive,
-      window._customDays
-    );
-    window.switchTab('vecka');
   } catch (e) {
-    btn.disabled = false;
-    btn.textContent = 'Välj';
-    const banner = document.getElementById('customPickBanner');
-    if (banner && !banner.querySelector('.replace-err')) {
-      const err = document.createElement('span');
-      err.className = 'replace-err';
-      err.style.cssText = 'color:var(--rust);font-size:0.8rem';
-      err.textContent = 'Kunde inte spara — prova igen.';
-      banner.insertBefore(err, banner.querySelector('.replace-banner-cancel'));
+    // Återställ den egna dagen — bara om ingen annan hunnit ändra den under tiden.
+    const cur = window._customDays?.entries?.[date];
+    if (cur && cur.recipeId === recipeId) {
+      const entries = { ...(window._customDays.entries || {}) };
+      if (prevCustomDays?.entries?.[date]) entries[date] = prevCustomDays.entries[date];
+      else delete entries[date];
+      window._customDays = { ...window._customDays, entries };
     }
+    window.dlxSetPending?.(date, false);
+    rerenderPlan();
+    if (document.body.dataset.activeTab === 'vecka') window.dlxWeekGoto?.(date);
+    window.showToast?.(userFacingMessage(e, 'Kunde inte spara receptet — prova igen.'), { type: 'error' });
   } finally {
     window._opBusy = false;
+    finishOptimistic();
   }
 }
 
@@ -1021,6 +1095,8 @@ window.enterReplaceMode    = enterReplaceMode;
 window.exitReplaceMode     = exitReplaceMode;
 window.selectRecipeForDay  = selectRecipeForDay;
 window.updateLastPlanDay   = updateLastPlanDay;
+window.suppressPlanEcho    = suppressPlanEcho;
+window.takeOpLock          = takeOpLock;
 window.openSavingPopover   = openSavingPopover;
 window.closeSavingPopover  = closeSavingPopover;
 window.confirmPlan         = confirmPlan;

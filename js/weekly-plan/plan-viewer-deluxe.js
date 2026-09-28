@@ -884,7 +884,51 @@ function renderDeluxeInner() {
   setSec(host, 'banner', weekNoticeHtml(plan, pending, weekStart) + modeBannerHtml());
   setSec(host, 'today', '');
   renderDaysDiff(host, weekDays, { tonightHtml: tonight, tonightDate: todayIso });
+  applyPendingMarks(host);
 }
+
+// ── Väntar-markering för optimistiska val (Välj själv) ──────────────────────
+// Receptet visas direkt; tills servern svarat pulserar kortet svagt och är
+// aria-busy. State-driven (Set) så markeringen överlever diff-renderingar.
+const _pendingDates = new Set();
+
+function applyPendingMarks(host) {
+  host.querySelectorAll('article.dlx-pending').forEach(el => {
+    if (!_pendingDates.has(el.dataset.date)) {
+      el.classList.remove('dlx-pending');
+      el.removeAttribute('aria-busy');
+    }
+  });
+  for (const date of _pendingDates) {
+    host.querySelectorAll(`article[data-date="${date}"]`).forEach(el => {
+      el.classList.add('dlx-pending');
+      el.setAttribute('aria-busy', 'true');
+    });
+  }
+}
+
+window.dlxSetPending = function (date, on) {
+  if (on) _pendingDates.add(date); else _pendingDates.delete(date);
+  const host = document.getElementById('weekDeluxe');
+  if (host) applyPendingMarks(host);
+};
+
+// Efter ett val i receptboken: hoppa till veckan som innehåller dagen, scrolla
+// fram kortet, glöd-kvitto och (valfritt) väntar-markering tills svaret landat.
+window.dlxAfterPick = function (date, { pending = false } = {}) {
+  if (pending) _pendingDates.add(date);
+  window.dlxWeekGoto(date);   // renderar (och applicerar markeringen)
+  const el = document.querySelector(`#weekDeluxe article[data-date="${date}"]`);
+  if (el) {
+    const r = el.getBoundingClientRect();
+    const hh = document.querySelector('header')?.offsetHeight || 0;
+    if (r.top < hh || r.bottom > window.innerHeight - 80) {
+      const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      el.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' });
+    }
+  }
+  dlxFlashDates([date]);
+};
 
 // ── Interaktion ───────────────────────────────────────────────────────────────
 // All daginteraktion går via snabbåtgärds-sheeten (dlxDayClick, definierad i

@@ -2575,70 +2575,94 @@
     visibility: visible;
   }
 
+  /* Välj-knappen i väljläget — tydlig pill, ≥44px hög. Hela kortets rubrik
+     väljer också (cardHeaderTap), knappen är den synliga signalen. */
   .select-btn {
     display: none;
-    position: relative;      /* för osynlig träffyta nedan */
     background: var(--rust);
     color: var(--on-accent);
     border: none;
-    border-radius: 6px;
-    padding: 0.25rem 0.65rem;
-    font-size: 0.78rem;
+    border-radius: 999px;
+    min-height: 44px;
+    min-width: 64px;
+    padding: 0 1rem;
+    font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
     flex-shrink: 0;
     align-self: center;
   }
-  .select-btn:hover { opacity: 0.88; }
-  /* Osynlig ≥44px träffyta utan att växa layouten (Session 120) */
-  .select-btn::after { content: ''; position: absolute; inset: -11px -8px; }
-  #receptView.replace-mode .select-btn,
-  #receptView.custom-pick-mode .select-btn { display: inline-block; }
-
-  .replace-banner {
-    display: none;
-    align-items: center;
-    gap: 0.75rem;
-    background: var(--clay);
-    border: 1.5px solid var(--rust);
-    border-radius: 10px;
-    padding: 0.7rem 1rem;
-    margin-bottom: 1rem;
-    font-size: 0.88rem;
-    color: var(--lichen);
+  .select-btn:active { opacity: 0.8; }
+  @media (hover: hover) {
+    .select-btn:hover { opacity: 0.88; }
   }
-  #receptView.replace-mode .replace-banner { display: flex; }
-  .replace-banner strong { color: var(--rust); }
+  #receptView.replace-mode .select-btn,
+  #receptView.custom-pick-mode .select-btn { display: inline-flex; align-items: center; justify-content: center; }
+  /* I väljläget: ingen utfällnings-chevron, och "provat"-pillen är bara
+     information (trycket går till kortet, som väljer receptet). */
+  #receptView.replace-mode .card-chevron,
+  #receptView.custom-pick-mode .card-chevron { display: none; }
+  #receptView.replace-mode .pill-toggle,
+  #receptView.custom-pick-mode .pill-toggle { pointer-events: none; }
+  #receptView.replace-mode .card-header,
+  #receptView.custom-pick-mode .card-header { gap: 0.6rem; padding-right: 0.8rem; }
+  #receptView.replace-mode .card-header:active,
+  #receptView.custom-pick-mode .card-header:active { background: var(--clay); }
 
+  /* Väljbannern — sticky under headern, en rad text + en hjälprad, Avbryt ≥44px */
+  .replace-banner,
   .custom-pick-banner {
     display: none;
     align-items: center;
     gap: 0.75rem;
+    position: sticky;
+    top: calc(var(--header-h, 56px) + 6px);
+    z-index: var(--z-banner);
     background: var(--clay);
     border: 1.5px solid var(--rust);
     border-radius: 10px;
-    padding: 0.7rem 1rem;
+    padding: 0.75rem 1rem;
     margin-bottom: 1rem;
-    font-size: 0.88rem;
-    color: var(--lichen);
+    font-size: 0.95rem;
+    line-height: 1.35;
+    color: var(--forest);
+    /* Linne-"kjol" uppåt täcker glipan mot headern när listan scrollar under */
+    box-shadow: 0 -7px 0 0 var(--linen), var(--shadow-sm);
   }
+  #receptView.replace-mode .replace-banner,
   #receptView.custom-pick-mode .custom-pick-banner { display: flex; }
-  .custom-pick-banner strong { color: var(--rust); }
+  .replace-banner-text { flex: 1; min-width: 0; }
+  .replace-banner strong,
+  .custom-pick-banner strong { color: var(--rust); font-weight: 700; }
+  .replace-banner-help {
+    display: block;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+  }
   .replace-banner-cancel {
-    margin-left: auto;
-    position: relative;
+    flex-shrink: 0;
+    min-height: 44px;
     background: none;
     border: 1.5px solid var(--rust);
-    border-radius: 6px;
+    border-radius: 999px;
     color: var(--rust);
-    padding: 0.2rem 0.65rem;
-    font-size: 0.82rem;
+    padding: 0 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
   }
-  /* Osynlig ≥44px träffyta (Session 120) */
-  .replace-banner-cancel::after { content: ''; position: absolute; inset: -11px; }
+  .replace-banner-cancel:active { background: var(--linen-card); }
+  /* Väljläget är ett fokuserat läge: import (+), sortera och filter skymmer
+     korten och hör inte hemma där — sök och "till toppen" finns kvar. Headern
+     döljs inte vid scroll och grupprubrikerna är inte sticky, så bannern är
+     det enda som följer med (inga glipor/överlapp mellan sticky-lager). */
+  body.pick-mode #fabImport,
+  body.pick-mode #openSortBtn,
+  body.pick-mode #openFilterBtn { display: none !important; }
+  body.pick-mode header.header-hidden { transform: none; }
+  body.pick-mode .recipe-section-header { position: static; }
 
   .settings-warning {
     font-size: 0.75rem;
@@ -5577,6 +5601,18 @@ body.cook-open { overflow: hidden; }
   60%  { box-shadow: 0 0 0 3px rgba(122,148,130,0.35); }
   100% { box-shadow: 0 0 0 0 rgba(122,148,130,0); }
 }
+
+/* Optimistiskt val (Välj själv): receptet visas direkt, kortet andas svagt
+   tills servern bekräftat. Bara opacitet — ingen rörelse vid reduced motion. */
+.dlx-pending { cursor: progress; }
+@media (prefers-reduced-motion: no-preference) {
+  .dlx-pending { animation: dlxPendingPulse 1.2s ease-in-out infinite; }
+}
+@keyframes dlxPendingPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+.dlx-pending.dlx-flash { animation: dlxFlashGlow 1.4s ease both; }
 
 /* ═══ Session 107 — Ikväll-sheeten: kvällens snabbåtgärder (backlog #15, variant B) ═══ */
 .dlx-sheet-backdrop {

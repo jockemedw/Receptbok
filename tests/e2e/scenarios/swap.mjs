@@ -11,6 +11,8 @@
 //   b) välj själv: Byt recept → Välj själv → (1) tryck på kortets titel,
 //      (2) tryck på Välj-knappen. Tid tills Matsedel visar den nya titeln på
 //      rätt datum + antal replace-anrop. Körs med planen denna vecka OCH nästa.
+//   d) fel: servern svarar 500 → återställd titel, toast, ingen felrad kvar i bannern.
+//   e) dubbeltryck på ett kort i väljläget → exakt ett replace-anrop.
 //   c) eko: direkt efter (a) spelas ett meal_days-event upp som stämmer med det
 //      nya läget; räkna följdfrågorna mot Supabase de närmaste 6 sekunderna.
 //
@@ -199,6 +201,9 @@ async function measurePickTap(page, date, card, selector, { apiLatency, counters
   { date, title: card.title }, { timeout: apiLatency + 2500 }).catch(() => {});
   await page.waitForTimeout(300);
   const t = timings(await readSampler(page), { newTitle: card.title, oldTitle });
+  // Låt bakgrundssparningen (optimistiskt val) bli klar innan nästa steg —
+  // annars vägrar den delade spärren (_opBusy) nästa val, som den ska.
+  await page.waitForFunction(() => !window._opBusy, null, { timeout: apiLatency + 3000 }).catch(() => {});
   const state = await page.evaluate((id) => ({
     kvarIVäljläge: !!window.replaceMode,
     kortUtfällt: !!document.querySelector(`#recipeGrid .recipe-card[data-id="${id}"].open, #recipeGrid .recipe-card[data-id="${id}"].expanded`),
@@ -228,6 +233,49 @@ async function scenarioManual(page, date, opts) {
   const cardB = await enterPick(page, date, [cardA.id]);
   const selectTap = cardB ? await measurePickTap(page, date, cardB, '.select-btn', opts) : { fel: 'inget kort' };
   return { datum: date, synligUtanBläddring: shownWithoutNav, tryckPåTitel: titleTap, tryckPåVälj: selectTap };
+}
+
+// Fel: servern svarar 500 → dagen ska återställas, en toast visas och bannern
+// ska inte bära med sig någon felrad när man går in i väljläget igen.
+async function scenarioFailure(page, date, { apiLatency, counters }) {
+  const oldTitle = await dayRecipe(page, date);
+  const card = await enterPick(page, date);
+  if (!card) return { fel: 'inget kort' };
+  counters.failReplace = true;
+  const r0 = replaceCalls(counters);
+  await page.locator(`#recipeGrid .recipe-card[data-id="${card.id}"] .card-title`).first().click();
+  await page.waitForFunction(() => document.querySelector('.toast'), null, { timeout: apiLatency + 3000 }).catch(() => {});
+  await page.waitForTimeout(200);
+  counters.failReplace = false;
+  const after = await page.evaluate((date) => ({
+    toast: document.querySelector('.toast')?.textContent?.trim() || null,
+    pending: !!document.querySelector(`#weekDeluxe article[data-date="${date}"].dlx-pending`),
+    visible: [...document.querySelectorAll(`#weekDeluxe [data-date="${date}"]`)].some((e) => e.getBoundingClientRect().height > 0),
+    opBusy: !!window._opBusy,
+  }), date);
+  const restored = (await dayRecipe(page, date)) === oldTitle;
+  // Gå in i väljläget igen — ingen kvarglömd felrad.
+  await enterPick(page, date);
+  const bannerErr = await page.evaluate(() => !!document.querySelector('#replaceBanner .replace-err, #customPickBanner .replace-err'));
+  await page.evaluate(() => { window.exitReplaceMode?.(); window.switchTab?.('vecka'); });
+  await page.waitForTimeout(200);
+  return {
+    replaceAnrop: replaceCalls(counters) - r0, återställd: restored, toast: after.toast,
+    kvarMarkerad: after.pending, dagenSynlig: after.visible, spärrKvar: after.opBusy, felradVidNyttVal: bannerErr,
+  };
+}
+
+// Dubbeltryck: två snabba tryck på samma kort → exakt ETT anrop.
+async function scenarioDoubleTap(page, date, { apiLatency, counters }) {
+  const card = await enterPick(page, date);
+  if (!card) return { fel: 'inget kort' };
+  const r0 = replaceCalls(counters);
+  await page.evaluate((id) => {
+    const h = document.querySelector(`#recipeGrid .recipe-card[data-id="${id}"] .card-header`);
+    h.click(); h.click();
+  }, card.id);
+  await page.waitForTimeout(apiLatency + 800);
+  return { replaceAnrop: replaceCalls(counters) - r0, planensTitel: (await dayRecipe(page, date)) === card.title ? 'ny' : 'oförändrad' };
 }
 
 // ── Körning ──────────────────────────────────────────────────────────────────
@@ -275,6 +323,8 @@ export async function run({ args, browserName = 'chromium', latency = 120 }) {
         // Välj själv på en ANNAN dag (om planen har en) så (a) inte skymmer.
         const manualTarget = await pickTarget(page, 1);
         out.väljSjälv = await scenarioManual(page, manualTarget, { apiLatency, counters });
+        out.väljSjälvFel = await scenarioFailure(page, manualTarget, { apiLatency, counters });
+        out.väljSjälvDubbeltryck = await scenarioDoubleTap(page, manualTarget, { apiLatency, counters });
       }
       out.apiAnrop = counters.api.map((c) => `${c.method} ${c.path}${c.action ? ` ${c.action}` : ''}`);
       result[key] = out;
@@ -285,7 +335,9 @@ export async function run({ args, browserName = 'chromium', latency = 120 }) {
     server.close();
   }
 
-  result.fel = errors;
+  // Webbläsarens egen logg av det AVSIKTLIGA 500-svaret i fel-scenariot är
+  // inget appfel — allt annat räknas.
+  result.fel = errors.filter((e) => !/status of 500 .*@replace-recipe/.test(e));
   result.supabaseLackage = leaks;
   console.log(JSON.stringify(result, null, 2));
 
@@ -297,7 +349,7 @@ export async function run({ args, browserName = 'chromium', latency = 120 }) {
     console.log(`\nJSON skriven: ${jsonOut}`);
   }
 
-  if (errors.length || leaks.length) {
+  if (result.fel.length || leaks.length) {
     console.error('\nFEL: sidan loggade JS-/konsolfel eller försökte nå Supabase på riktigt (se "fel" ovan).');
     process.exitCode = 1;
   }

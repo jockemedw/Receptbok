@@ -175,9 +175,11 @@ export function dealBytIn(recipeId, btnEl) {
 export async function dealConfirmDay(recipeId, date, btnEl) {
   const cand = window._weeklyDeals?.candidates?.find((c) => c.recipeId === recipeId);
   if (!cand) return;
+  if (window.takeOpLock && !window.takeOpLock()) return;   // delad spärr — en ändring i taget
 
   btnEl.disabled = true;
   btnEl.classList.add('is-loading');
+  window.suppressPlanEcho?.();   // dämpa realtids-ekot redan FÖRE anropet
 
   try {
     const res = await window.apiFetch('/api/replace-recipe', {
@@ -218,6 +220,7 @@ export async function dealConfirmDay(recipeId, date, btnEl) {
     closeDealsPopup();
     window.renderWeeklyPlanData(window._lastPlan, window._lastShop, false, window._planArchive, window._customDays);
     if (window.switchTab) window.switchTab('vecka');
+    window.dlxAfterPick?.(date);   // landa på veckan där dagen ligger
     if (window.showToast) {
       window.showToast(`${cand.title} inbytt — sparar ca ${cand.saving} kr.`, { type: 'success' });
     }
@@ -225,6 +228,8 @@ export async function dealConfirmDay(recipeId, date, btnEl) {
     btnEl.disabled = false;
     btnEl.classList.remove('is-loading');
     if (window.showToast) window.showToast('Kunde inte byta in receptet — prova igen.', { type: 'error' });
+  } finally {
+    window._opBusy = false;
   }
 }
 

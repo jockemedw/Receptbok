@@ -94,6 +94,7 @@ const json = (route, status, body) =>
 
 // counters: { apiCalls: [pathname], api: [{method, path, action, body, t}], leaks: [url] }
 // opts.apiLatency: fördröjning (ms) för de skrivande stubbarna (replace-recipe, day).
+// counters.failReplace (sätts när som helst): /api/replace-recipe svarar 500.
 export async function withRoutes(page, counters, { apiLatency = 0 } = {}) {
   counters.apiCalls ||= [];
   counters.api ||= [];
@@ -129,6 +130,8 @@ export async function withRoutes(page, counters, { apiLatency = 0 } = {}) {
     if (url.pathname.endsWith('/api/replace-recipe')) {
       if (method !== 'POST') return json(route, 405, { error: 'Metod ej tillåten' });
       await sleep(apiLatency);
+      // counters.failReplace = true → simulera serverfel (inget skrivs i stubben).
+      if (counters.failReplace) return json(route, 500, { error: 'Kunde inte byta recept just nu.' });
       const out = await page.evaluate(({ b, seq }) => {
         const T = window.__stubTables;
         const row = T.meal_days.find((r) => r.date === b.date && r.plan_id != null);

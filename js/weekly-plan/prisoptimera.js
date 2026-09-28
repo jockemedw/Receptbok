@@ -292,8 +292,10 @@ export async function poConfirmDay(recipeId, date, btnEl) {
     if (!ok) return;
   }
 
+  if (window.takeOpLock && !window.takeOpLock()) return;   // delad spärr — en ändring i taget
   btnEl.disabled = true;
   btnEl.classList.add('is-loading');
+  window.suppressPlanEcho?.();   // dämpa realtids-ekot redan FÖRE anropet
   try {
     const res = await window.apiFetch('/api/replace-recipe', {
       method: 'POST',
@@ -314,11 +316,14 @@ export async function poConfirmDay(recipeId, date, btnEl) {
     closePrisoptimera();
     window.renderWeeklyPlanData(window._lastPlan, window._lastShop, false, window._planArchive, window._customDays);
     window.switchTab?.('vecka');
+    window.dlxAfterPick?.(date);   // landa på veckan där dagen ligger
     window.showToast?.(`${cand.title} inlagt — sparar ca ${cand.saving} kr.`, { type: 'success' });
   } catch (e) {
     btnEl.disabled = false;
     btnEl.classList.remove('is-loading');
     window.showToast?.('Kunde inte lägga in receptet — prova igen.', { type: 'error' });
+  } finally {
+    window._opBusy = false;
   }
 }
 
