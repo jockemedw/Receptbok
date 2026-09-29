@@ -225,6 +225,8 @@ Aktiv kö — de senaste sessionernas ännu ej mobil-verifierade arbete.
 
 **Session 149 — Nattpass kvalitet: receptbytet känns omedelbart, lugnare sheets, luftigare text (blandat render-only + datamuterande, SKARP efter merge, ej mobil-verifierad). Styles v200 · app v165 · SW v118.**
 
+**Tillägg 2026-09-29 (render-only):** Datumraden ("28 sep – 4 okt") borttagen ur Matsedels-heron på Joakims begäran — heron börjar nu med statistiken; veckonumret finns kvar i railen. `heroDateRange` + `.dlx-hero-title`-CSS borttagna. Styles v201 · app v166 · SW v119. Verifiera på mobil: heron utan datumrad, ljust + mörkt.
+
 Joakim: "appen känns lågkvalitativ — trång text, plottriga menyer, hackar; slumpa buggar, välj själv laddar inte in; byten ska kännas omedelbara". Körd obevakad som workflow (9 paket + slutfas). Allt testat lokalt mot stubbharnessen — **ingenting skrevs mot live-databasen**.
 
 1. **Perf-harnessen lagad + byt-recept-scenario** (render-only, bara `tests/e2e/**`). Stubben fångade bara `supabase-js@2/+esm` men appen laddar `@2.116.0` → uppstarten hängde. Nu regex; nya stubbar för `/api/replace-recipe` + `/api/day`, `__stubEmit` för realtime, `--scenario=swap|echo`. Baslinje före: Slumpa 1533 ms utan väntarläge, Välj själv-tryck på titel = 0 anrop (buggen), nästa vecka → hoppade till innevarande vecka, eko = 7 följdfrågor.

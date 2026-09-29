@@ -439,10 +439,6 @@ function buildHero(weekDays, weekStart, plan, pending) {
 
   const vegCount = counts['vegetarisk'] || 0;
 
-  // Rubrik: den visade veckan mån–sön, kompakt ("6–12 juli" / "29 juni – 5 juli").
-  const weekEnd = addDaysIso(weekStart, 6);
-  const title = heroDateRange(weekStart, weekEnd);
-
   // Sparat-statistiken är plan-scopad och öppnar "Veckans fynd" när sådana finns.
   const hasDeals = hasActiveDays && !!(window._weeklyDeals?.candidates?.length);
   const savingStat = totalSaving >= 1 ? (
@@ -490,7 +486,6 @@ function buildHero(weekDays, weekStart, plan, pending) {
   return `
     <div class="dlx-hero">
       <div class="dlx-hero-glow"></div>
-      <h2 class="dlx-hero-title">${esc(title)}</h2>
       <div class="dlx-stats">
         <div class="dlx-stat">
           <div class="dlx-stat-num">${planned}</div>
@@ -512,20 +507,6 @@ function buildHero(weekDays, weekStart, plan, pending) {
         ${rightSlot}
       </nav>
     </div>`;
-}
-
-// "6–12 juli" (samma månad) / "29 juni – 5 juli" (över månadsskifte).
-// Cachade formatterare (toLocaleDateString bygger en ny per anrop) — samma
-// locale + options, så utdatan är byte-identisk.
-const HERO_DAY_MONTH_FMT = new Intl.DateTimeFormat('sv-SE', { day: 'numeric', month: 'long' });
-const HERO_MONTH_FMT = new Intl.DateTimeFormat('sv-SE', { month: 'long' });
-function heroDateRange(startIso, endIso) {
-  const s = new Date(startIso + 'T12:00:00'), e = new Date(endIso + 'T12:00:00');
-  const long = (d) => HERO_DAY_MONTH_FMT.format(d);
-  if (s.getMonth() === e.getMonth()) {
-    return `${s.getDate()}–${e.getDate()} ${HERO_MONTH_FMT.format(e)}`;
-  }
-  return `${long(s)} – ${long(e)}`;
 }
 
 // ── Dagskort ──────────────────────────────────────────────────────────────────

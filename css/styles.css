@@ -4130,16 +4130,6 @@ html.auth-required body {
 /* will-change sätts av JS (plan-viewer-deluxe.js) bara under svep/glid —
    permanent höll det hela veckopanelen som ett eget lager i minnet. */
 
-.dlx-hero-title {
-  position: relative;
-  font-family: var(--font-display);
-  font-weight: 400;
-  font-size: 1.62rem;
-  line-height: 1.1;
-  letter-spacing: 0.01em;
-  margin: 0 0 0.6rem;
-  color: var(--on-deep);
-}
 /* Stats — redaktionella display-siffror med hårfina avdelare */
 .dlx-stats {
   position: relative;
@@ -4751,7 +4741,6 @@ html.auth-required body {
   .dlx-detail-cols { flex-direction: row; }
   .dlx-detail-block { flex: 1 1 0; }
   .dlx-actions { grid-template-columns: repeat(4, 1fr); }
-  .dlx-hero-title { font-size: 2rem; }
 }
 
 /* ═══ Session 86 — Fable 5-omtag: feedback, matlagningsläge, PWA-polish ═══ */
