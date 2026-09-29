@@ -4126,7 +4126,10 @@ html.auth-required body {
   pointer-events: none;
 }
 /* ── Pager: hela veckovyn (hero + dagslista) är svepytan för veckoväxlingen ── */
-.dlx-pager { overflow: hidden; touch-action: pan-y; overscroll-behavior-x: contain; }
+.dlx-pager { position: relative; overflow: hidden; touch-action: pan-y; overscroll-behavior-x: contain; }
+/* Grannveckan under svep/glid (iPhone-hemskärmskänsla) — inert ögonblicksbild
+   som ligger en sidbredd bort och följer panelen; tas bort när glidet landat. */
+.dlx-peek { position: absolute; top: 0; left: 0; width: 100%; pointer-events: none; will-change: transform; }
 /* will-change sätts av JS (plan-viewer-deluxe.js) bara under svep/glid —
    permanent höll det hela veckopanelen som ett eget lager i minnet. */
 

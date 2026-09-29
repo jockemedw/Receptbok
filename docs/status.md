@@ -225,6 +225,8 @@ Aktiv kö — de senaste sessionernas ännu ej mobil-verifierade arbete.
 
 **Session 149 — Nattpass kvalitet: receptbytet känns omedelbart, lugnare sheets, luftigare text (blandat render-only + datamuterande, SKARP efter merge, ej mobil-verifierad). Styles v200 · app v165 · SW v118.**
 
+**Tillägg 2026-09-29 #2 (render-only): Veckosvep som iPhone-hemskärmar.** Fade-glidet ersatt av ett "band": panelen följer fingret 1:1, grannveckan (inert ögonblicksbild `.dlx-peek`, samma byggare via `peekHtml`/`weekDaysOf`) ligger en sidbredd bort och glider in bredvid; vid släpp fortsätter rörelsen i fingrets fart och bromsar in (byte vid >halva bredden eller flick >0,3 px/ms), annars fjädring tillbaka; gummiband (iOS-kurva) vid tidslinjens kant. Knappar/Idag/drag över veckogräns/hjul använder samma glid. `prefers-reduced-motion` = direktbyte. Styles v202 · app v167 · SW v120. **Verifiera på mobil:** långsamt drag visar nästa vecka bredvid; kort drag fjädrar tillbaka; snabb flick byter; kanten gummibandar; vertikal scroll opåverkad; långtrycks-drag över veckogräns fungerar.
+
 **Tillägg 2026-09-29 (render-only):** Datumraden ("28 sep – 4 okt") borttagen ur Matsedels-heron på Joakims begäran — heron börjar nu med statistiken; veckonumret finns kvar i railen. `heroDateRange` + `.dlx-hero-title`-CSS borttagna. Styles v201 · app v166 · SW v119. Verifiera på mobil: heron utan datumrad, ljust + mörkt.
 
 Joakim: "appen känns lågkvalitativ — trång text, plottriga menyer, hackar; slumpa buggar, välj själv laddar inte in; byten ska kännas omedelbara". Körd obevakad som workflow (9 paket + slutfas). Allt testat lokalt mot stubbharnessen — **ingenting skrevs mot live-databasen**.
