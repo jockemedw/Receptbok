@@ -159,8 +159,23 @@ export function chooseRandomConfirm(poolIds, requestedId) {
   return order.length ? order[0] : null;
 }
 
-export function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), usedOn = {}, savingsById = null, currentSeason = null, today = isoToday()) {
+// opts.coverCanons (Prisoptimera i guiden): Map receptId → Set av de rea-varor
+// (canons) familjen valt som receptet använder. Så länge någon vald vara ännu
+// saknas i planen föredrar varje dag ett recept som täcker en saknad vara —
+// med ALLA vanliga regler kvar (dagtagg, veg-/Ture-dag, proteintak, oprövade).
+// Hittas inget sådant fylls dagen som vanligt; anroparen räknar ut vilka varor
+// som blev otäckta.
+export function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), usedOn = {}, savingsById = null, currentSeason = null, today = isoToday(), opts = {}) {
   const MAX_PER_PROTEIN = 2;
+  const coverCanons = opts.coverCanons || null;
+  const uncovered = new Set();
+  if (coverCanons) for (const set of coverCanons.values()) for (const c of set) uncovered.add(c);
+  const coversUncovered = (r) => {
+    const set = coverCanons?.get(r.id);
+    if (!set) return false;
+    for (const c of set) if (uncovered.has(c)) return true;
+    return false;
+  };
 
   const fresh = recipes.filter((r) => !recentIds.has(r.id));
   let pool;
@@ -207,6 +222,18 @@ export function selectRecipes(recipes, dayList, constraints, recentIds = new Set
     };
     const saveTure = tureCount > 0 && !mustBeTure;
     const preferNonTure = (r) => !saveTure || !hasTure(r);
+    if (uncovered.size) {
+      for (const r of dayPool) {
+        if (usedIds.has(r.id)) continue;
+        if (!coversUncovered(r)) continue;
+        if (!tureOk(r)) continue;
+        if (!vegOk(r)) continue;
+        if (!preferNonTure(r)) continue;
+        if ((proteinUsage[r.protein] || 0) >= maxForProtein(r.protein)) continue;
+        if (!underUntestedLimit(r)) continue;
+        return r;
+      }
+    }
     for (const r of dayPool) {
       if (usedIds.has(r.id)) continue;
       if (!tureOk(r)) continue;
@@ -266,6 +293,7 @@ export function selectRecipes(recipes, dayList, constraints, recentIds = new Set
       );
     }
     usedIds.add(recipe.id);
+    for (const c of coverCanons?.get(recipe.id) || []) uncovered.delete(c);
     proteinUsage[recipe.protein] = (proteinUsage[recipe.protein] || 0) + 1;
     if (!recipe.tested) untestedSoFar++;
     result.push({ date: day.date, day: day.day, recipe: recipe.title, recipeId: recipe.id });

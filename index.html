@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/+esm">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=202">
+<link rel="stylesheet" href="css/styles.css?v=203">
 <style>/* tömd — CSS flyttad till css/styles.css */
 
 </style>
@@ -100,10 +100,6 @@
 <div id="weekView">
   <div class="content-heading">
     <h2 class="content-heading-title">Matsedel</h2>
-    <button type="button" class="prisopt-btn" onclick="openPrisoptimera()" aria-label="Prisoptimera — se veckans reor och få receptförslag">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 7.5v9 M9.5 9.7c.6-.7 1.5-1 2.5-1s2 .3 2.4 1c.5.8 0 1.7-1 2-.7.2-2.7.3-3.4.7-.9.4-1.4 1.3-.9 2.1.5.7 1.6 1 2.5 1s1.9-.3 2.5-1"/></svg>
-      Prisoptimera
-    </button>
   </div>
   <div id="weekLoading" class="no-data">
     <div class="no-data-icon"><svg class="icon icon-em-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12 M6 20h12 M6 4l6 8-6 8 M18 4l-6 8 6 8"/></svg></div>
@@ -306,18 +302,20 @@
     </div>
 
 
+    <div class="wiz-deals" id="wizDeals">
+      <button type="button" class="wiz-deals-head" onclick="wizToggleDeals()" aria-expanded="false" aria-controls="wizDealsBody">
+        <span class="wiz-deals-ic"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 7.5v9 M9.5 9.7c.6-.7 1.5-1 2.5-1s2 .3 2.4 1c.5.8 0 1.7-1 2-.7.2-2.7.3-3.4.7-.9.4-1.4 1.3-.9 2.1.5.7 1.6 1 2.5 1s1.9-.3 2.5-1"/></svg></span>
+        <span class="wiz-deals-txt"><strong>Prisoptimera — laga från veckans reor</strong><span id="wizDealsSub">Valfritt — välj varor så byggs matsedeln runt dem</span></span>
+        <span class="wiz-deals-chev" aria-hidden="true">›</span>
+      </button>
+      <div class="wiz-deals-body" id="wizDealsBody" hidden></div>
+    </div>
+
     <button class="generate-btn" id="generateBtn" onclick="generatePlan()">
       <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 13.2 10.8 19 12 13.2 13.2 12 20 10.8 13.2 5 12 10.8 10.8z"/><path d="M19 5l.5 2 M5 19l-.5-2" opacity=".7"/></svg> Generera ny matsedel
     </button>
     <div class="trigger-status" id="triggerStatus"></div>
 
-    <div class="wiz-alt">
-      <span class="wiz-alt-or">eller</span>
-      <button type="button" class="wiz-prisopt" onclick="wizOpenPrisoptimera()">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 7.5v9 M9.5 9.7c.6-.7 1.5-1 2.5-1s2 .3 2.4 1c.5.8 0 1.7-1 2-.7.2-2.7.3-3.4.7-.9.4-1.4 1.3-.9 2.1.5.7 1.6 1 2.5 1s1.9-.3 2.5-1"/></svg>
-        Prisoptimera — laga från veckans reor
-      </button>
-    </div>
 
       <div class="wiz-foot">
         <button type="button" class="wiz-back" onclick="wizGo(1)">‹ Ändra dagarna</button>
@@ -663,6 +661,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=167"></script>
+<script type="module" src="js/app.js?v=168"></script>
 </body>
 </html>
