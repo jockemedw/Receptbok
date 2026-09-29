@@ -159,10 +159,18 @@ function dlxCanStep(dir) {
   return next >= b.min && next <= b.max;
 }
 
-// "Slide-through": panelen (#weekDeluxe) glider ut i svep-riktningen, veckan
-// byts + renderas om, panelen glider in från andra hållet. Transformen bor på
-// panel-elementet som överlever setSec-omrenderingen, så innehållet byts inuti.
+// ── Veckobyte som iPhone-hemskärmar ──────────────────────────────────────────
+// Visad vecka och grannveckan ligger sida vid sida som sidor på ett band:
+// panelen (#weekDeluxe) följer fingret 1:1 och grannveckan — en inert
+// ögonblicksbild (.dlx-peek) byggd med samma byggare — glider in bredvid. Vid
+// släpp fortsätter bandet med fingrets fart och bromsar in mot nästa sida
+// (eller fjädrar tillbaka). När glidet landat byts veckan i den riktiga panelen
+// och bilden tas bort i samma bildruta — samma markup, så inget syns.
 let _dlxAnimBusy = false;
+let _peek = null;                       // { el, dir, weekStart }
+const PAGE_EASE = 'cubic-bezier(0.22, 0.8, 0.3, 1)';   // inbromsning, startlutning ≈ 3,6
+const PAGE_EASE_SLOPE = 3.6;
+
 function prefersReducedMotion() {
   return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
 }
@@ -171,43 +179,116 @@ function prefersReducedMotion() {
 let _paneIdleTimer = 0;
 function paneMoving(pane, on, idleAfterMs = 0) {
   clearTimeout(_paneIdleTimer);
-  if (on) { pane.style.willChange = 'transform, opacity'; return; }
+  if (on) { pane.style.willChange = 'transform'; return; }
   _paneIdleTimer = setTimeout(() => { pane.style.willChange = ''; }, idleAfterMs);
 }
 
-function animateWeekChange(dir, apply) {
-  const pane = document.getElementById('weekDeluxe');
-  if (!pane || prefersReducedMotion()) { apply(); renderDeluxe(); return; }
-  if (_dlxAnimBusy) return;
+function pagerWidth(pager) { return pager?.clientWidth || window.innerWidth; }
+
+// Grannveckans ögonblicksbild — samma sektioner som renderDeluxeInner men som
+// ren sträng (ingen diff-state, inga entré-animationer, inte klickbar).
+function peekHtml(weekStart) {
+  const plan = window._lastPlan || null;
+  const pending = !!(plan?.days?.length) && !plan?.confirmedAt && !window.planConfirmed;
+  const days = weekDaysOf(weekStart);
+  const todayIso = fmtIso(new Date());
+  const tonight = weekStart === currentWeekStart() ? buildTonight(days) : '';
+  const cards = days.map(d =>
+    `<div class="dlx-day-slot">${(tonight && d.date === todayIso) ? tonight : renderDayCard(d)}</div>`).join('');
+  return `<div class="dlx-sec">${buildHero(days, weekStart, plan, pending)}</div>`
+    + `<div class="dlx-sec">${weekNoticeHtml(plan, pending, weekStart) + modeBannerHtml()}</div>`
+    + `<div class="dlx-sec"><div class="dlx-days dlx-quiet">${cards}</div></div>`;
+}
+
+function ensurePeek(pager, dir, weekStart) {
+  if (_peek && _peek.dir === dir && _peek.weekStart === weekStart) return;
+  dropPeek();
+  const el = document.createElement('div');
+  el.className = 'dlx-peek';
+  el.setAttribute('aria-hidden', 'true');
+  el.inert = true;
+  el.innerHTML = peekHtml(weekStart);
+  pager.appendChild(el);
+  _peek = { el, dir, weekStart };
+}
+function dropPeek() { _peek?.el.remove(); _peek = null; }
+
+// Bandets läge: panelen på x, grannveckan en sidbredd bort i sin riktning.
+function setTrack(pane, x, W, transition = 'none') {
+  pane.style.transition = transition;
+  pane.style.transform = x ? `translate3d(${x}px,0,0)` : '';
+  if (_peek) {
+    _peek.el.style.transition = transition;
+    _peek.el.style.transform = `translate3d(${x + _peek.dir * W}px,0,0)`;
+  }
+}
+
+function slideTrack(pane, toX, W, ms, done) {
+  let fired = false;
+  const fin = () => {
+    if (fired) return;
+    fired = true;
+    pane.removeEventListener('transitionend', onEnd);
+    done();
+  };
+  const onEnd = (e) => { if (e.target === pane && e.propertyName === 'transform') fin(); };
+  pane.addEventListener('transitionend', onEnd);
+  setTrack(pane, toX, W, `transform ${ms}ms ${PAGE_EASE}`);
+  setTimeout(fin, ms + 80);           // ingen transitionend om läget inte ändrats
+}
+
+// Glid in grannveckan (som redan ligger i _peek) och byt vecka när den landat.
+function commitWeekChange(pane, dir, W, apply, ms) {
   _dlxAnimBusy = true;
-  window._dlxWeekAnimBusy = true;   // day-drag.js: starta inget långtryck mitt i glidet
+  window._dlxWeekAnimBusy = true;     // day-drag.js: starta inget långtryck mitt i glidet
   paneMoving(pane, true);
-  pane.style.transition = 'transform 0.14s ease-in, opacity 0.14s ease-in';
-  pane.style.transform = `translateX(${dir * -56}px)`;
-  pane.style.opacity = '0';
-  setTimeout(() => {
+  slideTrack(pane, -dir * W, W, ms, () => {
     apply();
-    renderDeluxe();
-    pane.style.transition = 'none';
-    pane.style.transform = `translateX(${dir * 56}px)`;
-    void pane.offsetWidth;                                  // force reflow
-    pane.style.transition = 'transform 0.2s ease-out, opacity 0.2s ease-out';
-    pane.style.transform = 'translateX(0)';
-    pane.style.opacity = '1';
-    setTimeout(() => { _dlxAnimBusy = false; window._dlxWeekAnimBusy = false; paneMoving(pane, false); }, 210);
-  }, 145);
+    dropPeek();
+    setTrack(pane, 0, W);
+    renderDeluxe();                   // _dlxAnimBusy → dlx-quiet: korten tonar inte in
+    _dlxAnimBusy = false;
+    window._dlxWeekAnimBusy = false;
+    paneMoving(pane, false);
+  });
+}
+
+// Fjädra tillbaka. Upptagen under tiden så ett nytt svep inte hoppar från mitten.
+function snapBack(pane, W, ms) {
+  _dlxAnimBusy = true;
+  window._dlxWeekAnimBusy = true;
+  slideTrack(pane, 0, W, ms, () => {
+    dropPeek();
+    setTrack(pane, 0, W);
+    _dlxAnimBusy = false;
+    window._dlxWeekAnimBusy = false;
+    paneMoving(pane, false);
+  });
+}
+
+// Knapp-/drag-/hjul-steg: samma band, bara utan finger.
+function animateWeekChange(dir, targetWeek) {
+  const apply = () => { _dlxWeekStart = targetWeek === currentWeekStart() ? null : targetWeek; };
+  const pane = document.getElementById('weekDeluxe');
+  const pager = pane?.parentElement;
+  if (!pane || !pager || prefersReducedMotion()) { apply(); renderDeluxe(); return; }
+  if (_dlxAnimBusy) return;
+  const W = pagerWidth(pager);
+  ensurePeek(pager, dir, targetWeek);
+  setTrack(pane, 0, W);
+  void pane.offsetWidth;              // startläget måste vara renderat innan glidet
+  commitWeekChange(pane, dir, W, apply, 380);
 }
 
 window.dlxWeekStep = function (dir) {
   if (_dlxAnimBusy || !dlxCanStep(dir)) return;
-  const next = addDaysIso(shownWeekStart(), dir * 7);
-  animateWeekChange(dir, () => { _dlxWeekStart = next === currentWeekStart() ? null : next; });
+  animateWeekChange(dir, addDaysIso(shownWeekStart(), dir * 7));
 };
 
 window.dlxWeekToday = function () {
   if (_dlxAnimBusy || shownWeekStart() === currentWeekStart()) return;
   const dir = shownWeekStart() > currentWeekStart() ? -1 : 1;   // glid mot idag
-  animateWeekChange(dir, () => { _dlxWeekStart = null; });
+  animateWeekChange(dir, currentWeekStart());
 };
 
 // Drag & släpp över veckogränser (day-drag.js): som dlxWeekStep men med
@@ -223,7 +304,7 @@ window.dlxDragWeekStep = function (dir, probe = false) {
   if (dir > 0 && next > addDaysIso(b.max, 7)) return false;
   if (dir < 0 && addDaysIso(next, 6) < dlxMinSwapIso()) return false;
   if (probe) return true;
-  animateWeekChange(dir, () => { _dlxWeekStart = next === currentWeekStart() ? null : next; });
+  animateWeekChange(dir, next);
   return true;
 };
 
@@ -241,42 +322,66 @@ function resetShownWeek() { _dlxWeekStart = null; }
 // Hela veckovyn (hero + dagslista) är svepytan. Horisontell avsikt skiljs från
 // vertikal scroll (avsikts-lås) så sidans vertikala scroll aldrig kapas.
 function installSwipe(pager, pane) {
-  let x0 = 0, y0 = 0, t0 = 0, mode = null;   // mode: null | 'h' | 'v'
+  let x0 = 0, y0 = 0, mode = null, W = 0, lastX = 0;   // mode: null | 'h' | 'v' | 'x' (ignorera)
+  let samples = [];                          // [{x, t}] — fingrets senaste ~100 ms
+
+  // Gummiband bortom tidslinjens kant (samma kurva som iOS scrollvyer).
+  const rubber = (dx) => Math.sign(dx) * (1 - 1 / (Math.abs(dx) * 0.55 / W + 1)) * W;
 
   pager.addEventListener('touchstart', (e) => {
-    if (_dlxAnimBusy || window._dlxDragActive || e.touches.length !== 1) return;
-    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = Date.now(); mode = null;
+    if (_dlxAnimBusy || window._dlxDragActive || e.touches.length !== 1) { mode = 'x'; return; }
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; mode = null;
+    samples = [{ x: x0, t: e.timeStamp }];
   }, { passive: true });
 
   pager.addEventListener('touchmove', (e) => {
     // _dlxDragActive: långtrycks-draget (day-drag.js) äger gesten — svepet står still.
-    if (_dlxAnimBusy || window._dlxDragActive || e.touches.length !== 1) return;
-    const dx = e.touches[0].clientX - x0, dy = e.touches[0].clientY - y0;
+    if (mode === 'x' || _dlxAnimBusy || window._dlxDragActive || e.touches.length !== 1) return;
+    const cx = e.touches[0].clientX;
+    const dx = cx - x0, dy = e.touches[0].clientY - y0;
     if (mode === null) {
       if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return;                 // dödzon
       mode = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'h' : 'v';             // avsikts-lås
+      if (mode === 'h') { W = pagerWidth(pager); paneMoving(pane, true); }
     }
     if (mode !== 'h') return;                                            // vertikal scroll får leva
     e.preventDefault();
-    const resist = dlxCanStep(dx < 0 ? 1 : -1) ? 0.55 : 0.18;           // gummiband vid kant
-    paneMoving(pane, true);
-    pane.style.transition = 'none';
-    pane.style.transform = `translateX(${dx * resist}px)`;
-    pane.style.opacity = String(1 - Math.min(Math.abs(dx) / 900, 0.25));
+    samples.push({ x: cx, t: e.timeStamp });
+    while (samples.length > 2 && e.timeStamp - samples[0].t > 100) samples.shift();
+    const dir = dx < 0 ? 1 : -1;
+    const can = dx !== 0 && dlxCanStep(dir);
+    if (can) ensurePeek(pager, dir, addDaysIso(shownWeekStart(), dir * 7));
+    else dropPeek();
+    lastX = can ? dx : rubber(dx);
+    setTrack(pane, lastX, W);
   }, { passive: false });
 
-  pager.addEventListener('touchend', (e) => {
+  const release = (e, cancelled) => {
     if (mode !== 'h') { mode = null; return; }
-    const dx = e.changedTouches[0].clientX - x0;
-    const vx = Math.abs(dx) / Math.max(Date.now() - t0, 1);             // px/ms
-    const dir = dx < 0 ? 1 : -1;
     mode = null;
-    if ((Math.abs(dx) > 70 || vx > 0.5) && dlxCanStep(dir)) { window.dlxWeekStep(dir); return; }
-    pane.style.transition = 'transform 0.18s ease-out, opacity 0.18s ease-out';   // fjädra tillbaka
-    pane.style.transform = 'translateX(0)';
-    pane.style.opacity = '1';
-    paneMoving(pane, false, 200);
-  }, { passive: true });
+    const cx = e.changedTouches[0]?.clientX ?? x0;
+    const dx = cx - x0;
+    const first = samples[0], last = { x: cx, t: e.timeStamp };
+    const v = (last.x - first.x) / Math.max(last.t - first.t, 1);      // px/ms, med tecken
+    const dir = dx < 0 ? 1 : -1;
+    const flick = Math.abs(v) > 0.3 && Math.sign(v) === Math.sign(dx);
+    const back = Math.abs(v) > 0.3 && Math.sign(v) === -Math.sign(dx);  // kastat tillbaka
+    const commit = !cancelled && dx !== 0 && dlxCanStep(dir) && _peek
+      && !back && (flick || Math.abs(dx) > W / 2);
+    const speed = Math.max(Math.abs(v), 0.01);
+    if (commit) {
+      // Glidet startar i fingrets fart: varaktighet ur kurvans startlutning.
+      const ms = Math.min(Math.max(PAGE_EASE_SLOPE * (W - Math.abs(dx)) / speed, 200), 420);
+      const target = _peek.weekStart;
+      commitWeekChange(pane, dir, W,
+        () => { _dlxWeekStart = target === currentWeekStart() ? null : target; }, ms);
+      return;
+    }
+    const ms = Math.min(Math.max(PAGE_EASE_SLOPE * Math.abs(lastX) / speed, 220), 360);
+    snapBack(pane, W, ms);
+  };
+  pager.addEventListener('touchend', (e) => release(e, false), { passive: true });
+  pager.addEventListener('touchcancel', (e) => release(e, true), { passive: true });
 
   // Desktop: horisontellt scrollhjul/trackpad.
   let wheelAcc = 0, wheelLock = 0;
@@ -311,10 +416,10 @@ function synthDay(iso) {
   };
 }
 
-// Den visade veckans 7 dagar (mån–sön) — luckor utanför horisonten syntetiseras.
-function shownWeekDays() {
+// En veckas 7 dagar (mån–sön) — luckor utanför horisonten syntetiseras.
+function shownWeekDays() { return weekDaysOf(shownWeekStart()); }
+function weekDaysOf(start) {
   const map = window._timelineByDate || {};
-  const start = shownWeekStart();
   return Array.from({ length: 7 }, (_, i) => {
     const iso = addDaysIso(start, i);
     return map[iso] || synthDay(iso);
