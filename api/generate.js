@@ -265,6 +265,9 @@ export default createSupabaseHandler(async (req, res) => {
     ture_days = 0,
     blocked_dates = [],
     optimize_prices = false,
+    // Prisoptimera i guiden: rea-varor (canons från GET /api/deals) som
+    // matsedeln ska byggas runt. Tom = vanlig, prisagnostisk generering.
+    deal_canons = [],
     season_weight = false,
     dry_run = false,
   } = req.body;
@@ -356,25 +359,41 @@ export default createSupabaseHandler(async (req, res) => {
     });
   }
 
+  const wantedCanons = new Set((Array.isArray(deal_canons) ? deal_canons : [])
+    .map((c) => String(c).toLowerCase().trim()).filter(Boolean).slice(0, 40));
+  const usePrices = optimize_prices || wantedCanons.size > 0;
+
   let savingsById = null;
+  let coverCanons = null;
   // Tyst degradering: prisoptimeringen vilar på en oofficiell Willys-feed som kan
   // sluta svara/ändra format utan förvarning — då blir resultatet 0 erbjudanden,
   // vilket ser ut som "inga reor" snarare än "bruten". pricingDegraded flaggar det
   // (returneras till UI:t) och skickar ett valfritt webhook-pling (notifyAlert).
   let pricingDegraded = false;
-  if (optimize_prices) {
+  if (usePrices) {
     try {
       // Samma feed-klient som /api/willys-offers och dispatchen (ingen egen
       // URL-literal); butik styrs av WILLYS_STORE_ID precis som i dispatchen.
       const store = process.env.WILLYS_STORE_ID || "2160";
       const { fetchOffersFromWillys } = await import("./willys-offers.js");
       const { matchRecipe } = await import("./_shared/willys-matcher.js");
-      const offers = await fetchOffersFromWillys(store, (url, opts) =>
+      const allOffers = await fetchOffersFromWillys(store, (url, opts) =>
         fetch(url, { ...opts, signal: AbortSignal.timeout(5000) }));
-      if (offers.length === 0) pricingDegraded = true; // 200 men inget parsebart = trolig API-ändring
+      if (allOffers.length === 0) pricingDegraded = true; // 200 men inget parsebart = trolig API-ändring
+      // Valda varor: bara deras erbjudanden räknas (samma regel som POST /api/deals)
+      // → besparingen och prioriteringen speglar exakt familjens urval.
+      let offers = allOffers;
+      if (wantedCanons.size) {
+        const { extractOfferCanon } = await import("./_shared/willys-matcher.js");
+        offers = allOffers.filter((o) => wantedCanons.has(extractOfferCanon(o) || ""));
+        coverCanons = new Map();
+      }
       savingsById = {};
       for (const r of filtered) {
         const m = matchRecipe(r, offers);
+        if (coverCanons && m.matches.length) {
+          coverCanons.set(r.id, new Set(m.matches.map((x) => x.canon)));
+        }
         if (m.totalSaving > 0) {
           const byCanon = new Map();
           for (const { canon, offer } of m.matches) {
@@ -394,6 +413,7 @@ export default createSupabaseHandler(async (req, res) => {
       }
     } catch {
       savingsById = null;
+      coverCanons = null;
       pricingDegraded = true; // icke-ok HTTP/timeout/nätfel/parsefel
     }
     if (pricingDegraded) {
@@ -409,7 +429,19 @@ export default createSupabaseHandler(async (req, res) => {
   }
 
   const currentSeason = season_weight ? getCurrentSeason(start_date) : null;
-  const selectedDays = selectRecipes(filtered, activeDays, constraints, recentIds, usedOn, savingsById, currentSeason);
+  const selectedDays = selectRecipes(filtered, activeDays, constraints, recentIds, usedOn, savingsById, currentSeason,
+    undefined, { coverCanons });
+
+  // Vilka valda varor fick ett recept i planen — UI:t berättar om någon saknas.
+  let dealCoverage = null;
+  if (wantedCanons.size && coverCanons) {
+    const covered = new Set();
+    for (const d of selectedDays) for (const c of coverCanons.get(d.recipeId) || []) covered.add(c);
+    dealCoverage = {
+      covered: [...wantedCanons].filter((c) => covered.has(c)),
+      uncovered: [...wantedCanons].filter((c) => !covered.has(c)),
+    };
+  }
 
   const days = allDays
     // Egen-planerade dagar hoppas över helt — de har redan sin meal_days-rad och
@@ -432,7 +464,7 @@ export default createSupabaseHandler(async (req, res) => {
 
   // "Veckans fynd": rea-recept som inte hamnade i planen, för popupen i UI:t.
   let deals = null;
-  if (optimize_prices && savingsById) {
+  if (usePrices && savingsById) {
     const chosenIds = days.map((d) => d.recipeId).filter(Boolean);
     const recipeMap = new Map(filtered.map((r) => [r.id, r]));
     // Redan laddad av blocket ovan (savingsById kan bara vara satt därifrån) —
@@ -443,7 +475,7 @@ export default createSupabaseHandler(async (req, res) => {
   }
 
   if (dry_run) {
-    return res.status(200).json({ ok: true, dry_run: true, days: days.length, weeklyPlan, deals, pricingDegraded });
+    return res.status(200).json({ ok: true, dry_run: true, days: days.length, weeklyPlan, deals, dealCoverage, pricingDegraded });
   }
 
   // Skriv nya planen + alla dagar (inaktiv). Glappar dag-skrivningen kastas det
@@ -465,5 +497,5 @@ export default createSupabaseHandler(async (req, res) => {
   // där familjen väljer vilka dagar som ska handlas
   // (/api/shopping action:set_days). Den befintliga listan står orörd tills
   // dess — inget försvinner för att någon genererar om matsedeln.
-  return res.status(200).json({ ok: true, days: days.length, weeklyPlan, deals, pricingDegraded });
+  return res.status(200).json({ ok: true, days: days.length, weeklyPlan, deals, dealCoverage, pricingDegraded });
 });

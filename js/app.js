@@ -25,7 +25,7 @@ import './weekly-plan/plan-viewer-deluxe.js';
 import './weekly-plan/day-drag.js';
 import './today/today-view.js';
 import './weekly-plan/deals-popup.js';
-import './weekly-plan/prisoptimera.js';
+import './weekly-plan/wiz-deals.js';
 
 async function init() {
   try {
@@ -146,8 +146,8 @@ window.closeBottomSheet = closeSheet;
 // stället för att navigera bort. DOM-driven (kollar vad som faktiskt syns)
 // snarare än en egen stack — säkrare mot att tappa synk med UI-stängning
 // (X-knapp, backdrop, Escape, spara-flöden). Delas via window.pushSheetHistory
-// /popSheetHistory så dlx-sheeten (plan-viewer-deluxe.js) och Prisoptimera
-// (prisoptimera.js) kan haka på utan att äga sin egen historik-logik.
+// /popSheetHistory så dlx-sheeten (plan-viewer-deluxe.js) kan haka på utan att
+// äga sin egen historik-logik.
 let closingFromPopstate = false;
 
 function pushSheetHistory() {
@@ -165,7 +165,6 @@ function popSheetHistory() {
 
 function closeAnyOpenSheet() {
   if (document.getElementById('dlxSheet')?.classList.contains('open')) { window.dlxCloseSheet?.(); return; }
-  if (document.querySelector('.po-overlay')) { window.closePrisoptimera?.(); return; }
   for (const id of ['sortSheet', 'filterSheet', 'planSheet', 'shopDaysSheet', 'shopStoreSheet']) {
     const s = document.getElementById(id);
     if (s && s.classList.contains('open')) { closeSheet(id); return; }

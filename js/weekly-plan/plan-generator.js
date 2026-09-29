@@ -262,8 +262,9 @@ export async function generatePlan() {
   // Rea-varning: Willys-kampanjer gäller oftast bara innevarande vecka.
   // Slutdatum mer än 7 dagar bort = hög risk att erbjudanden hunnit löpa ut
   // innan familjen handlar. Fråga användaren innan vi kör optimeringen.
-  const optimizePricesEl = document.getElementById('optimizePrices');
-  const wantsOptimize = !!(optimizePricesEl && optimizePricesEl.checked);
+  // Prisoptimera = reavaror valda i guidens rea-sektion (wiz-deals.js).
+  const dealCanons = window.getSelectedDealCanons?.() || [];
+  const wantsOptimize = dealCanons.length > 0;
   if (wantsOptimize) {
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const end = new Date(endVal + 'T00:00:00');
@@ -295,7 +296,7 @@ export async function generatePlan() {
       ture_days:        parseInt(document.getElementById('tureDays').value) || 0,
       skip_shopping: true,
       blocked_dates:    getBlockedDates(),
-      optimize_prices:  wantsOptimize,
+      deal_canons:      dealCanons,
       season_weight:    wantsSeason,
     };
     const res  = await window.apiFetch('/api/generate', {
@@ -320,6 +321,7 @@ export async function generatePlan() {
     if (wantsOptimize && data.pricingDegraded) {
       window.showToast?.('Reapriserna kunde inte hämtas just nu — matsedeln skapades utan prisoptimering.', { type: 'info', duration: 6000 });
     }
+    if (wantsOptimize) window.resetDealSelection?.();
     if (data.weeklyPlan) {
       // Hämta arkiv + custom-dagar från Supabase efter generering
       let archive = { plans: [] };
@@ -358,12 +360,20 @@ export async function generatePlan() {
     window.switchTab('vecka');
     // Stäng wizard-sheeten — förslaget + bekräfta-raden är nu det viktiga.
     window.closeBottomSheet?.('planSheet');
-    window.showToast?.(`Förslag klart — ${data.days} dagar planerade.`, {
+    // Valda reavaror som inget recept kunde täcka (regler/historik stoppade)
+    // nämns i kvittot — inget eget ark, familjen ser resten i matsedeln.
+    const missing = data.dealCoverage?.uncovered || [];
+    const missNote = missing.length
+      ? ` Inget passande recept med ${missing.slice(0, 3).join(', ')}${missing.length > 3 ? ' m.fl.' : ''}.`
+      : '';
+    window.showToast?.(`Förslag klart — ${data.days} dagar planerade.${missNote}`, {
       type: 'success',
-      duration: 6000,
+      duration: missing.length ? 8000 : 6000,
       action: { label: 'Välj dagar', onClick: () => window.openShoppingDayPicker?.() },
     });
-    if (window._weeklyDeals?.candidates?.length && window.openDealsPopup) {
+    // Veckans fynd öppnas inte automatiskt när familjen själv valt reavaror —
+    // valet ÄR prisoptimeringen. Fynden nås ändå via "sparat · fynd" i heron.
+    if (!wantsOptimize && window._weeklyDeals?.candidates?.length && window.openDealsPopup) {
       setTimeout(() => window.openDealsPopup(), 400);
     }
   } catch (err) {

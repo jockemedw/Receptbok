@@ -638,6 +638,48 @@ const DEFAULT_CONSTRAINTS = {
   assertEq(chooseRandomConfirm(undefined, 8), null, "confirm: saknad pool → null");
 }
 
+// Test 23 — Prisoptimera i guiden: valda rea-varor (coverCanons) får ett recept
+// i planen när det går, utan att reglerna släpps.
+{
+  // Lax: 2 (vardag), 7 (helg). Kyckling: 3 (vardag), 10 (helg). Linser: 4 (veg).
+  const cover = new Map([[2, new Set(["lax"])], [7, new Set(["lax"])],
+    [3, new Set(["kyckling"])], [10, new Set(["kyckling"])], [4, new Set(["linser"])]]);
+  let allCovered = 0;
+  for (let i = 0; i < 200; i++) {
+    const res = selectRecipes(makeRecipes(), TRE_VARDAGAR, DEFAULT_CONSTRAINTS, new Set(), {}, null, null,
+      undefined, { coverCanons: cover });
+    const ids = new Set(res.map((d) => d.recipeId));
+    if ((ids.has(2)) && ids.has(3) && ids.has(4)) allCovered++;
+  }
+  // Veg-regeln: utan veg-dagar får linssoppan (veg) inte läggas på en vanlig dag.
+  assertEq(allCovered, 0, "prisopt: veg-recept pressas inte in på icke-veg-dag");
+
+  const vegCons = { ...DEFAULT_CONSTRAINTS, vegetarian_days: 1 };
+  let ok = 0;
+  for (let i = 0; i < 200; i++) {
+    const res = selectRecipes(makeRecipes(), TRE_VARDAGAR, vegCons, new Set(), {}, null, null,
+      undefined, { coverCanons: cover });
+    const ids = new Set(res.map((d) => d.recipeId));
+    if ((ids.has(2)) && ids.has(3) && ids.has(4)) ok++;
+    assertEq(res.every((d) => [1, 2, 3, 4, 5, 6].includes(d.recipeId)), true, "prisopt: vardagstaggen hålls");
+  }
+  assertEq(ok, 200, "prisopt: lax + kyckling + linser täcks alltid när en veg-dag finns");
+
+  // Utan coverCanons: oförändrat beteende (inga krav).
+  const plain = selectRecipes(makeRecipes(), TRE_VARDAGAR, DEFAULT_CONSTRAINTS, new Set(), {}, null, null,
+    undefined, {});
+  assertEq(plain.length, 3, "prisopt: tomt opts → vanlig plan");
+
+  // Nyligen lagat recept hålls borta även om det täcker en vald vara.
+  let recentPicked = 0;
+  for (let i = 0; i < 100; i++) {
+    const res = selectRecipes(makeRecipes(), TRE_VARDAGAR, DEFAULT_CONSTRAINTS, new Set([2]), {}, null, null,
+      undefined, { coverCanons: new Map([[2, new Set(["lax"])]]) });
+    if (res.some((d) => d.recipeId === 2)) recentPicked++;
+  }
+  assertEq(recentPicked, 0, "prisopt: 14-dagarsfönstret gäller även valda varor");
+}
+
 // ─── Slutrapport ──────────────────────────────────────────────────────────────
 const total = passed + failed;
 console.log(`\nPASS ${passed}/${total}${failed ? ` — ${failed} FAIL` : ""}`);
