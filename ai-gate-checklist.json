@@ -1,0 +1,58 @@
+[
+  {
+    "id": "veckoplan",
+    "question": "Lämnar ändringen befintlig veckoplan orörd som sidoeffekt? Brott: kod som kan radera, skriva över eller lämna en befintlig plan (weekly_plans/meal_days) tom eller inaktiv utan att användaren i appen själv begärt just det, eller som inte bevarar egna dagar (meal_days med plan_id NULL) vid generering."
+  },
+  {
+    "id": "receptstruktur",
+    "question": "Lämnar ändringen recept-strukturen orörd? Brott: ändrade, tillagda eller borttagna fält/kolumner i Supabase-tabellen recipes eller i mappningen i js/data-mapper.js."
+  },
+  {
+    "id": "jwt",
+    "question": "Är varje skrivande endpoint i api/ fortsatt skyddad av JWT-auth via wrappern i api/_shared/handler.js (requireUser)? Brott: ny eller ändrad skrivande endpoint utan wrappern, ELLER en ändring i handler.js/auth-koden som försvagar skyddet för befintliga endpoints."
+  },
+  {
+    "id": "ingen-ai-i-runtime",
+    "question": "Är genererings- och inköpsflödet fortsatt fritt från AI-/LLM-anrop? (Gemini i receptimporten api/import-recipe är tillåten; allt annat AI-anrop i runtime är ett brott.)"
+  },
+  {
+    "id": "ingen-autogenerering",
+    "question": "Är ändringen fri från automatisk/schemalagd generering av matsedeln (cron, scheduled functions, bakgrundsjobb som genererar utan manuell trigger)?"
+  },
+  {
+    "id": "delad-data",
+    "question": "Är ändringen fri från localStorage/sessionStorage/IndexedDB eller annan enhetsspecifik lagring för DELAT innehåll (matsedel, inköpslista, listor, skafferi, recept)? Rena vy-preferenser är tillåtna."
+  },
+  {
+    "id": "familjen-gratis",
+    "question": "Är ändringen fri från betalväggar, annonser och nya löpande driftskostnader som drabbar familjens egen instans (hushåll #1)?"
+  },
+  {
+    "id": "inga-secrets",
+    "question": "Är underlaget fritt från secrets, nycklar och tokens i klartext, och från kod som loggar dem?"
+  },
+  {
+    "id": "ingen-autonom-ddl",
+    "question": "Är underlaget fritt från kod eller steg som KÖR schemaändringar/migrationer eller skrivande SQL autonomt? (En idempotent SQL-fil som inväntar manuell körning är tillåten.)"
+  },
+  {
+    "id": "inom-planen",
+    "only": "diff",
+    "question": "Håller sig diffen inom den bifogade planen och uppgiften — inga ändringar i filer eller beteenden som planen inte nämner? Svara nej om plan saknas i underlaget."
+  },
+  {
+    "id": "tester-ej-forsvagade",
+    "only": "diff",
+    "question": "Är befintliga tester oförsvagade — inga borttagna eller urvattnade assertions, inga test som gjorts om till att alltid passera, inga överhoppade test?"
+  },
+  {
+    "id": "versionsbump",
+    "only": "diff",
+    "question": "Om diffen ändrar frontend (js/, css/, index.html): är css/styles.css?v=N och js/app.js?v=N i index.html samt CACHE_VERSION i service-worker.js bumpade? Svara ja om diffen inte rör frontend."
+  },
+  {
+    "id": "markning",
+    "only": "diff",
+    "question": "Stämmer ändringens faktiska karaktär med hur den beskrivs i planen — en ändring som skriver eller muterar data är inte kallad render-only?"
+  }
+]

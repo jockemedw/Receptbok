@@ -1,0 +1,15 @@
+{
+  "baseBranch": "main",
+  "checklist": "ai-gate-checklist.json",
+  "maxFiles": [{ "dir": "api", "pattern": "[.]js$", "max": 12 }],
+  "codex": { "effort": "high", "timeoutMin": 15 },
+  "nattpass": {
+    "model": "sonnet",
+    "budgetUsd": 15,
+    "totalTimeoutMin": 180,
+    "testCommands": ["node --check js/app.js"],
+    "testFiles": { "dir": "tests", "pattern": "[.]test[.]js$" },
+    "testEnv": { "TZ": "UTC" },
+    "protectedPaths": ["^db/migrations/", "^vercel[.]json$"]
+  }
+}

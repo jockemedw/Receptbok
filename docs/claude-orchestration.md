@@ -44,6 +44,32 @@ som har sin egen radar i `docs/status.md`).
 5. **Kontexthygien (redan byggd) ÄR del av arkitekturen:** lean CLAUDE.md + `docs/status.md`-digest +
    test-gating-hookar håller per-session-kostnaden nere och ger alla agenter samma grund.
 
+## Extern AI som grindvakt + nattpass (Session 151, 2026-10-03)
+
+Verktyget bor i ett eget, projektoberoende repo: **`jockemedw/ai-collab`** (lokalt `../ai-collab`
+bredvid Receptboken). Receptboken äger bara sin config och sin checklista i repo-roten:
+`ai-gate.config.json` + `ai-gate-checklist.json`. Plan och öppna beslut: `PLAN.md` i ai-collab.
+
+- **Vad en grind är:** något deterministiskt (exit-kod / JSON som ett skript läser) som stoppar flödet.
+  En modells utlåtande som Claude "väger in" är inte en grind.
+- **Granskare:** Codex CLI, headless och skrivskyddad, inloggad med ChatGPT-prenumeration — **finns bara
+  på Joakims dator** (skrivbordsappen, inte på PATH). Gemini CLI är inte installerad.
+- **Granskaren får primärkällan:** uppgiften, planen i klartext, faktisk diff, fullständig testlogg —
+  aldrig Claudes sammanfattning. Checklistan är ja/nej mot invarianterna i CLAUDE.md.
+- **Köra grinden i en vanlig session:**
+  `node ../ai-collab/bin/ai-gate.mjs diff --base origin/main --head HEAD` (exit 0 ja · 1 nej · 2 gick inte att köra).
+- **Köra ett nattpass manuellt:** `node ../ai-collab/bin/nattpass.mjs "uppgift" --no-pr`
+  → eget worktree + gren → plan → plan-grind → bygg → låst kandidat-commit → tester (UTC) → diff-grind
+  → (utan `--no-pr`) push av grenen + utkast-PR. Loggar i `.nattpass/<id>/`.
+- **Nattpass-regler:** aldrig DDL/migrationer autonomt, aldrig push till main (alltid PR), aldrig plan-läge,
+  mobilverifiering kan inte automatiseras → listas i PR:en och förs till verifieringskön i `docs/status.md`.
+- **Ändra reglerna:** redigera `ai-gate-checklist.json` (en ja/nej-fråga per regel; `"only": "diff"|"plan"`).
+  12-filsgränsen i `api/` räknas deterministiskt via `maxFiles` i configen.
+- **Öppet (Joakims beslut):** (1) isolering av byggaren — den får köra `node` och kan därmed i princip
+  runda förbuden mot push; alternativ: grenskydd på main, isolerad miljö, eller accepterad risk lokalt.
+  (2) Schemaläggning lokalt eller i molnet (Codex-inloggningen finns inte i molnet). (3) PR-steget är
+  aldrig kört. (4) Roadmapen är inte märkt med vilka punkter som lämpar sig för autonomt arbete.
+
 ## Månatlig omvärdering (tech-radar för modeller & orkestrering)
 
 Kör månadsvis (eller vid lämpligare intervall). Kolla det som faktiskt ändras över tid:
