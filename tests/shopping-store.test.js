@@ -527,7 +527,8 @@ const itemNamed = (db, listId, prefix) =>
 // med stubbar — nycklarna måste vara identiska, annars pekar bockar/borttag
 // på fel rad när klienten använder serverns itemIds direkt.
 {
-  const src = readFileSync(new URL("../js/shopping/shopping-list.js", import.meta.url), "utf8");
+  const src = readFileSync(new URL("../js/shopping/shopping-list.js", import.meta.url), "utf8")
+    .replace(/\r\n/g, "\n"); // Windows-checkout med autocrlf ger CRLF
   const start = src.indexOf("function buildShopState(");
   const end = src.indexOf("\n}\n", start) + 3;
   assertTrue(start > 0 && end > start, "paritet: buildShopState hittades i klientkoden");
