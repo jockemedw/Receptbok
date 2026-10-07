@@ -2,6 +2,24 @@
 
 Sessioner 8–149. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
 
+## Session 151 — AI-grind
+
+**Session 151 (2026-10-03) — Extern AI som grindvakt + nattpass; verktyget utflyttat till eget repo `ai-collab` (ingen appkod i js/ eller api/ ändrad).**
+
+Joakim ville ha schemalagd framdrift med extern AI som gatekeeper. Gjort, i ordning:
+
+1. **Discovery lokalt:** Codex CLI 0.160.0 finns via skrivbordsappen (inte på PATH), inloggad med ChatGPT-prenumeration; Gemini CLI saknas; `claude -p` fungerar. Joakim valde **Codex** som granskare.
+2. **Grinden byggd och testad åt båda håll:** PR 243:s diff godkänd; samma diff + inplanterad endpoint utan JWT som raderar `meal_days` underkänd på just `veckoplan` och `jwt`.
+3. **Nattpass testat manuellt (utan schemaläggning, utan PR):** första körningen stoppades korrekt — byggagenten hade ändrat `api/_shared/select-recipes.js` utanför uppgiften. Slutlig körning: plan → plan-grind → bygg → låst kandidat → 19 testkörningar gröna → diff-grind 14/14 ja.
+4. **Codex granskade upplägget** (5 kringgåenden + felkontrakt). Fynd 2–5 åtgärdade; fynd 1 (byggaren får köra `node` = godtycklig kod med Joakims rättigheter) är **öppet beslut**.
+5. **Utflyttat till `jockemedw/ai-collab`** (privat, rent från projektspår, ska bli en skill). I Receptboken finns bara `ai-gate.config.json` + `ai-gate-checklist.json`.
+6. **`tests/shopping-store.test.js` tål CRLF** (PR #244) — var rött lokalt på Windows, grönt i CI.
+
+**Inte gjort:** PR-steget aldrig kört · ingen schemaläggning · roadmap-märkning av punkter lämpliga för autonomt arbete · `recencyWeight`-buggen (se Kända buggar). Inget att mobilverifiera.
+
+Session 8–149 i `docs/session-log-archive.md`. Full git-historik: `git log --oneline`.
+
+
 ## Session 149 — Nattpass kvalitet: receptbytet känns omedelbart, lugnare sheets, luftigare text (blandat render-only + datamuterande, SKARP efter merge, ej mobil-verifierad). Styles v200 · app v165 · SW v118
 
 **Tillägg 2026-09-29 #3 (datamuterande): Prisoptimera flyttad in i genereringsguiden.** Rubrikknappen *Prisoptimera* och det separata arket (`prisoptimera.js`) borttagna. Guidens steg 2 har en utfällbar sektion *Prisoptimera — laga från veckans reor* (`wiz-deals.js`): reavaror som chips (bästa besparing först, 12 + "Visa alla"); valda varor skickas som `deal_canons` till `/api/generate`, som bygger matsedeln runt dem (`selectRecipes` `opts.coverCanons`, alla regler kvar) och svarar `dealCoverage`. Kvittot nämner valda varor utan passande recept; Veckans fynd öppnas inte automatiskt när varor valts. Styles v203 · app v168 · SW v121. **Verifiera på mobil:** Matsedel-rubriken utan Prisoptimera-knapp; guiden steg 2 → fäll ut reor → välj 2–3 varor → Generera → planen innehåller recept med varorna (sparat-siffror på dagarna); välj en vara inget recept har → kvittot nämner den. **Städ-kandidat:** `POST /api/deals` används inte längre av klienten.

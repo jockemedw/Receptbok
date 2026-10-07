@@ -120,7 +120,23 @@ export function isoWeekNumber(dateIso) {
   return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
 }
 
+// Begränsat bildtest. Matcha även titel så ett återanvänt ID inte får fel bild.
+const RECIPE_IMAGE_SAMPLES = {
+  1: ['Gräddig fiskgratäng med purjo', '01-fiskgratang'],
+  2: ['Matvetesallad med gröna ärter och krispig halloumi', '02-matvetesallad'],
+  4: ['Marinerad kyckling med curry-cashewnötssås', '04-kyckling'],
+  7: ['Tomatsoppa med pizzasnurror', '07-tomatsoppa'],
+  29: ['Stekt curryris med färs och salladslök', '29-curryris'],
+  35: ['Katsu sando med panerad tofu och kålsallad', '35-katsu-sando'],
+};
+
+export function recipeImage(r) {
+  const sample = RECIPE_IMAGE_SAMPLES[r.id];
+  return sample && r.title === sample[0] ? `images/recipes/${sample[1]}.webp` : '';
+}
+
 export function renderDetailInner(r) {
+  const image = recipeImage(r);
   const ingHtml   = (r.ingredients || []).map(renderIngredient).join('');
   const stepsHtml = (r.instructions || []).map(s =>
     `<li onclick="toggleStep(this)"><span>${escapeHtml(s)}</span></li>`
@@ -128,6 +144,10 @@ export function renderDetailInner(r) {
   const notesHtml = r.notes
     ? `<div class="detail-section"><h3>Noteringar</h3><div class="notes-box">💡 ${escapeHtml(r.notes)}</div></div>` : '';
   return `
+    ${image ? `<figure class="recipe-photo">
+      <img src="${image}" alt="${escapeHtml(r.title)}" width="768" height="768" loading="lazy" decoding="async" onerror="this.closest('figure').hidden=true">
+      <figcaption>AI-genererad bild · serveringsförslag</figcaption>
+    </figure>` : ''}
     <div class="detail-section">
       <h3>Ingredienser · ${r.servings || 4} portioner</h3>
       <ul class="ingredients-list">${ingHtml}</ul>

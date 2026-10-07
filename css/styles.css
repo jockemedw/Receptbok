@@ -968,6 +968,35 @@
 
   .card-info { flex: 1; min-width: 0; }
 
+  .recipe-thumbnail {
+    width: 56px;
+    height: 56px;
+    flex-shrink: 0;
+    object-fit: cover;
+    border-radius: 10px;
+  }
+
+  .recipe-photo { margin: 0; min-width: 0; }
+  .recipe-photo img {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 360px;
+    object-fit: contain;
+    border-radius: 12px;
+  }
+  .recipe-photo figcaption {
+    margin-top: 0.4rem;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-align: center;
+  }
+
+  @media (max-width: 420px) {
+    .card-header:has(.recipe-thumbnail) { gap: 0.6rem; }
+    .recipe-thumbnail { width: 48px; height: 48px; }
+  }
+
   .card-title {
     font-family: var(--font-display);
     font-size: 1.05rem;

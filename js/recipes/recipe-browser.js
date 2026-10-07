@@ -2,7 +2,7 @@
 // Läser state: RECIPES, groupBy, isSnapping, scrollUpAccum
 // Skriver state: isSnapping, scrollUpAccum
 
-import { proteinLabel, timeStr, renderDetailInner, escapeHtml, jsStringAttr, PROTEIN_COLOR, svCompare } from '../utils.js';
+import { proteinLabel, timeStr, renderDetailInner, escapeHtml, jsStringAttr, PROTEIN_COLOR, svCompare, recipeImage } from '../utils.js';
 
 // ── Grupperingsdefinitioner ───────────────────────────────────────────────────
 // Varje grupp är en lista av sektioner. Sektionerna utvärderas i ordning;
@@ -89,6 +89,7 @@ const GROUP_DEFS = {
 // ── Receptkort ────────────────────────────────────────────────────────────────
 export function renderCard(r) {
   const t = timeStr(r);
+  const image = recipeImage(r);
   return `
 <div class="recipe-card"
      style="--rail:${PROTEIN_COLOR[r.protein] || 'var(--birch-soft)'}"
@@ -101,7 +102,7 @@ export function renderCard(r) {
   <div class="card-header" role="button" tabindex="0"
        onclick="cardHeaderTap(event, this.closest('.recipe-card'))"
        onkeydown="if(event.target===this&&(event.key==='Enter'||event.key===' ')){event.preventDefault();cardHeaderTap(event, this.closest('.recipe-card'))}">
-    <div class="recipe-num">${r.id}</div>
+    ${image ? `<img class="recipe-thumbnail" src="${image}" alt="" width="56" height="56" loading="lazy" decoding="async" onerror="this.hidden=true">` : `<div class="recipe-num">${r.id}</div>`}
     <div class="card-info">
       <div class="card-title">${escapeHtml(r.title)}</div>
       <div class="card-meta">

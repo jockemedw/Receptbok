@@ -6,6 +6,7 @@ vid sessionstart eller när du behöver veta vad som är öppet. Arkiv: `docs/se
 
 <!-- DIGEST:START -->
 ## ▶ Nästa session — börja här
+- **Session 152: sex receptbilder i lista och detalj (render-only).** Mobiltest återstår: sök "Gräddig fiskgratäng" eller "Katsu sando". Styles v204/app v169/SW v122.
 - **NYTT (Session 151, 2026-10-03): EXTERN AI-GRIND + NATTPASS — verktyget bor i eget repo `jockemedw/ai-collab` (ingen appkod ändrad).** Codex CLI granskar plan och diff mot `ai-gate-checklist.json`; skript (exit-kod) avgör. Receptbokens config: `ai-gate.config.json` + `ai-gate-checklist.json` i roten. Kör manuellt: `node ../ai-collab/bin/nattpass.mjs "uppgift" --no-pr`. **Öppet (Joakims beslut):** isolering av byggaren (grenskydd / isolerad miljö / accepterad risk), schemaläggning lokalt eller moln, PR-steget aldrig kört. Detaljer: `docs/claude-orchestration.md` + `PLAN.md` i ai-collab.
 - **NYTT (Session 149): NATTPASS KVALITET — RECEPTBYTET KÄNNS OMEDELBART (blandat, SKARP, ej mobil-verifierad; styles v200/app v165/SW v118).** Välj själv väljer vid tryck och visar valet direkt på rätt vecka; Slumpa visar ny rätt direkt (förhandsval) och väljer samma sorts rätt utan att pendla; servern i Frankfurt (`fra1`) + parallella läsningar; inga eko-omladdningar/spinnerblink; luftigare dag-sheet, flytta-banner och text i övriga vyer. **Börja med mobilkön (Session 149)** + kolla `x-vercel-id` innehåller `fra1`.
 - **NYTT (Session 148): RECEPTVALET — MINDRE UPPREPNING (datamuterande, SKARP).** Livedata visade att S147-scenariot (uttömd delpool) inte uppstår med er genereringstakt (3–5 v) — upprepningen var slump ur ~10 testade icke-veg-recept. Nu: "längst sedan"-viktning alltid (90 d), egna dagar + dagflyttar räknas som använda (`meal_days` ihopslaget med historiken), spökrader (ersatt utkast/bortslumpat) städas. `SUPABASE_ACCESS_TOKEN` fungerar igen. Delvis live-verifierat (slumpa + spökstädning fungerar). **DB-läge 2026-09-28:** migration 011 och 010 är INTE körda (körningen stoppades av miljöns behörighetsspärr — kör 011 i SQL Editor eller ge Claude-sessionen lov); `db/schema-baseline.sql` finns nu; ingrediensaudit 2026-09-28: P0 0 · P1 13 · P2 374.
@@ -224,18 +225,8 @@ Aktiv kö — de senaste sessionernas ännu ej mobil-verifierade arbete.
 - ~~Portionsskalning i matlagningsläget~~ → uppgraderad till backlogpunkt **#28** (uppskjuten på Joakims begäran 2026-07-03) — se `docs/app-analys-backlog.md`. OBS: skild från #12 (inköpslistans hushållsskalning, byggd).
 
 ## Senaste session
+**Session 152 — Receptbildstest (2026-10-07, render-only).**
 
-**Session 151 (2026-10-03) — Extern AI som grindvakt + nattpass; verktyget utflyttat till eget repo `ai-collab` (ingen appkod i js/ eller api/ ändrad).**
+Joakim: "Gör en enkel test där de läggs in på lämpligt sätt i appen". Publicering: "OK - jag vill testa i appen".
 
-Joakim ville ha schemalagd framdrift med extern AI som gatekeeper. Gjort, i ordning:
-
-1. **Discovery lokalt:** Codex CLI 0.160.0 finns via skrivbordsappen (inte på PATH), inloggad med ChatGPT-prenumeration; Gemini CLI saknas; `claude -p` fungerar. Joakim valde **Codex** som granskare.
-2. **Grinden byggd och testad åt båda håll:** PR 243:s diff godkänd; samma diff + inplanterad endpoint utan JWT som raderar `meal_days` underkänd på just `veckoplan` och `jwt`.
-3. **Nattpass testat manuellt (utan schemaläggning, utan PR):** första körningen stoppades korrekt — byggagenten hade ändrat `api/_shared/select-recipes.js` utanför uppgiften. Slutlig körning: plan → plan-grind → bygg → låst kandidat → 19 testkörningar gröna → diff-grind 14/14 ja.
-4. **Codex granskade upplägget** (5 kringgåenden + felkontrakt). Fynd 2–5 åtgärdade; fynd 1 (byggaren får köra `node` = godtycklig kod med Joakims rättigheter) är **öppet beslut**.
-5. **Utflyttat till `jockemedw/ai-collab`** (privat, rent från projektspår, ska bli en skill). I Receptboken finns bara `ai-gate.config.json` + `ai-gate-checklist.json`.
-6. **`tests/shopping-store.test.js` tål CRLF** (PR #244) — var rött lokalt på Windows, grönt i CI.
-
-**Inte gjort:** PR-steget aldrig kört · ingen schemaläggning · roadmap-märkning av punkter lämpliga för autonomt arbete · `recencyWeight`-buggen (se Kända buggar). Inget att mobilverifiera.
-
-Session 8–149 i `docs/session-log-archive.md`. Full git-historik: `git log --oneline`.
+Sex WebP-bilder (768 px, totalt cirka 497 kB), kopplade via ID + exakt titel: miniatyr i receptlistan och större AI-märkt bild i receptdetaljen. Recept och matsedel oförändrade. Mobil/desktop visuellt granskade med sparade recept; användarens mobiltest återstår. Integrerat med senaste main, inklusive cardHeaderTap och svCompare. Styles v204/app v169/SW v122.
