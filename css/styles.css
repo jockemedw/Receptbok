@@ -3020,6 +3020,8 @@
   .manual-add-row { display: flex; gap: 0.5rem; }
   .manual-add-input {
     flex: 1;
+    min-height: 44px;
+    box-sizing: border-box;
     padding: 0.6rem 0.8rem;
     border: 1px solid var(--border);
     border-radius: 8px;
