@@ -1274,10 +1274,13 @@ async function commitManualOrder(shownOrderIdx) {
   if (!changed.length) return;
 
   try {
-    await Promise.all(changed.map(({ id, position }) =>
+    const results = await Promise.all(changed.map(({ id, position }) =>
       window.db.from('shopping_items').update({ position }).eq('id', id)));
+    if (results.some(r => r?.error)) throw new Error('reorder');
   } catch {
     window.showToast?.('Kunde inte spara ordningen — prova igen.', { type: 'error' });
+    window._preserveChecked = true;
+    loadShoppingTab();
   }
 }
 
