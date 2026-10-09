@@ -119,6 +119,28 @@ assertEq(isBulkVolume("10p"), false, "10p (antal) = ej storpack");
 assertEq(isBulkVolume(""), false, "tom volym = ej storpack");
 assertEq(isBulkVolume(null), false, "null volym = ej storpack");
 
+// 8. NON_FOOD_RE: "rosor"/"binda" får inte döda broccoli-/blomkålsrosor.
+const mk = (code, name) => ({
+  code, name, productLine2: "X, 500g", priceValue: 30, savingsAmount: 10,
+  comparePrice: "60,00 kr", priceUnit: "kr/st",
+  potentialPromotions: [{
+    promotionType: "MixMatchPricePromotion", campaignType: "GENERAL",
+    price: { value: 20 }, threshold: null, qualifyingCount: 1,
+    realMixAndMatch: false, conditionLabel: "Spara 10 kr/st", validUntil: 1785707999000,
+  }],
+});
+const nf = normalizeOffers([
+  mk("500000001_ST", "Broccolirosor Fryst"),
+  mk("500000002_ST", "Blomkålsrosor"),
+  mk("500000003_ST", "Rosor"),
+  mk("500000004_ST", "Binda Normal"),
+]);
+const nfCodes = nf.map((o) => o.code);
+assertEq(nfCodes.includes("500000001_ST"), true, "Broccolirosor behålls");
+assertEq(nfCodes.includes("500000002_ST"), true, "Blomkålsrosor behålls");
+assertEq(nfCodes.includes("500000003_ST"), false, "Rosor (blommor) sorteras bort");
+assertEq(nfCodes.includes("500000004_ST"), false, "Binda (hygien) sorteras bort");
+
 console.log(`\nwillys-offers.test.js: ${passed} passed, ${failed} failed`);
 if (failed > 0) {
   console.error("\nFailures:\n" + failures.join("\n"));

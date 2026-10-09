@@ -45,7 +45,7 @@ const NON_FOOD_RE = new RegExp(
     "schampo", "shampo", "tandkräm", "tandborste", "deodorant", "deospray",
     "handtvål", "handcreme", "bodylotion", "body lotion", "ansiktsrengör",
     "ansiktmask", "ansiktskräm", "hårfärg", "rakgel", "duschcreme", "duschkräm",
-    "duschgel", "blöja", "byxblöjor", "tampong", "binda", "sun lotion",
+    "duschgel", "blöja", "byxblöjor", "tampong", "\\bbinda\\b", "\\bbindor\\b", "sun lotion",
     "moisture bomb", "deo roll",
     // Pappersvaror & förbrukning
     "toalettpapper", "bakplåtspapper", "hushållspapper", "våtservett",
@@ -55,7 +55,7 @@ const NON_FOOD_RE = new RegExp(
     "proteinpulver", "protein pulver", "protein shake", "protein bar",
     "viktminskning", "näringsdryck", "vitaminer",
     // Ej mat
-    "rosor", "sneakers", "hårfärg",
+    "\\brosor\\b", "sneakers", "hårfärg",
   ].join("|"),
   "i"
 );
