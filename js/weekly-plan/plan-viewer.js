@@ -1093,7 +1093,7 @@ export function customDayEditorHtml(dateIso, dayName) {
   // backslash FÖRST, sedan ' och &<>".
   const escDayName = jsStringAttr(dayName || '');
   const dateLabel = fmtShort(dateIso);
-  const noteValue = note.replace(/"/g, '&quot;');
+  const noteValue = escapeHtml(note);
 
   // Retro-planering (Session 131): recept går att välja även på passerade dagar
   // inom retro-fönstret (logga vad ni faktiskt åt / planera om i efterhand).
