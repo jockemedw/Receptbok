@@ -77,6 +77,7 @@ function makeMockDb(initial = {}) {
       table, op: "select", payload: null, filters: [], wantSelect: false,
       insert(p) { this.op = "insert"; this.payload = p; return this; },
       update(p) { this.op = "update"; this.payload = p; return this; },
+      delete() { this.op = "delete"; return this; },
       select() { this.wantSelect = true; return this; },
       eq(c, v) { this.filters.push(["eq", c, v]); return this; },
       in(c, v) { this.filters.push(["in", c, v]); return this; },
@@ -109,6 +110,11 @@ function makeMockDb(initial = {}) {
             return row;
           });
           return { data: single ? inserted[0] : inserted, error: null };
+        }
+        if (this.op === "delete") {
+          const hit = rows.filter((r) => matches(r, this.filters));
+          hit.forEach((r) => rows.splice(rows.indexOf(r), 1));
+          return { data: hit, error: null };
         }
         if (this.op === "update") {
           if (this.table === "shopping_items" && state.failConvertUpdate && this.payload?.source === "manual") {
@@ -363,6 +369,30 @@ const itemNamed = (db, listId, prefix) =>
   const next = await rebuildActiveList({ householdId: HH, coverDates: ["2026-07-27"], recipes: RECIPES, database: db });
   assertTrue(itemNamed(db, next.listId, "grädde")?.checked === false, "avslutad runda: bockad grädde förbockas inte på nya rundan");
   assertTrue(!next.shoppingList.checkedItems || Object.keys(next.shoppingList.checkedItems).length === 0, "avslutad runda: inga bockar ärvs");
+}
+
+// ── 7c. Egna tillägg med samma namn dubbleras inte ───────────────────────────
+{
+  const db = makeMockDb({
+    mealDays: [day("2026-07-20", { recipe_id: 1 }), day("2026-07-21", { recipe_id: 2 })],
+    recipes: RECIPES,
+  });
+  await rebuildActiveList({ householdId: HH, coverDates: ["2026-07-20", "2026-07-21"], recipes: RECIPES, database: db });
+  const l1 = await getActiveList(HH, db);
+  const gradde = itemNamed(db, l1.id, "grädde").name;
+  db._state.items.push({ id: 9101, list_id: l1.id, category: "Övrigt", name: gradde, source: "manual", checked: false, position: 0 });
+  const res = await markRoundShopped(HH, db);
+  assertEq(allItems(db, l1.id).filter((i) => i.name === gradde).length, 1, "dubblett: bara en rad med samma namn kvar efter 'Vi har handlat'");
+  assertTrue(allItems(db, l1.id).find((i) => i.name === gradde).source === "manual", "dubblett: raden är ett Eget tillägg");
+  assertEq(res.converted, allItems(db, l1.id).filter((i) => i.source === "manual").length - 1, "dubblett: converted räknar bara faktiskt konverterade");
+
+  // Ombyggnad med redan existerande dubbletter kollapsar dem
+  db._state.items.push({ id: 9102, list_id: l1.id, category: "Övrigt", name: "mjölk", source: "manual", checked: true, position: 5 });
+  db._state.items.push({ id: 9103, list_id: l1.id, category: "Övrigt", name: "mjölk", source: "manual", checked: false, position: 6 });
+  db._state.mealDays.push(day("2026-07-27", { recipe_id: 3 }));
+  const next = await rebuildActiveList({ householdId: HH, coverDates: ["2026-07-27"], recipes: RECIPES, database: db });
+  assertEq(allItems(db, next.listId).filter((i) => i.name === "mjölk").length, 1, "dubblett: ombyggnad kollapsar dubblettnamn");
+  assertEq(next.shoppingList.checkedItems["manual::mjölk"], true, "dubblett: behållen rad behåller bocken");
 }
 
 // ── 8. setCoveredDays: manuellt dagurval (Session 134) ──────────────────────

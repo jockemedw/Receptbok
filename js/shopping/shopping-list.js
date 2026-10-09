@@ -153,7 +153,10 @@ function buildShopState(list, items) {
     });
   }
 
-  const manualSorted = manualRows.slice().sort((a, b) => a.position - b.position);
+  // Dubbletter (samma namn) kollapsar till första raden — nyckeln är namn-baserad.
+  const seenManual = new Set();
+  const manualSorted = manualRows.slice().sort((a, b) => a.position - b.position)
+    .filter((row) => !seenManual.has(row.name) && seenManual.add(row.name));
   const manualItems = manualSorted.map((row) => row.name);
   manualSorted.forEach((row) => {
     const key = `manual::${row.name}`;
@@ -633,6 +636,12 @@ export async function renameShopItem(inputEl) {
   const orig = inputEl.dataset.orig || '';
   const newName = inputEl.value.trim();
   if (!id || !newName || newName === orig) { inputEl.value = newName || orig; return; }
+  const isManualRow = window._shopItemIds?.[`manual::${orig}`] === id;
+  if (isManualRow && (window._shopManualItems || []).includes(newName)) {
+    inputEl.value = orig;
+    window.showToast('Det finns redan en vara med det namnet.', { type: 'error' });
+    return;
+  }
 
   // Uppdatera minnet direkt (optimistiskt) så en efterföljande re-render — t.ex.
   // när man trycker "✓ Klar" — visar det nya namnet och inte snäpper tillbaka.
@@ -1128,6 +1137,10 @@ export async function addManualItem(inputId = 'manualItemInput', btnId = 'manual
   const input = document.getElementById(inputId);
   const item  = input.value.trim();
   if (!item) return;
+  if ((window._shopManualItems || []).includes(item)) {
+    window.showToast('Det finns redan en vara med det namnet.', { type: 'error' });
+    return;
+  }
   const btn = document.getElementById(btnId);
   btn.disabled = true;
   try {
