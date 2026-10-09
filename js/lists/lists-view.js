@@ -200,7 +200,7 @@ function scheduleRefresh() {
         _openNoteId = null;
         window.showToast?.('Anteckningen togs bort på en annan enhet.', { type: 'info' });
       }
-      render({ keepAddFocus: true });
+      render();
     } catch { /* tyst — nästa event eller fliköppning försöker igen */ }
   }, 350);
 }
