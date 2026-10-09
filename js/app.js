@@ -131,7 +131,7 @@ function closeSheet(id) {
     delete document.body.dataset.scrollLockY;
     window.scrollTo(0, scrollY);
   }
-  setTimeout(() => { sheet.hidden = true; }, 280);
+  setTimeout(() => { if (!sheet.classList.contains('open')) sheet.hidden = true; }, 280);
   if (wasOpen) popSheetHistory();
 }
 
