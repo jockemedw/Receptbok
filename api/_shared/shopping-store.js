@@ -91,6 +91,7 @@ export async function rebuildActiveList({
   targetServings: knownTargetServings,
   oldList: knownOldList,
   existingItems: knownExistingItems,
+  openRound: knownOpenRound,
 }) {
   const wanted = [...new Set(coverDates || [])].sort();
 
@@ -147,9 +148,17 @@ export async function rebuildActiveList({
       if (eiErr) throw new Error("Kunde inte läsa nuvarande inköpslista — prova igen.");
       existingItems = data;
     }
+    // Receptbockar följer med bara om gamla listans runda fortfarande är öppen.
+    // Efter "Vi har handlat" (alla dagar stämplade) är bockarna köpta varor från
+    // en AVSLUTAD runda och ska inte förbockas på nästa rundas lista.
+    const hasCheckedRecipe = (existingItems || []).some((i) => i.source === "recipe" && i.checked === true);
+    // knownOpenRound: anroparen vet redan svaret (replace-recipe: bytta dagen är alltid o-inhandlad).
+    const openRound = !hasCheckedRecipe ? false
+      : knownOpenRound !== undefined ? knownOpenRound === true
+        : unshoppedDates(await fetchCoverage(householdId, oldList.id, database)).length > 0;
     for (const item of existingItems || []) {
       if (item.source === "manual") manualRows.push(item);
-      else if (item.source === "recipe" && item.checked === true) oldRecipeChecked[item.name] = true;
+      else if (openRound && item.source === "recipe" && item.checked === true) oldRecipeChecked[item.name] = true;
     }
     manualRows.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
   }

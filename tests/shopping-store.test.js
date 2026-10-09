@@ -347,6 +347,24 @@ const itemNamed = (db, listId, prefix) =>
   assertTrue(!!mon.shopped_at, "scenario: måndagens stämpel orörd av ombygget");
 }
 
+// ── 7b. Bockade receptvaror från avslutad runda förbockas inte på nästa runda ─
+{
+  const db = makeMockDb({
+    mealDays: [day("2026-07-20", { recipe_id: 1 }), day("2026-07-21", { recipe_id: 2 })],
+    recipes: RECIPES,
+  });
+  await rebuildActiveList({ householdId: HH, coverDates: ["2026-07-20", "2026-07-21"], recipes: RECIPES, database: db });
+  const l1 = await getActiveList(HH, db);
+  itemNamed(db, l1.id, "torsk").checked = true;
+  itemNamed(db, l1.id, "grädde").checked = true;
+  await markRoundShopped(HH, db);
+  // Nästa vecka: nytt recept med samma grädde
+  db._state.mealDays.push(day("2026-07-27", { recipe_id: 2 }));
+  const next = await rebuildActiveList({ householdId: HH, coverDates: ["2026-07-27"], recipes: RECIPES, database: db });
+  assertTrue(itemNamed(db, next.listId, "grädde")?.checked === false, "avslutad runda: bockad grädde förbockas inte på nya rundan");
+  assertTrue(!next.shoppingList.checkedItems || Object.keys(next.shoppingList.checkedItems).length === 0, "avslutad runda: inga bockar ärvs");
+}
+
 // ── 8. setCoveredDays: manuellt dagurval (Session 134) ──────────────────────
 {
   const db = makeMockDb({
