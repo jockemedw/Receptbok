@@ -13,7 +13,7 @@ const CUISINE_TAGS = ['italienskt', 'mexikanskt', 'medelhavet', 'mellanöstern',
 // Huvudingrediens — keyword-matchning över ingredient-listan, första match vinner.
 // Ordning är viktig: specifik före bred. Returnerar null = "annat".
 const MAIN_INGREDIENT_RULES = [
-  ['lax',       /\blax(filé)?(\b|er|en)/i],
+  ['lax',       /\blax/i],
   ['räkor',     /\bräkor\b|\bräka\b/i],
   ['kyckling',  /\bkyckling/i],
   ['tofu',      /\btofu\b/i],
@@ -22,7 +22,7 @@ const MAIN_INGREDIENT_RULES = [
   ['linser',    /\blinser\b/i],
   ['bönor',     /\b(svarta|vita|röda|kidney|cannellini|borlotti|pinto|adzuki)\s*bönor\b|\bbönor\b|\bedamame\b/i],
   ['quinoa',    /\bquinoa\b/i],
-  ['svamp',     /\b(svamp(ar)?|champinjon|portobello|shiitake|kantarell|karljohan|trattkantarell)\b/i],
+  ['svamp',     /\b(svamp|champinjon|portobello|shiitake|kantarell|karljohan|trattkantarell)/i],
 ];
 
 function mainIngredientOf(r) {
