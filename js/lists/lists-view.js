@@ -30,6 +30,7 @@ let _showCreateNote = false;
 let _quickAddListId = null;   // vilken lista har snabbtillägg (L2) öppet på översikten
 let _importing = false;       // Excel-import-vyn öppen
 let _importText = '';         // inklistrad/inläst text (i state så den överlever re-render)
+let _importBusy = false;      // vakt mot dubbeltryck i flDoImport
 let _importParsed = [];       // [{title, items[]}] efter förhandsgranskning
 let _decorSupported = null;    // L3: null=okänt, false=migration 006 ej körd (ikon/färg-kolumner saknas)
 
@@ -780,13 +781,19 @@ export async function flDoImport() {
     window.showToast?.('Inget att importera — klistra in och förhandsgranska först.', { type: 'info' });
     return;
   }
+  if (_importBusy) return;
+  _importBusy = true;
   let created = 0;
+  const doneLists = [];
+  let pendingListId = null;
   try {
     for (const l of parsed) {
+      pendingListId = null;
       const { data: listRow, error } = await window.db.from('family_lists')
         .insert({ household_id: _householdId, title: l.title, kind: 'list' })
         .select().single();
       if (error) throw error;
+      pendingListId = listRow.id;
       if (l.items.length) {
         const rowsToInsert = l.items.map((text, idx) => ({
           list_id: listRow.id, household_id: _householdId, text, sort_order: idx + 1,
@@ -795,6 +802,8 @@ export async function flDoImport() {
         if (itemsErr) throw itemsErr;
       }
       created++;
+      pendingListId = null;
+      doneLists.push(l);
     }
     _importing = false;
     _importText = '';
@@ -803,11 +812,21 @@ export async function flDoImport() {
     render();
     window.showToast?.(`Importerade ${created} ${created === 1 ? 'lista' : 'listor'}.`, { type: 'success' });
   } catch {
-    await refreshData();
-    render();
+    // Städa bort den halvskapade tomma listan och redan importerade ur förhandsgranskningen,
+    // så ett nytt försök inte skapar dubbletter.
+    if (pendingListId) {
+      try { await window.db.from('family_lists').delete().eq('id', pendingListId); } catch { /* tyst */ }
+    }
+    _importParsed = _importParsed.filter((l) => !doneLists.includes(l));
+    try {
+      await refreshData();
+      render();
+    } catch { /* offline — toasten visas ändå */ }
     window.showToast?.(created
       ? `Importerade ${created} listor, men något gick fel sen — kolla resultatet.`
       : 'Kunde inte importera — prova igen.', { type: 'error' });
+  } finally {
+    _importBusy = false;
   }
 }
 
