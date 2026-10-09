@@ -35,14 +35,17 @@ function savePrefs() {
   clearTimeout(_savePrefTimer);
   _savePrefTimer = setTimeout(async () => {
     try {
-      await window.apiFetch("/api/shopping", {
+      const res = await window.apiFetch("/api/shopping", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "set_preferences", preferences: prefs }),
       });
+      if (!res.ok) throw new Error("save failed");
+      const ok = document.getElementById("prefsError");
+      if (ok) ok.style.display = "none";
     } catch {
       const err = document.getElementById("prefsError");
-      if (err) { err.textContent = "Kunde inte spara — försök igen."; err.style.display = ""; }
+      if (err) { err.textContent = "Kunde inte spara inköpspreferenserna — försök igen."; err.style.display = ""; }
     }
   }, 500);
 }
