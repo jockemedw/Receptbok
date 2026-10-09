@@ -273,6 +273,8 @@ function activateDrag() {
   // Jigglet lever tills man släpper (CSS: evig animation på `rotate`, som
   // komponeras oberoende av lucköppningens `translate` och målets `scale`).
   container.classList.add('dlx-drag-mode');
+  // Nyss ändrade kort har inline animation-duration från settleEntryAnim som slår wiggle-CSS:en.
+  container.querySelectorAll('[data-date]').forEach(el => { el.style.animationDuration = ''; });
 
   const line = document.createElement('div');
   line.className = 'dlx-drop-line';
