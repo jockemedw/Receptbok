@@ -61,6 +61,13 @@ checkProtein("Krämig svamppasta", ["250 g champinjoner", "2 dl grädde"], "vege
 checkProtein("Hamburgare", ["500 g nötfärs", "4 hamburgerbröd"], "kött", "\"ham\" i hamburgare får inte ge fläsk");
 checkProtein("Avokadosallad", ["2 avocado", "1 lime"], "vegetarisk", "\"cod\" i avocado får inte ge fisk");
 checkProtein("Pulled pork", ["1.5 kg pork shoulder"], "fläsk", "engelskt helord pork → fläsk");
+// Buljong/sås/delsträngs-ord ska inte styra protein
+checkProtein("Thai kyckling", ["500 g kycklingfilé", "1 msk fisksås"], "kyckling", "fisksås ger inte fisk");
+checkProtein("Currygryta", ["400 g kikärtor", "1 kycklingbuljongtärning"], "vegetarisk", "kycklingbuljong ger inte kyckling");
+checkProtein("Havregrynsgröt", ["2 msk flaxfrö", "2 dl havregryn"], "vegetarisk", "flaxfrö ger inte fisk");
+checkProtein("Smörgås", ["1 skiva bröd", "2 msk räkost"], "vegetarisk", "räkost ger inte fisk");
+checkProtein("Fiskgratäng", ["600 g torsk"], "fisk", "fisk i titel fortfarande fisk");
+checkProtein("Kycklinggryta", ["600 g kycklingfilé"], "kyckling", "kycklingfilé fortfarande kyckling");
 
 const total = passed + failed;
 console.log(`\nPASS ${passed}/${total}${failed ? ` — ${failed} FAIL` : ""}`);
