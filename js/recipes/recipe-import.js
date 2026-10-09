@@ -164,6 +164,8 @@ export function openImportPreview(recipe) {
   window._importSeasons                                       = recipe.seasons || [];
   document.getElementById('editFeedback').textContent        = '';
   document.getElementById('editSaveBtn').disabled            = false;
+  const del = document.querySelector('#editModal .btn-delete');
+  if (del) del.style.display = 'none';                    // nytt recept — inget att ta bort än
   const m = document.getElementById('editModal');
   m.style.display = 'block';
   requestAnimationFrame(() => m.classList.add('open'));   // mjuk fade-in, annars osynlig modal (F067)
