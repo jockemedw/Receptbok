@@ -1,6 +1,6 @@
 // Ingrediensförhandsgranskning i veckovyn + "Flytta till inköpslista"-knapp.
 
-import { CAT_ICONS, escapeHtml } from '../utils.js';
+import { CAT_ICONS, escapeHtml, fmtIso } from '../utils.js';
 
 function syncIngredientAria(section) {
   const header = section.querySelector('.ingredient-section-header');
@@ -47,7 +47,7 @@ export async function moveToShoppingList() {
   btn.disabled    = true;
   btn.textContent = 'Flyttar…';
   try {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = fmtIso(new Date());
     const { data: lists } = await window.db
       .from('shopping_lists')
       .select('id')
@@ -59,6 +59,11 @@ export async function moveToShoppingList() {
         .update({ recipe_items_moved_at: today })
         .eq('id', lists[0].id);
       if (error) throw error;
+    } else {
+      window.showToast('Det finns ingen aktiv inköpslista — välj dagar först.', { type: 'error' });
+      btn.textContent = 'Flytta till inköpslista →';
+      btn.disabled    = false;
+      return;
     }
     btn.dataset.movedAt = today;
     btn.textContent     = 'Flytta till inköpslista →';
