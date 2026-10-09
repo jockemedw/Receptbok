@@ -3441,7 +3441,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    min-height: 38px;
+    min-height: 44px;
     padding: 0.3rem 0.7rem;
     background: var(--linen);
     border: 1px solid var(--stone);
