@@ -3,7 +3,7 @@ import { db, getHouseholdId } from "./_shared/supabase.js";
 import {
   fullContent, isEmptyContent, isMarkerContent,
   spanAfterInsert, spanAfterPush, spanAfterPull, changedFullRows,
-  firstHoleAfter, spanEntries,
+  firstHoleAfter, spanEntries, addDaysIso,
 } from "./_shared/day-ops.js";
 import { RETRO_WINDOW_DAYS } from "./_shared/constants.js";
 import { getActiveList, fetchCoverage, unshoppedDates, rebuildActiveList } from "./_shared/shopping-store.js";
@@ -23,8 +23,11 @@ import { pruneOrphanHistory } from "./_shared/history.js";
 //                                 allt emellan skjuts en dag framåt — även över
 //                                 plangränsen. Med `note` skrivs en egen
 //                                 notering ("Vi äter ute") på det tömda datumet.
-//   pull    { date }            — inversen: markören/hålet på dagen tas bort och
+//   pull    { date, until? }    — inversen: markören/hålet på dagen tas bort och
 //                                 allt efter dras en dag bakåt till nästa hål.
+//                                 Ångra skickar `until` = pushens holeDate, så
+//                                 exakt pushens spann dras tillbaka och dagar
+//                                 efter ett senare hål lämnas orörda.
 //   delete  { date }            — dagen försvinner helt; o-inhandlade varor
 //                                 plockas bort från aktiva inköpslistan.
 //
@@ -35,6 +38,7 @@ import { pruneOrphanHistory } from "./_shared/history.js";
 // inhandlat-status och listtäckning följer receptet (fullContent).
 //
 // Svar (alla actions): { ok, noop?, weeklyPlan, customDays, shoppingList?, listStale? }
+// push svarar även med { movedTo, holeDate } (holeDate = Ångras `until`).
 
 const ROW_FIELDS = "date, plan_id, recipe_id, recipe_title_snapshot, saving, saving_matches, blocked, locked, custom_note, shopped_at, shopping_list_id";
 const PUSH_MAX_DAYS = 60;   // hur långt fram ett hål söks vid push/pull
@@ -155,10 +159,10 @@ async function buildResponse(householdId, plan, extra = {}) {
 }
 
 export default createSupabaseHandler(async (req, res) => {
-  const { action, date, to = null, before = null, note = null } = req.body || {};
+  const { action, date, to = null, before = null, note = null, until = null } = req.body || {};
   if (!ACTIONS.includes(action)) return bad(res, "Okänd åtgärd — ladda om sidan och prova igen.");
   if (!date || !ISO_RE.test(date)) return bad(res, "date saknas");
-  for (const v of [to, before]) {
+  for (const v of [to, before, until]) {
     if (v != null && !ISO_RE.test(v)) return bad(res, "Något av datumen såg konstigt ut — ladda om sidan och prova igen.");
   }
 
@@ -166,7 +170,7 @@ export default createSupabaseHandler(async (req, res) => {
   // bakåt (RETRO_WINDOW_DAYS). Äldre är historik. Servern står på egna ben
   // oavsett klientvalideringen.
   const minIso = new Date(Date.now() - RETRO_WINDOW_DAYS * 86400e3).toISOString().slice(0, 10);
-  if ([date, to, before].some((v) => v && v < minIso)) {
+  if ([date, to, before, until].some((v) => v && v < minIso)) {
     return bad(res, "Dagen ligger längre bak än matsedeln sträcker sig och kan inte ändras.");
   }
 
@@ -237,7 +241,7 @@ export default createSupabaseHandler(async (req, res) => {
     const text = typeof note === "string" ? note.trim().slice(0, 140) : "";
     if (text) next[0] = { date, content: fullContent({ custom_note: text }) };
     await writeDiff(householdId, entries, next, "push");
-    return res.status(200).json(await buildResponse(householdId, plan, { movedTo: next[1]?.date ?? null }));
+    return res.status(200).json(await buildResponse(householdId, plan, { movedTo: next[1]?.date ?? null, holeDate: hole }));
   }
 
   // ── pull ───────────────────────────────────────────────────────────────────
@@ -245,11 +249,16 @@ export default createSupabaseHandler(async (req, res) => {
     if (srcContent && !isEmptyContent(srcContent) && !isMarkerContent(srcContent)) {
       return bad(res, "Dagen har ett recept — flytta eller ta bort det först.");
     }
-    const hole = firstHoleAfter(byDate, date, PUSH_MAX_DAYS);
+    // Ångra efter push: dra tillbaka exakt pushens spann (t.o.m. hålet den
+    // fyllde). Annars: t.o.m. närmaste hål ("Dra ihop matsedeln").
+    if (until != null && (until <= date || until > addDaysIso(date, PUSH_MAX_DAYS))) {
+      return bad(res, "Något av datumen såg konstigt ut — ladda om sidan och prova igen.");
+    }
+    const hole = until || firstHoleAfter(byDate, date, PUSH_MAX_DAYS);
     if (!hole) return bad(res, "Matsedeln är full flera veckor framåt — ta bort en dag först.", 409);
     const entries = spanEntries(byDate, date, hole);
-    const result = spanAfterPull(entries);
-    if (result.error) return rotationError(res, result, "pull", { date });
+    const result = spanAfterPull(entries, { allowFilledEnd: until != null });
+    if (result.error) return rotationError(res, result, "pull", { date, until });
     if (!result.noop) await writeDiff(householdId, entries, result.next, "pull");
     return res.status(200).json(await buildResponse(householdId, plan, { noop: result.noop === true }));
   }

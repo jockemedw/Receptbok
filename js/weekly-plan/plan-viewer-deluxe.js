@@ -1936,7 +1936,9 @@ window.dlxSheetNoDinner = async function (note) {
   if (!data) return;
   window.showToast?.(`${note} — ${title} flyttas till ${isToday ? 'i morgon' : 'nästa dag'}.`, {
     type: 'success',
-    action: { label: 'Ångra', onClick: () => runDayOp({ action: 'pull', date: s.date }, {
+    // until = hålet pushen fyllde → Ångra drar tillbaka exakt det spannet och
+    // rör inte dagar efter ett senare hål.
+    action: { label: 'Ångra', onClick: () => runDayOp({ action: 'pull', date: s.date, until: data.holeDate || undefined }, {
       label: 'Ångrar…', fallback: 'Kunde inte ångra — öppna dagen och välj "Dra ihop matsedeln".',
       flash: () => [s.date],
     }) },
