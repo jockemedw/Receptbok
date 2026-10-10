@@ -112,8 +112,41 @@ export async function detachOldPlanDays(householdId, database = db) {
   return { detached: (detached || []).map((d) => d.date).sort() };
 }
 
+// Fälten i en ögonblicksbild av en överskriven dag (allt utom plan_id — den
+// läggs tillbaka som egen dag). Läses av discard-plan.
+const REPLACED_FIELDS = "date, recipe_id, recipe_title_snapshot, custom_note, saving, saving_matches, locked, blocked, shopped_at, shopping_list_id";
+
 export async function savePlanToSupabase(weeklyPlan, householdId, database = db) {
   const today = new Date().toISOString();
+
+  // Ögonblicksbild av de plandagar som UPSERT:en nedan skriver över, så att
+  // "Kassera förslag" kan lägga tillbaka dem (discard-plan, migration 012).
+  // Egna dagar (plan_id = null) skrivs aldrig över och behöver ingen bild.
+  // Läses FÖRE plan-raden skapas — ett läsfel stoppar genereringen orörd.
+  const dates = weeklyPlan.days.map((d) => d.date);
+  let replacedDays = [];
+  if (dates.length) {
+    const { data: prev, error: prevErr } = await database
+      .from("meal_days")
+      .select(REPLACED_FIELDS)
+      .eq("household_id", householdId)
+      .in("date", dates)
+      .not("plan_id", "is", null);
+    if (prevErr) throw prevErr;
+    replacedDays = (prev || []).map((r) => ({
+      date: r.date,
+      recipe_id: r.recipe_id ?? null,
+      recipe_title_snapshot: r.recipe_title_snapshot ?? null,
+      custom_note: r.custom_note ?? null,
+      saving: r.saving ?? null,
+      saving_matches: r.saving_matches ?? null,
+      locked: r.locked === true,
+      blocked: r.blocked === true,
+      shopped_at: r.shopped_at ?? null,
+      shopping_list_id: r.shopping_list_id ?? null,
+    }));
+  }
+
   // Plan-raden skapas INAKTIV. Den tas i bruk (activatePlan) först när alla
   // dagar är skrivna — så att en aktiv plan ALDRIG kan sakna sina dagar (ger
   // annars en tom matsedel utan åtgärdsknappar om dag-skrivningen glappar).
@@ -129,6 +162,16 @@ export async function savePlanToSupabase(weeklyPlan, householdId, database = db)
     .select()
     .single();
   if (planErr) throw planErr;
+
+  // Egen skrivning (inte i insert:en) så genereringen fungerar även innan
+  // migration 012 är körd — då saknas kolumnen och bilden hoppas över.
+  if (replacedDays.length) {
+    const { error: snapErr } = await database
+      .from("weekly_plans")
+      .update({ replaced_days: replacedDays })
+      .eq("id", newPlan.id);
+    if (snapErr) console.warn("savePlanToSupabase: kunde inte spara överskrivna dagar", snapErr.message);
+  }
 
   const mealDayRows = weeklyPlan.days.map((d) => ({
     household_id: householdId,

@@ -888,7 +888,7 @@ export function closeSavingPopover() {
 export async function discardPlan() {
   const ok = await window.confirmDialog({
     title: 'Kassera förslaget?',
-    message: 'Den föreslagna matsedeln tas bort. Dina tidigare matsedlar och inköpslistan påverkas inte.',
+    message: 'Den föreslagna matsedeln tas bort. Inköpslistan påverkas inte.',
     confirmLabel: 'Kassera',
     danger: true,
   });
@@ -927,6 +927,11 @@ export async function discardPlan() {
       ]);
     } catch { /* kör med fallbacks */ }
     renderWeeklyPlanData(emptyPlan, shop, false, archive, customDays);
+    if (data.restored > 0) {
+      window.showToast?.(data.restored === 1
+        ? 'Förslaget är borttaget — dagen det ersatte är tillbaka.'
+        : `Förslaget är borttaget — ${data.restored} dagar det ersatte är tillbaka.`, { type: 'success' });
+    }
   } catch (e) {
     btn.disabled = false;
     if (confirmBtn) confirmBtn.disabled = false;
