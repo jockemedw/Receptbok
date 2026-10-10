@@ -3020,6 +3020,8 @@
   .manual-add-row { display: flex; gap: 0.5rem; }
   .manual-add-input {
     flex: 1;
+    min-height: 44px;
+    box-sizing: border-box;
     padding: 0.6rem 0.8rem;
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -3441,7 +3443,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    min-height: 38px;
+    min-height: 44px;
     padding: 0.3rem 0.7rem;
     background: var(--linen);
     border: 1px solid var(--stone);
@@ -6235,6 +6237,9 @@ main#receptView {
   color: var(--lichen-deep);
   cursor: pointer;
   padding: 0.4rem 0.5rem 0.4rem 0;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
 }
 .fl-edit-toggle {
   background: none;
@@ -6245,6 +6250,9 @@ main#receptView {
   color: var(--text-muted);
   cursor: pointer;
   padding: 0.35rem 0.85rem;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
 }
 .fl-edit-toggle.active {
   color: var(--forest);
@@ -6586,9 +6594,11 @@ main#receptView {
 .fl-swatches, .fl-icon-opts {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: 0.6rem;
 }
+.fl-swatch::after, .fl-icon-opt::after { content: ''; position: absolute; inset: -8px; }
 .fl-swatch {
+  position: relative;
   width: 1.75rem;
   height: 1.75rem;
   border-radius: 50%;
@@ -6606,6 +6616,7 @@ main#receptView {
   line-height: 1;
 }
 .fl-icon-opt {
+  position: relative;
   width: 2rem;
   height: 2rem;
   border-radius: 10px;

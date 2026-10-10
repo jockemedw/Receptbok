@@ -10,7 +10,11 @@ let _scrollY  = 0;
 
 async function acquireWakeLock() {
   try {
-    if ('wakeLock' in navigator) _wakeLock = await navigator.wakeLock.request('screen');
+    if (!('wakeLock' in navigator)) return;
+    const lock = await navigator.wakeLock.request('screen');
+    if (!_overlay) { try { lock.release(); } catch { /* redan släppt */ } return; } // stängdes medan request väntade
+    try { _wakeLock?.release(); } catch { /* redan släppt */ }                       // läck inte föregående lås
+    _wakeLock = lock;
   } catch { /* batterisparläge m.m. — appen funkar ändå */ }
 }
 function releaseWakeLock() {

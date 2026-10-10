@@ -379,19 +379,21 @@ async function loadCustomDays() {
 }
 
 async function loadActivePlanFromSupabase(householdId) {
-  const { data: plans } = await window.db
+  const { data: plans, error: plansErr } = await window.db
     .from('weekly_plans')
     .select('*')
     .eq('household_id', householdId)
     .eq('is_active', true)
     .limit(1);
+  if (plansErr) throw plansErr;
   const wp = plans?.[0];
   if (!wp) return null;
-  const { data: mealDays } = await window.db
+  const { data: mealDays, error: daysErr } = await window.db
     .from('meal_days')
     .select('*')
     .eq('plan_id', wp.id)
     .order('date');
+  if (daysErr) throw daysErr;
   return {
     id:          wp.id,   // för realtime-ekokontrollen (plan_id-värdet)
     generated:   wp.generated_at,
@@ -886,7 +888,7 @@ export function closeSavingPopover() {
 export async function discardPlan() {
   const ok = await window.confirmDialog({
     title: 'Kassera förslaget?',
-    message: 'Den föreslagna matsedeln tas bort. Dina tidigare matsedlar och inköpslistan påverkas inte.',
+    message: 'Den föreslagna matsedeln tas bort. Inköpslistan påverkas inte.',
     confirmLabel: 'Kassera',
     danger: true,
   });
@@ -925,6 +927,11 @@ export async function discardPlan() {
       ]);
     } catch { /* kör med fallbacks */ }
     renderWeeklyPlanData(emptyPlan, shop, false, archive, customDays);
+    if (data.restored > 0) {
+      window.showToast?.(data.restored === 1
+        ? 'Förslaget är borttaget — dagen det ersatte är tillbaka.'
+        : `Förslaget är borttaget — ${data.restored} dagar det ersatte är tillbaka.`, { type: 'success' });
+    }
   } catch (e) {
     btn.disabled = false;
     if (confirmBtn) confirmBtn.disabled = false;
@@ -1066,7 +1073,12 @@ export async function loadWeeklyPlan() {
     subscribeMealDays(householdId);
   } catch {
     document.getElementById('weekLoading').style.display = 'none';
-    document.getElementById('weekNoData').style.display  = '';
+    if (window._lastPlan?.days?.length || Object.keys(window._customDays?.entries || {}).length) {
+      window.showToast?.('Kunde inte uppdatera matsedeln — prova igen strax.', { type: 'error' });
+    } else {
+      document.getElementById('weekNoData').style.display = '';
+      document.getElementById('weekContent').style.display = 'none';
+    }
   }
 }
 
@@ -1086,7 +1098,7 @@ export function customDayEditorHtml(dateIso, dayName) {
   // backslash FÖRST, sedan ' och &<>".
   const escDayName = jsStringAttr(dayName || '');
   const dateLabel = fmtShort(dateIso);
-  const noteValue = note.replace(/"/g, '&quot;');
+  const noteValue = escapeHtml(note);
 
   // Retro-planering (Session 131): recept går att välja även på passerade dagar
   // inom retro-fönstret (logga vad ni faktiskt åt / planera om i efterhand).

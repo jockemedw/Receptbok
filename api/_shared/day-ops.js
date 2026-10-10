@@ -142,12 +142,17 @@ export function spanAfterPush(entries) {
 // t.o.m. närmaste hål efter det. Markören tas bort och allt emellan dras en
 // dag bakåt. Inversen av push.
 // Returnerar { next }, { noop: true } eller { error: "src"|"hole"|"invariant" }.
-export function spanAfterPull(entries) {
+//
+// allowFilledEnd (Ångra efter push): spannet slutar på hålet som pushen fyllde
+// i stället för på nästa hål — sista dagen får då ha innehåll, och den glider ett
+// steg bakåt som de andra. Utan flaggan skulle pull leta upp NÄSTA hål och dra
+// med sig dagar som pushen aldrig rörde.
+export function spanAfterPull(entries, { allowFilledEnd = false } = {}) {
   if (!entries.length) return { error: "src" };
   const first = entries[0].content;
   if (!isEmptyContent(first) && !isMarkerContent(first)) return { error: "src" };
   const last = entries.length - 1;
-  if (last > 0 && !isEmptyContent(entries[last].content)) return { error: "hole" };
+  if (last > 0 && !allowFilledEnd && !isEmptyContent(entries[last].content)) return { error: "hole" };
   if (entries.length === 1 && isEmptyContent(first)) return { noop: true };
 
   // Markören roteras sist och släcks; resten glider ett steg bakåt.

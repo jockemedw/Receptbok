@@ -231,6 +231,7 @@ export async function replaceRecipe({ database = db, householdId, body = {}, rng
       targetServings,
       oldList: activeList,
       existingItems: itemsRes?.data || [],
+      openRound: true,   // den bytta dagen är o-inhandlad och ligger på listan
     }),
     prune,
   ]);

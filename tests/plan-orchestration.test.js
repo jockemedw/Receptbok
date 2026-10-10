@@ -38,6 +38,7 @@
 //      och familjens egna dagar lämnas i fred (invariant #1).
 
 import { savePlanToSupabase, detachOldPlanDays, activatePlan, activatePlanAtomic, isMissingRpcError } from "../api/generate.js";
+import { discardActivePlan } from "../api/discard-plan.js";
 
 // ─── Mockad Supabase-db (kedjebar query-builder) ─────────────────────────────
 // Stödjer exakt de kedjor de tre funktionerna använder. Håller in-memory-tabeller
@@ -47,6 +48,7 @@ function makeMockDb(initial = {}) {
     plans: initial.plans ? initial.plans.map((p) => ({ ...p })) : [],
     mealDays: initial.mealDays ? initial.mealDays.map((d) => ({ ...d })) : [],
     archives: initial.archives ? initial.archives.map((a) => ({ ...a })) : [],
+    history: initial.history ? initial.history.map((h) => ({ ...h })) : [],
     seq: initial.seq || 100,
     failMealInsert: !!initial.failMealInsert,
     // RPC-simulering för activate_plan_atomic:
@@ -66,6 +68,7 @@ function makeMockDb(initial = {}) {
     name === "weekly_plans" ? state.plans
     : name === "meal_days" ? state.mealDays
     : name === "plan_archives" ? state.archives
+    : name === "recipe_history" ? state.history
     : null;
 
   const matches = (row, filters) => filters.every(([kind, col, val]) => {
@@ -81,7 +84,7 @@ function makeMockDb(initial = {}) {
     const q = {
       table, op: "select", payload: null, filters: [], wantSelect: false,
       insert(payload) { this.op = "insert"; this.payload = payload; return this; },
-      upsert(payload, opts) { this.op = "upsert"; this.payload = payload; this.onConflict = opts && opts.onConflict; return this; },
+      upsert(payload, opts) { this.op = "upsert"; this.payload = payload; this.onConflict = opts && opts.onConflict; this.ignoreDuplicates = !!(opts && opts.ignoreDuplicates); return this; },
       update(payload) { this.op = "update"; this.payload = payload; return this; },
       delete() { this.op = "delete"; return this; },
       select() { this.wantSelect = true; return this; },
@@ -123,6 +126,7 @@ function makeMockDb(initial = {}) {
             const existing = conflictCols.length
               ? rows.find((r) => conflictCols.every((c) => r[c] === it[c]))
               : null;
+            if (existing && this.ignoreDuplicates) return existing;
             if (existing) { Object.assign(existing, it); return existing; }
             const row = { ...it };
             if (this.table === "weekly_plans" && row.id == null) row.id = ++state.seq;
@@ -450,6 +454,69 @@ function freshDbWithOldPlan() {
     "Familjens egen dag",
     "detach: familjens egen dag har kvar sitt innehåll"
   );
+}
+
+const assertJson = (a, e, desc) => assertEq(JSON.stringify(a), JSON.stringify(e), desc);
+
+// ─── Test 10: Kassera förslag lägger tillbaka dagarna förslaget skrev över ───
+// Session 153: UPSERT:en skriver över överlappande datum. Utan ögonblicksbild
+// raderade "Kassera förslag" de gamla dagarna för gott (invariant #1).
+{
+  const D0 = isoDaysAgo(-1), D1 = isoDaysAgo(-2), D2 = isoDaysAgo(-3);
+  const db = makeMockDb({
+    plans: [{ id: 1, household_id: "h", start_date: D0, end_date: D1, is_active: true, confirmed_at: "2026-10-01T10:00:00Z" }],
+    mealDays: [
+      { plan_id: 1, household_id: "h", date: D0, recipe_id: 11, recipe_title_snapshot: "Gammal1", shopped_at: "2026-10-01T12:00:00Z", shopping_list_id: "L1" },
+      { plan_id: 1, household_id: "h", date: D1, recipe_id: 12, recipe_title_snapshot: "Gammal2", shopped_at: null, shopping_list_id: "L1" },
+      { plan_id: null, household_id: "h", date: D2, recipe_id: 99, recipe_title_snapshot: "Egen dag" },
+    ],
+    history: [{ household_id: "h", recipe_id: 2, used_on: D1 }, { household_id: "h", recipe_id: 11, used_on: D0 }],
+  });
+  const DRAFT = { generated: D1, startDate: D1, endDate: D1, days: [{ date: D1, day: "A", recipe: "Ny", recipeId: 2 }] };
+  const newId = await savePlanToSupabase(DRAFT, "h", db);
+  const draft = db._state.plans.find((p) => p.id === newId);
+  assertJson((draft.replaced_days || []).map((d) => [d.date, d.recipe_id, d.shopping_list_id]), [[D1, 12, "L1"]],
+    "kassera: generate sparar bild av EXAKT den överskrivna plandagen (inte egna dagar, inte orörda datum)");
+  assertTrue(!("plan_id" in draft.replaced_days[0]), "kassera: bilden bär inget plan_id");
+  await activatePlanAtomic(newId, DRAFT.startDate, "h", db);
+  assertJson(db._state.mealDays.find((d) => d.date === D1).recipe_id, 2, "kassera: förslaget har skrivit över D1");
+
+  const r = await discardActivePlan("h", db);
+  assertJson(r.status, 200, "kassera: lyckas");
+  assertJson(r.restored, 1, "kassera: en dag lagd tillbaka");
+  const back = db._state.mealDays.find((d) => d.date === D1);
+  assertJson([back.recipe_id, back.recipe_title_snapshot, back.plan_id, back.shopping_list_id], [12, "Gammal2", null, "L1"],
+    "kassera: D1 har sitt gamla recept och sin listkoppling, som egen dag");
+  assertJson(db._state.mealDays.find((d) => d.date === D0).recipe_id, 11, "kassera: gamla planens icke-överlappande dag orörd");
+  assertJson(db._state.mealDays.find((d) => d.date === D2).recipe_title_snapshot, "Egen dag", "kassera: familjens egen dag orörd");
+  assertJson(activeCount(db), 0, "kassera: förslaget avaktiverat");
+  assertJson(db._state.history.map((h) => h.recipe_id), [11], "kassera: förslagets historikrad rensad, övriga kvar");
+}
+{
+  // Ett datum som fått innehåll efter genereringen (t.ex. en egen dag flyttad
+  // dit) skrivs aldrig över av återläggningen.
+  const D1 = isoDaysAgo(-2);
+  const db = makeMockDb({
+    plans: [{ id: 7, household_id: "h", start_date: D1, end_date: D1, is_active: true,
+      replaced_days: [{ date: D1, recipe_id: 12, recipe_title_snapshot: "Gammal2" }] }],
+    mealDays: [{ plan_id: null, household_id: "h", date: D1, recipe_id: 99, recipe_title_snapshot: "Flyttad egen dag" }],
+  });
+  const r = await discardActivePlan("h", db);
+  assertJson(r.status, 200, "kassera/krock: lyckas");
+  assertJson(db._state.mealDays.filter((d) => d.date === D1).map((d) => d.recipe_title_snapshot), ["Flyttad egen dag"],
+    "kassera/krock: befintligt innehåll vinner, ingen dubblett");
+}
+{
+  // Före migration 012 (ingen replaced_days) → beter sig som förut.
+  const D1 = isoDaysAgo(-2);
+  const db = makeMockDb({
+    plans: [{ id: 8, household_id: "h", start_date: D1, end_date: D1, is_active: true }],
+    mealDays: [{ plan_id: 8, household_id: "h", date: D1, recipe_id: 5, recipe_title_snapshot: "Förslag" }],
+  });
+  const r = await discardActivePlan("h", db);
+  assertJson([r.status, r.restored, db._state.mealDays.length, activeCount(db)], [200, 0, 0, 0], "kassera/utan bild: förslaget borta, inget återlagt");
+  const c = makeMockDb({ plans: [{ id: 9, household_id: "h", is_active: true, confirmed_at: "x" }] });
+  assertJson((await discardActivePlan("h", c)).status, 400, "kassera: bekräftad plan avvisas");
 }
 
 // ─── Test 9: isMissingRpcError känner igen PostgREST-felformerna ─────────────

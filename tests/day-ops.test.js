@@ -195,6 +195,22 @@ assertEq(rotateMove(["A","B","C","D","E"], 1, 1), null,                  "rotate
   );
 }
 
+// ── push→pull med until (Ångra rör inte dagar efter ett senare hål) ─────────
+{
+  // A B _ C _ : push på A fyller hålet på d(2). Utan until letar pull upp NÄSTA
+  // hål (d(4)) och drar C från d(3) till d(2) — en dag pushen aldrig rörde.
+  const span = mkSpan("AB_C_");
+  const pushSpan = span.slice(0, 3);
+  const pushed = spanAfterPush(pushSpan).next;
+  pushed[0] = { date: d(0), content: fullContent({ custom_note: "Vi äter ute" }) };
+  const after = [...pushed, ...span.slice(3)];
+  assertEq(layout(after), "nABC_", "until: efter push + notering");
+  const pulled = spanAfterPull(after.slice(0, 3), { allowFilledEnd: true }).next;
+  assertEq(layout([...pulled, ...after.slice(3)]), "AB_C_", "until: Ångra återställer exakt, C står kvar på sin dag");
+  assertEq(spanSignature(pulled), spanSignature(after.slice(1, 3)), "until: allt utom markören bevarat");
+  assertEq(spanAfterPull(after.slice(0, 3)).error, "hole", "until: utan flaggan avvisas spann som slutar på en fylld dag");
+}
+
 // ── changedFullRows: bara ändrade datum + tömda datum raderas ────────────────
 {
   const span = mkSpan("A_B");

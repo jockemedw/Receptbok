@@ -93,6 +93,8 @@ export function openEditModal(event, id) {
   document.getElementById('editFeedback').textContent = '';
   document.getElementById('editSaveBtn').disabled    = false;
   closeTagPicker();                                       // väljaren startar alltid ihopfälld
+  const del = document.querySelector('#editModal .btn-delete');
+  if (del) del.style.display = '';                        // visas igen vid redigering (dolt i importförhandsgranskning)
   const m = document.getElementById('editModal');
   m.style.display = 'block';
   requestAnimationFrame(() => m.classList.add('open'));   // mjuk fade-in (Session 120)

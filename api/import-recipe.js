@@ -395,7 +395,11 @@ async function callGemini(parts, apiKey) {
 // ── Hjälpfunktioner ─────────────────────────────────────────────────────────
 
 export function guessProtein(title, ingredients) {
-  const text = (title + " " + ingredients.join(" ")).toLowerCase();
+  // Ta bort ord som innehåller protein-nyckelord men inte är protein (fisksås,
+  // kycklingbuljong, flaxfrö, räkost) — annars klassas t.ex. thaikyckling som fisk.
+  const text = (title + " " + ingredients.join(" ")).toLowerCase()
+    .replace(/[a-zåäö]*(buljong|fond|fisksås|ostronsås|worcestersås|kryddmix|kryddblandning)[a-zåäö]*/g, " ")
+    .replace(/(flax|räkost)[a-zåäö]*/g, " ");
   // Engelska ord matchas som HELA ord (\b) — "ham" får inte träffa champinjoner
   // eller hamburgare, "cod" inte avocado. De svenska mönstren är delsträngar som
   // förut (kycklingfilé, laxfilé …).

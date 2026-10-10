@@ -91,6 +91,7 @@ export async function rebuildActiveList({
   targetServings: knownTargetServings,
   oldList: knownOldList,
   existingItems: knownExistingItems,
+  openRound: knownOpenRound,
 }) {
   const wanted = [...new Set(coverDates || [])].sort();
 
@@ -147,11 +148,26 @@ export async function rebuildActiveList({
       if (eiErr) throw new Error("Kunde inte läsa nuvarande inköpslista — prova igen.");
       existingItems = data;
     }
+    // Receptbockar följer med bara om gamla listans runda fortfarande är öppen.
+    // Efter "Vi har handlat" (alla dagar stämplade) är bockarna köpta varor från
+    // en AVSLUTAD runda och ska inte förbockas på nästa rundas lista.
+    const hasCheckedRecipe = (existingItems || []).some((i) => i.source === "recipe" && i.checked === true);
+    // knownOpenRound: anroparen vet redan svaret (replace-recipe: bytta dagen är alltid o-inhandlad).
+    const openRound = !hasCheckedRecipe ? false
+      : knownOpenRound !== undefined ? knownOpenRound === true
+        : unshoppedDates(await fetchCoverage(householdId, oldList.id, database)).length > 0;
     for (const item of existingItems || []) {
       if (item.source === "manual") manualRows.push(item);
-      else if (item.source === "recipe" && item.checked === true) oldRecipeChecked[item.name] = true;
+      else if (openRound && item.source === "recipe" && item.checked === true) oldRecipeChecked[item.name] = true;
     }
     manualRows.sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+    // Dubblettnamn kollapsar till en rad (klienten nycklar egna varor på namn);
+    // bockad om den behållna raden var bockad. Bortfallna rader kopieras aldrig.
+    const seen = new Set();
+    for (let i = 0; i < manualRows.length; i++) {
+      if (seen.has(manualRows[i].name)) manualRows.splice(i--, 1);
+      else seen.add(manualRows[i].name);
+    }
   }
 
   const today = new Date().toISOString().slice(0, 10);
@@ -275,7 +291,7 @@ export function shopItemIdsFromRows(rows) {
       .forEach((row, idx) => { itemIds[`recipe::${cat}::${idx}`] = row.id; });
   }
   manualRows.slice().sort((a, b) => a.position - b.position)
-    .forEach((row) => { itemIds[`manual::${row.name}`] = row.id; });
+    .forEach((row) => { itemIds[`manual::${row.name}`] ??= row.id; });   // dubblettnamn: första raden (som klienten)
   return itemIds;
 }
 
@@ -439,7 +455,26 @@ export async function markRoundShopped(householdId, database = db) {
     .eq("household_id", householdId);
   if (!pantryErr) pantry = new Set((pantryRows || []).map((r) => r.name));
 
-  const toConvert = (items || []).filter((i) => !pantry.has(pantryKey(i.name)));
+  // Egna tillägg med samma namn går inte att bocka/ta bort separat → redan
+  // existerande eller dubblerade namn konverteras inte; raderna tas bort (stämpeln
+  // hindrar dem från att byggas om).
+  const { data: manualNow, error: manualErr } = await database
+    .from("shopping_items")
+    .select("name")
+    .eq("list_id", list.id)
+    .eq("source", "manual");
+  if (manualErr) throw new Error("Kunde inte flytta varorna till Egna tillägg — prova igen.");
+  const manualNames = new Set((manualNow || []).map((r) => r.name));
+  const toConvert = [];
+  const dupIds = [];
+  for (const i of (items || []).filter((i) => !pantry.has(pantryKey(i.name)))) {
+    if (manualNames.has(i.name)) dupIds.push(i.id);
+    else { manualNames.add(i.name); toConvert.push(i); }
+  }
+  if (dupIds.length) {
+    const { error: delErr } = await database.from("shopping_items").delete().in("id", dupIds);
+    if (delErr) throw new Error("Kunde inte flytta varorna till Egna tillägg — prova igen.");
+  }
   if (toConvert.length) {
     const { error: convErr } = await database
       .from("shopping_items")

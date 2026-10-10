@@ -2,6 +2,14 @@
 
 Sessioner 8–149. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
 
+## Session 152 — Receptbildstest
+
+**Session 152 — Receptbildstest (2026-10-07, render-only).**
+
+Joakim: "Gör en enkel test där de läggs in på lämpligt sätt i appen". Publicering: "OK - jag vill testa i appen".
+
+Sex WebP-bilder (768 px, totalt cirka 497 kB), kopplade via ID + exakt titel: miniatyr i receptlistan och större AI-märkt bild i receptdetaljen. Recept och matsedel oförändrade. Mobil/desktop visuellt granskade med sparade recept; användarens mobiltest återstår. Integrerat med senaste main, inklusive cardHeaderTap och svCompare. Styles v204/app v169/SW v122.
+
 ## Session 151 — AI-grind
 
 **Session 151 (2026-10-03) — Extern AI som grindvakt + nattpass; verktyget utflyttat till eget repo `ai-collab` (ingen appkod i js/ eller api/ ändrad).**

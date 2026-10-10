@@ -1548,7 +1548,9 @@ window.dlxCloseSheet = function () {
   const wasOpen = !!window._dlxSheet;
   window._dlxSheet = null;
   document.getElementById('dlxSheetBackdrop')?.classList.remove('open');
-  document.getElementById('dlxSheet')?.classList.remove('open');
+  const sh = document.getElementById('dlxSheet');
+  sh?.classList.remove('open');
+  if (sh) sh.dataset.view = '';
   if (wasOpen) window.popSheetHistory?.();
 };
 
@@ -1865,8 +1867,10 @@ function renderSheet() {
   // Grepp + stängkryss ligger utanför scrollytan så krysset alltid syns.
   // Scrollpositionen behålls vid omrendering av SAMMA vy (t.ex. provat-toggeln).
   const prev = el.querySelector('.dlx-sheet-scroll');
-  const keepTop = (prev && el.dataset.view === s.view) ? prev.scrollTop : 0;
+  const keepTop = (prev && el.dataset.view === s.view && el.dataset.date === String(s.date) && el.dataset.to === String(s.to || '')) ? prev.scrollTop : 0;
   el.dataset.view = s.view;
+  el.dataset.date = String(s.date);
+  el.dataset.to = String(s.to || '');
   el.innerHTML = `<div class="dlx-sheet-grip" aria-hidden="true"></div>
     <button type="button" class="dlx-sheet-close" aria-label="Stäng" onclick="dlxCloseSheet()">${I.close}</button>
     <div class="dlx-sheet-scroll">${body}</div>`;
@@ -1932,7 +1936,9 @@ window.dlxSheetNoDinner = async function (note) {
   if (!data) return;
   window.showToast?.(`${note} — ${title} flyttas till ${isToday ? 'i morgon' : 'nästa dag'}.`, {
     type: 'success',
-    action: { label: 'Ångra', onClick: () => runDayOp({ action: 'pull', date: s.date }, {
+    // until = hålet pushen fyllde → Ångra drar tillbaka exakt det spannet och
+    // rör inte dagar efter ett senare hål.
+    action: { label: 'Ångra', onClick: () => runDayOp({ action: 'pull', date: s.date, until: data.holeDate || undefined }, {
       label: 'Ångrar…', fallback: 'Kunde inte ångra — öppna dagen och välj "Dra ihop matsedeln".',
       flash: () => [s.date],
     }) },

@@ -321,6 +321,8 @@ function todayVisible() {
   return !!document.getElementById('todayView')?.classList.contains('visible');
 }
 
+let _renderedIso = null;
+
 export function renderTodayView() {
   if (!todayVisible()) return;
   const end = window.perfSpan?.('render:Idag');
@@ -351,6 +353,7 @@ function renderTodayViewInner() {
 
   const now = new Date();
   const todayIso = fmtIso(now);
+  _renderedIso = todayIso;
   const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowIso = fmtIso(tomorrow);
 
@@ -476,3 +479,16 @@ function installHooks() {
 installHooks();
 
 window.renderTodayView = renderTodayView;
+
+// Datumbyte medan appen stått öppen: ladda om planen (bygger om tidslinjen med
+// nya isPast/isToday) när appen kommer tillbaka i förgrunden på en ny dag.
+function refreshIfNewDay() {
+  if (document.visibilityState !== 'visible') return;
+  if (!_renderedIso || fmtIso(new Date()) === _renderedIso) return;
+  try {
+    if (window.loadWeeklyPlan) Promise.resolve(window.loadWeeklyPlan()).catch(() => {});
+    else renderTodayView();
+  } catch { /* ritas om vid nästa flikbyte */ }
+}
+document.addEventListener('visibilitychange', refreshIfNewDay);
+window.addEventListener('pageshow', refreshIfNewDay);
