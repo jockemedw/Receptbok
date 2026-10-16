@@ -4,7 +4,7 @@
 // Beroendefritt (plain fetch mot PostgREST). Kräver miljövariabler:
 //   SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY  (eller SUPABASE_ANON_KEY för read-only)
 //
-// Synkrona/Python-skript läser istället den gitignorerade cachen
+// Synkrona skript läser istället den gitignorerade cachen
 // `scripts/.cache/recipes.json` som skapas av `node scripts/export-recipes.mjs`.
 
 import { readFileSync, existsSync } from "fs";

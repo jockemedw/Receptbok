@@ -14,13 +14,10 @@ const data = loadRecipesFromCache();
 const recipes = data.recipes;
 
 // ─── Import shopping-builder functions ────────────────────────────────────
-// We can't directly import ESM from api/_shared because it uses bare exports.
-// Instead, inline the critical functions for consistent testing.
+// Samma parser/normalizer som inköpslistan (api/_shared/shopping-builder.js).
 import {
   parseIngredient,
   normalizeName,
-  NORMALIZATION_TABLE,
-  CANON_SET,
 } from "../api/_shared/shopping-builder.js";
 
 // ─── Constants ────────────────────────────────────────────────────────────

@@ -205,7 +205,6 @@ async function legacyReplace(database, householdId, body, rng) {
 // ─── Fixtur: en vecka framåt från i dag, en egen dag, lista över två dagar ───
 const HH = "hh-1";
 const T = (n) => isoDaysAgo(-n); // n dagar framåt
-const tags = (weekend) => [weekend ? "helg60" : "vardag30"];
 const R = (id, protein, ingredients, extra = {}) => ({
   id, household_id: HH, title: `Rätt ${id}`, protein, tested: true, servings: 4,
   tags: ["vardag30", "helg60"], ingredients, ...extra,
@@ -222,7 +221,6 @@ const RECIPES = [
   R(9, "kyckling", ["400 g kycklinglår"]),
   R(10, "kött", ["400 g nötfärs", "1 st lök"]),
 ];
-void tags;
 
 function fixture({ onList = true, shoppedTarget = false } = {}) {
   const md = (date, recipe_id, extra = {}) => ({

@@ -2,7 +2,7 @@
 // Data-driven korpus med VERKLIGA produktnamnsmönster grupperade i klasser
 // (drycker, smaksatt/dessert, färdigrätt, barnmat, djurmat, snacks, nötsmör,
 // konserv-i-olja, växt-alternativ). Speglar samma beslutslogik som
-// willys-search.js: en sökträff är en giltig match om den INTE avvisas och
+// api/_shared/axfood-search.js: en sökträff är en giltig match om den INTE avvisas och
 // antingen har exakt canon eller är relevant.
 //
 // Syfte: låsa fast reject-härdningen (Session 80–81) klassvis och fånga
@@ -15,7 +15,7 @@ import { rejectsMatch, extractOfferCanon, relevantToCanon } from "../api/_shared
 let passed = 0, failed = 0;
 const failures = [];
 
-// Replikerar willys-search.js: giltig match = ej avvisad OCH (exakt canon ELLER relevant).
+// Replikerar api/_shared/axfood-search.js: giltig match = ej avvisad OCH (exakt canon ELLER relevant).
 function isMatch(canon, name, brandLine = "") {
   const offer = { name, brandLine };
   if (rejectsMatch(canon, offer)) return false;

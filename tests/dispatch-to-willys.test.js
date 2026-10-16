@@ -1,6 +1,6 @@
 // Regressiontester för Willys-dispatch-kedjan: sök, cart-klient, matcher, endpoint.
-// Körs med `node tests/dispatch-to-willys.test.js` — inga externa deps.
-// Hook: se .claude/settings.json — blockerar commit vid regression.
+// Körs med `node tests/dispatch-to-willys.test.js` — kräver node_modules (dispatch-to-willys.js drar in @supabase/supabase-js).
+// Hook: se .claude/settings.json — körs efter Edit av dispatch-, axfood- och matcher-filerna och larmar (exit 2) vid regression.
 
 import { extractOfferCanon, rejectsMatch } from "../api/_shared/willys-matcher.js";
 import { fetchOffersFromWillys } from "../api/willys-offers.js";
@@ -34,7 +34,7 @@ assertFalse(rejectsMatch("grädde", { name: "Matlagningsgrädde 15%", brandLine:
 // ─── Task 2: fetchOffersFromWillys-export ─────────────────────────
 assertEq(typeof fetchOffersFromWillys, "function", "fetchOffersFromWillys är en funktion");
 
-// ─── Task 3: willys-search.js — findProductByCanon ────────────────
+// ─── Task 3: axfood-search.js — findProductByCanon ────────────────
 
 // Fake fetch som returnerar en canned JSON-response
 function makeFakeFetch(responsesByUrl) {
@@ -362,7 +362,7 @@ function fakeSearch(map) {
   assertEq(hitUtan?.code, "import_ST", "sök utan pref: första träffen som förut");
 }
 
-// ─── Task 5: willys-cart-client ───────────────────────────────────
+// ─── Task 5: axfood-cart-client ───────────────────────────────────
 
 // Fake fetch som spelar in requests och returnerar canned responses
 function makeRecordingFetch(responses) {

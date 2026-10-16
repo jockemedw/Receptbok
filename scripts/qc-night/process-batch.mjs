@@ -11,7 +11,7 @@
 //
 // Kör:  node scripts/qc-night/process-batch.mjs <proposals.json> <batchTag>
 
-import { readFileSync, writeFileSync, existsSync } from "fs";
+import { readFileSync, writeFileSync } from "fs";
 import { validateOne } from "./validate.mjs";
 
 const ROOT = new URL("../../", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
