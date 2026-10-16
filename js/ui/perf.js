@@ -40,8 +40,6 @@ function readFlag() {
 
 const ON = readFlag();
 
-export function perfEnabled() { return ON; }
-
 // ── Insamling ────────────────────────────────────────────────────────────────
 
 const state = {

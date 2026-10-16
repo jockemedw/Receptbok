@@ -1,6 +1,6 @@
 // Supabase-klient — singleton som hela frontend delar.
 // SUPABASE_URL + publishable key är medvetet hårdkodade — anon-nivån
-// skyddas av RLS (sektion 3 i 2026-05-16-supabase-migration-design.md).
+// skyddas av RLS (sektion 3 i docs/superpowers/specs/2026-05-16-supabase-migration-design.md).
 
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/+esm';
 
@@ -116,9 +116,6 @@ auth.onAuthStateChange((event) => {
   }
 });
 
-window.supabase = supabase;
 window.db = db;
-window.auth = auth;
 window.apiFetch = apiFetch;
 window.getHouseholdId = getHouseholdId;
-window.isDbUnreachable = isDbUnreachable;

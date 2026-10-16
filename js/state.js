@@ -9,15 +9,16 @@ window.recipeFilters      = {           // multi-val checkbox-filter per grupp
   season:         new Set(),
 };
 window.replaceMode        = null;    // { date, dayName } under receptbyte
-window._opBusy            = false;   // spärr: en plan-/custom-day-mutation i taget
-                                     // (delas av plan-viewer-deluxe och plan-viewer)
+window._opBusy            = false;   // spärr: en datamuterande operation i taget (plan-/dagmutationer,
+                                     // inköpsdagar, Willys-dispatch) — delas av plan-viewer(-deluxe),
+                                     // day-drag, deals-popup, day-picker och dispatch-ui
 window.editingId          = null;    // ID vid redigering, null = nytt recept
 window.planConfirmed      = false;
 window._checkedItems      = {};      // { key: bool } — bockar i inköpslistan
 window._pantryItems       = new Set(); // normaliserade varunamn markerade "har hemma"
 window._pantrySupported   = false;   // true när pantry_items-tabellen finns (migration 002)
 window._checkedSaveTimer  = null;
-window._shopRecipeItems   = null;    // sparat för textvy-rebuild
+window._shopRecipeItems   = null;    // receptvaror per kategori — inköpslistans rendering + dispatch
 window._shopManualItems   = [];
 window._editRowKey        = null;    // nyckel för rad som redigeras i inköpslistan (penn-knappen)
 window._handlaMode        = false;   // handla-läge: bockade varor sjunker ner under strecket

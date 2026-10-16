@@ -90,6 +90,12 @@ let _cookIngs = [];   // [{raw, parsed}] — indexmatchad mot li[data-i]
 let _cookBase = 4;
 let _cookServings = 4;
 
+function servNoteText() {
+  return _cookServings === _cookBase
+    ? `receptet är för ${_cookBase}`
+    : `mängderna skalade från ${_cookBase}`;
+}
+
 function ingLineHtml(entry, factor) {
   const { raw, parsed } = entry;
   if (!parsed) return escapeHtml(raw);
@@ -107,9 +113,7 @@ function renderServings() {
   const val = _overlay.querySelector('.cook-serv-val');
   if (val) val.textContent = `${_cookServings} port.`;
   const note = _overlay.querySelector('.cook-serv-note');
-  if (note) note.textContent = _cookServings === _cookBase
-    ? `receptet är för ${_cookBase}`
-    : `mängderna skalade från ${_cookBase}`;
+  if (note) note.textContent = servNoteText();
   _overlay.querySelectorAll('.cook-ing > span:last-child').forEach((el, i) => {
     if (_cookIngs[i]) el.innerHTML = ingLineHtml(_cookIngs[i], factor);
   });
@@ -199,7 +203,7 @@ export function openCookMode(recipeId) {
         <button type="button" class="cook-serv-btn" aria-label="Färre portioner" onclick="_cookServStep(-1)">−</button>
         <span class="cook-serv-val">${_cookServings} port.</span>
         <button type="button" class="cook-serv-btn" aria-label="Fler portioner" onclick="_cookServStep(1)">+</button>
-        <span class="cook-serv-note">${_cookServings === _cookBase ? `receptet är för ${_cookBase}` : `mängderna skalade från ${_cookBase}`}</span>
+        <span class="cook-serv-note">${servNoteText()}</span>
       </div>
       <details class="cook-ings-wrap" open>
         <summary>Ingredienser</summary>

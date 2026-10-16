@@ -166,7 +166,7 @@ export function renderDetailInner(r) {
 
 // ── Svenska helgdagar ────────────────────────────────────────────────────────
 
-// Gauss algoritm — returnerar påskdagens datum för ett år som ISO-string.
+// Gauss algoritm — returnerar påskdagen för ett år som Date (UTC-midnatt).
 function easterSunday(year) {
   const a = year % 19;
   const b = Math.floor(year / 100);
@@ -239,20 +239,10 @@ export function getSwedishHolidays(year) {
   return map;
 }
 
-// Returnerar helgdagsnamn eller null. Accepterar ISO-string eller Date.
+// Returnerar helgdagsnamn eller null för ett ISO-datum (YYYY-MM-DD).
 export function getHolidayName(dateIso) {
   if (!dateIso) return null;
   const year = parseInt(dateIso.slice(0, 4), 10);
   if (!year) return null;
   return getSwedishHolidays(year).get(dateIso) || null;
 }
-
-// Exponera på window för inline onclick-attribut och icke-modul-kod
-window.escapeHtml       = escapeHtml;
-window.jsStringAttr     = jsStringAttr;
-window.timeStr          = timeStr;
-window.renderIngredient = renderIngredient;
-window.fmtIso           = fmtIso;
-window.fmtShort         = fmtShort;
-window.svCompare        = svCompare;
-window.getHolidayName   = getHolidayName;
