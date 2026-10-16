@@ -63,7 +63,7 @@
     /* Z-index-skala (Session 120) — tokeniserad vid EXAKT nuvarande värden, ingen
        omordning (ren kod-städning, inget syns). Lågt→högt: innehåll < chrome <
        sheets < overlays < auth. */
-    --z-base: 2;             /* dekorativ bakgrund (timeline-outer::after) */
+    --z-base: 2;             /* dlx-drop-line (kläm-in-linjen i dagslistan) */
     --z-sticky: 5;           /* sticky innehållsrubrik / cook-progress */
     --z-cook-strip: 6;       /* cook-safe-strip ovanför progress */
     --z-popover: 10;         /* inställnings-popover */
@@ -180,8 +180,7 @@
   input, textarea, select, [contenteditable="true"],
   .shop-text-view, .shop-text-view *,
   .recipe-detail, .recipe-detail *,
-  .fl-note-body, .today-note-body, .today-hero-note, .today-tonight-body,
-  .selectable, .selectable * {
+  .fl-note-body, .today-note-body, .today-hero-note, .today-tonight-body {
     -webkit-user-select: text;
     user-select: text;
     -webkit-touch-callout: default;
@@ -507,8 +506,6 @@
     display: none;
   }
 
-  .recipe-count { display: none; }
-
   /* ── BOTTOM SHEET ── */
   .bottom-sheet {
     position: fixed;
@@ -751,63 +748,6 @@
   }
   .results-info:empty { display: none; }
 
-  /* ── WEEKLY PLAN BANNER ── */
-  .plan-banner {
-    background: var(--clay);
-    border: 1px solid color-mix(in srgb, var(--rust) 20%, var(--linen-card));
-    border-radius: 12px;
-    padding: 1rem 1.1rem;
-    margin-bottom: 1.2rem;
-    display: none;
-  }
-
-  .plan-banner.visible { display: block; }
-
-  .plan-banner-title {
-    font-size: 0.78rem;
-    font-weight: 500;
-    color: var(--rust);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin-bottom: 0.6rem;
-  }
-
-  .plan-days {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-    gap: 0.4rem;
-  }
-
-  .plan-day {
-    background: var(--paper);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 0.5rem 0.7rem;
-    cursor: pointer;
-    transition: border-color 0.15s, box-shadow 0.15s;
-  }
-
-  .plan-day:hover {
-    border-color: var(--rust);
-    box-shadow: 0 2px 8px rgba(194,82,43,0.1);
-  }
-
-  .plan-day-name {
-    font-size: var(--fs-xs);
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--text-muted);
-    font-weight: 500;
-  }
-
-  .plan-day-recipe {
-    font-family: var(--font-display);
-    font-size: 0.88rem;
-    color: var(--forest);
-    line-height: 1.3;
-    margin-top: 0.15rem;
-  }
-
   /* ── RECIPE GRID ── */
   .recipe-grid {
     display: flex;
@@ -1042,13 +982,8 @@
     stroke: currentColor;
     fill: none;
   }
-  .icon-rotate-90 { transform: rotate(90deg); display: inline-block; }
-  .icon-em-1-2 { width: 1.2em; height: 1.2em; }
   .icon-em-1-5 { width: 1.5em; height: 1.5em; }
   .icon-em-2 { width: 2em; height: 2em; vertical-align: middle; }
-
-  .settings-chevron svg { transition: transform 0.2s ease; }
-  .settings-chevron.open svg { transform: rotate(180deg); }
 
   .card-chevron {
     color: var(--text-muted);
@@ -1275,89 +1210,9 @@
     padding: 0 1rem;
   }
 
-  .custom-bulk-banner {
-    margin: 0.3rem 1rem 0.5rem;
-    padding: 0.6rem 0.9rem;
-    background: var(--linen);
-    border: 1px dashed var(--border);
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-  }
-  .custom-bulk-text {
-    font-size: 0.82rem;
-    color: var(--text-muted);
-  }
-  .custom-bulk-btn {
-    background: transparent;
-    border: 1.5px solid var(--birch);
-    color: var(--forest);
-    border-radius: 8px;
-    padding: 0.5rem 0.85rem;
-    font-size: 0.82rem;
-    font-weight: 500;
-    line-height: 1;
-    font-family: inherit;
-    cursor: pointer;
-    transition: border-color 0.15s, color 0.15s, background 0.15s;
-  }
-  .custom-bulk-btn:hover {
-    border-color: var(--forest);
-    background: var(--moss-soft);
-  }
-
-  .plan-backdrop-label {
-    position: sticky;
-    left: 16px;
-    align-self: flex-start;
-    margin-bottom: 4px;
-    font-size: var(--fs-xs);
-    font-weight: 700;
-    color: var(--lichen-deep);
-    white-space: nowrap;
-    pointer-events: none;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-  }
-
-  .pending-badge {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    background: var(--rust);
-    color: white;
-    font-size: var(--fs-xs);
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    padding: 2px 6px;
-    border-radius: 999px;
-    pointer-events: none;
-  }
-
   /* Editor för egen planering i detaljpanelen */
   .custom-day-editor {
     padding: 0.25rem 0;
-  }
-  .custom-day-header {
-    padding: 0 0.25rem 1rem;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 1rem;
-  }
-  .custom-day-title {
-    font-family: var(--font-display);
-    font-size: 1.35rem;
-    font-weight: 700;
-    color: var(--lichen);
-    line-height: 1.15;
-  }
-  .custom-day-sub {
-    font-size: 0.82rem;
-    color: var(--text-muted);
-    margin-top: 0.2rem;
-    letter-spacing: 0.01em;
   }
 
   .custom-options {
@@ -1366,61 +1221,6 @@
     gap: 0.6rem;
   }
 
-  .custom-option {
-    display: flex;
-    align-items: center;
-    gap: 0.85rem;
-    width: 100%;
-    padding: 0.9rem 1rem;
-    background: var(--paper);
-    border: 1.5px solid var(--border);
-    border-radius: 12px;
-    font-family: inherit;
-    font-size: 0.95rem;
-    color: var(--lichen);
-    cursor: pointer;
-    text-align: left;
-    transition: border-color 0.15s, background 0.15s, transform 0.08s;
-    box-sizing: border-box;
-  }
-  button.custom-option:hover,
-  button.custom-option:focus-visible {
-    border-color: var(--rust);
-    background: var(--clay);
-    outline: none;
-  }
-  button.custom-option:active {
-    transform: scale(0.985);
-  }
-  .custom-option-icon {
-    font-size: 1.25rem;
-    line-height: 1;
-    flex-shrink: 0;
-  }
-  .custom-option-label {
-    flex: 1;
-    font-weight: 500;
-  }
-  .custom-option-chev {
-    color: var(--rust);
-    font-size: 1.4rem;
-    line-height: 1;
-    opacity: 0.7;
-    flex-shrink: 0;
-  }
-
-  /* Noteringskortet — samma form men "expanderat" */
-  .custom-option-note {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.65rem;
-    cursor: default;
-  }
-  .custom-option-note .custom-option-head {
-    display: flex;
-    align-items: center;
-    gap: 0.85rem;
-  }
   .custom-note-input {
     width: 100%;
     padding: 0.6rem 0.8rem;
@@ -1453,26 +1253,6 @@
   .custom-note-save:hover { opacity: 0.88; }
   .custom-note-save:disabled { opacity: 0.5; cursor: default; }
 
-  .custom-day-remove {
-    display: block;
-    margin: 1rem auto 0;
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    font-family: inherit;
-    font-size: 0.82rem;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-    cursor: pointer;
-    padding: 0.35rem 0.6rem;
-    transition: color 0.15s;
-  }
-  .custom-day-remove:hover,
-  .custom-day-remove:focus-visible {
-    color: var(--rust);
-    outline: none;
-  }
-
   .holiday-dot {
     display: inline-block;
     width: 6px;
@@ -1482,17 +1262,6 @@
     margin-left: 4px;
     flex-shrink: 0;
     box-shadow: 0 0 0 2px rgba(176,64,48,0.15);
-  }
-
-  .readonly-note {
-    margin: 0.8rem 0 0;
-    padding: 0.5rem 0.75rem;
-    background: var(--linen);
-    border-left: 3px solid var(--lichen);
-    border-radius: 6px;
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    font-style: italic;
   }
 
   /* ── Datumväljare: helgdags- och veckoslut-markering ── */
@@ -1509,30 +1278,6 @@
     height: 5px;
     background: var(--rust-deep);
     border-radius: 50%;
-  }
-
-  .week-day-saving {
-    margin-top: 0.25rem;
-    font-size: var(--fs-xs);
-    font-weight: 600;
-    color: var(--color-success-dark, var(--lichen-deep));
-    letter-spacing: 0.01em;
-    flex-shrink: 0;
-    background: none;
-    border: none;
-    padding: 0;
-    font-family: inherit;
-    text-align: left;
-  }
-  .week-day-saving.has-details {
-    cursor: pointer;
-    border-radius: 4px;
-    padding: 1px 3px;
-    margin-left: -3px;
-    transition: background-color 0.15s ease;
-  }
-  .week-day-saving.has-details:hover {
-    background: rgba(74,125,78,0.12);
   }
 
   /* Besparings-popover */
@@ -1741,60 +1486,6 @@
   }
   .dlx-stat-saving.has-deals .dlx-stat-lbl { color: var(--ochre, #c89a3e); font-weight: 600; }
 
-  .week-recipe-detail {
-    overflow: hidden;
-    max-height: 0;
-    transition: max-height 0.5s cubic-bezier(0.4,0,0.2,1);
-    margin: 0.25rem 0 0;
-  }
-
-  .week-recipe-detail.open {
-    max-height: 3000px;
-  }
-
-  .week-recipe-detail .detail-inner {
-    background: var(--paper);
-    border: 1.5px solid var(--border);
-    border-radius: 12px;
-    padding: 1rem 1.1rem 1.25rem;
-    margin: 0 1rem 0.5rem;
-  }
-
-  .week-recipe-header {
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-    margin-bottom: 0.85rem;
-  }
-
-  .week-recipe-title {
-    font-family: var(--font-display);
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--lichen);
-    flex: 1 1 100%;
-  }
-
-  .replace-recipe-btn {
-    margin-top: 1.1rem;
-    display: inline-block;
-    background: transparent;
-    border: 1.5px solid var(--birch);
-    color: var(--forest);
-    border-radius: 8px;
-    padding: 0.5rem 1rem;
-    font-size: 0.85rem;
-    font-weight: 500;
-    line-height: 1;
-    font-family: inherit;
-    cursor: pointer;
-    transition: border-color 0.15s, color 0.15s, background 0.15s;
-  }
-
-  @media (hover: hover) { .replace-recipe-btn:hover { border-color: var(--forest); background: var(--moss-soft); } }
-  .replace-recipe-btn:disabled { opacity: 0.55; cursor: default; }
-
   .confirm-plan-wrap {
     padding: 0.75rem 1rem 0.25rem;
   }
@@ -1856,168 +1547,6 @@
 
   .confirm-status.confirmed { color: var(--color-success); font-weight: 500; }
 
-  @keyframes wiggle {
-    0%   { transform: scale(1); }
-    30%  { transform: scale(1.05); }
-    65%  { transform: scale(0.97); }
-    100% { transform: scale(1); }
-  }
-
-  /* Snabbåtgärds-kluster (slumpa + byt dag) nere till höger på markerat dagkort */
-  .day-card-actions {
-    position: absolute;
-    bottom: 0.35rem;
-    right: 0.4rem;
-    display: flex;
-    gap: 0.15rem;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.15s;
-  }
-
-  .card-icon-btn {
-    background: var(--clay, #f0e6dd);
-    border: 1px solid var(--birch);
-    padding: 0.22rem 0.3rem;
-    border-radius: 6px;
-    cursor: pointer;
-    color: var(--rust);
-    transition: color 0.15s, border-color 0.15s, background 0.15s, opacity 0.15s;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-  }
-  @media (hover: hover) { .card-icon-btn:hover { border-color: var(--rust); background: var(--paper); } }
-  .card-icon-btn .icon { width: 14px; height: 14px; }
-  .card-icon-btn svg { display: block; }
-  .card-icon-btn:disabled { cursor: default; }
-  .card-icon-btn.is-loading {
-    opacity: 0.6;
-    animation: pulse 0.9s ease-in-out infinite;
-  }
-
-  @keyframes pulse {
-    0%, 100% { opacity: 0.45; }
-    50%      { opacity: 0.9; }
-  }
-
-  /* Primära "byt recept"-knappar i detaljpanelen — framlyfta, ej i disclosure */
-  .day-replace-actions {
-    margin-top: 1.1rem;
-    padding-top: 0.85rem;
-    border-top: 1px solid var(--border);
-  }
-  .day-replace-hint {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin: 0 0 0.55rem;
-  }
-  .day-replace-btns {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-  .day-replace-btn {
-    flex: 1 1 0;
-    min-width: 9.5rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-    background: transparent;
-    border: 1.5px solid var(--birch);
-    color: var(--forest);
-    border-radius: 8px;
-    padding: 0.6rem 0.85rem;
-    font-size: 0.85rem;
-    font-weight: 500;
-    line-height: 1;
-    font-family: inherit;
-    cursor: pointer;
-    transition: border-color 0.15s, color 0.15s, background 0.15s, opacity 0.15s;
-  }
-  .day-replace-btn .icon { width: 16px; height: 16px; flex-shrink: 0; }
-  @media (hover: hover) { .day-replace-btn:hover { border-color: var(--forest); background: var(--moss-soft); } }
-  .day-replace-btn:disabled { opacity: 0.55; cursor: default; }
-  .day-replace-btn-primary {
-    background: var(--rust);
-    border-color: var(--rust);
-    color: white;
-  }
-  .day-replace-btn-primary:hover {
-    background: var(--rust);
-    border-color: var(--rust);
-    opacity: 0.88;
-  }
-
-  /* ── Blockerade dagar ── */
-  .blocked-recipe-text {
-    font-style: italic;
-    color: var(--text-muted);
-  }
-
-  /* ── Fri dag / byt dag-knappar i detaljpanel ── */
-  .day-action-btns {
-    display: flex;
-    gap: 0.5rem;
-    margin-top: 1.1rem;
-    padding-top: 0.8rem;
-    border-top: 1px solid var(--border);
-  }
-  .day-action-btn {
-    flex: 1;
-    background: transparent;
-    border: 1.5px solid var(--birch);
-    color: var(--forest);
-    border-radius: 8px;
-    padding: 0.5rem 0.6rem;
-    font-size: 0.82rem;
-    font-weight: 500;
-    line-height: 1;
-    font-family: inherit;
-    cursor: pointer;
-    transition: border-color 0.15s, color 0.15s, background 0.15s;
-  }
-  .day-action-btn:hover {
-    border-color: var(--forest);
-    background: var(--moss-soft);
-  }
-
-  /* ── "Ändra dag"-disclosure i detaljpanelen ── */
-  .day-actions-details {
-    margin-top: 1.2rem;
-    border-top: 1px solid var(--border);
-    padding-top: 0.75rem;
-  }
-  .day-actions-details summary {
-    font-size: 0.82rem;
-    font-weight: 600;
-    color: var(--text-muted);
-    cursor: pointer;
-    list-style: none;
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    user-select: none;
-  }
-  .day-actions-details summary::-webkit-details-marker { display: none; }
-  .day-actions-details summary::after {
-    content: '›';
-    font-size: 1.1rem;
-    line-height: 1;
-    transition: transform 0.15s;
-    display: inline-block;
-  }
-  .day-actions-details[open] summary::after { transform: rotate(90deg); }
-  .day-actions-inner {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    margin-top: 0.6rem;
-  }
-  .day-actions-inner .replace-recipe-btn { margin-top: 0; }
-  .day-actions-inner .day-action-btns { border-top: none; margin-top: 0; padding-top: 0; }
-
   /* ── Dagväljare (pre-generering) ── */
   .day-toggles {
     display: flex;
@@ -2074,19 +1603,6 @@
     color: var(--text-muted);
   }
 
-  .week-day-name {
-    font-size: var(--fs-xs);
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--text-muted);
-    font-weight: 500;
-    margin-bottom: 0.35rem;
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-    flex-shrink: 0;
-  }
-
   .today-dot {
     display: inline-block;
     width: 6px;
@@ -2094,27 +1610,6 @@
     background: var(--rust);
     border-radius: 50%;
     flex-shrink: 0;
-  }
-
-  .week-day-recipe {
-    font-family: var(--font-display);
-    font-size: 0.88rem;
-    color: var(--forest);
-    line-height: 1.3;
-    transition: opacity 0.15s;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    flex: 1;
-  }
-
-  .week-day-time {
-    font-size: var(--fs-xs);
-    color: var(--text-muted);
-    margin-top: 3px;
-    letter-spacing: 0.02em;
   }
 
   .week-meta {
@@ -2222,12 +1717,6 @@
     padding: 1.5rem 0 0.5rem;
   }
 
-  .trigger-section.collapsed .trigger-body {
-    max-height: 0;
-    overflow: hidden;
-    margin: 0;
-  }
-
   .trigger-toggle-row {
     display: flex;
     justify-content: center;
@@ -2252,12 +1741,6 @@
   .trigger-toggle-btn:hover {
     border-color: var(--forest);
     background: var(--moss-soft);
-  }
-
-  .trigger-body {
-    max-height: 2000px;
-    transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1);
-    overflow: hidden;
   }
 
   /* ── Wizard-sheeten (designförslag 2026-07, steg 4) ── */
@@ -2303,44 +1786,6 @@
     min-height: 44px;
     padding: 0.6rem 1rem;
     cursor: pointer;
-  }
-
-  .trigger-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: var(--rust);
-    color: white;
-    border: none;
-    border-radius: 30px;
-    padding: 0.75rem 1.5rem;
-    font-family: var(--font-body);
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    text-decoration: none;
-    transition: opacity 0.2s, transform 0.15s;
-    box-shadow: 0 4px 16px rgba(194,82,43,0.25);
-  }
-
-  .trigger-btn:hover {
-    opacity: 0.9;
-    transform: translateY(-1px);
-  }
-
-  .trigger-hint {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    margin-top: 0.6rem;
-    font-style: italic;
-  }
-
-  .trigger-title {
-    font-family: var(--font-display);
-    font-size: 1.1rem;
-    font-weight: 400;
-    color: var(--lichen);
-    margin-bottom: 1.1rem;
   }
 
   .date-range {
@@ -2397,24 +1842,6 @@
     margin-bottom: 1rem;
   }
 
-  .trigger-dates {
-    display: none;
-    margin-top: 0.85rem;
-    background: var(--stone);
-    border-radius: 8px;
-    padding: 0.7rem 1rem;
-    font-size: 0.82rem;
-    color: var(--forest);
-    font-family: monospace;
-    line-height: 1.8;
-    text-align: left;
-    max-width: 280px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .trigger-dates.visible { display: block; }
-
   /* ── NO DATA ── */
   .no-data {
     text-align: center;
@@ -2425,27 +1852,6 @@
   .no-data-icon { font-size: 2rem; margin-bottom: 0.75rem; }
 
   /* ── SETTINGS PANEL ── */
-  .settings-toggle-wrap {
-    margin-bottom: 0.75rem;
-  }
-
-  .settings-toggle {
-    background: none;
-    border: 1.5px solid var(--border);
-    border-radius: 20px;
-    padding: 0.4rem 1rem;
-    font-family: var(--font-body);
-    font-size: 0.82rem;
-    color: var(--text-muted);
-    cursor: pointer;
-    transition: border-color 0.2s, color 0.2s;
-  }
-
-  .settings-toggle:hover {
-    border-color: var(--lichen);
-    color: var(--lichen);
-  }
-
   .settings-panel {
     max-height: 0;
     overflow: hidden;
@@ -3645,12 +3051,6 @@
   @keyframes spinFast {
     to { transform: rotate(360deg); }
   }
-  .recipe-grid-loading {
-    text-align: center;
-    padding: 2rem 0;
-    color: var(--text-muted);
-    font-size: 0.95rem;
-  }
   .fab-import {
     position: fixed;
     bottom: calc(var(--bottom-nav-h) + 1.5rem);
@@ -3969,7 +3369,7 @@
 
 .bottom-nav-tab:active { transform: scale(0.96); }
 
-/* ── Auth-gate (magic-link login) ───────────────────────────────────────── */
+/* ── Auth-gate (inloggning med e-post + lösenord) ───────────────────────── */
 
 html.auth-required body {
   overflow: hidden;
@@ -4118,7 +3518,7 @@ html.auth-required body {
 
 /* ════════════════════════════════════════════════════════════════════════
    PREMIUMVY FÖR MATSEDELN (plan-viewer-deluxe.js)
-   En alternativ presentation av samma data. Visas via body.week-deluxe.
+   Matsedelns enda vy (klassiska tidslinjen avvecklad, Session 101).
    ════════════════════════════════════════════════════════════════════════ */
 
 /* ── Visningslogik ── */
@@ -4388,7 +3788,6 @@ html.auth-required body {
 @keyframes dlxFadeInDim { from { opacity: 0; transform: translateY(6px); } to { opacity: 0.7; transform: none; } }
 .dlx-day:active { transform: scale(0.98); }
 @media (hover: hover) { .dlx-day:hover { box-shadow: 0 10px 26px -18px rgba(44,63,51,0.5); border-color: var(--birch); } }   /* hover-guard (Session 120) */
-.dlx-day.expanded { box-shadow: 0 16px 38px -20px rgba(44,63,51,0.55); border-color: var(--lichen); }
 .dlx-day.is-today { border-color: var(--rust); box-shadow: 0 0 0 1px var(--rust) inset; }
 .dlx-day.is-past,
 .dlx-day.is-archive,
@@ -4403,10 +3802,6 @@ html.auth-required body {
 /* Helg-markör: en dovare, varmare kort-bakgrund (markerar helgdagar lugnt utan att
    påverka korthöjden). Tydligt skild från både kortet (#fdfcf8) och sidan (#f5f1e8). */
 .dlx-day.is-weekend { background: color-mix(in srgb, var(--stone) 55%, var(--linen)); border-color: var(--birch-soft); }
-/* Utfällt helgkort: BEHÅLL den dovare helg-tonen (markören) men lägg tillbaka
-   utfällningens lichen-accent — annars vinner is-weekend:s birch-ram pga
-   källordning och kortet ser avvikande ut mot vardagskortens utfällning. */
-.dlx-day.is-weekend.expanded { border-color: var(--lichen); }
 
 .dlx-day-head {
   display: flex;
@@ -4478,18 +3873,6 @@ html.auth-required body {
 .dlx-day.free .dlx-day-note { margin-left: auto; }
 
 .dlx-day-main { flex: 1 1 auto; min-width: 0; }
-.dlx-day-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--moss-muted);
-  margin-bottom: 0.2rem;
-}
-.dlx-day-tag svg { width: 13px; height: 13px; }
 .dlx-day-recipe {
   font-family: var(--font-display);
   font-weight: 400;
@@ -4556,16 +3939,8 @@ html.auth-required body {
   transition: transform 0.25s, color 0.2s;
   line-height: 1;
 }
-.dlx-day.expanded .dlx-day-chev { transform: rotate(90deg); color: var(--lichen); }
 
-/* ── Detaljpanel (inline) ── */
-.dlx-detail {
-  cursor: default;
-  padding: 0.2rem 1.15rem 1.15rem;
-  border-top: 1px solid var(--stone);
-  animation: dlxExpand 0.3s ease both;
-}
-@keyframes dlxExpand { from { opacity: 0; } to { opacity: 1; } }
+/* ── Receptdetalj (dag-sheeten) ── */
 .dlx-detail-head {
   display: flex;
   align-items: center;
@@ -4650,56 +4025,12 @@ html.auth-required body {
   color: var(--rust-deep);
   line-height: 1.45;
 }
-.dlx-detail-empty { font-size: 0.85rem; color: var(--moss-muted); }
-.dlx-readonly { font-size: 0.8rem; color: var(--moss-muted); margin: 0.8rem 0 0; }
-.dlx-err { color: var(--rust); font-size: 0.8rem; margin: 0.6rem 0 0; }
 
-/* Egen-planering-editorn (Session 97) delas med klassiska vyns bottenpanel, där
-   .detail-inner har en ljus panel-bakgrund (--linen-card) och .custom-option är
-   vita kort. Inline i premiumvyns kort ska editorn i stället ärva kortets yta
-   (sand på helg, linne på vardag) — annars syns en vit platta inne i det
-   sandfärgade helgkortet. .dlx-detail ger redan ram + padding. */
-.dlx-detail-custom .detail-inner { background: transparent; border-top: none; padding: 0; }
-.dlx-detail-custom .custom-option { background: transparent; }
-
-/* ── Åtgärder ── */
-.dlx-actions {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.5rem;
-  margin-top: 1rem;
-}
-.dlx-act {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: 0.6rem 0.5rem;
-  border: 1.5px solid var(--birch-soft);
-  /* Genomskinlig så knappen ärver kortets yta (linne på vardag, sand på helg) —
-     definieras av ramen, inte en vit fyllning. Annars syns vita block i den
-     sandfärgade helg-utfällningen. */
-  background: transparent;
-  border-radius: 12px;
-  color: var(--forest);
-  font-family: inherit;
-  font-size: 0.8rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: border-color 0.18s, background 0.18s, color 0.18s;
-}
-.dlx-act svg { width: 15px; height: 15px; }
-.dlx-act:hover { border-color: var(--lichen); color: var(--lichen-deep); }
-.dlx-act.primary { background: var(--rust); border-color: var(--rust); color: var(--on-accent); }
-.dlx-act.primary:hover { background: var(--rust-deep); border-color: var(--rust-deep); color: var(--on-accent); }
-.dlx-act.loading { opacity: 0.6; pointer-events: none; }
-.dlx-act.loading svg { animation: dlxSpin 0.8s linear infinite; }
-@keyframes dlxSpin { to { transform: rotate(360deg); } }
 .dlx-mini-btn {
   margin-top: 0.9rem;
   padding: 0.5rem 0.9rem;
   border: 1.5px solid var(--birch-soft);
-  background: transparent;   /* ärver kortets yta — se .dlx-act ovan */
+  background: transparent;   /* genomskinlig — ärver omgivande yta */
   border-radius: 10px;
   color: var(--forest);
   font-family: inherit;
@@ -4757,8 +4088,7 @@ html.auth-required body {
 /* Mottagarpulsen: statisk ring på ::after som andas i opacitet — kompositorn
    sköter den, ingen omritning av kortet per bildruta (box-shadow-animation
    gjorde det). Innanför kanten eftersom dagkorten klipper (overflow: hidden). */
-.dlx-swap-target::after,
-.dlx-drop-zone::after {
+.dlx-swap-target::after {
   content: '';
   position: absolute;
   inset: 0;
@@ -4774,7 +4104,6 @@ html.auth-required body {
 @media (min-width: 680px) {
   .dlx-detail-cols { flex-direction: row; }
   .dlx-detail-block { flex: 1 1 0; }
-  .dlx-actions { grid-template-columns: repeat(4, 1fr); }
 }
 
 /* ═══ Session 86 — Fable 5-omtag: feedback, matlagningsläge, PWA-polish ═══ */
@@ -4993,16 +4322,14 @@ body.cook-open { overflow: hidden; }
   padding: 0.7rem 1.25rem;
   border-bottom: 1px solid var(--birch-soft);
 }
-.cook-progress-track,
-.shop-progress-track {
+.cook-progress-track {
   flex: 1;
   height: 0.5rem;
   background: var(--stone);
   border-radius: 999px;
   overflow: hidden;
 }
-.cook-progress-fill,
-.shop-progress-fill {
+.cook-progress-fill {
   height: 100%;
   width: 0;
   background: var(--lichen-deep);
@@ -5263,7 +4590,6 @@ body.cook-open { overflow: hidden; }
   line-height: 1;
   transition: transform 0.2s ease;
 }
-.dlx-tonight.expanded .dlx-tonight-chev { transform: rotate(90deg); }
 /* Datum i vänsterkolumn — samma layoutspråk som dagkorten (.dlx-day-when) */
 .dlx-tonight-head {
   display: flex;
@@ -5278,8 +4604,6 @@ body.cook-open { overflow: hidden; }
   gap: 0.15rem;
   min-width: 0;
 }
-/* Kortet har redan horisontell padding — nollställ detaljens egna sidopaddingar */
-.dlx-tonight .dlx-detail { width: 100%; cursor: default; margin-top: 0.6rem; padding: 0.4rem 0 0; }
 .dlx-tonight-eyebrow {
   display: inline-flex;
   align-items: center;
@@ -5630,29 +4954,6 @@ body.cook-open { overflow: hidden; }
 .today-quick-add input:focus { outline: none; border-color: var(--lichen); }
 .today-quick-add .today-btn { flex: none; }
 
-/* ── Flytta dag: släppzoner mellan korten ── */
-.dlx-drop-zone {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  width: 100%;
-  min-height: 2.7rem;
-  border: 2px dashed var(--lichen);
-  border-radius: 12px;
-  background: var(--moss-soft);
-  color: var(--lichen-deep);
-  font-family: inherit;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  position: relative;   /* bär puls-ringen (::after, se .dlx-swap-target) */
-}
-.dlx-drop-zone svg { width: 1.1em; height: 1.1em; }
-.dlx-drop-zone:active { background: var(--lichen); color: var(--on-accent); }
-/* Zonen mellan hero och Ikväll-kortet ligger utanför .dlx-days → egen luft */
-#weekDeluxe > .dlx-drop-zone { margin-top: 0.85rem; }
-
 /* ── CTA i tomma matsedelsvyn ── */
 .empty-cta-btn {
   margin-top: 1rem;
@@ -5698,16 +4999,6 @@ body.cook-open { overflow: hidden; }
   top: calc(var(--header-h, 56px) + 6px);
   z-index: var(--z-banner);
   box-shadow: 0 4px 14px rgba(44,63,51,0.25);
-}
-.dlx-swap-banner.busy span::before {
-  content: '';
-  width: 0.85rem;
-  height: 0.85rem;
-  border: 2px solid rgba(255,255,255,0.35);
-  border-top-color: var(--on-accent);
-  border-radius: 50%;
-  animation: dlxSpin 0.7s linear infinite;
-  flex-shrink: 0;
 }
 
 /* Nedtonade kort i byt/flytta-läge — ogiltiga mål (fortfarande tryckbara:
@@ -6090,14 +5381,6 @@ main#receptView {
 }
 .dlx-sheet-back svg { width: 18px; height: 18px; }
 .dlx-sheet-back:active { background: var(--linen); }
-.dlx-sheet-cap {
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--moss-muted);
-  margin: 0.8rem 0.2rem 0.25rem;
-}
 .dlx-sheet-empty {
   font-size: 0.875rem;
   color: var(--moss-muted);
@@ -6140,7 +5423,7 @@ main#receptView {
 }
 .dlx-sheet-added span::before { content: "✓ "; color: var(--lichen-deep); }
 /* Editorer (egen planering/fri dag) i sheeten — sheeten är redan en ljus panel,
-   nollställ editorns egen panel-bakgrund/ram precis som .dlx-detail-custom gör. */
+   nollställ editorns egen panel-bakgrund/ram. */
 .dlx-sheet-editor .detail-inner { display: block; background: transparent; border-top: none; padding: 0; }
 /* Receptvyn i sheeten återanvänder .dlx-detail-*-klasserna — ge blocken luft. */
 .dlx-sheet .dlx-detail-head { margin: 0 0.1rem 0.8rem; padding-top: 0; gap: 0.5rem; }
@@ -6631,7 +5914,7 @@ main#receptView {
 .fl-icon-none { color: var(--text-muted); font-size: 0.85rem; }
 
 /* ═══ Prisoptimera — reor-först-flöde (Session 121) ═══════════════════════════ */
-/* Entré-knapp i Matsedel-rubriken */
+/* Flikrubrik med pill-knapp till höger — i dag "Välj dagar" i Inköpslistans rubrik (index.html). Klassnamnet är kvar från Prisoptimera-knappen i Matsedel-rubriken (borttagen Session 150). */
 #weekView .content-heading,
 #shopView .content-heading { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
 .prisopt-btn {
@@ -6765,12 +6048,10 @@ main#receptView {
 /* Insert-linjen positioneras absolut i dagslistan */
 .dlx-days { position: relative; }
 
-/* Flyttbara kort: KORT wiggle-puls vid aktiveringen (3 svängar, ~0,8 s) som
-   sedan landar i ett LUGNT statiskt läge — en mjuk streckad lichen-ram som
-   säger "den här kan ta emot". Ingen fortsatt puls/rörelse på mottagarna
-   (Joakims feedback: konstant wiggle var för mycket; iPhones edit-läge är
-   lugnt tills man hovrar ett mål). Den aktiva rörelsen bor på ghosten,
-   luckan och det hovrade målet — inte i bakgrunden. */
+/* Flyttbara kort (mottagarna) jigglar lugnt så länge draget pågår — `rotate`
+   ±0,5° i 0,52 s-cykel plus en mjuk streckad lichen-ram (iPhones hemskärm).
+   Det hovrade målet slutar jiggla (se .dlx-drag-over). Joakims mobiltest (#206):
+   den tidigare korta, snabbare burst-wigglen var darrig och tog slut för tidigt. */
 /* Jigglet animerar den INDIVIDUELLA `rotate`-egenskapen — inte den samlade
    transform-kanalen. Det gör att en EVIG wiggle kan samexistera med
    lucköppningens `translate` och målets `scale` på samma element (de är egna
@@ -6854,11 +6135,9 @@ main#receptView {
 }
 
 /* Grannarna glider isär och öppnar en RIKTIG lucka runt sömmen (iPhone: listan
-   delar på sig för att ge plats). animation:none avbryter ev. pågående
-   wiggle-burst så translaten tar över transform-kanalen direkt (annars äger
-   keyframe-animationen den och luckan öppnas inte förrän bursten spelat klart).
-   Transformerna påverkar aldrig träffytan — hitTest läser layout-position
-   (offsetTop), inte transformerad rect. */
+   delar på sig för att ge plats). Luckan bärs av `translate` — en egen egenskap
+   som inte krockar med jigglets `rotate`. Transformerna påverkar aldrig träffytan —
+   hitTest läser layout-position (offsetTop), inte transformerad rect. */
 /* Luckan öppnas tydligt (2 × 24 px ≈ ett halvt kort) — det ska läsas som att
    listan delar på sig och gör plats, inte som ett darr. */
 .dlx-days.dlx-drag-mode .dlx-nudge-up   { translate: 0 -24px; }
