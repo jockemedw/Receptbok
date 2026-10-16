@@ -2,7 +2,7 @@
 //
 // BAKGRUND. requireUser frågade tidigare Supabase Auth (db.auth.getUser) vid
 // VARJE API-anrop — en nätverksrunda innan endpointen ens börjat arbeta. Uppmätt
-// på Joakims iPhone 2026-09-04: /api/skip-day 3 478 ms, move-day 2 700 ms.
+// på Joakims iPhone 2026-09-04: /api/skip-day 3 478 ms, move-day 2 700 ms (båda numera api/day.js).
 // Projektet signerar sina tokens med ES256 och publicerar den publika nyckeln på
 // <SUPABASE_URL>/auth/v1/.well-known/jwks.json (publik, cache 600 s), så
 // signaturen kan verifieras lokalt utan att fråga någon.
@@ -29,7 +29,7 @@
 //   förfalskade tokens, INTE återkallade. För familjens tre konton utan
 //   självregistrering är avvägningen accepterad; blir det fel läge finns två
 //   billiga vägar: (a) kräv getUser på de destruktiva endpointsen
-//   (discard-plan, skip-day action:delete), (b) en liten deny-lista per varm
+//   (discard-plan, day action:delete), (b) en liten deny-lista per varm
 //   lambda. Måste omprövas vid M1, när främmande hushåll registrerar sig och
 //   "ta bort medlem" behöver bita omedelbart.
 //

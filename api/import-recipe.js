@@ -412,8 +412,7 @@ export function guessProtein(title, ingredients) {
 
 function buildTags(time, protein) {
   const tags = [];
-  if (protein && protein !== "vegetarisk") tags.push(protein);
-  if (protein === "vegetarisk") tags.push("vegetarisk");
+  if (protein) tags.push(protein);
   if (time !== null && time !== undefined) {
     if (time <= 30) tags.push("vardag30");
     else if (time <= 60) tags.push("helg60");

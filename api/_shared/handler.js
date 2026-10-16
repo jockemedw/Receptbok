@@ -1,6 +1,11 @@
 /**
- * Wrapper som hanterar CORS, OPTIONS, metodkontroll och GITHUB_PAT.
- * Anvaends: export default createHandler(async (req, res, pat) => { ... })
+ * Delade wrappers för api/-endpoints: CORS, OPTIONS, metodkontroll, JWT-krav
+ * (requireUser) och maskering av tekniska fel.
+ * createSupabaseHandler är standard för Supabase-endpoints (allowGet för GET+POST).
+ * createHandler kräver dessutom GITHUB_PAT och skickar den som tredje argument
+ * (används idag bara av import-recipe.js). requireUser exporteras för endpoints
+ * med egen routing (dispatch-to-willys.js).
+ * Används: export default createSupabaseHandler(async (req, res) => { ... })
  */
 
 // Avsiktligt kastade fel (new Error("Kunde inte ...")) har begripliga svenska
