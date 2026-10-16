@@ -14,7 +14,7 @@ import { pruneOrphanHistory } from "./_shared/history.js";
 // plandagar, egna dagar, noteringar och fria dagar behandlas LIKADANT.
 // Datumen ligger fast — innehållet byter datum.
 //
-// Body: { action, date, to?, before?, note? }
+// Body: { action, date, to?, before?, note?, until? }
 //   swap    { date, to }        — dagarna byter innehåll. Är `to` tom flyttas
 //                                 raden dit (datumbyte i EN update, atomärt).
 //   insert  { date, before? }   — "kläm in": dagen lyfts ur och kläms in före
@@ -188,7 +188,7 @@ export default createSupabaseHandler(async (req, res) => {
     if (to === date) return bad(res, "Välj två olika dagar.");
     if (!hasContent(date)) return bad(res, "Dagen har inget att flytta.", 404);
     const dst = byDate.get(to);
-    if (dst && !isEmptyContent(fullContent(dst))) {
+    if (hasContent(to)) {
       // Båda finns → byt fullt innehåll i EN bulk-upsert (en SQL-sats, atomär)
       const { error } = await db.from("meal_days").upsert([
         { household_id: householdId, date, ...fullContent(dst) },

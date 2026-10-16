@@ -44,7 +44,7 @@ export default createSupabaseHandler(async (req, res) => {
     startDate: plan.start_date,
     endDate: plan.end_date,
     confirmedAt,
-    days: (mealDays || []).map((d) => ({ recipeId: d.recipe_id })),
+    days: mealDays.map((d) => ({ recipeId: d.recipe_id })),
   };
 
   return res.status(200).json({ ok: true, weeklyPlan: confirmedPlan });

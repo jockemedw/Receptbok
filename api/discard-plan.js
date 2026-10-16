@@ -3,19 +3,20 @@ import { db, getHouseholdId } from "./_shared/supabase.js";
 
 const FAIL = "Kunde inte kassera matsedeln — prova igen.";
 
-// Kasserar en opåbörjad (icke-bekräftad) matsedel:
+// Kasserar en opåbörjad (icke-bekräftad) matsedel, i den här ordningen:
 // - Tar bort dess meal_days och lägger tillbaka de dagar förslaget skrev över
 //   (replaced_days, sparad av generate — migration 012) som egna dagar
-// - Deaktiverar weekly_plan sist
+// - Deaktiverar weekly_plan (sista steget som kan fallera)
 // - Raderar recipe_history-poster för planens recept så de kan väljas igen
-// - Rör inte shopping_lists (speglar senast bekräftade plan)
+//   (best effort — fel loggas bara)
+// - Rör inte shopping_lists (listan speglar de dagar familjen valt att handla
+//   för — Session 134)
 //
 // Ordningen gör ett nytt försök säkert: misslyckas ett steg står planen kvar
 // som aktiv och nästa Kassera gör om resten (radering och återläggning är
 // idempotenta — återläggningen skriver aldrig över en dag som har innehåll).
 export async function discardActivePlan(householdId, database = db) {
-  // select * → replaced_days följer med när kolumnen finns, utan att
-  // läsningen fallerar innan migration 012 är körd.
+  // select * → replaced_days (migration 012) följer med.
   const { data: plans, error: plansErr } = await database
     .from("weekly_plans")
     .select("*")
