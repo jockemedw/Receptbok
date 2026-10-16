@@ -1,6 +1,6 @@
 // Matsedelsgenerering: datumväljare, inställningar, genereringsknapp.
 
-import { fmtIso, fmtShort, daysBetween, getHolidayName } from '../utils.js';
+import { fmtIso, daysBetween, getHolidayName } from '../utils.js';
 
 export function initDatePickers() {
   const today = new Date();
@@ -246,8 +246,8 @@ export async function generatePlan() {
 
   // F194 (QC-natt): regenerering skriver rakt över den aktiva planens
   // receptval — utan varning även om planen redan är BEKRÄFTAD (och familjen
-  // kanske redan handlat). Fråga innan vi kör vidare, samma mönster som
-  // discardPlan/prisoptimera redan använder för planConfirmed.
+  // kanske redan handlat). Fråga innan vi kör vidare (samma confirmDialog
+  // som discardPlan).
   const isConfirmed = !!(window._lastPlan?.confirmedAt || window.planConfirmed);
   if (isConfirmed) {
     const ok = await window.confirmDialog({
@@ -355,7 +355,7 @@ export async function generatePlan() {
       } catch { /* OK, kör utan uppdatering */ }
       window.renderWeeklyPlanData(data.weeklyPlan, null, true, archive, customDays);
     }
-    // Veckans fynd: spara rea-förslagen och öppna popupen en gång.
+    // Veckans fynd: spara rea-förslagen — popupen nås via "sparat · fynd" i premiumvyns hero.
     window._weeklyDeals = data.deals || null;
     window.switchTab('vecka');
     // Stäng wizard-sheeten — förslaget + bekräfta-raden är nu det viktiga.
