@@ -7,7 +7,7 @@ import { db, getHouseholdId } from "./_shared/supabase.js";
 // (docs/prestanda-plan-2026-09.md).
 import { selectRecipes, bucketBySaving, hasTure } from "./_shared/select-recipes.js";
 import { notifyAlert } from "./_shared/alert.js";
-import { fetchRecipeUsage, pruneOrphanHistory } from "./_shared/history.js";
+import { fetchRecipeUsage, pruneOrphanHistory, recordSuggestions } from "./_shared/history.js";
 
 function getCurrentSeason(dateStr) {
   const month = new Date(dateStr).getMonth() + 1;
@@ -287,7 +287,7 @@ export async function activatePlanAtomic(newPlanId, startDate, householdId, data
 
 // used_on = dagen rätten ÄTS, inte genereringsdagen. Med genereringsdatum
 // släpptes en rätt som låg sist i en lång matsedel fri för nytt val redan dagar
-// efter att den lagats (14-dagarsfönstret räknades från genereringen).
+// efter att den lagats (historikfönstret räknades från genereringen).
 async function saveHistoryToSupabase(days, householdId) {
   const rows = days
     .filter((d) => d.recipeId)
@@ -373,7 +373,7 @@ export default createSupabaseHandler(async (req, res) => {
     }
   }
 
-  const { recentIds, usedOn } = usage;
+  const { recentIds, hardIds, usedOn, penaltyById } = usage;
   const allDays = buildDayList(start_date, end_date);
   const blockedSet = new Set(blocked_dates);
   // Blockerade OCH egen-planerade (custom) dagar utesluts ur receptvalet.
@@ -473,7 +473,7 @@ export default createSupabaseHandler(async (req, res) => {
 
   const currentSeason = season_weight ? getCurrentSeason(start_date) : null;
   const selectedDays = selectRecipes(filtered, activeDays, constraints, recentIds, usedOn, savingsById, currentSeason,
-    undefined, { coverCanons });
+    undefined, { coverCanons, hardIds, penaltyById });
 
   // Vilka valda varor fick ett recept i planen — UI:t berättar om någon saknas.
   let dealCoverage = null;
@@ -532,8 +532,13 @@ export default createSupabaseHandler(async (req, res) => {
   await activatePlanAtomic(newPlanId, start_date, householdId);
   await saveHistoryToSupabase(days, householdId);
   // Ett ersatt utkast/en överskriven vecka lämnar annars sina recept som
-  // "använda" i historiken fast de aldrig lagas (Session 148).
-  await pruneOrphanHistory(db, householdId);
+  // "använda" i historiken fast de aldrig lagas (Session 148). Förslagsminnet
+  // (Session 154) kommer ihåg att de föreslogs — kasseras utkastet viktas de
+  // ner ett tag i stället för att genast komma tillbaka. Best effort.
+  await Promise.all([
+    pruneOrphanHistory(db, householdId),
+    recordSuggestions(db, householdId, days.map((d) => d?.recipeId), "suggested_on"),
+  ]);
 
   // Inköpslistan rörs INTE här (Session 134). Genereringen skapar bara
   // matsedeln; ingredienserna går till listan i ett separat, helt manuellt steg

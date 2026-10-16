@@ -3,7 +3,7 @@
 //
 // selectRecipes() är en ren funktion — all I/O mockas bort via argument.
 // Testar:
-//   1. Historikfiltrering (14-dagars fönster)
+//   1. Historikfiltrering (4-veckorsfönster, 2–4 veckor = reserv)
 //   2. Fallback: pool < antal dagar → fyll pa från "längst sedan"
 //   3. Proteinbalans: max 2 per typ
 //   4. Vardag/helg-matchning (vardag30/helg60-taggar)
@@ -17,7 +17,7 @@
 // (en ren modul utan Supabase-beroenden) så att testet kör EXAKT samma kod som
 // api/generate.js använder — ingen drift-benägen inline-kopia längre.
 import { selectRecipes, bucketBySaving, hasTure, byLongestAgo, recencyWeight, pickReplacementOrder, chooseRandomConfirm } from "../api/_shared/select-recipes.js";
-import { buildRecipeUsage } from "../api/_shared/history.js";
+import { buildRecipeUsage, suggestionPenalties } from "../api/_shared/history.js";
 
 // ─── Testinfrastruktur ────────────────────────────────────────────────────────
 let passed = 0;
@@ -678,6 +678,125 @@ const DEFAULT_CONSTRAINTS = {
     if (res.some((d) => d.recipeId === 2)) recentPicked++;
   }
   assertEq(recentPicked, 0, "prisopt: 14-dagarsfönstret gäller även valda varor");
+}
+
+// ─── Session 154: 4-veckorsminne, reserv och förslagsminne ──────────────────
+
+// Test 30 — buildRecipeUsage: hardIds = delmängd inom 2 veckor.
+{
+  const today = "2026-10-16";
+  const history = [
+    { recipe_id: 1, used_on: "2026-10-10" }, // 6 dagar → hård spärr
+    { recipe_id: 2, used_on: "2026-09-25" }, // 21 dagar → reserv
+    { recipe_id: 3, used_on: "2026-09-10" }, // 36 dagar → fri
+  ];
+  const u = buildRecipeUsage(history, [], today, "2026-09-18", "2026-10-02");
+  assertEq([...u.recentIds].sort().join(","), "1,2", "fönster: recentIds = inom 4 veckor");
+  assertEq([...u.hardIds].join(","), "1", "fönster: hardIds = inom 2 veckor");
+  const legacy = buildRecipeUsage(history, [], today, "2026-09-18");
+  assertEq([...legacy.hardIds].sort().join(","), "1,2", "fönster: utan hardCutoff = recentIds (ingen reserv)");
+}
+
+// Test 31 — reserven tas före proteintaket släpps.
+{
+  const recipes = [
+    { id: 1, title: "Kyckling A", protein: "kyckling", tags: ["vardag30"], tested: true, ingredients: [] },
+    { id: 2, title: "Kyckling B", protein: "kyckling", tags: ["vardag30"], tested: true, ingredients: [] },
+    { id: 3, title: "Kyckling C", protein: "kyckling", tags: ["vardag30"], tested: true, ingredients: [] },
+    { id: 4, title: "Fisk reserv", protein: "fisk", tags: ["vardag30"], tested: true, ingredients: [] },
+    { id: 5, title: "Fisk nyss", protein: "fisk", tags: ["vardag30"], tested: true, ingredients: [] },
+  ];
+  const recent = new Set([4, 5]), hard = new Set([5]);
+  const usedOn = { 4: "2026-04-01", 5: "2026-04-15" };
+  let reservePicked = 0, hardPicked = 0, overCap = 0;
+  for (let i = 0; i < 100; i++) {
+    const res = selectRecipes(recipes, TRE_VARDAGAR, DEFAULT_CONSTRAINTS, recent, usedOn, null, null, "2026-04-21",
+      { hardIds: hard });
+    const ids = res.map((d) => d.recipeId);
+    if (ids.includes(4)) reservePicked++;
+    if (ids.includes(5)) hardPicked++;
+    if (ids.filter((id) => id <= 3).length > 2) overCap++;
+  }
+  assertEq(reservePicked, 100, "reserv: 2–4 veckor gammal rätt tas när kycklingtaket nås");
+  assertEq(hardPicked, 0, "reserv: rätt inom 2 veckor väljs inte");
+  assertEq(overCap, 0, "reserv: proteintaket hålls");
+
+  // Utan hardIds (gamla anrop) → ingen reserv, taket släpps som förr.
+  const old = selectRecipes(recipes, TRE_VARDAGAR, DEFAULT_CONSTRAINTS, recent, usedOn, null, null, "2026-04-21");
+  assertEq(old.filter((d) => d.recipeId <= 3).length, 3, "reserv: utan hardIds är beteendet oförändrat");
+}
+
+// Test 32 — reserven tas före fel dagtyp (helg utan färska helg60-rätter).
+{
+  const recipes = [
+    { id: 1, title: "Vardag", protein: "fisk", tags: ["vardag30"], tested: true, ingredients: [] },
+    { id: 2, title: "Helg reserv", protein: "kött", tags: ["helg60"], tested: true, ingredients: [] },
+  ];
+  const lordag = [VECKA[5]];
+  const res = selectRecipes(recipes, lordag, DEFAULT_CONSTRAINTS, new Set([2]), { 2: "2026-04-01" }, null, null,
+    "2026-04-21", { hardIds: new Set() });
+  assertEq(res[0].recipeId, 2, "reserv: helg60-reserv före vardagsrätt på helgdag");
+}
+
+// Test 33 — suggestionPenalties.
+{
+  const today = "2026-10-16";
+  const p = suggestionPenalties([
+    { recipe_id: 1, rejected_on: today },
+    { recipe_id: 2, suggested_on: today },
+    { recipe_id: 3, suggested_on: today, rejected_on: today },
+    { recipe_id: 4, suggested_on: "2026-10-02" },          // 14 dagar → halvvägs
+    { recipe_id: 5, suggested_on: today },                 // planerad framåt → accepterad
+    { recipe_id: 6, rejected_on: "2026-09-18" },           // 28 dagar → glömd
+    { recipe_id: 7, rejected_on: "2026-10-10" },           // lagad efter bortvalet
+  ], { 5: "2026-10-20", 7: "2026-10-12" }, today);
+  assertEq(p[1], 0.2, "förslagsminne: bortvald i dag = 0.2");
+  assertEq(p[2], 0.5, "förslagsminne: föreslagen i dag = 0.5");
+  assertEq(Math.round(p[3] * 100) / 100, 0.1, "förslagsminne: båda i dag = 0.1");
+  assertEq(p[4], 0.75, "förslagsminne: 14 dagar sedan = halvvägs tillbaka");
+  assertFalse(5 in p, "förslagsminne: planerad efter förslaget → ingen sänkning");
+  assertFalse(6 in p, "förslagsminne: efter 28 dagar → glömd");
+  assertFalse(7 in p, "förslagsminne: lagad efter bortvalet → ingen sänkning");
+}
+
+// Test 34 — förslagsminnet sänker sannolikheten i generering och Slumpa.
+{
+  const recipes = [
+    { id: 1, title: "Bortvald", protein: "fisk", tags: ["vardag30"], tested: true, ingredients: [] },
+    { id: 2, title: "Annan", protein: "fisk", tags: ["vardag30"], tested: true, ingredients: [] },
+  ];
+  let gen = 0, rep = 0;
+  for (let i = 0; i < 600; i++) {
+    const [d] = selectRecipes(recipes, VECKA.slice(0, 1), DEFAULT_CONSTRAINTS, new Set(), {}, null, null,
+      "2026-04-21", { penaltyById: { 1: 0.2 } });
+    if (d.recipeId === 1) gen++;
+    const order = pickReplacementOrder([...recipes, { id: 3, title: "Nu", protein: "fisk", tags: ["vardag30"], tested: true }], {
+      current: { id: 3, protein: "fisk", tested: true }, date: "2026-04-21", penaltyById: { 1: 0.2 },
+    });
+    if (order[0] === 1) rep++;
+  }
+  // Förväntat ≈ 0.2/1.2 ≈ 17 %.
+  assertTrue(gen < 150, `förslagsminne: generering väljer bortvald rätt sällan (${gen}/600)`);
+  assertTrue(rep < 150, `förslagsminne: Slumpa väljer bortvald rätt sällan (${rep}/600)`);
+}
+
+// Test 35 — Slumpa: testad reservrätt (2–4 v) före otestad färsk, rätt inom 2 v sist.
+{
+  const recipes = [
+    { id: 1, title: "Nuvarande", protein: "kyckling", tags: ["vardag30"], tested: true },
+    { id: 2, title: "Otestad färsk", protein: "kyckling", tags: ["vardag30"], tested: false },
+    { id: 3, title: "Testad reserv", protein: "kyckling", tags: ["vardag30"], tested: true },
+    { id: 4, title: "Testad nyss", protein: "kyckling", tags: ["vardag30"], tested: true },
+  ];
+  const order = pickReplacementOrder(recipes, {
+    current: recipes[0], recentIds: new Set([3, 4]), hardIds: new Set([4]),
+    usedOn: { 3: "2026-03-28", 4: "2026-04-14" }, date: "2026-04-21", today: "2026-04-21",
+  });
+  assertEq(order.join(","), "3,2,4", "Slumpa: reserv (samma testad-status) → färsk otestad → sista utväg");
+  const legacy = pickReplacementOrder(recipes, {
+    current: recipes[0], recentIds: new Set([3, 4]), usedOn: { 3: "2026-03-28", 4: "2026-04-14" }, date: "2026-04-21",
+  });
+  assertEq(legacy[0], 2, "Slumpa: utan hardIds ingen reserv (som förr)");
 }
 
 // ─── Slutrapport ──────────────────────────────────────────────────────────────

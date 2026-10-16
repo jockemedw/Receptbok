@@ -43,7 +43,7 @@ function makeMockDb(initial) {
     seq: 1000,
   };
   const stats = { calls: 0, doneDepth: 0, maxDepth: 0 };
-  const conflictKeys = { recipe_history: ["household_id", "recipe_id"] };
+  const conflictKeys = { recipe_history: ["household_id", "recipe_id"], recipe_suggestions: ["household_id", "recipe_id"] };
 
   const matches = (row, filters) => filters.every(([kind, col, val]) => {
     if (kind === "eq") return row[col] === val;
@@ -425,6 +425,44 @@ for (const onList of [true, false]) {
   const unk = await replaceRecipe({ database: makeMockDb(fx), householdId: HH,
     body: { ...base, newRecipeId: 999, random: true }, rng: seeded(11) });
   assertEq([unk.status, unk.body.recipeId], [200, plain.body.recipeId], "förhandsval: okänt id → serverns val");
+}
+
+// ── 9. Förslagsminnet (Session 154): bortbytt rätt minns, preview skriver inte ─
+{
+  const fx = { ...fixture({ onList: false }), recipe_suggestions: [] };
+  const db = makeMockDb(fx);
+  const res = await replaceRecipe({ database: db, householdId: HH,
+    body: { date: T(1), currentRecipeId: 2, weekRecipeIds: [1, 2, 3, 5] }, rng: seeded(3) });
+  assertEq(res.status, 200, "förslagsminne: Slumpa 200");
+  const row = db._state.recipe_suggestions.find((r) => r.recipe_id === 2);
+  assertEq(row?.rejected_on, isoDaysAgo(0), "förslagsminne: bortbytt rätt får rejected_on = i dag");
+  assertEq(db._state.recipe_suggestions.length, 1, "förslagsminne: bara den bortbytta rätten skrivs");
+
+  // Välj själv minns också den bortbytta rätten.
+  const db2 = makeMockDb(fx);
+  await replaceRecipe({ database: db2, householdId: HH, body: { date: T(2), newRecipeId: 6 } });
+  assertEq(db2._state.recipe_suggestions[0]?.recipe_id, 3, "förslagsminne: Välj själv minns bortbytt rätt");
+
+  // Preview skriver aldrig.
+  const db3 = makeMockDb(fx);
+  await replaceRecipe({ database: db3, householdId: HH,
+    body: { date: T(1), currentRecipeId: 2, weekRecipeIds: [1, 2, 3, 5], preview: true }, rng: seeded(3) });
+  assertEq(db3._state.recipe_suggestions.length, 0, "förslagsminne: preview skriver inget");
+
+  // Bortvald rätt viktas ner: två färska kycklingrätter (9, 11) konkurrerar om
+  // första platsen; 9 bortvald i dag → hamnar först mer sällan.
+  const fx2 = { ...fx, recipes: [...RECIPES, R(11, "kyckling", ["400 g kycklingfärs"])] };
+  let pickedRejected = 0, pickedPlain = 0;
+  for (let seed = 1; seed <= 200; seed++) {
+    const body = { date: T(1), currentRecipeId: 2, weekRecipeIds: [1, 2, 3, 5], preview: true };
+    const withMem = await replaceRecipe({ database: makeMockDb({ ...fx2,
+      recipe_suggestions: [{ household_id: HH, recipe_id: 9, rejected_on: isoDaysAgo(0) }] }),
+    householdId: HH, body, rng: seeded(seed) });
+    const without = await replaceRecipe({ database: makeMockDb(fx2), householdId: HH, body, rng: seeded(seed) });
+    if (withMem.body.candidates[0].id === 9) pickedRejected++;
+    if (without.body.candidates[0].id === 9) pickedPlain++;
+  }
+  assertTrue(pickedRejected < pickedPlain * 0.6, `förslagsminne: bortvald rätt föreslås först mer sällan (${pickedRejected} mot ${pickedPlain} av 200)`);
 }
 
 if (failed > 0) console.log(failures.join("\n\n"));

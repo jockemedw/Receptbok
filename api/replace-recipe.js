@@ -1,6 +1,9 @@
 import { createSupabaseHandler } from "./_shared/handler.js";
 import { db, getHouseholdId, fetchTargetServings } from "./_shared/supabase.js";
-import { buildRecipeUsage, isoDaysAgo, orphanHistoryIds, pruneOrphanHistory } from "./_shared/history.js";
+import {
+  buildRecipeUsage, isoDaysAgo, orphanHistoryIds, pruneOrphanHistory,
+  suggestionPenalties, recordSuggestions, RECENT_WINDOW_DAYS, HARD_WINDOW_DAYS,
+} from "./_shared/history.js";
 import { pickReplacementOrder, chooseRandomConfirm } from "./_shared/select-recipes.js";
 import { getActiveList, rebuildActiveList } from "./_shared/shopping-store.js";
 
@@ -73,6 +76,7 @@ export async function replaceRecipe({ database = db, householdId, body = {}, rng
     { data: windowDays, error: daysErr },
     { data: coveredRows, error: covErr },
     hist,
+    sugg,
     activeList,
     targetServings,
   ] = await Promise.all([
@@ -87,6 +91,8 @@ export async function replaceRecipe({ database = db, householdId, body = {}, rng
     database.from("meal_days").select("date, recipe_id, blocked, shopped_at, shopping_list_id")
       .eq("household_id", householdId).not("shopping_list_id", "is", null).is("shopped_at", null),
     database.from("recipe_history").select("recipe_id, used_on").eq("household_id", householdId),
+    // Förslagsminnet (migration 013). Saknas tabellen → fel → ignoreras.
+    database.from("recipe_suggestions").select("recipe_id, suggested_on, rejected_on").eq("household_id", householdId),
     getActiveList(householdId, database),
     fetchTargetServings(householdId, database),
   ]);
@@ -116,7 +122,9 @@ export async function replaceRecipe({ database = db, householdId, body = {}, rng
   } else {
     // Historik + alla planerade dagar (även egna) — samma källa som generate.js.
     const planned = days.filter((d) => d.recipe_id != null && d.date >= usageFrom);
-    const { recentIds, usedOn } = buildRecipeUsage(historyRows || [], planned, today, isoDaysAgo(14));
+    const { recentIds, hardIds, usedOn } = buildRecipeUsage(historyRows || [], planned, today,
+      isoDaysAgo(RECENT_WINDOW_DAYS), isoDaysAgo(HARD_WINDOW_DAYS));
+    const penaltyById = sugg?.error ? {} : suggestionPenalties(sugg?.data || [], usedOn, today);
 
     const byId = new Map(allRecipes.map((r) => [r.id, r]));
     const proteinCount = {};
@@ -131,7 +139,7 @@ export async function replaceRecipe({ database = db, householdId, body = {}, rng
     const order = pickReplacementOrder(allRecipes, {
       current: byId.get(currentRecipeId) || null,
       weekIds: weekRecipeIds.filter((id) => id !== currentRecipeId),
-      recentIds, usedOn, proteinCount, date, excludeIds, rng,
+      recentIds, hardIds, usedOn, proteinCount, date, excludeIds, rng, penaltyById,
     });
     if (!order.length) return { status: 409, body: { error: "Inga tillgängliga recept att byta till." } };
     // Förhandsval: bara läsning — inga skrivningar, ingen städning, inget ombygge.
@@ -175,6 +183,9 @@ export async function replaceRecipe({ database = db, householdId, body = {}, rng
   // (var dagen redan inhandlad behövs nya varor → tillbaka på listan nedan).
   // Läsningarna för ombygget (ingredienser för täckta recept, gamla listans
   // varor) påverkas inte av skrivningarna och går i samma runda.
+  // Rätten som byts bort minns som bortvald (förslagsminnet, best effort) —
+  // den viktas ner i kommande förslag en tid. Läggs i samma runda.
+  const rejectedId = mealDayRow.recipe_id != null && mealDayRow.recipe_id !== picked.id ? mealDayRow.recipe_id : null;
   const [{ error: mdErr }, { error: histErr }, ingRes, itemsRes] = await Promise.all([
     database.from("meal_days").update({
       recipe_id: picked.id,
@@ -194,6 +205,7 @@ export async function replaceRecipe({ database = db, householdId, body = {}, rng
     onList
       ? database.from("shopping_items").select("name, checked, source, position").eq("list_id", activeList.id)
       : null,
+    rejectedId != null ? recordSuggestions(database, householdId, [rejectedId], "rejected_on", today) : null,
   ]);
   if (mdErr || histErr) throw mdErr || histErr;
 
