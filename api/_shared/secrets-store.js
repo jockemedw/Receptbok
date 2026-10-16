@@ -2,6 +2,7 @@
 // Används av:
 //   - api/dispatch-to-willys.js?op=refresh-cookies → writeUser (extensionen postar hit)
 //   - api/dispatch-to-willys.js                    → readUser (cart-anrop till butiken)
+//   - api/dispatch-to-willys.js loginAndStore → writeUser (färsk session efter lösenordsinloggning, Session 136)
 //
 // Format (users[<id>].stores[<butik>] är sanningen sedan Hemköp tillkom):
 //   { "users": { "joakim": {

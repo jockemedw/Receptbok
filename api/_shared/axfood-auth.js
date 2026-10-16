@@ -54,7 +54,6 @@ function makeJar() {
       }
     },
     header() { return [...jar.entries()].map(([k, v]) => `${k}=${v}`).join("; "); },
-    size() { return jar.size; },
   };
 }
 

@@ -11,7 +11,7 @@
 import { db } from "./supabase.js";
 import { encrypt, decrypt, getKey } from "./crypto-box.js";
 
-// PostgREST-koden för "relationen finns inte".
+// Postgres SQLSTATE 42P01 / meddelandet "does not exist" = relationen finns inte.
 function isMissingTable(error) {
   return error?.code === "42P01" || /does not exist/i.test(error?.message || "");
 }

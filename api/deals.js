@@ -6,24 +6,25 @@
 // föregående version). Samma flöde, en endpoint:
 //
 //   GET  /api/deals            (publik, som /api/willys-offers — proxad rea-data)
-//     → steg 1: veckans Willys-reor GRUPPERADE per ingrediens (canon), sorterade
-//       på bästa besparing. Underlag för att kryssa i vilka varor man vill ha
-//       receptförslag från.
+//     → veckans Willys-reor GRUPPERADE per ingrediens (canon), sorterade på bästa
+//       besparing. Visas som chips i genereringsguidens rea-sektion
+//       (js/weekly-plan/wiz-deals.js); valda canons skickas som deal_canons till
+//       /api/generate (Session 150).
 //   POST /api/deals  { canons: ["kyckling", ...] }  (auth)
-//     → steg 2: { suggestions: [{ recipeId, title, protein, time, saving, matches }] }
-//       Bara valda canons räknas → besparingen speglar exakt urvalet. Recept
-//       rankas störst besparing först via matchRecipe (samma canon-lexikon som
-//       inköpslistan).
+//     → { suggestions: [{ recipeId, title, protein, time, saving, matches }] }
+//       Receptförslag till det gamla Prisoptimera-arket. Anropas inte av klienten
+//       sedan Session 150; ligger kvar tills Joakim OK:at borttagning. Bara valda
+//       canons räknas, och recepten rankas med störst besparing först via matchRecipe.
 //
-// Grupperingen och matchningen använder SAMMA extractOfferCanon, så det man
-// kryssar i steg 1 är exakt det som driver receptträffarna i steg 2.
+// Grupperingen här och deal_canons-filtreringen i generate.js använder SAMMA
+// extractOfferCanon, så det familjen väljer i guiden är exakt det som räknas där.
 
 import { createSupabaseHandler } from "./_shared/handler.js";
 import { db, getHouseholdId } from "./_shared/supabase.js";
 import { fetchOffersFromWillys } from "./willys-offers.js";
 import { matchRecipe, extractOfferCanon } from "./_shared/willys-matcher.js";
 
-// ── GET: steg 1 — reor grupperade per ingrediens (publik) ──────────────────
+// ── GET: reor grupperade per ingrediens (publik) ──
 async function offersHandler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -68,7 +69,7 @@ async function offersHandler(req, res) {
   }
 }
 
-// ── POST: steg 2 — receptförslag från familjens VALDA rea-ingredienser (auth) ──
+// ── POST: receptförslag från VALDA rea-ingredienser (auth, oanvänd av klienten sedan Session 150) ──
 // En rad per canon = det bästa erbjudandet för den ingrediensen (familjen köper
 // ett, inte alla). Speglar byCanon-logiken i generate.js.
 function bestMatchesByCanon(matches) {
@@ -137,7 +138,7 @@ const recipesHandler = createSupabaseHandler(async (req, res) => {
   return res.status(200).json({ suggestions });
 });
 
-// Metod-router: GET publikt (steg 1), allt annat via den auth-wrappade
+// Metod-router: GET publikt, allt annat via den auth-wrappade
 // POST-handlern (som även svarar på OPTIONS-preflight och 405).
 export default function handler(req, res) {
   if (req.method === "GET") return offersHandler(req, res);

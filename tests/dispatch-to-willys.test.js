@@ -468,7 +468,6 @@ assertEq(pickUnitForCode(undefined), "pieces", "undefined-kod → pieces (krasch
       Mejeri: ["mjölk (1 l)", "grädde (2 dl)"],
       Grönsaker: ["purjolök (1)"],
     },
-    categories: null,
   };
   const offers = [
     { code: "rea_gradde_ST", name: "Vispgrädde Matlagning 35%", brandLine: "Arla", savingPerUnit: 5 },

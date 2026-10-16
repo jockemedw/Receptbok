@@ -4,7 +4,7 @@
 //   default storeId = 2160 (Willys Linköping Ekholmen)
 //
 // Hämtar live från Willys publika campaigns-endpoint (ingen auth).
-// Filtrerar bort icke-matchbara promotion-typer (SubtotalOrderPromotion).
+// Släpper bara igenom promotion-typer med rent styckpris (isMatchablePromo) — SubtotalOrderPromotion bara när den är ovillkorad (threshold 0/null).
 // Returnerar kompakt shape per Session 27-beslutet (~30 KB istf 485 KB).
 //
 // Caching: 1h CDN-cache via Cache-Control — inga serverless cold-start-kostnader
@@ -55,7 +55,7 @@ const NON_FOOD_RE = new RegExp(
     "proteinpulver", "protein pulver", "protein shake", "protein bar",
     "viktminskning", "näringsdryck", "vitaminer",
     // Ej mat
-    "\\brosor\\b", "sneakers", "hårfärg",
+    "\\brosor\\b", "sneakers",
   ].join("|"),
   "i"
 );
@@ -64,7 +64,7 @@ function isNonFood(offer) {
   return NON_FOOD_RE.test(`${offer.name} ${offer.brandLine || ""}`);
 }
 
-// Återanvändbar fetch av offers utan HTTP-hop — används av dispatch-to-willys.
+// Återanvändbar fetch av offers utan HTTP-hop — används av dispatch-to-willys, deals och generate.
 // Tar en storeId och en optional fetchImpl (för testbarhet).
 export async function fetchOffersFromWillys(store, fetchImpl = fetch) {
   const url = `${WILLYS_BASE}?q=${store}&type=PERSONAL_GENERAL&page=0&size=500`;

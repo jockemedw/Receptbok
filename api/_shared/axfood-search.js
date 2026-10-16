@@ -15,7 +15,7 @@
 //     "färs" → "Nötfärs", "banan" → "Banan", "toalettpapper" → "Toalettpapper".
 
 import { extractOfferCanon, rejectsMatch, relevantToCanon, brandBlocked } from "./willys-matcher.js";
-import { ORGANIC_RE, SWEDISH_RE } from "./dispatch-matcher.js";
+import { prefScore } from "./dispatch-matcher.js";
 import { STORES } from "./axfood-stores.js";
 
 export function createSearchClient({ fetchImpl = fetch, blockedBrands = [], baseUrl = STORES.willys.baseUrl } = {}) {
@@ -58,15 +58,8 @@ export function createSearchClient({ fetchImpl = fetch, blockedBrands = [], base
 
     // Preferens-poäng: utan wanted är poängen alltid 0 → reduce behåller
     // första kandidaten (strikt >), dvs. exakt gamla beteendet.
-    const prefScore = ({ offerShape }) => {
-      if (!wanted) return 0;
-      const text = `${offerShape.name} ${offerShape.brandLine}`;
-      let s = 0;
-      if (wanted.organic && ORGANIC_RE.test(text)) s++;
-      if (wanted.swedish && SWEDISH_RE.test(text)) s++;
-      return s;
-    };
-    const pickBest = (arr) => arr.reduce((best, c) => (prefScore(c) > prefScore(best) ? c : best), arr[0]);
+    const score = ({ offerShape }) => prefScore(`${offerShape.name} ${offerShape.brandLine}`, wanted);
+    const pickBest = (arr) => arr.reduce((best, c) => (score(c) > score(best) ? c : best), arr[0]);
 
     // Steg 1: exakt canon-likhet.
     const exacts = candidates.filter(({ offerShape }) => extractOfferCanon(offerShape) === canon);

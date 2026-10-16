@@ -139,10 +139,6 @@ export function matchRecipe(recipe, offers) {
   return { recipeId: recipe.id, matches, totalSaving };
 }
 
-export function matchRecipes(recipes, offers) {
-  return recipes.map((r) => matchRecipe(r, offers));
-}
-
 // Bygger "Veckans fynd"-förslag: recept som INTE valts till matsedeln men som
 // fångar rea-varor. Topplistan styrs av HUVUDPROTEINETS besparing (receptets
 // `protein`-kategori) — inte totalen, så att billig lök/vitlök aldrig lyfter ett

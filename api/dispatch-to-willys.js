@@ -3,19 +3,26 @@
 // Chrome-extensionen (kombinerat för att hålla oss under Vercel Hobby-planens
 // 12-funktioner-tak — filnamnet är historiskt och behålls därför).
 //
-// GET  /api/dispatch-to-willys                                → { featureAvailable, stores: [{id,label,available}] }
-// POST /api/dispatch-to-willys { store?, date? }              → { ok, addedCount, missing, cartUrl, store } | { ok:false, error, message }
-// POST /api/dispatch-to-willys?op=refresh-cookies + body      → { ok, updatedAt } | { error }
+// GET  /api/dispatch-to-willys                     → { featureAvailable, stores: [{id,label,available,connectVia,connectedAs}] }
+// POST /api/dispatch-to-willys { store? }          → { ok, addedCount, missing, cartUrl, store, sources, prefMisses }
+//                                                    | { ok:false, error, message } | { featureAvailable:false, store }
+//   (klienten skickar även `date`, men servern läser det inte)
+// POST ?op=refresh-cookies + body                  → { ok, store, updatedAt } | { error }
 //   Header: X-Refresh-Secret krävs på refresh-cookies-vägen
+// POST ?op=save-credentials { store, username, password } (JWT) → { ok, store, connectedAs } | { error }
+// POST ?op=clear-credentials { store } (JWT)                    → { ok, store, connectedAs:null } | { error }
 //
 // `store` är "willys" (default när fältet saknas) eller "hemkop" — se
 // _shared/axfood-stores.js. Cookie-uppsättningen är per butik; bara Willys har
 // ett rea-flöde (hasOffers) och legacy-env-fallback.
 //
-// Cred-källor (minst en krävs för att en butik ska vara available):
+// Cred-källor i den ordning resolveStoreSecrets provar dem (minst en krävs för att en butik ska vara available):
 //   1. Secret gist (föredragen) — kräver GITHUB_GIST_PAT + WILLYS_SECRETS_GIST_ID,
 //      populeras av Chrome-extension via POST ?op=refresh-cookies
 //   2. Env-fallback (legacy, ENDAST Willys) — WILLYS_COOKIE + WILLYS_CSRF
+//   3. Sparad butiksinloggning (Session 136, bara butiker med hasPasswordLogin = Hemköp) —
+//      STORE_CRED_KEY + tabellen store_credentials (?op=save-credentials). Sist eftersom en
+//      inloggning kostar anrop mot butiken; i GET räcker det att uppgifter finns sparade.
 //   WILLYS_STORE_ID — default 2160 (Ekholmen), används bara av Willys rea-flöde
 //
 // Säkerhet: returnerar aldrig cookies eller CSRF-token i loggning eller response.
@@ -563,15 +570,16 @@ async function addProductsInBatches(cartClient, codes, { batchSize = 8, concurre
   return { added, failed, authExpired };
 }
 
-// Läser aktiv inköpslista från Supabase och returnerar { recipeItems, manualItems }
-// i samma format som shopping-list-endpointen brukade returnera.
-// "Har hemma"-markerade varor (pantry_items, backlog #13) filtreras bort —
-// familjen har dem redan, de ska inte läggas i Willys-korgen. Saknas tabellen
-// (migration 002 ej körd) skickas listan ofiltrerad, precis som innan.
+// Skafferinyckel: varunamnet utan mängdparentes, gemener — samma nyckel som pantryKey i js/shopping/shopping-list.js sparar i pantry_items.name.
 function pantryKeyFromName(name) {
   return String(name || "").replace(/\s*\([^)]*\)\s*$/, "").trim().toLowerCase();
 }
 
+// Läser aktiv inköpslista från Supabase och returnerar { recipeItems, manualItems }
+// i det format extractCanonsFromShoppingList läser.
+// "Har hemma"-markerade varor (pantry_items, backlog #13) filtreras bort —
+// familjen har dem redan, de ska inte läggas i Willys-korgen. Saknas tabellen
+// (migration 002 ej körd) skickas listan ofiltrerad, precis som innan.
 async function fetchShoppingListFromSupabase() {
   const { data: lists } = await db
     .from("shopping_lists")
@@ -610,8 +618,8 @@ async function fetchShoppingListFromSupabase() {
   return { recipeItems, manualItems };
 }
 
-// Läser användarens inköpspreferenser (samma fil som AI-prompten + UI:t
-// använder): blockerade varumärken + eko/svenskt-toggles per kategori
+// Läser användarens inköpspreferenser (samma fil som api/shopping.js get_/set_preferences
+// och UI:t använder): blockerade varumärken + eko/svenskt-toggles per kategori
 // (backlog #20). Saknad fil / fel → tomma defaults (ingen filtrering, ingen
 // viktning), så dispatchen aldrig faller på en preferens-läsning.
 async function fetchDispatchPreferences() {
@@ -629,7 +637,7 @@ async function fetchDispatchPreferences() {
 }
 
 function extractCanonsFromShoppingList(shoppingList) {
-  const cats = shoppingList.recipeItems || shoppingList.categories || {};
+  const cats = shoppingList.recipeItems || {};
   const seen = new Set();
   for (const items of Object.values(cats)) {
     if (!Array.isArray(items)) continue;
