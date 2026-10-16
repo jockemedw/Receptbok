@@ -1,6 +1,5 @@
 // Inköpslista: rendering, bockning, manuella varor, copy-läge.
-// Läser state: _shopListId, _shopItemIds, _checkedItems, _checkedSaveTimer, _shopRecipeItems, _shopManualItems
-// Skriver state: _shopListId, _shopItemIds, _checkedItems, _checkedSaveTimer, _shopRecipeItems, _shopManualItems
+// State (window.*, de flesta deklarerade i js/state.js): _shopListId, _shopItemIds, _checkedItems, _checkSeq/_checkSeqNext, _checkedSaveTimer, _shopRecipeItems, _shopManualItems, _editRowKey, _handlaMode, _pantryItems/_pantrySupported, _shopCoverage, _shopDirty, _preserveChecked — läses och skrivs här.
 
 import { CAT_ICONS, escapeHtml, fmtIso, fmtShort, svCompare } from '../utils.js';
 
@@ -129,7 +128,7 @@ function subscribeShoppingItems(listId) {
 // Egna varor: namn-baserad nyckel (F035 — ett tidigare index-baserat schema
 // här matchade inte det namn-baserade schema toggleShopItem/renderingen
 // faktiskt skriver till, så egna varors bockar sparades aldrig).
-function buildShopState(list, items) {
+function buildShopState(items) {
   const recipeRows = {};   // kategori → rader
   const manualRows = [];
   _itemPos = new Map(items.map((r) => [r.id, r.position]));
@@ -188,13 +187,6 @@ function keyForId(id) {
   return Object.keys(window._shopItemIds || {}).find((k) => window._shopItemIds[k] === id) || null;
 }
 
-function nameForKey(key) {
-  const rm = key.match(/^recipe::(.+)::(\d+)$/);
-  if (rm) return window._shopRecipeItems?.[rm[1]]?.[parseInt(rm[2], 10)] ?? null;
-  if (key.startsWith('manual::')) return key.slice('manual::'.length);
-  return null;
-}
-
 // Raden i DOM för en bock-nyckel. Egna varor bär data-key; receptvaror gör det
 // också sedan Session 132 (tidigare matchades de via onclick-strängen).
 function itemElByKey(key) {
@@ -234,7 +226,7 @@ function applyRemoteUpdate(row) {
   let render = false;
 
   // 1. Namnbyte på en annan enhet
-  const currentName = nameForKey(key);
+  const currentName = itemNameForKey(key, window._shopRecipeItems);
   if (currentName != null && row.name && row.name !== currentName) {
     updateNameInMemory(row.id, row.name);
     key = keyForId(row.id) || key;   // egna varors nyckel är namn-baserad → den flyttade
@@ -290,7 +282,7 @@ function pantryKey(name) {
   return String(name || '').replace(/\s*\([^)]*\)\s*$/, '').trim().toLowerCase();
 }
 
-function isPantryName(name) {
+export function isPantryName(name) {
   return window._pantrySupported && window._pantryItems?.has(pantryKey(name));
 }
 
@@ -482,16 +474,10 @@ export async function removeShopItem(key) {
   }
 }
 
-// Delta-flush (F229/F244/F252/F230): skriver BARA de rader som faktiskt
-// togglats sedan senaste flush (_pendingChecks), inte hela listans absoluta
-// bock-status. Tidigare skrev varje flush om samtliga rader i
-// window._shopItemIds → O(N) skrivningar/realtime-events per tryck, no-op-
-// UPDATE:ar på orörda manuella rader (som i sin tur triggade en full
-// window._preserveChecked=false-omladdning via realtime-handlern) och —
-// värst — skrev checked:false över en partners samtidiga bockning som ännu
-// inte hunnit synas lokalt. Samma mönster som js/lists/lists-view.js:
-// _pendingChecks (rad-id → önskat värde) fylls i toggleShopItem, flushas
-// grupperat true/false och töms här.
+// Delta-flush (F229/F244/F252/F230 — se motiveringen vid _pendingChecks överst):
+// skriver BARA rader som togglats sedan senaste flush. _pendingChecks (rad-id →
+// önskat värde) fylls i toggleShopItem och flushas grupperat true/false av
+// flushPendingChecks, som tömmer den.
 export function scheduleCheckedSave() {
   clearTimeout(window._checkedSaveTimer);
   window._checkedSaveTimer = setTimeout(flushPendingChecks, 600);
@@ -630,7 +616,7 @@ function rowEditBtnHtml(key) {
             onclick="event.stopPropagation();editShopRow(this.dataset.key)">${ICON_PENCIL}</button>`;
 }
 
-// Byt namn på en vara (i redigera-läge). Uppdaterar DB + minne utan omladdning.
+// Byt namn på en vara (radredigering via penn-knappen, anropas från commitRowEdit). Uppdaterar DB + minne utan omladdning.
 export async function renameShopItem(inputEl) {
   const id = inputEl.dataset.id;            // shopping_items.id är en UUID-sträng
   const orig = inputEl.dataset.orig || '';
@@ -643,8 +629,8 @@ export async function renameShopItem(inputEl) {
     return;
   }
 
-  // Uppdatera minnet direkt (optimistiskt) så en efterföljande re-render — t.ex.
-  // när man trycker "✓ Klar" — visar det nya namnet och inte snäpper tillbaka.
+  // Uppdatera minnet direkt (optimistiskt) så re-rendern nedan — och commitRowEdits
+  // efterföljande — visar det nya namnet medan DB-skrivningen pågår och inte snäpper tillbaka.
   inputEl.dataset.orig = newName;
   const wasManual = updateNameInMemory(id, newName);
   if (wasManual) renderFullShoppingList(window._shopRecipeItems, window._shopManualItems);
@@ -669,7 +655,7 @@ export async function renameShopItem(inputEl) {
 // nyckeln i BÅDE _shopItemIds och _checkedItems (till skillnad från
 // receptvarornas indexbaserade nyckel, som inte påverkas av namnbyte).
 function updateNameInMemory(id, newName) {
-  const key = Object.keys(window._shopItemIds || {}).find(k => window._shopItemIds[k] === id);
+  const key = keyForId(id);
   if (!key) return false;
   const rm = key.match(/^recipe::(.+)::(\d+)$/);
   if (rm) {
@@ -697,7 +683,10 @@ function updateNameInMemory(id, newName) {
   return false;
 }
 
-export function rebuildShopText() {
+// Kopieringstexten (#shoppingText) för omarkerade, ej "har hemma"-varor —
+// html för vyn, text för "Kopiera hela listan". Delas av rebuildShopText och
+// renderFullShoppingList.
+function shopTextContent() {
   let textParts = [];
   let textBlocksHtml = '';
 
@@ -731,14 +720,22 @@ export function rebuildShopText() {
     </div>`;
   }
 
+  return { html: textBlocksHtml, text: textParts.join('\n\n') };
+}
+
+function writeShopText({ html, text }) {
   const textEl = document.getElementById('shoppingText');
-  textEl.innerHTML = textBlocksHtml +
+  textEl.innerHTML = html +
     `<button class="shop-copy-btn" onclick="copyShoppingList()">Kopiera hela listan</button>`;
-  textEl._fullText = textParts.join('\n\n');
+  textEl._fullText = text;
+}
+
+export function rebuildShopText() {
+  writeShopText(shopTextContent());
 }
 
 // ── Rad-byggare (delas av kategori-vyn och handla-lägets "I korgen"-sektion) ──
-// Receptvara: bock-nyckeln bakas in i onclick (realtime-selektorn matchar på den).
+// Receptvara: bock-nyckeln ligger i data-key (itemElByKey matchar på den sedan Session 132).
 function recipeItemLi(cat, idx, name) {
   const key     = `recipe::${cat}::${idx}`;
   const pantry  = isPantryName(name);
@@ -788,8 +785,6 @@ export function renderFullShoppingList(recipeItems, manualItems) {
   window._shopRecipeItems = recipeItems;
   window._shopManualItems = manualItems;
   let checkHtml = '';
-  let textParts = [];
-  let textBlocksHtml = '';
   const handla = window._handlaMode === true;
   const doneItems = [];   // handla-läge: bockade varor samlas här → visas under strecket
 
@@ -819,25 +814,6 @@ export function renderFullShoppingList(recipeItems, manualItems) {
           <ul class="shopping-items">${itemsHtml}</ul>
         </div>`;
       }).join('');
-
-    const recipeText = Object.entries(recipeItems)
-      .filter(([, items]) => items.length > 0)
-      .map(([cat, items]) => {
-        const unchecked = items.filter((item, idx) => !window._checkedItems[`recipe::${cat}::${idx}`] && !isPantryName(item));
-        return unchecked.length ? `${cat}:\n${unchecked.map(i => '• ' + i).join('\n')}` : null;
-      }).filter(Boolean).join('\n\n');
-    if (recipeText) textParts.push(recipeText);
-
-    textBlocksHtml += Object.entries(recipeItems)
-      .filter(([, items]) => items.length > 0)
-      .map(([cat, items]) => {
-        const unchecked = items.filter((item, idx) => !window._checkedItems[`recipe::${cat}::${idx}`] && !isPantryName(item));
-        if (!unchecked.length) return '';
-        return `<div class="shop-text-category">
-          <div class="shop-text-cat-name">${CAT_ICONS[cat] || '•'} ${cat}</div>
-          <div class="shop-text-items">${unchecked.map(i => '• ' + escapeHtml(i)).join('\n')}</div>
-        </div>`;
-      }).join('');
   }
 
   if (manualItems.length > 0) {
@@ -861,15 +837,6 @@ export function renderFullShoppingList(recipeItems, manualItems) {
         <ul class="shopping-items">${manualHtml}</ul>
       </div>`;
     }
-
-    const uncheckedManual = manualItems.filter((item) => !window._checkedItems[`manual::${item}`] && !isPantryName(item));
-    if (uncheckedManual.length) {
-      textParts.push(`Egna tillägg:\n${uncheckedManual.map(i => '• ' + i).join('\n')}`);
-      textBlocksHtml += `<div class="shop-text-category">
-        <div class="shop-text-cat-name">${ICON_NOTE} Egna tillägg</div>
-        <div class="shop-text-items">${uncheckedManual.map(i => '• ' + escapeHtml(i)).join('\n')}</div>
-      </div>`;
-    }
   }
 
   // handla-läge: strecket + "I korgen"-sektionen, senast ibockade överst
@@ -883,11 +850,9 @@ export function renderFullShoppingList(recipeItems, manualItems) {
     </div>`;
   }
 
+  const shopText = shopTextContent();
   document.getElementById('shoppingList').innerHTML = checkHtml;
-  const textEl = document.getElementById('shoppingText');
-  textEl.innerHTML = textBlocksHtml +
-    `<button class="shop-copy-btn" onclick="copyShoppingList()">Kopiera hela listan</button>`;
-  textEl._fullText = textParts.join('\n\n');
+  writeShopText(shopText);
 }
 
 // ── Inköpsrundor: täckningsrad + "Vi har handlat" (migration 009) ────────────
@@ -1070,7 +1035,7 @@ async function loadShoppingTabInner() {
     window._shopListId = list.id;
     subscribeShoppingItems(list.id);
 
-    const state = buildShopState(list, items);
+    const state = buildShopState(items);
     window._shopItemIds = state.itemIds;
     if (!preserveChecked) window._checkedItems = state.checkedItems;
 
@@ -1463,7 +1428,7 @@ function carryPendingChecks(byName, shop, recipeItemsData) {
 // inaktiva listan tills ett eko råkade ladda om fliken.
 export function renderShoppingData(shop) {
   if (!shop) return;
-  const recipeItemsData = shop.recipeItems || shop.categories || null;
+  const recipeItemsData = shop.recipeItems || null;
   const hasRecipe = shop.recipeItemsMovedAt &&
     recipeItemsData && Object.values(recipeItemsData).some(v => v.length > 0);
   const hasManual = (shop.manualItems || []).length > 0;

@@ -98,8 +98,8 @@ export function showEarlierShopDays() {
   renderShopDayPicker();
 }
 
-// "Hela matsedeln" = alla dagar i den aktiva planen (inte arkivet, inte
-// tidigare dagar) — den vanligaste storhandlingen med ett tryck.
+// "Hela matsedeln" = alla väljbara dagar från idag och framåt (aktiva planen +
+// egna dagar, inte arkivet) — den vanligaste storhandlingen med ett tryck.
 export function selectWholePlan() {
   const s = state();
   if (!s) return;
