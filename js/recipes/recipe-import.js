@@ -181,4 +181,3 @@ window.closeImportModal   = closeImportModal;
 window.switchImportTab    = switchImportTab;
 window.importFromUrl      = importFromUrl;
 window.importFromPhoto    = importFromPhoto;
-window.openImportPreview  = openImportPreview;

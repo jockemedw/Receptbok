@@ -1,9 +1,10 @@
-// Receptredigering: öppna/stänga modal, spara, ta bort.
-// Läser state: RECIPES, editingId
-// Skriver state: RECIPES, editingId
+// Receptredigering: öppna/stänga modal, taggväljare, spara, ta bort.
+// Läser state: RECIPES, editingId, _importSeasons (från importförhandsgranskningen)
+// Skriver state: RECIPES, _allRecipes, editingId, _importSeasons
 
-import { proteinLabel, timeStr, renderIngredient, renderDetailInner, escapeHtml, jsStringAttr, svCompare } from '../utils.js';
+import { renderDetailInner, escapeHtml, jsStringAttr, svCompare } from '../utils.js';
 import { recipeToRow } from '../data-mapper.js';
+import { cardMetaHtml } from './recipe-browser.js';
 
 // ── Taggväljare ───────────────────────────────────────────────────────────────
 // Knappen vid taggfältet fäller ut alla taggar som redan används i receptboken
@@ -214,20 +215,9 @@ export async function saveRecipe() {
 
     const card = document.querySelector(`.recipe-card[data-id="${window.editingId}"]`);
     if (card) {
-      const t = timeStr(updated);
       card.dataset.title        = updated.title.toLowerCase();
-      card.dataset.protein      = updated.protein;
-      card.dataset.tags         = updated.tags.join(' ');
-      card.dataset.time         = updated.time || 999;
-      card.dataset.ingredients  = updated.ingredients.join(' ').toLowerCase();
-      card.dataset.instructions = updated.instructions.join(' ').toLowerCase();
       card.querySelector('.card-title').textContent = updated.title;
-      card.querySelector('.card-meta').innerHTML = `
-        <span class="pill pill-protein">${proteinLabel[updated.protein] || updated.protein}</span>
-        ${t ? `<span class="pill pill-time">⏱ ${t}</span>` : ''}
-        <span class="pill ${updated.tested ? 'pill-tested' : 'pill-untested'} pill-toggle" role="button" tabindex="0"
-              onclick="toggleTested(event, ${updated.id})"
-              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTested(event, ${updated.id})}">${updated.tested ? '✓ Provat' : 'Oprövat'}</span>`;
+      card.querySelector('.card-meta').innerHTML = cardMetaHtml(updated);
       const inner = card.querySelector('.detail-inner');
       inner.innerHTML = renderDetailInner(updated);
       inner.dataset.rendered = '1';

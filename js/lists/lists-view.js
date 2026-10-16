@@ -9,7 +9,7 @@
 // Data bor i Supabase-tabellerna family_lists + family_list_items
 // (db/migrations/005_family_lists.sql). Skrivningar går direkt från klienten —
 // RLS skyddar (samma mönster som skafferimarkeringarna). Saknas tabellerna
-// (migrationen ej körd) visas ett vänligt "aktiveras snart"-läge.
+// (migrationen ej körd) visas ett vänligt "nästan klara"-läge (_supported=false).
 
 import { escapeHtml } from '../utils.js';
 
@@ -211,8 +211,8 @@ function headingHtml(title) {
   return `<div class="content-heading"><h1 class="content-heading-title">${escapeHtml(title)}</h1></div>`;
 }
 
-// Re-render utan att tappa fokus/halvskriven text i "lägg till"-fältet —
-// viktigt när partnern ändrar samtidigt eller vid snabb inmatning av rader.
+// Fält vars fokus, text och markörläge bevaras över en re-render (partnern
+// ändrar samtidigt, snabb inmatning) — se render().
 const KEEP_FIELDS = ['flAddInput', 'flNewListInput', 'flNewNoteInput', 'flNoteTitle', 'flNoteBody', 'flQuickAddInput', 'flImportText', 'flRenameInput'];
 
 function render(opts = {}) {
@@ -589,35 +589,39 @@ async function flushPendingChecks() {
 }
 
 // ── Rader: lägg till / ta bort ───────────────────────────────────────────────
+// Optimistisk insert (temp-rad direkt, riktigt id när servern svarat; rullas
+// tillbaka vid fel). Delas av flAddItem och snabbtillägget flQuickAddItem.
+async function insertItem(listId, text, renderOpts) {
+  const sortOrder = Math.max(0, ...itemsOf(listId).map((i) => i.sort_order || 0)) + 1;
+  const temp = {
+    id: `tmp-${++_tmpSeq}`, list_id: listId, household_id: _householdId,
+    text, checked: false, sort_order: sortOrder,
+  };
+  _allItems.push(temp);
+  render(renderOpts);
+
+  try {
+    const { data, error } = await window.db.from('family_list_items')
+      .insert({ list_id: listId, household_id: _householdId, text, sort_order: sortOrder })
+      .select().single();
+    if (error) throw error;
+    const t = _allItems.find((i) => i.id === temp.id);
+    if (t) t.id = data.id;
+    render(renderOpts);
+  } catch {
+    _allItems = _allItems.filter((i) => i.id !== temp.id);
+    render();
+    window.showToast?.('Kunde inte lägga till raden — prova igen.', { type: 'error' });
+  }
+}
+
 export async function flAddItem(ev) {
   ev.preventDefault();
   const inp = document.getElementById('flAddInput');
   const text = (inp?.value || '').trim();
   if (!text || !_openListId) return;
   if (inp) inp.value = '';
-
-  const listItems = itemsOf(_openListId);
-  const sortOrder = Math.max(0, ...listItems.map((i) => i.sort_order || 0)) + 1;
-  const temp = {
-    id: `tmp-${++_tmpSeq}`, list_id: _openListId, household_id: _householdId,
-    text, checked: false, sort_order: sortOrder,
-  };
-  _allItems.push(temp);
-  render({ keepAddFocus: true });
-
-  try {
-    const { data, error } = await window.db.from('family_list_items')
-      .insert({ list_id: _openListId, household_id: _householdId, text, sort_order: sortOrder })
-      .select().single();
-    if (error) throw error;
-    const t = _allItems.find((i) => i.id === temp.id);
-    if (t) t.id = data.id;
-    render({ keepAddFocus: true });
-  } catch {
-    _allItems = _allItems.filter((i) => i.id !== temp.id);
-    render();
-    window.showToast?.('Kunde inte lägga till raden — prova igen.', { type: 'error' });
-  }
+  await insertItem(_openListId, text, { keepAddFocus: true });
 }
 
 // L2 — snabbtillägg från översikten (samma insert som flAddItem, men mot en
@@ -640,28 +644,7 @@ export async function flQuickAddItem(ev) {
   const text = (inp?.value || '').trim();
   if (!text || !listId) return;
   if (inp) inp.value = '';
-
-  const sortOrder = Math.max(0, ...itemsOf(listId).map((i) => i.sort_order || 0)) + 1;
-  const temp = {
-    id: `tmp-${++_tmpSeq}`, list_id: listId, household_id: _householdId,
-    text, checked: false, sort_order: sortOrder,
-  };
-  _allItems.push(temp);
-  render();   // aktiv-elementbevarandet håller kvar fokus i flQuickAddInput
-
-  try {
-    const { data, error } = await window.db.from('family_list_items')
-      .insert({ list_id: listId, household_id: _householdId, text, sort_order: sortOrder })
-      .select().single();
-    if (error) throw error;
-    const t = _allItems.find((i) => i.id === temp.id);
-    if (t) t.id = data.id;
-    render();
-  } catch {
-    _allItems = _allItems.filter((i) => i.id !== temp.id);
-    render();
-    window.showToast?.('Kunde inte lägga till raden — prova igen.', { type: 'error' });
-  }
+  await insertItem(listId, text);   // aktiv-elementbevarandet håller kvar fokus i flQuickAddInput
 }
 
 // ── Excel-import (klistra in tabell / CSV-fil) ───────────────────────────────

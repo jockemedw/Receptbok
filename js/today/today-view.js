@@ -4,8 +4,9 @@
 // --p (samma trick som prototypens .t-<protein>).
 //
 // Läser: window._timelineByDate (byggs av renderWeeklyPlanData i plan-viewer.js),
-//        window.RECIPES, window._lastPlan. Muterar inget eget tillstånd — bara
-//        rendering + anrop av befintliga window.*-funktioner (VSA).
+//        window.RECIPES, window._dbResting. Muterar ingen plandata — bara egna
+//        vy-cacher (prisbanner, fästa lappar, senast renderat datum),
+//        window._todayReady, rendering + anrop av befintliga window.*-funktioner (VSA).
 //
 // Re-render: vi wrappar renderWeeklyPlanData + loadWeeklyPlan + switchTab (samma
 // synk-mönster som deluxe). Importeras EFTER deluxe → wrappningen ligger ytterst.
@@ -426,21 +427,14 @@ window.todayAddItem = async function () {
 function wrap(name, { async = false, onAfter } = {}) {
   const orig = window[name];
   if (typeof orig !== 'function' || orig.__todayWrapped) return;
+  const after = () => {
+    window._todayReady = true;
+    try { renderTodayView(); } catch (e) { console.error('renderTodayView', e); }
+    onAfter?.();
+  };
   const wrapped = async
-    ? async function (...args) {
-        const r = await orig.apply(this, args);
-        window._todayReady = true;
-        try { renderTodayView(); } catch (e) { console.error('renderTodayView', e); }
-        onAfter?.();
-        return r;
-      }
-    : function (...args) {
-        const r = orig.apply(this, args);
-        window._todayReady = true;
-        try { renderTodayView(); } catch (e) { console.error('renderTodayView', e); }
-        onAfter?.();
-        return r;
-      };
+    ? async function (...args) { const r = await orig.apply(this, args); after(); return r; }
+    : function (...args) { const r = orig.apply(this, args); after(); return r; };
   wrapped.__todayWrapped = true;
   window[name] = wrapped;
 }
@@ -477,8 +471,6 @@ function installHooks() {
 }
 
 installHooks();
-
-window.renderTodayView = renderTodayView;
 
 // Datumbyte medan appen stått öppen: ladda om planen (bygger om tidslinjen med
 // nya isPast/isToday) när appen kommer tillbaka i förgrunden på en ny dag.
