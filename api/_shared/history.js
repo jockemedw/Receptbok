@@ -22,10 +22,22 @@ export function isoDaysAgo(days, from = new Date()) {
   return d.toISOString().slice(0, 10);
 }
 
-// Ren funktion (testbar): historikrader + planerade dagar → { usedOn, recentIds }.
+// ── Minnesfönstren (Session 154) ──────────────────────────────────────────
+// RECENT_WINDOW_DAYS: recept som lagats/planerats inom 4 veckor väljs inte i
+// första hand (tidigare 14 dagar). HARD_WINDOW_DAYS: inom 2 veckor väljs de i
+// princip aldrig — bara i sista utvägen. Recept lagade för 2–4 veckor sedan är
+// RESERVEN: tar en delpool slut (t.ex. testade kycklingrätter för vardag) tas
+// hellre en sådan — längst sedan först, med dagtyp och proteintak kvar — än att
+// generatorn släpper kraven. Bortom 4 veckor sköter "längst sedan"-viktningen
+// (RECENCY_HORIZON_DAYS = 90 i select-recipes.js) variationen mjukt.
+export const RECENT_WINDOW_DAYS = 28;
+export const HARD_WINDOW_DAYS = 14;
+
+// Ren funktion (testbar): historikrader + planerade dagar → { usedOn, recentIds, hardIds }.
 // usedOn[id] = senaste datum receptet användes/är planerat; recentIds = de med
-// usedOn >= cutoff (inkl. framtida planerade).
-export function buildRecipeUsage(historyRows = [], plannedRows = [], today, cutoff) {
+// usedOn >= cutoff (inkl. framtida planerade); hardIds = delmängden med
+// usedOn >= hardCutoff (utan hardCutoff = samma som recentIds, dvs. ingen reserv).
+export function buildRecipeUsage(historyRows = [], plannedRows = [], today, cutoff, hardCutoff = cutoff) {
   const plannedFrom = new Set();
   const usedOn = {};
   const bump = (id, date) => {
@@ -43,23 +55,84 @@ export function buildRecipeUsage(historyRows = [], plannedRows = [], today, cuto
     bump(h.recipe_id, h.used_on);
   }
   const recentIds = new Set();
+  const hardIds = new Set();
   for (const [id, date] of Object.entries(usedOn)) {
     if (date >= cutoff) recentIds.add(parseInt(id, 10));
+    if (date >= hardCutoff) hardIds.add(parseInt(id, 10));
   }
-  return { usedOn, recentIds };
+  return { usedOn, recentIds, hardIds };
 }
 
-// Hämtar historik + planerade dagar (senaste `lookbackDays` och framåt).
-export async function fetchRecipeUsage(database, householdId, { windowDays = 14, lookbackDays = 90 } = {}) {
+// ── Förslagsminne (Session 154, tabell recipe_suggestions — migration 013) ──
+// Historiken minns bara vad som faktiskt planerats/lagats. Ett kasserat utkast
+// eller en bortbytt rätt släpps (spökrad-städningen) — och kom därför tillbaka
+// i nästa förslag. Här minns vi FÖRSLAGEN: suggested_on = dagen receptet senast
+// lades i en genererad matsedel, rejected_on = dagen det senast byttes bort.
+// Ett sådant recept viktas ner (aldrig spärras) i SUGGESTION_MEMORY_DAYS, mest
+// direkt efteråt och linjärt tillbaka till full vikt. Lagas/planeras receptet
+// på eller efter förslagsdagen räknas förslaget som accepterat → ingen sänkning.
+export const SUGGESTION_MEMORY_DAYS = 28;
+const SUGGESTED_FLOOR = 0.5; // med i ett förslag som inte blev av (t.ex. kasserat utkast)
+const REJECTED_FLOOR = 0.2;  // aktivt bortbytt
+
+function daysBetween(fromIso, toIso) {
+  return (new Date(toIso + "T12:00:00") - new Date(fromIso + "T12:00:00")) / 864e5;
+}
+
+// Ren funktion (testbar): förslagsrader + usedOn → { receptId: vikt (0..1) }.
+// Bara recept med sänkt vikt tas med.
+export function suggestionPenalties(rows = [], usedOn = {}, today = isoDaysAgo(0)) {
+  const out = {};
+  for (const row of rows) {
+    if (row?.recipe_id == null) continue;
+    const used = usedOn[String(row.recipe_id)] || null;
+    const factor = (date, floor) => {
+      if (!date) return 1;
+      if (used && used >= date) return 1;
+      const days = Math.max(0, daysBetween(date, today));
+      if (days >= SUGGESTION_MEMORY_DAYS) return 1;
+      return floor + (1 - floor) * (days / SUGGESTION_MEMORY_DAYS);
+    };
+    const w = factor(row.suggested_on, SUGGESTED_FLOOR) * factor(row.rejected_on, REJECTED_FLOOR);
+    if (w < 1) out[row.recipe_id] = w;
+  }
+  return out;
+}
+
+// Best effort: saknas tabellen (migration 013 ej körd) eller glappar skrivningen
+// märks det bara som sämre variation — aldrig ett misslyckat byte/generering.
+export async function recordSuggestions(database, householdId, recipeIds, field, date = isoDaysAgo(0)) {
+  const ids = [...new Set((recipeIds || []).filter((id) => id != null))];
+  if (!ids.length) return;
+  try {
+    const { error } = await database.from("recipe_suggestions").upsert(
+      ids.map((recipe_id) => ({ household_id: householdId, recipe_id, [field]: date })),
+      { onConflict: "household_id,recipe_id" });
+    if (error) console.warn("recordSuggestions", error.message);
+  } catch (e) {
+    console.warn("recordSuggestions", e?.message || e);
+  }
+}
+
+// Hämtar historik + planerade dagar (senaste `lookbackDays` och framåt) + förslagsminnet.
+export async function fetchRecipeUsage(database, householdId, {
+  windowDays = RECENT_WINDOW_DAYS, hardDays = HARD_WINDOW_DAYS, lookbackDays = 90,
+} = {}) {
   const today = isoDaysAgo(0);
-  const [hist, planned] = await Promise.all([
+  const [hist, planned, sugg] = await Promise.all([
     database.from("recipe_history").select("recipe_id, used_on").eq("household_id", householdId),
     database.from("meal_days").select("recipe_id, date").eq("household_id", householdId)
       .not("recipe_id", "is", null).gte("date", isoDaysAgo(lookbackDays)),
+    // En rad per recept (som recipe_history) — liten tabell, läses i sin helhet.
+    database.from("recipe_suggestions").select("recipe_id, suggested_on, rejected_on")
+      .eq("household_id", householdId),
   ]);
   // Läsfel sväljs (som förr): sämre variation är bättre än en misslyckad generering.
   if (hist.error || planned.error) console.error("fetchRecipeUsage", hist.error || planned.error);
-  return buildRecipeUsage(hist.data || [], planned.data || [], today, isoDaysAgo(windowDays));
+  const usage = buildRecipeUsage(hist.data || [], planned.data || [], today,
+    isoDaysAgo(windowDays), isoDaysAgo(hardDays));
+  const penaltyById = sugg.error ? {} : suggestionPenalties(sugg.data || [], usage.usedOn, today);
+  return { ...usage, penaltyById };
 }
 
 // Ren funktion (testbar): vilka recept-id i historiken är spökrader?

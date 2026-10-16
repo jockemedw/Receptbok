@@ -2,9 +2,10 @@
 // Bröts ut ur api/generate.js (tidigare inline + en drift-benägen testkopia) så
 // att både handlern och tests/select-recipes.test.js importerar SAMMA källa.
 //
-// Pipeline: historikfiltrering (14 dagar görs av anroparen via recentIds) →
-// proteinfördelning (max 2 per icke-veg-typ) → vardag30/helg60-matchning →
-// säsongsvikt → slump. Se selectRecipes nedan.
+// Pipeline: historikfiltrering (4 veckor via recentIds, se RECENT_WINDOW_DAYS i
+// history.js; recept lagade för 2–4 veckor sedan är reserv) → proteinfördelning
+// (max 2 per icke-veg-typ) → vardag30/helg60-matchning → säsongsvikt ×
+// "längst sedan" × förslagsminne → slump. Se selectRecipes nedan.
 
 import { shuffle } from "./history.js";
 import { weightedSaving } from "./willys-matcher.js";
@@ -51,12 +52,14 @@ export function weightedOrder(list, weightOf, rng = Math.random) {
 // Prioriterar in rea-recept i matsedeln. Tröskeln mäts på VÄRDEVIKTAD besparing
 // (weightedSaving) i stället för rå kr — så att ett recept vars besparing bara är
 // billig vitlök/lök inte trycks in, medan dyra protein-/färskvarureor lyfts.
-export function bucketBySaving(pool, savingsById, currentSeason = null, usedOn = {}, today = isoToday()) {
-  // Säsong och "längst sedan" viktas INOM varje besparings-bucket i stället för
-  // att omsortera hela poolen efteråt — rea-recept ligger fortfarande först
-  // (buckets konkateneras high→low); vikterna styr bara ordningen inom.
+export function bucketBySaving(pool, savingsById, currentSeason = null, usedOn = {}, today = isoToday(), penaltyById = null) {
+  // Säsong, "längst sedan" och förslagsminnet (penaltyById, se
+  // suggestionPenalties i history.js) viktas INOM varje besparings-bucket i
+  // stället för att omsortera hela poolen efteråt — rea-recept ligger
+  // fortfarande först (buckets konkateneras high→low); vikterna styr bara
+  // ordningen inom.
   const order = (arr) => weightedOrder(arr, (r) =>
-    seasonWeight(r, currentSeason) * recencyWeight(usedOn[r.id], today));
+    seasonWeight(r, currentSeason) * recencyWeight(usedOn[r.id], today) * (penaltyById?.[r.id] ?? 1));
   if (!savingsById) return order(pool);
   const high = [], low = [];
   for (const r of pool) {
@@ -94,14 +97,19 @@ export function byLongestAgo(list, usedOn = {}, rng = Math.random) {
 //   4. valfri klass
 // …alla med rätt dagtagg (vardag30/helg60) och inom proteintaket. Därefter de
 // gamla reservnivåerna (släpp taket, släpp taggen, släpp båda). Inom varje nivå
-// viktas "längst sedan". excludeIds (nyss utbytta recept samma dag) hålls borta
+// viktas "längst sedan" × förslagsminnet (penaltyById).
+//
+// Reserven (Session 154): recept i recentIds (4 veckor) men inte i hardIds
+// (2 veckor) — dvs. lagade för 2–4 veckor sedan — kommer med rätt dagtagg och
+// inom proteintaket FÖRE nivåerna som släpper testad-status eller taggen.
+// Utan hardIds (= recentIds) är reserven tom och ordningen exakt som förr. excludeIds (nyss utbytta recept samma dag) hålls borta
 // överallt utom i sista utvägen — det stoppar pingpong A→X→A. Nuvarande recept
 // returneras aldrig.
 export const MAX_PROTEIN_REPLACE = 2;
 
 export function pickReplacementOrder(recipes, {
-  current = null, weekIds = [], recentIds = new Set(), usedOn = {}, proteinCount = {},
-  date, excludeIds = [], rng = Math.random, today = isoToday(),
+  current = null, weekIds = [], recentIds = new Set(), hardIds = recentIds, usedOn = {}, proteinCount = {},
+  date, excludeIds = [], rng = Math.random, today = isoToday(), penaltyById = null,
 } = {}) {
   const currentId = current?.id ?? null;
   const weekSet = new Set(weekIds);
@@ -116,17 +124,21 @@ export function pickReplacementOrder(recipes, {
   const sameClass = (r) => isVeg(r) === isVeg(current);
   const sameProtein = (r) => r.protein === current.protein;
 
-  const base = recipes.filter((r) =>
-    r.id !== currentId && !weekSet.has(r.id) && !recentIds.has(r.id) && !excluded.has(r.id));
+  const allowed = (r) => r.id !== currentId && !weekSet.has(r.id) && !excluded.has(r.id);
+  const base = recipes.filter((r) => allowed(r) && !recentIds.has(r.id));
   const strict = base.filter((r) => hasTag(r) && underCap(r));
+  const reserve = recipes.filter((r) =>
+    allowed(r) && recentIds.has(r.id) && !hardIds.has(r.id) && hasTag(r) && underCap(r));
 
   const tiers = [];
   if (current) {
     tiers.push(strict.filter((r) => sameTested(r) && sameProtein(r)));
     tiers.push(strict.filter((r) => sameTested(r) && sameClass(r)));
+    tiers.push(reserve.filter((r) => sameTested(r) && sameClass(r)));
     tiers.push(strict.filter(sameClass));
   }
   tiers.push(strict);
+  tiers.push(reserve);
   tiers.push(base.filter(hasTag));
   tiers.push(base.filter(underCap));
   tiers.push(base);
@@ -140,7 +152,8 @@ export function pickReplacementOrder(recipes, {
       order.push(r.id);
     }
   };
-  for (const tier of tiers) add(weightedOrder(tier, (r) => recencyWeight(usedOn[r.id], today), rng));
+  const weight = (r) => recencyWeight(usedOn[r.id], today) * (penaltyById?.[r.id] ?? 1);
+  for (const tier of tiers) add(weightedOrder(tier, weight, rng));
   // Sista utvägen: allt utom nuvarande och veckans — längst sedan först, lika
   // datum slumpas (ingen deterministisk pingpong).
   add(byLongestAgo(recipes.filter((r) => r.id !== currentId && !weekSet.has(r.id)), usedOn, rng));
@@ -165,9 +178,18 @@ export function chooseRandomConfirm(poolIds, requestedId) {
 // med ALLA vanliga regler kvar (dagtagg, veg-/Ture-dag, proteintak, oprövade).
 // Hittas inget sådant fylls dagen som vanligt; anroparen räknar ut vilka varor
 // som blev otäckta.
+//
+// opts.hardIds (Session 154): delmängden av recentIds som lagats/planerats de
+// senaste 2 veckorna. recentIds minus hardIds = RESERVEN (lagade för 2–4
+// veckor sedan): tar dagens delpool slut tas hellre en reservrätt med alla
+// regler kvar (dagtagg, proteintak, oprövade) — längst sedan först — än att
+// proteintaket eller dagtaggen släpps. Utan hardIds är reserven tom (som förr).
+// opts.penaltyById: förslagsminnet (suggestionPenalties) — vikt i ordningen.
 export function selectRecipes(recipes, dayList, constraints, recentIds = new Set(), usedOn = {}, savingsById = null, currentSeason = null, today = isoToday(), opts = {}) {
   const MAX_PER_PROTEIN = 2;
   const coverCanons = opts.coverCanons || null;
+  const hardIds = opts.hardIds || recentIds;
+  const penaltyById = opts.penaltyById || null;
   const uncovered = new Set();
   if (coverCanons) for (const set of coverCanons.values()) for (const c of set) uncovered.add(c);
   const coversUncovered = (r) => {
@@ -193,8 +215,15 @@ export function selectRecipes(recipes, dayList, constraints, recentIds = new Set
   const lastResort = byLongestAgo(recipes, usedOn);
   if (pool.length === 0) pool = recipes;
 
-  const weekdayPool = bucketBySaving(pool.filter((r) => r.tags.includes("vardag30")), savingsById, currentSeason, usedOn, today);
-  const weekendPool = bucketBySaving(pool.filter((r) => r.tags.includes("helg60")), savingsById, currentSeason, usedOn, today);
+  const weekdayPool = bucketBySaving(pool.filter((r) => r.tags.includes("vardag30")), savingsById, currentSeason, usedOn, today, penaltyById);
+  const weekendPool = bucketBySaving(pool.filter((r) => r.tags.includes("helg60")), savingsById, currentSeason, usedOn, today, penaltyById);
+  // Reserven: utanför poolen, inom 4-veckorsfönstret men äldre än 2 veckor.
+  // Längst sedan först (ingen slump i ordningen — äldst är bäst här).
+  const poolIds = new Set(pool.map((r) => r.id));
+  const reserve = byLongestAgo(recipes.filter((r) =>
+    !poolIds.has(r.id) && recentIds.has(r.id) && !hardIds.has(r.id)), usedOn);
+  const weekdayReserve = reserve.filter((r) => r.tags.includes("vardag30"));
+  const weekendReserve = reserve.filter((r) => r.tags.includes("helg60"));
 
   const tureCount = constraints.ture_days;
   const shuffledIndices = shuffle(dayList.map((_, i) => i));
@@ -211,7 +240,7 @@ export function selectRecipes(recipes, dayList, constraints, recentIds = new Set
   const result = [];
   let untestedSoFar = 0;
 
-  function pick(dayPool, altPool, mustBeVeg, mustBeTure) {
+  function pick(dayPool, altPool, mustBeVeg, mustBeTure, dayReserve = []) {
     const maxForProtein = (p) => p === "vegetarisk" ? maxVeg : MAX_PER_PROTEIN;
     const underUntestedLimit = (r) => r.tested || untestedSoFar < constraints.untested_count;
     const tureOk = (r) => !mustBeTure || hasTure(r);
@@ -235,6 +264,17 @@ export function selectRecipes(recipes, dayList, constraints, recentIds = new Set
       }
     }
     for (const r of dayPool) {
+      if (usedIds.has(r.id)) continue;
+      if (!tureOk(r)) continue;
+      if (!vegOk(r)) continue;
+      if (!preferNonTure(r)) continue;
+      if ((proteinUsage[r.protein] || 0) >= maxForProtein(r.protein)) continue;
+      if (!underUntestedLimit(r)) continue;
+      return r;
+    }
+    // Reserven (2–4 veckor sedan) med ALLA regler, före nivåerna som släpper
+    // proteintaket eller dagtaggen.
+    for (const r of dayReserve) {
       if (usedIds.has(r.id)) continue;
       if (!tureOk(r)) continue;
       if (!vegOk(r)) continue;
@@ -284,7 +324,8 @@ export function selectRecipes(recipes, dayList, constraints, recentIds = new Set
     const isTureDay = tureDaySet.has(i);
     const dayPool = day.is_weekend ? weekendPool : weekdayPool;
     const altPool = day.is_weekend ? weekdayPool : weekendPool;
-    const recipe = pick(dayPool, altPool, isVegDay, isTureDay);
+    const dayReserve = day.is_weekend ? weekendReserve : weekdayReserve;
+    const recipe = pick(dayPool, altPool, isVegDay, isTureDay, dayReserve);
     if (!recipe) {
       throw new Error(
         `Kunde inte hitta recept för ${day.day} (${day.date}) — ` +

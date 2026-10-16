@@ -1,6 +1,18 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–149. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–153. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+## Session 153 — Nattpass buggfix
+
+**Session 153 — Nattpass buggfix (2026-10-09, blandat: render-only + datamuterande; PR #247 mergad).**
+
+Joakim: "Kör en billig men omfattande buggfix-workflow över natten." Workflow med 57 agenter (Sonnet-finders per slice → skeptisk verifiering, två röster för high → sekventiella fixar med en commit per bugg → adversariell slutgranskning). 29 kandidater, 26 bekräftade, 3 avfärdade; **24 fixade**, 0 återställda i slutgranskningen, 2 till Joakim — **båda fixade samma morgon på hans order** (se nedan). Hela sviten grön + `node --check`. Ingen DDL, ingen ny `api/`-fil (11), recept-strukturen orörd, custom-dagar orörda. Gren `nattpass/buggfix-2026-10-09`, PR #247 — mergad efter Joakims OK. Styles v205/app v171/SW v124.
+
+**Beslutsfynden (Joakim: "Fixa de sista två, sen merge") — datamuterande:** (a) **Kassera förslag lägger tillbaka dagarna förslaget skrev över:** `savePlanToSupabase` sparar en bild av överskrivna plandagar i `weekly_plans.replaced_days` (migration 012), `discardActivePlan` (`api/discard-plan.js`) raderar förslagets dagar → lägger tillbaka bilden som egna dagar (`ignoreDuplicates` — befintligt innehåll vinner; FK-fel på raderad lista → utan listkoppling) → avaktiverar sist (omförsök säkert). Dialogtexten lovar inte längre något om tidigare matsedlar; toast säger hur många dagar som kom tillbaka. (b) **Ångra efter Ingen middag:** push svarar `holeDate`, Ångra skickar `until` → `spanAfterPull(..., {allowFilledEnd})` drar tillbaka exakt pushens spann. "Dra ihop" oförändrad. Tester: day-ops (until-fallet) + plan-orchestration test 10 (snapshot, återläggning, krock, utan bild, bekräftad).
+
+**Datamuterande (5):** `discard-plan` läser DB-fel och avbryter (tidigare svaldes de) · bockar från en *avslutad* inköpsrunda ärvs inte till nästa listas receptvaror · egna tillägg med samma namn dubbleras inte efter "Vi har handlat" + klienten nekar dubblettnamn · Excel-importen skyddad mot dubbeltryck/delfel · "Flytta till inköpslista" stämplar lokalt datum och säger till när lista saknas.
+**Render-only (19):** Idag-fliken byter dag efter midnatt utan omladdning · realtime i Listor stjäl inte fokus · Enter/Space på ✕ i Ändra-läget · dag-sheetens scroll nollas mellan dagar (S149 h) · wiggle i dragläget efter nyss ändrat kort (S149 d) · fel vid sparade inköpspreferenser och omordning av egna varor visas · Matsedeln står kvar vid nätfel i stället för tomvy · noteringsfältet escapas fullt (S149 i) · sheet som öppnas igen inom 280 ms döljs inte · wake lock läcker inte · touch-targets 44 px (listornas Ändra-läge, taggchips, Inköps tilläggsfält — S149 j delvis) · chevron "Visa receptet" nåbar med tangentbord (S149 l) · huvudingrediens-gruppering (laxfilé/champinjoner) · `guessProtein` vid import ignorerar buljong/fisksås m.m. · "Ta bort recept" dold i importförhandsgranskningen · broccoli-/blomkålsrosor sorteras inte bort som "icke-mat" i Prisoptimera.
+**Avfärdat:** `recencyWeight` utan `Z` (effekt ≈0,0005 i vikt, ingen användarpåverkan) · R07 (medvetet val, dokumenterat) · Provat-knappen 34 px (åsidosätts i sheeten).
 
 ## Session 152 — Receptbildstest
 
