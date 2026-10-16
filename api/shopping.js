@@ -6,7 +6,7 @@ import { getActiveList, fetchCoverage, unshoppedDates, rebuildActiveList, setCov
 // Action-dispatchad inköpsendpoint (mönstret håller api/ under 12-filsgränsen):
 //   get_preferences / set_preferences — inköpspreferenser (dispatch-preferences.json)
 //   set_days     — manuellt dagurval: listan byggs om så den täcker EXAKT de
-//                  valda dagarna (Session 134). Ersätter den automatiska
+//                  valda dagarna (Session 134). Ersätter det automatiska
 //                  bygget som tidigare låg i /api/confirm.
 //   add_day      — lägg en dags ingredienser på listan (custom-dag eller
 //                  återläggning av en redan inhandlad dag; nollar spärren)
