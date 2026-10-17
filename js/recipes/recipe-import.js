@@ -52,6 +52,14 @@ function handlePhotoSelect(input) {
   fb.textContent   = `Vald: ${file.name.length > 25 ? file.name.slice(0, 22) + '…' : file.name}`;
 }
 
+// Serverns felsvar är redan begriplig svenska (handler.js maskerar programfel) —
+// visa det. Nätfel, icke-JSON-svar och tomma fel får anroparens reservtext.
+function serverError(message) {
+  const err = new Error(message || '');
+  err.fromServer = typeof message === 'string' && message.trim() !== '';
+  return err;
+}
+
 export async function importFromUrl() {
   const url = document.getElementById('importUrlInput').value.trim();
   const fb  = document.getElementById('importFeedback');
@@ -70,13 +78,13 @@ export async function importFromUrl() {
       signal: controller.signal,
     });
     const data = await res.json();
-    if (!res.ok || data.error) throw new Error(data.error || 'Fel');
+    if (!res.ok || data.error) throw serverError(data.error);
     closeImportModal();
     openImportPreview(data.recipe);
   } catch (e) {
     if (e.name === 'AbortError') return;   // sheeten stängdes av användaren (F197) — visa ingen felruta
     fb.style.color = 'var(--rust)';
-    fb.textContent = 'Kunde inte hämta receptet — kontrollera adressen.';
+    fb.textContent = e.fromServer ? e.message : 'Kunde inte hämta receptet — kontrollera adressen.';
     btn.disabled   = false;
   } finally {
     if (importAbortController === controller) importAbortController = null;
@@ -109,13 +117,13 @@ export async function importFromPhoto() {
       signal: controller.signal,
     });
     const data = await res.json();
-    if (!res.ok || data.error) throw new Error(data.error || 'Fel');
+    if (!res.ok || data.error) throw serverError(data.error);
     closeImportModal();
     openImportPreview(data.recipe);
   } catch (e) {
     if (e.name === 'AbortError') return;   // sheeten stängdes av användaren (F197) — visa ingen felruta
     fb.style.color = 'var(--rust)';
-    fb.textContent = 'Kunde inte tolka bilden — prova med klarare ljus eller närmre avstånd.';
+    fb.textContent = e.fromServer ? e.message : 'Kunde inte tolka bilden — prova med klarare ljus eller närmre avstånd.';
     btn.disabled   = false;
   } finally {
     clearInterval(msgTimer);

@@ -1,4 +1,4 @@
-import { createHandler } from "./_shared/handler.js";
+import { createSupabaseHandler } from "./_shared/handler.js";
 import { lookup } from "node:dns/promises";
 
 const GEMINI_MODELS = [
@@ -6,6 +6,7 @@ const GEMINI_MODELS = [
   "gemini-2.0-flash",
 ];
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+const PROTEINS = ["fisk", "kyckling", "kött", "fläsk", "vegetarisk"];
 
 const GEMINI_SCHEMA_PROMPT = `Du är en expert på matlagning och dataextraktion. Extrahera receptet och returnera BARA ett JSON-objekt (ingen annan text, ingen markdown) med exakt dessa fält:
 {
@@ -58,7 +59,9 @@ Recept att konvertera:`;
 
 // ── Handler ─────────────────────────────────────────────────────────────────
 
-export default createHandler(async (req, res) => {
+// createSupabaseHandler (inte den gamla GITHUB_PAT-varianten): importen rör
+// inte GitHub, så en borttagen PAT får inte ta ned receptimporten.
+export default createSupabaseHandler(async (req, res) => {
   const { type, url, imageBase64, mimeType } = req.body || {};
 
   if (type === "url") return await handleUrl(url, res);
@@ -89,8 +92,45 @@ export function isPrivateIp(ip) {
   return false;
 }
 
-function isForeignUrl(parsedUrl) {
+export function isForeignUrl(parsedUrl) {
   return !parsedUrl.hostname.endsWith(".se");
+}
+
+// Följ omdirigeringar manuellt och IP-validera VARJE hopp. Med default
+// redirect:"follow" kontrolleras bara den första värden — en publik sida kan då
+// 302:a till t.ex. http://169.254.169.254/ (molnets metadata) och läcka internt
+// innehåll tillbaka som "recept" (SSRF).
+// → { html, finalUrl } | { blocked: true }. Kastar om sidan inte går att nå.
+// fetchImpl/lookupImpl är injicerbara för tester.
+export async function fetchFollowingRedirects(startUrl, { fetchImpl = fetch, lookupImpl = lookup } = {}) {
+  const MAX_REDIRECTS = 5;
+  let current = startUrl;
+  let response;
+  for (let hop = 0; ; hop++) {
+    const { address } = await lookupImpl(current.hostname);
+    if (isPrivateIp(address)) return { blocked: true };
+    response = await fetchImpl(current.href, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept: "text/html,application/xhtml+xml",
+      },
+      redirect: "manual",
+      signal: AbortSignal.timeout(10000),
+    });
+
+    const location = response.status >= 300 && response.status < 400
+      ? response.headers.get("location")
+      : null;
+    if (!location) break;
+
+    if (hop >= MAX_REDIRECTS) throw new Error("too many redirects");
+    const next = new URL(location, current);
+    if (next.protocol !== "http:" && next.protocol !== "https:") return { blocked: true };
+    current = next;
+  }
+  if (!response.ok) throw new Error();
+  return { html: await response.text(), finalUrl: current };
 }
 
 async function handleUrl(url, res) {
@@ -107,52 +147,22 @@ async function handleUrl(url, res) {
 
   const apiKey = process.env.GOOGLE_API_KEY;
 
-  // Följ omdirigeringar manuellt och IP-validera VARJE hopp. Med default
-  // redirect:"follow" kontrolleras bara den första värden — en publik sida kan då
-  // 302:a till t.ex. http://169.254.169.254/ (molnets metadata) och läcka internt
-  // innehåll tillbaka som "recept" (SSRF).
-  const MAX_REDIRECTS = 5;
-  let current = parsed;
-  let html;
+  let fetched;
   try {
-    let response;
-    for (let hop = 0; ; hop++) {
-      const { address } = await lookup(current.hostname);
-      if (isPrivateIp(address)) {
-        return res.status(400).json({ error: "Den här adressen stöds inte — prova en annan receptsajt." });
-      }
-      response = await fetch(current.href, {
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          Accept: "text/html,application/xhtml+xml",
-        },
-        redirect: "manual",
-        signal: AbortSignal.timeout(10000),
-      });
-
-      const location = response.status >= 300 && response.status < 400
-        ? response.headers.get("location")
-        : null;
-      if (!location) break;
-
-      if (hop >= MAX_REDIRECTS) throw new Error("too many redirects");
-      const next = new URL(location, current);
-      if (next.protocol !== "http:" && next.protocol !== "https:") {
-        return res.status(400).json({ error: "Den här adressen stöds inte — prova en annan receptsajt." });
-      }
-      current = next;
-    }
-    if (!response.ok) throw new Error();
-    html = await response.text();
+    fetched = await fetchFollowingRedirects(parsed);
   } catch {
     return res.status(400).json({ error: "Kunde inte nå sidan — kontrollera adressen." });
   }
+  if (fetched.blocked) {
+    return res.status(400).json({ error: "Den här adressen stöds inte — prova en annan receptsajt." });
+  }
+  const { html, finalUrl } = fetched;
 
   // Försök 1: JSON-LD + eventuell enhetskonvertering för icke-svenska sajter
   const recipe = extractJsonLd(html);
   if (recipe) {
-    if (isForeignUrl(parsed) && apiKey) {
+    // Slutadressen, inte den inklistrade: en kortlänk till koket.se är svensk.
+    if (isForeignUrl(finalUrl) && apiKey) {
       const converted = await postProcessForeignRecipe(recipe, apiKey);
       return res.status(200).json({ recipe: converted });
     }
@@ -304,12 +314,14 @@ async function postProcessForeignRecipe(recipe, apiKey) {
 
 // ── Foto-import ─────────────────────────────────────────────────────────────
 
-async function handlePhoto(imageBase64, mimeType, res) {
+export async function handlePhoto(imageBase64, mimeType, res) {
   if (!imageBase64) return res.status(400).json({ error: "Ingen bild skickades." });
 
   const apiKey = process.env.GOOGLE_API_KEY;
   if (!apiKey) {
-    return res.status(500).json({ error: "Fotoimport är inte konfigurerat — GOOGLE_API_KEY saknas i Vercel." });
+    // Env-namnet hör hemma i serverloggen, inte i appen (svaret visas för användaren).
+    console.error("import-recipe: GOOGLE_API_KEY saknas — fotoimport avstängd");
+    return res.status(422).json({ error: "Fotoimport är inte påslagen just nu — lägg in receptet manuellt så länge." });
   }
 
   const recipe = await callGemini(
@@ -381,14 +393,32 @@ async function callGeminiRaw(parts, apiKey) {
 async function callGemini(parts, apiKey) {
   const recipe = await callGeminiRaw(parts, apiKey);
   if (!recipe) return null;
+  return normalizeGeminiRecipe(recipe);
+}
 
+// Fyller i/validerar Geminis utkast. Proteinet avgörs FÖRST (ogiltigt/saknat →
+// guessProtein), sedan taggarna: Geminis egna ∪ de beräknade. Utan den unionen
+// kunde en tags-array utan vardag30/helg60 göra att receptet aldrig valdes.
+export function normalizeGeminiRecipe(recipe) {
   recipe.tested   = false;
   recipe.timeNote = recipe.timeNote || null;
   recipe.notes    = recipe.notes    || null;
   recipe.seasons  = recipe.seasons  || [];
   recipe.servings = recipe.servings || 4;
-  recipe.tags     = recipe.tags     || buildTags(recipe.time, recipe.protein);
-  recipe.protein  = recipe.protein  || guessProtein(recipe.title || "", recipe.ingredients || []);
+
+  const rawProtein = typeof recipe.protein === "string" ? recipe.protein.trim().toLowerCase() : "";
+  recipe.protein = PROTEINS.includes(rawProtein)
+    ? rawProtein
+    : guessProtein(
+        `${typeof recipe.title === "string" ? recipe.title : ""} ${rawProtein}`,
+        Array.isArray(recipe.ingredients) ? recipe.ingredients.map(String) : []
+      );
+
+  const geminiTags = Array.isArray(recipe.tags)
+    ? recipe.tags.filter((t) => typeof t === "string" && t.trim()).map((t) => t.trim())
+    : [];
+  const computed = buildTags(Number(recipe.time) || null, recipe.protein);
+  recipe.tags = [...new Set([...geminiTags, ...computed])];
   return recipe;
 }
 

@@ -981,6 +981,23 @@ assertEq(pickUnitForCode(undefined), "pieces", "undefined-kod → pieces (krasch
     }
     assertFalse(seen.join(" ").includes("SUPERHEMLIGT"), "SÄKERHET: lösenordet loggas aldrig");
   }
+
+  // (j) Saknad tabell via PostgREST (PGRST205) känns igen: save ger
+  //     migrationsbeskedet, clear behandlar det som "inget att ta bort".
+  {
+    const { saveCredentials, clearCredentials } = await import("../api/_shared/store-credentials.js");
+    const missing = { error: { code: "PGRST205", message: "Could not find the table 'public.store_credentials' in the schema cache" } };
+    const chain = { eq() { return chain; }, then: (r) => r(missing) };
+    const database = { from: () => ({ upsert: async () => missing, delete: () => chain }) };
+    const env = { STORE_CRED_KEY: randomBytes(32).toString("base64") };
+    let msg = "";
+    try {
+      await saveCredentials({ householdId: "h1", store: "hemkop", username: "a@b.se", password: "x", database, env });
+    } catch (e) { msg = e.message; }
+    assertTrue(/migration 010/.test(msg), "store-credentials: PGRST205 vid spara → migrationsbeskedet");
+    const cleared = await clearCredentials({ householdId: "h1", store: "hemkop", database });
+    assertEq(cleared?.ok, true, "store-credentials: PGRST205 vid ta bort → ok");
+  }
 }
 
 console.log(`\n${passed} passerade, ${failed} failade`);

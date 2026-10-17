@@ -1,10 +1,10 @@
 /**
  * Delade wrappers för api/-endpoints: CORS, OPTIONS, metodkontroll, JWT-krav
  * (requireUser) och maskering av tekniska fel.
- * createSupabaseHandler är standard för Supabase-endpoints (allowGet för GET+POST).
- * createHandler kräver dessutom GITHUB_PAT och skickar den som tredje argument
- * (används idag bara av import-recipe.js). requireUser exporteras för endpoints
- * med egen routing (dispatch-to-willys.js).
+ * createSupabaseHandler är standard för alla endpoints (allowGet för GET+POST).
+ * Endpoints som behöver GITHUB_PAT kontrollerar den själva där den används
+ * (shopping.js set_preferences). requireUser exporteras för endpoints med egen
+ * routing (dispatch-to-willys.js).
  * Används: export default createSupabaseHandler(async (req, res) => { ... })
  */
 
@@ -82,32 +82,7 @@ function setAuthTiming(res, ms) {
   try { res.setHeader("Server-Timing", `auth;dur=${ms}`); } catch { /* svaret redan påbörjat */ }
 }
 
-export function createHandler(fn) {
-  return async (req, res) => {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
-    if (req.method === "OPTIONS") return res.status(200).end();
-    if (req.method !== "POST") return res.status(405).json({ error: "Metod ej tillåten" });
-
-    const pat = process.env.GITHUB_PAT;
-    if (!pat) return res.status(500).json({ error: "GITHUB_PAT saknas i env" });
-
-    const tAuth = Date.now();
-    if (!(await requireUser(req, res))) return;
-    setAuthTiming(res, Date.now() - tAuth);
-
-    try {
-      await fn(req, res, pat);
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: userMessage(err) });
-    }
-  };
-}
-
-// Variant utan GITHUB_PAT — används av Supabase-baserade endpoints.
+// Standardwrappern för api/-endpoints.
 export function createSupabaseHandler(fn, { allowGet = false } = {}) {
   return async (req, res) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
@@ -119,7 +94,9 @@ export function createSupabaseHandler(fn, { allowGet = false } = {}) {
     if (!allowed.includes(req.method)) return res.status(405).json({ error: "Metod ej tillåten" });
 
     if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-      return res.status(500).json({ error: "SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY saknas i env" });
+      // Env-namnen loggas på servern — svaret kan visas för användaren.
+      console.error("SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY saknas i env");
+      return res.status(500).json({ error: "Appen är inte färdigkonfigurerad just nu — prova igen om en stund." });
     }
 
     const tAuth = Date.now();
