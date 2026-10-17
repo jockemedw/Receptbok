@@ -41,6 +41,8 @@
 //   9. isMissingRpcError känner igen PostgREST-felformerna.
 //   10. discardActivePlan (Kassera förslag) lägger tillbaka replaced_days som
 //      egna dagar utan att skriva över senare innehåll (Session 153).
+//   10b. Kassera bygger om inköpslistan när förslagsdagar låg på den (S155):
+//      deras varor bort, inhandlade och egna dagar orörda, best effort.
 //   11. Hjälpare i generate.js (S155): historikfel loggas men kastar inte (planen
 //      är redan aktiv), allowed_proteins tål array/ogiltigt värde, och
 //      buildDayList är tidszonsoberoende över sommartidsbytet.
@@ -58,6 +60,10 @@ function makeMockDb(initial = {}) {
     mealDays: initial.mealDays ? initial.mealDays.map((d) => ({ ...d })) : [],
     archives: initial.archives ? initial.archives.map((a) => ({ ...a })) : [],
     history: initial.history ? initial.history.map((h) => ({ ...h })) : [],
+    // Inköpslistan (för discardActivePlan → rebuildActiveList, S155)
+    lists: initial.lists ? initial.lists.map((l) => ({ ...l })) : [],
+    items: initial.items ? initial.items.map((i) => ({ ...i })) : [],
+    recipes: initial.recipes ? initial.recipes.map((r) => ({ ...r })) : [],
     seq: initial.seq || 100,
     failMealInsert: !!initial.failMealInsert,
     // RPC-simulering för activate_plan_atomic:
@@ -78,13 +84,23 @@ function makeMockDb(initial = {}) {
     : name === "meal_days" ? state.mealDays
     : name === "plan_archives" ? state.archives
     : name === "recipe_history" ? state.history
+    : name === "shopping_lists" ? state.lists
+    : name === "shopping_items" ? state.items
+    : name === "recipes" ? state.recipes
+    : name === "households" ? []
     : null;
 
   const matches = (row, filters) => filters.every(([kind, col, val]) => {
     if (kind === "eq") return row[col] === val;
     if (kind === "lt") return row[col] < val;
     if (kind === "in") return val.includes(row[col]);
-    if (kind === "not") return row[col] != null; // bara not(col,"is",null) används
+    if (kind === "is") return (row[col] ?? null) === val;
+    if (kind === "not") {
+      // not(col,"is",null) | not(col,"is",true) | not(col,"in",'("a","b")')
+      const [op, v] = val || ["is", null];
+      if (op === "in") return !String(v).replace(/[()"]/g, "").split(",").includes(row[col]);
+      return v === null ? row[col] != null : row[col] !== v;
+    }
     if (kind === "neq") return row[col] !== val;
     return true;
   });
@@ -101,7 +117,8 @@ function makeMockDb(initial = {}) {
       neq(c, v) { this.filters.push(["neq", c, v]); return this; },
       lt(c, v) { this.filters.push(["lt", c, v]); return this; },
       in(c, v) { this.filters.push(["in", c, v]); return this; },
-      not(c) { this.filters.push(["not", c]); return this; },
+      is(c, v) { this.filters.push(["is", c, v]); return this; },
+      not(c, op, v) { this.filters.push(["not", c, [op, v]]); return this; },
       order() { return this; },
       limit() { return this; },
       single() { return Promise.resolve(this._exec(true)); },
@@ -117,6 +134,7 @@ function makeMockDb(initial = {}) {
           const inserted = items.map((it) => {
             const row = { ...it };
             if (this.table === "weekly_plans" && row.id == null) row.id = ++state.seq;
+            if ((this.table === "shopping_lists" || this.table === "shopping_items") && row.id == null) row.id = `S${++state.seq}`;
             rows.push(row);
             return row;
           });
@@ -526,6 +544,91 @@ const assertJson = (a, e, desc) => assertEq(JSON.stringify(a), JSON.stringify(e)
   assertJson([r.status, r.restored, db._state.mealDays.length, activeCount(db)], [200, 0, 0, 0], "kassera/utan bild: förslaget borta, inget återlagt");
   const c = makeMockDb({ plans: [{ id: 9, household_id: "h", is_active: true, confirmed_at: "x" }] });
   assertJson((await discardActivePlan("h", c)).status, 400, "kassera: bekräftad plan avvisas");
+}
+
+// ─── Test 10b: Kassera bygger om listan för förslagets dagar (S155) ──────────
+// Förslagsdagar kan läggas på listan via Välj dagar före bekräftelse. Kassera
+// ska då ta bort deras varor — men bara deras: inhandlade och egna dagar rörs inte.
+{
+  const P0 = isoDaysAgo(-1), P1 = isoDaysAgo(-2), P2 = isoDaysAgo(-3), OWN = isoDaysAgo(-4), SHOP = isoDaysAgo(1);
+  const db = makeMockDb({
+    plans: [{ id: 20, household_id: "h", start_date: P0, end_date: P2, is_active: true,
+      replaced_days: [{ date: P2, recipe_id: 12, recipe_title_snapshot: "Gammal", shopping_list_id: "L1", shopped_at: null }] }],
+    mealDays: [
+      { plan_id: 20, household_id: "h", date: P0, recipe_id: 2, shopping_list_id: "L1", shopped_at: null },
+      { plan_id: 20, household_id: "h", date: P1, recipe_id: 3, shopping_list_id: null, shopped_at: null },
+      { plan_id: 20, household_id: "h", date: P2, recipe_id: 5, shopping_list_id: null, shopped_at: null },
+      { plan_id: null, household_id: "h", date: OWN, recipe_id: 99, recipe_title_snapshot: "Egen dag", shopping_list_id: "L1", shopped_at: null },
+      { plan_id: null, household_id: "h", date: SHOP, recipe_id: 98, recipe_title_snapshot: "Handlad", shopping_list_id: "L1", shopped_at: "2026-10-01T12:00:00Z" },
+    ],
+    lists: [{ id: "L1", household_id: "h", start_date: SHOP, end_date: OWN, is_active: true, recipe_items_moved_at: null }],
+    items: [
+      { id: "i1", list_id: "L1", category: "Fisk & kött", name: "lax (400 g)", source: "recipe", checked: false, position: 0 },
+      { id: "i2", list_id: "L1", category: "Mejeri", name: "mjölk (1 l)", source: "recipe", checked: false, position: 0 },
+      { id: "i3", list_id: "L1", category: "Övrigt", name: "blöjor", source: "manual", checked: true, position: 0 },
+    ],
+    recipes: [
+      { id: 2, household_id: "h", title: "Laxpasta", ingredients: ["400 g lax"] },
+      { id: 3, household_id: "h", title: "Wok", ingredients: ["500 g kycklingfilé"] },
+      { id: 5, household_id: "h", title: "Tacos", ingredients: ["8 st tacoskal"] },
+      { id: 12, household_id: "h", title: "Gammal", ingredients: ["2 st gurka"] },
+      { id: 98, household_id: "h", title: "Handlad", ingredients: ["1 kg potatis"] },
+      { id: 99, household_id: "h", title: "Egen dag", ingredients: ["1 l mjölk"] },
+    ],
+  });
+  const before = JSON.stringify(db._state.mealDays.filter((d) => d.plan_id == null));
+  const r = await discardActivePlan("h", db);
+  assertJson([r.status, r.restored, r.listStale], [200, 1, false], "kassera/lista: lyckas, en dag återlagd");
+  const active = db._state.lists.filter((l) => l.is_active);
+  assertJson(active.length, 1, "kassera/lista: exakt en aktiv lista");
+  assertTrue(active[0].id !== "L1" && r.shoppingList?.listId === active[0].id, "kassera/lista: ny lista i svaret");
+  const names = db._state.items.filter((i) => i.list_id === active[0].id).map((i) => i.name).join("|");
+  assertTrue(!/lax/.test(names), "kassera/lista: förslagsdagens varor borta");
+  assertTrue(/mjölk/.test(names) && /gurka/.test(names), "kassera/lista: egen dag + återlagd dag kvar på listan");
+  assertTrue(!/potatis/.test(names), "kassera/lista: inhandlad dag byggs inte in igen");
+  assertTrue(/blöjor/.test(names), "kassera/lista: egna tillägg bevaras");
+  assertJson((r.shoppingList?.coveredDates || []).slice().sort(), [OWN, P2].sort(), "kassera/lista: täckningen = egen dag + återlagd dag");
+  const shop = db._state.mealDays.find((d) => d.date === SHOP);
+  assertJson([shop.shopped_at, shop.shopping_list_id], ["2026-10-01T12:00:00Z", "L1"], "kassera/lista: inhandlad dag orörd");
+  const own = db._state.mealDays.find((d) => d.date === OWN);
+  const ownBefore = JSON.parse(before).find((d) => d.date === OWN);
+  assertJson([own.plan_id, own.recipe_id, own.recipe_title_snapshot], [ownBefore.plan_id, ownBefore.recipe_id, ownBefore.recipe_title_snapshot],
+    "kassera/lista: egen dag orörd (bara listpekaren följer nya listan)");
+  const back = db._state.mealDays.find((d) => d.date === P2);
+  assertJson([back.recipe_id, back.plan_id, back.shopping_list_id], [12, null, active[0].id], "kassera/lista: återlagd dag tillbaka, på nya listan");
+  assertJson(db._state.mealDays.filter((d) => d.plan_id === 20).length, 0, "kassera/lista: förslagets dagar borta");
+  assertJson(activeCount(db), 0, "kassera/lista: förslaget avaktiverat");
+}
+{
+  // Ingen o-inhandlad förslagsdag på listan → ingen ombyggnad (inget nytt list-id i onödan).
+  const D = isoDaysAgo(-1);
+  let calls = 0;
+  const db = makeMockDb({
+    plans: [{ id: 21, household_id: "h", is_active: true }],
+    mealDays: [
+      { plan_id: 21, household_id: "h", date: D, recipe_id: 2, shopping_list_id: "L1", shopped_at: "2026-10-01T12:00:00Z" },
+      { plan_id: 21, household_id: "h", date: isoDaysAgo(-2), recipe_id: 3, shopping_list_id: null },
+    ],
+    lists: [{ id: "L1", household_id: "h", is_active: true }],
+  });
+  const r = await discardActivePlan("h", db, { rebuild: async () => { calls++; return { shoppingList: {} }; } });
+  assertJson([r.status, calls, r.shoppingList, r.listStale], [200, 0, null, false], "kassera/ej på listan: ingen ombyggnad");
+}
+{
+  // Ombygget kastar → planen är ändå kasserad: 200 + listStale (ett nytt försök ger 404).
+  const D = isoDaysAgo(-1);
+  const db = makeMockDb({
+    plans: [{ id: 22, household_id: "h", is_active: true }],
+    mealDays: [{ plan_id: 22, household_id: "h", date: D, recipe_id: 2, shopping_list_id: "L1", shopped_at: null }],
+    lists: [{ id: "L1", household_id: "h", is_active: true }],
+  });
+  const origErr = console.error;
+  console.error = () => {};
+  let r;
+  try { r = await discardActivePlan("h", db, { rebuild: async () => { throw new Error("simulerat ombyggnadsfel"); } }); }
+  finally { console.error = origErr; }
+  assertJson([r.status, r.listStale, r.shoppingList, activeCount(db), db._state.mealDays.length], [200, true, null, 0, 0],
+    "kassera/ombygge fallerar: kasserad ändå, listStale");
 }
 
 // ─── Test 9: isMissingRpcError känner igen PostgREST-felformerna ─────────────

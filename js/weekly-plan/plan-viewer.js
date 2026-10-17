@@ -890,9 +890,16 @@ export function closeSavingPopover() {
 // ── Bekräftelse ───────────────────────────────────────────────────────────────
 
 export async function discardPlan() {
+  // Ligger förslagsdagar (o-inhandlade) på inköpslistan tas deras varor bort.
+  const onList = (window._lastPlan?.days || []).some((d) => {
+    const t = window._timelineByDate?.[d.date];
+    return t?.onList && !t.shoppedAt;
+  });
   const ok = await window.confirmDialog({
     title: 'Kassera förslaget?',
-    message: 'Den föreslagna matsedeln tas bort. Inköpslistan påverkas inte.',
+    message: onList
+      ? 'Den föreslagna matsedeln tas bort. Varorna för förslagets dagar tas bort från inköpslistan.'
+      : 'Den föreslagna matsedeln tas bort.',
     confirmLabel: 'Kassera',
     danger: true,
   });
@@ -930,7 +937,11 @@ export async function discardPlan() {
       ]);
     } catch { /* kör med fallbacks */ }
     (window.renderWeeklyPlanData || renderWeeklyPlanData)(emptyPlan, shop, false, archive, customDays);
-    if (data.restored > 0) {
+    // Ombyggd inköpslista (förslagsdagar låg på den): rita den ur svaret.
+    if (data.shoppingList && window.renderShoppingData) window.renderShoppingData(data.shoppingList);
+    if (data.listStale) {
+      window.showToast?.('Förslaget är borttaget, men inköpslistan kunde inte uppdateras — ladda om och prova igen.', { type: 'error' });
+    } else if (data.restored > 0) {
       window.showToast?.(data.restored === 1
         ? 'Förslaget är borttaget — dagen det ersatte är tillbaka.'
         : `Förslaget är borttaget — ${data.restored} dagar det ersatte är tillbaka.`, { type: 'success' });
