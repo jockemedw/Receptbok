@@ -3,7 +3,7 @@
 
 import './ui/perf.js';   // ?perf=1 → mätning (Fas 0). Inert utan flaggan.
 import './state.js';
-import { svCompare } from './utils.js';
+import { svCompare, escapeHtml } from './utils.js';
 import { isDbUnreachable, getLastDbError, DB_RESTING_MESSAGE } from './supabase-client.js';
 import { requireAuth } from './auth-gate.js';
 import { recipeFromRow } from './data-mapper.js';
@@ -92,7 +92,7 @@ searchClear.addEventListener('click', () => {
   searchInput.focus();
 });
 
-// ── Bottom-sheet (Sortera + Filter) ─────────────────────────────────────────
+// ── Bottom-sheets (Sortera, Filter, genereringsguiden, dagväljaren, butiksval) ──
 // iOS-säker scroll-lock: spara scrollY, fixa body, återställ vid stängning.
 let openSheetCount = 0;
 
@@ -135,7 +135,7 @@ function closeSheet(id) {
   if (wasOpen) popSheetHistory();
 }
 
-window.openBottomSheet  = openSheet;   // delas med wizard-sheeten (plan-generator.js)
+window.openBottomSheet  = openSheet;   // delas med plan-generator.js (planSheet), day-picker.js (shopDaysSheet) och dispatch-ui.js (shopStoreSheet)
 window.closeBottomSheet = closeSheet;
 
 // ── Back-button / history-integration för sheets & modaler (F196) ──────────
@@ -163,9 +163,11 @@ function popSheetHistory() {
   if (history.state?.receptbokSheet) history.back();
 }
 
+const SHEET_IDS = ['sortSheet', 'filterSheet', 'planSheet', 'shopDaysSheet', 'shopStoreSheet'];
+
 function closeAnyOpenSheet() {
   if (document.getElementById('dlxSheet')?.classList.contains('open')) { window.dlxCloseSheet?.(); return; }
-  for (const id of ['sortSheet', 'filterSheet', 'planSheet', 'shopDaysSheet', 'shopStoreSheet']) {
+  for (const id of SHEET_IDS) {
     const s = document.getElementById(id);
     if (s && s.classList.contains('open')) { closeSheet(id); return; }
   }
@@ -189,7 +191,7 @@ document.body.addEventListener('click', e => {
 
 document.addEventListener('keydown', e => {
   if (e.key !== 'Escape') return;
-  ['sortSheet', 'filterSheet', 'planSheet', 'shopDaysSheet', 'shopStoreSheet'].forEach(id => {
+  SHEET_IDS.forEach(id => {
     const s = document.getElementById(id);
     if (s && !s.hidden) closeSheet(id);
   });
@@ -228,7 +230,7 @@ function buildTagFilterUI() {
 
   const container = document.getElementById('tagFilterChecks');
   container.innerHTML = sorted.map(([tag, count]) =>
-    `<label class="bs-check"><input type="checkbox" data-fgroup="tags" value="${window.escapeHtml(tag)}"><span>${window.escapeHtml(tag)} (${count})</span></label>`
+    `<label class="bs-check"><input type="checkbox" data-fgroup="tags" value="${escapeHtml(tag)}"><span>${escapeHtml(tag)} (${count})</span></label>`
   ).join('');
 
   document.getElementById('tagFilterGroup').style.display = '';
@@ -243,7 +245,7 @@ function buildTagFilterUI() {
   });
 }
 
-// Filter: checkbox change (statiska filter: tested, mainIngredient, time)
+// Filter: checkbox change (statiska filter: tested, mainIngredient, time, season)
 document.querySelectorAll('#filterSheet input[type="checkbox"]').forEach(c => {
   c.addEventListener('change', () => {
     const set = window.recipeFilters[c.dataset.fgroup];

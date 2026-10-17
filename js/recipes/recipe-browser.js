@@ -1,6 +1,6 @@
-// Receptbläddrare: rendering av receptkort, gruppering, sökning.
-// Läser state: RECIPES, groupBy, isSnapping, scrollUpAccum
-// Skriver state: isSnapping, scrollUpAccum
+// Receptbläddrare: rendering av receptkort, gruppering, filter, sökning.
+// Läser state: RECIPES, groupBy, recipeFilters, replaceMode, customPickMode
+// Skriver state: groupBy, isSnapping, scrollUpAccum, lastScrollY, RECIPES[].tested
 
 import { proteinLabel, timeStr, renderDetailInner, escapeHtml, jsStringAttr, PROTEIN_COLOR, svCompare, recipeImage } from '../utils.js';
 
@@ -36,9 +36,9 @@ function mainIngredientOf(r) {
 const GROUP_DEFS = {
   tested: {
     sections: [
-      { id: 'provat',  label: '✓ Provat',                 match: r => r.tested },
-      { id: 'oprovat', label: 'Oprövat',                  match: r => !r.tested && !r.tags.includes('doh') },
-      { id: 'doh',     label: 'Importerat — granska',     match: r => !r.tested && r.tags.includes('doh') },
+      { id: 'provat',  label: '✓ Provat',                 match: r => statusBucket(r) === 'provat' },
+      { id: 'oprovat', label: 'Oprövat',                  match: r => statusBucket(r) === 'oprovat' },
+      { id: 'doh',     label: 'Importerat — granska',     match: r => statusBucket(r) === 'doh' },
     ],
   },
   mainIngredient: {
@@ -58,9 +58,9 @@ const GROUP_DEFS = {
   },
   time: {
     sections: [
-      { id: 'vardag30', label: 'Vardag · ≤30 min',     match: r => r.time && r.time <= 30 },
-      { id: 'helg60',   label: 'Helg · 31–60 min',     match: r => r.time && r.time > 30 && r.time <= 60 },
-      { id: 'longer',   label: 'Längre eller okänt',   match: r => !r.time || r.time > 60 },
+      { id: 'vardag30', label: 'Vardag · ≤30 min',     match: r => timeBucket(r) === 'vardag30' },
+      { id: 'helg60',   label: 'Helg · 31–60 min',     match: r => timeBucket(r) === 'helg60' },
+      { id: 'longer',   label: 'Längre eller okänt',   match: r => timeBucket(r) === 'longer' },
     ],
   },
   type: {
@@ -87,30 +87,31 @@ const GROUP_DEFS = {
 };
 
 // ── Receptkort ────────────────────────────────────────────────────────────────
-export function renderCard(r) {
+export function cardMetaHtml(r) {
   const t = timeStr(r);
+  return `
+        <span class="pill pill-protein">${proteinLabel[r.protein] || r.protein}</span>
+        ${t ? `<span class="pill pill-time">⏱ ${t}</span>` : ''}
+        <span class="pill ${r.tested ? 'pill-tested' : 'pill-untested'} pill-toggle" role="button" tabindex="0"
+              onclick="toggleTested(event, ${r.id})"
+              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTested(event, ${r.id})}">${r.tested ? '✓ Provat' : 'Oprövat'}</span>`;
+}
+
+export function renderCard(r) {
   const image = recipeImage(r);
   return `
 <div class="recipe-card"
      style="--rail:${PROTEIN_COLOR[r.protein] || 'var(--birch-soft)'}"
      data-id="${r.id}"
      data-title="${escapeHtml(r.title).toLowerCase()}"
-     data-protein="${escapeHtml(r.protein || '')}"
-     data-tags="${escapeHtml((r.tags || []).join(' '))}"
-     data-tested="${r.tested}"
-     data-time="${r.time || 999}">
+     data-tested="${r.tested}">
   <div class="card-header" role="button" tabindex="0"
        onclick="cardHeaderTap(event, this.closest('.recipe-card'))"
        onkeydown="if(event.target===this&&(event.key==='Enter'||event.key===' ')){event.preventDefault();cardHeaderTap(event, this.closest('.recipe-card'))}">
     ${image ? `<img class="recipe-thumbnail" src="${image}" alt="" width="56" height="56" loading="lazy" decoding="async" onerror="this.hidden=true">` : `<div class="recipe-num">${r.id}</div>`}
     <div class="card-info">
       <div class="card-title">${escapeHtml(r.title)}</div>
-      <div class="card-meta">
-        <span class="pill pill-protein">${proteinLabel[r.protein] || r.protein}</span>
-        ${t ? `<span class="pill pill-time">⏱ ${t}</span>` : ''}
-        <span class="pill ${r.tested ? 'pill-tested' : 'pill-untested'} pill-toggle" role="button" tabindex="0"
-              onclick="toggleTested(event, ${r.id})"
-              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTested(event, ${r.id})}">${r.tested ? '✓ Provat' : 'Oprövat'}</span>
+      <div class="card-meta">${cardMetaHtml(r)}
       </div>
     </div>
     <button type="button" class="select-btn" tabindex="-1"
@@ -334,8 +335,6 @@ export async function toggleTested(event, id) {
   }
 }
 
-window.renderCard          = renderCard;
-window.toggleCard          = toggleCard;
 window.cardHeaderTap       = cardHeaderTap;
 window.cardChevronTap      = cardChevronTap;
 window.renderRecipeBrowser = renderRecipeBrowser;

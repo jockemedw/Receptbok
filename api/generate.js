@@ -1,11 +1,12 @@
 import { createSupabaseHandler } from "./_shared/handler.js";
 import { db, getHouseholdId } from "./_shared/supabase.js";
-// Willys-modulerna importeras DYNAMISKT längre ner — de behövs bara när
-// optimize_prices är på, och genereringen är prisagnostisk sedan Session 121
-// (toggeln är borta ur UI:t). Att slippa dem vid import-tid gör funktionens
+// Willys-modulerna importeras DYNAMISKT längre ner — de behövs bara vid
+// prisoptimering (guidens deal_canons, Session 150; den gamla flaggan
+// optimize_prices skickas inte längre av klienten). En vanlig generering är
+// prisagnostisk, och att slippa modulerna vid import-tid gör funktionens
 // kallstart lättare, vilket är hela poängen med Batch E3
 // (docs/prestanda-plan-2026-09.md).
-import { selectRecipes, bucketBySaving, hasTure } from "./_shared/select-recipes.js";
+import { selectRecipes, hasTure } from "./_shared/select-recipes.js";
 import { notifyAlert } from "./_shared/alert.js";
 import { fetchRecipeUsage, pruneOrphanHistory, recordSuggestions } from "./_shared/history.js";
 
@@ -86,11 +87,11 @@ async function fetchRecipes(householdId) {
 // oldPlan.id är alltså per definition dagar som den nya planen INTE täcker
 // (vare sig före eller efter dess spann) — exakt de som ska lösgöras.
 //
-// Anropas FÖRE activatePlanAtomic. Det är avsiktligt: när dagarna redan är
-// lösgjorda hittar även den GAMLA versionen av RPC:n activate_plan_atomic
-// (db/migrations/001) noll rader med oldPlan.id, så dess arkiverings- och
-// raderingssteg blir no-op:ar. Fixen gäller alltså direkt vid deploy, utan att
-// migration 011 behöver vara körd.
+// Anropas först i activatePlanAtomic, FÖRE RPC:n. Det är avsiktligt: när
+// dagarna redan är lösgjorda hittar även den GAMLA versionen av RPC:n
+// activate_plan_atomic (db/migrations/001) noll rader med oldPlan.id, så dess
+// arkiverings- och raderingssteg blir no-op:ar. Fixen gäller alltså direkt vid
+// deploy, utan att migration 011 behöver vara körd.
 export async function detachOldPlanDays(householdId, database = db) {
   const { data: plans, error: planErr } = await database
     .from("weekly_plans")
@@ -117,7 +118,7 @@ export async function detachOldPlanDays(householdId, database = db) {
 const REPLACED_FIELDS = "date, recipe_id, recipe_title_snapshot, custom_note, saving, saving_matches, locked, blocked, shopped_at, shopping_list_id";
 
 export async function savePlanToSupabase(weeklyPlan, householdId, database = db) {
-  const today = new Date().toISOString();
+  const now = new Date().toISOString();
 
   // Ögonblicksbild av de plandagar som UPSERT:en nedan skriver över, så att
   // "Kassera förslag" kan lägga tillbaka dem (discard-plan, migration 012).
@@ -156,7 +157,7 @@ export async function savePlanToSupabase(weeklyPlan, householdId, database = db)
       household_id: householdId,
       start_date: weeklyPlan.startDate,
       end_date: weeklyPlan.endDate,
-      generated_at: today,
+      generated_at: now,
       is_active: false,
     })
     .select()
@@ -199,7 +200,8 @@ export async function savePlanToSupabase(weeklyPlan, householdId, database = db)
     .upsert(mealDayRows, { onConflict: "household_id,date" });
   if (daysErr) {
     // Städa bort den halv-skrivna plan-raden så den aldrig kan dyka upp som
-    // en tom aktiv plan. Den gamla planen är ännu orörd (arkiveras senare).
+    // en tom aktiv plan. Den gamla planen är ännu orörd (dess kvarvarande
+    // dagar lösgörs först i activatePlanAtomic).
     await database.from("weekly_plans").delete().eq("id", newPlan.id);
     throw daysErr;
   }
@@ -386,13 +388,13 @@ export default createSupabaseHandler(async (req, res) => {
   }
 
   // F295: om proteintoggeln lämnar poolen helt vegetarisk (t.ex. "endast
-  // Vegetarisk" ikryssad) kastar select-recipes.js's pick() på varje dag som
-  // varken är en Ture- eller vegetarisk dag — select-recipes.js:89 (vegOk)
-  // kräver protein!=="vegetarisk" på just de dagarna, i ALLA loopar (även
-  // sista utvägen). Räkna fram samma dagfördelning som selectRecipes gör
-  // (ture-dagar först, sedan veg-dagar av det som blir kvar) och stoppa här
-  // med ett begripligt svenskt fel i stället för att låta kraschen nå
-  // användaren som ett vagt 500.
+  // Vegetarisk" ikryssad) hittar pick() i select-recipes.js inget recept för
+  // dagar som varken är Ture- eller vegetariska dagar, och selectRecipes kastar
+  // då vid första sådana dag — vegOk i pick() kräver protein!=="vegetarisk" på
+  // just de dagarna, i ALLA loopar (även sista utvägen). Räkna fram samma
+  // dagfördelning som selectRecipes gör (ture-dagar först, sedan veg-dagar av
+  // det som blir kvar) och stoppa här med ett begripligt svenskt fel i stället
+  // för att låta kraschen nå användaren som ett vagt 500.
   const nTureDays = Math.min(constraints.ture_days, activeDays.length);
   const nVegDays = Math.min(constraints.vegetarian_days, activeDays.length - nTureDays);
   const plainDaysNeeded = activeDays.length - nTureDays - nVegDays;
@@ -419,7 +421,7 @@ export default createSupabaseHandler(async (req, res) => {
       // URL-literal); butik styrs av WILLYS_STORE_ID precis som i dispatchen.
       const store = process.env.WILLYS_STORE_ID || "2160";
       const { fetchOffersFromWillys } = await import("./willys-offers.js");
-      const { matchRecipe } = await import("./_shared/willys-matcher.js");
+      const { matchRecipe, extractOfferCanon } = await import("./_shared/willys-matcher.js");
       const allOffers = await fetchOffersFromWillys(store, (url, opts) =>
         fetch(url, { ...opts, signal: AbortSignal.timeout(5000) }));
       if (allOffers.length === 0) pricingDegraded = true; // 200 men inget parsebart = trolig API-ändring
@@ -427,7 +429,6 @@ export default createSupabaseHandler(async (req, res) => {
       // → besparingen och prioriteringen speglar exakt familjens urval.
       let offers = allOffers;
       if (wantedCanons.size) {
-        const { extractOfferCanon } = await import("./_shared/willys-matcher.js");
         offers = allOffers.filter((o) => wantedCanons.has(extractOfferCanon(o) || ""));
         coverCanons = new Map();
       }
@@ -464,7 +465,9 @@ export default createSupabaseHandler(async (req, res) => {
     }
     // Sparar utfallet så appen kan visa en banner nästa gång NÅGON öppnar den,
     // oavsett om just den personen genererar en ny matsedel (backlog #2,
-    // reaktiv in-app-variant vald 2026-07-03 i stället för webhook-larm).
+    // reaktiv in-app-variant vald 2026-07-03 i stället för att förlita sig på
+    // webhook-larm — plinget ovan finns kvar som valfritt komplement och går
+    // bara om ALERT_WEBHOOK är satt).
     // Saknas tabellen (migration 004 ej körd) sväljs felet — ingen regression.
     const statusRow = { household_id: householdId, last_checked_at: new Date().toISOString(), degraded: pricingDegraded };
     if (!pricingDegraded) statusRow.last_success_at = statusRow.last_checked_at;

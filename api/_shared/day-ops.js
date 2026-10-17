@@ -122,15 +122,13 @@ export function spanAfterInsert(entries, srcDate, beforeDate) {
 // (sista entryn måste vara tom). Hålet dras till första positionen; allt
 // emellan skjuts en dag framåt. Anroparen bestämmer sedan vad som ska stå på
 // det nu tomma datumet (t.ex. en notering "Vi äter ute").
-// Returnerar { next }, { noop: true } eller { error: "src"|"hole"|"invariant" }.
+// Returnerar { next } eller { error: "src"|"hole"|"invariant" }.
 export function spanAfterPush(entries) {
   if (!entries.length || isEmptyContent(entries[0].content)) return { error: "src" };
   const last = entries.length - 1;
   if (!isEmptyContent(entries[last].content)) return { error: "hole" };
-  if (entries.length < 2) return { noop: true };
 
   const rotated = rotateMove(entries.map((e) => e.content), last, 0);
-  if (!rotated) return { noop: true };
 
   const next = withContents(entries, rotated);
   if (spanSignature(entries) !== spanSignature(next)) return { error: "invariant" };
@@ -186,7 +184,7 @@ export function changedFullRows(oldEntries, nextEntries) {
   return { upserts, deletions };
 }
 
-// ── Datumhjälpare (UTC-säkra, delas av endpoint och tester) ──────────────────
+// ── Datumhjälpare (UTC-säkra, delas av endpoints och tester) ─────────────────
 export function addDaysIso(iso, n) {
   const d = new Date(iso + "T12:00:00Z");
   d.setUTCDate(d.getUTCDate() + n);

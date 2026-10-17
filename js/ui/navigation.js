@@ -1,4 +1,4 @@
-// Tab-navigering: receptvy, veckovyn, inköpslistan.
+// Flik-navigering (Idag, Matsedel, Inköp, Recept, Listor) + headerns sökfält.
 
 export function switchTab(tab) {
   // Rulla till toppen FÖRST, medan layouten för den gamla vyn fortfarande är

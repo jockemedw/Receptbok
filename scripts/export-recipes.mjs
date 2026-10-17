@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Exporterar alla recept från Supabase till den gitignorerade cachen
-// scripts/.cache/recipes.json. Synkrona dev-skript och generate_weekly_plan.py
-// läser denna cache. recipes.json (repo-roten) är retirerad (Fas 8.4).
+// scripts/.cache/recipes.json. Synkrona dev-skript (recipe-audit, season-analysis;
+// audit-ingredients som fallback) läser denna cache. recipes.json (repo-roten)
+// är retirerad (Fas 8.4).
 //
 // Kör:  SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… node scripts/export-recipes.mjs
 

@@ -1,9 +1,9 @@
 // Per-canon-matchning för dispatch till Willys.
-// Försöker rea-träff först (från willys-offers-cache), söker annars.
+// Försöker rea-träff först (veckans Willys-erbjudanden, hämtade per dispatch), söker annars.
 //
 // Input:
 //   canons       — array av canon-strängar (dubbletter OK, dedupeas)
-//   offers       — array i shopping-builder-shape ({code, name, brandLine, ...})
+//   offers       — array i normalizeOffers-shape (api/willys-offers.js: {code, name, brandLine, savingPerUnit, ...})
 //   searchClient — { findProductByCanon(canon, wanted?): Promise<{code, name, ...} | null> }
 //   opts.wantedForCanon — (canon) => { organic: bool, swedish: bool } | null.
 //     Inköpspreferenserna (eko/svenskt per kategori, backlog #20): bland flera
@@ -22,7 +22,7 @@ import { extractOfferCanon, rejectsMatch, brandBlocked } from "./willys-matcher.
 export const ORGANIC_RE = /\b(eko|ekologisk\w*|krav|kravmärkt|organic)\b/i;
 export const SWEDISH_RE = /\b(svensk\w*|sverige)\b/i;
 
-function prefScore(text, wanted) {
+export function prefScore(text, wanted) {
   if (!wanted) return 0;
   let s = 0;
   if (wanted.organic && ORGANIC_RE.test(text)) s++;

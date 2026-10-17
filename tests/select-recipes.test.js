@@ -1,4 +1,5 @@
-// Regressiontester för selectRecipes() i api/generate.js.
+// Regressiontester för selectRecipes() m.fl. i api/_shared/select-recipes.js
+// (används av api/generate.js och api/replace-recipe.js).
 // Körs med `node tests/select-recipes.test.js` — inga externa deps.
 //
 // selectRecipes() är en ren funktion — all I/O mockas bort via argument.
@@ -8,7 +9,7 @@
 //   3. Proteinbalans: max 2 per typ
 //   4. Vardag/helg-matchning (vardag30/helg60-taggar)
 //   5. Veg-slot: veg-recept placeras på rätt antal dagar
-//   6. Låsta recept: kringgår historik, placeras i rätt slot
+//   6. Fallback: recept i historiken kan väljas när poolen kräver det
 //   7. Blockerade datum: exkluderas från planen
 //   8. bucketBySaving: recept med saving >= 10 sorteras först i poolen
 
@@ -248,11 +249,10 @@ const DEFAULT_CONSTRAINTS = {
   }
 }
 
-// ─── Test 7: Låsta recept kringgår historikfiltrering ─────────────────────────
-// Vi simulerar ett "låst" recept genom att det är enda alternativet i poolen.
-// selectRecipes tar inte emot locked_ids direkt — den hanteras i generate.js-handler
-// (injektion i filtered-listan). Testet verifierar att recentIds inte blockerar
-// ett recept som ändå hamnar i filtered-poolen.
+// ─── Test 7: recept i historiken kan väljas via fallbacken ────────────────────
+// Ett recept i historikfönstret (recentIds) ska ändå kunna väljas via fallbacken
+// när poolen kräver det. (Testet hette förr "låsta recept" — locked_ids-
+// injektionen i generate.js finns inte längre.)
 {
   const lockedId = 99;
   const locked = { id: lockedId, title: "Låst helgrecept", protein: "fisk", tags: ["helg60"], tested: true, ingredients: [] };
@@ -302,11 +302,8 @@ const DEFAULT_CONSTRAINTS = {
     1: { total: 5,  matches: [] }, // under tröskel
     // 2 har ingen besparing
   };
-  // Kör bucketBySaving 20 gånger — recept 3 (hög) ska ALLTID komma före 1 och 2
-  // eftersom high-bucketen shuflas separat och sedan konkateneras med low.
-  // Men shuffle är slumpmässig inom bucketen. Verifiera att recept 3 hamnar
-  // i position 0 av bucketBySaving-resultatet åtminstone ibland — och aldrig
-  // efter recept 1 (low-bucket) om high-bucket inte är tom.
+  // Recept 3 är ensamt i high-bucketen, och buckets konkateneras high→low
+  // (vikterna styr bara ordningen inom en bucket) → det ska ALLTID hamna först.
   let reavinnareForst = 0;
   for (let i = 0; i < 30; i++) {
     const ordered = bucketBySaving(pool, savingsById);
@@ -506,7 +503,7 @@ const DEFAULT_CONSTRAINTS = {
     { id: 1, title: "Nyss", protein: "fisk", tags: ["vardag30"], tested: true, ingredients: [] },
     { id: 2, title: "Aldrig", protein: "fisk", tags: ["vardag30"], tested: true, ingredients: [] },
   ];
-  const usedOn = { 1: "2026-04-03" }; // 18 dagar före → utanför 14-dagarsfönstret
+  const usedOn = { 1: "2026-04-03" }; // 18 dagar före, inte i recentIds → bara recency-vikten verkar
   let neverUsed = 0;
   for (let i = 0; i < 400; i++) {
     const [d] = selectRecipes(recipes, VECKA.slice(0, 1), DEFAULT_CONSTRAINTS, new Set(), usedOn, null, null, "2026-04-21");
@@ -677,7 +674,7 @@ const DEFAULT_CONSTRAINTS = {
       undefined, { coverCanons: new Map([[2, new Set(["lax"])]]) });
     if (res.some((d) => d.recipeId === 2)) recentPicked++;
   }
-  assertEq(recentPicked, 0, "prisopt: 14-dagarsfönstret gäller även valda varor");
+  assertEq(recentPicked, 0, "prisopt: historikfönstret gäller även valda varor");
 }
 
 // ─── Session 154: 4-veckorsminne, reserv och förslagsminne ──────────────────

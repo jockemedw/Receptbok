@@ -21,7 +21,6 @@ export const STORES = {
     // Startsidan, INTE /cart — den 404:ar. Butiken kommer ihåg både vald butik
     // och korgen via sessionscookien, så användaren landar rätt ändå.
     cartUrl: "https://www.willys.se/",
-    cookieDomain: "willys.se",
     hasOffers: true,
     hasEnvFallback: true,
     hasPasswordLogin: false,   // BankID — se kommentaren ovan
@@ -31,7 +30,6 @@ export const STORES = {
     label: "Hemköp",
     baseUrl: "https://www.hemkop.se",
     cartUrl: "https://www.hemkop.se/",
-    cookieDomain: "hemkop.se",
     hasOffers: false,
     hasEnvFallback: false,
     hasPasswordLogin: true,

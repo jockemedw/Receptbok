@@ -1,5 +1,5 @@
 // Dispatch-UI: knapp → butiksval → confirm → POST → resultat-modal.
-// Läser state: window._shopRecipeItems (för räkning i confirm-dialog)
+// Läser state: window._shopRecipeItems + _shopManualItems (räkning i confirm-dialog), window._shopCoverage ("Markera som inhandlat" i resultatet). Läser/skriver: window._opBusy (spärr mot dubbel dispatch, F078).
 // Feature-toggled via GET /api/dispatch-to-willys vid tab-load.
 //
 // Butikerna (Willys/Hemköp) kommer från backend — frontend hårdkodar varken

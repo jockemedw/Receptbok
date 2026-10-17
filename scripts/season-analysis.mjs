@@ -1,5 +1,5 @@
 /**
- * Säsongsanalys av alla recept i recipes.json
+ * Säsongsanalys av alla recept (Supabase-cachen scripts/.cache/recipes.json)
  * Bygger säsongstabell, analyserar ingredienser, genererar docs/research-sasong.md
  */
 import fs from 'fs';
@@ -204,8 +204,8 @@ const PANTRY_WORDS = new Set([
 
 /**
  * Matchar en ingrediensrad mot säsongstabellen.
- * Returnerar { ingredient, seasonMonths, weight } eller null om pantry/omatchbar.
- * weight: 1.0 för huvudingredienser, 0.5 för örter/garnering
+ * Returnerar { ingredient, months, weight? } eller null om pantry/omatchbar.
+ * weight saknas (= 1.0) för huvudingredienser och är 0.3 för örter/garnering.
  */
 function matchIngredient(raw) {
   // Rensa prefix (Tillbehör:, Marinad:, Sås:, etc.)
@@ -247,7 +247,7 @@ function matchIngredient(raw) {
   // Matcha mot säsongstabellen
   const matchResult = findSeasonMatch(nameOnly, s);
 
-  // Örter/garnering → halverad vikt (de säljs ofta färska året runt i kruka)
+  // Örter/garnering → nedviktade till 0.3 (de säljs ofta färska året runt i kruka)
   if (matchResult && /persilja|koriander|basilika|mynta|dill/.test(matchResult.ingredient)) {
     matchResult.weight = 0.3;
   }

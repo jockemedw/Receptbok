@@ -1,8 +1,9 @@
 // "Veckans fynd" — popup som visar rea-varor optimeringen hittade och föreslår
 // rea-recept att byta in i matsedeln.
 //
-// Öppnas automatiskt en gång efter en prisoptimerad generering (plan-generator)
-// och kan återöppnas via besparings-statistiken i premiumvyns hero.
+// Öppnas från besparings-statistiken i premiumvyns hero ('sparat · fynd' /
+// 'se fynd') när den senaste genereringen gav rea-kandidater — det sker bara
+// när reavaror valts i guiden (Session 150).
 //
 // Läser: window._weeklyDeals ({ candidates }), window._lastPlan, window._lastShop,
 //        window._planArchive, window._customDays.
@@ -53,7 +54,7 @@ function inPlanDeals() {
 // Dagar i aktiva planen som ett föreslaget recept kan ersätta.
 function targetDays() {
   const days = window._lastPlan?.days || [];
-  return days.filter((d) => d.recipeId && !d.blocked && !d.custom && !d.free);
+  return days.filter((d) => d.recipeId && !d.blocked);
 }
 
 function candidateCard(c) {
@@ -76,7 +77,7 @@ function candidateCard(c) {
       <button type="button" class="deal-card-head deal-card-toggle" onclick="dealToggleCard(this)" aria-expanded="false">
         <div class="deal-card-main">
           <div class="deal-title">${escapeHtml(c.title)}</div>
-          <div class="deal-meta">${meta}<span class="deal-matchcount">${n} ${n === 1 ? 'fynd' : 'fynd'}</span></div>
+          <div class="deal-meta">${meta}<span class="deal-matchcount">${n} fynd</span></div>
         </div>
         <div class="deal-saving">${COIN} ${c.saving} kr <span class="deal-chev" aria-hidden="true">›</span></div>
       </button>

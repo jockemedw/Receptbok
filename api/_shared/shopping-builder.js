@@ -545,7 +545,7 @@ export const CANON_REJECT_PATTERNS = {
   "lax": /\b(kallrökt|varmrökt|gravad|gravlax|rökt|rökta)\b/i,
   // Vitlök: avvisa marinerad antipasti (recepten vill ha färsk vitlök).
   "vitlöksklyftor": /\bmarinerad/i,
-  "fisk": /\b(fiskpinnar|fiskbullar|fiskbullar)\b/i,
+  "fisk": /\b(fiskpinnar|fiskbullar)\b/i,
   // Yoghurt: avvisa smaksatta/fruktade/dessert-varianter — recept skriver "yoghurt" för naturell.
   "yoghurt": /\b(körsbär\w*|jordgubb\w*|hallon|blåbär|skogsbär|lingon|hjortron|aprikos|persika|päron|mango|ananas|passion|vanilj\w*|citron|banan|fika|kola|choklad|samoa|kokos|lakrits|dessert|smoothie|drick\w*|müsli|granola|frukt|smaksatt)\b/i,
   // Citron: avvisa drycker/läsk (t.ex. "Citron Kolsyrat Vatten") — recept vill ha frukt/saft.
@@ -564,7 +564,7 @@ export const CANON_REJECT_PATTERNS = {
 // Adjektiv-prefix som strippas i fallback-stemming (Session 34).
 // Skilt från cleanIngredient — denna lista är säker att applicera efter
 // amount+unit redan strippats och direktlookup misslyckats.
-const STEM_ADJ_PREFIX = /^(liten|små|smått|stor|stora|rejäl|rejäla|färsk|färska|fryst|frysta|torkad|torkade|skalad|skalade|riven|rivna|hackad|hackade|finhackad|finhackade|grovhackad|grovhackade|skivad|skivade|strimlad|strimlade|finstrimlad|tärnad|tärnade|krossad|krossade|pressad|pressade|passerad|passerade|inlagd|inlagda|salt|salta|söt|söta|naturell|naturella|smulad|smulade|blandad|blandade|tunt|tunn|tunna|grovt|grov|hel|hela|halv|halva|röd|röda|gul|gula|grön|gröna|vit|vita|några|lite|litet|mycket|ett|en|valfri|valfria|några)\s+/i;
+const STEM_ADJ_PREFIX = /^(liten|små|smått|stor|stora|rejäl|rejäla|färsk|färska|fryst|frysta|torkad|torkade|skalad|skalade|riven|rivna|hackad|hackade|finhackad|finhackade|grovhackad|grovhackade|skivad|skivade|strimlad|strimlade|finstrimlad|tärnad|tärnade|krossad|krossade|pressad|pressade|passerad|passerade|inlagd|inlagda|salt|salta|söt|söta|naturell|naturella|smulad|smulade|blandad|blandade|tunt|tunn|tunna|grovt|grov|hel|hela|halv|halva|röd|röda|gul|gula|grön|gröna|vit|vita|några|lite|litet|mycket|ett|en|valfri|valfria)\s+/i;
 
 // Token som aldrig får bli canon via last-word-fallback (fyllnadsord + pantry).
 const TOKEN_BLOCKLIST = new Set([
@@ -622,7 +622,7 @@ export function categorize(name) {
   for (const [cat, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
     if (cat === "Skafferi" || cat === "Övrigt") continue;
     if (keywords.some((kw) =>
-      kw.includes(" ") ? (low === kw || low.includes(kw)) : lowWords.has(kw)
+      kw.includes(" ") ? low.includes(kw) : lowWords.has(kw)
     )) return cat;
   }
   return "Skafferi";
@@ -680,7 +680,7 @@ export function buildShoppingList(selectedIds, allRecipes, opts = {}) {
   const categories = { Mejeri: [], Grönsaker: [], "Fisk & kött": [], Frukt: [], Skafferi: [], Övrigt: [] };
 
   const merged = new Map();
-  const noAmount = new Map();
+  const noAmount = new Set();
 
   for (const rid of selectedIds) {
     const recipe = recipeMap[rid];
@@ -691,7 +691,7 @@ export function buildShoppingList(selectedIds, allRecipes, opts = {}) {
       let { amount, unit, name } = parseIngredient(rawIng);
       const normalized = normalizeName(name);
       if (amount === null) {
-        noAmount.set(normalized, normalized);
+        noAmount.add(normalized);
       } else {
         const conv = UNIT_CONVERSION[unit];
         if (conv) { amount *= conv.factor; unit = conv.to; }
@@ -719,15 +719,15 @@ export function buildShoppingList(selectedIds, allRecipes, opts = {}) {
       const hasLargeUnit = [...merged.keys()].some(
         (k) => k.startsWith(item.name + "||") && !SMALL_UNITS.has(merged.get(k)?.unit)
       );
-      if (!hasLargeUnit) noAmount.set(item.name, item.name);
+      if (!hasLargeUnit) noAmount.add(item.name);
     }
   }
-  for (const [name] of noAmount) {
+  for (const name of noAmount) {
     if (PANTRY_ALWAYS_SKIP.has(name)) noAmount.delete(name);
     if (name.includes(" eller ")) noAmount.delete(name);
   }
 
-  // Gruppéra per namn: samma vara med olika (okonverterbara) enheter visas som
+  // Gruppera per namn: samma vara med olika (okonverterbara) enheter visas som
   // EN rad med alla mängder — "morot (900 g + 6 st)" — i stället för att som
   // tidigare tappa alla mängder till bara namnet (morots-buggen, Session 138).
   const byName = new Map();
@@ -748,7 +748,7 @@ export function buildShoppingList(selectedIds, allRecipes, opts = {}) {
     const qty = segs.map((s) => qtyString(s.amount, combined ? (s.unit ?? "st") : s.unit)).join(" + ");
     categories[categorize(name)].push(`${name} (${qty})`);
   }
-  for (const [normalized] of noAmount.entries()) {
+  for (const normalized of noAmount) {
     const alreadyCovered = [...merged.keys()].some((k) => k.startsWith(normalized + "||"));
     if (!alreadyCovered) categories[categorize(normalized)].push(normalized);
   }

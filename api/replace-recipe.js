@@ -6,6 +6,7 @@ import {
 } from "./_shared/history.js";
 import { pickReplacementOrder, chooseRandomConfirm } from "./_shared/select-recipes.js";
 import { getActiveList, rebuildActiveList } from "./_shared/shopping-store.js";
+import { addDaysIso } from "./_shared/day-ops.js";
 
 // Receptbyte (Slumpa / välj själv / Byt in från Veckans fynd).
 //
@@ -16,9 +17,10 @@ import { getActiveList, rebuildActiveList } from "./_shared/shopping-store.js";
 //      i ett fönster, listans o-inhandlade täckning, historik, aktiv lista,
 //      portionsmål. Dagraden, veckans proteiner, receptanvändningen och om
 //      dagen ligger på listan räknas sedan fram i minnet.
-//   2. Skrivningarna exakt som förr (meal_days-update ‖ historik-upsert). Om
-//      listan ska byggas om hämtas samtidigt ingredienser (bara täckta recept)
-//      och gamla listans varor — läsningar som skrivningarna inte påverkar.
+//   2. Skrivningarna (meal_days-update ‖ historik-upsert ‖ bortvald-stämpel i
+//      förslagsminnet, best effort). Om listan ska byggas om hämtas samtidigt
+//      ingredienser (bara täckta recept) och gamla listans varor — läsningar
+//      som skrivningarna inte påverkar.
 //   3. Spökhistorik-städningen (bara en DELETE, spökraderna är redan kända)
 //      körs parallellt med listombygget — de rör olika tabeller.
 // Säkerhetsordningen i rebuildActiveList (ny lista inaktiv → varor → stäng
@@ -38,12 +40,6 @@ import { getActiveList, rebuildActiveList } from "./_shared/shopping-store.js";
 const USAGE_LOOKBACK_DAYS = 90;
 const PLAN_MARGIN_DAYS = 62;
 const PREVIEW_CANDIDATES = 3;
-
-function shiftIso(iso, days) {
-  const d = new Date(iso + "T12:00:00Z");
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}
 
 // Kärnan, injicerbar för tester (samma mönster som generate.js). Returnerar
 // { status, body } — handlern nedan skickar svaret.
@@ -66,7 +62,7 @@ export async function replaceRecipe({ database = db, householdId, body = {}, rng
 
   const today = isoDaysAgo(0);
   const usageFrom = isoDaysAgo(USAGE_LOOKBACK_DAYS);
-  const planFrom = shiftIso(date, -PLAN_MARGIN_DAYS);
+  const planFrom = addDaysIso(date, -PLAN_MARGIN_DAYS);
   const windowFrom = usageFrom < planFrom ? usageFrom : planFrom;
 
   // 1) EN läsomgång — allt oberoende parallellt.
@@ -110,7 +106,7 @@ export async function replaceRecipe({ database = db, householdId, body = {}, rng
   }
 
   const allRecipes = recipes || [];
-  // Läsfel på historiken sväljs (som förr i fetchRecipeUsage): sämre variation
+  // Läsfel på historiken sväljs (som i fetchRecipeUsage): sämre variation
   // är bättre än ett misslyckat byte. Städningen hoppas då över.
   if (hist.error) console.error("replace-recipe: historik", hist.error);
   const historyRows = hist.error ? null : (hist.data || []);

@@ -41,7 +41,7 @@ export async function fetchCoverage(householdId, listId, database = db) {
   if (!listId) return [];
   const { data, error } = await database
     .from("meal_days")
-    .select("date, shopped_at, recipe_id, recipe_title_snapshot")
+    .select("date, shopped_at")
     .eq("household_id", householdId)
     .eq("shopping_list_id", listId)
     .order("date");
@@ -59,7 +59,7 @@ export function unshoppedDates(coverage) {
 //    eller med fri dag (blocked) filtreras bort tyst. Samma recept två dagar ⇒
 //    dubbla mängder (avsiktligt).
 //  - span: {startDate, endDate} eller null → min/max av byggdagarna.
-//  - stampMovedAt: true (confirm/add_day) stämplar recipe_items_moved_at = idag
+//  - stampMovedAt: true (set_days/add_day) stämplar recipe_items_moved_at = idag
 //    så receptvarorna syns direkt på Inköp-fliken; false ärver gamla listans värde.
 //  - recipes: recept-array om anroparen redan hämtat dem (annars hämtas de här).
 //  - database: injicerbar för tester (samma mönster som generate.js).
@@ -68,11 +68,14 @@ export function unshoppedDates(coverage) {
 // något skickar in det så ombygget slipper läsa om det — varje läsning är en
 // nätverksrunda. Utelämnat (undefined) = läs som förr. OBS: null är ett giltigt
 // värde för oldList (ingen aktiv lista) och targetServings (ingen skalning).
-//  - dayRows: [{date, recipe_id}] för coverDates, redan filtrerade på
-//    recipe_id != null och blocked != true.
+//  - dayRows: [{date, recipe_id, blocked}] för (minst) coverDates. Filtreras här
+//    på coverDates, recipe_id != null och blocked !== true — anroparen behöver
+//    inte förfiltrera.
 //  - targetServings: hushållets portionsmål (fetchTargetServings).
 //  - oldList: nuvarande aktiva lista (getActiveList) eller null.
 //  - existingItems: oldLists varor [{name, checked, source, position}].
+//  - openRound: true om anroparen vet att gamla listans runda är öppen (minst en
+//    o-inhandlad täckt dag) — sparar fetchCoverage-läsningen för receptbockarna.
 //
 // Svaret bär även itemIds (varunyckel → shopping_items.id, samma nycklar som
 // klientens window._shopItemIds) så klienten kan visa listan utan omladdning.
@@ -306,9 +309,9 @@ export function shopItemIdsFromRows(rows) {
 //     rörs inte: historiken om att de en gång handlats står kvar.
 //   - Dagar utan recept och fria dagar filtreras bort tyst men rapporteras i
 //     `skipped` så UI:t kan berätta vad som hoppades över.
-//   - ARKIVERADE DAGAR återskapas (se restoreArchivedDays). Genererar man två
-//     matsedlar efter varandra arkiveras den första och dess meal_days-rader
-//     raderas — utan återskapning gick dess dagar inte att handla för.
+//   - ARKIVERADE DAGAR återskapas (se restoreArchivedDays) — legacy för arkiv
+//     från före Session 137, då en ny generering raderade den gamla planens
+//     meal_days-rader så dess dagar inte gick att handla för.
 //
 // Tomt urval är tillåtet: receptvarorna töms och bara Egna tillägg blir kvar.
 export async function setCoveredDays({ householdId, dates, database = db }) {
@@ -434,9 +437,10 @@ export async function markRoundShopped(householdId, database = db) {
   // Görs FÖRE stämplingen (Session-fynd R03+R08): konverteringen är idempotent
   // — redan konverterade varor har source='manual' och matchar inte frågan
   // nedan igen — så en misslyckad läsning/konvertering ska inte lämna dagarna
-  // stämplade som inhandlade. Är de stämplade utan att varorna hann konverteras
-  // ger nästa ombyggnad ({shoppedDates: [], converted: 0} på ett nytt anrop)
-  // ingen ny chans, för spärren är redan satt. Skafferivaror ("har hemma")
+  // stämplade som inhandlade. Stämplades dagarna först och konverteringen sedan
+  // misslyckades, skulle ett nytt anrop returnera {shoppedDates: [], converted: 0}
+  // (spärren är redan satt) och de obockade varorna försvinna vid nästa
+  // ombyggnad. Skafferivaror ("har hemma")
   // hoppas över — de ska inte återuppstå som egna tillägg. Misslyckas
   // pantry-läsningen behandlas skafferiet som tomt (hellre en överlevande vara
   // för mycket än en tyst borttappad).

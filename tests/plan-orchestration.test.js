@@ -30,19 +30,25 @@
 //      migration 011 har körts.
 //   6. activatePlanAtomic, RPC SAKNAS (PGRST202) → faller tillbaka till
 //      activatePlan, samma slutresultat som test 3.
-//   7. activatePlanAtomic, RPC:n finns men kraschar MITT I (simulerat fel, t.ex.
-//      nätfel under transaktionen) → bytet går inte igenom: gamla planen är
-//      fortfarande aktiv, nya planen fortfarande inaktiv, och INGEN dag har gått
-//      förlorad (de ligger kvar som egna dagar och syns i matsedeln).
+//   7. activatePlanAtomic, RPC:n kraschar MITT I → transaktionen rullas tillbaka,
+//      men UPSERT+detach har redan körts, så activatePlanAtomic återhämtar sig
+//      genom att aktivera den NYA planen i JS (Session 144, Codex R02). Ingen dag
+//      går förlorad, och de gamla ligger kvar som egna dagar.
+//   7b. Samma krasch när nya planen överlappar den gamla → den nya planen är
+//      aktiv med alla dagar.
 //   8. detachOldPlanDays rör bara den gamla planens rader — nya planens dagar
 //      och familjens egna dagar lämnas i fred (invariant #1).
+//   9. isMissingRpcError känner igen PostgREST-felformerna.
+//   10. discardActivePlan (Kassera förslag) lägger tillbaka replaced_days som
+//      egna dagar utan att skriva över senare innehåll (Session 153).
 
 import { savePlanToSupabase, detachOldPlanDays, activatePlan, activatePlanAtomic, isMissingRpcError } from "../api/generate.js";
 import { discardActivePlan } from "../api/discard-plan.js";
 
 // ─── Mockad Supabase-db (kedjebar query-builder) ─────────────────────────────
-// Stödjer exakt de kedjor de tre funktionerna använder. Håller in-memory-tabeller
-// och kan tvinga fram fel på meal_days-insert (failMealInsert).
+// Stödjer exakt de kedjor plan-orkestreringen (generate.js) och discardActivePlan
+// använder. Håller in-memory-tabeller och kan tvinga fram fel på meal_days-insert
+// (failMealInsert).
 function makeMockDb(initial = {}) {
   const state = {
     plans: initial.plans ? initial.plans.map((p) => ({ ...p })) : [],
@@ -155,8 +161,8 @@ function makeMockDb(initial = {}) {
     return q;
   }
 
-  // Mockar PostgREST RPC-anropet mot activate_plan_atomic. Replikerar SQL-filens
-  // logik (db/migrations/001_activate_plan_atomic.sql) mot in-memory-state, så
+  // Mockar PostgREST RPC-anropet mot activate_plan_atomic. Replikerar SQL-funktionen
+  // mot in-memory-state: db/migrations/011 som standard, 001 i rpcMode "legacy", så
   // test 4 verifierar samma beteende som funktionen är tänkt att ge i Postgres.
   function rpc(name, args) {
     if (name !== "activate_plan_atomic") {
@@ -250,7 +256,7 @@ function isoDaysAgo(n) {
   d.setDate(d.getDate() - n);
   return d.toISOString().slice(0, 10);
 }
-const OLD_START = isoDaysAgo(3);   // gamla planens dagar — nyligen, inom 30-dagarsfönstret
+const OLD_START = isoDaysAgo(3);   // gamla planens dagar — nyligen
 const OLD_MID   = isoDaysAgo(2);
 const OLD_END   = isoDaysAgo(1);
 

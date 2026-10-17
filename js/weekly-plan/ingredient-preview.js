@@ -39,7 +39,6 @@ export function renderIngredientPreview(recipeItems, movedAt, expand = false) {
 
   document.getElementById('ingredientPreview').innerHTML = html;
   btn.style.display    = '';
-  btn.dataset.movedAt  = movedAt || '';
 }
 
 export async function moveToShoppingList() {
@@ -65,7 +64,6 @@ export async function moveToShoppingList() {
       btn.disabled    = false;
       return;
     }
-    btn.dataset.movedAt = today;
     btn.textContent     = 'Flytta till inköpslista →';
     btn.disabled        = false;
     window.switchTab('shop');   // laddar Inköp-fliken (navigation.js) — ingen extra laddning här

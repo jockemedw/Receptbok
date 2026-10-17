@@ -10,7 +10,7 @@
 // Rent GESTLAGER — all mutationslogik återanvänds via window.dlxPerformSwap/
 // window.dlxPerformMove (plan-viewer-deluxe.js): samma spärrar (_opBusy), samma
 // felhantering, samma pending-banner och glöd-kvitto. Inga nya endpoints, ingen
-// egen serverkod. Tryck-flödena i dag-sheeten ("Byt dag"/"Flytta dag") finns
+// egen serverkod. Tryck-flödena i dag-sheeten ("Flytta middagen" → byt plats / kläm in) finns
 // kvar som tangentbordsnåbar väg — draget är ett snabbare alternativ, inte en
 // ersättning. EN modell (Session 142): plandagar, egna dagar, noteringar och
 // fria dagar dras och tas emot likadant.
@@ -39,18 +39,17 @@
 // och flygningar nollas av den globala reduced-motion-regeln i styles.css;
 // JS hoppar dessutom över animationsväntetiderna.
 
-import { fmtIso, addDaysIso, isoWeekNumber, retroWindowStartIso } from '../utils.js';
+import { addDaysIso, isoWeekNumber, retroWindowStartIso } from '../utils.js';
 
 const HOLD_MS = 380;          // långtryck innan draget aktiveras
 const HOLD_SLOP = 8;          // px rörelse som bryter hållet (= svepets dödzon)
-// Träffbanden runt en kortgräns ("mellan två dagar"). HYSTERES: ett aktivt mål
-// behålls tills fingret dragit sig undan ordentligt (EXIT > ENTER). Utan det
-// flippar målet insert↔swap vid varje darrning på bandkanten — grannarna
-// hoppade 14 px in och ut och det såg ut som frenetiskt skakande.
-// Sömmen ska gå att träffa med tummen: bandet är upp till ±EDGE_BAND px men
-// aldrig mer än 30 % av det lägsta grannkortet, så kortets mitt (≥ 40 %) alltid
-// förblir "byt plats/flytta hit". Hysteres: en fångad söm hålls EDGE_HYST px
-// längre innan den släpper (annars flippar målet vid varje darrning).
+// Träffbanden runt en kortgräns ("mellan två dagar"). Sömmen ska gå att träffa
+// med tummen: bandet är upp till ±EDGE_BAND px men aldrig mer än
+// EDGE_BAND_RATIO (30 %) av det lägsta grannkortet, så kortets mitt (≥ 40 %)
+// alltid förblir "byt plats/flytta hit". HYSTERES: en fångad söm släpper först
+// EDGE_HYST px längre ut (fånga < släppa). Utan det flippar målet insert↔swap
+// vid varje darrning på bandkanten — grannarna hoppade 14 px in och ut och det
+// såg ut som frenetiskt skakande.
 const EDGE_BAND = 26;         // max ± px för att FÅNGA en söm
 const EDGE_BAND_RATIO = 0.3;  // …men högst så här stor del av grannkortet
 const EDGE_HYST = 8;          // extra px innan en fångad söm SLÄPPER

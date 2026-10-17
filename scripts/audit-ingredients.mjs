@@ -1,13 +1,14 @@
 #!/usr/bin/env node
 // ─── INGREDIENS-AUDIT (Fas 0) ──────────────────────────────────────────────
 // Kvalitetskontroll av alla receptingredienser. Klassar varje ingrediensrad i
-// 6 problemklasser och graderar severity (P0/P1/P2), så vi kan mäta framsteg
+// 5 problemklasser (C1–C5) och graderar severity (P0/P1/P2), så vi kan mäta framsteg
 // före/efter datastädning (Fas 3).
 //
 // Datakälla (i prioritetsordning):
 //   1. Live Supabase via REST om SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY finns
 //      (eller SUPABASE_ANON_KEY — read-only räcker).
 //   2. --source <fil.json>  (export med formen { "recipes": [...] })
+//   3. annars scripts/.cache/recipes.json (skapas av node scripts/export-recipes.mjs)
 //
 // Kör:  node scripts/audit-ingredients.mjs [--source /tmp/recipes-supabase.json]
 // Skriver: docs/ingredient-audit-<datum>.md + docs/ingredient-audit-latest.json
@@ -115,10 +116,8 @@ const classCount = {};   // cls -> antal
 const sevCount = { P0: 0, P1: 0, P2: 0 };
 const nonCanon = new Map(); // norm -> antal
 const byRecipe = new Map(); // id -> { title, lines: [{raw, tags}] }
-const titleById = new Map();
 
 for (const r of recipes) {
-  titleById.set(r.id, r.title);
   for (const raw of r.ingredients || []) {
     totalLines++;
     const res = classify(raw, r.id);
@@ -135,8 +134,7 @@ for (const r of recipes) {
 }
 
 // ─── Bygg markdown ───────────────────────────────────────────────────────────
-const matchable = totalLines; // info
-const uniqNames = nonCanon.size; // bara icke-canon hamnar här; canon räknas separat nedan
+const uniqNames = nonCanon.size; // bara icke-canon hamnar här
 let md = `# Ingrediens-audit — ${today}\n\n`;
 md += `> Genererad av \`scripts/audit-ingredients.mjs\`. Källa: ${source}.\n\n`;
 md += `## Sammanfattning\n\n`;

@@ -1,13 +1,14 @@
-// Premiumvy för matsedeln — en helt alternativ presentation av samma data.
+// Matsedelns vy (premiumvyn) — enda vyn sedan klassiska tidslinjen och
+// Premium/Klassisk-växeln avvecklades (Session 101).
 //
 // Läser: window._timelineByDate, window._lastPlan, window._lastShop,
 //        window.RECIPES, window.planConfirmed, window._planArchive, window._customDays
-// Muterar inget eget tillstånd — all backend-logik återanvänds via befintliga
-// endpoints och window.*-funktioner. Klassiska vyn lämnas orörd; en segmenterad
-// växel styr bara vilken som visas (CSS via body.week-deluxe).
+// Eget vytillstånd (visad vecka, flytta-läge, sheet) bor i modulen och på
+// window (_dlxMove/_dlxSheet). Mutationer går via /api/day, /api/replace-recipe,
+// /api/shopping och recipes.tested (Supabase direkt).
 //
-// Re-render: vi wrappar window.renderWeeklyPlanData så båda vyerna alltid hålls
-// i synk efter generering/byte/bekräftelse.
+// Re-render: vi wrappar window.renderWeeklyPlanData (och loadWeeklyPlan/switchTab,
+// se installHooks) så vyn alltid hålls i synk efter generering/byte/bekräftelse.
 
 import { fmtIso, fmtShort, PROTEIN_COLOR, isoWeekNumber, escapeHtml, weekStartOf, addDaysIso, getHolidayName, jsStringAttr, retroWindowStartIso } from '../utils.js';
 
@@ -25,8 +26,6 @@ const I = {
   free: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4 M8 2v4 M3 10h18"/><path d="M9 15l6 0"/></svg>',
   pot: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13c0-3.5 3.5-6 8-6s8 2.5 8 6"/><path d="M3 13h18"/><path d="M5.5 13v2c0 1.5 1 2.5 2.5 2.5h8c1.5 0 2.5-1 2.5-2.5v-2"/><path d="M11 4.5c0-.8.5-1.5 1-1.5s1 .7 1 1.5"/></svg>',
   note: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5h11l3 3v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z"/><path d="M8 11h8 M8 14h8 M8 17h5"/></svg>',
-  chef: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14v5a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-5"/><path d="M7 14a4 4 0 0 1-1-7.9A4 4 0 0 1 13 4a4 4 0 0 1 5 8"/></svg>',
-  leaf: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/><path d="M2 21c0-3 1.85-5.36 5.08-6"/></svg>',
   // Markör för egen planering (ersätter texten "EGEN PLANERING") + plus för tom dag.
   own: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10-10a2 2 0 0 0-2.8-2.8L5 17v3z"/><path d="M13.5 6.5l4 4"/></svg>',
   // Rester/använd upp-dag (backlog #14): skål med ånga.
@@ -39,10 +38,10 @@ const I = {
   cart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.6 11.2A1.5 1.5 0 0 0 9.06 16.4H18a1.5 1.5 0 0 0 1.46-1.14L21 8H6"/><circle cx="10" cy="20" r="1.4"/><circle cx="17.5" cy="20" r="1.4"/></svg>',
   // Bock — grön "klar"-markör bredvid kundvagnen.
   tick: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4 4L19 6.5"/></svg>',
-  // Soptunna — "ta bort dagen helt" (danger-åtgärd i dag-sheeten).
   // Kryss — stäng dag-sheeten (samma form som dagväljarens stängkryss).
   close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
   back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+  // Soptunna — "ta bort dagen helt" (danger-åtgärd i dag-sheeten).
   trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M6.5 7l.8 12a1.5 1.5 0 0 0 1.5 1.4h6.4a1.5 1.5 0 0 0 1.5-1.4l.8-12"/><path d="M10 11v6 M14 11v6"/></svg>',
 };
 
@@ -130,6 +129,10 @@ function sortedTimeline() {
 
 function recipeById(id) {
   return id ? (window.RECIPES || []).find(r => r.id === id) : null;
+}
+
+function recipeMetaText(r) {
+  return [r?.time ? `${r.time} min` : null, r ? PROTEIN_LABEL[r.protein] : null].filter(Boolean).join(' · ');
 }
 
 // ── Veckostate — vyn visar EN kalendervecka (ISO, mån–sön) i taget ───────────
@@ -294,7 +297,7 @@ window.dlxWeekToday = function () {
 // Drag & släpp över veckogränser (day-drag.js): som dlxWeekStep men med
 // drag-egna klampgränser — framåt t.o.m. EN vecka bortom tidslinjens sista
 // (släpp på nästa, ännu tomma, vecka = horisonten växer när dagen landar),
-// bakåt så länge målveckan når in i 14-dagarsfönstret (retro-gränsen).
+// bakåt så länge målveckan når in i retro-fönstret (utils.retroWindowStartIso).
 // probe=true svarar bara på OM steget är möjligt (kantindikatorernas läge).
 window.dlxDragWeekStep = function (dir, probe = false) {
   if (_dlxAnimBusy) return false;
@@ -467,18 +470,17 @@ function buildTonight(timeline) {
   // receptboken, penna = egen notering.
   const recipeMark = `<span class="dlx-own dlx-own-recipe" title="Recept ur receptboken" aria-label="Recept ur receptboken">${I.pot}</span>`;
   const noteMark = customNoteMark(d.customNote);
-  let label, sub = '', mark = '', kind = '', mkind = 'custom';
+  let label, sub = '', mark = '', kind = '';
   if (d.recipeId && !d.isCustom) {
     const r = recipeById(d.recipeId);
     label = d.recipe || '';
-    sub = [r?.time ? `${r.time} min` : null, r ? PROTEIN_LABEL[r.protein] : null].filter(Boolean).join(' · ');
+    sub = recipeMetaText(r);
     kind = 'recipe';
-    mkind = 'recipe';
   } else if (d.isCustom && d.customRecipeId) {
     const r = recipeById(d.customRecipeId);
     label = d.customRecipeTitle || '';
     // Text-komplement till proteinfärgen (a11y — färg får inte bära ensam)
-    sub = [r?.time ? `${r.time} min` : null, r ? PROTEIN_LABEL[r.protein] : null].filter(Boolean).join(' · ');
+    sub = recipeMetaText(r);
     mark = recipeMark;
   } else if (d.isCustom && (d.customRecipeTitle || d.customNote)) {
     label = d.customRecipeTitle || d.customNote;
@@ -486,13 +488,12 @@ function buildTonight(timeline) {
   } else if (d.blocked) {
     label = 'Fri dag';
     sub = 'Ingen middag planerad';
-    mkind = 'free';
   } else {
     return '';
   }
 
   return `
-    <article class="dlx-tonight${modeCls(d, mkind)}" data-date="${d.date}"${kind ? ` data-kind="${kind}"` : ''}
+    <article class="dlx-tonight${modeCls(d)}" data-date="${d.date}"${kind ? ` data-kind="${kind}"` : ''}
              role="button" tabindex="0" onclick="dlxDayClick('${d.date}', '${attr(d.day)}')"
              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();dlxDayClick('${d.date}', '${attr(d.day)}')}">
       <span class="dlx-tonight-eyebrow">${I.pot} Ikväll</span>
@@ -534,7 +535,6 @@ function buildHero(weekDays, weekStart, plan, pending) {
   }
   const order = ['fisk', 'kyckling', 'kött', 'fläsk', 'vegetarisk'];
   const segs = order.filter(p => counts[p]).map(p => {
-    const pct = planned ? (counts[p] / planned * 100) : 0;
     return `<span class="dlx-bar-seg" style="flex:${counts[p]};background:${PROTEIN_COLOR[p] || 'var(--birch)'}"
               title="${PROTEIN_LABEL[p]}: ${counts[p]}"></span>`;
   }).join('');
@@ -708,7 +708,7 @@ function recipeDayCard(d, opts) {
   if (time) metaParts.push(`<span class="dlx-meta-time">${I.clock}${time}</span>`);
 
   return `
-    <article class="dlx-day${opts.cls}${modeCls(d, 'recipe')}" data-date="${d.date}"
+    <article class="dlx-day${opts.cls}${modeCls(d)}" data-date="${d.date}"
              style="--rail:${color}" onclick="dlxDayClick('${d.date}', '${attr(d.day)}')">
       <span class="dlx-rail"></span>
       <div class="dlx-day-head">
@@ -737,7 +737,7 @@ function emptyDayCard(d) {
       if (r) metaParts.push(`<span class="dlx-chip" style="--chip:${color}">${esc(PROTEIN_LABEL[r.protein] || r.protein)}</span>`);
       if (r?.time) metaParts.push(`<span class="dlx-meta-time">${I.clock}${r.time} min</span>`);
       return `
-        <article class="dlx-day custom${modeCls(d, 'custom')}" data-date="${d.date}" style="--rail:${color}"
+        <article class="dlx-day custom${modeCls(d)}" data-date="${d.date}" style="--rail:${color}"
                  onclick="dlxDayClick('${d.date}', '${attr(d.day)}')">
           <span class="dlx-rail"></span>
           <div class="dlx-day-head">
@@ -753,7 +753,7 @@ function emptyDayCard(d) {
         </article>`;
     }
     return `
-      <article class="dlx-day custom slim${modeCls(d, 'custom')}" data-date="${d.date}" onclick="dlxDayClick('${d.date}', '${attr(d.day)}')">
+      <article class="dlx-day custom slim${modeCls(d)}" data-date="${d.date}" onclick="dlxDayClick('${d.date}', '${attr(d.day)}')">
         <span class="dlx-rail" style="background:var(--birch)"></span>
         <div class="dlx-day-head">
           <div class="dlx-day-when"><span class="dlx-day-dow">${esc(d.day)}</span>
@@ -769,7 +769,7 @@ function emptyDayCard(d) {
 
   if (d.blocked) {
     return `
-      <article class="dlx-day free slim${modeCls(d, 'free')}" data-date="${d.date}" onclick="dlxDayClick('${d.date}', '${attr(d.day)}')">
+      <article class="dlx-day free slim${modeCls(d)}" data-date="${d.date}" onclick="dlxDayClick('${d.date}', '${attr(d.day)}')">
         <span class="dlx-rail" style="background:var(--birch-soft)"></span>
         <div class="dlx-day-head">
           <div class="dlx-day-when"><span class="dlx-day-dow">${esc(d.day)}</span>
@@ -781,14 +781,14 @@ function emptyDayCard(d) {
       </article>`;
   }
 
-  // Tom dag (gap) — klickbar inom retro-fönstret (14 dagar bakåt + all framtid):
+  // Tom dag (gap) — klickbar inom retro-fönstret (retroWindowStartIso bakåt + all framtid):
   // öppnar egen-planering-editorn även för passerade dagar, så en tömd dag
   // aldrig blir en återvändsgränd (F: Joakims låsta måndag). Äldre än fönstret
   // är historik och förblir inert.
   const clickable = d.date >= dlxMinSwapIso();
   const click = clickable ? `onclick="dlxDayClick('${d.date}', '${attr(d.day)}')"` : '';
   return `
-    <article class="dlx-day gap slim${clickable ? '' : ' inert'}${modeCls(d, 'gap')}" data-date="${d.date}" ${click}>
+    <article class="dlx-day gap slim${clickable ? '' : ' inert'}${modeCls(d)}" data-date="${d.date}" ${click}>
       <span class="dlx-rail" style="background:transparent"></span>
       <div class="dlx-day-head">
         <div class="dlx-day-when"><span class="dlx-day-dow">${esc(d.day)}</span>
@@ -803,7 +803,7 @@ function emptyDayCard(d) {
 function renderDayCard(d) {
   const isRecipe = d.recipeId && !d.isCustom;
   const cls = (d.isToday ? ' is-today' : '') + (d.isPast ? ' is-past' : '') + (d.isArchive ? ' is-archive' : '');
-  let html = isRecipe ? recipeDayCard(d, { active: d.planId === 'active', cls }) : emptyDayCard(d);
+  let html = isRecipe ? recipeDayCard(d, { cls }) : emptyDayCard(d);
   // recipeDayCard får is-today/is-past/is-archive via opts; emptyDayCard (egen dag,
   // fri dag, tom dag) gör inte det — injicera samma tillståndsklasser här så att
   // dämpningen av passerade dagar gäller ALLA korttyper, inte bara receptdagar.
@@ -826,11 +826,13 @@ function renderDayCard(d) {
 }
 
 // ── Huvudrendering ────────────────────────────────────────────────────────────
-// Sektionsvis diff-rendering: varje del (historik/hero/banner/ikväll/dagar)
-// bor i en egen wrapper (display: contents → påverkar inte layouten) och får
-// sin innerHTML utbytt BARA när innehållet faktiskt ändrats. Det gör att t.ex.
-// heron aldrig byggs om när man expanderar ett kort eller när realtime-ekot
-// från ens egen skrivning kommer — inget blink, ingen fladder.
+// Sektionsvis diff-rendering: varje del (hero/banner/dagar) bor i en egen
+// wrapper (display: contents → påverkar inte layouten) och får sin innerHTML
+// utbytt BARA när innehållet faktiskt ändrats. history/today är tömda platshållare
+// (stabil sektionsordning) och Ikväll ligger inline i dagslistan, se
+// renderDeluxeInner. Det gör att t.ex. heron aldrig byggs om när man expanderar
+// ett kort eller när realtime-ekot från ens egen skrivning kommer — inget blink,
+// ingen fladder.
 function setSec(host, name, html) {
   let el = host.querySelector(`:scope > .dlx-sec[data-sec="${name}"]`);
   if (!el) {
@@ -1052,7 +1054,7 @@ window.dlxAfterPick = function (date, { pending = false } = {}) {
     const r = el.getBoundingClientRect();
     const hh = document.querySelector('header')?.offsetHeight || 0;
     if (r.top < hh || r.bottom > window.innerHeight - 80) {
-      const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      const reduce = prefersReducedMotion();
       el.scrollIntoView({ block: 'center', behavior: reduce ? 'auto' : 'smooth' });
     }
   }
@@ -1493,17 +1495,22 @@ window.dlxDayClick = function (date, dayName) {
   openDaySheet(date, dayName);
 };
 
-// Valsheet när flytta-målet redan har innehåll: byt plats eller kläm in.
-function openChoiceSheet(fromDate, toDate) {
-  const tl = window._timelineByDate || {};
-  ensureSheetHost();
-  window._dlxSheet = { date: fromDate, day: (tl[fromDate] || synthDay(fromDate)).day, view: 'flyttaval', to: toDate };
+// Rendera och öppna dag-sheeten (fade in via rAF).
+function showSheet() {
   renderSheet();
   requestAnimationFrame(() => {
     document.getElementById('dlxSheetBackdrop')?.classList.add('open');
     document.getElementById('dlxSheet')?.classList.add('open');
   });
-  window.pushSheetHistory?.();
+  window.pushSheetHistory?.();   // F196: Android/PWA-bakåtknapp ska stänga sheeten
+}
+
+// Valsheet när flytta-målet redan har innehåll: byt plats eller kläm in.
+function openChoiceSheet(fromDate, toDate) {
+  const tl = window._timelineByDate || {};
+  ensureSheetHost();
+  window._dlxSheet = { date: fromDate, day: (tl[fromDate] || synthDay(fromDate)).day, view: 'flyttaval', to: toDate };
+  showSheet();
 }
 
 window.dlxChoiceGo = async function (kind) {
@@ -1533,12 +1540,7 @@ function openDaySheet(date, day) {
     return;   // äldre än retro-fönstret — historik, inget att göra
   }
   window._dlxSheet = { date, day, view };
-  renderSheet();
-  requestAnimationFrame(() => {
-    document.getElementById('dlxSheetBackdrop')?.classList.add('open');
-    document.getElementById('dlxSheet')?.classList.add('open');
-  });
-  window.pushSheetHistory?.();   // F196: Android/PWA-bakåtknapp ska stänga sheeten
+  showSheet();
   // Avsikt: värm endpoints och hämta Slumpa-förhandsval medan familjen läser menyn.
   warmEndpoints();
   if (view === 'meny' && canShuffleDay(d)) prefetchShuffle(date);
@@ -1680,7 +1682,7 @@ function sheetMenuHtml(d) {
   const isCustomRecipe = d.isCustom && d.customRecipeId;
   const r = recipeById(isCustomRecipe ? d.customRecipeId : d.recipeId);
   const title = isCustomRecipe ? d.customRecipeTitle : d.recipe;
-  const sub = [r?.time ? `${r.time} min` : null, r ? PROTEIN_LABEL[r.protein] : null].filter(Boolean).join(' · ');
+  const sub = recipeMetaText(r);
   const inWindow = !d.isArchive && d.date >= dlxMinSwapIso();
 
   // Primärparet sida vid sida: Visa receptet (fylld) + Byt recept/Redigera dagen.
@@ -1992,7 +1994,7 @@ async function sheetListAction(action, successMsg) {
     try { data = await res.json(); } catch { /* ingen JSON */ }
     if (!res.ok) throw Object.assign(new Error(data.error || ''), { serverMsg: data.error });
     window.dlxCloseSheet();
-    window._planMutateUntil = Date.now() + 4000;   // dämpa realtids-ekot
+    suppressEcho();   // dämpa realtids-ekot
     window.showToast?.(successMsg, { type: 'success' });   // kvittot först — uppdateringen sker bakom
     if (data.shoppingList && window.renderShoppingData) {
       // "Lägg tillbaka" en inhandlad dag: servern nollade spärren före ombygget.

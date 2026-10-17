@@ -128,7 +128,8 @@ export async function withRoutes(page, counters, { apiLatency = 0 } = {}) {
 
     // /api/replace-recipe — samma form som api/replace-recipe.js:
     // { recipe: <titel>, recipeId, saving, savingMatches } (+ shoppingList när
-    // servern byggt om listan; utelämnas här). Skrivningen speglas i stubbens
+    // servern byggt om listan — stubben gör det bara med window.__stubReplaceShop
+    // = true, se nedan). Skrivningen speglas i stubbens
     // tabeller så en senare omhämtning ser samma tillstånd.
     if (url.pathname.endsWith('/api/replace-recipe')) {
       if (method === 'OPTIONS') return route.fulfill({ status: 200, body: '' });   // uppvärmning

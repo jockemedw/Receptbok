@@ -1,7 +1,7 @@
 // Scroll-hantering: header show/hide, scroll-to-top, smooth scroll, steg-toggle.
 
-export const headerEl  = document.querySelector('header');
-export const scrollBtn = document.getElementById('scrolltop');
+const headerEl  = document.querySelector('header');
+const scrollBtn = document.getElementById('scrolltop');
 
 const HEADER_SHOW_THRESHOLD = 80;
 

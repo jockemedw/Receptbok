@@ -1,6 +1,7 @@
 // Valfritt larm-pling till en webhook (t.ex. en gratis ntfy.sh-topic) när något
-// degraderar tyst — i första hand när Willys-feeden slutar ge erbjudanden, vilket
-// annars ser ut som "inga reor denna vecka" i stället för "integrationen är bruten".
+// degraderar tyst: när Willys-feeden slutar ge erbjudanden (generate.js), vilket
+// annars ser ut som "inga reor denna vecka" i stället för "integrationen är bruten",
+// och när butikskopplingen för varukorgsexporten har gått ut (dispatch-to-willys.js).
 //
 // HELT INERT utan env: returnerar direkt om ALERT_WEBHOOK saknas, så det är säkert
 // att anropa överallt. Sätt ALERT_WEBHOOK i Vercel (t.ex. https://ntfy.sh/<din-topic>)

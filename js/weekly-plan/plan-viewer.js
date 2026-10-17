@@ -1,8 +1,10 @@
-// Veckovyn: rendering, receptbyte, dagbyte, bekräftelse.
-// Läser state: RECIPES, planConfirmed, isSnapping, scrollUpAccum
-// Skriver state: planConfirmed, isSnapping, scrollUpAccum
+// Matsedelns data och åtgärder: laddning + realtime-synk, tidslinjekartan
+// (_timelineByDate) som premium- och Idag-vyn renderar, Välj själv, egna dagar,
+// bekräfta/kassera.
+// Skriver state bl.a.: _lastPlan, _lastShop, _planArchive, _customDays, _timelineByDate,
+//   _activeShopListId, planConfirmed, replaceMode, customPickMode, _opBusy, _planMutateUntil
 
-import { fmtIso, fmtShort, PROTEIN_COLOR, getHolidayName, isoWeekNumber, escapeHtml, jsStringAttr, retroWindowStartIso } from '../utils.js';
+import { fmtIso, fmtShort, getHolidayName, isoWeekNumber, escapeHtml, jsStringAttr, retroWindowStartIso } from '../utils.js';
 import { mealDayRowMatches, applyListCoverage } from './echo-match.js';
 
 const ICON_COIN = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 7.5v9 M9.5 9.7c.6-.7 1.5-1 2.5-1s2 .3 2.4 1c.5.8 0 1.7-1 2-.7.2-2.7.3-3.4.7-.9.4-1.4 1.3-.9 2.1.5.7 1.6 1 2.5 1s1.9-.3 2.5-1"/></svg>';
@@ -80,7 +82,7 @@ function reloadIfStale() {
 
 // Eko-dämpning FÖRE en egen skrivning: realtime-eventet från vår egen ändring
 // kan komma medan anropet pågår — sätt fönstret innan fetch, inte efter svaret.
-// Delas av alla vägar som byter recept (Välj själv, reor, prisoptimera).
+// Delas av alla vägar som byter recept (Välj själv, Slumpa, Veckans fynd).
 export function suppressPlanEcho(ms = 4000) {
   window._planMutateUntil = Math.max(window._planMutateUntil || 0, Date.now() + ms);
 }
@@ -910,10 +912,9 @@ export async function discardPlan() {
     window.planConfirmed = false;
     window.dlxCloseSheet?.();
 
-    // Använd returnerad tomma planen direkt — Vercels statiska weekly-plan.json
-    // har inte hunnit re-deploya efter API-commiten (~30 sek), så fetch skulle
-    // fortfarande leverera den gamla planen. Hämta arkiv/custom-days/inköpslista
-    // med cache-bust för att reflektera senaste tillstånd.
+    // Rita den tomma planen ur svaret direkt (ingen extra planhämtning) och läs
+    // arkiv, egna dagar och inköpssummering färskt ur Supabase — kasseringen kan
+    // ha återställt dagar som förslaget ersatte (data.restored).
     const emptyPlan = data.weeklyPlan || { days: [], startDate: null, endDate: null };
     let archive    = { plans: [] };
     let customDays = window._customDays || { entries: {} };
@@ -959,8 +960,6 @@ export async function confirmPlan() {
     window.planConfirmed = true;
     if (window._lastPlan) window._lastPlan.confirmedAt = data.weeklyPlan?.confirmedAt || new Date().toISOString();
     document.getElementById('confirmPlanWrap').style.display = 'none';
-    // Bekräftad plan → ta bort snabbåtgärderna (slumpa/byt dag) från korten
-    document.querySelectorAll('.day-card-actions').forEach(b => b.remove());
 
     // Inköpslistan byggs INTE här längre (Session 134) — familjen väljer själv
     // vilka dagar som ska handlas. Toasten bär genvägen till det steget.
@@ -1053,7 +1052,6 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
   }
   // Fäll bara ut direkt efter nygenerering — annars kollapsad som default.
   window.renderIngredientPreview(recipeItems, shop?.recipeItemsMovedAt || null, freshlyGenerated);
-  document.getElementById('triggerSection').classList.add('collapsed');
 }
 
 export async function loadWeeklyPlan() {
@@ -1191,7 +1189,7 @@ export async function saveCustomDay(dateIso) {
     await postCustomDays('set', [dateIso], note);
     window.dlxCloseSheet?.();   // editorn bor i dag-sheeten
     // Via window.* så BÅDE deluxe- och Idag-vyns re-render-hookar kör (den lokala
-    // funktionen uppdaterar bara timeline-kartan + klassisk DOM, inte vyerna).
+    // funktionen ritar inte om vyerna).
     // postCustomDays har redan uppdaterat window._customDays → instant, ingen omladdning.
     window.renderWeeklyPlanData(
       window._lastPlan || null,
@@ -1253,7 +1251,7 @@ export async function clearCustomDay(dateIso) {
 
 // ── Städa övergivna interaktionslägen vid flikbyte (F259) ───────────────────
 // enterReplaceMode/enterCustomPickMode och deluxe-vyns flytta-läge
-// (_dlxMove) stänger av realtime-plansynken (subscribeMealDays ovan)
+// (_dlxMove) skjuter upp realtime-omhämtningen (subscribeMealDays ovan, F231)
 // så länge de hänger kvar. Ett flikbyte utan uttryckligt Avbryt lämnade
 // tidigare läget beväpnat resten av sessionen. Wrappar window.switchTab
 // (samma mönster som today-view.js/plan-viewer-deluxe.js) så städningen sker

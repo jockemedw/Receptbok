@@ -592,7 +592,7 @@ const itemNamed = (db, listId, prefix) =>
     { id: 20, category: "Övrigt", name: "tvål", source: "manual", checked: false, position: 1 },
     { id: 21, category: "Övrigt", name: "blöjor", source: "manual", checked: true, position: 0 },
   ];
-  const client = buildShopState({}, rows).itemIds;
+  const client = buildShopState(rows).itemIds;
   const server = shopItemIdsFromRows(rows);
   const sortObj = (o) => Object.fromEntries(Object.entries(o).sort(([x], [y]) => (x < y ? -1 : 1)));
   assertEq(sortObj(server), sortObj(client), "paritet: serverns itemIds = klientens buildShopState-nycklar");

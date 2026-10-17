@@ -2,6 +2,7 @@
 // Promptgenerator för AI-agent (Claude in Chrome).
 
 import { escapeHtml, jsStringAttr } from '../utils.js';
+import { isPantryName } from './shopping-list.js';
 
 const ICON_GEAR = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.32 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>';
 const ICON_CLIPBOARD = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="4" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11v6 M9 14h6"/></svg>';
@@ -55,17 +56,7 @@ function getShoppingCategories() {
   return Object.keys(items).filter((cat) => items[cat]?.length > 0);
 }
 
-// Speglar isPantryName/pantryKey i shopping-list.js (F076) — inte exponerad på
-// window, så logiken hålls i synk lokalt här. "Har hemma"-varor ska aldrig in
-// i AI-inköpsprompten, precis som de aldrig hamnar i "Kopiera hela listan".
-function pantryKey(name) {
-  return String(name || "").replace(/\s*\([^)]*\)\s*$/, "").trim().toLowerCase();
-}
-
-function isPantryName(name) {
-  return window._pantrySupported && window._pantryItems?.has(pantryKey(name));
-}
-
+// "Har hemma"-varor (F076) ska aldrig in i AI-inköpsprompten, precis som i "Kopiera hela listan".
 function getUncheckedItems() {
   const items = window._shopRecipeItems || {};
   const checked = window._checkedItems || {};
@@ -83,12 +74,16 @@ function getUncheckedManualItems() {
   return manual.filter((item) => !checked[`manual::${item}`] && !isPantryName(item));
 }
 
+function brandPillsMarkup() {
+  return prefs.blockedBrands
+    .map((b) => `<span class="pref-pill">${escapeHtml(b)}<button class="pref-pill-x" aria-label="Ta bort märke" onclick="removeBrand('${jsStringAttr(b)}')">&times;</button></span>`)
+    .join("");
+}
+
 function renderBrandPills() {
   const container = document.getElementById("brandPills");
   if (!container) return;
-  container.innerHTML = prefs.blockedBrands
-    .map((b) => `<span class="pref-pill">${escapeHtml(b)}<button class="pref-pill-x" aria-label="Ta bort märke" onclick="removeBrand('${jsStringAttr(b)}')">&times;</button></span>`)
-    .join("");
+  container.innerHTML = brandPillsMarkup();
 }
 
 function addBrand() {
@@ -119,10 +114,6 @@ export function renderPreferencesUI() {
 
   const cats = getShoppingCategories();
 
-  const brandPillsHtml = prefs.blockedBrands
-    .map((b) => `<span class="pref-pill">${escapeHtml(b)}<button class="pref-pill-x" aria-label="Ta bort märke" onclick="removeBrand('${jsStringAttr(b)}')">&times;</button></span>`)
-    .join("");
-
   const organicToggles = cats.map((cat) => {
     const checked = prefs.preferOrganic[cat] ? "checked" : "";
     return `<label class="pref-toggle"><input type="checkbox" ${checked} onchange="togglePref('organic','${escapeHtml(cat)}')"> ${escapeHtml(cat)}</label>`;
@@ -146,7 +137,7 @@ export function renderPreferencesUI() {
                  onkeydown="if(event.key==='Enter'){addBrand();event.preventDefault()}">
           <button class="prefs-brand-add" onclick="addBrand()">+</button>
         </div>
-        <div id="brandPills" class="prefs-pills">${brandPillsHtml}</div>
+        <div id="brandPills" class="prefs-pills">${brandPillsMarkup()}</div>
       </div>
       ${cats.length ? `
       <div class="prefs-group">
@@ -172,10 +163,14 @@ function togglePrefsPanel() {
   if (btn) btn.setAttribute("aria-expanded", String(open));
 }
 
+function uncheckedCount(unchecked, manual) {
+  return Object.values(unchecked).reduce((s, a) => s + a.length, 0) + manual.length;
+}
+
 export function buildPrompt() {
   const unchecked = getUncheckedItems();
   const uncheckedManual = getUncheckedManualItems();
-  const totalCount = Object.values(unchecked).reduce((s, a) => s + a.length, 0) + uncheckedManual.length;
+  const totalCount = uncheckedCount(unchecked, uncheckedManual);
   if (totalCount === 0) return null;
 
   const lines = [];
@@ -226,7 +221,7 @@ export function renderPromptButton() {
 
   const unchecked = getUncheckedItems();
   const uncheckedManual = getUncheckedManualItems();
-  const totalCount = Object.values(unchecked).reduce((s, a) => s + a.length, 0) + uncheckedManual.length;
+  const totalCount = uncheckedCount(unchecked, uncheckedManual);
 
   anchor.innerHTML = `
     <button class="shop-dispatch-prompt-btn" onclick="copyAIPrompt()" ${totalCount === 0 ? "disabled" : ""}>

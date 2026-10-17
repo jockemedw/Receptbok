@@ -1,6 +1,6 @@
 // Regressiontester för cookies-endpoint + secrets-store.
-// Körs med `node tests/cookies-endpoint.test.js` — inga externa deps.
-// Hook: se .claude/settings.json — blockerar commit vid regression.
+// Körs med `node tests/cookies-endpoint.test.js` — kräver node_modules (dispatch-to-willys.js drar in @supabase/supabase-js).
+// Hook: se .claude/settings.json — körs efter Edit av dispatch-to-willys/secrets-store/axfood-stores och larmar (exit 2) vid regression.
 
 import { createSecretsStore } from "../api/_shared/secrets-store.js";
 import { runRefresh, secretsMatch } from "../api/dispatch-to-willys.js";
