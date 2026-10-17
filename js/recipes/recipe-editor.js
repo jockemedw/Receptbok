@@ -2,9 +2,9 @@
 // Läser state: RECIPES, editingId, _importSeasons (från importförhandsgranskningen)
 // Skriver state: RECIPES, _allRecipes, editingId, _importSeasons
 
-import { renderDetailInner, escapeHtml, jsStringAttr, svCompare } from '../utils.js';
+import { renderDetailInner, escapeHtml, jsStringAttr, svCompare, PROTEIN_COLOR } from '../utils.js';
 import { recipeToRow } from '../data-mapper.js';
-import { cardMetaHtml } from './recipe-browser.js';
+import { cardMetaHtml, renderCard } from './recipe-browser.js';
 
 // ── Taggväljare ───────────────────────────────────────────────────────────────
 // Knappen vid taggfältet fäller ut alla taggar som redan används i receptboken
@@ -179,6 +179,7 @@ export async function saveRecipe() {
     window.switchTab('recept');
     window.RECIPES.push(saved);
     window._allRecipes = window.RECIPES;
+    window.syncRecipeCount?.();
 
     // Nollställ sökning så det nya kortet syns
     document.getElementById('search').value = '';
@@ -218,6 +219,12 @@ export async function saveRecipe() {
       card.dataset.title        = updated.title.toLowerCase();
       card.querySelector('.card-title').textContent = updated.title;
       card.querySelector('.card-meta').innerHTML = cardMetaHtml(updated);
+      // Proteinbyte → ny färgrand; namnbyte → Välj-knappen bär titeln i onclick.
+      card.style.setProperty('--rail', PROTEIN_COLOR[updated.protein] || 'var(--birch-soft)');
+      const tmp = document.createElement('template');   // inert — laddar ingen bild
+      tmp.innerHTML = renderCard(updated);
+      const freshSelect = tmp.content.querySelector('.select-btn');
+      if (freshSelect) card.querySelector('.select-btn')?.replaceWith(freshSelect);
       const inner = card.querySelector('.detail-inner');
       inner.innerHTML = renderDetailInner(updated);
       inner.dataset.rendered = '1';
@@ -253,6 +260,9 @@ export async function deleteRecipe() {
       .eq('household_id', householdId);
     if (error) throw error;
     window.RECIPES = window.RECIPES.filter(r => r.id !== window.editingId);
+    // filter() ger en ny array — aliaset som guidens receptantal läser måste följa med.
+    window._allRecipes = window.RECIPES;
+    window.syncRecipeCount?.();
     const card = document.querySelector(`.recipe-card[data-id="${window.editingId}"]`);
     if (card) card.remove();
     delBtn.disabled = false;

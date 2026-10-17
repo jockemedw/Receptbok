@@ -5,7 +5,7 @@ import './ui/perf.js';   // ?perf=1 → mätning (Fas 0). Inert utan flaggan.
 import './state.js';
 import { svCompare, escapeHtml } from './utils.js';
 import { isDbUnreachable, getLastDbError, DB_RESTING_MESSAGE } from './supabase-client.js';
-import { requireAuth } from './auth-gate.js';
+import { requireAuth, signOut } from './auth-gate.js';
 import { recipeFromRow } from './data-mapper.js';
 import './ui/scroll.js';
 import './ui/navigation.js';
@@ -48,8 +48,7 @@ async function init() {
     window._allRecipes = window.RECIPES;
     window.perfMark?.('recept');
     document.getElementById('loadingState').style.display = 'none';
-    document.getElementById('footerEl').textContent =
-      `Receptboken · ${window.RECIPES.length} recept`;
+    syncRecipeCount();
     buildTagFilterUI();
     window.renderRecipeBrowser();
     // Mäter kostnaden för att bygga Recept-fliken vid boot fast den är dold
@@ -68,6 +67,24 @@ async function init() {
     loading.querySelector('p').textContent = err.message;
   }
 }
+
+// Sidfotens receptantal. Delas med recipe-editor.js (ny/raderad receptpost).
+function syncRecipeCount() {
+  const el = document.getElementById('footerCount');
+  if (el) el.textContent = `Receptboken · ${window.RECIPES.length} recept`;
+}
+window.syncRecipeCount = syncRecipeCount;
+
+// Logga ut — diskret i sidfoten, alltid bakom en bekräftelse (barnhänder).
+document.getElementById('signOutBtn')?.addEventListener('click', async () => {
+  const ok = await window.confirmDialog({
+    title: 'Logga ut?',
+    message: 'Du loggas ut från Receptboken på den här enheten. Familjens matsedel och listor finns kvar.',
+    confirmLabel: 'Logga ut',
+    cancelLabel: 'Avbryt',
+  });
+  if (ok) await signOut();
+});
 
 // Event listeners
 const searchInput = document.getElementById('search');
@@ -98,6 +115,10 @@ let openSheetCount = 0;
 
 function openSheet(id) {
   const sheet = document.getElementById(id);
+  // Idempotent per sheet: openStorePicker() anropas även inifrån den öppna
+  // butiksväljaren (Tillbaka/efter koppling) — utan spärren räknades låset upp
+  // två gånger och body fastnade som position:fixed efter stängning.
+  if (sheet.classList.contains('open')) return;
   sheet.hidden = false;
   void sheet.offsetWidth;
   sheet.classList.add('open');
@@ -118,6 +139,9 @@ function openSheet(id) {
 function closeSheet(id) {
   const sheet = document.getElementById(id);
   const wasOpen = sheet.classList.contains('open');
+  // Redan stängd (t.ex. Escape inom 280 ms, eller guiden stängd under
+  // genereringen) — rör varken räknaren eller scroll-låset.
+  if (!wasOpen) return;
   sheet.classList.remove('open');
 
   openSheetCount = Math.max(0, openSheetCount - 1);
@@ -132,7 +156,7 @@ function closeSheet(id) {
     window.scrollTo(0, scrollY);
   }
   setTimeout(() => { if (!sheet.classList.contains('open')) sheet.hidden = true; }, 280);
-  if (wasOpen) popSheetHistory();
+  popSheetHistory();
 }
 
 window.openBottomSheet  = openSheet;   // delas med plan-generator.js (planSheet), day-picker.js (shopDaysSheet) och dispatch-ui.js (shopStoreSheet)
@@ -255,10 +279,14 @@ document.querySelectorAll('#filterSheet input[type="checkbox"]').forEach(c => {
   });
 });
 
-document.getElementById('filterClearBtn').addEventListener('click', () => {
+function clearRecipeFilters() {
   for (const k of Object.keys(window.recipeFilters)) window.recipeFilters[k].clear();
   document.querySelectorAll('#filterSheet input[type="checkbox"]').forEach(c => { c.checked = false; });
   updateFilterDot();
+}
+
+document.getElementById('filterClearBtn').addEventListener('click', () => {
+  clearRecipeFilters();
   window.renderRecipeBrowser();
 });
 
@@ -268,11 +296,14 @@ function updateFilterDot() {
   document.getElementById('filterDot').hidden = !any;
 }
 
-// "Rensa sökning"-knapp i empty state
+// "Rensa sökning och filter"-knapp i empty state — tomläget kan lika gärna
+// bero på filtren som på sökningen, så nolla båda.
 document.getElementById('emptyState').addEventListener('click', e => {
   if (e.target.closest('.empty-reset-btn')) {
     searchInput.value = '';
     updateSearchClear();
+    clearTimeout(searchDebounce);
+    clearRecipeFilters();
     window.renderRecipeBrowser();
   }
 });

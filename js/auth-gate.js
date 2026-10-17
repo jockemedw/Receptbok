@@ -168,7 +168,10 @@ export async function requireAuth() {
 }
 
 export async function signOut() {
-  await auth.signOut();
+  // Utan nät (eller med utgången token) svarar global utloggning med fel och
+  // sessionen ligger kvar — logga då ut lokalt så enheten faktiskt släpps.
+  const { error } = await auth.signOut();
+  if (error) await auth.signOut({ scope: 'local' });
   window.location.reload();
 }
 
