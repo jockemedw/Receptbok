@@ -58,6 +58,11 @@ const CORPUS = [
   ["ost", "Mac & Cheese Färdigrätt", "Anamma", false],
   ["köttfärs", "Köttbullar Färdigrätt", "Dafgård", false],
   ["fisk", "Panerad Torskfilé", "Findus", false],
+  ["fisk", "Fisk Nuggets", "ELDORADO, 500g", false], // S155 9f: dispatchens sökträff för "fisk"
+  ["fisk", "Fiskburgare", "Findus", false],
+  ["fisk", "Fisk Bites Crispy", "", false],
+  ["fisk", "Fiskgratäng", "Findus", false],
+  ["fisk", "Fiskfilé", "Garant", true],
   ["potatis", "Potatisgratäng Färdigrätt Micro", "Felix", false],
 
   // ── Barnmat ──

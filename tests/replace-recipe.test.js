@@ -39,6 +39,9 @@ function makeMockDb(initial) {
   const state = {
     weekly_plans: [], recipes: [], meal_days: [], recipe_history: [],
     shopping_lists: [], shopping_items: [], households: [],
+    // Förslagsminnet (migration 013) finns i drift — utan tabellen körde
+    // paritetstesterna bara "tabell saknas"-vägen (S155 11a).
+    recipe_suggestions: [],
     ...JSON.parse(JSON.stringify(initial)),
     seq: 1000,
   };
@@ -268,7 +271,15 @@ async function runBoth(label, fx, body, seed = 42) {
   // Svaret: samma som förr. (itemIds är nytt och radid-beroende — jämförs
   // separat; rebuildActiveList delas av båda vägarna.)
   assertEq(fresh.body, legacy.body, `${label}: samma svar`);
-  assertEq(newDb._state, legacyDb._state, `${label}: identiskt DB-slutläge`);
+  // Den gamla vägen kände inte förslagsminnet → jämför slutläget utan det, och
+  // kontrollera förslagsraderna separat: exakt en rejected_on-rad för den
+  // bortbytta rätten (ingen om samma rätt valdes igen).
+  const strip = ({ recipe_suggestions, ...rest }) => rest;
+  assertEq(strip(newDb._state), strip(legacyDb._state), `${label}: identiskt DB-slutläge`);
+  const before = (fx.meal_days || []).find((d) => d.plan_id === 7 && d.date === body.date)?.recipe_id ?? null;
+  const expectSugg = fresh.status === 200 && before != null && before !== fresh.body.recipeId
+    ? [{ household_id: HH, recipe_id: before, rejected_on: isoDaysAgo(0) }] : [];
+  assertEq(newDb._state.recipe_suggestions, expectSugg, `${label}: förslagsminnet skriver bara den bortbytta rätten`);
   const cap = fresh.body.shoppingList ? 7 : 3;
   assertTrue(newDb.stats.maxDepth <= cap, `${label}: ≤ ${cap} seriella rundor (var ${newDb.stats.maxDepth}, förr ${legacyDb.stats.maxDepth})`);
   if (_dbg) console.log(label, fresh.body.recipeId, "rundor ny/gammal", newDb.stats.maxDepth, legacyDb.stats.maxDepth, "anrop", newDb.stats.calls, legacyDb.stats.calls);
@@ -461,6 +472,23 @@ for (const onList of [true, false]) {
     if (without.body.candidates[0].id === 9) pickedPlain++;
   }
   assertTrue(pickedRejected < pickedPlain * 0.6, `förslagsminne: bortvald rätt föreslås först mer sällan (${pickedRejected} mot ${pickedPlain} av 200)`);
+}
+
+// ── 10. Förslagsminnet saknas (före migration 013) → bytet fungerar ändå ────
+{
+  const fx = fixture({ onList: false });
+  const db = makeMockDb(fx);
+  delete db._state.recipe_suggestions;
+  const origWarn = console.warn;
+  console.warn = () => {};
+  let res;
+  try {
+    res = await replaceRecipe({ database: db, householdId: HH,
+      body: { date: T(1), currentRecipeId: 2, weekRecipeIds: [1, 2, 3, 5] }, rng: seeded(42) });
+  } finally { console.warn = origWarn; }
+  const ref = await replaceRecipe({ database: makeMockDb(fx), householdId: HH,
+    body: { date: T(1), currentRecipeId: 2, weekRecipeIds: [1, 2, 3, 5] }, rng: seeded(42) });
+  assertEq([res.status, res.body.recipeId], [200, ref.body.recipeId], "utan förslagstabell: Slumpa lyckas med samma val");
 }
 
 if (failed > 0) console.log(failures.join("\n\n"));

@@ -9,9 +9,10 @@ import { db, getHouseholdId } from "./_shared/supabase.js";
 import { selectRecipes, hasTure } from "./_shared/select-recipes.js";
 import { notifyAlert } from "./_shared/alert.js";
 import { fetchRecipeUsage, pruneOrphanHistory, recordSuggestions } from "./_shared/history.js";
+import { addDaysIso } from "./_shared/day-ops.js";
 
 function getCurrentSeason(dateStr) {
-  const month = new Date(dateStr).getMonth() + 1;
+  const month = new Date(dateStr).getUTCMonth() + 1; // ISO-datum tolkas som UTC
   if (month >= 3 && month <= 5) return "vår";
   if (month >= 6 && month <= 8) return "sommar";
   if (month >= 9 && month <= 11) return "höst";
@@ -20,21 +21,30 @@ function getCurrentSeason(dateStr) {
 
 const DAY_NAMES = ["Måndag", "Tisdag", "Onsdag", "Torsdag", "Fredag", "Lördag", "Söndag"];
 
-function buildDayList(startDate, endDate) {
+// Ren ISO-datumaritmetik i UTC (addDaysIso) — med lokal setDate dubblades en
+// dag vid sommartidsbytet om processen inte körde i UTC.
+export function buildDayList(startDate, endDate) {
   const days = [];
-  const current = new Date(startDate);
-  const end = new Date(endDate);
-  while (current <= end) {
-    const dow = current.getDay();
+  for (let cur = startDate; cur <= endDate; cur = addDaysIso(cur, 1)) {
+    const dow = new Date(cur + "T12:00:00Z").getUTCDay();
     const weekday = dow === 0 ? 6 : dow - 1;
     days.push({
-      date: current.toISOString().slice(0, 10),
+      date: cur,
       day: DAY_NAMES[weekday],
       is_weekend: weekday >= 5,
     });
-    current.setDate(current.getDate() + 1);
   }
   return days;
+}
+
+// allowed_proteins: komma-sträng (klienten) eller array. null = ogiltigt värde.
+export function parseAllowedProteins(value) {
+  const list = Array.isArray(value) ? value
+    : typeof value === "string" ? value.split(",")
+    : null;
+  if (!list) return null;
+  const out = list.map((p) => String(p).trim()).filter(Boolean);
+  return out.length ? out : null;
 }
 
 function filterRecipes(recipes, constraints) {
@@ -290,12 +300,19 @@ export async function activatePlanAtomic(newPlanId, startDate, householdId, data
 // used_on = dagen rätten ÄTS, inte genereringsdagen. Med genereringsdatum
 // släpptes en rätt som låg sist i en lång matsedel fri för nytt val redan dagar
 // efter att den lagats (historikfönstret räknades från genereringen).
-async function saveHistoryToSupabase(days, householdId) {
+// Kastar aldrig: planen är redan aktiverad när det här körs, så ett historikfel
+// loggas i stället för att fälla svaret.
+export async function saveHistoryToSupabase(days, householdId, database = db) {
   const rows = days
     .filter((d) => d.recipeId)
     .map((d) => ({ household_id: householdId, recipe_id: d.recipeId, used_on: d.date }));
   if (!rows.length) return;
-  await db.from("recipe_history").upsert(rows, { onConflict: "household_id,recipe_id" });
+  try {
+    const { error } = await database.from("recipe_history").upsert(rows, { onConflict: "household_id,recipe_id" });
+    if (error) console.error("saveHistoryToSupabase", error.message);
+  } catch (err) {
+    console.error("saveHistoryToSupabase", err?.message || err);
+  }
 }
 
 // ── Handler ─────────────────────────────────────────────────────────────────
@@ -334,8 +351,13 @@ export default createSupabaseHandler(async (req, res) => {
   }
   const clampCount = (v) => Math.min(Math.max(parseInt(v) || 0, 0), spanDays);
 
+  const proteinList = parseAllowedProteins(allowed_proteins);
+  if (!proteinList) {
+    return res.status(400).json({ error: "Välj minst ett protein." });
+  }
+
   const constraints = {
-    allowed_proteins: allowed_proteins.split(",").map((p) => p.trim()).filter(Boolean),
+    allowed_proteins: proteinList,
     untested_count: clampCount(untested_count),
     vegetarian_days: clampCount(vegetarian_days),
     ture_days: clampCount(ture_days),
@@ -377,7 +399,7 @@ export default createSupabaseHandler(async (req, res) => {
 
   const { recentIds, hardIds, usedOn, penaltyById } = usage;
   const allDays = buildDayList(start_date, end_date);
-  const blockedSet = new Set(blocked_dates);
+  const blockedSet = new Set(Array.isArray(blocked_dates) ? blocked_dates : []);
   // Blockerade OCH egen-planerade (custom) dagar utesluts ur receptvalet.
   const activeDays = allDays.filter((d) => !blockedSet.has(d.date) && !customDates.has(d.date));
 

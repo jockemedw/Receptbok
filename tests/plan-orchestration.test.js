@@ -41,8 +41,11 @@
 //   9. isMissingRpcError känner igen PostgREST-felformerna.
 //   10. discardActivePlan (Kassera förslag) lägger tillbaka replaced_days som
 //      egna dagar utan att skriva över senare innehåll (Session 153).
+//   11. Hjälpare i generate.js (S155): historikfel loggas men kastar inte (planen
+//      är redan aktiv), allowed_proteins tål array/ogiltigt värde, och
+//      buildDayList är tidszonsoberoende över sommartidsbytet.
 
-import { savePlanToSupabase, detachOldPlanDays, activatePlan, activatePlanAtomic, isMissingRpcError } from "../api/generate.js";
+import { savePlanToSupabase, detachOldPlanDays, activatePlan, activatePlanAtomic, isMissingRpcError, saveHistoryToSupabase, parseAllowedProteins, buildDayList } from "../api/generate.js";
 import { discardActivePlan } from "../api/discard-plan.js";
 
 // ─── Mockad Supabase-db (kedjebar query-builder) ─────────────────────────────
@@ -532,6 +535,46 @@ const assertJson = (a, e, desc) => assertEq(JSON.stringify(a), JSON.stringify(e)
   assertTrue(isMissingRpcError({ message: "404 not found" }), "isMissingRpcError: 404-text");
   assertEq(isMissingRpcError({ message: "simulerat nätverksfel mitt i RPC" }), false, "isMissingRpcError: vanligt fel ska INTE tolkas som saknad funktion");
   assertEq(isMissingRpcError(null), false, "isMissingRpcError: null-fel → false");
+}
+
+// ─── Test 11: hjälpare i generate.js (S155) ──────────────────────────────────
+{
+  // Historik-upserten returnerar {error} → loggas, kastar inte.
+  const errDb = { from: () => ({ upsert: () => Promise.resolve({ data: null, error: { message: "simulerat historikfel" } }) }) };
+  const logged = [];
+  const origErr = console.error;
+  console.error = (...a) => logged.push(a.join(" "));
+  let threw = false;
+  try { await saveHistoryToSupabase([{ date: "2026-10-20", recipeId: 5 }], "h", errDb); }
+  catch { threw = true; }
+  finally { console.error = origErr; }
+  assertEq(threw, false, "historik: upsert-fel kastar inte (planen är redan aktiv)");
+  assertTrue(logged.some((l) => l.includes("simulerat historikfel")), "historik: upsert-fel loggas");
+
+  const okDb = makeMockDb();
+  await saveHistoryToSupabase([{ date: "2026-10-20", recipeId: 5 }, { date: "2026-10-21" }], "h", okDb);
+  assertEq(JSON.stringify(okDb._state.history), JSON.stringify([{ household_id: "h", recipe_id: 5, used_on: "2026-10-20" }]),
+    "historik: en rad per receptdag (dagar utan recept hoppas över)");
+}
+{
+  assertEq(JSON.stringify(parseAllowedProteins("fisk, kyckling,")), JSON.stringify(["fisk", "kyckling"]), "proteiner: komma-sträng (klienten)");
+  assertEq(JSON.stringify(parseAllowedProteins(["fisk", " kött "])), JSON.stringify(["fisk", "kött"]), "proteiner: array accepteras");
+  assertEq(parseAllowedProteins(42), null, "proteiner: tal → ogiltigt (400)");
+  assertEq(parseAllowedProteins(null), null, "proteiner: null → ogiltigt (400)");
+  assertEq(parseAllowedProteins(""), null, "proteiner: tom sträng → ogiltigt (400)");
+}
+{
+  const prevTz = process.env.TZ;
+  process.env.TZ = "Europe/Stockholm";
+  try {
+    const list = buildDayList("2026-03-27", "2026-04-01");
+    assertEq(list.map((d) => d.date).join(","), "2026-03-27,2026-03-28,2026-03-29,2026-03-30,2026-03-31,2026-04-01",
+      "buildDayList (Europe/Stockholm): 6 unika datum över sommartidsbytet");
+    assertEq(list.map((d) => d.day).join(","), "Fredag,Lördag,Söndag,Måndag,Tisdag,Onsdag", "buildDayList: rätt veckodagar");
+    assertEq(list.filter((d) => d.is_weekend).length, 2, "buildDayList: lördag+söndag är helg");
+  } finally {
+    if (prevTz === undefined) delete process.env.TZ; else process.env.TZ = prevTz;
+  }
 }
 
 // ─── Slutrapport ──────────────────────────────────────────────────────────────

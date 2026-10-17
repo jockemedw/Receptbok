@@ -76,7 +76,7 @@ const SUGGESTED_FLOOR = 0.5; // med i ett förslag som inte blev av (t.ex. kasse
 const REJECTED_FLOOR = 0.2;  // aktivt bortbytt
 
 function daysBetween(fromIso, toIso) {
-  return (new Date(toIso + "T12:00:00") - new Date(fromIso + "T12:00:00")) / 864e5;
+  return (new Date(toIso + "T12:00:00Z") - new Date(fromIso + "T12:00:00Z")) / 864e5;
 }
 
 // Ren funktion (testbar): förslagsrader + usedOn → { receptId: vikt (0..1) }.
