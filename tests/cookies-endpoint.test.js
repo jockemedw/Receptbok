@@ -3,7 +3,7 @@
 // Hook: se .claude/settings.json — körs efter Edit av dispatch-to-willys/secrets-store/axfood-stores och larmar (exit 2) vid regression.
 
 import { createSecretsStore } from "../api/_shared/secrets-store.js";
-import { runRefresh, secretsMatch } from "../api/dispatch-to-willys.js";
+import dispatchHandler, { runRefresh, secretsMatch } from "../api/dispatch-to-willys.js";
 
 let passed = 0;
 let failed = 0;
@@ -392,6 +392,54 @@ assertFalse(secretsMatch(undefined, "abc"), "secretsMatch: undefined header → 
 assertFalse(secretsMatch("abc", undefined), "secretsMatch: undefined expected → false");
 // U. En presensskillnad i sista tecknet fångas
 assertFalse(secretsMatch("hemlighet1", "hemlighet2"), "secretsMatch: skillnad i sista tecknet → false");
+
+// ─── S155: refresh-cookies via handlern kräver INTE JWT ─────────────────────
+// GET/POST på endpointen kräver inloggning sedan S155, men extensionen har bara
+// X-Refresh-Secret — dess väg måste ligga före auth-kontrollen. Global fetch
+// ersätts med en fake-gist (createSecretsStore läser fetch vid anropet).
+{
+  function mockRes() {
+    return {
+      statusCode: null, body: undefined,
+      setHeader() {},
+      status(c) { this.statusCode = c; return this; },
+      json(b) { this.body = b; return this; },
+      end() { return this; },
+    };
+  }
+  const envKeys = ["WILLYS_REFRESH_SECRET", "GITHUB_GIST_PAT", "WILLYS_SECRETS_GIST_ID"];
+  const savedEnv = Object.fromEntries(envKeys.map((k) => [k, process.env[k]]));
+  process.env.WILLYS_REFRESH_SECRET = "ext-hemlighet";
+  process.env.GITHUB_GIST_PAT = "pat";
+  process.env.WILLYS_SECRETS_GIST_ID = "g1";
+  const origFetch = globalThis.fetch;
+  const gist = makeGistFetch({ users: {} });
+  globalThis.fetch = gist;
+  try {
+    const payload = { userId: "joakim", cookie: "c-ny", csrf: "t-ny", storeId: "2160" };
+    const ok = mockRes();
+    await dispatchHandler({
+      method: "POST", query: { op: "refresh-cookies" },
+      headers: { "x-refresh-secret": "ext-hemlighet" }, body: payload,
+    }, ok);
+    assertEq(ok.statusCode, 200, "S155: refresh-cookies utan JWT men rätt hemlighet → 200");
+    assertEq(ok.body?.ok, true, "S155: refresh-cookies svarar ok");
+    assertEq(gist.state().users?.joakim?.stores?.willys?.cookie, "c-ny", "S155: refresh-cookies skrev cookien till gisten");
+
+    const bad = mockRes();
+    await dispatchHandler({
+      method: "POST", query: { op: "refresh-cookies" },
+      headers: { "x-refresh-secret": "fel" }, body: payload,
+    }, bad);
+    assertEq(bad.statusCode, 401, "S155: refresh-cookies med fel hemlighet → 401");
+    assertEq(bad.body?.error, "unauthorized", "S155: avvisningen kommer från hemlighetskontrollen, inte JWT-kravet");
+  } finally {
+    globalThis.fetch = origFetch;
+    for (const k of envKeys) {
+      if (savedEnv[k] === undefined) delete process.env[k]; else process.env[k] = savedEnv[k];
+    }
+  }
+}
 
 console.log(`\n${passed} passerade, ${failed} failade`);
 if (failed > 0) {
