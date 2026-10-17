@@ -114,7 +114,7 @@ export async function recordSuggestions(database, householdId, recipeIds, field,
   }
 }
 
-// Hämtar historik + planerade dagar (senaste `lookbackDays` och framåt) + förslagsminnet.
+// Hämtar hela historiken + planerade dagar (senaste `lookbackDays` och framåt) + förslagsminnet.
 export async function fetchRecipeUsage(database, householdId, {
   windowDays = RECENT_WINDOW_DAYS, hardDays = HARD_WINDOW_DAYS, lookbackDays = 90,
 } = {}) {
