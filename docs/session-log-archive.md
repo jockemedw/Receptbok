@@ -1,6 +1,16 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–153. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–154. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+## Session 154 — Receptminne 4 veckor
+
+**Session 154 — Receptminne 4 veckor + förslagsminne (2026-10-16, datamuterande, backend-only).**
+
+Joakim: "hålla räkning på vilka recept vi ätit i 4–8 veckor bakåt och inte föreslå dessa igen." **Premisskoll mot livedata först:** 34 receptmiddagar jun–okt, 29 unika; bara en upprepning inom 4–8 v (52 d). Familjen äter ~3 receptmiddagar/v, 30/34 testade — men bara 37 av 166 recept är testade (11 testade icke-veg vardag30). Simulering (16 v × 4 middagar, 40 körningar, riktiga receptbanken, oprövade=0): hårt 8-veckorsfönster gav **725/2560 dagar med fel dagtyp** (60-min-rätt på vardag) + 57 proteintaksbrott; hårt 4 v 82 + 42. Joakim valde (AskUserQuestion) **"4 veckor + smart reserv"** och att både ätna rätter och förslag stör ("Båda").
+
+**Byggt:** (1) `RECENT_WINDOW_DAYS = 28` / `HARD_WINDOW_DAYS = 14` i `api/_shared/history.js`; `buildRecipeUsage` returnerar även `hardIds`. (2) **Reserv:** recept lagade för 2–4 veckor sedan används — längst sedan först, med dagtagg, proteintak och oprövade-gräns kvar — innan generatorn släpper proteintaket/dagtaggen (`selectRecipes` opts.`hardIds`) och i Slumpa före nivåerna som släpper testad-status (`pickReplacementOrder` `hardIds`). Utan `hardIds` = exakt gamla beteendet. Simulering: upprepningar inom 28 d **558 → 52** (oprövade=0) / **254 → 18** (oprövade=1), dagtypsbrott 0. (3) **Förslagsminne** (ny tabell `recipe_suggestions`, **migration 013 — KÖRD 2026-10-16 på Joakims OK, verifierad**): `generate` stämplar `suggested_on` på planens recept, `replace-recipe` stämplar `rejected_on` på bortbytt rätt (Slumpa + Välj själv; aldrig i preview). `suggestionPenalties` viktar ner i 28 d (bortvald 0,2 → 1, kasserat förslag 0,5 → 1); planeras/lagas rätten efter förslaget = ingen sänkning. Best effort: utan tabellen ignoreras läsningen och skrivningen loggas bara. 90-dagars "längst sedan"-viktningen orörd. Ingen ny `api/`-fil (10), recept-strukturen orörd, inga frontend-ändringar → inga versionsbumpar. Tester: select-recipes test 30–35, replace-recipe test 9; hela sviten grön.
+
+**Noterat (ej åtgärdat):** "Morotssoppa med apelsin och basilika" ligger på tre egna dagar med 5 dagars mellanrum (7/8, 12/8, 17/8) — egna dagar, inte generatorn; troligen flyttar/manuellt val.
 
 ## Session 153 — Nattpass buggfix
 
