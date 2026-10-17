@@ -26,7 +26,7 @@
 //
 // Säkerhet: returnerar aldrig cookies eller CSRF-token i loggning eller response.
 
-import { fetchOffersFromWillys } from "./willys-offers.js";
+import { fetchOffersFromWillys } from "./_shared/willys-offers.js";
 import { createSearchClient } from "./_shared/axfood-search.js";
 import { createCartClient } from "./_shared/axfood-cart-client.js";
 import { matchCanons } from "./_shared/dispatch-matcher.js";

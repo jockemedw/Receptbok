@@ -1,17 +1,15 @@
-// Willys-erbjudanden — proxy + normaliserare
+// Willys-erbjudanden — feed-klient + normaliserare (delad modul, ingen endpoint).
 //
-// GET /api/willys-offers?store=<storeId>
-//   default storeId = 2160 (Willys Linköping Ekholmen)
-//
-// Hämtar live från Willys publika campaigns-endpoint (ingen auth).
+// fetchOffersFromWillys(store) hämtar live från Willys publika campaigns-endpoint
+// (ingen auth); butik styrs av anroparen (WILLYS_STORE_ID, fallback 2160).
 // Släpper bara igenom promotion-typer med rent styckpris (isMatchablePromo) — SubtotalOrderPromotion bara när den är ovillkorad (threshold 0/null).
 // Returnerar kompakt shape per Session 27-beslutet (~30 KB istf 485 KB).
 //
-// Caching: 1h CDN-cache via Cache-Control — inga serverless cold-start-kostnader
-// vid täta anrop från UI:t.
+// Var tidigare den publika endpointen GET /api/willys-offers, som saknade klient
+// och var en öppen proxy mot Willys — borttagen Session 155. Används av
+// api/deals.js (GET, rea-chips i guiden), api/generate.js och dispatchen.
 
 const WILLYS_BASE = "https://www.willys.se/search/campaigns/online";
-const DEFAULT_STORE = "2160";
 const MATCHABLE_PROMO_TYPES = new Set([
   "MixMatchPricePromotion",
   "MixMatchPercentagePromotion",
@@ -79,36 +77,6 @@ export async function fetchOffersFromWillys(store, fetchImpl = fetch) {
   }
   const data = await upstream.json();
   return normalizeOffers(data.results || []);
-}
-
-export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-
-  if (req.method === "OPTIONS") return res.status(200).end();
-  if (req.method !== "GET") return res.status(405).json({ error: "Metod ej tillåten" });
-
-  const store = String(req.query?.store || DEFAULT_STORE).trim();
-  if (!/^\d{3,5}$/.test(store)) {
-    return res.status(400).json({ error: "Ogiltigt store-ID — ange 3–5 siffror." });
-  }
-
-  try {
-    const offers = await fetchOffersFromWillys(store);
-    res.setHeader("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=7200");
-    return res.status(200).json({
-      generated: new Date().toISOString(),
-      store,
-      count: offers.length,
-      offers,
-    });
-  } catch (err) {
-    console.error("willys-offers error:", err);
-    return res.status(502).json({
-      error: "Kunde inte hämta Willys-erbjudanden — prova igen om en stund.",
-    });
-  }
 }
 
 // Tolkar förpackningsstorlek ("2kg", "1,5l", "ca: 1.8kg", "500g", "10p") till

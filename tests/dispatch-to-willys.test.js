@@ -3,7 +3,7 @@
 // Hook: se .claude/settings.json — körs efter Edit av dispatch-, axfood- och matcher-filerna och larmar (exit 2) vid regression.
 
 import { extractOfferCanon, rejectsMatch } from "../api/_shared/willys-matcher.js";
-import { fetchOffersFromWillys } from "../api/willys-offers.js";
+import { fetchOffersFromWillys } from "../api/_shared/willys-offers.js";
 import { createSearchClient } from "../api/_shared/axfood-search.js";
 import { matchCanons } from "../api/_shared/dispatch-matcher.js";
 import { createCartClient, pickUnitForCode } from "../api/_shared/axfood-cart-client.js";

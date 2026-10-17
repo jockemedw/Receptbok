@@ -2,7 +2,7 @@ import { createSupabaseHandler } from "./_shared/handler.js";
 import { db, getHouseholdId } from "./_shared/supabase.js";
 // Willys-modulerna importeras DYNAMISKT längre ner — de behövs bara vid
 // prisoptimering (guidens deal_canons, Session 150; den gamla flaggan
-// optimize_prices skickas inte längre av klienten). En vanlig generering är
+// optimize_prices togs bort Session 155). En vanlig generering är
 // prisagnostisk, och att slippa modulerna vid import-tid gör funktionens
 // kallstart lättare, vilket är hela poängen med Batch E3
 // (docs/prestanda-plan-2026-09.md).
@@ -326,7 +326,6 @@ export default createSupabaseHandler(async (req, res) => {
     vegetarian_days = 0,
     ture_days = 0,
     blocked_dates = [],
-    optimize_prices = false,
     // Prisoptimera i guiden: rea-varor (canons från GET /api/deals) som
     // matsedeln ska byggas runt. Tom = vanlig, prisagnostisk generering.
     deal_canons = [],
@@ -428,7 +427,7 @@ export default createSupabaseHandler(async (req, res) => {
 
   const wantedCanons = new Set((Array.isArray(deal_canons) ? deal_canons : [])
     .map((c) => String(c).toLowerCase().trim()).filter(Boolean).slice(0, 40));
-  const usePrices = optimize_prices || wantedCanons.size > 0;
+  const usePrices = wantedCanons.size > 0;
 
   let savingsById = null;
   let coverCanons = null;
@@ -439,15 +438,15 @@ export default createSupabaseHandler(async (req, res) => {
   let pricingDegraded = false;
   if (usePrices) {
     try {
-      // Samma feed-klient som /api/willys-offers och dispatchen (ingen egen
+      // Samma feed-klient (_shared/willys-offers.js) som /api/deals och dispatchen (ingen egen
       // URL-literal); butik styrs av WILLYS_STORE_ID precis som i dispatchen.
       const store = process.env.WILLYS_STORE_ID || "2160";
-      const { fetchOffersFromWillys } = await import("./willys-offers.js");
+      const { fetchOffersFromWillys } = await import("./_shared/willys-offers.js");
       const { matchRecipe, extractOfferCanon } = await import("./_shared/willys-matcher.js");
       const allOffers = await fetchOffersFromWillys(store, (url, opts) =>
         fetch(url, { ...opts, signal: AbortSignal.timeout(5000) }));
       if (allOffers.length === 0) pricingDegraded = true; // 200 men inget parsebart = trolig API-ändring
-      // Valda varor: bara deras erbjudanden räknas (samma regel som POST /api/deals)
+      // Valda varor: bara deras erbjudanden räknas (samma canon-urval som guidens chips)
       // → besparingen och prioriteringen speglar exakt familjens urval.
       let offers = allOffers;
       if (wantedCanons.size) {

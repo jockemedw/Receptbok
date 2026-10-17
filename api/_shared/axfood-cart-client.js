@@ -47,7 +47,7 @@ export function createCartClient({ fetchImpl = fetch, cookies, csrf, baseUrl = S
   // Willys köpvillkor). F292: för flerköpserbjudanden ("2 för X",
   // qualifyingCount > 1) uppfylls därför INTE kampanjvillkoret av dispatchen
   // — reapriset utlöses inte i Willys-kassan även om planen visade en
-  // besparing. Det är därför normalizeOffers (api/willys-offers.js) nu
+  // besparing. Det är därför normalizeOffers (api/_shared/willys-offers.js) nu
   // exponerar en äkta STYCKbesparing (savingsAmount / qualifyingCount) i
   // stället för hela flerköpsbesparingen, så den siffra vi visar/matchar på
   // aldrig är större än vad EN enhet (som är vad vi faktiskt lägger i
