@@ -4,7 +4,7 @@
 import assert from 'assert';
 // utils.js exponerar sina hjälpare på window.* — ge den en attrapp i node.
 globalThis.window = globalThis.window || {};
-const { svCompare, fmtShort } = await import('../js/utils.js');
+const { svCompare, fmtShort, timeStr } = await import('../js/utils.js');
 
 let passed = 0;
 function test(name, fn) { fn(); passed++; console.log('  ✓', name); }
@@ -32,6 +32,15 @@ test('fmtShort ger samma sträng som toLocaleDateString för ett helt år', () =
 test('fmtShort tom sträng för saknat datum', () => {
   assert.strictEqual(fmtShort(''), '');
   assert.strictEqual(fmtShort(null), '');
+});
+
+test('timeStr: timmar med komma, minuter under 60, +-notering bakom', () => {
+  assert.strictEqual(timeStr({ time: 90 }), '1,5 h');
+  assert.strictEqual(timeStr({ time: 60 }), '1 h');
+  assert.strictEqual(timeStr({ time: 40 }), '40 min');
+  assert.strictEqual(timeStr({ time: 30, timeNote: '+ marinering' }), '30 min + marinering');
+  assert.strictEqual(timeStr({ time: 30, timeNote: 'ugn 150°' }), '30 min');
+  assert.strictEqual(timeStr({}), null);
 });
 
 console.log(`\n${passed} tester gröna`);

@@ -47,16 +47,19 @@ export async function moveToShoppingList() {
   btn.textContent = 'Flyttar…';
   try {
     const today = fmtIso(new Date());
+    const householdId = await window.getHouseholdId();
     const { data: lists } = await window.db
       .from('shopping_lists')
       .select('id')
+      .eq('household_id', householdId)
       .eq('is_active', true)
       .limit(1);
     if (lists?.length) {
       const { error } = await window.db
         .from('shopping_lists')
         .update({ recipe_items_moved_at: today })
-        .eq('id', lists[0].id);
+        .eq('id', lists[0].id)
+        .eq('household_id', householdId);
       if (error) throw error;
     } else {
       window.showToast('Det finns ingen aktiv inköpslista — välj dagar först.', { type: 'error' });

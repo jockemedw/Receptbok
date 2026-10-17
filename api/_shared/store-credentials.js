@@ -12,8 +12,11 @@ import { db } from "./supabase.js";
 import { encrypt, decrypt, getKey } from "./crypto-box.js";
 
 // Postgres SQLSTATE 42P01 / meddelandet "does not exist" = relationen finns inte.
+// PostgREST svarar i stället PGRST205 "... in the schema cache" (samma mönster
+// som js/lists/lists-view.js).
 function isMissingTable(error) {
-  return error?.code === "42P01" || /does not exist/i.test(error?.message || "");
+  return error?.code === "42P01" || error?.code === "PGRST205"
+    || /does not exist|schema cache/i.test(error?.message || "");
 }
 
 export async function saveCredentials({ householdId, store, username, password, database = db, env = process.env }) {

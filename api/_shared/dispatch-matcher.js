@@ -3,7 +3,7 @@
 //
 // Input:
 //   canons       — array av canon-strängar (dubbletter OK, dedupeas)
-//   offers       — array i normalizeOffers-shape (api/willys-offers.js: {code, name, brandLine, savingPerUnit, ...})
+//   offers       — array i normalizeOffers-shape (api/_shared/willys-offers.js: {code, name, brandLine, savingPerUnit, ...})
 //   searchClient — { findProductByCanon(canon, wanted?): Promise<{code, name, ...} | null> }
 //   opts.wantedForCanon — (canon) => { organic: bool, swedish: bool } | null.
 //     Inköpspreferenserna (eko/svenskt per kategori, backlog #20): bland flera

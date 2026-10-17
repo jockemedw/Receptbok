@@ -6,7 +6,7 @@
 // samlas allt butiksspecifikt här i stället för att spridas ut i klienterna.
 // Verifierat skarpt mot hemkop.se i scripts/hemkop-cart-poc.mjs (2026-06-23).
 //
-// hasOffers: bara Willys har ett rea-/campaigns-flöde inkopplat (api/willys-offers.js).
+// hasOffers: bara Willys har ett rea-/campaigns-flöde inkopplat (api/_shared/willys-offers.js).
 //   Hemköp matchas uteslutande via produktsök. Det är ett medvetet avgränsningsbeslut
 //   — Hemköps campaigns-endpoint kräver ett butiks-ID vi inte har, och prisoptimeringen
 //   läser Willys.

@@ -577,6 +577,13 @@ function shopCounts() {
   return { total, done, perCat };
 }
 
+// Kvar att handla = det dispatchen skickar (servern hoppar över avbockade och
+// "har hemma"-varor). Används av bekräftelsen i dispatch-ui.js.
+export function shopRemainingCount() {
+  const { total, done } = shopCounts();
+  return total - done;
+}
+
 // Progressringen ("X av Y klara / kvar att plocka") är borttagen på Joakims
 // begäran (för plottrigt) — kvar är kategoriräknarna och "Vi har handlat"-
 // framhävningen när allt är bockat.
@@ -1501,5 +1508,6 @@ window.loadShoppingTab    = loadShoppingTab;
 window.refreshShoppingTab = refreshShoppingTab;
 window.renderShoppingData = renderShoppingData;
 window.markRoundShopped   = markRoundShopped;
+window.shopRemainingCount = shopRemainingCount;
 window.refreshShopCoverage = refreshShopCoverage;
 window.renderFullShoppingList = renderFullShoppingList;

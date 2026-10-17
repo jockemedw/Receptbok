@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/+esm">
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=206">
+<link rel="stylesheet" href="css/styles.css?v=207">
 </head>
 <body data-active-tab="idag">
 
@@ -89,8 +89,8 @@
 
   <div class="empty" id="emptyState" style="display:none">
     <div class="no-data-icon"><svg class="icon icon-em-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11h18a9 9 0 0 1-9 9 9 9 0 0 1-9-9z"/><path d="M7 11V8 M12 11V6 M17 11V8"/></svg></div>
-    <p>Inga recept matchade sökningen.</p>
-    <button class="empty-reset-btn">Rensa sökning</button>
+    <p>Inga recept matchade sökningen eller filtren.</p>
+    <button class="empty-reset-btn">Rensa sökning och filter</button>
   </div>
 </main>
 
@@ -384,7 +384,10 @@
   </div>
 </div>
 
-<footer id="footerEl">Receptboken</footer>
+<footer id="footerEl">
+  <span id="footerCount">Receptboken</span>
+  <button type="button" class="footer-signout" id="signOutBtn">Logga ut</button>
+</footer>
 
 <div class="bottom-right-stack" id="bottomRightStack">
   <button id="scrolltop" title="Till toppen" aria-label="Till toppen">
@@ -658,6 +661,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=173"></script>
+<script type="module" src="js/app.js?v=174"></script>
 </body>
 </html>

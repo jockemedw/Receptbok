@@ -3,10 +3,9 @@
 // Chrome-extensionen (kombinerat för att hålla oss under Vercel Hobby-planens
 // 12-funktioner-tak — filnamnet är historiskt och behålls därför).
 //
-// GET  /api/dispatch-to-willys                     → { featureAvailable, stores: [{id,label,available,connectVia,connectedAs}] }
-// POST /api/dispatch-to-willys { store? }          → { ok, addedCount, missing, cartUrl, store, sources, prefMisses }
+// GET  /api/dispatch-to-willys (JWT)               → { featureAvailable, stores: [{id,label,available,connectVia,connectedAs}] }
+// POST /api/dispatch-to-willys { store? } (JWT)    → { ok, addedCount, missing, cartUrl, store, sources, prefMisses }
 //                                                    | { ok:false, error, message } | { featureAvailable:false, store }
-//   (klienten skickar även `date`, men servern läser det inte)
 // POST ?op=refresh-cookies + body                  → { ok, store, updatedAt } | { error }
 //   Header: X-Refresh-Secret krävs på refresh-cookies-vägen
 // POST ?op=save-credentials { store, username, password } (JWT) → { ok, store, connectedAs } | { error }
@@ -27,7 +26,7 @@
 //
 // Säkerhet: returnerar aldrig cookies eller CSRF-token i loggning eller response.
 
-import { fetchOffersFromWillys } from "./willys-offers.js";
+import { fetchOffersFromWillys } from "./_shared/willys-offers.js";
 import { createSearchClient } from "./_shared/axfood-search.js";
 import { createCartClient } from "./_shared/axfood-cart-client.js";
 import { matchCanons } from "./_shared/dispatch-matcher.js";
@@ -68,12 +67,27 @@ export default async function handler(req, res) {
   // cookie-refreshen (som kommer från en extension utan session och därför
   // autentiseras med delad hemlighet) görs de här av en INLOGGAD familjemedlem
   // → JWT-krav enligt invariant #4. Hela filen wrappas medvetet inte: det
-  // skulle bryta både den publika GET:en och extensionens väg.
+  // skulle bryta extensionens väg.
   if (req.query?.op === "save-credentials" || req.query?.op === "clear-credentials") {
     if (req.method !== "POST") return res.status(405).json({ error: "Metod ej tillåten" });
     if (!(await requireUser(req, res))) return;
     return handleCredentials(req, res);
   }
+
+  // Butiksstatusen (GET visar det kopplade kontonamnet) och själva korgfyllningen
+  // (POST) kräver också inloggning — annars kan vem som helst som känner URL:en
+  // fylla familjens korg. Ligger EFTER refresh-cookies så extensionen (som bara
+  // har X-Refresh-Secret) fortsätter fungera.
+  // En klient med gammal cachad JS (före S157) skickar utan token och läser bara
+  // data.message — ge den ett besked den kan agera på.
+  const authz = req.headers?.authorization || req.headers?.Authorization || "";
+  if (!authz.startsWith("Bearer ")) {
+    return res.status(401).json({
+      error: "Du måste vara inloggad för att göra det här.",
+      message: "Appen har uppdaterats — stäng den och öppna den igen.",
+    });
+  }
+  if (!(await requireUser(req, res))) return;
 
   // GITHUB_GIST_PAT = classic token med gist-scope (krävs för gist-läsning;
   // fine-grained tokens stödjer inte gists). Fallback till GITHUB_PAT för bakåtkomp.
@@ -124,14 +138,22 @@ export default async function handler(req, res) {
     });
   }
 
-  // householdId behövs för sparade butiksinloggningar. Misslyckas läsningen
-  // körs dispatchen vidare på cookie-vägen precis som före Session 136.
+  // householdId behövs för både inköpslistan och sparade butiksinloggningar.
+  // Utan det vet vi inte vems lista som ska skickas — avbryt hellre än att
+  // gissa (tidigare togs "första aktiva listan" i hela databasen).
   let householdId = null;
-  try { householdId = await getHouseholdId(); } catch { /* login-vägen står över */ }
+  try { householdId = await getHouseholdId(); } catch { /* hanteras nedan */ }
+  if (!householdId) {
+    return res.status(500).json({
+      ok: false,
+      error: "internal",
+      message: `Kunde inte läsa inköpslistan just nu — prova att skicka till ${shop.label} igen om en stund.`,
+    });
+  }
 
   const secrets = await resolveStoreSecrets({
     secretsStore, store: shop.id, env: process.env, userId: "joakim",
-    login: householdId ? { householdId } : null,
+    login: { householdId },
   });
   if (!secrets) {
     return res.status(200).json({ featureAvailable: false, store: { id: shop.id, label: shop.label } });
@@ -139,7 +161,7 @@ export default async function handler(req, res) {
 
   try {
     console.log(`dispatch store=${shop.id} source=${secrets.source}`);
-    const shoppingList = await fetchShoppingListFromSupabase();
+    const shoppingList = await fetchShoppingListFromSupabase({ householdId });
     const preferences = await fetchDispatchPreferences();
     const blockedBrands = preferences.blockedBrands;
     // Bara Willys har ett rea-flöde inkopplat. För Hemköp går varje canon via
@@ -575,33 +597,39 @@ function pantryKeyFromName(name) {
   return String(name || "").replace(/\s*\([^)]*\)\s*$/, "").trim().toLowerCase();
 }
 
-// Läser aktiv inköpslista från Supabase och returnerar { recipeItems, manualItems }
-// i det format extractCanonsFromShoppingList läser.
-// "Har hemma"-markerade varor (pantry_items, backlog #13) filtreras bort —
-// familjen har dem redan, de ska inte läggas i Willys-korgen. Saknas tabellen
-// (migration 002 ej körd) skickas listan ofiltrerad, precis som innan.
-async function fetchShoppingListFromSupabase() {
-  const { data: lists } = await db
+// Läser hushållets aktiva inköpslista från Supabase och returnerar
+// { recipeItems, manualItems } i det format extractCanonsFromShoppingList läser.
+// Filtreras på householdId (service-role kringgår RLS — utan filtret kan ett
+// annat hushålls lista skickas). "Har hemma"-markerade varor (pantry_items,
+// backlog #13) filtreras bort — familjen har dem redan, de ska inte läggas i
+// Willys-korgen. Saknas tabellen (migration 002 ej körd) skickas listan
+// ofiltrerad, precis som innan. Ett läsfel kastas i stället för att ge en tom
+// lista (som annars visas som "hittade ingen matchning"). Exporterad för test.
+export async function fetchShoppingListFromSupabase({ householdId, database = db }) {
+  const { data: lists, error: listsError } = await database
     .from("shopping_lists")
     .select("id, household_id")
+    .eq("household_id", householdId)
     .eq("is_active", true)
     .limit(1);
+  if (listsError) throw new Error("Kunde inte läsa inköpslistan — prova igen om en stund.");
   if (!lists?.length) return { recipeItems: {}, manualItems: [] };
 
   let pantry = new Set();
   try {
-    const { data: pantryRows, error } = await db
+    const { data: pantryRows, error } = await database
       .from("pantry_items")
       .select("name")
-      .eq("household_id", lists[0].household_id);
+      .eq("household_id", householdId);
     if (!error) pantry = new Set((pantryRows || []).map((r) => r.name));
   } catch { /* tabellen saknas → ingen filtrering */ }
 
-  const { data: items } = await db
+  const { data: items, error: itemsError } = await database
     .from("shopping_items")
     .select("category, name, source, position, checked")
     .eq("list_id", lists[0].id)
     .order("position");
+  if (itemsError) throw new Error("Kunde inte läsa inköpslistan — prova igen om en stund.");
 
   const recipeItems = {};
   const manualItems = [];

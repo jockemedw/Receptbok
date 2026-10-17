@@ -3,11 +3,11 @@
 // Hook: se .claude/settings.json — körs efter Edit av dispatch-, axfood- och matcher-filerna och larmar (exit 2) vid regression.
 
 import { extractOfferCanon, rejectsMatch } from "../api/_shared/willys-matcher.js";
-import { fetchOffersFromWillys } from "../api/willys-offers.js";
+import { fetchOffersFromWillys } from "../api/_shared/willys-offers.js";
 import { createSearchClient } from "../api/_shared/axfood-search.js";
 import { matchCanons } from "../api/_shared/dispatch-matcher.js";
 import { createCartClient, pickUnitForCode } from "../api/_shared/axfood-cart-client.js";
-import { runDispatch, resolveStoreSecrets } from "../api/dispatch-to-willys.js";
+import dispatchHandler, { runDispatch, resolveStoreSecrets, fetchShoppingListFromSupabase } from "../api/dispatch-to-willys.js";
 
 let passed = 0;
 let failed = 0;
@@ -980,6 +980,149 @@ assertEq(pickUnitForCode(undefined), "pieces", "undefined-kod → pieces (krasch
       console.log = origLog; console.error = origErr;
     }
     assertFalse(seen.join(" ").includes("SUPERHEMLIGT"), "SÄKERHET: lösenordet loggas aldrig");
+  }
+
+  // (j) Saknad tabell via PostgREST (PGRST205) känns igen: save ger
+  //     migrationsbeskedet, clear behandlar det som "inget att ta bort".
+  {
+    const { saveCredentials, clearCredentials } = await import("../api/_shared/store-credentials.js");
+    const missing = { error: { code: "PGRST205", message: "Could not find the table 'public.store_credentials' in the schema cache" } };
+    const chain = { eq() { return chain; }, then: (r) => r(missing) };
+    const database = { from: () => ({ upsert: async () => missing, delete: () => chain }) };
+    const env = { STORE_CRED_KEY: randomBytes(32).toString("base64") };
+    let msg = "";
+    try {
+      await saveCredentials({ householdId: "h1", store: "hemkop", username: "a@b.se", password: "x", database, env });
+    } catch (e) { msg = e.message; }
+    assertTrue(/migration 010/.test(msg), "store-credentials: PGRST205 vid spara → migrationsbeskedet");
+    const cleared = await clearCredentials({ householdId: "h1", store: "hemkop", database });
+    assertEq(cleared?.ok, true, "store-credentials: PGRST205 vid ta bort → ok");
+  }
+}
+
+// ─── S155: inköpslistan läses per hushåll (1a) + läsfel kastas (1d) ─────────
+
+// Kedjebar fake-db: from(tabell).select().eq(kol, v)….limit()/order() → { data, error }.
+// `errors[tabell]` ger ett PostgREST-liknande fel för just den tabellen.
+function fakeListDb(tables, errors = {}) {
+  return {
+    from(table) {
+      const filters = [];
+      const q = {
+        select() { return q; },
+        eq(col, val) { filters.push([col, val]); return q; },
+        order() { return q; },
+        limit() { return q; },
+        then(resolve, reject) {
+          const result = errors[table]
+            ? { data: null, error: errors[table] }
+            : { data: (tables[table] || []).filter((r) => filters.every(([c, v]) => r[c] === v)), error: null };
+          return Promise.resolve(result).then(resolve, reject);
+        },
+      };
+      return q;
+    },
+  };
+}
+
+{
+  // Två hushåll med varsin aktiv lista (unikt index: en aktiv per hushåll).
+  // B:s lista ligger först — utan household_id-filter skulle den väljas.
+  const tables = {
+    shopping_lists: [
+      { id: "LB", household_id: "B", is_active: true },
+      { id: "LA", household_id: "A", is_active: true },
+      { id: "LA-old", household_id: "A", is_active: false },
+    ],
+    shopping_items: [
+      { list_id: "LB", category: "Mejeri", name: "B-ost", source: "recipe", position: 0, checked: false },
+      { list_id: "LA", category: "Mejeri", name: "grädde (2 dl)", source: "recipe", position: 0, checked: false },
+      { list_id: "LA", category: "Mejeri", name: "smör", source: "recipe", position: 1, checked: true },
+      { list_id: "LA", category: "Grönsaker", name: "lök (2 st)", source: "recipe", position: 2, checked: false },
+      { list_id: "LA", category: "Övrigt", name: "kaffe", source: "manual", position: 3, checked: false },
+      { list_id: "LA-old", category: "Mejeri", name: "gammal mjölk", source: "recipe", position: 0, checked: false },
+    ],
+    pantry_items: [
+      { household_id: "A", name: "lök" },
+      { household_id: "B", name: "grädde" },   // B:s skafferi får inte filtrera A:s lista
+    ],
+  };
+  const listA = await fetchShoppingListFromSupabase({ householdId: "A", database: fakeListDb(tables) });
+  assertEq(JSON.stringify(listA.recipeItems), JSON.stringify({ Mejeri: ["grädde (2 dl)"] }),
+    "1a: hushåll A får bara sin egen aktiva lista (avbockat + eget skafferi filtrerat)");
+  assertEq(JSON.stringify(listA.manualItems), JSON.stringify(["kaffe"]), "1a: A:s manuella varor följer med");
+  const listB = await fetchShoppingListFromSupabase({ householdId: "B", database: fakeListDb(tables) });
+  assertEq(JSON.stringify(listB.recipeItems), JSON.stringify({ Mejeri: ["B-ost"] }), "1a: hushåll B får bara sin lista");
+  const listC = await fetchShoppingListFromSupabase({ householdId: "C", database: fakeListDb(tables) });
+  assertEq(JSON.stringify(listC), JSON.stringify({ recipeItems: {}, manualItems: [] }), "1a: hushåll utan aktiv lista → tom lista");
+
+  // 1d: databasfel ger ett begripligt fel i stället för en tom lista ("ingen matchning").
+  for (const table of ["shopping_lists", "shopping_items"]) {
+    let msg = "";
+    try {
+      await fetchShoppingListFromSupabase({
+        householdId: "A",
+        database: fakeListDb(tables, { [table]: { message: "fetch failed" } }),
+      });
+    } catch (e) { msg = e.message; }
+    assertEq(msg, "Kunde inte läsa inköpslistan — prova igen om en stund.", `1d: läsfel i ${table} → kastar begripligt fel`);
+  }
+  // Skafferifel är fortsatt ofarligt — listan skickas ofiltrerad.
+  const noPantry = await fetchShoppingListFromSupabase({
+    householdId: "A", database: fakeListDb(tables, { pantry_items: { message: "missing" } }),
+  });
+  assertEq(JSON.stringify(noPantry.recipeItems.Grönsaker), JSON.stringify(["lök (2 st)"]), "1a: skafferifel → ingen skafferifiltrering");
+}
+
+// ─── S155: GET och POST kräver inloggning (R01, 1e) ─────────────────────────
+// Handlern anropas direkt med mock-req/res. Supabase-env pekar på en ogiltig
+// värd och global fetch räknas, så ett db- eller butiksanrop före auth-kontrollen
+// skulle synas som ett fetch-anrop.
+{
+  function mockRes() {
+    return {
+      statusCode: null, body: undefined,
+      setHeader() {},
+      status(c) { this.statusCode = c; return this; },
+      json(b) { this.body = b; return this; },
+      end() { return this; },
+    };
+  }
+  const envKeys = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"];
+  const savedEnv = Object.fromEntries(envKeys.map((k) => [k, process.env[k]]));
+  process.env.SUPABASE_URL = "http://db.invalid";
+  process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
+  const origFetch = globalThis.fetch;
+  let fetchCalls = 0;
+  globalThis.fetch = async () => { fetchCalls++; throw new Error("nätverk ska inte nås"); };
+  try {
+    for (const method of ["POST", "GET"]) {
+      fetchCalls = 0;
+      const res = mockRes();
+      await dispatchHandler({ method, query: {}, headers: {}, body: { store: "willys" } }, res);
+      assertEq(res.statusCode, 401, `R01/1e: ${method} utan token → 401`);
+      assertTrue(/inloggad/.test(res.body?.error || ""), `R01/1e: ${method} utan token → begripligt besked`);
+      assertEq(fetchCalls, 0, `R01/1e: ${method} utan token → varken db eller butik rörs`);
+    }
+    // Fel schema (inte "Bearer ") räknas som saknad token.
+    {
+      fetchCalls = 0;
+      const res = mockRes();
+      await dispatchHandler({ method: "POST", query: {}, headers: { authorization: "Basic abc" }, body: {} }, res);
+      assertEq(res.statusCode, 401, "R01: POST med fel auth-schema → 401");
+      assertEq(fetchCalls, 0, "R01: POST med fel auth-schema → inget nätverksanrop");
+    }
+    // Preflight kräver fortsatt ingen token.
+    {
+      const res = mockRes();
+      await dispatchHandler({ method: "OPTIONS", query: {}, headers: {} }, res);
+      assertEq(res.statusCode, 200, "R01: OPTIONS utan token → 200");
+    }
+  } finally {
+    globalThis.fetch = origFetch;
+    for (const k of envKeys) {
+      if (savedEnv[k] === undefined) delete process.env[k]; else process.env[k] = savedEnv[k];
+    }
   }
 }
 

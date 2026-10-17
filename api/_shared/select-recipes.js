@@ -27,7 +27,7 @@ export function isoToday() {
 
 export function recencyWeight(usedOnDate, today = isoToday()) {
   if (!usedOnDate) return 1;
-  const days = (new Date(today + "T12:00:00") - new Date(usedOnDate + "T12:00:00")) / 864e5;
+  const days = (new Date(today + "T12:00:00Z") - new Date(usedOnDate + "T12:00:00Z")) / 864e5;
   if (days <= 0) return RECENCY_FLOOR;
   return Math.min(1, Math.max(RECENCY_FLOOR, days / RECENCY_HORIZON_DAYS));
 }

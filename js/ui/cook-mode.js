@@ -2,7 +2,7 @@
 // Stor text, bockbara ingredienser och steg, och Wake Lock så att skärmen
 // inte släcks medan man lagar. Ren presentationsvy — muterar ingen data.
 
-import { escapeHtml } from '../utils.js';
+import { escapeHtml, timeStr } from '../utils.js';
 
 let _wakeLock = null;
 let _overlay  = null;
@@ -175,8 +175,9 @@ export function openCookMode(recipeId) {
     ? `<div class="cook-notes">💡 ${escapeHtml(r.notes)}</div>` : '';
   const meta = [
     r.servings ? `${r.servings} portioner` : null,
-    r.time ? `${r.time} min` : null,
-    r.timeNote || null,
+    timeStr(r),   // samma format som receptkortet ('1,5 h')
+    // timeStr har redan med en '+'-notering när tiden finns
+    r.timeNote && !(r.time && r.timeNote.startsWith('+')) ? r.timeNote : null,
   ].filter(Boolean).join(' · ');
 
   _overlay = document.createElement('div');

@@ -545,7 +545,8 @@ export const CANON_REJECT_PATTERNS = {
   "lax": /\b(kallrökt|varmrökt|gravad|gravlax|rökt|rökta)\b/i,
   // Vitlök: avvisa marinerad antipasti (recepten vill ha färsk vitlök).
   "vitlöksklyftor": /\bmarinerad/i,
-  "fisk": /\b(fiskpinnar|fiskbullar)\b/i,
+  // Fisk: avvisa panerade/sammansatta fiskprodukter (t.ex. "Fisk Nuggets") — recept vill ha filé.
+  "fisk": /\b(fiskpinnar|fiskbullar|laxbullar|nuggets|bites|crispy)\b|burger|burgare|sprödbakad|gratäng|soppa/i,
   // Yoghurt: avvisa smaksatta/fruktade/dessert-varianter — recept skriver "yoghurt" för naturell.
   "yoghurt": /\b(körsbär\w*|jordgubb\w*|hallon|blåbär|skogsbär|lingon|hjortron|aprikos|persika|päron|mango|ananas|passion|vanilj\w*|citron|banan|fika|kola|choklad|samoa|kokos|lakrits|dessert|smoothie|drick\w*|müsli|granola|frukt|smaksatt)\b/i,
   // Citron: avvisa drycker/läsk (t.ex. "Citron Kolsyrat Vatten") — recept vill ha frukt/saft.

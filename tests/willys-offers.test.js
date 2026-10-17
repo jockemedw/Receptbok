@@ -1,4 +1,4 @@
-// Regressiontester för normalizeOffers (api/willys-offers.js).
+// Regressiontester för normalizeOffers (api/_shared/willys-offers.js).
 // Körs med `node tests/willys-offers.test.js` — inga externa deps.
 //
 // Bevakar (Willys Plus-utforskning 2026-06-16):
@@ -8,7 +8,7 @@
 //   3. SubtotalOrderPromotion med threshold > 0 (villkorad ordersumma) skippas
 //   4. MixMatch-beteendet är oförändrat (priser/saving)
 
-import { normalizeOffers, isBulkVolume } from "../api/willys-offers.js";
+import { normalizeOffers, isBulkVolume } from "../api/_shared/willys-offers.js";
 
 let passed = 0;
 let failed = 0;
@@ -140,6 +140,43 @@ assertEq(nfCodes.includes("500000001_ST"), true, "Broccolirosor behålls");
 assertEq(nfCodes.includes("500000002_ST"), true, "Blomkålsrosor behålls");
 assertEq(nfCodes.includes("500000003_ST"), false, "Rosor (blommor) sorteras bort");
 assertEq(nfCodes.includes("500000004_ST"), false, "Binda (hygien) sorteras bort");
+
+// 9. /api/deals-routern (S155): bara GET (+ OPTIONS-preflight) finns kvar —
+// den gamla POST-vägen (receptförslag) är borttagen och ska ge 405.
+const { default: dealsHandler } = await import("../api/deals.js");
+function mockRes() {
+  return {
+    statusCode: null, body: undefined, headers: {},
+    setHeader(k, v) { this.headers[k] = v; },
+    status(c) { this.statusCode = c; return this; },
+    json(b) { this.body = b; return this; },
+    end() { return this; },
+  };
+}
+const rPost = mockRes();
+await dealsHandler({ method: "POST", headers: {}, body: { canons: ["kyckling"] } }, rPost);
+assertEq(rPost.statusCode, 405, "POST /api/deals → 405");
+assertEq(rPost.headers["Access-Control-Allow-Origin"], "*", "405-svaret har CORS-header");
+const rOpt = mockRes();
+await dealsHandler({ method: "OPTIONS", headers: {} }, rOpt);
+assertEq(rOpt.statusCode, 200, "OPTIONS /api/deals → 200");
+assertEq(rOpt.headers["Access-Control-Allow-Methods"], "GET, OPTIONS", "preflight tillåter bara GET");
+const rPut = mockRes();
+await dealsHandler({ method: "PUT", headers: {} }, rPut);
+assertEq(rPut.statusCode, 405, "PUT /api/deals → 405");
+
+// GET utan token, mot en stubbad Willys-feed → 200 med grupperade reor.
+const realFetch = globalThis.fetch;
+globalThis.fetch = async () => ({ ok: true, json: async () => ({ results: RAW }) });
+try {
+  const rGet = mockRes();
+  await dealsHandler({ method: "GET", headers: {}, query: {} }, rGet);
+  assertEq(rGet.statusCode, 200, "GET /api/deals utan token → 200");
+  assertEq(rGet.headers["Access-Control-Allow-Origin"], "*", "GET-svaret har CORS-header");
+  assertEq(Array.isArray(rGet.body?.groups), true, "GET-svaret har groups[]");
+} finally {
+  globalThis.fetch = realFetch;
+}
 
 console.log(`\nwillys-offers.test.js: ${passed} passed, ${failed} failed`);
 if (failed > 0) {

@@ -12,6 +12,7 @@
 // (migrationen ej körd) visas ett vänligt "nästan klara"-läge (_supported=false).
 
 import { escapeHtml } from '../utils.js';
+import { isListRowEcho } from './list-echo.js';
 
 // ── State (modul-scopat — inget delas med andra slices) ─────────────────────
 let _lists = [];          // family_lists-rader med kind='list' (även arkiverade)
@@ -172,8 +173,7 @@ function onRealtime(payload) {
   } else if (table === 'family_lists') {
     if (eventType === 'UPDATE' && newRow) {
       const local = allRows().find((l) => l.id === newRow.id);
-      if (local && local.title === newRow.title && local.archived === newRow.archived
-          && local.pinned === newRow.pinned && local.body === newRow.body) {
+      if (isListRowEcho(local, newRow)) {
         // Bara updated_at ändrad (parent-touch-triggern) — uppdatera tyst.
         local.updated_at = newRow.updated_at;
         return;
@@ -806,7 +806,7 @@ export async function flDoImport() {
       render();
     } catch { /* offline — toasten visas ändå */ }
     window.showToast?.(created
-      ? `Importerade ${created} listor, men något gick fel sen — kolla resultatet.`
+      ? `Importerade ${created} ${created === 1 ? 'lista' : 'listor'}, men något gick fel sen — kolla resultatet.`
       : 'Kunde inte importera — prova igen.', { type: 'error' });
   } finally {
     _importBusy = false;

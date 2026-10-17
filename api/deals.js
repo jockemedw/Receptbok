@@ -1,34 +1,30 @@
-// Prisoptimera — reor-först-flödet i EN serverless-function.
+// Prisoptimera — veckans Willys-reor till genereringsguiden.
 //
-// Slås medvetet ihop till en fil (GET + POST) för att hålla oss under Vercels
-// gräns på 12 serverless-functions på gratisplanen. Två separata filer tog
-// api/-katalogen till 13 och blockade hela deployen (produktionen fastnade på
-// föregående version). Samma flöde, en endpoint:
-//
-//   GET  /api/deals            (publik, som /api/willys-offers — proxad rea-data)
+//   GET  /api/deals            (publik — proxad rea-data, ingen familjedata)
 //     → veckans Willys-reor GRUPPERADE per ingrediens (canon), sorterade på bästa
 //       besparing. Visas som chips i genereringsguidens rea-sektion
 //       (js/weekly-plan/wiz-deals.js); valda canons skickas som deal_canons till
 //       /api/generate (Session 150).
-//   POST /api/deals  { canons: ["kyckling", ...] }  (auth)
-//     → { suggestions: [{ recipeId, title, protein, time, saving, matches }] }
-//       Receptförslag till det gamla Prisoptimera-arket. Anropas inte av klienten
-//       sedan Session 150; ligger kvar tills Joakim OK:at borttagning. Bara valda
-//       canons räknas, och recepten rankas med störst besparing först via matchRecipe.
+//
+// Den gamla POST-vägen (receptförslag till Prisoptimera-arket, oanvänd sedan
+// Session 150) togs bort Session 155 — den läste recept via "första hushållet"
+// och hade läckt hushåll #1:s recept till nya hushåll. Allt utom GET/OPTIONS → 405.
 //
 // Grupperingen här och deal_canons-filtreringen i generate.js använder SAMMA
 // extractOfferCanon, så det familjen väljer i guiden är exakt det som räknas där.
 
-import { createSupabaseHandler } from "./_shared/handler.js";
-import { db, getHouseholdId } from "./_shared/supabase.js";
-import { fetchOffersFromWillys } from "./willys-offers.js";
-import { matchRecipe, extractOfferCanon } from "./_shared/willys-matcher.js";
+import { fetchOffersFromWillys } from "./_shared/willys-offers.js";
+import { extractOfferCanon } from "./_shared/willys-matcher.js";
+
+function setCors(res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+}
 
 // ── GET: reor grupperade per ingrediens (publik) ──
 async function offersHandler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  setCors(res);
 
   const store = process.env.WILLYS_STORE_ID || "2160";
 
@@ -69,78 +65,10 @@ async function offersHandler(req, res) {
   }
 }
 
-// ── POST: receptförslag från VALDA rea-ingredienser (auth, oanvänd av klienten sedan Session 150) ──
-// En rad per canon = det bästa erbjudandet för den ingrediensen (familjen köper
-// ett, inte alla). Speglar byCanon-logiken i generate.js.
-function bestMatchesByCanon(matches) {
-  const byCanon = new Map();
-  for (const { canon, offer } of matches) {
-    const cur = byCanon.get(canon);
-    if (!cur || (offer.savingPerUnit || 0) > (cur.savingPerUnit || 0)) {
-      byCanon.set(canon, {
-        canon,
-        name: offer.name,
-        brandLine: offer.brandLine || null,
-        promoPrice: offer.promoPrice,
-        regularPrice: offer.regularPrice,
-        savingPerUnit: offer.savingPerUnit,
-        loyalty: !!offer.loyalty,
-        bulk: !!offer.bulk,
-      });
-    }
-  }
-  return [...byCanon.values()].sort((a, b) => (b.savingPerUnit || 0) - (a.savingPerUnit || 0));
-}
-
-const recipesHandler = createSupabaseHandler(async (req, res) => {
-  const rawCanons = Array.isArray(req.body?.canons) ? req.body.canons : [];
-  const canonSet = new Set(rawCanons.map((c) => String(c).toLowerCase().trim()).filter(Boolean));
-  if (canonSet.size === 0) {
-    return res.status(400).json({ error: "Välj minst en vara att få receptförslag från." });
-  }
-
-  const householdId = await getHouseholdId();
-  const store = process.env.WILLYS_STORE_ID || "2160";
-
-  const [offers, recipeRes] = await Promise.all([
-    fetchOffersFromWillys(store),
-    db.from("recipes")
-      .select("id, title, time, tags, protein, tested, ingredients")
-      .eq("household_id", householdId),
-  ]);
-
-  // Bara erbjudanden vars canon familjen valt → besparingen räknas bara på urvalet.
-  const selectedOffers = offers.filter((o) => canonSet.has(extractOfferCanon(o) || ""));
-
-  const recipes = (recipeRes.data || []).map((r) => ({
-    id: r.id,
-    title: r.title,
-    time: r.time,
-    protein: r.protein,
-    tags: r.tags || [],
-    ingredients: r.ingredients || [],
-  }));
-
-  const suggestions = recipes
-    .map((r) => ({ r, m: matchRecipe(r, selectedOffers) }))
-    .filter((x) => x.m.totalSaving > 0)
-    .map(({ r, m }) => ({
-      recipeId: r.id,
-      title: r.title,
-      protein: r.protein,
-      time: r.time || null,
-      saving: Math.round(m.totalSaving),
-      matches: bestMatchesByCanon(m.matches),
-    }))
-    .sort((a, b) => b.saving - a.saving)
-    .slice(0, 30);
-
-  return res.status(200).json({ suggestions });
-});
-
-// Metod-router: GET publikt, allt annat via den auth-wrappade
-// POST-handlern (som även svarar på OPTIONS-preflight och 405).
+// Metod-router: GET publikt, OPTIONS-preflight 200, allt annat 405.
 export default function handler(req, res) {
   if (req.method === "GET") return offersHandler(req, res);
-  return recipesHandler(req, res);
+  setCors(res);
+  if (req.method === "OPTIONS") return res.status(200).end();
+  return res.status(405).json({ error: "Metod ej tillåten" });
 }

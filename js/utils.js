@@ -18,6 +18,11 @@ export const PROTEIN_COLOR = {
   kött: 'var(--p-kott)', fläsk: 'var(--p-flask)',
 };
 
+// Besparingens fotnot — samma formulering i dagens popover och Veckans fynd.
+// savingPerUnit räknas per förpackning (kr/kg-varor omräknade, "X för Y" delat).
+export const SAVING_BASIS = 'Besparingen avser hela förpackningen och förutsätter att du handlar erbjudandet';
+export const SAVING_CAVEAT = 'Reapriser kan ändras eller löpa ut.';
+
 export function escapeHtml(s) {
   return String(s == null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')

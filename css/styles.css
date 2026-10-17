@@ -1182,6 +1182,27 @@
     color: var(--text-muted);
     opacity: 0.6;
   }
+  /* Diskret utloggning — textlänk, men full touch-yta (≥44px). Ärver
+     sidfotens --text-muted, så ljust/mörkt tema följer med. */
+  .footer-signout {
+    display: block;
+    margin: 0.25rem auto 0;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0 1rem;
+    background: none;
+    border: none;
+    color: inherit;
+    font: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+  }
+  .footer-signout:focus-visible {
+    outline: 2px solid var(--rust);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
 
 
   /* ── WEEK VIEW ── */

@@ -42,6 +42,9 @@ export async function getHouseholdId() {
   const { data, error } = await db
     .from("households")
     .select("id")
+    // Äldsta hushållet = familjen. Utan ORDER BY är "första" odeterministiskt
+    // så fort det finns 2+ hushåll.
+    .order("created_at", { ascending: true })
     .limit(1)
     .single();
   if (error || !data) throw new Error("Hittade ingen household — kör migrationen först.");

@@ -4,7 +4,7 @@
 // Skriver state bl.a.: _lastPlan, _lastShop, _planArchive, _customDays, _timelineByDate,
 //   _activeShopListId, planConfirmed, replaceMode, customPickMode, _opBusy, _planMutateUntil
 
-import { fmtIso, fmtShort, getHolidayName, isoWeekNumber, escapeHtml, jsStringAttr, retroWindowStartIso } from '../utils.js';
+import { fmtIso, fmtShort, getHolidayName, isoWeekNumber, escapeHtml, jsStringAttr, retroWindowStartIso, SAVING_BASIS, SAVING_CAVEAT } from '../utils.js';
 import { mealDayRowMatches, applyListCoverage } from './echo-match.js';
 
 const ICON_COIN = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 7.5v9 M9.5 9.7c.6-.7 1.5-1 2.5-1s2 .3 2.4 1c.5.8 0 1.7-1 2-.7.2-2.7.3-3.4.7-.9.4-1.4 1.3-.9 2.1.5.7 1.6 1 2.5 1s1.9-.3 2.5-1"/></svg>';
@@ -495,8 +495,10 @@ async function adoptShopResponse(res) {
   }
 }
 
+// Via window.* — wrapparna där (premiumvyn, Idag-vyn) ritar om sina vyer.
+// Den lokala funktionen ritar bara den klassiska vyn.
 function rerenderPlan() {
-  renderWeeklyPlanData(window._lastPlan || null, window._lastShop || null, false, window._planArchive, window._customDays);
+  (window.renderWeeklyPlanData || renderWeeklyPlanData)(window._lastPlan || null, window._lastShop || null, false, window._planArchive, window._customDays);
 }
 
 // _lastShop är matsedelns vy av inköpslistan och återanvänds vid senare
@@ -875,7 +877,7 @@ export function openSavingPopover(dateIso) {
       </div>
       <p class="saving-sub">På <strong>${title}</strong> — jämfört med normalpris på Willys Ekholmen.</p>
       <ul class="saving-list">${rows}</ul>
-      <p class="saving-footnote">Besparingen räknas per enhet och förutsätter att du handlar erbjudandet. Reapriser kan ändras eller löpa ut.</p>
+      <p class="saving-footnote">${SAVING_BASIS}. ${SAVING_CAVEAT}</p>
     </div>`;
   document.body.appendChild(overlay);
   requestAnimationFrame(() => overlay.classList.add('open'));
@@ -888,9 +890,16 @@ export function closeSavingPopover() {
 // ── Bekräftelse ───────────────────────────────────────────────────────────────
 
 export async function discardPlan() {
+  // Ligger förslagsdagar (o-inhandlade) på inköpslistan tas deras varor bort.
+  const onList = (window._lastPlan?.days || []).some((d) => {
+    const t = window._timelineByDate?.[d.date];
+    return t?.onList && !t.shoppedAt;
+  });
   const ok = await window.confirmDialog({
     title: 'Kassera förslaget?',
-    message: 'Den föreslagna matsedeln tas bort. Inköpslistan påverkas inte.',
+    message: onList
+      ? 'Den föreslagna matsedeln tas bort. Varorna för förslagets dagar tas bort från inköpslistan.'
+      : 'Den föreslagna matsedeln tas bort.',
     confirmLabel: 'Kassera',
     danger: true,
   });
@@ -927,8 +936,12 @@ export async function discardPlan() {
         loadShopSummaryFromSupabase(householdId),
       ]);
     } catch { /* kör med fallbacks */ }
-    renderWeeklyPlanData(emptyPlan, shop, false, archive, customDays);
-    if (data.restored > 0) {
+    (window.renderWeeklyPlanData || renderWeeklyPlanData)(emptyPlan, shop, false, archive, customDays);
+    // Ombyggd inköpslista (förslagsdagar låg på den): rita den ur svaret.
+    if (data.shoppingList && window.renderShoppingData) window.renderShoppingData(data.shoppingList);
+    if (data.listStale) {
+      window.showToast?.('Förslaget är borttaget, men inköpslistan kunde inte uppdateras — välj inköpsdagarna igen under Inköp så rättas listan.', { type: 'error' });
+    } else if (data.restored > 0) {
       window.showToast?.(data.restored === 1
         ? 'Förslaget är borttaget — dagen det ersatte är tillbaka.'
         : `Förslaget är borttaget — ${data.restored} dagar det ersatte är tillbaka.`, { type: 'success' });

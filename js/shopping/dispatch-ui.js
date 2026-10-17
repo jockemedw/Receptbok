@@ -1,6 +1,7 @@
 // Dispatch-UI: knapp → butiksval → confirm → POST → resultat-modal.
-// Läser state: window._shopRecipeItems + _shopManualItems (räkning i confirm-dialog), window._shopCoverage ("Markera som inhandlat" i resultatet). Läser/skriver: window._opBusy (spärr mot dubbel dispatch, F078).
-// Feature-toggled via GET /api/dispatch-to-willys vid tab-load.
+// Läser state: window._shopRecipeItems + _shopManualItems + window.shopRemainingCount() (räkning i confirm-dialog), window._shopCoverage ("Markera som inhandlat" i resultatet). Läser/skriver: window._opBusy (spärr mot dubbel dispatch, F078).
+// Feature-toggled via GET /api/dispatch-to-willys vid tab-load. GET och POST kräver
+// inloggning → båda går via window.apiFetch (Bearer-token).
 //
 // Butikerna (Willys/Hemköp) kommer från backend — frontend hårdkodar varken
 // namn eller URL:er, så en ny Axfood-butik bara dyker upp i väljaren.
@@ -25,7 +26,7 @@ export async function initDispatchUI() {
   const btn = document.getElementById("dispatchToWillysBtn");
   if (!btn) return;
   try {
-    const res = await fetch("/api/dispatch-to-willys");
+    const res = await window.apiFetch("/api/dispatch-to-willys");
     if (!res.ok) { btn.style.display = "none"; return; }
     const data = await res.json();
     // Äldre backend svarar utan stores[] — behandla det som enbart Willys, så
@@ -182,8 +183,22 @@ export function openDispatchConfirm(storeId) {
   const manualCount = (window._shopManualItems || []).length;
   const totalCount = recipeCount + manualCount;
   if (totalCount === 0) {
+    setModalTitle(`Skicka till ${storeLabel(storeId)}`);
     showResult(`
       <p>Inköpslistan är tom — inget att skicka.</p>
+      <div class="dispatch-actions"><button onclick="closeDispatchModal()">Stäng</button></div>
+    `);
+    return;
+  }
+  // Servern hoppar över avbockade och "har hemma"-varor — räkna likadant, så
+  // siffran i frågan stämmer med det som faktiskt skickas.
+  const remaining = typeof window.shopRemainingCount === 'function'
+    ? window.shopRemainingCount()
+    : totalCount;
+  if (remaining === 0) {
+    setModalTitle(`Skicka till ${storeLabel(storeId)}`);
+    showResult(`
+      <p>Allt på listan är avbockat eller markerat "har hemma" — inget att skicka.</p>
       <div class="dispatch-actions"><button onclick="closeDispatchModal()">Stäng</button></div>
     `);
     return;
@@ -191,7 +206,7 @@ export function openDispatchConfirm(storeId) {
   const label = storeLabel(storeId);
   setModalTitle(`Skicka till ${label}`);
   showResult(`
-    <p>Skicka ${totalCount} ingrediens${totalCount !== 1 ? 'er' : ''} till din ${escapeHtml(label)}-korg?</p>
+    <p>Skicka ${remaining} ingrediens${remaining !== 1 ? 'er' : ''} till din ${escapeHtml(label)}-korg?</p>
     <p class="dispatch-note">Matchade produkter läggs in i korgen. Omatchade rapporteras efteråt så du kan lägga till dem själv.</p>
     <div class="dispatch-actions">
       <button class="btn-secondary" onclick="closeDispatchModal()">Avbryt</button>
@@ -215,10 +230,10 @@ export async function runDispatch(storeId) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 60000);
   try {
-    const res = await fetch("/api/dispatch-to-willys", {
+    const res = await window.apiFetch("/api/dispatch-to-willys", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ store: storeId, date: new Date().toISOString().slice(0, 10) }),
+      body: JSON.stringify({ store: storeId }),
       signal: controller.signal,
     });
     const data = await res.json();
@@ -280,8 +295,9 @@ function renderResult(data, fallbackLabel) {
     `);
     return;
   }
+  // data.error bär 401-beskedet från inloggningskravet ("Din session har gått ut — logga in igen.").
   showResult(`
-    <p>${escapeHtml(data.message || "Något gick fel — prova igen om en stund.")}</p>
+    <p>${escapeHtml(data.message || data.error || "Något gick fel — prova igen om en stund.")}</p>
     <div class="dispatch-actions"><button onclick="closeDispatchModal()">Stäng</button></div>
   `);
 }

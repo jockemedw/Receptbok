@@ -796,6 +796,21 @@ const DEFAULT_CONSTRAINTS = {
   assertEq(legacy[0], 2, "Slumpa: utan hardIds ingen reserv (som förr)");
 }
 
+// Test — datumaritmetiken är tidszonsoberoende (S151). Utan Z i datumen
+// räknades dagar i lokal tid → 89,96 dagar över sommartidsskiftet i svensk
+// tidszon, och testet ovan var rött på varje svensk dator. TZ byts i körtid.
+{
+  const prevTz = process.env.TZ;
+  process.env.TZ = "Europe/Stockholm";
+  try {
+    assertEq(recencyWeight("2026-01-21", "2026-04-21"), 1, "recencyWeight (Europe/Stockholm): ≥90 dagar över sommartidsskiftet = 1");
+    assertEq(JSON.stringify(suggestionPenalties([{ recipe_id: 1, rejected_on: "2026-03-20" }], {}, "2026-04-17")), "{}",
+      "suggestionPenalties (Europe/Stockholm): 28 dagar över sommartidsskiftet = utgånget");
+  } finally {
+    if (prevTz === undefined) delete process.env.TZ; else process.env.TZ = prevTz;
+  }
+}
+
 // ─── Slutrapport ──────────────────────────────────────────────────────────────
 const total = passed + failed;
 console.log(`\nPASS ${passed}/${total}${failed ? ` — ${failed} FAIL` : ""}`);

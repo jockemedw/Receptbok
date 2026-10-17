@@ -497,7 +497,7 @@ function generateMarkdown() {
   let md = '';
 
   md += '# Säsongsanalys — Receptboken\n\n';
-  md += '> Genererad 2026-05-10. Underlag för säsongsimporterad receptprioritering.\n\n';
+  md += `> Genererad ${new Date().toISOString().slice(0, 10)}. Underlag för säsongsimporterad receptprioritering.\n\n`;
   md += '## Sammanfattning\n\n';
   md += `- **${recipes.length} recept** analyserade\n`;
   md += `- **${stats.vår}** passar vår (mar–maj)\n`;
