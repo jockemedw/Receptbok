@@ -1,6 +1,6 @@
 // Matsedelsgenerering: datumväljare, inställningar, genereringsknapp.
 
-import { fmtIso, daysBetween, getHolidayName } from '../utils.js';
+import { fmtIso, fmtShort, daysBetween, getHolidayName } from '../utils.js';
 
 export function initDatePickers() {
   const today = new Date();
@@ -244,15 +244,23 @@ export async function generatePlan() {
   const diff = daysBetween(startVal, endVal);
   if (diff < 1 || diff > 15) return;
 
-  // F194 (QC-natt): regenerering skriver rakt över den aktiva planens
-  // receptval — utan varning även om planen redan är BEKRÄFTAD (och familjen
-  // kanske redan handlat). Fråga innan vi kör vidare (samma confirmDialog
-  // som discardPlan).
+  // F194 (QC-natt): regenerering skriver över den aktiva planens dagar i
+  // intervallet — fråga om den planen är BEKRÄFTAD (familjen kan ha handlat).
+  // Bara dagar som faktiskt överlappar räknas: servern skriver aldrig över
+  // planens dagar utanför intervallet (de lösgörs som egna dagar,
+  // detachOldPlanDays i api/generate.js). Utan överlapp — t.ex. en ny vecka
+  // efter att den gamla matsedeln tagit slut — finns inget att varna för.
   const isConfirmed = !!(window._lastPlan?.confirmedAt || window.planConfirmed);
-  if (isConfirmed) {
+  const overlapping = isConfirmed
+    ? (window._lastPlan?.days || []).filter((d) => d.date >= startVal && d.date <= endVal)
+        .sort((a, b) => (a.date < b.date ? -1 : 1))
+    : [];
+  if (overlapping.length) {
+    const n = overlapping.length;
     const ok = await window.confirmDialog({
-      title: 'Ersätt bekräftad matsedel?',
-      message: 'Du har en bekräftad matsedel — en ny plan ersätter den. Fortsätt?',
+      title: 'Ersätt dagar i bekräftad matsedel?',
+      message: `Den nya matsedeln ersätter ${n} ${n === 1 ? 'dag' : 'dagar'} i din bekräftade matsedel ` +
+        `(${fmtShort(overlapping[0].date)}–${fmtShort(overlapping[n - 1].date)}). Fortsätt?`,
       confirmLabel: 'Fortsätt',
       danger: true,
     });

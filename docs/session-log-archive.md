@@ -1,6 +1,14 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–154. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–155. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+## Session 155 — Nattpass städrunda
+
+**Session 155 — Nattpass städrunda (2026-10-16/17, beteendeneutral: render-only + backendkod utan beteendeändring; PR #250 mergad 2026-10-17 på Joakims OK).**
+
+Joakim: "kör ett workflow över natten där gör en omfattande städrunda i projektets kod med avseende på att städa dålig kod eller dåliga beskrivningar." Workflow med 44 agenter: 12 slices (5 api, 5 js, css, tester/skript) → finder per slice → skeptisk verifiering (två oberoende granskare för api/-slices: data-vägar + dynamiska referenser; en för övriga) där en kandidat bara gick vidare om ALLA granskare godkände → sekventiella fixare med en commit per slice + hela sviten efter varje → två adversariella slutgranskare över hela diffen (0 flaggor) → slutgrind. **153 kandidater, 148 godkända och applicerade, 0 återställda.** 65 filer, +414/−1236 rader (varav ~740 döda CSS-rader från klassiska vyn/inline-panelen/gamla triggerformuläret). Död kod och oanvända `window.*`-exponeringar bort (moduler importerar nu från `utils.js`), dubbletter ersatta med befintliga hjälpare, inaktuella filhuvuden/kommentarer rättade (GitHub-JSON-eran, 14-dagarsfönstret, borttagna endpoints). Inga assertioner ändrade (en testbeskrivning omformulerad). Ingen DDL, ingen ny `api/`-fil, recept-strukturen och docs-historiken orörda, inga cirkulära importer. Claude dubbelkollade efteråt: 18/18 tester gröna, harness default + swap utan JS-fel (echo fallerar redan på main — stubbdatum). **Styles v206/app v172/SW v125.** Gren `nattpass/stadrunda-2026-10-16`.
+
+**Fynd som INTE fixades (beteendeändringar) — se Öppna utredningar "Städrundan S155".**
 
 ## Session 154 — Receptminne 4 veckor
 
