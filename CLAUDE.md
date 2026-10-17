@@ -64,7 +64,7 @@ Rörlig status (roadmap, kända buggar, verifieringskö, öppna utredningar, sen
 Vilken modell gör vad (Opus 4.8 default, Sonnet 5 arbetshäst, Haiku 4.5 fan-out, Fable 5 för det svåraste), när subagenter/workflows används, och månatlig omvärdering — bor i `docs/claude-orchestration.md`.
 
 ## Kommandon (tester & skript)
-Inga npm-scripts — allt körs direkt med `node`. Hela sviten ska vara GRÖN innan "klart" (hooks i `.claude/settings.json` kör relevanta tester vid Edit och blockerar vid fail — kör ändå hela sviten manuellt vid ändringar som rör flera moduler). Hårdkoda aldrig assertionstal i dokumentation — de ändras löpande.
+Inga npm-scripts — allt körs direkt med `node`. Kör `npm install` först i en ny molnsession — utan `node_modules` failar sex testfiler (auth-verify, cookies-endpoint, dispatch-to-willys, plan-orchestration, replace-recipe, shopping-store) på saknade paket. Hela sviten ska vara GRÖN innan "klart" (hooks i `.claude/settings.json` kör relevanta tester vid Edit och blockerar vid fail — kör ändå hela sviten manuellt vid ändringar som rör flera moduler). Hårdkoda aldrig assertionstal i dokumentation — de ändras löpande.
 
 ```bash
 node tests/match.test.js               # Willys-matchning + ingrediens-normalizer

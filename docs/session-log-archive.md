@@ -1,6 +1,12 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–155. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–156. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+## Session 156 — Falsk bekräftad-varning
+
+**Session 156 — Falsk varning "bekräftad matsedel" vid generering (2026-10-17, klientlogik, ingen ändrad datapath).**
+
+Joakim: generering 17/10 + en vecka gav varningen att en bekräftad matsedel finns. **Orsak:** `generatePlan` (`js/weekly-plan/plan-generator.js`) varnade så fort den AKTIVA planen var bekräftad — oavsett datum. Livedata: aktiv plan 30/9–14/10, bekräftad 28/9, helt passerad. Servern skriver bara över den aktiva planens dagar inom det nya intervallet; övriga lösgörs som egna dagar (`detachOldPlanDays`) — inget hade gått förlorat. **Fix:** varningen visas bara när den bekräftade planens dagar faktiskt överlappar det valda intervallet, och säger hur många dagar och vilka datum som ersätts. Hela sviten grön, harness utan JS-fel. App v173/SW v126 (styles orörd).
 
 ## Session 155 — Nattpass städrunda
 
