@@ -183,6 +183,7 @@ export function openDispatchConfirm(storeId) {
   const manualCount = (window._shopManualItems || []).length;
   const totalCount = recipeCount + manualCount;
   if (totalCount === 0) {
+    setModalTitle(`Skicka till ${storeLabel(storeId)}`);
     showResult(`
       <p>Inköpslistan är tom — inget att skicka.</p>
       <div class="dispatch-actions"><button onclick="closeDispatchModal()">Stäng</button></div>
@@ -195,6 +196,7 @@ export function openDispatchConfirm(storeId) {
     ? window.shopRemainingCount()
     : totalCount;
   if (remaining === 0) {
+    setModalTitle(`Skicka till ${storeLabel(storeId)}`);
     showResult(`
       <p>Allt på listan är avbockat eller markerat "har hemma" — inget att skicka.</p>
       <div class="dispatch-actions"><button onclick="closeDispatchModal()">Stäng</button></div>

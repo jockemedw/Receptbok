@@ -336,6 +336,13 @@ export default createSupabaseHandler(async (req, res) => {
   if (!start_date || !end_date) {
     return res.status(400).json({ error: "start_date och end_date krävs" });
   }
+  // Riktiga datum krävs — annars blir spanDays NaN och 15-dagarsspärren släpper
+  // igenom t.ex. "2027-13-01", som buildDayList sedan stegar sig fram till.
+  const isIsoDate = (s) => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s)
+    && new Date(s + "T12:00:00Z").toISOString().slice(0, 10) === s;
+  if (!isIsoDate(start_date) || !isIsoDate(end_date)) {
+    return res.status(400).json({ error: "Ogiltigt datum — välj datum i kalendern igen." });
+  }
   if (start_date > end_date) {
     return res.status(400).json({ error: "Startdatum måste vara före slutdatum." });
   }

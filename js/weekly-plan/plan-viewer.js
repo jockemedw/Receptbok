@@ -940,7 +940,7 @@ export async function discardPlan() {
     // Ombyggd inköpslista (förslagsdagar låg på den): rita den ur svaret.
     if (data.shoppingList && window.renderShoppingData) window.renderShoppingData(data.shoppingList);
     if (data.listStale) {
-      window.showToast?.('Förslaget är borttaget, men inköpslistan kunde inte uppdateras — ladda om och prova igen.', { type: 'error' });
+      window.showToast?.('Förslaget är borttaget, men inköpslistan kunde inte uppdateras — välj inköpsdagarna igen under Inköp så rättas listan.', { type: 'error' });
     } else if (data.restored > 0) {
       window.showToast?.(data.restored === 1
         ? 'Förslaget är borttaget — dagen det ersatte är tillbaka.'

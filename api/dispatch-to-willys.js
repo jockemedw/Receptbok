@@ -78,6 +78,15 @@ export default async function handler(req, res) {
   // (POST) kräver också inloggning — annars kan vem som helst som känner URL:en
   // fylla familjens korg. Ligger EFTER refresh-cookies så extensionen (som bara
   // har X-Refresh-Secret) fortsätter fungera.
+  // En klient med gammal cachad JS (före S157) skickar utan token och läser bara
+  // data.message — ge den ett besked den kan agera på.
+  const authz = req.headers?.authorization || req.headers?.Authorization || "";
+  if (!authz.startsWith("Bearer ")) {
+    return res.status(401).json({
+      error: "Du måste vara inloggad för att göra det här.",
+      message: "Appen har uppdaterats — stäng den och öppna den igen.",
+    });
+  }
   if (!(await requireUser(req, res))) return;
 
   // GITHUB_GIST_PAT = classic token med gist-scope (krävs för gist-läsning;
