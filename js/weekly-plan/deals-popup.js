@@ -9,7 +9,7 @@
 //        window._planArchive, window._customDays.
 // Skriver via /api/replace-recipe (newRecipeId + saving/savingMatches behålls).
 
-import { escapeHtml, fmtShort, PROTEIN_COLOR } from '../utils.js';
+import { escapeHtml, fmtShort, PROTEIN_COLOR, SAVING_BASIS, SAVING_CAVEAT } from '../utils.js';
 
 const PROTEIN_LABEL = { fisk: 'Fisk', kyckling: 'Kyckling', kött: 'Kött', fläsk: 'Fläsk', vegetarisk: 'Vegetariskt' };
 const COIN = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 7.5v9 M9.5 9.7c.6-.7 1.5-1 2.5-1s2 .3 2.4 1c.5.8 0 1.7-1 2-.7.2-2.7.3-3.4.7-.9.4-1.4 1.3-.9 2.1.5.7 1.6 1 2.5 1s1.9-.3 2.5-1"/></svg>';
@@ -137,7 +137,7 @@ export function openDealsPopup() {
         ${inPlanHtml}
         ${candHtml}
       </div>
-      <p class="saving-footnote">Besparingen avser hela förpackningen och förutsätter att du handlar erbjudandet — varor märkta <span class="saving-bulk">storpack</span> räcker ofta till fler måltider. Reapriser kan ändras eller löpa ut.</p>
+      <p class="saving-footnote">${SAVING_BASIS} — varor märkta <span class="saving-bulk">storpack</span> räcker ofta till fler måltider. ${SAVING_CAVEAT}</p>
     </div>`;
   document.body.appendChild(overlay);
 }

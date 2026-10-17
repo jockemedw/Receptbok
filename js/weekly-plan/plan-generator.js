@@ -302,7 +302,6 @@ export async function generatePlan() {
       untested_count:   parseInt(document.getElementById('untestedCount').value) || 0,
       vegetarian_days:  parseInt(document.getElementById('vegetarianDays').value) || 0,
       ture_days:        parseInt(document.getElementById('tureDays').value) || 0,
-      skip_shopping: true,
       blocked_dates:    getBlockedDates(),
       deal_canons:      dealCanons,
       season_weight:    wantsSeason,
