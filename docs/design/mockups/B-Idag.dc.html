@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<title>Idag – tisdag 20 oktober, desktop</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#1d2721}
+a{color:#9dbca6}a:hover{color:#cfe0d3}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #1d2721; color: #e6e0d2; font-family: 'DM Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.45; display: flex; flex-direction: column">
+
+  <header style="display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 14px 32px; border-bottom: 1px solid #33402f; flex-wrap: wrap">
+    <div style="font-size: 22px; font-weight: 600; color: #f0ebe0; letter-spacing: -0.01em">Recept<span style="color: #d4a851; font-style: italic; font-weight: 500">boken</span></div>
+    <nav aria-label="Huvudmeny" style="display: flex; gap: 4px; flex-wrap: wrap">
+      <a href="#" aria-current="page" style="padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: 600; color: #f0ebe0; background: #2b3830">Idag</a>
+      <a href="B-Matsedel.dc.html" style="padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: 500; color: #9aa78f">Matsedel</a>
+      <a href="B-Inkop.dc.html" style="padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: 500; color: #9aa78f">Inköp</a>
+      <a href="B-Master-detail.dc.html" style="padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: 500; color: #9aa78f">Recept</a>
+      <a href="#" style="padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: 500; color: #9aa78f">Listor</a>
+    </nav>
+    <div style="width: 300px"></div>
+  </header>
+
+  <main style="max-width: 1200px; width: 100%; margin: 0 auto; padding: 32px 32px 64px; display: flex; flex-direction: column; gap: 28px">
+
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <h1 style="margin: 0; font-size: 40px; font-weight: 600; letter-spacing: -0.02em; color: #f0ebe0; line-height: 1.05">Tisdag 20 oktober</h1>
+      <div style="color: #9aa78f; font-size: 14px">Vecka 43 · 1 dag kvar att fylla i matsedeln · 12 varor på inköpslistan</div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 24px; align-items: start">
+
+      <section style="display: flex; flex-direction: column; gap: 16px">
+        <article style="display: grid; grid-template-columns: 160px 1fr; gap: 20px; padding: 20px; border-radius: 18px; background: #263229; outline: 2px solid {{accent}}; outline-offset: -2px">
+          <div style="aspect-ratio: 1 / 1; border-radius: 12px; background: #2b3830; display: flex; align-items: center; justify-content: center; color: #75816e">
+            <svg aria-hidden="true" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11h16M5 11a7 7 0 0 1 14 0M3 15h18l-1 4H4z"></path></svg>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 12px; min-width: 0">
+            <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: {{accent}}">Ikväll</div>
+            <h2 style="margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -0.01em; line-height: 1.1; color: #f0ebe0">Rester</h2>
+            <div style="color: #9aa78f; font-size: 14px">Egen dag · inget recept kopplat</div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: auto">
+              <a href="B-Master-detail.dc.html" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 10px 16px; border-radius: 10px; background: {{accent}}; color: #1c2620; text-decoration: none; font-weight: 600">Välj ett recept i stället</a>
+              <button type="button" style="min-height: 44px; padding: 10px 16px; border-radius: 10px; border: 1px solid #3d4c41; background: transparent; color: #f0ebe0; font: inherit; font-weight: 600; cursor: pointer">Byt dag</button>
+            </div>
+          </div>
+        </article>
+
+        <a href="B-Matsedel.dc.html" style="display: grid; grid-template-columns: 72px 1fr auto; gap: 16px; align-items: center; padding: 14px 16px; border-radius: 14px; background: #263229; text-decoration: none; color: inherit">
+          <div style="width: 72px; height: 72px; border-radius: 10px; background: #2b3830; display: flex; align-items: center; justify-content: center; color: #75816e">
+            <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10-10-4-4L4 16z M13 7l4 4"></path></svg>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0">
+            <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #9aa78f">I morgon · onsdag</div>
+            <div style="font-size: 18px; font-weight: 600; color: #f0ebe0">Asiatisk fisksoppa</div>
+            <div style="font-size: 13px; color: #9aa78f">Egen dag</div>
+          </div>
+          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9aa78f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg>
+        </a>
+
+        <section style="display: flex; flex-direction: column; gap: 12px; padding: 20px; border-radius: 18px; background: #263229">
+          <div style="display: flex; align-items: baseline; justify-content: space-between">
+            <h2 style="margin: 0; font-size: 18px; font-weight: 600; color: #f0ebe0">Vecka 43</h2>
+            <a href="B-Matsedel.dc.html" style="font-size: 14px; color: #9dbca6; text-decoration: none">Hela matsedeln</a>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px">
+            <a href="B-Matsedel.dc.html" style="display: flex; flex-direction: column; gap: 6px; padding: 8px 6px; border-radius: 10px; border: 1px dashed #3d4c41; text-decoration: none; color: inherit; min-height: 84px"><span style="font-size: 12px; font-weight: 600; color: #75816e">Mån</span><span style="font-size: 12px; color: #75816e">Tom</span></a>
+            <a href="B-Matsedel.dc.html" style="display: flex; flex-direction: column; gap: 6px; padding: 8px 6px; border-radius: 10px; background: #2b3830; outline: 2px solid {{accent}}; outline-offset: -2px; text-decoration: none; color: inherit; min-height: 84px"><span style="font-size: 12px; font-weight: 600; color: {{accent}}">Tis</span><span style="font-size: 12px; color: #f0ebe0; line-height: 1.2">Rester</span></a>
+            <a href="B-Matsedel.dc.html" style="display: flex; flex-direction: column; gap: 6px; padding: 8px 6px; border-radius: 10px; background: #2b3830; text-decoration: none; color: inherit; min-height: 84px"><span style="font-size: 12px; font-weight: 600; color: #9aa78f">Ons</span><span style="font-size: 12px; color: #e6e0d2; line-height: 1.2">Asiatisk fisksoppa</span></a>
+            <a href="B-Matsedel.dc.html" style="display: flex; flex-direction: column; gap: 6px; padding: 8px 6px; border-radius: 10px; background: #2b3830; text-decoration: none; color: inherit; min-height: 84px"><span style="font-size: 12px; font-weight: 600; color: #9aa78f">Tor</span><span style="font-size: 12px; color: #e6e0d2; line-height: 1.2">Jocke improv</span></a>
+            <a href="B-Matsedel.dc.html" style="display: flex; flex-direction: column; gap: 6px; padding: 8px 6px; border-radius: 10px; background: #2b3830; text-decoration: none; color: inherit; min-height: 84px"><span style="font-size: 12px; font-weight: 600; color: #9aa78f">Fre</span><span style="font-size: 12px; color: #e6e0d2; line-height: 1.2">Väffeltoast</span><span style="width: 7px; height: 7px; border-radius: 50%; background: #c67563"></span></a>
+            <a href="B-Matsedel.dc.html" style="display: flex; flex-direction: column; gap: 6px; padding: 8px 6px; border-radius: 10px; background: #2b3830; text-decoration: none; color: inherit; min-height: 84px"><span style="font-size: 12px; font-weight: 600; color: #9aa78f">Lör</span><span style="font-size: 12px; color: #e6e0d2; line-height: 1.2">Rotfrukts­frittata</span></a>
+            <a href="B-Matsedel.dc.html" style="display: flex; flex-direction: column; gap: 6px; padding: 8px 6px; border-radius: 10px; background: #2b3830; text-decoration: none; color: inherit; min-height: 84px"><span style="font-size: 12px; font-weight: 600; color: #9aa78f">Sön</span><span style="font-size: 12px; color: #e6e0d2; line-height: 1.2">Linsbolognese</span></a>
+          </div>
+          <div style="font-size: 13px; color: #9aa78f">Måndag saknar middag. Färgprick = recept från receptboken; övriga är egna dagar.</div>
+        </section>
+      </section>
+
+      <section style="display: flex; flex-direction: column; gap: 16px">
+        <section style="display: flex; flex-direction: column; gap: 14px; padding: 20px; border-radius: 18px; background: #263229">
+          <div style="display: flex; align-items: baseline; justify-content: space-between">
+            <h2 style="margin: 0; font-size: 18px; font-weight: 600; color: #f0ebe0">Inköpslistan</h2>
+            <a href="B-Inkop.dc.html" style="font-size: 14px; color: #9dbca6; text-decoration: none">Öppna</a>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <div style="display: flex; justify-content: space-between; font-size: 14px; color: #9aa78f"><span>12 varor · fredagens recept + 2 egna</span><span>0 plockade</span></div>
+            <div role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="12" style="height: 6px; border-radius: 3px; background: #33402f; overflow: hidden"><div style="width: 0%; height: 100%; background: #9dbca6"></div></div>
+          </div>
+          <label style="display: flex; align-items: center; gap: 10px; background: #1d2721; border: 1px solid #33402f; border-radius: 12px; padding: 4px 4px 4px 14px; color: #9aa78f; min-height: 52px">
+            <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+            <span style="position: absolute; left: -9999px">Lägg till vara</span>
+            <input type="text" placeholder="Snabbt till listan, t.ex. blöjor, kaffe…" style="background: transparent; border: 0; outline: 0; color: #e6e0d2; font: inherit; width: 100%">
+            <button type="button" style="min-height: 44px; padding: 0 18px; border-radius: 9px; border: 0; background: {{accent}}; color: #1c2620; font: inherit; font-weight: 600; cursor: pointer">Lägg till</button>
+          </label>
+          <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 14px">
+            <li style="display: flex; justify-content: space-between; padding: 8px 2px; border-bottom: 1px solid #33402f"><span>Kvarg</span><span style="color: #75816e">eget tillägg</span></li>
+            <li style="display: flex; justify-content: space-between; padding: 8px 2px; border-bottom: 1px solid #33402f"><span>Potatis</span><span style="color: #75816e">eget tillägg</span></li>
+            <li style="display: flex; justify-content: space-between; padding: 8px 2px"><span>Äpple, crème fraiche, rökt kalkon …</span><span style="color: #75816e">Väffeltoast</span></li>
+          </ul>
+        </section>
+
+        <section style="display: flex; flex-direction: column; gap: 12px; padding: 20px; border-radius: 18px; background: #263229">
+          <h2 style="margin: 0; font-size: 18px; font-weight: 600; color: #f0ebe0">Att göra</h2>
+          <a href="B-Matsedel.dc.html" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; background: #1d2721; text-decoration: none; color: inherit; min-height: 48px">
+            <span style="width: 32px; height: 32px; border-radius: 8px; background: #33422f; color: #9dbca6; display: flex; align-items: center; justify-content: center">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></span>
+            <span style="flex: 1">Fyll måndagen i matsedeln</span>
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa78f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg>
+          </a>
+          <a href="B-Inkop.dc.html" style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; background: #1d2721; text-decoration: none; color: inherit; min-height: 48px">
+            <span style="width: 32px; height: 32px; border-radius: 8px; background: #33422f; color: #9dbca6; display: flex; align-items: center; justify-content: center">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.4 12.4a1 1 0 0 0 1 .8h9.7a1 1 0 0 0 1-.8L21 8H6"></path><circle cx="9" cy="21" r="1"></circle><circle cx="18" cy="21" r="1"></circle></svg></span>
+            <span style="flex: 1">Skicka veckans lista till Willys</span>
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9aa78f" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg>
+          </a>
+        </section>
+      </section>
+
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#cd825e","options":["#cd825e","#d4a851","#9dbca6"]},"$preview":{"width":1280,"height":860}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#cd825e' };
+  }
+}
+</script>
+</body>
+</html>

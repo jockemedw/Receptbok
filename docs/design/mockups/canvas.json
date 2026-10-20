@@ -1,0 +1,142 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "A-Recept-grid.dc.html": {
+      "expand": "fill",
+      "h": 1480,
+      "title": "A · Receptlista (desktop)",
+      "w": 1280,
+      "x": 0,
+      "y": 0
+    },
+    "A-Recept-mobil.dc.html": {
+      "h": 844,
+      "radius": 24,
+      "title": "A · Receptlista (mobil)",
+      "w": 390,
+      "x": 1360,
+      "y": 0
+    },
+    "A-Receptdetalj.dc.html": {
+      "expand": "fill",
+      "h": 1080,
+      "title": "A · Receptdetalj (desktop)",
+      "w": 1280,
+      "x": 0,
+      "y": 1900
+    },
+    "B-Master-detail.dc.html": {
+      "expand": "fill",
+      "h": 1080,
+      "title": "B · Lista + detalj i ett (desktop)",
+      "w": 1280,
+      "x": 1360,
+      "y": 1900
+    },
+    "B-Matsedel.dc.html": {
+      "x": 0,
+      "y": 3220,
+      "w": 1280,
+      "h": 720,
+      "title": "B · Matsedel (desktop)",
+      "expand": "fill"
+    },
+    "B-Inkop.dc.html": {
+      "x": 1360,
+      "y": 3220,
+      "w": 1280,
+      "h": 1080,
+      "title": "B · Inköp (desktop)",
+      "expand": "fill"
+    },
+    "B-Idag.dc.html": {
+      "x": 0,
+      "y": 4540,
+      "w": 1280,
+      "h": 860,
+      "title": "B · Idag (desktop)",
+      "expand": "fill"
+    },
+    "B-Idag-mobil.dc.html": {
+      "x": 1360,
+      "y": 4540,
+      "w": 390,
+      "h": 844,
+      "title": "B · Idag (mobil)",
+      "radius": 24
+    },
+    "B-Matsedel-mobil.dc.html": {
+      "x": 1830,
+      "y": 4540,
+      "w": 390,
+      "h": 844,
+      "title": "B · Matsedel (mobil)",
+      "radius": 24
+    },
+    "B-Inkop-mobil.dc.html": {
+      "x": 2300,
+      "y": 4540,
+      "w": 390,
+      "h": 844,
+      "title": "B · Inköp (mobil)",
+      "radius": 24
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-20T17:09:58.893Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "t-a": {
+      "kind": "title1",
+      "maxW": 1750,
+      "text": "Riktning A · Bildburen receptlista",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "t-b": {
+      "kind": "title1",
+      "maxW": 2640,
+      "text": "Receptdetalj – två upplägg",
+      "w": 240,
+      "x": 0,
+      "y": 1600
+    },
+    "t-c": {
+      "x": 0,
+      "y": 2920,
+      "text": "Matsedel och Inköp i B-uttrycket",
+      "kind": "title1",
+      "maxW": 2640,
+      "w": 240
+    },
+    "t-d": {
+      "x": 0,
+      "y": 4240,
+      "text": "Idag och mobilvyer",
+      "kind": "title1",
+      "maxW": 2640,
+      "w": 240
+    }
+  },
+  "order": [
+    "A-Recept-grid.dc.html",
+    "A-Recept-mobil.dc.html",
+    "A-Receptdetalj.dc.html",
+    "B-Master-detail.dc.html",
+    "B-Matsedel.dc.html",
+    "B-Inkop.dc.html",
+    "B-Idag.dc.html",
+    "B-Idag-mobil.dc.html",
+    "B-Matsedel-mobil.dc.html",
+    "B-Inkop-mobil.dc.html"
+  ],
+  "pages": [],
+  "title": "Receptbok – ny design"
+}
