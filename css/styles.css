@@ -36,11 +36,10 @@
     --p-flask: #c07a5a;
     --p-veg: #5e7a68;
 
-    /* Typografi: Bricolage Grotesque (varm, karaktärsfull sans) på alla rubriker
-       sedan Session 140 — Joakim ville bort från serifer. Historik: Playfair
-       Display → Fraunces (Session 108, valdes bort) → Newsreader (Session 111)
-       → Bricolage Grotesque. */
-    --font-display: 'Bricolage Grotesque', sans-serif;
+    /* Typografi (ny design 2026-10, docs/design/HANDOFF-ny-design.md): DM Sans
+       överallt — rubriker, logotyp, receptnamn, brödtext. Vikt 600/700 bär
+       rubrikerna. Historik: Playfair → Fraunces → Newsreader → Bricolage → DM Sans. */
+    --font-display: 'DM Sans', sans-serif;
     --font-body: 'DM Sans', sans-serif;
     --on-accent: #fff;   /* text/ikon ovanpå rust/lichen-ytor */
     --on-deep: #f5f1e8;  /* text på ytor som är mörka i BÅDA teman (hero-gradienten) */
@@ -102,11 +101,15 @@
     --seg-active: var(--paper);
     --seg-active-text: var(--lichen-deep);
     --bottom-nav-h: 0px;
+    --content-max: 1200px;   /* desktop använder bredden (ny design 2026-10) */
+    --header-h: 0px;         /* sätts av js/ui/scroll.js (headerns verkliga höjd) */
+    --top-safe: 0px;         /* mobil: statusfältet när headern är dold */
   }
 
   @media (max-width: 599px) {
     :root {
       --bottom-nav-h: calc(84px + env(safe-area-inset-bottom, 0px));
+      --top-safe: env(safe-area-inset-top, 0px);
     }
   }
 
@@ -163,6 +166,7 @@
     background: var(--linen);
     color: var(--forest);
     min-height: 100vh;
+    padding-top: calc(var(--header-h) + var(--top-safe));
     padding-bottom: var(--bottom-nav-h);
   }
 
@@ -192,218 +196,117 @@
     -webkit-touch-callout: none;
   }
 
-  /* ── HEADER ── */
+  /* ── HEADER (ny design 2026-10) ──────────────────────────────────────────
+     Desktop: låg rad på sidans egen yta — logotyp · nav · (plats för sök).
+     Mobil (<600px): ingen header alls; varje vy bär sin egen rubrik och
+     bottennavigeringen sköter flikbytet. Sökfältet bor i receptvyn. */
   header {
-    background: var(--lichen);
-    color: var(--linen);
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     z-index: var(--z-chrome);
-    /* Reservera statusfältet/Dynamic Island (black-translucent + viewport-fit=cover):
-       den gröna ytan går upp under pannan, ordmärket hamnar under den. På enheter
-       utan panna är env() = 0 → oförändrat. Body-offseten följer med automatiskt
-       (scroll.js mäter header.offsetHeight). */
-    padding-top: env(safe-area-inset-top, 0);
-    box-shadow: 0 1px 0 rgba(255,255,255,0.06), 0 4px 28px rgba(0,0,0,0.2);
-    transition: transform 0.3s ease;
-  }
-  header.header-hidden { transform: translateY(-100%); }
-
-  .header-bar {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    padding: 0.6rem 1.25rem 0;
+    justify-content: space-between;
+    gap: 24px;
+    padding: calc(env(safe-area-inset-top, 0px) + 10px) 32px 10px;
+    background: var(--linen);
+    color: var(--forest);
+    border-bottom: 1px solid var(--hairline);
   }
+  /* header-hidden sätts fortfarande av scroll.js vid nedscroll — på desktop ska
+     den låga headern ligga still (mockuperna), så klassen är verkningslös här. */
+  header.header-hidden { transform: none; }
 
-  header h1 {
+  .header-wordmark {
     font-family: var(--font-display);
-    font-size: 1.25rem;
-    font-weight: 400;
-    letter-spacing: 0.02em;
-    color: var(--linen);
-    display: flex;
-    align-items: center;
-    padding-bottom: 0.4rem;
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    color: var(--forest-deep);
+    margin: 0;
+    white-space: nowrap;
   }
-
-  header h1 em {
+  .header-wordmark em {
     font-style: italic;
+    font-weight: 500;
     color: var(--ochre);
   }
 
   .header-nav {
     display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    justify-content: center;
   }
-
-  @media (min-width: 600px) {
-    .header-bar {
-      flex-direction: row;
-      align-items: center;
-      padding-bottom: 0.5rem;
-    }
-    header h1 { padding-bottom: 0; }
-    .header-nav {
-      justify-content: center;
-      gap: 0.4rem;
-      padding: 0 1.25rem 0.8rem;
-    }
-  }
-
-  @media (max-width: 599px) {
-    .header-bar {
-      flex-direction: row;
-      padding: 0.4rem 1rem;
-      align-items: center;
-      justify-content: center;
-    }
-    header h1 {
-      font-size: 1.05rem;
-      padding-bottom: 0;
-    }
-    .header-nav { display: none; }
-  }
-
   .header-tab {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 8px 14px;
+    border: 0;
+    border-radius: 8px;
     background: none;
-    border: none;
-    border-bottom: 2px solid transparent;
-    color: rgba(250,247,242,0.72); /* var 0.45 — under WCAG-kontrast på lichen */
     font-family: var(--font-body);
-    font-size: 0.88rem;
+    font-size: 15px;
     font-weight: 500;
-    letter-spacing: 0.03em;
-    padding: 0.5rem 0;
+    color: var(--moss-muted);
     cursor: pointer;
-    transition: color 0.2s, border-color 0.25s;
     white-space: nowrap;
-    flex: 1;
-    text-align: center;
+    transition: color var(--dur-fast), background var(--dur-fast);
   }
-
-  .header-tab:hover { color: rgba(250,247,242,0.75); }
-
+  .header-tab-icon { display: none; }
   .header-tab.active {
-    color: var(--linen);
-    border-bottom-color: var(--ochre);
+    color: var(--forest-deep);
+    background: var(--paper);
+    font-weight: 600;
   }
-
-  @media (min-width: 600px) {
-    .header-tab {
-      background: none;
-      border: none;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.28rem;
-      color: rgba(250,247,242,0.72);
-      padding: 0.3rem 1.5rem 0.5rem;
-      flex: none;
-      position: relative;
-      transition: color 0.18s;
-    }
-    .header-tab-icon {
-      width: 22px;
-      height: 22px;
-      display: block;
-    }
-    .header-tab-icon svg {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-    .header-tab-label {
-      font-family: var(--font-body);
-      font-size: 0.83rem;
-      font-weight: 500;
-      letter-spacing: 0.04em;
-      line-height: 1;
-    }
-    .header-tab:hover {
-      color: rgba(250,247,242,0.82);
-      background: none;
-      border: none;
-    }
-    .header-tab.active {
-      color: var(--linen);
-      background: none;
-      border: none;
-      border-bottom: none;
-    }
-    .header-tab.active::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 20px;
-      height: 2.5px;
-      background: var(--ochre);
-      border-radius: 2px;
-    }
-    .header-search-btn.active {
-      color: var(--linen);
-    }
-    .header-search-btn.active::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 20px;
-      height: 2.5px;
-      background: var(--ochre);
-      border-radius: 2px;
-    }
+  @media (hover: hover) {
+    .header-tab:hover { color: var(--forest-deep); }
   }
+  /* Spegelbild av logotypen så navet hamnar mitt på sidan (mockup: 300px). */
+  .header-spacer { flex: 0 1 300px; }
+  @media (max-width: 1023px) { .header-spacer { display: none; } }
+  @media (max-width: 599px) { header { display: none; } }
 
-  /* ── SEARCH AREA (dropdown) ── */
-  .header-search-area {
-    padding: 0.6rem 1.25rem 0.85rem;
-    overflow: hidden;
-    max-height: 500px;
-    opacity: 1;
-    transition: max-height 0.4s ease, opacity 0.25s ease, padding 0.3s ease;
+  /* ── SÖK (receptvyn) ── */
+  .recipe-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 0 0.25rem 0.5rem;
   }
-
-  .header-search-area.hidden {
-    max-height: 0;
-    opacity: 0;
-    padding-top: 0;
-    padding-bottom: 0;
-  }
-
-  /* ── SEARCH ── */
   .search-wrap { position: relative; }
 
   #search {
     width: 100%;
-    padding: 0.65rem 2.6rem 0.65rem 2.4rem;
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.12);
-    background: rgba(0,0,0,0.18);
-    color: var(--linen);
+    min-height: 44px;
+    padding: 10px 2.6rem 10px 2.5rem;
+    border-radius: 12px;
+    border: 1px solid var(--hairline);
+    background: var(--linen-card);
+    color: var(--forest);
     font-family: var(--font-body);
-    font-size: 0.92rem;
+    font-size: 15px;
     outline: none;
-    transition: background 0.2s, border-color 0.2s;
+    transition: border-color var(--dur-fast), background var(--dur-fast);
   }
 
-  #search::placeholder { color: rgba(250,247,242,0.45); }
+  #search::placeholder { color: var(--moss-muted); }
   #search:focus {
-    background: rgba(0,0,0,0.28);
-    border-color: rgba(255,255,255,0.22);
+    border-color: var(--lichen-deep);
+    background: var(--paper);
   }
 
   .search-icon {
     position: absolute;
-    left: 0.75rem;
+    left: 14px;
     top: 50%;
     transform: translateY(-50%);
-    opacity: 0.5;
-    font-size: 0.9rem;
+    color: var(--moss-muted);
+    display: flex;
     pointer-events: none;
   }
 
@@ -420,10 +323,10 @@
     justify-content: center;
     border: none;
     border-radius: 50%;
-    background: rgba(255,255,255,0.12);
-    color: var(--linen);
+    background: var(--stone);
+    color: var(--forest);
     cursor: pointer;
-    opacity: 0.7;
+    opacity: 0.8;
     transition: opacity 0.15s, background 0.15s;
   }
   .search-clear svg { width: 0.85rem; height: 0.85rem; }
@@ -431,7 +334,7 @@
   .search-clear::after { content: ''; position: absolute; inset: -9px; }
   .search-clear:active { transform: translateY(-50%) scale(0.9); }
   @media (hover: hover) {
-    .search-clear:hover { opacity: 1; background: rgba(255,255,255,0.2); }
+    .search-clear:hover { opacity: 1; background: var(--birch-soft); }
   }
   .search-clear.hidden { display: none; }
 
@@ -721,15 +624,22 @@
   }
   .content-heading-title {
     font-family: var(--font-display);
-    font-size: 2.25rem;
-    font-weight: 700;
-    color: var(--forest);
-    line-height: 1.1;
-    letter-spacing: -0.01em;
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: var(--forest-deep);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+  }
+  .content-heading-sub {
+    display: block;
+    margin-top: 6px;
+    font-size: 14px;
+    color: var(--moss-muted);
   }
   @media (max-width: 599px) {
     .content-heading { padding: 1.25rem 0.25rem 0.25rem; }
-    .content-heading-title { font-size: 1.7rem; }
+    .content-heading-title { font-size: 1.75rem; }
+    .content-heading-sub { font-size: 13px; margin-top: 4px; }
   }
 
   /* ── MAIN ── */
@@ -761,7 +671,7 @@
 
   .recipe-section-header {
     position: sticky;
-    top: env(safe-area-inset-top, 0);
+    top: calc(var(--header-h) + var(--top-safe));
     background: var(--linen);
     margin: 0 -1rem 0.55rem;
     padding: 0.55rem 1.25rem 0.5rem;   /* texten i linje med sidrubriken, inte skärmkanten */
@@ -940,7 +850,7 @@
   .card-title {
     font-family: var(--font-display);
     font-size: 1.05rem;
-    font-weight: 400;
+    font-weight: 600;
     line-height: 1.3;
     color: var(--forest);
     margin-bottom: 0.4rem;
@@ -1222,7 +1132,7 @@
   .section-title {
     font-family: var(--font-display);
     font-size: 1.25rem;
-    font-weight: 400;
+    font-weight: 600;
     color: var(--lichen);
     margin: 0 0 0.15rem;
     display: flex;
@@ -3422,7 +3332,7 @@ html.auth-required body {
 .auth-title {
   font-family: var(--font-display);
   font-size: 2.2rem;
-  font-weight: 400;
+  font-weight: 600;
   text-align: center;
   color: var(--forest);
   margin: 0 0 6px 0;
@@ -3896,7 +3806,7 @@ html.auth-required body {
 .dlx-day-main { flex: 1 1 auto; min-width: 0; }
 .dlx-day-recipe {
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 600;
   font-size: 1rem;
   line-height: 1.2;
   color: var(--forest-deep);
@@ -3994,7 +3904,7 @@ html.auth-required body {
 .dlx-detail-cols { display: flex; flex-direction: column; gap: 1rem; }
 .dlx-detail-block h4 {
   font-family: var(--font-display);
-  font-weight: 400;
+  font-weight: 600;
   font-size: 0.98rem;
   color: var(--lichen);
   margin: 0 0 0.45rem;

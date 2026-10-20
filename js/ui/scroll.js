@@ -8,12 +8,14 @@ const HEADER_SHOW_THRESHOLD = 80;
 // Cacha header-höjden så scroll-handlern slipper läsa offsetHeight (tvingad reflow)
 // på varje frame. ResizeObserver håller värdet aktuellt när headern ändrar storlek.
 let headerHeight = headerEl.offsetHeight;
-new ResizeObserver(() => {
+// Body-offseten görs i CSS (padding-top: var(--header-h) + statusfältet på
+// mobil, där headern är dold helt). Här hålls bara variabeln aktuell.
+const syncHeaderHeight = () => {
   headerHeight = headerEl.offsetHeight;
-  document.body.style.paddingTop = headerHeight + 'px';
-  // Exponeras för CSS (t.ex. scroll-margin-top på snap-ankare i premiumvyn)
   document.documentElement.style.setProperty('--header-h', headerHeight + 'px');
-}).observe(headerEl);
+};
+syncHeaderHeight();
+new ResizeObserver(syncHeaderHeight).observe(headerEl);
 
 window.addEventListener('scroll', () => {
   const y = window.scrollY;

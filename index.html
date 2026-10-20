@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" media="(prefers-color-scheme: light)" content="#7a9482">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#f5f1e8">
 <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1d2721">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -16,15 +16,13 @@
 <link rel="preconnect" href="https://zqeznveicagqwblltvsa.supabase.co" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/+esm">
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=207">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css?v=208">
 </head>
 <body data-active-tab="idag">
 
 <header>
-  <div class="header-bar">
-    <h1>Recept<em>boken</em></h1>
-  </div>
+  <h1 class="header-wordmark">Recept<em>boken</em></h1>
   <nav class="header-nav">
     <button class="header-tab active" id="tabIdag" data-tab="idag" onclick="switchTab('idag')">
       <span class="header-tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5"/><path d="M5.5 9.5V20a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V9.5"/><path d="M9.5 21v-6h5v6"/></svg></span>
@@ -46,20 +44,8 @@
       <span class="header-tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3.5 5.5 1.5 1.5L8 4"/><path d="m3.5 11.5 1.5 1.5L8 10"/><path d="m3.5 17.5 1.5 1.5L8 16"/><path d="M11 6h9"/><path d="M11 12h9"/><path d="M11 18h9"/></svg></span>
       <span class="header-tab-label">Listor</span>
     </button>
-    <button class="header-tab header-search-btn" id="headerSearchBtn" onclick="toggleHeaderSearch()" aria-label="Sök recept">
-      <span class="header-tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
-      <span class="header-tab-label">Sök</span>
-    </button>
   </nav>
-  <div class="header-search-area hidden" id="headerSearchArea">
-    <div class="search-wrap">
-      <span class="search-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
-      <input id="search" type="text" placeholder="Sök på namn, ingrediens, tagg…" autocomplete="off" aria-label="Sök recept">
-      <button type="button" class="search-clear hidden" id="searchClear" aria-label="Rensa sökning">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
-      </button>
-    </div>
-  </div>
+  <div class="header-spacer" aria-hidden="true"></div>
 </header>
 
 <div id="todayView" class="visible">
@@ -77,6 +63,16 @@
   </div>
   <div class="content-heading">
     <h2 class="content-heading-title">Recept</h2>
+    <span class="content-heading-sub" id="recipeCountLabel"></span>
+  </div>
+  <div class="recipe-toolbar">
+    <div class="search-wrap">
+      <span class="search-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
+      <input id="search" type="text" placeholder="Sök på namn, ingrediens, tagg…" autocomplete="off" aria-label="Sök recept">
+      <button type="button" class="search-clear hidden" id="searchClear" aria-label="Rensa sökning">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
   </div>
   <p class="results-info" id="resultsInfo"></p>
 
@@ -393,9 +389,6 @@
   <button id="scrolltop" title="Till toppen" aria-label="Till toppen">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
   </button>
-  <button class="recipe-fab tab-recept-only" id="openSearchBtn" onclick="toggleHeaderSearch()" aria-label="Sök recept" title="Sök">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-  </button>
   <button class="recipe-fab tab-recept-only" id="openSortBtn" aria-haspopup="dialog" aria-label="Sortera recept" title="Sortera">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h13"/><path d="M3 12h9"/><path d="M3 18h5"/></svg>
   </button>
@@ -661,6 +654,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=174"></script>
+<script type="module" src="js/app.js?v=175"></script>
 </body>
 </html>
