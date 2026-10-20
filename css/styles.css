@@ -7035,3 +7035,286 @@ body:has(#receptView.rv-detail-open) #fabImport { display: none !important; }
   .dlx-swap-banner { margin: 0 0 12px; }
   #confirmPlanWrap, #ingredientSection { max-width: 680px; margin-left: auto; margin-right: auto; }
 }
+
+/* ── INKÖP (ny design 2026-10, mockups B-Inkop + B-Inkop-mobil) ───────────────
+   Inmatning överst, varor per avdelning med källan som etikett per rad,
+   "Har hemma" som avbockad sektion sist. Desktop (≥900px): fast högerpanel
+   (plockat, Skicka till butik, Kopiera lista, veckoremsa). Mobil: Skicka fast
+   i botten ovanför navet, ⋯ öppnar panelen som en sheet. */
+.sr-only { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+#shopView { max-width: var(--content-max); padding: 0 0 calc(4rem + 72px); }
+.shop-layout { display: flex; flex-direction: column; }
+.shop-main { min-width: 0; padding: 0 16px; display: flex; flex-direction: column; gap: 14px; }
+#shopView .content-heading.shop-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; padding: 1.25rem 0 0; }
+.shop-heading-txt { min-width: 0; }
+.shop-days-btn { flex: none; }
+.shop-progress-thin { height: 4px; border-radius: 2px; background: var(--stone); overflow: hidden; }
+.shop-progress-thin > div { height: 100%; width: 0; background: var(--lichen-deep); transition: width var(--dur-base); }
+.shop-add-row {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--linen-card); border: 1px solid var(--hairline); border-radius: 12px;
+  padding: 3px 3px 3px 12px; min-height: 48px; color: var(--moss-muted);
+}
+.shop-add-row input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; color: var(--forest); font: inherit; font-size: 15px; }
+.shop-add-row input::placeholder { color: var(--moss-muted); }
+.shop-add-row button {
+  min-height: 40px; padding: 0 14px; border-radius: 9px; border: 0;
+  background: var(--rust); color: var(--on-accent); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.shop-add-row:focus-within { border-color: var(--lichen-deep); }
+#shopContent { padding: 0; }
+#shopContent .week-section { margin: 0; }
+
+/* Avdelningar + rader */
+#shoppingList { display: flex; flex-direction: column; gap: 14px; }
+#shoppingList .shopping-category { background: none; border: 0; border-radius: 0; margin: 0; overflow: visible; box-shadow: none; }
+#shoppingList .shopping-cat-header {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 0 2px 6px; margin: 0; background: none; border: 0;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--moss-muted);
+}
+#shoppingList .shopping-cat-name { font-size: 11px; font-weight: 600; color: var(--moss-muted); }
+#shoppingList .shopping-cat-count { font-size: 11px; color: var(--moss-muted); }
+#shoppingList .shopping-items { display: flex; flex-direction: column; gap: 4px; list-style: none; margin: 0; padding: 0; }
+#shoppingList .shopping-item {
+  display: flex; align-items: center; gap: 12px;
+  min-height: 48px; padding: 6px 10px; border-radius: 10px;
+  background: var(--linen-card); border: 0; margin: 0;
+}
+#shoppingList .shopping-item .item-checkbox { flex: none; width: 22px; height: 22px; border-radius: 6px; }
+#shoppingList .item-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+#shoppingList .item-text { font-size: 15px; }
+.shop-src { font-size: 11px; color: var(--birch); line-height: 1.2; }
+#shoppingList .shopping-item.checked .shop-src { opacity: 0.6; }
+#shoppingList .shop-pantry-section { opacity: 0.65; }
+#shoppingList .shop-pantry-section .shopping-item { background: transparent; border: 1px dashed var(--birch-soft); }
+#shoppingList .shop-pantry-section .item-text { text-decoration: line-through; font-style: normal; }
+#shoppingList .shop-pantry-section .item-checkbox { border-style: dashed; }
+#shoppingList .shop-done-section { margin-top: 6px; }
+
+/* Panelen (aside) — desktop: fast kolumn; mobil: bottensheet via ⋯ */
+.shop-side { display: flex; flex-direction: column; gap: 16px; }
+.shop-panel { display: flex; flex-direction: column; gap: 12px; padding: 20px; border-radius: 16px; background: var(--linen-card); }
+.shop-panel-h2 { margin: 0; font-family: var(--font-display); font-size: 17px; font-weight: 600; color: var(--forest-deep); }
+.shop-panel-h2.small { font-size: 14px; }
+.shop-progress-row { display: flex; justify-content: space-between; font-size: 14px; color: var(--moss-muted); }
+.shop-progress { height: 6px; border-radius: 3px; background: var(--stone); overflow: hidden; margin-top: -6px; }
+.shop-progress > div { height: 100%; width: 0; background: var(--lichen-deep); transition: width var(--dur-base); }
+.shop-side-dispatch:empty { display: none; }
+.shop-side .shop-dispatch-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
+  min-height: 48px; padding: 12px 18px; border-radius: 12px; border: 0;
+  background: var(--rust); color: var(--on-accent); font: inherit; font-weight: 600; cursor: pointer; margin: 0;
+}
+.shop-side-btn {
+  min-height: 44px; padding: 10px 16px; border-radius: 10px;
+  border: 1px solid var(--birch-soft); background: transparent; color: var(--forest-deep);
+  font: inherit; font-weight: 600; cursor: pointer;
+}
+.shop-side-toggle { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--moss-muted); min-height: 44px; cursor: pointer; }
+.shop-side-toggle input { width: 20px; height: 20px; accent-color: var(--lichen-deep); margin: 0; }
+.shop-daystrip { display: flex; gap: 6px; }
+.shop-daycell {
+  flex: 1; text-align: center; padding: 8px 0; border-radius: 8px;
+  font-size: 13px; color: var(--birch); border: 1px dashed var(--birch-soft);
+}
+.shop-daycell.is-on { font-weight: 600; color: var(--on-accent); background: var(--lichen-deep); border-color: transparent; }
+.shop-daycell.is-shopped { font-weight: 600; color: var(--lichen-deep); background: var(--moss-soft); border-color: transparent; }
+.shop-side-note { margin: 0; font-size: 13px; color: var(--moss-muted); }
+.shop-side-links { display: flex; gap: 14px; font-size: 13px; }
+.shop-side-links button { border: 0; background: none; padding: 0; min-height: 32px; font: inherit; font-size: 13px; color: var(--moss-muted); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.shop-side-links button.danger { color: var(--rust-deep); }
+.shop-side-close { display: none; }
+.shop-side-backdrop { display: none; }
+
+/* Mobil: fast rad ovanför bottennavet */
+.shop-mobile-bar {
+  position: fixed; left: 0; right: 0; bottom: var(--bottom-nav-h);
+  display: none; gap: 8px; padding: 16px 16px 12px;
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--linen) 0%, transparent), var(--linen) 40%);
+  z-index: calc(var(--z-chrome) - 1);
+}
+body[data-active-tab="shop"] .shop-mobile-bar { display: flex; }
+.shop-mobile-dispatch { flex: 1; display: flex; }
+.shop-mobile-dispatch:empty + .shop-more-btn { margin-left: auto; }
+.shop-mobile-dispatch .shop-dispatch-btn {
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 48px; border-radius: 12px; border: 0; margin: 0;
+  background: var(--rust); color: var(--on-accent); font: inherit; font-weight: 600; cursor: pointer;
+  box-shadow: var(--shadow-md);
+}
+.shop-more-btn {
+  width: 48px; height: 48px; border-radius: 12px; flex: none;
+  border: 1px solid var(--birch-soft); background: var(--linen-card); color: var(--forest-deep);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.shop-more-btn svg { width: 18px; height: 18px; }
+
+@media (max-width: 899px) {
+  .shop-side {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-sheet);
+    max-height: 85dvh; overflow-y: auto;
+    padding: 20px 16px calc(var(--bottom-nav-h) + 16px);
+    background: var(--linen); border-radius: 18px 18px 0 0;
+    transform: translateY(102%); transition: transform var(--dur-sheet) var(--ease-out);
+    box-shadow: 0 -6px 30px rgba(0,0,0,0.2);
+  }
+  .shop-side.open { transform: none; }
+  .shop-side-close {
+    display: flex; align-self: flex-end; width: 40px; height: 40px; margin: -6px -6px -14px 0;
+    border: 0; background: none; color: var(--moss-muted); align-items: center; justify-content: center; cursor: pointer;
+  }
+  .shop-side-close svg { width: 18px; height: 18px; }
+  .shop-side-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: calc(var(--z-sheet) - 1); opacity: 0; pointer-events: none; transition: opacity var(--dur-base); }
+  .shop-side-backdrop.open { display: block; opacity: 1; pointer-events: auto; }
+  .shop-side-backdrop { display: block; }
+}
+
+@media (min-width: 900px) {
+  #shopView { padding: 0 32px 64px; margin: 0 auto; }
+  .shop-layout { flex-direction: row; align-items: flex-start; gap: 40px; }
+  .shop-main { flex: 999 1 560px; padding: 0; gap: 24px; }
+  #shopView .content-heading.shop-heading { padding-top: 32px; }
+  .shop-progress-thin { display: none; }
+  .shop-add-row { min-height: 52px; padding: 4px 4px 4px 14px; }
+  .shop-add-row button { min-height: 44px; padding: 0 18px; }
+  #shoppingList .shopping-item { display: grid; grid-template-columns: 24px 1fr auto auto auto auto; gap: 14px; }
+  #shoppingList .item-main { flex-direction: row; align-items: baseline; justify-content: space-between; gap: 12px; }
+  .shop-src { font-size: 12px; }
+  .shop-side { flex: 1 1 300px; max-width: 340px; position: sticky; top: calc(var(--header-h) + 24px); margin-top: 32px; }
+  .shop-mobile-bar { display: none !important; }
+}
+
+/* ── IDAG (ny design 2026-10, mockups B-Idag + B-Idag-mobil) ──────────────────
+   Kvällens kort med konkreta handlingar, i morgon-rad, veckoöversikt (text på
+   desktop, prickar på mobil), inköpsstatus med snabbinmatning, "Att göra" på
+   desktop. Två kolumner ≥900px. Gamla .today-*-reglerna ovan är döda utom
+   .today-eyebrow, .today-link, .today-note-kort och .today-loading. */
+#todayView.visible { max-width: var(--content-max); padding: 1.25rem 16px calc(4rem + env(safe-area-inset-bottom, 0px)); }
+.td { display: flex; flex-direction: column; gap: 14px; }
+.td-head { display: flex; flex-direction: column; gap: 4px; }
+.td-h1 { margin: 0; font-family: var(--font-display); font-size: 28px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.05; color: var(--forest-deep); }
+.td-sub { font-size: 13px; color: var(--moss-muted); }
+.td-cols { display: grid; grid-template-columns: 1fr; gap: 14px; align-items: start; }
+.td-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+
+.td-card { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 14px; background: var(--linen-card); }
+.td-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.td-h2 { margin: 0; font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--forest-deep); }
+.td-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--moss-muted); }
+
+/* Ikväll */
+.td-tonight { padding: 16px; border-radius: 16px; outline: 2px solid var(--rust); outline-offset: -2px; gap: 12px; }
+.td-tonight-row { display: flex; gap: 14px; align-items: center; }
+.td-thumb {
+  width: 72px; height: 72px; border-radius: 10px; flex: none; overflow: hidden;
+  background: var(--paper); display: flex; align-items: center; justify-content: center; color: var(--birch);
+}
+.td-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.td-thumb svg { width: 28px; height: 28px; }
+.td-tonight-txt { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.td-tonight .td-eyebrow { color: var(--rust); }
+.td-tonight-title { margin: 0; font-family: var(--font-display); font-size: 24px; font-weight: 600; line-height: 1.1; color: var(--forest-deep); }
+.td-meta { font-size: 13px; color: var(--moss-muted); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.td-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--p, var(--birch)); display: inline-block; }
+.td-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.td-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: 1 1 auto;
+  min-height: 44px; padding: 10px 14px; border-radius: 10px;
+  border: 1px solid var(--birch-soft); background: transparent; color: var(--forest-deep);
+  font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none;
+  transition: background var(--dur-fast);
+}
+.td-btn svg { width: 16px; height: 16px; }
+.td-btn-accent { border: 0; background: var(--rust); color: var(--on-accent); }
+.td-btn-quiet { flex: 0 1 auto; }
+@media (hover: hover) { .td-btn:hover { background: var(--paper); } .td-btn-accent:hover { background: var(--rust-deep); } }
+
+/* I morgon */
+.td-tomorrow { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; min-height: 56px; padding: 12px 14px; border-radius: 12px; background: var(--linen-card); border: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; width: 100%; }
+.td-tomorrow-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.td-tomorrow-title { font-size: 16px; font-weight: 600; color: var(--forest-deep); }
+.td-tomorrow-sub { font-size: 13px; color: var(--moss-muted); }
+.td-chev { color: var(--moss-muted); display: flex; }
+.td-chev svg { width: 16px; height: 16px; }
+.td-tomorrow .td-thumb { display: none; }
+
+/* Veckan */
+.td-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.tw-day {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 8px 2px; border-radius: 8px; background: var(--paper); border: 0;
+  min-height: 56px; color: inherit; font: inherit; cursor: pointer; text-decoration: none;
+}
+.tw-day.is-empty { background: transparent; border: 1px dashed var(--birch-soft); }
+.tw-day.is-today { outline: 2px solid var(--rust); outline-offset: -2px; }
+.tw-lbl { font-size: 11px; font-weight: 600; color: var(--moss-muted); }
+.tw-day.is-today .tw-lbl { color: var(--rust); }
+.tw-day.is-empty .tw-lbl { color: var(--birch); }
+.tw-lbl-long { display: none; }
+.tw-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--p, var(--moss-muted)); }
+.tw-day.is-empty .tw-dot { background: transparent; border: 1px dashed var(--birch); }
+.tw-txt { display: none; }
+.td-caption { font-size: 12px; color: var(--moss-muted); }
+
+/* Inköp */
+.td-shop-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--moss-muted); gap: 8px; }
+.td-progress { height: 6px; border-radius: 3px; background: var(--stone); overflow: hidden; }
+.td-progress > div { height: 100%; background: var(--lichen-deep); }
+.td-quick { display: flex; align-items: center; gap: 8px; background: var(--linen); border: 1px solid var(--hairline); border-radius: 10px; padding: 3px 3px 3px 12px; min-height: 48px; }
+.td-quick input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; color: var(--forest); font: inherit; font-size: 15px; }
+.td-quick input::placeholder { color: var(--moss-muted); }
+.td-quick button { min-height: 40px; padding: 0 14px; border-radius: 8px; border: 0; background: var(--rust); color: var(--on-accent); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; }
+.td-quick:focus-within { border-color: var(--lichen-deep); }
+.td-shoplist { list-style: none; margin: 0; padding: 0; display: none; flex-direction: column; font-size: 14px; }
+.td-shoplist li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 2px; border-bottom: 1px solid var(--hairline); }
+.td-shoplist li:last-child { border-bottom: 0; }
+.td-shoplist li span:last-child { color: var(--birch); font-size: 12px; white-space: nowrap; }
+
+/* Att göra (desktop) */
+.td-todo { display: none; }
+.td-todo-item {
+  display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 10px 12px; border-radius: 10px;
+  background: var(--linen); border: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; width: 100%;
+}
+.td-todo-ic { width: 32px; height: 32px; border-radius: 8px; background: var(--moss-soft); color: var(--lichen-deep); display: flex; align-items: center; justify-content: center; flex: none; }
+.td-todo-ic svg { width: 16px; height: 16px; }
+.td-todo-item span:nth-child(2) { flex: 1; }
+
+/* Tomma/vilande lägen */
+.td-empty { text-align: center; padding: 26px 22px; }
+.td-empty .td-tonight-title { font-size: 22px; }
+.td-empty-note { margin: 0; font-size: 14px; color: var(--moss-muted); }
+.td-empty .td-actions { justify-content: center; }
+
+@media (min-width: 900px) {
+  #todayView.visible { padding: 32px 32px 64px; margin: 0 auto; }
+  .td { gap: 28px; }
+  .td-h1 { font-size: 40px; }
+  .td-sub { font-size: 14px; }
+  .td-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+  .td-col { gap: 16px; }
+  .td-card { padding: 20px; border-radius: 18px; gap: 12px; }
+  .td-h2 { font-size: 18px; }
+  .td-tonight { display: grid; grid-template-columns: 160px 1fr; gap: 20px; padding: 20px; }
+  .td-tonight-row { display: contents; }
+  .td-tonight .td-thumb { width: 160px; height: 160px; border-radius: 12px; }
+  .td-tonight .td-thumb svg { width: 40px; height: 40px; }
+  .td-tonight-txt { gap: 12px; min-height: 160px; }
+  .td-tonight-title { font-size: 28px; }
+  .td-tonight .td-actions { margin-top: auto; }
+  .td-btn { flex: 0 1 auto; padding: 10px 16px; }
+  .td-tomorrow { grid-template-columns: 72px 1fr auto; gap: 16px; padding: 14px 16px; border-radius: 14px; }
+  .td-tomorrow .td-thumb { display: flex; }
+  .td-tomorrow-title { font-size: 18px; }
+  .td-week { gap: 6px; }
+  .tw-day { align-items: flex-start; padding: 8px 6px; border-radius: 10px; min-height: 84px; }
+  .tw-lbl-long { display: inline; font-size: 12px; }
+  .tw-lbl-short { display: none; }
+  .tw-txt { display: block; font-size: 12px; line-height: 1.2; color: var(--forest); }
+  .tw-day.is-empty .tw-txt { color: var(--birch); }
+  .tw-dot { width: 7px; height: 7px; }
+  .tw-day.is-empty .tw-dot, .tw-day.is-own .tw-dot { display: none; }
+  .td-shoplist { display: flex; }
+  .td-todo { display: flex; }
+}

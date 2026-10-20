@@ -196,6 +196,7 @@ function closeAnyOpenSheet() {
   if (document.getElementById('dlxSheet')?.classList.contains('open')) { window.dlxCloseSheet?.(); return; }
   // Receptdetaljen i helskärm (mobil) stängs av bakåtknappen som en sheet.
   if (document.getElementById('receptView')?.classList.contains('rv-detail-open')) { window.closeRecipeDetail?.(); return; }
+  if (document.getElementById('shopSide')?.classList.contains('open')) { window.closeShopSide?.(); return; }
   for (const id of SHEET_IDS) {
     const s = document.getElementById(id);
     if (s && s.classList.contains('open')) { closeSheet(id); return; }
