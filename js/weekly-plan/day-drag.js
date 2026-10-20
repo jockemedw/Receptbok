@@ -491,6 +491,9 @@ function cancelHold() {
 // ── Lyssnare ──────────────────────────────────────────────────────────────────
 document.addEventListener('pointerdown', (e) => {
   if (_drag || _hold) return;                                   // en gest i taget
+  // ponytail: drag & släpp bara i mobilens dagslista — desktopens 7-kolumnsrutnät
+  // (ny design 2026-10) saknar insert-zoner; flytta via dag-sheeten där tills vidare.
+  if (window.matchMedia && window.matchMedia('(min-width: 900px)').matches) return;
   if (e.pointerType === 'mouse' && e.button !== 0) return;
   // Under en bakgrundssparning (optimistiskt val) får draget starta — släppet
   // köar i runDayOp tills sparningen landat. Annars: en ändring i taget.

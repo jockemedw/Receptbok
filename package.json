@@ -6,5 +6,8 @@
     "@supabase/supabase-js": "^2.105.4",
     "jose": "^6.2.11"
   },
-  "type": "module"
+  "type": "module",
+  "devDependencies": {
+    "sharp": "^0.35.5"
+  }
 }

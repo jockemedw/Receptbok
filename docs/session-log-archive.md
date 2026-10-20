@@ -1,6 +1,14 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–156. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–157. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+## Session 157 — Buggfix Städrundan S155
+
+**Session 157 — Buggfix av Städrundan S155:s fynd (2026-10-17, blandat: render-only + backend-beteende + säkerhet + datamuterande).**
+
+Joakim: "Orkestrera ett workflow för att beta av identifierade buggar … analysera samtliga och föreslå en plan för helheten." **Analys (6 agenter, read-only):** loggen hade ~31 punkter (inte 48); 30 höll, 1 redan fixad (9b fiskbullar), 10 nya hittades i samma kod (bl.a. **9f Fisk Nuggets i Willys-korgen**, **8c scroll-låset fastnar** efter butiksväljaren → Hemköp → Tillbaka). Premisskorrigering: `api/` hade 10 filer, inte 12. **Joakims beslut (AskUserQuestion):** dispatch GET+POST kräver inloggning · Kassera förslag bygger om inköpslistan · ta bort `GET /api/willys-offers` + `POST /api/deals` · "Logga ut" diskret i sidfoten.
+
+**Fix-workflow (9 agenter):** sju sekventiella paket, en commit per paket, hela sviten efter varje → två adversariella granskare (0 blockerare; 5 mindre rättade av Claude, bl.a. att ogiltigt slutdatum släppte igenom 15-dagarsspärren efter buildDayList-bytet). **Säkerhet:** R01/1e dispatch kräver JWT (refresh-cookies med X-Refresh-Secret orörd; gammal cachad klient får "stäng och öppna appen igen"), dispatchens lista filtreras på hushåll (1a), `getHouseholdId` ORDER BY created_at, de två döda publika ytorna borta (`api/` nu **9** filer, rea-hämtningen i `api/_shared/willys-offers.js`), Logga ut. **Datamuterande:** Kassera förslag tar bort förslagets o-inhandlade dagars varor från listan (2); moveToShoppingList hushållsfiltrerad (1b, oförändrat beteende). **Backend-beteende:** import utan GITHUB_PAT-krav + begripliga felsvar + protein före taggar + redirect-slutadress (5a–5d), PGRST205, historikfel loggas, `allowed_proteins` valideras, UTC-säkra datum (S151-recency, 9e — sviten grön även med TZ=Europe/Stockholm), fiskavvisning (9f). **Render-only:** omritning av premium-/Idag-vyn efter inköpssvar (3), sheet-låset idempotent (8a/8c), tomläget rensar filter (8b), receptantal/färgrand (7a/7b), listeko färg/ikon (6a/6b), rätt antal i "Skicka N" (4), enhetlig besparingstext, matlagningsläget "1,5 h". Nya tester: `tests/list-echo.test.js` + fall i dispatch/cookies/import/plan-orchestration/replace-recipe/match-corpus/utils-format. **19/19 gröna.** Ingen DDL, recept-strukturen orörd. Styles v207/app v174/SW v127. Gren `buggfix/s155-fynd`.
 
 ## Session 156 — Falsk bekräftad-varning
 

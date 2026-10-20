@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<title>Matsedel – vecka 43, desktop</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#1d2721}
+a{color:#9dbca6}a:hover{color:#cfe0d3}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #1d2721; color: #e6e0d2; font-family: 'DM Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.45; display: flex; flex-direction: column">
+
+  <header style="display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 14px 32px; border-bottom: 1px solid #33402f; flex-wrap: wrap">
+    <div style="font-size: 22px; font-weight: 600; color: #f0ebe0; letter-spacing: -0.01em">Recept<span style="color: #d4a851; font-style: italic; font-weight: 500">boken</span></div>
+    <nav aria-label="Huvudmeny" style="display: flex; gap: 4px; flex-wrap: wrap">
+      <a href="#" style="padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: 500; color: #9aa78f">Idag</a>
+      <a href="#" aria-current="page" style="padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: 600; color: #f0ebe0; background: #2b3830">Matsedel</a>
+      <a href="B-Inkop.dc.html" style="padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: 500; color: #9aa78f">Inköp</a>
+      <a href="B-Master-detail.dc.html" style="padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: 500; color: #9aa78f">Recept</a>
+      <a href="#" style="padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: 500; color: #9aa78f">Listor</a>
+    </nav>
+    <div style="width: 300px"></div>
+  </header>
+
+  <main style="max-width: 1200px; width: 100%; margin: 0 auto; padding: 32px 32px 64px; display: flex; flex-direction: column; gap: 28px">
+
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap">
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <h1 style="margin: 0; font-size: 40px; font-weight: 600; letter-spacing: -0.02em; color: #f0ebe0; line-height: 1.05">Vecka 43</h1>
+        <div style="color: #9aa78f; font-size: 14px">19–25 oktober · 1 middag från receptboken · 4 egna dagar · 1 dag kvar att fylla</div>
+      </div>
+      <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap">
+        <div role="group" aria-label="Byt vecka" style="display: inline-flex; border: 1px solid #3d4c41; border-radius: 10px; overflow: hidden">
+          <a href="#" style="display: flex; align-items: center; gap: 6px; padding: 10px 14px; text-decoration: none; color: #e6e0d2; font-weight: 500; background: #263229">
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"></path></svg>v. 42</a>
+          <a href="#" style="display: flex; align-items: center; gap: 6px; padding: 10px 14px; text-decoration: none; color: #e6e0d2; font-weight: 500; background: #263229; border-left: 1px solid #3d4c41">v. 44
+            <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"></path></svg></a>
+        </div>
+        <a href="B-Inkop.dc.html" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 10px 16px; border-radius: 10px; border: 1px solid #3d4c41; background: #263229; color: #f0ebe0; text-decoration: none; font-weight: 600">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h16l-1.5 10h-13z M8 9l2-5M16 9l-2-5"></path></svg>Inköp för veckan
+        </a>
+        <button type="button" style="display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 10px 16px; border-radius: 10px; border: 0; background: {{accent}}; color: #1c2620; font: inherit; font-weight: 600; cursor: pointer">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4z M19 16l.9 2.1L22 19l-2.1.9L19 22l-.9-2.1L16 19l2.1-.9z"></path></svg>Föreslå matsedel
+        </button>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: 12px">
+
+      <section aria-label="Måndag 19 oktober" style="display: flex; flex-direction: column; gap: 10px; min-height: 260px; padding: 12px; border-radius: 14px; border: 1px dashed #3d4c41">
+        <div style="display: flex; align-items: baseline; justify-content: space-between"><span style="font-weight: 600; color: #9aa78f">Mån</span><span style="font-size: 13px; color: #75816e">19</span></div>
+        <button type="button" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 10px; background: transparent; color: #9aa78f; font: inherit; font-weight: 500; cursor: pointer; min-height: 44px">
+          <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Lägg till
+        </button>
+      </section>
+
+      <section aria-label="Tisdag 20 oktober, ikväll" style="display: flex; flex-direction: column; gap: 10px; min-height: 260px; padding: 12px; border-radius: 14px; background: #263229; outline: 2px solid {{accent}}; outline-offset: -2px">
+        <div style="display: flex; align-items: baseline; justify-content: space-between"><span style="font-weight: 600; color: {{accent}}">Tis · ikväll</span><span style="font-size: 13px; color: #75816e">20</span></div>
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 8px">
+          <div style="aspect-ratio: 1 / 1; border-radius: 10px; background: #2b3830; display: flex; align-items: center; justify-content: center; color: #75816e">
+            <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11h16M5 11a7 7 0 0 1 14 0M3 15h18l-1 4H4z"></path></svg>
+          </div>
+          <div style="font-weight: 600; color: #f0ebe0; line-height: 1.25">Rester</div>
+          <div style="font-size: 12px; color: #9aa78f">Egen dag</div>
+        </div>
+      </section>
+
+      <section aria-label="Onsdag 21 oktober" style="display: flex; flex-direction: column; gap: 10px; min-height: 260px; padding: 12px; border-radius: 14px; background: #263229">
+        <div style="display: flex; align-items: baseline; justify-content: space-between"><span style="font-weight: 600; color: #9aa78f">Ons</span><span style="font-size: 13px; color: #75816e">21</span></div>
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 8px">
+          <div style="aspect-ratio: 1 / 1; border-radius: 10px; background: #2b3830; display: flex; align-items: center; justify-content: center; color: #75816e">
+            <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10-10-4-4L4 16z M13 7l4 4"></path></svg>
+          </div>
+          <div style="font-weight: 600; color: #f0ebe0; line-height: 1.25">Asiatisk fisksoppa</div>
+          <div style="font-size: 12px; color: #9aa78f">Egen dag</div>
+        </div>
+      </section>
+
+      <section aria-label="Torsdag 22 oktober" style="display: flex; flex-direction: column; gap: 10px; min-height: 260px; padding: 12px; border-radius: 14px; background: #263229">
+        <div style="display: flex; align-items: baseline; justify-content: space-between"><span style="font-weight: 600; color: #9aa78f">Tor</span><span style="font-size: 13px; color: #75816e">22</span></div>
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 8px">
+          <div style="aspect-ratio: 1 / 1; border-radius: 10px; background: #2b3830; display: flex; align-items: center; justify-content: center; color: #75816e">
+            <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10-10-4-4L4 16z M13 7l4 4"></path></svg>
+          </div>
+          <div style="font-weight: 600; color: #f0ebe0; line-height: 1.25">Jocke improv</div>
+          <div style="font-size: 12px; color: #9aa78f">Egen dag</div>
+        </div>
+      </section>
+
+      <section aria-label="Fredag 23 oktober" style="display: flex; flex-direction: column; gap: 10px; min-height: 260px; padding: 12px; border-radius: 14px; background: #263229">
+        <div style="display: flex; align-items: baseline; justify-content: space-between"><span style="font-weight: 600; color: #9aa78f">Fre</span><span style="font-size: 13px; color: #75816e">23</span></div>
+        <a href="B-Master-detail.dc.html" style="flex: 1; display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: inherit">
+          <div style="aspect-ratio: 1 / 1; border-radius: 10px; background: #2b3830; display: flex; align-items: center; justify-content: center; color: #75816e; font-size: 11px; text-align: center; padding: 8px">[bild saknas för receptet]</div>
+          <div style="font-weight: 600; color: #f0ebe0; line-height: 1.25">Väffeltoast med rökt kalkon, äpple och dijonkräm</div>
+          <div style="font-size: 12px; color: #9aa78f; display: flex; align-items: center; gap: 6px"><span style="width: 7px; height: 7px; border-radius: 50%; background: #c67563"></span>Kött · 20 min</div>
+        </a>
+      </section>
+
+      <section aria-label="Lördag 24 oktober" style="display: flex; flex-direction: column; gap: 10px; min-height: 260px; padding: 12px; border-radius: 14px; background: #263229">
+        <div style="display: flex; align-items: baseline; justify-content: space-between"><span style="font-weight: 600; color: #9aa78f">Lör</span><span style="font-size: 13px; color: #75816e">24</span></div>
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 8px">
+          <div style="aspect-ratio: 1 / 1; border-radius: 10px; background: #2b3830; display: flex; align-items: center; justify-content: center; color: #75816e">
+            <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10-10-4-4L4 16z M13 7l4 4"></path></svg>
+          </div>
+          <div style="font-weight: 600; color: #f0ebe0; line-height: 1.25">Rotfruktsfrittata</div>
+          <div style="font-size: 12px; color: #9aa78f">Egen dag</div>
+        </div>
+      </section>
+
+      <section aria-label="Söndag 25 oktober" style="display: flex; flex-direction: column; gap: 10px; min-height: 260px; padding: 12px; border-radius: 14px; background: #263229">
+        <div style="display: flex; align-items: baseline; justify-content: space-between"><span style="font-weight: 600; color: #9aa78f">Sön</span><span style="font-size: 13px; color: #75816e">25</span></div>
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 8px">
+          <div style="aspect-ratio: 1 / 1; border-radius: 10px; background: #2b3830; display: flex; align-items: center; justify-content: center; color: #75816e">
+            <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10-10-4-4L4 16z M13 7l4 4"></path></svg>
+          </div>
+          <div style="font-weight: 600; color: #f0ebe0; line-height: 1.25">Linsbolognese</div>
+          <div style="font-size: 12px; color: #9aa78f">Egen dag</div>
+        </div>
+      </section>
+
+    </div>
+
+    <p style="margin: 0; color: #9aa78f; font-size: 14px; display: flex; align-items: center; gap: 8px">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h6M9 12h6M9 18h6M5 6h.01M5 12h.01M5 18h.01"></path></svg>
+      Dra en dag för att flytta den. Klicka på en tom dag för att välja recept, skriva en egen dag eller slumpa.
+    </p>
+
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#cd825e","options":["#cd825e","#d4a851","#9dbca6"]},"$preview":{"width":1280,"height":720}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#cd825e' };
+  }
+}
+</script>
+</body>
+</html>

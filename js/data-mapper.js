@@ -19,6 +19,8 @@ export function recipeFromRow(row) {
     instructions: Array.isArray(row.instructions) ? row.instructions : [],
     notes: row.notes ?? null,
     seasons: Array.isArray(row.seasons) ? row.seasons : [],
+    // Källänk (migration 014). Saknas kolumnen i raden → null, precis som tomt.
+    sourceUrl: row.source_url ?? null,
   };
 }
 
@@ -38,5 +40,9 @@ export function recipeToRow(recipe, householdId) {
     instructions: Array.isArray(recipe.instructions) ? recipe.instructions : [],
     notes: recipe.notes ?? null,
     seasons: Array.isArray(recipe.seasons) ? recipe.seasons : [],
+    // source_url skrivs BARA när ett värde finns: innan migration 014 körts
+    // saknas kolumnen, och PostgREST avvisar hela skrivningen för en okänd
+    // kolumn — editorns spara får inte gå sönder av en null.
+    ...(recipe.sourceUrl ? { source_url: recipe.sourceUrl } : {}),
   };
 }

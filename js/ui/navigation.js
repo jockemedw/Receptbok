@@ -1,4 +1,4 @@
-// Flik-navigering (Idag, Matsedel, Inköp, Recept, Listor) + headerns sökfält.
+// Flik-navigering (Idag, Matsedel, Inköp, Recept, Listor).
 
 export function switchTab(tab) {
   // Rulla till toppen FÖRST, medan layouten för den gamla vyn fortfarande är
@@ -16,36 +16,9 @@ export function switchTab(tab) {
   document.querySelectorAll('[data-tab]').forEach(el => {
     el.classList.toggle('active', el.dataset.tab === tab);
   });
-  closeHeaderSearch();
   document.getElementById('fabImport').style.display              = tab === 'recept' ? 'block' : 'none';
   if (tab === 'shop') window.loadShoppingTab();
   if (tab === 'listor') window.loadListsTab?.();
 }
 
-function closeHeaderSearch() {
-  document.getElementById('headerSearchArea').classList.add('hidden');
-  document.getElementById('headerSearchBtn').classList.remove('active');
-  document.getElementById('openSearchBtn')?.classList.remove('is-active');
-}
-
-export function toggleHeaderSearch() {
-  const area  = document.getElementById('headerSearchArea');
-  const btn   = document.getElementById('headerSearchBtn');
-  const fab   = document.getElementById('openSearchBtn');
-  const input = document.getElementById('search');
-  const willOpen = area.classList.contains('hidden');
-  area.classList.toggle('hidden', !willOpen);
-  btn.classList.toggle('active', willOpen);
-  fab?.classList.toggle('is-active', willOpen);
-  window.updateSearchClear?.();
-  // Fokusera synkront i tryck-gesten — annars öppnar iOS inte tangentbordet.
-  if (willOpen && input) input.focus({ preventScroll: false });
-}
-
-// Stäng sökning med Escape
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeHeaderSearch();
-});
-
 window.switchTab = switchTab;
-window.toggleHeaderSearch = toggleHeaderSearch;

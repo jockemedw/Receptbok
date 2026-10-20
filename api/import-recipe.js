@@ -164,9 +164,9 @@ async function handleUrl(url, res) {
     // Slutadressen, inte den inklistrade: en kortlänk till koket.se är svensk.
     if (isForeignUrl(finalUrl) && apiKey) {
       const converted = await postProcessForeignRecipe(recipe, apiKey);
-      return res.status(200).json({ recipe: converted });
+      return res.status(200).json({ recipe: { ...converted, sourceUrl: finalUrl } });
     }
-    return res.status(200).json({ recipe });
+    return res.status(200).json({ recipe: { ...recipe, sourceUrl: finalUrl } });
   }
 
   // Försök 2: Gemini-fallback om nyckel finns

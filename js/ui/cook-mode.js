@@ -49,7 +49,7 @@ const FRAC_VAL = { '¼': 0.25, '½': 0.5, '¾': 0.75 };
 const LEAD_RE  = new RegExp(`^(\\d+(?:[.,]\\d+)?)?\\s*([¼½¾])?\\s*(${QTY_UNITS})?(?=\\s)\\s+(.+)$`, 'i');
 const PAREN_RE = new RegExp(`^(.+?)\\s*\\((\\d+(?:[.,]\\d+)?)\\s*(${QTY_UNITS})?\\)$`, 'i');
 
-function parseQty(raw) {
+export function parseQty(raw) {
   const t = String(raw || '').trim();
   let m = t.match(LEAD_RE);
   if (m && (m[1] || m[2])) {
@@ -69,7 +69,7 @@ function parseQty(raw) {
 // kvartsprecision. Styck-artade enheter visas som blandat bråk (1½).
 const FRAC = { 0.25: '¼', 0.5: '½', 0.75: '¾' };
 const EXACT_UNITS = new Set(['kg', 'l', 'dl', 'cl', 'ml', 'g']);
-function fmtQty(value, unit) {
+export function fmtQty(value, unit) {
   const u = unit.toLowerCase();
   if (EXACT_UNITS.has(u)) {
     const s = Number(value.toFixed(2)).toLocaleString('sv-SE', { maximumFractionDigits: 2 });

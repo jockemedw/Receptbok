@@ -1,22 +1,25 @@
 // Idag-fliken — appens startflik och svaret på "vad blir det ikväll?".
-// Byggd enligt designprototypen (facit: artifact ddad7251), med appens tokens
-// (titelfonten via --font-display + mörkt tema följer med). Proteinfärgen sätts per element via inline
-// --p (samma trick som prototypens .t-<protein>).
+// Ny design 2026-10 (docs/design/mockups B-Idag + B-Idag-mobil): kvällens kort
+// med konkreta handlingar (Börja laga / Välj ett recept i stället / Byt dag),
+// i morgon-rad, veckoöversikt (dagnamn + rätt på desktop, prickar på mobil),
+// inköpsstatus med snabbinmatning och en kort "Att göra"-lista på desktop.
 //
 // Läser: window._timelineByDate (byggs av renderWeeklyPlanData i plan-viewer.js),
-//        window.RECIPES, window._dbResting. Muterar ingen plandata — bara egna
-//        vy-cacher (prisbanner, fästa lappar, senast renderat datum),
-//        window._todayReady, rendering + anrop av befintliga window.*-funktioner (VSA).
+//        window.RECIPES, window._dbResting, inköpslistans minne
+//        (_shopRecipeItems/_shopManualItems/_checkedItems/_shopCoverage).
+//        Muterar ingen plandata — bara egna vy-cacher, window._todayReady,
+//        rendering + anrop av befintliga window.*-funktioner (VSA).
 //
 // Re-render: vi wrappar renderWeeklyPlanData + loadWeeklyPlan + switchTab (samma
 // synk-mönster som deluxe). Importeras EFTER deluxe → wrappningen ligger ytterst.
 
-import { fmtIso, PROTEIN_COLOR, isoWeekNumber, escapeHtml, weekStartOf, addDaysIso, jsStringAttr } from '../utils.js';
+import { fmtIso, PROTEIN_COLOR, isoWeekNumber, escapeHtml, weekStartOf, addDaysIso, jsStringAttr, recipeImage } from '../utils.js';
 import { DB_RESTING_MESSAGE } from '../supabase-client.js';
 
 const MONTH_NAMES_LONG = ['januari', 'februari', 'mars', 'april', 'maj', 'juni', 'juli', 'augusti', 'september', 'oktober', 'november', 'december'];
+const MONTH_NAMES_SHORT = ['jan', 'feb', 'mars', 'apr', 'maj', 'juni', 'juli', 'aug', 'sep', 'okt', 'nov', 'dec'];
 const PROTEIN_LABEL = { fisk: 'Fisk', kyckling: 'Kyckling', kött: 'Kött', fläsk: 'Fläsk', vegetarisk: 'Vegetariskt' };
-const TYPE_TAGS = { soppa: 'Soppa', pasta: 'Pasta', wok: 'Wok', ugn: 'Ugn', sallad: 'Sallad', gryta: 'Gryta', ramen: 'Ramen' };
+const RESTER_RE = /rester|kylskåpstömning|kylskåpsstädning|använd upp|tömma kylen/i;
 
 const esc = escapeHtml;
 // F212: lokal escaper missade backslash (lagrad XSS via recepttitel) — använd
@@ -25,12 +28,16 @@ const attr = jsStringAttr;
 function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 
 const I = {
-  pot: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13c0-3.5 3.5-6 8-6s8 2.5 8 6"/><path d="M3 13h18"/><path d="M5.5 13v2c0 1.5 1 2.5 2.5 2.5h8c1.5 0 2.5-1 2.5-2.5v-2"/></svg>',
-  clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
-  coin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><path d="M12 7.5v9M9.5 9.7c.6-.7 1.5-1 2.5-1s2 .3 2.4 1c.5.8 0 1.7-1 2-.7.2-2.7.3-3.4.7-.9.4-1.4 1.3-.9 2.1.5.7 1.6 1 2.5 1s1.9-.3 2.5-1"/></svg>',
-  chev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
-  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14 M5 12h14"/></svg>',
-  sparkle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4 13.2 10.8 19 12 13.2 13.2 12 20 10.8 13.2 5 12 10.8 10.8z"/></svg>',
+  pot: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13c0-3.5 3.5-6 8-6s8 2.5 8 6"/><path d="M3 13h18"/><path d="M5.5 13v2c0 1.5 1 2.5 2.5 2.5h8c1.5 0 2.5-1 2.5-2.5v-2"/></svg>',
+  leftovers: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11h16M5 11a7 7 0 0 1 14 0M3 15h18l-1 4H4z"/></svg>',
+  pencil: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4l10-10-4-4L4 16z M13 7l4 4"/></svg>',
+  free: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4 M8 2v4 M3 10h18"/><path d="M9 15l6 0"/></svg>',
+  chev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>',
+  play: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>',
+  cart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 12.4a1 1 0 0 0 1 .8h9.7a1 1 0 0 0 1-.8L21 8H6"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg>',
+  tick: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>',
+  sparkle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 13.2 10.8 19 12 13.2 13.2 12 20 10.8 13.2 5 12 10.8 10.8z"/></svg>',
 };
 
 function recipeById(id) {
@@ -42,87 +49,91 @@ function dayInfo(d) {
   if (!d) return null;
   if (d.recipeId && !d.isCustom) {
     const r = recipeById(d.recipeId);
-    return mk('recipe', d.recipe || '', d.recipeId, r, (d.saving && d.saving >= 1) ? d.saving : null);
+    return mk('recipe', d.recipe || '', d.recipeId, r, (d.saving && d.saving >= 1) ? d.saving : null, true);
   }
   if (d.isCustom && d.customRecipeId) {
     const r = recipeById(d.customRecipeId);
-    return mk('recipe', d.customRecipeTitle || '', d.customRecipeId, r, null);
+    return mk('recipe', d.customRecipeTitle || '', d.customRecipeId, r, null, false);
   }
   if (d.isCustom && (d.customRecipeTitle || d.customNote)) {
-    return { kind: 'note', title: d.customRecipeTitle || d.customNote, cookId: null, color: 'var(--birch)', protein: null, time: null, servings: null, saving: null, typeLabel: null };
+    const title = d.customRecipeTitle || d.customNote;
+    return { kind: 'note', title, cookId: null, color: 'var(--moss-muted)', protein: null, time: null, servings: null, saving: null, r: null, planDay: false, leftovers: RESTER_RE.test(title) };
   }
   if (d.blocked) {
-    return { kind: 'free', title: 'Fri dag', cookId: null, color: 'var(--birch)', protein: null, time: null, servings: null, saving: null, typeLabel: null };
+    return { kind: 'free', title: 'Fri dag', cookId: null, color: 'var(--birch)', protein: null, time: null, servings: null, saving: null, r: null, planDay: false };
   }
   return null;
 }
 
-function mk(kind, title, cookId, r, saving) {
+function mk(kind, title, cookId, r, saving, planDay) {
   return {
-    kind, title, cookId,
+    kind, title, cookId, r, planDay,
     color: r ? (PROTEIN_COLOR[r.protein] || 'var(--lichen)') : 'var(--lichen)',
     protein: r ? r.protein : null,
     time: r?.time || null,
     servings: r?.servings || null,
     saving,
-    typeLabel: typeLabelFor(r),
   };
 }
 
-function typeLabelFor(r) {
-  if (!r) return null;
-  const tags = (r.tags || []).map(t => t.toLowerCase());
-  for (const t of tags) if (TYPE_TAGS[t]) return TYPE_TAGS[t];
-  if (tags.includes('helg60')) return 'Helgrecept';
-  if (tags.includes('vardag30')) return 'Vardagsrecept';
-  return null;
+function thumbHtml(info, size = 72) {
+  const img = info?.r ? recipeImage(info.r) : '';
+  if (img) return `<span class="td-thumb"><img src="${img}" alt="" width="${size}" height="${size}" loading="lazy" decoding="async" onerror="this.remove()"></span>`;
+  const icon = !info ? I.plus : info.kind === 'free' ? I.free : info.kind === 'note' ? (info.leftovers ? I.leftovers : I.pencil) : I.pot;
+  return `<span class="td-thumb" aria-hidden="true">${icon}</span>`;
 }
+
+// "Välj ett recept i stället": plandag → byt recept (Välj själv), annars egen dag med recept.
+window.todayPickRecipe = function (date, dayName, planDay) {
+  if (planDay) window.enterReplaceMode?.(date, dayName);
+  else window.enterCustomPickMode?.(date, dayName);
+};
 
 // ── Delrenderingar ────────────────────────────────────────────────────────────
 
-function heroHtml(todayEntry, info) {
-  // Tomt/välkomst-läge: ingen middag ikväll (tom/fri dag).
-  if (!info || info.kind === 'free') {
-    const isFree = info?.kind === 'free';
+function tonightHtml(entry, info) {
+  const click = entry ? `dlxDayClick('${entry.date}', '${attr(entry.day)}')` : `openNewPlan()`;
+  const pick = entry ? `todayPickRecipe('${entry.date}', '${attr(entry.day)}', ${info?.planDay ? 'true' : 'false'})` : `openNewPlan()`;
+
+  if (!info) {
     return `
-      <article class="today-tonight today-tonight-empty">
-        <div class="today-tonight-body">
-          <span class="today-hero-icon">${I.pot}</span>
-          <h1 class="today-tonight-title">${isFree ? 'Fri dag ikväll' : 'Inget planerat ikväll'}</h1>
-          <p class="today-hero-note">${isFree ? 'Ingen middag inplanerad — ta det lugnt ikväll.' : 'Välj en rätt för ikväll eller skapa en ny matsedel.'}</p>
-          <div class="today-tonight-actions">
-            ${todayEntry ? `<button type="button" class="today-btn today-btn-primary" onclick="dlxDayClick('${todayEntry.date}', '${attr(todayEntry.day)}')">${I.plus}Planera dagen</button>` : ''}
-            <button type="button" class="today-btn today-btn-quiet" onclick="openNewPlan()">Ny matsedel</button>
+      <article class="td-card td-tonight td-empty">
+        <div class="td-tonight-row">
+          ${thumbHtml(null)}
+          <div class="td-tonight-txt">
+            <span class="td-eyebrow">Ikväll</span>
+            <h2 class="td-tonight-title">Inget planerat</h2>
+            <p class="td-empty-note">Välj en rätt för ikväll eller låt appen föreslå en vecka.</p>
           </div>
+        </div>
+        <div class="td-actions">
+          <button type="button" class="td-btn td-btn-accent" onclick="${pick}">Välj ett recept</button>
+          <button type="button" class="td-btn" onclick="${click}">Planera dagen</button>
         </div>
       </article>`;
   }
 
-  const deal = info.saving
-    ? `<span class="today-deal-chip">${I.coin}−${Math.round(info.saving)} kr extrapris</span>`
-    : '';
-  const meta = [
-    info.time ? `<span>${I.clock}${info.time} min</span>` : '',
-    info.protein ? `<span><span class="today-dot" style="--p:${info.color}"></span>${esc(PROTEIN_LABEL[info.protein] || info.protein)}</span>` : '',
-    info.servings ? `<span>${info.servings} portioner</span>` : '',
-  ].filter(Boolean).join('');
-  const cookBtn = info.cookId
-    ? `<button type="button" class="today-btn today-btn-primary" onclick="openCookMode(${info.cookId})">${I.pot}Börja laga</button>`
-    : '';
+  const meta = info.kind === 'recipe'
+    ? [info.time ? `${info.time} min` : '', info.protein ? `<span class="td-dot" style="--p:${info.color}"></span>${esc(PROTEIN_LABEL[info.protein] || info.protein)}` : '', info.servings ? `${info.servings} portioner` : '', info.saving ? `−${Math.round(info.saving)} kr extrapris` : ''].filter(Boolean).join(' · ')
+    : info.kind === 'free' ? 'Ingen middag planerad' : 'Egen dag · inget recept kopplat';
+
+  const primary = info.kind === 'recipe' && info.cookId
+    ? `<button type="button" class="td-btn td-btn-accent" onclick="openCookMode(${info.cookId})">${I.play}Börja laga</button>`
+    : `<button type="button" class="td-btn td-btn-accent" onclick="${pick}">Välj ett recept i stället</button>`;
 
   return `
-    <article class="today-tonight" style="--p:${info.color}">
-      <div class="today-tonight-body">
-        <div class="today-tonight-eyebrow">
-          <span class="today-eyebrow">Ikväll</span>
-          ${deal}
+    <article class="td-card td-tonight">
+      <div class="td-tonight-row">
+        ${thumbHtml(info)}
+        <div class="td-tonight-txt">
+          <span class="td-eyebrow">Ikväll</span>
+          <h2 class="td-tonight-title">${esc(info.title)}</h2>
+          <div class="td-meta">${meta}</div>
         </div>
-        <h1 class="today-tonight-title">${esc(info.title)}</h1>
-        <div class="today-tonight-meta">${meta}</div>
-        <div class="today-tonight-actions">
-          ${cookBtn}
-          <button type="button" class="today-btn today-btn-quiet" onclick="dlxDayClick('${todayEntry.date}', '${attr(todayEntry.day)}')">Mer</button>
-        </div>
+      </div>
+      <div class="td-actions">
+        ${primary}
+        <button type="button" class="td-btn td-btn-quiet" onclick="${click}">Byt dag</button>
       </div>
     </article>`;
 }
@@ -130,84 +141,122 @@ function heroHtml(todayEntry, info) {
 function tomorrowHtml(entry, info) {
   if (!entry) return '';
   const eyebrow = `I morgon · ${esc(entry.day.toLowerCase())}`;
-  const click = `onclick="dlxDayClick('${entry.date}', '${attr(entry.day)}')"`;
-
-  // Tom lucka (ingen planerad middag) → "Inget planerat", tryck för att planera.
-  if (!info) {
-    if (entry.isPast) return '';   // säkerhetsnät — morgondagen är aldrig förfluten
-    return `
-      <button type="button" class="today-tomorrow today-tomorrow-empty" style="--p:var(--birch)" ${click}>
-        <span class="today-tomorrow-thread"></span>
-        <span class="today-tomorrow-txt">
-          <span class="today-eyebrow">${eyebrow}</span>
-          <span class="today-tomorrow-title today-tomorrow-empty-title">Inget planerat</span>
-        </span>
-        <span class="today-tomorrow-chev" aria-hidden="true">${I.chev}</span>
-      </button>`;
-  }
-
-  const meta = [
-    info.time ? `${info.time} min` : null,
-    info.protein ? PROTEIN_LABEL[info.protein] || info.protein : null,
-    info.typeLabel,
-  ].filter(Boolean).join(' · ');
+  const click = `dlxDayClick('${entry.date}', '${attr(entry.day)}')`;
+  const sub = !info ? 'Inget planerat — tryck för att planera'
+    : info.kind === 'recipe' ? [info.time ? `${info.time} min` : '', info.protein ? PROTEIN_LABEL[info.protein] || info.protein : ''].filter(Boolean).join(' · ')
+    : info.kind === 'free' ? 'Fri dag' : 'Egen dag';
   return `
-    <button type="button" class="today-tomorrow" style="--p:${info.color}" ${click}>
-      <span class="today-tomorrow-thread"></span>
-      <span class="today-tomorrow-txt">
-        <span class="today-eyebrow">${eyebrow}</span>
-        <span class="today-tomorrow-title">${esc(info.title)}</span>
-        ${meta ? `<span class="today-tomorrow-meta">${esc(meta)}</span>` : ''}
+    <button type="button" class="td-tomorrow" onclick="${click}">
+      ${thumbHtml(info)}
+      <span class="td-tomorrow-txt">
+        <span class="td-eyebrow">${eyebrow}</span>
+        <span class="td-tomorrow-title">${esc(info ? info.title : 'Inget planerat')}</span>
+        ${sub ? `<span class="td-tomorrow-sub">${esc(sub)}</span>` : ''}
       </span>
-      <span class="today-tomorrow-chev" aria-hidden="true">${I.chev}</span>
+      <span class="td-chev" aria-hidden="true">${I.chev}</span>
     </button>`;
 }
 
-function weekHtml(weekDays, sumLeft, sumRight) {
+function weekHtml(weekDays, weekNo) {
   if (!weekDays.length) return '';
   const todayIso = fmtIso(new Date());
-  const threads = weekDays.map(d => {
+  const tiles = weekDays.map(d => {
     const info = dayInfo(d);
-    const hasMeal = info && info.kind === 'recipe';
-    // "Inhandlad": riktig per-dag-data (meal_days.shopped_at, inköpsrundor) —
-    // samma källa som kundvagnschipet i Matsedel-vyn.
-    const shopped = !!d.shoppedAt;
-    const cls = [
-      'today-thread',
-      d.date < todayIso ? 'past' : '',
-      d.date === todayIso ? 'today' : '',
-      hasMeal ? '' : 'free',
-      shopped ? 'shopped' : '',
-    ].filter(Boolean).join(' ');
-    const color = hasMeal ? info.color : 'var(--birch)';
-    const title = `${d.day}${info ? ' · ' + info.title : ''}${shopped ? ' · handlat' : ''}`;
-    return `<span class="${cls}" style="--p:${color}" title="${esc(title)}">
-        <span class="today-thread-bar"></span><span class="today-thread-day">${esc(d.day.charAt(0))}</span>${shopped ? '<span class="today-thread-dot" aria-hidden="true"></span>' : ''}
-      </span>`;
+    const isRecipe = info?.kind === 'recipe';
+    const cls = ['tw-day', !info ? 'is-empty' : '', info && !isRecipe ? 'is-own' : '', d.date === todayIso ? 'is-today' : ''].filter(Boolean).join(' ');
+    const color = isRecipe ? info.color : 'var(--moss-muted)';
+    const txt = info ? info.title : 'Tom';
+    const title = `${d.day}${info ? ' · ' + info.title : ' · tom'}${d.shoppedAt ? ' · handlat' : ''}`;
+    return `<button type="button" class="${cls}" style="--p:${color}" title="${esc(title)}" onclick="dlxDayClick('${d.date}', '${attr(d.day)}')">
+        <span class="tw-lbl"><span class="tw-lbl-short">${esc(d.day.charAt(0))}</span><span class="tw-lbl-long">${esc(d.day.slice(0, 3))}</span></span>
+        <span class="tw-txt">${esc(txt)}</span>
+        <span class="tw-dot" aria-hidden="true"></span>
+      </button>`;
   }).join('');
+  const empties = weekDays.filter(d => !dayInfo(d) && d.date >= todayIso);
+  const caption = empties.length
+    ? `${empties.map(d => d.day).join(', ')} saknar middag. Färgprick = recept från receptboken; övriga är egna dagar.`
+    : 'Färgprick = recept från receptboken · grå = egen dag · streckad = tom';
   return `
-    <div class="today-section-head">
-      <h2 class="today-h2">Vecka ${isoWeekNumber(todayIso)}</h2>
-      <span class="today-link" role="button" tabindex="0" onclick="switchTab('vecka')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchTab('vecka');}">Hela matsedeln</span>
-    </div>
-    <button type="button" class="today-weave-card" onclick="switchTab('vecka')" aria-label="Öppna matsedeln">
-      <div class="today-weave-row">${threads}</div>
-      <div class="today-weave-sum">
-        <span>${esc(sumLeft)}</span>
-        ${sumRight ? `<strong>${esc(sumRight)}</strong>` : ''}
+    <section class="td-card">
+      <div class="td-card-head">
+        <h2 class="td-h2">Vecka ${weekNo}</h2>
+        <span class="today-link" role="button" tabindex="0" onclick="switchTab('vecka')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchTab('vecka');}">Hela matsedeln</span>
       </div>
-    </button>`;
+      <div class="td-week">${tiles}</div>
+      <div class="td-caption">${esc(caption)}</div>
+    </section>`;
 }
 
-function quickAddHtml() {
+// Inköpslistans läge ur minnet (laddas tyst första gången Idag visas).
+let _shopLoadKicked = false;
+function shopState() {
+  const rec = window._shopRecipeItems;
+  const man = window._shopManualItems;
+  if (rec === null && (!man || !man.length) && !_shopLoadKicked && typeof window.loadShoppingTab === 'function') {
+    _shopLoadKicked = true;
+    Promise.resolve(window.loadShoppingTab()).then(() => renderTodayView()).catch(() => {});
+    return null;
+  }
+  const names = [];
+  let total = 0, done = 0;
+  for (const [cat, items] of Object.entries(rec || {})) {
+    items.forEach((it, idx) => {
+      if (window.isPantryName?.(it)) return;
+      total++;
+      if (window._checkedItems?.[`recipe::${cat}::${idx}`]) done++;
+    });
+  }
+  (man || []).forEach((it) => {
+    if (window.isPantryName?.(it)) return;
+    total++;
+    if (window._checkedItems?.[`manual::${it}`]) done++;
+    names.push(it);
+  });
+  const cov = window._shopCoverage || [];
+  const covered = cov.filter(r => !r.shopped_at).map(r => r.recipe_title_snapshot).filter(Boolean);
+  return { total, done, manual: names, covered, recipeCount: total - names.length };
+}
+
+function shopHtml(st) {
+  const total = st ? st.total : 0;
+  const done = st ? st.done : 0;
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  const srcTxt = st && st.covered.length
+    ? `${st.recipeCount} från ${st.covered.length === 1 ? st.covered[0] : st.covered.length + ' recept'}${st.manual.length ? ` + ${st.manual.length} egna` : ''}`
+    : (st && st.manual.length ? `${st.manual.length} egna tillägg` : 'tom');
+  const rows = st ? [
+    ...st.manual.slice(0, 2).map(n => `<li><span>${esc(n)}</span><span>eget tillägg</span></li>`),
+    st.recipeCount ? `<li><span>${st.recipeCount} varor från matsedeln</span><span>${esc(st.covered[0] || '')}</span></li>` : '',
+  ].filter(Boolean).join('') : '';
   return `
-    <div class="today-section-head"><h2 class="today-h2">Snabbt till listan</h2></div>
-    <div class="today-quick-add">
-      <input type="text" id="todayAddInput" maxlength="80" placeholder="T.ex. blöjor, kaffe …"
-             aria-label="Lägg till vara"
-             onkeydown="if(event.key==='Enter'){event.preventDefault();todayAddItem()}">
-      <button type="button" id="todayAddBtn" class="today-btn today-btn-quiet" onclick="todayAddItem()">Lägg till</button>
-    </div>`;
+    <section class="td-card">
+      <div class="td-card-head">
+        <h2 class="td-h2">Inköpslistan</h2>
+        <span class="today-link" role="button" tabindex="0" onclick="switchTab('shop')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchTab('shop');}">Öppna</span>
+      </div>
+      <div class="td-shop-row"><span>${total} ${total === 1 ? 'vara' : 'varor'} · ${esc(srcTxt)}</span><span>${done} ${done === 1 ? 'plockad' : 'plockade'}</span></div>
+      <div class="td-progress" role="progressbar" aria-valuenow="${pct}" aria-valuemin="0" aria-valuemax="100"><div style="width:${pct}%"></div></div>
+      <label class="td-quick">
+        <input type="text" id="todayAddInput" maxlength="80" placeholder="Snabbt till listan, t.ex. blöjor, kaffe…"
+               aria-label="Lägg till vara"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();todayAddItem()}">
+        <button type="button" id="todayAddBtn" onclick="todayAddItem()">Lägg till</button>
+      </label>
+      ${rows ? `<ul class="td-shoplist">${rows}</ul>` : ''}
+      <button type="button" class="td-btn td-shop-open" onclick="switchTab('shop')">${I.cart}Öppna listan</button>
+    </section>`;
+}
+
+function todoHtml(weekDays, st, pending) {
+  const todayIso = fmtIso(new Date());
+  const items = [];
+  const empty = weekDays.find(d => !dayInfo(d) && d.date >= todayIso);
+  if (empty) items.push(`<button type="button" class="td-todo-item" onclick="dlxDayClick('${empty.date}', '${attr(empty.day)}')"><span class="td-todo-ic">${I.plus}</span><span>Fyll ${esc(empty.day.toLowerCase())}en i matsedeln</span><span class="td-chev">${I.chev}</span></button>`);
+  if (pending) items.push(`<button type="button" class="td-todo-item" onclick="switchTab('vecka')"><span class="td-todo-ic">${I.tick}</span><span>Bekräfta matsedelsförslaget</span><span class="td-chev">${I.chev}</span></button>`);
+  if (st && st.total - st.done > 0) items.push(`<button type="button" class="td-todo-item" onclick="switchTab('shop')"><span class="td-todo-ic">${I.cart}</span><span>Skicka veckans lista till butiken</span><span class="td-chev">${I.chev}</span></button>`);
+  if (!items.length) return '';
+  return `<section class="td-card td-todo"><h2 class="td-h2">Att göra</h2>${items.join('')}</section>`;
 }
 
 // ── Willys-larmbanner (backlog #2, reaktiv in-app-variant) ───────────────────
@@ -263,11 +312,13 @@ function pinnedNotesHtml() {
     </button>`;
   }).join('');
   return `
-    <div class="today-section-head">
-      <h2 class="today-h2">Fästa lappar</h2>
-      <span class="today-link" role="button" tabindex="0" onclick="switchTab('listor')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchTab('listor');}">Alla anteckningar</span>
-    </div>
-    <div class="today-notes">${cards}</div>`;
+    <section class="td-card">
+      <div class="td-card-head">
+        <h2 class="td-h2">Fästa lappar</h2>
+        <span class="today-link" role="button" tabindex="0" onclick="switchTab('listor')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchTab('listor');}">Alla anteckningar</span>
+      </div>
+      <div class="today-notes">${cards}</div>
+    </section>`;
 }
 
 window.openPinnedNote = function (id) {
@@ -284,28 +335,26 @@ function loadingHtml() {
 // "Ingen matsedel ännu". window._dbResting sätts av app.js:init() vid boot.
 function dbRestingHtml() {
   return `
-    <article class="today-tonight today-tonight-empty">
-      <div class="today-tonight-body">
-        <span class="today-hero-icon">⚠️</span>
-        <h1 class="today-tonight-title">Appen har vilat</h1>
-        <p class="today-hero-note">${esc(DB_RESTING_MESSAGE)}</p>
-        <div class="today-tonight-actions">
-          <button type="button" class="today-btn today-btn-primary" onclick="location.reload()">Prova igen</button>
-        </div>
+    <article class="td-card td-tonight td-empty">
+      <div class="td-tonight-txt">
+        <h2 class="td-tonight-title">Appen har vilat</h2>
+        <p class="td-empty-note">${esc(DB_RESTING_MESSAGE)}</p>
+      </div>
+      <div class="td-actions">
+        <button type="button" class="td-btn td-btn-accent" onclick="location.reload()">Prova igen</button>
       </div>
     </article>`;
 }
 
 function noPlanHtml() {
   return `
-    <article class="today-tonight today-tonight-empty">
-      <div class="today-tonight-body">
-        <span class="today-hero-icon">${I.sparkle}</span>
-        <h1 class="today-tonight-title">Ingen matsedel ännu</h1>
-        <p class="today-hero-note">Skapa familjens första matsedel så syns kvällens middag här.</p>
-        <div class="today-tonight-actions">
-          <button type="button" class="today-btn today-btn-primary" onclick="openNewPlan()">${I.sparkle}Skapa matsedel</button>
-        </div>
+    <article class="td-card td-tonight td-empty">
+      <div class="td-tonight-txt">
+        <h2 class="td-tonight-title">Ingen matsedel ännu</h2>
+        <p class="td-empty-note">Låt appen föreslå familjens första vecka, så syns kvällens middag här.</p>
+      </div>
+      <div class="td-actions">
+        <button type="button" class="td-btn td-btn-accent" onclick="openNewPlan()">${I.sparkle}Föreslå matsedel</button>
       </div>
     </article>`;
 }
@@ -346,11 +395,10 @@ function renderTodayViewInner() {
   const hadFocus = prevInput && document.activeElement === prevInput;
 
   if (!window._todayReady) { host.innerHTML = loadingHtml(); return; }
-  if (window._dbResting) { host.innerHTML = dbRestingHtml(); return; }
+  if (window._dbResting) { host.innerHTML = `<div class="td">${dbRestingHtml()}</div>`; return; }
 
   const timeline = window._timelineByDate || {};
   const hasPlan = Object.values(timeline).some(d => d.recipeId || d.isCustom || d.blocked);
-  if (!hasPlan) { host.innerHTML = noPlanHtml(); return; }
 
   const now = new Date();
   const todayIso = fmtIso(now);
@@ -360,39 +408,47 @@ function renderTodayViewInner() {
 
   const todayEntry = timeline[todayIso] || null;
   const todayInfo = dayInfo(todayEntry);
-
-  // I morgon: morgondagens middag. Saknas den (tom lucka) visar kortet
-  // "Inget planerat" och går att trycka på för att planera dagen.
   const tomorrowEntry = timeline[tomorrowIso] || null;
   const tomorrowInfo = dayInfo(tomorrowEntry);
 
   const wk = isoWeekNumber(todayIso);
-  const dateLine = todayEntry
-    ? `${todayEntry.day} ${todayEntry.dayNum} ${MONTH_NAMES_LONG[todayEntry.month]} · vecka ${wk}`
-    : `${capitalize(now.toLocaleDateString('sv-SE', { weekday: 'long' }))} ${now.getDate()} ${MONTH_NAMES_LONG[now.getMonth()]} · vecka ${wk}`;
+  const h1 = todayEntry
+    ? `${todayEntry.day} ${todayEntry.dayNum} ${MONTH_NAMES_LONG[todayEntry.month]}`
+    : `${capitalize(now.toLocaleDateString('sv-SE', { weekday: 'long' }))} ${now.getDate()} ${MONTH_NAMES_LONG[now.getMonth()]}`;
+  const h1Short = todayEntry
+    ? `${todayEntry.day} ${todayEntry.dayNum} ${MONTH_NAMES_SHORT[todayEntry.month]}`
+    : h1;
+  void h1Short;
 
-  // Veckans trådband: innevarande kalendervecka (mån–sön) — samma veckotänk
-  // som Matsedel-flikens veckovy. Innevarande vecka ligger alltid inom
-  // tidslinjens horisont; filter(Boolean) är bara ett skyddsnät.
+  // Veckan: innevarande kalendervecka (mån–sön) — samma veckotänk som Matsedeln.
   const ws = weekStartOf(todayIso);
   const weekDays = Array.from({ length: 7 }, (_, i) => timeline[addDaysIso(ws, i)]).filter(Boolean);
+  const empties = weekDays.filter(d => !dayInfo(d) && d.date >= todayIso).length;
+  const st = shopState();
+  const plan = window._lastPlan || null;
+  const pending = !!(plan?.days?.length) && !plan?.confirmedAt && !window.planConfirmed;
 
-  // Sammanfattning räknas på veckan: middagar kvar · veg + veckans besparing
-  // ("−X kr denna vecka" blir bokstavligt sant).
-  const kvar = weekDays.filter(d => dayInfo(d)?.kind === 'recipe' && d.date >= todayIso).length;
-  const veg = weekDays.filter(d => dayInfo(d)?.protein === 'vegetarisk').length;
-  const saving = weekDays.reduce((s, d) => s + (d.saving || 0), 0);
-  const sumLeft = `${kvar} ${kvar === 1 ? 'middag' : 'middagar'} kvar · ${veg} veg`;
-  const sumRight = saving >= 1 ? `−${Math.round(saving)} kr denna vecka` : '';
+  const subParts = [`Vecka ${wk}`];
+  if (hasPlan && empties) subParts.push(`${empties} ${empties === 1 ? 'dag' : 'dagar'} kvar att fylla i matsedeln`);
+  if (st) subParts.push(`${st.total} ${st.total === 1 ? 'vara' : 'varor'} på inköpslistan`);
 
-  host.innerHTML =
-    `<div class="today-date"><span class="today-eyebrow">${esc(dateLine)}</span></div>` +
-    _pricingBannerHtml +
-    heroHtml(todayEntry, todayInfo) +
-    tomorrowHtml(tomorrowEntry, tomorrowInfo) +
-    weekHtml(weekDays, sumLeft, sumRight) +
-    pinnedNotesHtml() +
-    quickAddHtml();
+  const left = hasPlan
+    ? tonightHtml(todayEntry, todayInfo) + tomorrowHtml(tomorrowEntry, tomorrowInfo) + weekHtml(weekDays, wk)
+    : noPlanHtml();
+  const right = shopHtml(st) + (hasPlan ? todoHtml(weekDays, st, pending) : '') + pinnedNotesHtml();
+
+  host.innerHTML = `
+    <div class="td">
+      <div class="td-head">
+        <h1 class="td-h1">${esc(h1)}</h1>
+        <div class="td-sub">${esc(subParts.join(' · '))}</div>
+      </div>
+      ${_pricingBannerHtml}
+      <div class="td-cols">
+        <div class="td-col">${left}</div>
+        <div class="td-col">${right}</div>
+      </div>
+    </div>`;
 
   if (prevVal != null) {
     const input = document.getElementById('todayAddInput');
@@ -419,6 +475,7 @@ window.todayAddItem = async function () {
   await window.addManualItem('todayAddInput', 'todayAddBtn');
   if (input && input.value === '') {
     window.showToast?.(`${item} ligger nu på inköpslistan.`, { type: 'success' });
+    renderTodayView();
     document.getElementById('todayAddInput')?.focus();
   }
 };
@@ -441,6 +498,8 @@ function wrap(name, { async = false, onAfter } = {}) {
 
 function installHooks() {
   wrap('renderWeeklyPlanData');
+  // Inköpslistans ändringar (bockar, nya varor, ombyggd lista) speglas i kortet.
+  wrap('renderFullShoppingList');
   // Kollar prisstatus + pinnade lappar först när loadWeeklyPlan (och därmed
   // auth+household) är klar — bådadera är hushållsskopad data som kräver en
   // inloggad session.

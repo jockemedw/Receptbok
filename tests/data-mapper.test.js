@@ -51,6 +51,7 @@ const fixtureMinJson = {
   instructions: [],
   notes: null,
   seasons: [],
+  sourceUrl: null,
 };
 
 const fixtureMinRow = {
@@ -97,6 +98,7 @@ const fixtureFullJson = {
   ],
   notes: "Tips: Servera med matvete, som här, eller pressad kokt potatis. Toppa gärna med lite färsk strimlad purjolök vid servering. Källa: Mer Smak nr 1 2019.",
   seasons: ["vår", "höst", "vinter"],
+  sourceUrl: null,
 };
 
 const fixtureFullRow = {
@@ -148,15 +150,33 @@ const fixtureExtraJson = {
   instructions: ["Stek."],
   notes: null,
   seasons: ["sommar"],
+  sourceUrl: null,
 };
+
+// ─── Fixture 4: källänk (migration 014) ────────────────────────────
+// Raden har source_url → JSON får sourceUrl; tillbaka till rad skrivs source_url.
+// Utan värde (null/saknas) skrivs ingen source_url alls — skrivningar får inte
+// gå sönder innan kolumnen finns.
+const fixtureSourceRow = { ...fixtureExtraRow, source_url: "https://dishingouthealth.com/exempel/" };
+const fixtureSourceJson = { ...fixtureExtraJson, sourceUrl: "https://dishingouthealth.com/exempel/" };
+const { created_at: _c, updated_at: _u, ...fixtureSourceRowClean } = fixtureSourceRow;
 
 // ─── recipeFromRow ────────────────────────────────────────────────
 assertEq(recipeFromRow(fixtureMinRow), fixtureMinJson, "fromRow: minimum-recept");
 assertEq(recipeFromRow(fixtureFullRow), fixtureFullJson, "fromRow: fullt recept med timeNote + seasons");
 assertEq(recipeFromRow(fixtureExtraRow), fixtureExtraJson, "fromRow: ignorerar extra-fält (created_at/updated_at)");
 
+assertEq(recipeFromRow(fixtureSourceRow), fixtureSourceJson, "fromRow: source_url → sourceUrl");
+assertEq(recipeFromRow({ ...fixtureExtraRow, source_url: null }), fixtureExtraJson, "fromRow: source_url null → sourceUrl null");
+
 // ─── recipeToRow ──────────────────────────────────────────────────
 assertEq(recipeToRow(fixtureMinJson, HOUSEHOLD_ID), fixtureMinRow, "toRow: minimum-recept");
+assertEq(recipeToRow(fixtureSourceJson, HOUSEHOLD_ID), fixtureSourceRowClean, "toRow: sourceUrl → source_url");
+assertEq(
+  Object.prototype.hasOwnProperty.call(recipeToRow(fixtureExtraJson, HOUSEHOLD_ID), "source_url"),
+  false,
+  "toRow: ingen source_url-nyckel när sourceUrl saknas (före migration 014)"
+);
 assertEq(recipeToRow(fixtureFullJson, HOUSEHOLD_ID), fixtureFullRow, "toRow: fullt recept med timeNote + seasons");
 
 // ─── Round-trip: JSON → row → JSON ────────────────────────────────

@@ -109,6 +109,7 @@ export function closeEditModal() {
   document.body.style.overflow = '';
   window.editingId = null;
   window._importSeasons = null;
+  window._importSourceUrl = null;
   closeTagPicker();
   document.getElementById('editModalTitle').textContent = 'Redigera recept';
 }
@@ -160,6 +161,8 @@ export async function saveRecipe() {
       const householdId = await window.getHouseholdId();
       const nextId = Math.max(...window.RECIPES.map(r => r.id), 0) + 1;
       const newRecipe = { ...formData, id: nextId, tested: false, seasons: window._importSeasons || [] };
+      // Källänk från URL-import (migration 014) — skrivs bara när kolumnen finns.
+      if (window._recipeSourceSupported && window._importSourceUrl) newRecipe.sourceUrl = window._importSourceUrl;
       const { data, error } = await window.db
         .from('recipes')
         .insert(recipeToRow(newRecipe, householdId))
@@ -214,21 +217,9 @@ export async function saveRecipe() {
     const idx = window.RECIPES.findIndex(r => r.id === window.editingId);
     window.RECIPES[idx] = updated;
 
-    const card = document.querySelector(`.recipe-card[data-id="${window.editingId}"]`);
-    if (card) {
-      card.dataset.title        = updated.title.toLowerCase();
-      card.querySelector('.card-title').textContent = updated.title;
-      card.querySelector('.card-meta').innerHTML = cardMetaHtml(updated);
-      // Proteinbyte → ny färgrand; namnbyte → Välj-knappen bär titeln i onclick.
-      card.style.setProperty('--rail', PROTEIN_COLOR[updated.protein] || 'var(--birch-soft)');
-      const tmp = document.createElement('template');   // inert — laddar ingen bild
-      tmp.innerHTML = renderCard(updated);
-      const freshSelect = tmp.content.querySelector('.select-btn');
-      if (freshSelect) card.querySelector('.select-btn')?.replaceWith(freshSelect);
-      const inner = card.querySelector('.detail-inner');
-      inner.innerHTML = renderDetailInner(updated);
-      inner.dataset.rendered = '1';
-    }
+    // Ny design: listan och detaljpanelen ritas om från state (ingen DOM-lappning).
+    window.renderRecipeBrowser();
+    if (window._recipeDetailId === updated.id) window.renderRecipeDetail?.(updated.id);
     closeEditModal();
   } catch {
     feedback.textContent = 'Kunde inte spara — prova igen.';

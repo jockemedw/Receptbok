@@ -340,28 +340,17 @@ function pantryBtnHtml(name) {
             onclick="event.stopPropagation();togglePantryItem(this.dataset.name)">${ICON_HOME}</button>`;
 }
 
-export function setShopMode(mode) {
-  const isHandla = mode === 'handla';
-  document.getElementById('modeBtnHandla').classList.toggle('active', isHandla);
-  document.getElementById('modeBtnText').classList.toggle('active', !isHandla);
-  document.getElementById('shoppingList').style.display = isHandla ? '' : 'none';
-  document.getElementById('shoppingText').classList.toggle('visible', !isHandla);
-  if (!isHandla && window._editRowKey) {
-    window._editRowKey = null;
-    renderFullShoppingList(window._shopRecipeItems || null, window._shopManualItems || []);
-  }
-}
+// Textvyn (Kopiera lista) är sedan ny design 2026-10 bara kopieringskälla —
+// "Kopiera lista" i panelen kopierar direkt. Behålls som no-op för gamla anrop.
+export function setShopMode() {}
 
 // Handla-läge: bockade varor sjunker ner under ett streck ("I korgen"),
 // sorterade med senast ibockade överst. En ren vy-preferens (in-memory,
 // nollställs vid omladdning) — själva bock-statusen ligger kvar i Supabase.
 export function toggleHandlaMode() {
   window._handlaMode = !window._handlaMode;
-  const btn = document.getElementById('handlaModeFab');
-  if (btn) {
-    btn.classList.toggle('is-active', window._handlaMode);
-    btn.setAttribute('aria-pressed', window._handlaMode ? 'true' : 'false');
-  }
+  const cb = document.getElementById('handlaModeToggle');
+  if (cb && cb.checked !== window._handlaMode) cb.checked = window._handlaMode;
   renderFullShoppingList(window._shopRecipeItems || null, window._shopManualItems || []);
 }
 
@@ -600,6 +589,7 @@ export function updateShopProgress() {
     const c = perCat[el.dataset.cat];
     if (c) el.textContent = `${c.done} av ${c.total}`;
   });
+  updateShopSummary();
 }
 
 // Textcell för en vara: redigerbart fält när just den raden redigeras
@@ -741,6 +731,33 @@ export function rebuildShopText() {
   writeShopText(shopTextContent());
 }
 
+// ── Källa per rad (ny design 2026-10) ────────────────────────────────────────
+// Receptnamnet som en liten etikett. shopping_items bär ingen receptreferens
+// (byggaren slår ihop över recept), så källan gissas: varans namn (före
+// mängdparentesen) mot ingrediensraderna i de recept listan täcker
+// (window._shopCoverage → recipe_title_snapshot → window.RECIPES).
+// ponytail: substring-gissning; kolumn shopping_items.sources om det ska vara exakt.
+let _srcCache = null;
+function coverRecipes() {
+  const titles = new Set((window._shopCoverage || []).map((r) => (r.recipe_title_snapshot || '').toLowerCase()).filter(Boolean));
+  return (window.RECIPES || []).filter((r) => titles.has((r.title || '').toLowerCase()));
+}
+function itemSourceLabel(name) {
+  if (!_srcCache) _srcCache = { recipes: coverRecipes(), map: new Map() };
+  if (_srcCache.map.has(name)) return _srcCache.map.get(name);
+  const base = String(name).split(' (')[0].trim().toLowerCase();
+  let label = '';
+  if (base.length >= 3) {
+    const hits = _srcCache.recipes.filter((r) => (r.ingredients || []).some((l) => l.toLowerCase().includes(base)));
+    if (hits.length) label = hits[0].title + (hits.length > 1 ? ` +${hits.length - 1}` : '');
+  }
+  _srcCache.map.set(name, label);
+  return label;
+}
+function srcCellHtml(label) {
+  return label ? `<span class="shop-src">${escapeHtml(label)}</span>` : '';
+}
+
 // ── Rad-byggare (delas av kategori-vyn och handla-lägets "I korgen"-sektion) ──
 // Receptvara: bock-nyckeln ligger i data-key (itemElByKey matchar på den sedan Session 132).
 function recipeItemLi(cat, idx, name) {
@@ -753,8 +770,7 @@ function recipeItemLi(cat, idx, name) {
               data-key="${escapeHtml(key)}"
               onclick="toggleShopItem(this,this.dataset.key)">
     <span class="item-checkbox">${checked ? '✓' : ''}</span>
-    ${itemTextCell(name, rowId, key)}
-    ${pantry ? '<span class="pantry-tag">har hemma</span>' : ''}
+    <span class="item-main">${itemTextCell(name, rowId, key)}${srcCellHtml(pantry ? cat : itemSourceLabel(name))}</span>
     ${rowEditBtnHtml(key)}
     ${pantryBtnHtml(name)}
     <button class="remove-item-btn" data-key="${key}" title="Ta bort varan"
@@ -777,8 +793,7 @@ function manualItemLi(idx, name) {
               data-key="${escapeHtml(key)}" data-manual-idx="${idx}"
               onclick="toggleShopItem(this,this.dataset.key)">
     <span class="item-checkbox">${checked ? '✓' : ''}</span>
-    ${itemTextCell(name, rowId, key)}
-    ${pantry ? '<span class="pantry-tag">har hemma</span>' : ''}
+    <span class="item-main">${itemTextCell(name, rowId, key)}${srcCellHtml('Eget tillägg')}</span>
     ${rowEditBtnHtml(key)}
     ${pantryBtnHtml(name)}
     ${handle}
@@ -791,9 +806,11 @@ function manualItemLi(idx, name) {
 export function renderFullShoppingList(recipeItems, manualItems) {
   window._shopRecipeItems = recipeItems;
   window._shopManualItems = manualItems;
+  _srcCache = null;
   let checkHtml = '';
   const handla = window._handlaMode === true;
   const doneItems = [];   // handla-läge: bockade varor samlas här → visas under strecket
+  const pantryRows = [];  // "har hemma": egen avbockad sektion sist (ny design 2026-10)
 
   if (recipeItems) {
     checkHtml += Object.entries(recipeItems)
@@ -802,6 +819,7 @@ export function renderFullShoppingList(recipeItems, manualItems) {
         const icon = CAT_ICONS[cat] || '•';
         const itemsHtml = items.map((item, idx) => {
           const key = `recipe::${cat}::${idx}`;
+          if (isPantryName(item)) { pantryRows.push(recipeItemLi(cat, idx, item)); return ''; }
           // handla-läge: bockade (ej pantry) flyttas till "I korgen"-sektionen
           if (handla && !isPantryName(item) && window._checkedItems[key]) {
             doneItems.push({ seq: window._checkSeq[key] || 0, html: recipeItemLi(cat, idx, item) });
@@ -809,8 +827,9 @@ export function renderFullShoppingList(recipeItems, manualItems) {
           }
           return recipeItemLi(cat, idx, item);
         }).join('');
-        // handla-läge: dölj kort där allt är bockat (inget kvar att plocka)
-        if (handla && !itemsHtml.trim()) return '';
+        // handla-läge: dölj kort där allt är bockat (inget kvar att plocka);
+        // en kategori med bara har hemma-varor har inget kvar att visa här
+        if (!itemsHtml.trim()) return '';
         const catTotal = items.filter((item) => !isPantryName(item)).length;
         const catDone = items.filter((item, idx) => !isPantryName(item) && window._checkedItems[`recipe::${cat}::${idx}`]).length;
         return `<div class="shopping-category">
@@ -825,6 +844,7 @@ export function renderFullShoppingList(recipeItems, manualItems) {
 
   if (manualItems.length > 0) {
     const manualHtml = manualItems.map((item, idx) => {
+      if (isPantryName(item)) { pantryRows.push(manualItemLi(idx, item)); return ''; }
       // handla-läge: bockade (ej pantry) flyttas till "I korgen"-sektionen
       if (handla && !isPantryName(item) && window._checkedItems[`manual::${item}`]) {
         doneItems.push({ seq: window._checkSeq[`manual::${item}`] || 0, html: manualItemLi(idx, item) });
@@ -832,8 +852,8 @@ export function renderFullShoppingList(recipeItems, manualItems) {
       }
       return manualItemLi(idx, item);
     }).join('');
-    // handla-läge: dölj kortet om alla egna varor är bockade
-    if (!(handla && !manualHtml.trim())) {
+    // handla-läge: dölj kortet om alla egna varor är bockade (eller alla har hemma)
+    if (manualHtml.trim()) {
       const manualTotal = manualItems.filter((item) => !isPantryName(item)).length;
       const manualDone = manualItems.filter((item) => !isPantryName(item) && window._checkedItems[`manual::${item}`]).length;
       checkHtml += `<div class="shopping-category">
@@ -857,10 +877,102 @@ export function renderFullShoppingList(recipeItems, manualItems) {
     </div>`;
   }
 
+  if (pantryRows.length) {
+    checkHtml += `<div class="shopping-category shop-pantry-section">
+      <div class="shopping-cat-header">
+        <span class="shopping-cat-name">Har hemma</span>
+        <span class="shopping-cat-count">${pantryRows.length}</span>
+      </div>
+      <ul class="shopping-items">${pantryRows.join('')}</ul>
+    </div>`;
+  }
+
   const shopText = shopTextContent();
   document.getElementById('shoppingList').innerHTML = checkHtml;
   writeShopText(shopText);
+  updateShopSummary();
 }
+
+// ── Sammanfattning: rubrikrad, plockat-räknare, veckoremsa (ny design 2026-10) ──
+const DAY_LETTERS = ['M', 'T', 'O', 'T', 'F', 'L', 'S'];
+function weekStartIso(iso) {
+  const d = new Date(iso + 'T12:00:00');
+  const dow = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - dow);
+  return fmtIso(d);
+}
+function addDays(iso, n) { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return fmtIso(d); }
+function longDay(iso) {
+  const d = new Date(iso + 'T12:00:00');
+  const s = d.toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'short' });
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+export function updateShopSummary() {
+  const { total, done } = shopCounts();
+  const cov = window._shopCoverage || [];
+  const unshopped = cov.filter((r) => !r.shopped_at).map((r) => r.date).sort();
+  const when = unshopped.length === 0 ? '' : unshopped.length === 1 ? longDay(unshopped[0]) : `${fmtShort(unshopped[0])} – ${fmtShort(unshopped[unshopped.length - 1])}`;
+  const parts = [when, `${total} ${total === 1 ? 'vara' : 'varor'}`, `${done} ${done === 1 ? 'plockad' : 'plockade'}`].filter(Boolean);
+  const sub = document.getElementById('shopSub');
+  if (sub) sub.textContent = parts.join(' · ');
+  const pct = total ? Math.round((done / total) * 100) : 0;
+  const lbl = document.getElementById('shopPickedLabel');
+  if (lbl) lbl.textContent = `${done} av ${total}`;
+  for (const [barId, wrapId] of [['shopProgressBar', null], [null, 'shopProgressThin']]) {
+    const wrap = wrapId ? document.getElementById(wrapId) : document.getElementById(barId)?.parentElement;
+    const bar = wrapId ? wrap?.firstElementChild : document.getElementById(barId);
+    if (bar) bar.style.width = pct + '%';
+    if (wrap) wrap.setAttribute('aria-valuenow', String(pct));
+  }
+  // Veckoremsa: innevarande vecka, täckta dagar markerade
+  const strip = document.getElementById('shopDayStrip');
+  if (strip) {
+    const ws = weekStartIso(fmtIso(new Date()));
+    const covered = new Set(cov.map((r) => r.date));
+    const shopped = new Set(cov.filter((r) => r.shopped_at).map((r) => r.date));
+    strip.innerHTML = DAY_LETTERS.map((l, i) => {
+      const iso = addDays(ws, i);
+      const cls = covered.has(iso) ? (shopped.has(iso) ? ' is-shopped' : ' is-on') : '';
+      return `<span class="shop-daycell${cls}" title="${escapeHtml(longDay(iso))}">${l}</span>`;
+    }).join('');
+    const note = document.getElementById('shopDaysNote');
+    if (note) {
+      const n = cov.length;
+      note.textContent = n === 0
+        ? 'Listan har inga receptdagar — välj dagar så fylls den på. Egna dagar ger inga varor.'
+        : `Listan täcker ${n} ${n === 1 ? 'middag' : 'middagar'}${unshopped.length < n ? `, ${n - unshopped.length} redan inhandlad${n - unshopped.length === 1 ? '' : 'e'}` : ''}.`;
+    }
+  }
+}
+
+// ── Mobil: panelen ("⋯") som bottensheet; Skicka-knappen i den fasta raden ──
+export function openShopSide() {
+  const side = document.getElementById('shopSide');
+  if (!side || side.classList.contains('open')) return;
+  side.classList.add('open');
+  document.getElementById('shopSideBackdrop')?.classList.add('open');
+  window.pushSheetHistory?.();
+}
+export function closeShopSide() {
+  const side = document.getElementById('shopSide');
+  if (!side?.classList.contains('open')) return;
+  side.classList.remove('open');
+  document.getElementById('shopSideBackdrop')?.classList.remove('open');
+  window.popSheetHistory?.();
+}
+// Skicka-knappen är ETT element (dispatch-ui styr dess synlighet/etikett) och
+// flyttas mellan panelen (desktop) och den fasta raden (mobil).
+function placeShopChrome() {
+  const btn = document.getElementById('dispatchToWillysBtn');
+  if (!btn) return;
+  const mobile = !(window.matchMedia && window.matchMedia('(min-width: 900px)').matches);
+  const host = document.getElementById(mobile ? 'shopMobileDispatch' : 'shopSideDispatch');
+  if (host && btn.parentElement !== host) host.appendChild(btn);
+  if (!mobile) closeShopSide();
+}
+if (window.matchMedia) window.matchMedia('(min-width: 900px)').addEventListener('change', placeShopChrome);
+placeShopChrome();
 
 // ── Inköpsrundor: täckningsrad + "Vi har handlat" (migration 009) ────────────
 // window._shopCoverage = meal_days-rader (date, shopped_at, recipe_title_snapshot)
@@ -1030,6 +1142,8 @@ async function loadShoppingTabInner() {
     if (!hasRecipeItems && !hasManual) {
       contentEl.style.display = 'none';
       document.getElementById('shopNoData').style.display = '';
+      window._shopRecipeItems = null; window._shopManualItems = [];
+      updateShopSummary();
       unsubscribeShoppingItems();
       return;
     }
@@ -1264,9 +1378,8 @@ export async function clearShoppingList() {
     danger: true,
   });
   if (!ok) return;
-  const btn = document.getElementById('modeBtnClear');
-  btn.disabled = true;
-  btn.textContent = 'Rensar…';
+  const btn = document.getElementById('modeBtnClear');   // fanns i gamla layouten; panelens länk har ingen väntetext
+  if (btn) { btn.disabled = true; btn.textContent = 'Rensar…'; }
   try {
     const listId = window._shopListId;
     if (listId) {
@@ -1330,10 +1443,8 @@ export async function clearPickedItems() {
 
 export function copyShoppingList() {
   const el = document.getElementById('shoppingText');
-  navigator.clipboard.writeText(el._fullText || '').then(() => {
-    const btn = el.querySelector('.shop-copy-btn');
-    btn.textContent = 'Kopierad!';
-    setTimeout(() => { btn.textContent = 'Kopiera hela listan'; }, 2000);
+  navigator.clipboard.writeText(el?._fullText || '').then(() => {
+    window.showToast?.('Listan är kopierad — klistra in den där du vill.', { type: 'success' });
   }).catch(() => {
     // Clipboard nekas i osäker kontext / äldre iOS — ge besked i stället för tyst.
     window.showToast?.('Kunde inte kopiera listan — markera texten och kopiera manuellt.', { type: 'error' });
@@ -1496,6 +1607,10 @@ window.closeShopAddSheet  = closeShopAddSheet;
 window.shopAddSubmit      = shopAddSubmit;
 window.toggleHandlaMode   = toggleHandlaMode;
 window.handlaModeFabClick = handlaModeFabClick;
+window.openShopSide       = openShopSide;
+window.isPantryName       = isPantryName;
+window.closeShopSide      = closeShopSide;
+window.updateShopSummary  = updateShopSummary;
 window.renameShopItem     = renameShopItem;
 window.removeShopItem     = removeShopItem;
 window.removeManualItem   = removeManualItem;

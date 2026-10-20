@@ -1,8 +1,12 @@
-// Receptbläddrare: rendering av receptkort, gruppering, filter, sökning.
-// Läser state: RECIPES, groupBy, recipeFilters, replaceMode, customPickMode
-// Skriver state: groupBy, isSnapping, scrollUpAccum, lastScrollY, RECIPES[].tested
+// Receptbläddrare (ny design 2026-10, docs/design/HANDOFF-ny-design.md):
+// desktop = master–detail (smal lista till vänster, valt recept till höger),
+// mobil = fotogrid två i bredd. Filterchips + gruppering högst upp, inga
+// flytande knappar. Detaljen renderas av recipe-detail.js.
+//
+// Läser state: RECIPES, groupBy, recipeQuick, recipeFilters, replaceMode, customPickMode
+// Skriver state: groupBy, recipeQuick, _recipeDetailId, RECIPES[].tested
 
-import { proteinLabel, timeStr, renderDetailInner, escapeHtml, jsStringAttr, PROTEIN_COLOR, svCompare, recipeImage } from '../utils.js';
+import { proteinLabel, timeStr, escapeHtml, jsStringAttr, PROTEIN_COLOR, svCompare, recipeImage } from '../utils.js';
 
 // ── Grupperingsdefinitioner ───────────────────────────────────────────────────
 // Varje grupp är en lista av sektioner. Sektionerna utvärderas i ordning;
@@ -34,14 +38,39 @@ function mainIngredientOf(r) {
 }
 
 const GROUP_DEFS = {
-  tested: {
+  time: {
+    label: 'Vardag / helg',
     sections: [
-      { id: 'provat',  label: '✓ Provat',                 match: r => statusBucket(r) === 'provat' },
-      { id: 'oprovat', label: 'Oprövat',                  match: r => statusBucket(r) === 'oprovat' },
-      { id: 'doh',     label: 'Importerat — granska',     match: r => statusBucket(r) === 'doh' },
+      { id: 'vardag30', label: 'Vardag · under 30 min',    match: r => timeBucket(r) === 'vardag30' },
+      { id: 'helg60',   label: 'Helg · upp till en timme', match: r => timeBucket(r) === 'helg60' },
+      { id: 'longer',   label: 'Längre eller okänt',       match: r => timeBucket(r) === 'longer' },
+    ],
+  },
+  cuisine: {
+    label: 'Kök',
+    sections: [
+      ...CUISINE_TAGS.map(tag => ({
+        id: tag,
+        label: tag.charAt(0).toUpperCase() + tag.slice(1),
+        match: r => r.tags.includes(tag),
+      })),
+      { id: 'doh',   label: 'Dishing out health', match: r => r.tags.includes('doh') },
+      { id: 'ovrig', label: 'Övrigt',             match: r => !CUISINE_TAGS.some(t => r.tags.includes(t)) },
+    ],
+  },
+  type: {
+    label: 'Typ',
+    sections: [
+      ...TYPE_TAGS.map(tag => ({
+        id: tag,
+        label: tag.charAt(0).toUpperCase() + tag.slice(1),
+        match: r => r.tags.includes(tag),
+      })),
+      { id: 'ovrig', label: 'Övrigt', match: r => !TYPE_TAGS.some(t => r.tags.includes(t)) },
     ],
   },
   mainIngredient: {
+    label: 'Huvudingrediens',
     sections: [
       { id: 'lax',       label: 'Lax' },
       { id: 'räkor',     label: 'Räkor' },
@@ -56,130 +85,150 @@ const GROUP_DEFS = {
       { id: 'annat',     label: 'Annat' },
     ].map(s => ({ ...s, match: r => mainIngredientOf(r) === s.id })),
   },
-  time: {
+  tested: {
+    label: 'Status',
     sections: [
-      { id: 'vardag30', label: 'Vardag · ≤30 min',     match: r => timeBucket(r) === 'vardag30' },
-      { id: 'helg60',   label: 'Helg · 31–60 min',     match: r => timeBucket(r) === 'helg60' },
-      { id: 'longer',   label: 'Längre eller okänt',   match: r => timeBucket(r) === 'longer' },
-    ],
-  },
-  type: {
-    sections: [
-      ...TYPE_TAGS.map(tag => ({
-        id: tag,
-        label: tag.charAt(0).toUpperCase() + tag.slice(1),
-        match: r => r.tags.includes(tag),
-      })),
-      { id: 'ovrig', label: 'Övrigt', match: r => !TYPE_TAGS.some(t => r.tags.includes(t)) },
-    ],
-  },
-  cuisine: {
-    sections: [
-      ...CUISINE_TAGS.map(tag => ({
-        id: tag,
-        label: tag.charAt(0).toUpperCase() + tag.slice(1),
-        match: r => r.tags.includes(tag),
-      })),
-      { id: 'doh',   label: 'Dishing out health', match: r => r.tags.includes('doh') },
-      { id: 'ovrig', label: 'Övrigt',             match: r => !CUISINE_TAGS.some(t => r.tags.includes(t)) },
+      { id: 'provat',  label: 'Provat',                 match: r => statusBucket(r) === 'provat' },
+      { id: 'oprovat', label: 'Inte provat än',         match: r => statusBucket(r) === 'oprovat' },
+      { id: 'doh',     label: 'Importerat — granska',   match: r => statusBucket(r) === 'doh' },
     ],
   },
 };
 
-// ── Receptkort ────────────────────────────────────────────────────────────────
+// ── Snabbfilter (chips högst upp — ett i taget, "Alla" nollar) ───────────────
+const QUICK_FILTERS = [
+  { id: 'all',      label: 'Alla',            match: () => true },
+  { id: 'veg',      label: 'Vegetariskt',     match: r => r.protein === 'vegetarisk' },
+  { id: 'fisk',     label: 'Fisk & skaldjur', match: r => r.protein === 'fisk' },
+  { id: 'kyckling', label: 'Kyckling',        match: r => r.protein === 'kyckling' },
+  { id: 'under30',  label: 'Under 30 min',    match: r => !!r.time && r.time <= 30 },
+  { id: 'provade',  label: 'Provade',         match: r => r.tested },
+  { id: 'ugn',      label: 'Ugn',             match: r => r.tags.includes('ugn') },
+];
+
+function quickDef() {
+  return QUICK_FILTERS.find(q => q.id === (window.recipeQuick || 'all')) || QUICK_FILTERS[0];
+}
+
+function renderChips() {
+  const host = document.getElementById('recipeChips');
+  if (!host) return;
+  const cur = quickDef().id;
+  host.innerHTML = QUICK_FILTERS.map(q =>
+    `<button type="button" class="recipe-chip${q.id === cur ? ' on' : ''}" aria-pressed="${q.id === cur}"
+             onclick="setRecipeQuick('${q.id}')">${escapeHtml(q.label)}</button>`).join('');
+}
+
+export function setRecipeQuick(id) {
+  window.recipeQuick = id;
+  renderRecipeBrowser();
+}
+
+function renderSortSelect() {
+  const sel = document.getElementById('recipeSort');
+  if (!sel || sel.dataset.built) return;
+  sel.innerHTML = Object.entries(GROUP_DEFS).map(([k, d]) => `<option value="${k}">${escapeHtml(d.label)}</option>`).join('');
+  sel.value = window.groupBy || 'time';
+  sel.dataset.built = '1';
+  sel.addEventListener('change', () => setGroupBy(sel.value));
+}
+
+// ── Receptkort — EN markup för listrad (desktop) och fotoruta (mobil) ────────
+const ICON_POT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13c0-3.5 3.5-6 8-6s8 2.5 8 6"/><path d="M3 13h18"/><path d="M5.5 13v2c0 1.5 1 2.5 2.5 2.5h8c1.5 0 2.5-1 2.5-2.5v-2"/></svg>';
+const ICON_TICK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"></path></svg>';
+
+// Metaraden: proteinprick · protein · tid · ✓ Provat (bara när provat — "Oprövat" visas inte).
 export function cardMetaHtml(r) {
   const t = timeStr(r);
-  return `
-        <span class="pill pill-protein">${proteinLabel[r.protein] || r.protein}</span>
-        ${t ? `<span class="pill pill-time">⏱ ${t}</span>` : ''}
-        <span class="pill ${r.tested ? 'pill-tested' : 'pill-untested'} pill-toggle" role="button" tabindex="0"
-              onclick="toggleTested(event, ${r.id})"
-              onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleTested(event, ${r.id})}">${r.tested ? '✓ Provat' : 'Oprövat'}</span>`;
+  const parts = [escapeHtml(proteinLabel[r.protein] || r.protein || '')];
+  if (t) parts.push(escapeHtml(t));
+  return `<span class="rc-dot" style="--p:${PROTEIN_COLOR[r.protein] || 'var(--birch)'}"></span>${parts.filter(Boolean).join(' · ')}` +
+    (r.tested ? `<span class="rc-tested">${ICON_TICK}Provat</span>` : '');
 }
+
+export function thumbHtml(r, cls = 'rc-thumb') {
+  const image = recipeImage(r);
+  return image
+    ? `<img class="${cls}" src="${image}" alt="" loading="lazy" decoding="async" width="56" height="56" onerror="recipeThumbFallback(this)">`
+    : `<span class="${cls} is-empty" aria-hidden="true">${ICON_POT}</span>`;
+}
+
+// Trasig bildfil → samma gryt-platshållare som recept utan bild (ingen trasig <img>).
+window.recipeThumbFallback = function (img) {
+  const span = document.createElement('span');
+  span.className = img.className + ' is-empty';
+  span.setAttribute('aria-hidden', 'true');
+  span.innerHTML = ICON_POT;
+  img.replaceWith(span);
+};
 
 export function renderCard(r) {
-  const image = recipeImage(r);
+  const selected = window._recipeDetailId === r.id;
   return `
-<div class="recipe-card"
-     style="--rail:${PROTEIN_COLOR[r.protein] || 'var(--birch-soft)'}"
-     data-id="${r.id}"
-     data-title="${escapeHtml(r.title).toLowerCase()}"
-     data-tested="${r.tested}">
-  <div class="card-header" role="button" tabindex="0"
-       onclick="cardHeaderTap(event, this.closest('.recipe-card'))"
-       onkeydown="if(event.target===this&&(event.key==='Enter'||event.key===' ')){event.preventDefault();cardHeaderTap(event, this.closest('.recipe-card'))}">
-    ${image ? `<img class="recipe-thumbnail" src="${image}" alt="" width="56" height="56" loading="lazy" decoding="async" onerror="this.hidden=true">` : `<div class="recipe-num">${r.id}</div>`}
-    <div class="card-info">
-      <div class="card-title">${escapeHtml(r.title)}</div>
-      <div class="card-meta">${cardMetaHtml(r)}
-      </div>
-    </div>
-    <button type="button" class="select-btn" tabindex="-1"
-            onclick="selectRecipeForDay(event,${r.id},'${jsStringAttr(r.title)}')">Välj</button>
-    <span class="card-chevron" role="button" tabindex="0" aria-label="Visa receptet"
-          onclick="cardChevronTap(event, this.closest('.recipe-card'))"
-          onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();cardChevronTap(event, this.closest('.recipe-card'))}">›</span>
-  </div>
-  <div class="recipe-detail">
-    <div class="detail-inner"></div>
-  </div>
-</div>`;
+<article class="recipe-card${selected ? ' is-selected' : ''}" data-id="${r.id}" data-title="${escapeHtml(r.title).toLowerCase()}" data-tested="${r.tested}"
+         style="--rail:${PROTEIN_COLOR[r.protein] || 'var(--birch-soft)'}">
+  <button type="button" class="rc-main" onclick="recipeCardTap(event, ${r.id})" aria-current="${selected ? 'true' : 'false'}">
+    ${thumbHtml(r)}
+    <span class="rc-body">
+      <span class="card-title">${escapeHtml(r.title)}</span>
+      <span class="card-meta">${cardMetaHtml(r)}</span>
+    </span>
+  </button>
+  <button type="button" class="rc-peek" aria-label="Visa receptet" title="Visa receptet"
+          onclick="recipeCardPeek(event, ${r.id})">›</button>
+</article>`;
 }
 
-// Bygg receptdetaljen först när kortet öppnas — håller DOM:en liten tills den behövs.
-function ensureDetail(card) {
-  const inner = card.querySelector('.detail-inner');
-  if (!inner || inner.dataset.rendered) return;
-  const id = Number(card.dataset.id);
-  const r  = window.RECIPES.find(x => x.id === id);
-  if (!r) return;
-  inner.innerHTML = renderDetailInner(r);
-  inner.dataset.rendered = '1';
-}
-
-// Väljläge (Välj själv / egen dag): ett tryck var som helst på kortets rubrik
-// VÄLJER receptet — det är vad bannern lovar. Annars fälls kortet ut som vanligt.
-export function cardHeaderTap(event, card) {
-  if (!card) return;
+// Väljläge (Välj själv / egen dag): ett tryck på kortet VÄLJER receptet — det
+// är vad bannern lovar. Annars öppnas receptet i detaljpanelen.
+export function recipeCardTap(event, id) {
   if (window.replaceMode || window.customPickMode) {
-    const id = Number(card.dataset.id);
-    const r  = window.RECIPES?.find(x => x.id === id);
+    const r = window.RECIPES?.find(x => x.id === id);
     if (r) window.selectRecipeForDay(event, id, r.title);
     return;
   }
-  toggleCard(card);
+  openRecipeDetail(id);
 }
 
-// Chevronen fäller alltid ut/ihop kortet — även i väljläget, där resten av
-// rubriken väljer receptet. Så går det att kolla ingredienser innan man väljer.
-export function cardChevronTap(event, card) {
+// "›" visar alltid receptet — även i väljläget, så man kan kolla ingredienser
+// innan man väljer (väljknappen finns i detaljen).
+export function recipeCardPeek(event, id) {
   event?.stopPropagation?.();
-  if (card) toggleCard(card);
+  openRecipeDetail(id);
 }
 
-export function toggleCard(card) {
-  const wasOpen = card.classList.contains('open');
-  document.querySelectorAll('.recipe-card.open').forEach(c => c.classList.remove('open'));
-  if (!wasOpen) {
-    ensureDetail(card);
-    card.classList.add('open');
-    const header = document.querySelector('header');
-    header.classList.remove('header-hidden');
-    window.isSnapping    = true;
-    window.scrollUpAccum = 0;
-    // NATIVE kompositor-scroll (av main-tråden → hög FPS "när skärmen flyttas"),
-    // men med EXAKT mål beräknat från kortets verkliga position. window.scrollTo
-    // med behavior:'smooth' är också kompositor-drivet — till skillnad från
-    // scrollIntoView+scroll-margin-top blir målet rätt ÄVEN med content-visibility
-    // på korten (annars gissas grann-korts höjd → rubriken hamnar bakom headern).
-    // headerhöjden inkluderar safe-area (env i header-padding). Respekterar reduced-motion.
-    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const hh  = header.offsetHeight;
-    const top = card.getBoundingClientRect().top + window.scrollY - hh - 12;
-    window.scrollTo({ top, behavior: reduce ? 'auto' : 'smooth' });
-    // Släpp header-låset när scrollen landat (så auto-göm-headern funkar igen).
-    setTimeout(() => { window.isSnapping = false; window.lastScrollY = window.scrollY; }, 620);
+function isDesktop() {
+  return !!(window.matchMedia && window.matchMedia('(min-width: 900px)').matches);
+}
+
+export function openRecipeDetail(id) {
+  const r = window.RECIPES.find(x => x.id === id);
+  if (!r) return;
+  const prev = window._recipeDetailId;
+  window._recipeDetailId = id;
+  const grid = document.getElementById('recipeGrid');
+  if (grid && prev !== id) {
+    grid.querySelectorAll('.recipe-card.is-selected').forEach(c => { c.classList.remove('is-selected'); c.querySelector('.rc-main')?.setAttribute('aria-current', 'false'); });
+    const card = grid.querySelector(`.recipe-card[data-id="${id}"]`);
+    if (card) { card.classList.add('is-selected'); card.querySelector('.rc-main')?.setAttribute('aria-current', 'true'); }
   }
+  window.renderRecipeDetail?.(id);
+  const rv = document.getElementById('receptView');
+  if (!isDesktop() && rv && !rv.classList.contains('rv-detail-open')) {
+    rv.classList.add('rv-detail-open');
+    document.body.classList.add('rv-detail-lock');
+    window.pushSheetHistory?.();   // bakåtknappen stänger detaljen (F196-mönstret)
+  }
+  const pane = document.getElementById('recipeDetailPane');
+  if (pane) pane.scrollTop = 0;
+}
+
+export function closeRecipeDetail() {
+  const rv = document.getElementById('receptView');
+  if (!rv?.classList.contains('rv-detail-open')) return;
+  rv.classList.remove('rv-detail-open');
+  document.body.classList.remove('rv-detail-lock');
+  window.popSheetHistory?.();
 }
 
 // ── Sökning + filter + gruppering + render ────────────────────────────────────
@@ -210,6 +259,7 @@ function seasonBucket(r) {
 }
 
 function passesFilters(r) {
+  if (!quickDef().match(r)) return false;
   const f = window.recipeFilters;
   if (!f) return true;
   if (f.tested.size         > 0 && !f.tested.has(statusBucket(r)))               return false;
@@ -225,8 +275,11 @@ export function renderRecipeBrowser() {
   const empty   = document.getElementById('emptyState');
   const info    = document.getElementById('resultsInfo');
   const q       = document.getElementById('search').value.toLowerCase().trim();
-  const groupBy = window.groupBy || 'tested';
-  const def     = GROUP_DEFS[groupBy] || GROUP_DEFS.tested;
+  const groupBy = window.groupBy || 'time';
+  const def     = GROUP_DEFS[groupBy] || GROUP_DEFS.time;
+
+  renderChips();
+  renderSortSelect();
 
   const matched = window.RECIPES.filter(r => matchesSearch(r, q) && passesFilters(r));
 
@@ -241,6 +294,10 @@ export function renderRecipeBrowser() {
   const nonEmpty = buckets.filter(b => b.recipes.length > 0);
 
   const total = window.RECIPES.length;
+  const countEl = document.getElementById('recipeCountLabel');
+  if (countEl) countEl.textContent = `${total} recept`;
+  const search = document.getElementById('search');
+  if (search && total) search.placeholder = `Sök bland ${total} recept…`;
 
   if (nonEmpty.length === 0) {
     grid.innerHTML  = '';
@@ -249,6 +306,12 @@ export function renderRecipeBrowser() {
     return;
   }
   empty.style.display = 'none';
+
+  // Desktop: alltid ett valt recept i detaljpanelen (mockup B-Master-detail).
+  if (isDesktop() && !matched.some(r => r.id === window._recipeDetailId)) {
+    window._recipeDetailId = nonEmpty[0].recipes[0].id;
+    window.renderRecipeDetail?.(window._recipeDetailId);
+  }
 
   grid.innerHTML = nonEmpty.map(b => `
     <section class="recipe-section" data-section="${b.id}">
@@ -261,8 +324,9 @@ export function renderRecipeBrowser() {
   `).join('');
 
   const filtersActive =
-    window.recipeFilters &&
-    (window.recipeFilters.tested.size + window.recipeFilters.mainIngredient.size + window.recipeFilters.time.size + window.recipeFilters.tags.size + window.recipeFilters.season.size > 0);
+    (window.recipeFilters &&
+    (window.recipeFilters.tested.size + window.recipeFilters.mainIngredient.size + window.recipeFilters.time.size + window.recipeFilters.tags.size + window.recipeFilters.season.size > 0))
+    || quickDef().id !== 'all';
 
   info.textContent = (q || filtersActive)
     ? `Visar ${matched.length} av ${total} recept`
@@ -290,28 +354,31 @@ function refreshStickyObserver() {
 
 export function setGroupBy(value) {
   window.groupBy = value;
+  const sel = document.getElementById('recipeSort');
+  if (sel && sel.value !== value) sel.value = value;
   renderRecipeBrowser();
 }
 
 export function jumpToRecipe(title) {
   window.switchTab('recept');
   document.getElementById('search').value = '';
+  window.updateSearchClear?.();
   renderRecipeBrowser();
-  setTimeout(() => {
-    document.querySelectorAll('.recipe-card').forEach(card => {
-      // toggleCard rullar nu in kortet självt (header-offset) → ingen extra scroll.
-      if (card.dataset.title === title.toLowerCase()) toggleCard(card);
-    });
-  }, 50);
+  const r = window.RECIPES.find(x => x.title.toLowerCase() === String(title).toLowerCase());
+  if (r) {
+    openRecipeDetail(r.id);
+    const card = document.querySelector(`.recipe-card[data-id="${r.id}"]`);
+    card?.scrollIntoView({ block: 'center', behavior: 'auto' });
+  }
 }
 
 export async function toggleTested(event, id) {
-  // I väljläget är pillen bara information — trycket går vidare till kortet
+  // I väljläget är statusen bara information — trycket går vidare till kortet
   // (som väljer receptet) i stället för att av misstag ändra "provat".
   if (window.replaceMode || window.customPickMode) return;
-  event.stopPropagation();
-  const pill = event.currentTarget;
-  pill.style.opacity = '0.5';
+  event?.stopPropagation?.();
+  const btn = event?.currentTarget;
+  if (btn) btn.style.opacity = '0.5';
   try {
     const r = window.RECIPES.find(r => r.id === id);
     if (!r) throw new Error();
@@ -324,19 +391,23 @@ export async function toggleTested(event, id) {
       .eq('household_id', householdId);
     if (error) throw error;
     r.tested = newTested;
-    pill.className   = `pill ${newTested ? 'pill-tested' : 'pill-untested'} pill-toggle`;
-    pill.textContent = newTested ? '✓ Provat' : 'Oprövat';
-    pill.closest('.recipe-card').dataset.tested = newTested;
+    renderRecipeBrowser();
+    if (window._recipeDetailId === id) window.renderRecipeDetail?.(id);
   } catch {
-    pill.style.outline = '2px solid var(--rust)';
-    setTimeout(() => { pill.style.outline = ''; }, 1500);
+    if (btn) {
+      btn.style.outline = '2px solid var(--rust)';
+      setTimeout(() => { btn.style.outline = ''; }, 1500);
+    }
   } finally {
-    pill.style.opacity = '';
+    if (btn) btn.style.opacity = '';
   }
 }
 
-window.cardHeaderTap       = cardHeaderTap;
-window.cardChevronTap      = cardChevronTap;
+window.recipeCardTap       = recipeCardTap;
+window.recipeCardPeek      = recipeCardPeek;
+window.openRecipeDetail    = openRecipeDetail;
+window.closeRecipeDetail   = closeRecipeDetail;
+window.setRecipeQuick      = setRecipeQuick;
 window.renderRecipeBrowser = renderRecipeBrowser;
 window.setGroupBy          = setGroupBy;
 window.jumpToRecipe        = jumpToRecipe;

@@ -1,6 +1,9 @@
 // Delad app-state — globala variabler som delas mellan moduler via window.*.
 window.RECIPES            = [];
-window.groupBy            = 'cuisine';  // gruppering i receptbrowsern (default: Kök)
+window.groupBy            = 'time';     // gruppering i receptbrowsern (default: vardag/helg — ny design 2026-10)
+window.recipeQuick        = 'all';      // snabbfilter-chip i receptvyn (all|veg|fisk|kyckling|under30|provade|ugn)
+window._recipeDetailId    = null;       // recept som visas i detaljpanelen
+window._placeRecipe       = null;       // { id, title } — "Planera in": väntar på att en dag trycks i Matsedeln
 window.recipeFilters      = {           // multi-val checkbox-filter per grupp
   tested:         new Set(),            // tomt = visa alla
   mainIngredient: new Set(),

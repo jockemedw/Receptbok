@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<title>Receptlista – bildburen, desktop</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#1d2721}
+a{color:#9dbca6}a:hover{color:#cfe0d3}
+</style>
+</helmet>
+<div style="min-height: 100vh; background: #1d2721; color: #e6e0d2; font-family: 'DM Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.45">
+
+  <header style="display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 14px 40px; border-bottom: 1px solid #33402f; flex-wrap: wrap">
+    <div style="font-family: 'DM Sans', system-ui, sans-serif; font-size: 22px; font-weight: 600; color: #f0ebe0; letter-spacing: -0.01em">Recept<span style="color: #d4a851; font-style: italic; font-weight: 500">boken</span></div>
+    <nav aria-label="Huvudmeny" style="display: flex; gap: 4px; flex-wrap: wrap">
+      <a href="#" style="padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: 500; color: #9aa78f">Idag</a>
+      <a href="#" style="padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: 500; color: #9aa78f">Matsedel</a>
+      <a href="#" style="padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: 500; color: #9aa78f">Inköp</a>
+      <a href="#" aria-current="page" style="padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: 600; color: #f0ebe0; background: #2b3830">Recept</a>
+      <a href="#" style="padding: 8px 14px; border-radius: 8px; text-decoration: none; font-weight: 500; color: #9aa78f">Listor</a>
+    </nav>
+    <label style="display: flex; align-items: center; gap: 10px; background: #263229; border: 1px solid #33402f; border-radius: 10px; padding: 9px 14px; width: 300px; max-width: 100%; color: #9aa78f">
+      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.5-3.5"></path></svg>
+      <span style="position: absolute; left: -9999px">Sök recept</span>
+      <input type="search" placeholder="Sök namn, ingrediens, tagg…" style="background: transparent; border: 0; outline: 0; color: #e6e0d2; font: inherit; width: 100%">
+    </label>
+  </header>
+
+  <main style="max-width: 1200px; margin: 0 auto; padding: 36px 40px 64px; display: flex; flex-direction: column; gap: 28px">
+
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap">
+      <h1 style="margin: 0; font-family: 'DM Sans', system-ui, sans-serif; font-size: 40px; font-weight: 600; letter-spacing: -0.02em; color: #f0ebe0; line-height: 1.05">Recept <span style="font-size: 18px; font-weight: 500; color: #9aa78f; letter-spacing: 0; margin-left: 6px">165</span></h1>
+      <div style="display: flex; gap: 10px; align-items: center">
+        <label style="display: flex; align-items: center; gap: 8px; color: #9aa78f; font-size: 14px">Sortera
+          <select style="background: #263229; color: #e6e0d2; border: 1px solid #33402f; border-radius: 8px; padding: 8px 10px; font: inherit">
+            <option>Efter kök</option><option>A–Ö</option><option>Kortast tid</option><option>Senast lagad</option>
+          </select>
+        </label>
+        <button type="button" style="display: flex; align-items: center; gap: 8px; background: {{accent}}; color: #1c2620; border: 0; border-radius: 10px; padding: 10px 16px; font: inherit; font-weight: 600; min-height: 44px; cursor: pointer">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+          Nytt recept
+        </button>
+      </div>
+    </div>
+
+    <div role="group" aria-label="Filter" style="display: flex; gap: 8px; flex-wrap: wrap">
+      <button type="button" aria-pressed="true" style="min-height: 40px; padding: 8px 16px; border-radius: 999px; border: 1px solid #9dbca6; background: #33422f; color: #f0ebe0; font: inherit; font-weight: 600; cursor: pointer">Alla</button>
+      <button type="button" aria-pressed="false" style="min-height: 40px; padding: 8px 16px; border-radius: 999px; border: 1px solid #3d4c41; background: transparent; color: #e6e0d2; font: inherit; font-weight: 500; cursor: pointer">Vegetariskt</button>
+      <button type="button" aria-pressed="false" style="min-height: 40px; padding: 8px 16px; border-radius: 999px; border: 1px solid #3d4c41; background: transparent; color: #e6e0d2; font: inherit; font-weight: 500; cursor: pointer">Fisk &amp; skaldjur</button>
+      <button type="button" aria-pressed="false" style="min-height: 40px; padding: 8px 16px; border-radius: 999px; border: 1px solid #3d4c41; background: transparent; color: #e6e0d2; font: inherit; font-weight: 500; cursor: pointer">Kyckling</button>
+      <button type="button" aria-pressed="false" style="min-height: 40px; padding: 8px 16px; border-radius: 999px; border: 1px solid #3d4c41; background: transparent; color: #e6e0d2; font: inherit; font-weight: 500; cursor: pointer">Under 30 min</button>
+      <button type="button" aria-pressed="false" style="min-height: 40px; padding: 8px 16px; border-radius: 999px; border: 1px solid #3d4c41; background: transparent; color: #e6e0d2; font: inherit; font-weight: 500; cursor: pointer">Provade</button>
+      <button type="button" aria-pressed="false" style="min-height: 40px; padding: 8px 16px; border-radius: 999px; border: 1px solid #3d4c41; background: transparent; color: #e6e0d2; font: inherit; font-weight: 500; cursor: pointer">Ugn</button>
+    </div>
+
+    <section style="display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; align-items: baseline; gap: 10px; border-bottom: 1px solid #33402f; padding-bottom: 10px">
+        <h2 style="margin: 0; font-family: 'DM Sans', system-ui, sans-serif; font-size: 20px; font-weight: 600; color: #f0ebe0">Vardag · under 30 min</h2>
+        <span style="color: #9aa78f; font-size: 14px">7 recept</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 1fr)); gap: 24px 20px">
+
+        <a href="A-Receptdetalj.dc.html" style="display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: inherit">
+          <img src="/_blob/ab564fed99d1ed5ee47fad6dd4297234" alt="" style="width: 100%; aspect-ratio: {{ratio}}; object-fit: cover; border-radius: 14px; background: #263229">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <div style="font-family: 'DM Sans', system-ui, sans-serif; font-size: 17px; font-weight: 600; color: #f0ebe0; line-height: 1.25; text-wrap: pretty">Orecchiette med solrosfrö-romesco</div>
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #9aa78f"><span style="width: 8px; height: 8px; border-radius: 50%; background: #8fac97"></span>Vegetariskt · 25 min</div>
+          </div>
+        </a>
+
+        <a href="A-Receptdetalj.dc.html" style="display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: inherit">
+          <img src="/_blob/3b9675e33fff59a8f8c5d93ce53be0f4" alt="" style="width: 100%; aspect-ratio: {{ratio}}; object-fit: cover; border-radius: 14px; background: #263229">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <div style="font-family: 'DM Sans', system-ui, sans-serif; font-size: 17px; font-weight: 600; color: #f0ebe0; line-height: 1.25; text-wrap: pretty">Räkor med tomat- och fänkålscouscous</div>
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #9aa78f"><span style="width: 8px; height: 8px; border-radius: 50%; background: #7ba7c9"></span>Fisk &amp; skaldjur · 20 min</div>
+          </div>
+        </a>
+
+        <a href="A-Receptdetalj.dc.html" style="display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: inherit">
+          <img src="/_blob/f34cb8b79352d175917afc0988f8eb0d" alt="" style="width: 100%; aspect-ratio: {{ratio}}; object-fit: cover; border-radius: 14px; background: #263229">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <div style="font-family: 'DM Sans', system-ui, sans-serif; font-size: 17px; font-weight: 600; color: #f0ebe0; line-height: 1.25; text-wrap: pretty">Kryddiga laxbowls med avokadosås</div>
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #9aa78f"><span style="width: 8px; height: 8px; border-radius: 50%; background: #7ba7c9"></span>Fisk &amp; skaldjur · 25 min</div>
+          </div>
+        </a>
+
+        <a href="A-Receptdetalj.dc.html" style="display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: inherit">
+          <img src="/_blob/362fbeebcdd655aaca4e37ac069a2a06" alt="" style="width: 100%; aspect-ratio: {{ratio}}; object-fit: cover; border-radius: 14px; background: #263229">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <div style="font-family: 'DM Sans', system-ui, sans-serif; font-size: 17px; font-weight: 600; color: #f0ebe0; line-height: 1.25; text-wrap: pretty">Kikärts- och tahiniwraps med collardblad</div>
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #9aa78f"><span style="width: 8px; height: 8px; border-radius: 50%; background: #8fac97"></span>Vegetariskt · 20 min</div>
+          </div>
+        </a>
+
+        <a href="A-Receptdetalj.dc.html" style="display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: inherit">
+          <img src="/_blob/8cc4d050bceafd01cc01e52fb2026961" alt="" style="width: 100%; aspect-ratio: {{ratio}}; object-fit: cover; border-radius: 14px; background: #263229">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <div style="font-family: 'DM Sans', system-ui, sans-serif; font-size: 17px; font-weight: 600; color: #f0ebe0; line-height: 1.25; text-wrap: pretty">Stekt vit fisk med harissa, fänkål och kapris</div>
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #9aa78f"><span style="width: 8px; height: 8px; border-radius: 50%; background: #7ba7c9"></span>Fisk &amp; skaldjur · 25 min</div>
+          </div>
+        </a>
+
+        <a href="A-Receptdetalj.dc.html" style="display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: inherit">
+          <img src="/_blob/d6c66a932f79d9ecad38396caf559be8" alt="" style="width: 100%; aspect-ratio: {{ratio}}; object-fit: cover; border-radius: 14px; background: #263229">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <div style="font-family: 'DM Sans', system-ui, sans-serif; font-size: 17px; font-weight: 600; color: #f0ebe0; line-height: 1.25; text-wrap: pretty">Tonfisksmältare med snabbsyrad fänkål</div>
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #9aa78f"><span style="width: 8px; height: 8px; border-radius: 50%; background: #7ba7c9"></span>Fisk &amp; skaldjur · 20 min<span style="display: inline-flex; align-items: center; gap: 4px; margin-left: 4px; color: #9dbca6; font-weight: 600"><svg aria-hidden="true" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"></path></svg>Provat</span></div>
+          </div>
+        </a>
+
+        <a href="A-Receptdetalj.dc.html" style="display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: inherit">
+          <img src="/_blob/2677bfbb1d3f08b226a3e721fd99e5ca" alt="" style="width: 100%; aspect-ratio: {{ratio}}; object-fit: cover; border-radius: 14px; background: #263229">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <div style="font-family: 'DM Sans', system-ui, sans-serif; font-size: 17px; font-weight: 600; color: #f0ebe0; line-height: 1.25; text-wrap: pretty">Enkla lönnsirap- och dijonkotletter</div>
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #9aa78f"><span style="width: 8px; height: 8px; border-radius: 50%; background: #cf9678"></span>Fläsk · 20 min</div>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; align-items: baseline; gap: 10px; border-bottom: 1px solid #33402f; padding-bottom: 10px">
+        <h2 style="margin: 0; font-family: 'DM Sans', system-ui, sans-serif; font-size: 20px; font-weight: 600; color: #f0ebe0">Helg · upp till en timme</h2>
+        <span style="color: #9aa78f; font-size: 14px">3 recept</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 1fr)); gap: 24px 20px">
+
+        <a href="A-Receptdetalj.dc.html" style="display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: inherit">
+          <img src="/_blob/ba1044e579be2bc1556fd8f441fa42de" alt="" style="width: 100%; aspect-ratio: {{ratio}}; object-fit: cover; border-radius: 14px; background: #263229">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <div style="font-family: 'DM Sans', system-ui, sans-serif; font-size: 17px; font-weight: 600; color: #f0ebe0; line-height: 1.25; text-wrap: pretty">Gurkmeje-glaserad lax med bulgur</div>
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #9aa78f"><span style="width: 8px; height: 8px; border-radius: 50%; background: #7ba7c9"></span>Fisk &amp; skaldjur · 50 min</div>
+          </div>
+        </a>
+
+        <a href="A-Receptdetalj.dc.html" style="display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: inherit">
+          <img src="/_blob/d28b61e38a6d7763b00b732a39c30a63" alt="" style="width: 100%; aspect-ratio: {{ratio}}; object-fit: cover; border-radius: 14px; background: #263229">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <div style="font-family: 'DM Sans', system-ui, sans-serif; font-size: 17px; font-weight: 600; color: #f0ebe0; line-height: 1.25; text-wrap: pretty">Rökig kikärts- och linssoppa</div>
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #9aa78f"><span style="width: 8px; height: 8px; border-radius: 50%; background: #8fac97"></span>Vegetariskt · 55 min</div>
+          </div>
+        </a>
+
+        <a href="A-Receptdetalj.dc.html" style="display: flex; flex-direction: column; gap: 10px; text-decoration: none; color: inherit">
+          <img src="/_blob/831a65db3160a6befd59157fdd9bc1ee" alt="" style="width: 100%; aspect-ratio: {{ratio}}; object-fit: cover; border-radius: 14px; background: #263229">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <div style="font-family: 'DM Sans', system-ui, sans-serif; font-size: 17px; font-weight: 600; color: #f0ebe0; line-height: 1.25; text-wrap: pretty">Medelhavsauberginer med quinoafyllning</div>
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #9aa78f"><span style="width: 8px; height: 8px; border-radius: 50%; background: #8fac97"></span>Vegetariskt · 50 min</div>
+          </div>
+        </a>
+
+      </div>
+    </section>
+
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#cd825e","options":["#cd825e","#d4a851","#9dbca6"]},"ratio":{"editor":"enum","default":"1 / 1","options":["1 / 1","4 / 3","3 / 2"]},"$preview":{"width":1280,"height":1480}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      accent: this.props.accent ?? '#cd825e',
+      ratio: this.props.ratio ?? '1 / 1'
+    };
+  }
+}
+</script>
+</body>
+</html>
