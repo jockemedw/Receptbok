@@ -199,7 +199,7 @@ function peekHtml(weekStart) {
   const cards = days.map(d =>
     `<div class="dlx-day-slot">${(tonight && d.date === todayIso) ? tonight : renderDayCard(d)}</div>`).join('');
   return `<div class="dlx-sec">${buildHero(days, weekStart, plan, pending)}</div>`
-    + `<div class="dlx-sec">${weekNoticeHtml(plan, pending, weekStart) + modeBannerHtml()}</div>`
+    + `<div class="dlx-sec">${weekNoticeHtml(plan, pending, weekStart) + modeBannerHtml() + placeBannerHtml()}</div>`
     + `<div class="dlx-sec"><div class="dlx-days dlx-quiet">${cards}</div></div>`;
 }
 
@@ -920,6 +920,37 @@ function modeBannerHtml() {
     <button type="button" onclick="dlxCancelMove()">Avbryt</button></div>`;
 }
 
+// "Planera in" från receptvyn: receptet är valt, dagen trycks här. Plandag →
+// samma byte som Välj själv (replace-recipe); annars egen dag med receptet.
+// Samma skrivvägar som väljläget — bara ordningen (recept först) är ny.
+async function dlxPlaceRecipe(date, dayName) {
+  const pr = window._placeRecipe;
+  if (!pr) return;
+  const d = (window._timelineByDate || {})[date];
+  if (d?.isArchive || date < dlxMinSwapIso()) {
+    window.showToast?.('Den dagen går inte att planera längre — välj en annan dag.', { type: 'error' });
+    return;
+  }
+  window._placeRecipe = null;
+  renderDeluxe();
+  if (d && d.recipeId && !d.isCustom) {
+    window.replaceMode = { date, dayName };
+    await window.selectRecipeForDay(null, pr.id, pr.title);
+  } else {
+    window.customPickMode = { date, dayName };
+    await window.selectRecipeForCustomDay(null, pr.id, pr.title);
+  }
+}
+
+function placeBannerHtml() {
+  const pr = window._placeRecipe;
+  if (!pr) return '';
+  return `<div class="dlx-swap-banner">
+    <span class="dlx-swap-ic" aria-hidden="true">${I.plus}</span>
+    <span class="dlx-swap-txt">Tryck på dagen då receptet ska lagas<strong>${esc(pr.title)}</strong></span>
+    <button type="button" onclick="placeRecipeCancel()">Avbryt</button></div>`;
+}
+
 // ── Helskärms-indikator för pågående dag-operationer ─────────────────────────
 // Ligger över allt, blockerar tryck under skrivningen och försvinner så fort
 // servern svarat. Ersätter det inkilade "Byter dag…"-kortet (Joakims mobil-
@@ -995,7 +1026,7 @@ function renderDeluxeInner() {
   // gammal DOM från tidigare renderingar rensas — setSec tar aldrig bort element.
   setSec(host, 'history', '');
   setSec(host, 'hero', hero);
-  setSec(host, 'banner', weekNoticeHtml(plan, pending, weekStart) + modeBannerHtml());
+  setSec(host, 'banner', weekNoticeHtml(plan, pending, weekStart) + modeBannerHtml() + placeBannerHtml());
   setSec(host, 'today', '');
   renderDaysDiff(host, weekDays, { tonightHtml: tonight, tonightDate: todayIso });
   applyPendingMarks(host);
@@ -1491,6 +1522,7 @@ function ensureSheetHost() {
 // (dlxPickMoveTarget förvaliderar med begripliga besked) — annars öppnas
 // sheeten för dagen.
 window.dlxDayClick = function (date, dayName) {
+  if (window._placeRecipe) { dlxPlaceRecipe(date, dayName); return; }
   if (window._dlxMove) { dlxPickMoveTarget(date); return; }
   openDaySheet(date, dayName);
 };

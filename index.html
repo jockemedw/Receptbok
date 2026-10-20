@@ -61,32 +61,44 @@
     <span class="replace-banner-text">Välj recept till <strong id="customPickBannerDay"></strong><span class="replace-banner-help">Tryck för att välja · › visar receptet</span></span>
     <button type="button" class="replace-banner-cancel" onclick="exitCustomPickMode()">Avbryt</button>
   </div>
-  <div class="content-heading">
-    <h2 class="content-heading-title">Recept</h2>
-    <span class="content-heading-sub" id="recipeCountLabel"></span>
-  </div>
-  <div class="recipe-toolbar">
-    <div class="search-wrap">
-      <span class="search-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
-      <input id="search" type="text" placeholder="Sök på namn, ingrediens, tagg…" autocomplete="off" aria-label="Sök recept">
-      <button type="button" class="search-clear hidden" id="searchClear" aria-label="Rensa sökning">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
-      </button>
-    </div>
-  </div>
-  <p class="results-info" id="resultsInfo"></p>
+  <div class="rv-layout">
+    <aside class="rv-list">
+      <div class="content-heading rv-heading">
+        <h2 class="content-heading-title">Recept</h2>
+        <span class="content-heading-sub" id="recipeCountLabel"></span>
+      </div>
+      <div class="recipe-toolbar">
+        <div class="search-wrap">
+          <span class="search-icon" aria-hidden="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg></span>
+          <input id="search" type="search" placeholder="Sök på namn, ingrediens, tagg…" autocomplete="off" aria-label="Sök recept">
+          <button type="button" class="search-clear hidden" id="searchClear" aria-label="Rensa sökning">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+          </button>
+        </div>
+        <div class="recipe-chips" id="recipeChips" role="group" aria-label="Filter"></div>
+        <div class="recipe-sortrow">
+          <label class="recipe-sort">Gruppera<select id="recipeSort" aria-label="Gruppera recepten"></select></label>
+          <button type="button" class="recipe-morefilters" id="openFilterBtn" aria-haspopup="dialog">
+            <span class="filter-dot" id="filterDot" hidden></span>Fler filter
+          </button>
+        </div>
+      </div>
+      <p class="results-info" id="resultsInfo"></p>
 
-  <div id="loadingState" class="loading">
-    <div class="loading-icon">⟳</div>
-    <p>Laddar receptbok…</p>
-  </div>
+      <div id="loadingState" class="loading">
+        <div class="loading-icon">⟳</div>
+        <p>Laddar receptbok…</p>
+      </div>
 
-  <div class="recipe-grid" id="recipeGrid"></div>
+      <div class="recipe-grid" id="recipeGrid"></div>
 
-  <div class="empty" id="emptyState" style="display:none">
-    <div class="no-data-icon"><svg class="icon icon-em-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11h18a9 9 0 0 1-9 9 9 9 0 0 1-9-9z"/><path d="M7 11V8 M12 11V6 M17 11V8"/></svg></div>
-    <p>Inga recept matchade sökningen eller filtren.</p>
-    <button class="empty-reset-btn">Rensa sökning och filter</button>
+      <div class="empty" id="emptyState" style="display:none">
+        <div class="no-data-icon"><svg class="icon icon-em-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11h18a9 9 0 0 1-9 9 9 9 0 0 1-9-9z"/><path d="M7 11V8 M12 11V6 M17 11V8"/></svg></div>
+        <p>Inga recept matchade sökningen eller filtren.</p>
+        <button class="empty-reset-btn">Rensa sökning och filter</button>
+      </div>
+    </aside>
+    <section class="rv-detail" id="recipeDetailPane" aria-label="Valt recept"></section>
   </div>
 </main>
 
@@ -389,13 +401,6 @@
   <button id="scrolltop" title="Till toppen" aria-label="Till toppen">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
   </button>
-  <button class="recipe-fab tab-recept-only" id="openSortBtn" aria-haspopup="dialog" aria-label="Sortera recept" title="Sortera">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h13"/><path d="M3 12h9"/><path d="M3 18h5"/></svg>
-  </button>
-  <button class="recipe-fab tab-recept-only" id="openFilterBtn" aria-haspopup="dialog" aria-label="Filtrera recept" title="Filter">
-    <span class="filter-dot" id="filterDot" hidden></span>
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 9v6l-4-2v-4z"/></svg>
-  </button>
   <button class="recipe-fab tab-shop-only" id="handlaModeFab" onclick="handlaModeFabClick()" aria-pressed="false" aria-label="Handla-läge" title="Handla-läge">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
   </button>
@@ -576,22 +581,6 @@
     <div class="storepick-body" id="shopStoreBody"></div>
     <div class="daypick-foot">
       <button type="button" class="daypick-cancel" data-sheet-close="shopStoreSheet">Avbryt</button>
-    </div>
-  </div>
-</div>
-
-<!-- Sortera-sheet -->
-<div class="bottom-sheet" id="sortSheet" role="dialog" aria-modal="true" aria-labelledby="sortSheetTitle" hidden>
-  <div class="bottom-sheet-backdrop" data-sheet-close="sortSheet"></div>
-  <div class="bottom-sheet-panel">
-    <div class="bottom-sheet-handle"></div>
-    <h3 class="bottom-sheet-title" id="sortSheetTitle">Sortera per</h3>
-    <div class="bs-options">
-      <label class="bs-option"><input type="radio" name="groupBy" value="tested"><span class="bs-option-label">Status</span></label>
-      <label class="bs-option"><input type="radio" name="groupBy" value="mainIngredient"><span class="bs-option-label">Huvudingrediens</span></label>
-      <label class="bs-option"><input type="radio" name="groupBy" value="time"><span class="bs-option-label">Tid</span></label>
-      <label class="bs-option"><input type="radio" name="groupBy" value="type"><span class="bs-option-label">Typ</span></label>
-      <label class="bs-option"><input type="radio" name="groupBy" value="cuisine" checked><span class="bs-option-label">Kök</span></label>
     </div>
   </div>
 </div>

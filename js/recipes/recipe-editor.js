@@ -217,21 +217,9 @@ export async function saveRecipe() {
     const idx = window.RECIPES.findIndex(r => r.id === window.editingId);
     window.RECIPES[idx] = updated;
 
-    const card = document.querySelector(`.recipe-card[data-id="${window.editingId}"]`);
-    if (card) {
-      card.dataset.title        = updated.title.toLowerCase();
-      card.querySelector('.card-title').textContent = updated.title;
-      card.querySelector('.card-meta').innerHTML = cardMetaHtml(updated);
-      // Proteinbyte → ny färgrand; namnbyte → Välj-knappen bär titeln i onclick.
-      card.style.setProperty('--rail', PROTEIN_COLOR[updated.protein] || 'var(--birch-soft)');
-      const tmp = document.createElement('template');   // inert — laddar ingen bild
-      tmp.innerHTML = renderCard(updated);
-      const freshSelect = tmp.content.querySelector('.select-btn');
-      if (freshSelect) card.querySelector('.select-btn')?.replaceWith(freshSelect);
-      const inner = card.querySelector('.detail-inner');
-      inner.innerHTML = renderDetailInner(updated);
-      inner.dataset.rendered = '1';
-    }
+    // Ny design: listan och detaljpanelen ritas om från state (ingen DOM-lappning).
+    window.renderRecipeBrowser();
+    if (window._recipeDetailId === updated.id) window.renderRecipeDetail?.(updated.id);
     closeEditModal();
   } catch {
     feedback.textContent = 'Kunde inte spara — prova igen.';

@@ -17,7 +17,8 @@ const endIdx = src.indexOf(endMarker);
 if (startIdx === -1 || endIdx === -1) {
   throw new Error('Kunde inte hitta QTY_UNITS…fmtQty i cook-mode.js — har filen ändrats?');
 }
-const snippet = src.slice(startIdx, endIdx);
+// Funktionerna exporteras numera (receptdetaljen återanvänder dem) — strippa export för new Function.
+const snippet = src.slice(startIdx, endIdx).replace(/^export /gm, '');
 
 const fn = new Function(`${snippet}\nreturn { parseQty, fmtQty };`);
 const { parseQty, fmtQty } = fn();

@@ -17,6 +17,7 @@ import './shopping/dispatch-ui.js';
 import './lists/lists-view.js';
 import './weekly-plan/ingredient-preview.js';
 import './recipes/recipe-browser.js';
+import './recipes/recipe-detail.js';
 import './recipes/recipe-editor.js';
 import './recipes/recipe-import.js';
 import './weekly-plan/plan-generator.js';
@@ -189,10 +190,12 @@ function popSheetHistory() {
   if (history.state?.receptbokSheet) history.back();
 }
 
-const SHEET_IDS = ['sortSheet', 'filterSheet', 'planSheet', 'shopDaysSheet', 'shopStoreSheet'];
+const SHEET_IDS = ['filterSheet', 'planSheet', 'shopDaysSheet', 'shopStoreSheet'];
 
 function closeAnyOpenSheet() {
   if (document.getElementById('dlxSheet')?.classList.contains('open')) { window.dlxCloseSheet?.(); return; }
+  // Receptdetaljen i helskärm (mobil) stängs av bakåtknappen som en sheet.
+  if (document.getElementById('receptView')?.classList.contains('rv-detail-open')) { window.closeRecipeDetail?.(); return; }
   for (const id of SHEET_IDS) {
     const s = document.getElementById(id);
     if (s && s.classList.contains('open')) { closeSheet(id); return; }
@@ -207,7 +210,6 @@ window.addEventListener('popstate', () => {
 window.pushSheetHistory = pushSheetHistory;
 window.popSheetHistory  = popSheetHistory;
 
-document.getElementById('openSortBtn').addEventListener('click', () => openSheet('sortSheet'));
 document.getElementById('openFilterBtn').addEventListener('click', () => openSheet('filterSheet'));
 
 document.body.addEventListener('click', e => {
@@ -220,16 +222,6 @@ document.addEventListener('keydown', e => {
   SHEET_IDS.forEach(id => {
     const s = document.getElementById(id);
     if (s && !s.hidden) closeSheet(id);
-  });
-});
-
-// Sortera: radio change
-document.querySelectorAll('#sortSheet input[name="groupBy"]').forEach(r => {
-  r.addEventListener('change', () => {
-    if (r.checked) {
-      window.setGroupBy(r.value);
-      closeSheet('sortSheet');
-    }
   });
 });
 
