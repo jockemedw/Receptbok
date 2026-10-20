@@ -1,3 +1,4 @@
+import { RECIPE_IMAGE_IDS } from './recipe-images.js';
 // Delade hjälpfunktioner och konstanter — ingen sidoeffekt, inga DOM-beroenden.
 
 export const proteinLabel = {
@@ -125,7 +126,10 @@ export function isoWeekNumber(dateIso) {
   return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
 }
 
-// Begränsat bildtest. Matcha även titel så ett återanvänt ID inte får fel bild.
+// Receptbilder (ny design 2026-10): webp-kopior i repot, images/recipes/r<id>.webp.
+// Manifestet js/recipe-images.js genereras av scripts/recipe-images/fetch-images.mjs
+// och säger vilka id:n som har bild — så listan aldrig ritar trasiga <img>.
+// De sex AI-bilderna från Session 152 ligger kvar som reserv för sina recept.
 const RECIPE_IMAGE_SAMPLES = {
   1: ['Gräddig fiskgratäng med purjo', '01-fiskgratang'],
   2: ['Matvetesallad med gröna ärter och krispig halloumi', '02-matvetesallad'],
@@ -136,12 +140,40 @@ const RECIPE_IMAGE_SAMPLES = {
 };
 
 export function recipeImage(r) {
+  if (!r) return '';
+  if (RECIPE_IMAGE_IDS.has(r.id)) return `images/recipes/r${r.id}.webp`;
   const sample = RECIPE_IMAGE_SAMPLES[r.id];
   return sample && r.title === sample[0] ? `images/recipes/${sample[1]}.webp` : '';
 }
 
+// Är bilden en av de AI-genererade reservbilderna (då ska bildtexten säga det)?
+export function recipeImageIsAi(r) {
+  return !!r && !RECIPE_IMAGE_IDS.has(r.id) && !!RECIPE_IMAGE_SAMPLES[r.id];
+}
+
+// Källa ur receptet: kolumnen source_url i första hand, annars "Källa: …"-raden i
+// noteringen (så även recept utan migration/återfyllnad får en läsbar källa).
+export function recipeSource(r) {
+  if (!r) return null;
+  const m = /Källa:\s*([^\n]+?)(?:,\s*(dishingouthealth\.com))?\.?\s*$/i.exec(r.notes || '');
+  const label = m ? m[1].trim() : null;
+  const site = m?.[2] || (r.sourceUrl ? safeHost(r.sourceUrl) : null);
+  if (!label && !r.sourceUrl) return null;
+  return { label: label || site || 'Originalreceptet', site, url: r.sourceUrl || null };
+}
+
+function safeHost(url) {
+  try { return new URL(url).hostname.replace(/^www\./, ''); } catch { return null; }
+}
+
 export function renderDetailInner(r) {
   const image = recipeImage(r);
+  const src = recipeSource(r);
+  const sourceHtml = src
+    ? `<p class="detail-source">Källa: ${src.url
+        ? `<a href="${escapeHtml(src.url)}" target="_blank" rel="noopener">${escapeHtml(src.label)}</a>`
+        : escapeHtml(src.label)}${src.site && src.label !== src.site ? ` · ${escapeHtml(src.site)}` : ''}</p>`
+    : '';
   const ingHtml   = (r.ingredients || []).map(renderIngredient).join('');
   const stepsHtml = (r.instructions || []).map(s =>
     `<li onclick="toggleStep(this)"><span>${escapeHtml(s)}</span></li>`
@@ -151,8 +183,9 @@ export function renderDetailInner(r) {
   return `
     ${image ? `<figure class="recipe-photo">
       <img src="${image}" alt="${escapeHtml(r.title)}" width="768" height="768" loading="lazy" decoding="async" onerror="this.closest('figure').hidden=true">
-      <figcaption>AI-genererad bild · serveringsförslag</figcaption>
+      ${recipeImageIsAi(r) ? '<figcaption>AI-genererad bild · serveringsförslag</figcaption>' : ''}
     </figure>` : ''}
+    ${sourceHtml}
     <div class="detail-section">
       <h3>Ingredienser · ${r.servings || 4} portioner</h3>
       <ul class="ingredients-list">${ingHtml}</ul>

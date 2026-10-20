@@ -109,6 +109,7 @@ export function closeEditModal() {
   document.body.style.overflow = '';
   window.editingId = null;
   window._importSeasons = null;
+  window._importSourceUrl = null;
   closeTagPicker();
   document.getElementById('editModalTitle').textContent = 'Redigera recept';
 }
@@ -160,6 +161,8 @@ export async function saveRecipe() {
       const householdId = await window.getHouseholdId();
       const nextId = Math.max(...window.RECIPES.map(r => r.id), 0) + 1;
       const newRecipe = { ...formData, id: nextId, tested: false, seasons: window._importSeasons || [] };
+      // Källänk från URL-import (migration 014) — skrivs bara när kolumnen finns.
+      if (window._recipeSourceSupported && window._importSourceUrl) newRecipe.sourceUrl = window._importSourceUrl;
       const { data, error } = await window.db
         .from('recipes')
         .insert(recipeToRow(newRecipe, householdId))

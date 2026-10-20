@@ -46,6 +46,8 @@ async function init() {
     if (error) throw new Error(isDbUnreachable(error) ? DB_RESTING_MESSAGE : 'Kunde inte ladda recepten.');
     window.RECIPES     = rows.map(recipeFromRow);
     window._allRecipes = window.RECIPES;
+    // Finns source_url-kolumnen (migration 014)? select('*') ger nyckeln bara då.
+    window._recipeSourceSupported = rows.length > 0 && Object.prototype.hasOwnProperty.call(rows[0], 'source_url');
     window.perfMark?.('recept');
     document.getElementById('loadingState').style.display = 'none';
     syncRecipeCount();

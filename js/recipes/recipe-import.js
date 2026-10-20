@@ -170,6 +170,7 @@ export function openImportPreview(recipe) {
   document.getElementById('edit-instructions').value         = (recipe.instructions || []).join('\n');
   document.getElementById('edit-notes').value                = recipe.notes || '';
   window._importSeasons                                       = recipe.seasons || [];
+  window._importSourceUrl                                     = recipe.sourceUrl || null;
   document.getElementById('editFeedback').textContent        = '';
   document.getElementById('editSaveBtn').disabled            = false;
   const del = document.querySelector('#editModal .btn-delete');

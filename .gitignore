@@ -70,3 +70,4 @@ __pycache__/
 .superpowers/
 STATUS.md
 /node
+scripts/recipe-images/report.json
