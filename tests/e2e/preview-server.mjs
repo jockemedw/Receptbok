@@ -36,6 +36,16 @@ createServer(async (req, res) => {
     let rel = decodeURIComponent(url.pathname);
     if (rel === '/' || rel.endsWith('/')) rel += 'index.html';
     if (rel.startsWith('/api/')) { res.writeHead(404).end('{}'); return; }
+    // Ingen service worker i förhandsvisningen: den cachar CSS stale-while-
+    // revalidate och visar annars förra omgångens stilar efter varje ändring.
+    // Den här versionen avregistrerar sig själv och tömmer cachen.
+    if (rel === '/service-worker.js') {
+      res.writeHead(200, { 'Content-Type': MIME['.js'], 'Cache-Control': 'no-store' })
+        .end("self.addEventListener('install', () => self.skipWaiting());\n"
+          + "self.addEventListener('activate', (e) => e.waitUntil(self.registration.unregister()"
+          + ".then(() => caches.keys()).then((ks) => Promise.all(ks.map((k) => caches.delete(k))))));\n");
+      return;
+    }
     const file = path.join(ROOT, rel);
     if (!file.startsWith(ROOT)) { res.writeHead(403).end('nej'); return; }
     let body = await readFile(file);

@@ -10,10 +10,11 @@
 // Re-render: vi wrappar window.renderWeeklyPlanData (och loadWeeklyPlan/switchTab,
 // se installHooks) så vyn alltid hålls i synk efter generering/byte/bekräftelse.
 
-import { fmtIso, fmtShort, PROTEIN_COLOR, isoWeekNumber, escapeHtml, weekStartOf, addDaysIso, getHolidayName, jsStringAttr, retroWindowStartIso } from '../utils.js';
+import { fmtIso, fmtShort, PROTEIN_COLOR, isoWeekNumber, escapeHtml, weekStartOf, addDaysIso, getHolidayName, jsStringAttr, retroWindowStartIso, recipeImage } from '../utils.js';
 
 const DAY_NAMES_LONG = ['Söndag', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag'];
 const MONTH_NAMES_SHORT = ['jan', 'feb', 'mars', 'apr', 'maj', 'juni', 'juli', 'aug', 'sep', 'okt', 'nov', 'dec'];
+const MONTH_NAMES_LONG = ['januari', 'februari', 'mars', 'april', 'maj', 'juni', 'juli', 'augusti', 'september', 'oktober', 'november', 'december'];
 const PROTEIN_LABEL = { fisk: 'Fisk', kyckling: 'Kyckling', kött: 'Kött', fläsk: 'Fläsk', vegetarisk: 'Vegetariskt' };
 
 const I = {
@@ -33,6 +34,11 @@ const I = {
   // Gaffel + kniv — "vi äter ute" i Ikväll-sheeten (backlog #15).
   fork: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v7c0 1 .7 2 2 2s2-1 2-2V3"/><path d="M7 3v18"/><path d="M17 3c-1.5 1-2.5 3.5-2.5 6 0 2 .8 3 2.5 3v9"/></svg>',
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14 M5 12h14"/></svg>',
+  // Draghandtag (tre streck) — dagens kort i mobilens lista dras i det.
+  handle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h6M9 12h6M9 18h6"/></svg>',
+  sparkle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4z M19 16l.9 2.1L22 19l-2.1.9L19 22l-.9-2.1L16 19l2.1-.9z"/></svg>',
+  chevL: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+  chevR: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg>',
   // Ren kundvagn (utan intern bock) — "handlat för"-markören sätter en separat
   // grön bock BREDVID (I.tick) så den läses som en tydlig "klar"-status.
   cart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.6 11.2A1.5 1.5 0 0 0 9.06 16.4H18a1.5 1.5 0 0 0 1.46-1.14L21 8H6"/><circle cx="10" cy="20" r="1.4"/><circle cx="17.5" cy="20" r="1.4"/></svg>',
@@ -195,10 +201,9 @@ function peekHtml(weekStart) {
   const pending = !!(plan?.days?.length) && !plan?.confirmedAt && !window.planConfirmed;
   const days = weekDaysOf(weekStart);
   const todayIso = fmtIso(new Date());
-  const tonight = weekStart === currentWeekStart() ? buildTonight(days) : '';
-  const cards = days.map(d =>
-    `<div class="dlx-day-slot">${(tonight && d.date === todayIso) ? tonight : renderDayCard(d)}</div>`).join('');
-  return `<div class="dlx-sec">${buildHero(days, weekStart, plan, pending)}</div>`
+  void todayIso;
+  const cards = days.map(d => `<div class="dlx-day-slot">${renderDayCard(d)}</div>`).join('');
+  return `<div class="dlx-sec">${buildHeader(days, weekStart, plan, pending)}</div>`
     + `<div class="dlx-sec">${weekNoticeHtml(plan, pending, weekStart) + modeBannerHtml() + placeBannerHtml()}</div>`
     + `<div class="dlx-sec"><div class="dlx-days dlx-quiet">${cards}</div></div>`;
 }
@@ -614,6 +619,90 @@ function buildHero(weekDays, weekStart, plan, pending) {
     </div>`;
 }
 
+// ── Veckohuvud (ny design 2026-10) — ersätter statistikbandet ─────────────────
+// Rubrik "Vecka N", en textrad med datumspann + vad veckan innehåller, och
+// knapparna: veckonavigering, Inköp för veckan, Föreslå matsedel (= dagens
+// Generera; Bekräfta/Kassera-flödet är oförändrat och ligger kvar under listan).
+function weekRangeText(weekStart) {
+  const a = new Date(weekStart + 'T12:00:00');
+  const b = new Date(addDaysIso(weekStart, 6) + 'T12:00:00');
+  return a.getMonth() === b.getMonth()
+    ? `${a.getDate()}–${b.getDate()} ${MONTH_NAMES_LONG[a.getMonth()]}`
+    : `${a.getDate()} ${MONTH_NAMES_SHORT[a.getMonth()]} – ${b.getDate()} ${MONTH_NAMES_SHORT[b.getMonth()]}`;
+}
+
+function weekSummaryParts(weekDays, plan, pending) {
+  const todayIso = fmtIso(new Date());
+  const recipes = weekDays.filter(d => heroMealId(d)).length;
+  const own = weekDays.filter(d => d.isCustom && !d.customRecipeId && (d.customRecipeTitle || d.customNote)).length;
+  const free = weekDays.filter(d => d.blocked).length;
+  const empty = weekDays.filter(d => !dayHasContent(d) && d.date >= todayIso).length;
+  const parts = [];
+  parts.push(recipes ? `${recipes} ${recipes === 1 ? 'middag' : 'middagar'} från receptboken` : 'inga middagar från receptboken');
+  if (own) parts.push(`${own} ${own === 1 ? 'egen dag' : 'egna dagar'}`);
+  if (free) parts.push(`${free} ${free === 1 ? 'fri dag' : 'fria dagar'}`);
+  if (empty) parts.push(`${empty} ${empty === 1 ? 'dag' : 'dagar'} kvar att fylla`);
+  const hasActiveDays = weekDays.some(d => d.planId === 'active');
+  if (pending && hasActiveDays) parts.push('<strong class="dlx-sum-badge pending">Förslag — bekräfta nedan</strong>');
+  else if (hasActiveDays && plan?.confirmedAt) parts.push('<strong class="dlx-sum-badge">Bekräftad</strong>');
+  const totalSaving = weekDays.reduce((sum, d) => sum + (d.saving || 0), 0);
+  const hasDeals = hasActiveDays && !!(window._weeklyDeals?.candidates?.length);
+  if (totalSaving >= 1) parts.push(`${fmtKr(totalSaving)} sparat${hasDeals ? ' · <button type="button" class="dlx-sum-link" onclick="openDealsPopup()">Se fynd</button>' : ''}`);
+  else if (hasDeals) parts.push('<button type="button" class="dlx-sum-link" onclick="openDealsPopup()">Se veckans fynd</button>');
+  return parts;
+}
+
+function buildHeader(weekDays, weekStart, plan, pending) {
+  const isCurrentWeek = weekStart === currentWeekStart();
+  const b = timelineBounds();
+  const atMin = b ? weekStart <= b.min : true;
+  const atMax = b ? weekStart >= b.max : true;
+  const prevNo = isoWeekNumber(addDaysIso(weekStart, -7));
+  const nextNo = isoWeekNumber(addDaysIso(weekStart, 7));
+  const summary = weekSummaryParts(weekDays, plan, pending);
+  const todayBtn = isCurrentWeek ? '' : `<button type="button" class="dlx-today-btn" onclick="dlxWeekToday()">Idag</button>`;
+  return `
+    <div class="dlx-header">
+      <button type="button" class="dlx-wk-arrow" onclick="dlxWeekStep(-1)"${atMin ? ' disabled' : ''} aria-label="Föregående vecka">${I.chevL}</button>
+      <div class="dlx-header-title">
+        <h1 class="dlx-h1">Vecka ${isoWeekNumber(weekStart)}${todayBtn}</h1>
+        <div class="dlx-header-sub">${esc(weekRangeText(weekStart))} · ${summary.join(' · ')}</div>
+      </div>
+      <button type="button" class="dlx-wk-arrow" onclick="dlxWeekStep(1)"${atMax ? ' disabled' : ''} aria-label="Nästa vecka">${I.chevR}</button>
+      <div class="dlx-header-actions">
+        <div class="dlx-wk-group" role="group" aria-label="Byt vecka">
+          <button type="button" onclick="dlxWeekStep(-1)"${atMin ? ' disabled' : ''}>${I.chevL}v. ${prevNo}</button>
+          <button type="button" onclick="dlxWeekStep(1)"${atMax ? ' disabled' : ''}>v. ${nextNo}${I.chevR}</button>
+        </div>
+        ${isCurrentWeek ? '' : `<button type="button" class="dlx-btn" onclick="dlxWeekToday()">Idag</button>`}
+        <button type="button" class="dlx-btn" onclick="switchTab('shop')">${I.cart}Inköp för veckan</button>
+        <button type="button" class="dlx-btn dlx-btn-accent" onclick="openNewPlan()">${I.sparkle}Föreslå matsedel</button>
+      </div>
+    </div>`;
+}
+
+// Mobil: knapparna under dagslistan (desktop har dem i huvudet).
+function footActionsHtml() {
+  return `<div class="dlx-foot">
+    <button type="button" class="dlx-btn" onclick="switchTab('shop')">Inköp för veckan</button>
+    <button type="button" class="dlx-btn dlx-btn-accent" onclick="openNewPlan()">Föreslå matsedel</button>
+  </div>`;
+}
+
+// Bildruta per dag: foto när receptet har ett, annars en ikon som skiljer
+// recept (gryta) från egen notering (penna) / rester (skål) / fri dag.
+function dayThumbHtml(r, icon = I.pot) {
+  const img = r ? recipeImage(r) : '';
+  if (img) return `<span class="dlx-day-thumb"><img src="${img}" alt="" loading="lazy" decoding="async" width="56" height="56" onerror="this.parentNode.classList.add('is-empty');this.remove()"></span>`;
+  return `<span class="dlx-day-thumb is-empty" aria-hidden="true">${icon}</span>`;
+}
+
+// Dagens kolumn: kort veckodag + "· ikväll" i dag (ersätter Idag-flaggan).
+function dowLabel(d) {
+  const short = (d.dayShort || d.day || '').slice(0, 3);
+  return d.isToday ? `${esc(short)} · ikväll` : esc(short);
+}
+
 // ── Dagskort ──────────────────────────────────────────────────────────────────
 
 // Passerade dagar hanteras precis som kommande — samma byten, flyttar och
@@ -683,7 +772,6 @@ function modeCls(d) {
 
 function dayBadges(d) {
   const out = [];
-  if (d.isToday) out.push('<span class="dlx-day-flag today">Idag</span>');
   // Helg markeras med en dovare kort-bakgrund (.dlx-day.is-weekend) — inte med en pill.
   // Helgdag (midsommar m.fl.) renderas som en högerställd chip vid chevronen
   // (injiceras i renderDayCard), så den aldrig trängs in i den smala datumkolumnen
@@ -713,15 +801,16 @@ function recipeDayCard(d, opts) {
       <span class="dlx-rail"></span>
       <div class="dlx-day-head">
         <div class="dlx-day-when">
-          <span class="dlx-day-dow">${esc(d.day)}</span>
+          <span class="dlx-day-dow">${dowLabel(d)}</span>
           <span class="dlx-day-date"><span class="dlx-day-num">${d.dayNum}</span><span class="dlx-day-mon">${MONTH_NAMES_SHORT[d.month]}</span></span>
           <span class="dlx-day-flags">${dayBadges(d)}</span>
         </div>
+        ${dayThumbHtml(r)}
         <div class="dlx-day-main">
           <h3 class="dlx-day-recipe">${esc(d.recipe || '')}</h3>
           <div class="dlx-day-meta">${metaParts.join('')}${savingPill}${dayShopChip(d)}</div>
         </div>
-        <span class="dlx-day-chev" aria-hidden="true">›</span>
+        <span class="dlx-day-chev" aria-hidden="true">${I.handle}</span>
       </div>
     </article>`;
 }
@@ -741,14 +830,15 @@ function emptyDayCard(d) {
                  onclick="dlxDayClick('${d.date}', '${attr(d.day)}')">
           <span class="dlx-rail"></span>
           <div class="dlx-day-head">
-            <div class="dlx-day-when"><span class="dlx-day-dow">${esc(d.day)}</span>
+            <div class="dlx-day-when"><span class="dlx-day-dow">${dowLabel(d)}</span>
               <span class="dlx-day-date"><span class="dlx-day-num">${d.dayNum}</span><span class="dlx-day-mon">${MONTH_NAMES_SHORT[d.month]}</span></span>
               <span class="dlx-day-flags">${dayBadges(d)}</span></div>
+            ${dayThumbHtml(r)}
             <div class="dlx-day-main">
-              <h3 class="dlx-day-recipe"><span class="dlx-own dlx-own-recipe" title="Recept ur receptboken" aria-label="Recept ur receptboken">${I.pot}</span>${esc(d.customRecipeTitle || '')}</h3>
-              ${(metaParts.length || dayShopChip(d)) ? `<div class="dlx-day-meta">${metaParts.join('')}${dayShopChip(d)}</div>` : ''}
+              <h3 class="dlx-day-recipe">${esc(d.customRecipeTitle || '')}</h3>
+              ${(metaParts.length || dayShopChip(d)) ? `<div class="dlx-day-meta">${metaParts.join('')}${dayShopChip(d)}</div>` : '<div class="dlx-day-meta"><span class="dlx-day-kind">Egen dag</span></div>'}
             </div>
-            <span class="dlx-day-chev" aria-hidden="true">›</span>
+            <span class="dlx-day-chev" aria-hidden="true">${I.handle}</span>
           </div>
         </article>`;
     }
@@ -756,13 +846,15 @@ function emptyDayCard(d) {
       <article class="dlx-day custom slim${modeCls(d)}" data-date="${d.date}" onclick="dlxDayClick('${d.date}', '${attr(d.day)}')">
         <span class="dlx-rail" style="background:var(--birch)"></span>
         <div class="dlx-day-head">
-          <div class="dlx-day-when"><span class="dlx-day-dow">${esc(d.day)}</span>
+          <div class="dlx-day-when"><span class="dlx-day-dow">${dowLabel(d)}</span>
             <span class="dlx-day-date"><span class="dlx-day-num">${d.dayNum}</span><span class="dlx-day-mon">${MONTH_NAMES_SHORT[d.month]}</span></span>
             <span class="dlx-day-flags">${dayBadges(d)}</span></div>
+          ${dayThumbHtml(null, RESTER_RE.test(d.customNote || '') ? I.leftovers : I.pencil)}
           <div class="dlx-day-main">
-            <h3 class="dlx-day-recipe">${customNoteMark(d.customNote)}${d.customNote ? esc(d.customNote) : 'Lägg till en notering'}</h3>
+            <h3 class="dlx-day-recipe">${d.customNote ? esc(d.customNote) : 'Lägg till en notering'}</h3>
+            <div class="dlx-day-meta"><span class="dlx-day-kind">Egen dag</span>${dayShopChip(d)}</div>
           </div>
-          <span class="dlx-day-chev" aria-hidden="true">›</span>
+          <span class="dlx-day-chev" aria-hidden="true">${I.handle}</span>
         </div>
       </article>`;
   }
@@ -772,11 +864,12 @@ function emptyDayCard(d) {
       <article class="dlx-day free slim${modeCls(d)}" data-date="${d.date}" onclick="dlxDayClick('${d.date}', '${attr(d.day)}')">
         <span class="dlx-rail" style="background:var(--birch-soft)"></span>
         <div class="dlx-day-head">
-          <div class="dlx-day-when"><span class="dlx-day-dow">${esc(d.day)}</span>
+          <div class="dlx-day-when"><span class="dlx-day-dow">${dowLabel(d)}</span>
             <span class="dlx-day-date"><span class="dlx-day-num">${d.dayNum}</span><span class="dlx-day-mon">${MONTH_NAMES_SHORT[d.month]}</span></span>
             <span class="dlx-day-flags">${dayBadges(d)}</span></div>
-          <div class="dlx-day-main"><p class="dlx-day-note">${I.free} Fri dag</p></div>
-          <span class="dlx-day-chev" aria-hidden="true">›</span>
+          ${dayThumbHtml(null, I.free)}
+          <div class="dlx-day-main"><h3 class="dlx-day-recipe">Fri dag</h3><div class="dlx-day-meta"><span class="dlx-day-kind">Ingen middag planerad</span></div></div>
+          <span class="dlx-day-chev" aria-hidden="true">${I.handle}</span>
         </div>
       </article>`;
   }
@@ -791,11 +884,10 @@ function emptyDayCard(d) {
     <article class="dlx-day gap slim${clickable ? '' : ' inert'}${modeCls(d)}" data-date="${d.date}" ${click}>
       <span class="dlx-rail" style="background:transparent"></span>
       <div class="dlx-day-head">
-        <div class="dlx-day-when"><span class="dlx-day-dow">${esc(d.day)}</span>
+        <div class="dlx-day-when"><span class="dlx-day-dow">${dowLabel(d)}</span>
           <span class="dlx-day-date"><span class="dlx-day-num">${d.dayNum}</span><span class="dlx-day-mon">${MONTH_NAMES_SHORT[d.month]}</span></span>
           <span class="dlx-day-flags">${dayBadges(d)}</span></div>
-        <div class="dlx-day-main"><p class="dlx-day-note muted">${clickable ? `<span class="dlx-add" title="Planera dagen" aria-label="Planera dagen">${I.plus}</span>` : '—'}</p></div>
-        ${clickable ? '<span class="dlx-day-chev" aria-hidden="true">›</span>' : ''}
+        <div class="dlx-day-main"><p class="dlx-day-note muted">${clickable ? `<span class="dlx-add" title="Planera dagen">${I.plus}<span class="dlx-add-txt">Lägg till middag</span></span>` : '—'}</p></div>
       </div>
     </article>`;
 }
@@ -1019,8 +1111,12 @@ function renderDeluxeInner() {
   const weekDays = shownWeekDays();
   const isCurrentWeek = weekStart === currentWeekStart();
 
-  const hero = buildHero(weekDays, weekStart, plan, pending);
-  const tonight = isCurrentWeek ? buildTonight(weekDays) : '';
+  // Ny design 2026-10: veckohuvud med textrad ersätter statistikbandet, och
+  // dagens kort markeras med accentram + "· ikväll" i stället för ett eget
+  // Ikväll-kort (buildHero/buildTonight är kvar oanropade tills städsteget).
+  const hero = buildHeader(weekDays, weekStart, plan, pending);
+  const tonight = '';
+  void isCurrentWeek;
 
   // Tömda sektioner (history/today) behålls så sektionsordningen är stabil och
   // gammal DOM från tidigare renderingar rensas — setSec tar aldrig bort element.
@@ -1029,6 +1125,7 @@ function renderDeluxeInner() {
   setSec(host, 'banner', weekNoticeHtml(plan, pending, weekStart) + modeBannerHtml() + placeBannerHtml());
   setSec(host, 'today', '');
   renderDaysDiff(host, weekDays, { tonightHtml: tonight, tonightDate: todayIso });
+  setSec(host, 'foot', footActionsHtml());
   applyPendingMarks(host);
 }
 
