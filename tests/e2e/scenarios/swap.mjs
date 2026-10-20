@@ -377,7 +377,7 @@ async function scenarioDoubleTap(page, date, { apiLatency, counters }) {
   if (!card) return { fel: 'inget kort' };
   const r0 = replaceCalls(counters);
   await page.evaluate((id) => {
-    const h = document.querySelector(`#recipeGrid .recipe-card[data-id="${id}"] .card-header`);
+    const h = document.querySelector(`#recipeGrid .recipe-card[data-id="${id}"] .rc-main`);
     h.click(); h.click();
   }, card.id);
   await page.waitForTimeout(apiLatency + 800);

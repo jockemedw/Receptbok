@@ -149,9 +149,18 @@ export function cardMetaHtml(r) {
 export function thumbHtml(r, cls = 'rc-thumb') {
   const image = recipeImage(r);
   return image
-    ? `<img class="${cls}" src="${image}" alt="" loading="lazy" decoding="async" width="56" height="56" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'${cls} is-empty',innerHTML:'${ICON_POT.replace(/'/g, '&#39;')}'}))">`
+    ? `<img class="${cls}" src="${image}" alt="" loading="lazy" decoding="async" width="56" height="56" onerror="recipeThumbFallback(this)">`
     : `<span class="${cls} is-empty" aria-hidden="true">${ICON_POT}</span>`;
 }
+
+// Trasig bildfil → samma gryt-platshållare som recept utan bild (ingen trasig <img>).
+window.recipeThumbFallback = function (img) {
+  const span = document.createElement('span');
+  span.className = img.className + ' is-empty';
+  span.setAttribute('aria-hidden', 'true');
+  span.innerHTML = ICON_POT;
+  img.replaceWith(span);
+};
 
 export function renderCard(r) {
   const selected = window._recipeDetailId === r.id;
