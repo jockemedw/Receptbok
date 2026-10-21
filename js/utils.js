@@ -1,4 +1,7 @@
-import { RECIPE_IMAGE_IDS } from './recipe-images.js';
+import * as RECIPE_IMAGES from './recipe-images.js';
+const RECIPE_IMAGE_IDS = RECIPE_IMAGES.RECIPE_IMAGE_IDS;
+// AI-genererade serveringsförslag (manifestet skriver mängden; saknas den = tom)
+const RECIPE_IMAGE_AI_IDS = RECIPE_IMAGES.RECIPE_IMAGE_AI_IDS || new Set();
 // Delade hjälpfunktioner och konstanter — ingen sidoeffekt, inga DOM-beroenden.
 
 export const proteinLabel = {
@@ -127,28 +130,16 @@ export function isoWeekNumber(dateIso) {
 }
 
 // Receptbilder (ny design 2026-10): webp-kopior i repot, images/recipes/r<id>.webp.
-// Manifestet js/recipe-images.js genereras av scripts/recipe-images/fetch-images.mjs
-// och säger vilka id:n som har bild — så listan aldrig ritar trasiga <img>.
-// De sex AI-bilderna från Session 152 ligger kvar som reserv för sina recept.
-const RECIPE_IMAGE_SAMPLES = {
-  1: ['Gräddig fiskgratäng med purjo', '01-fiskgratang'],
-  2: ['Matvetesallad med gröna ärter och krispig halloumi', '02-matvetesallad'],
-  4: ['Marinerad kyckling med curry-cashewnötssås', '04-kyckling'],
-  7: ['Tomatsoppa med pizzasnurror', '07-tomatsoppa'],
-  29: ['Stekt curryris med färs och salladslök', '29-curryris'],
-  35: ['Katsu sando med panerad tofu och kålsallad', '35-katsu-sando'],
-};
-
+// Manifestet js/recipe-images.js genereras av scripts/recipe-images/*.mjs och säger
+// vilka id:n som har bild (och vilka som är AI-genererade serveringsförslag) — så
+// listan aldrig ritar trasiga <img>.
 export function recipeImage(r) {
-  if (!r) return '';
-  if (RECIPE_IMAGE_IDS.has(r.id)) return `images/recipes/r${r.id}.webp`;
-  const sample = RECIPE_IMAGE_SAMPLES[r.id];
-  return sample && r.title === sample[0] ? `images/recipes/${sample[1]}.webp` : '';
+  return r && RECIPE_IMAGE_IDS.has(r.id) ? `images/recipes/r${r.id}.webp` : '';
 }
 
-// Är bilden en av de AI-genererade reservbilderna (då ska bildtexten säga det)?
+// AI-genererat serveringsförslag (då ska bildtexten säga det).
 export function recipeImageIsAi(r) {
-  return !!r && !RECIPE_IMAGE_IDS.has(r.id) && !!RECIPE_IMAGE_SAMPLES[r.id];
+  return !!r && RECIPE_IMAGE_AI_IDS.has(r.id);
 }
 
 // Källa ur receptet: kolumnen source_url i första hand, annars "Källa: …"-raden i
