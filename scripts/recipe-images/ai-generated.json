@@ -1,0 +1,482 @@
+{
+  "_": "AI-genererade receptbilder (serveringsförslag) — id, modell, datum, prompt. Läses när manifestet skrivs (RECIPE_IMAGE_AI_IDS → bildtexten \"AI-genererad bild · serveringsförslag\" i appen).",
+  "images": [
+    {
+      "id": 1,
+      "title": "Gräddig fiskgratäng med purjo",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 22,
+      "date": "2026-10-21",
+      "prompt": "A white oven dish with a creamy baked fish gratin: pieces of white cod in a pale cream sauce topped with soft sautéed sliced leek, lightly golden on top, served with a bowl of cooked whole wheat grain (matvete) and bright green peas on the side. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 6,
+      "title": "Pastasallad med kyckling, feta och basilika",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 27,
+      "date": "2026-10-21",
+      "prompt": "A large bowl of pasta salad with penne, chunks of roast chicken, cubes of white feta cheese, halved cherry tomatoes, black olives, finely chopped red onion, diced red bell pepper and torn fresh basil leaves, lightly dressed with olive oil, served at room temperature. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 13,
+      "title": "Nudlar i röd curry",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 34,
+      "date": "2026-10-21",
+      "prompt": "A deep bowl of thick udon noodles in a creamy red Thai coconut curry broth with golden cubes of fried tofu, sliced spring onion greens on top, a lime wedge on the rim, a sprinkle of crispy fried onion and sesame seeds. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 16,
+      "title": "Bönstroganoff",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 37,
+      "date": "2026-10-21",
+      "prompt": "A plate of vegetarian bean stroganoff: mixed beans in a creamy pale orange paprika and tomato cream sauce with thyme, served over a mound of fluffy white rice, a little chopped parsley on top. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 20,
+      "title": "Citronrisoni med rostad spetskål",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 41,
+      "date": "2026-10-21",
+      "prompt": "A plate of creamy lemon risoni (tiny rice-shaped pasta in a glossy cream sauce with lemon zest) with a wedge of oven-roasted pointed cabbage with charred golden edges on top, finished with finely grated grana padano and a little parsley. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 22,
+      "title": "Parmesanpotatis med kallrökt lax",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 43,
+      "date": "2026-10-21",
+      "prompt": "A baking tray lined with parchment holding smashed boiled potatoes crisped under the grill with a golden crust of grated parmesan and flaky salt, served with folded slices of cold-smoked salmon, a bowl of lemon crème fraîche and a few green lettuce leaves. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 23,
+      "title": "Minestrone",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 44,
+      "date": "2026-10-21",
+      "prompt": "A deep plate of rustic Italian minestrone: a reddish tomato broth with small shell pasta, diced carrot, finely sliced leek and celery, crispy pancetta cubes, topped with a raw egg yolk in the centre, a generous snowfall of grated parmesan and a few basil leaves. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 24,
+      "title": "Tonfiskpasta",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 45,
+      "date": "2026-10-21",
+      "prompt": "A plate of fresh fettuccine tossed with a chunky sauce of canned tuna flakes, chopped tomatoes, sliced celery, capers, onion and chili flakes in olive oil, rustic and simple, no cream. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 29,
+      "title": "Stekt curryris med färs och salladslök",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 50,
+      "date": "2026-10-21",
+      "prompt": "A plate of yellow curry fried rice with browned minced beef, shredded white cabbage, coarsely grated carrot and green peas, topped with sliced spring onion and chopped nuts, a small dish of sriracha on the side. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 30,
+      "title": "Valnötshummus med ugnsrostade grönsaker",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 51,
+      "date": "2026-10-21",
+      "prompt": "A sheet pan of oven-roasted vegetables with golden edges: potato wedges, cabbage wedges, carrot sticks, cauliflower and broccoli florets, red bell pepper, a few Jerusalem artichokes, with a bowl of pale creamy walnut hummus drizzled with olive oil, some crumbled feta and olives. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 37,
+      "title": "Kålcurry med gröna ärter och koriander",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 58,
+      "date": "2026-10-21",
+      "prompt": "A bowl of Indian-style white cabbage curry: finely chopped cabbage stir-fried until soft with golden edges in warm yellow-orange spices with mustard seeds and cumin, bright green peas folded in, plenty of coarsely chopped fresh coriander on top, a side of steamed basmati rice. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 38,
+      "title": "Sommargryta med vitkål, zucchini och dill",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 59,
+      "date": "2026-10-21",
+      "prompt": "A shallow pot of summer vegetable stew: slices of potato, golden pan-fried zucchini slices, soft white cabbage and onion in a light tomato and crème fraîche broth, topped with a generous scattering of chopped fresh dill, garlic and lemon zest, a piece of rustic baguette beside it. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 39,
+      "title": "Kålpannkaka med zucchini och sojadipp",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 60,
+      "date": "2026-10-21",
+      "prompt": "A plate stacked with small Korean-style savoury vegetable pancakes, thin and lightly golden, with visible shreds of pointed cabbage, zucchini sticks and spring onion and flecks of red chili flakes, a small bowl of dark soy-vinegar dipping sauce and a sprinkle of toasted sesame seeds. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 42,
+      "title": "Pork ramen – nudelsoppa med chilistekt fläskfärs",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 63,
+      "date": "2026-10-21",
+      "prompt": "A large bowl of ramen: clear golden chicken broth with wavy noodles, a generous pile of crumbly browned minced pork fried with chili flakes and garlic (loose crumbles, not patties or slices), quartered mushrooms, pieces of pak choi, a halved soft-boiled egg with a jammy orange yolk, fresh coriander leaves on top, chopsticks resting on the rim. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 44,
+      "title": "Morotssoppa med apelsin och basilika",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 65,
+      "date": "2026-10-21",
+      "prompt": "A bowl of smooth bright orange carrot soup with a hint of orange juice, blended until silky, topped with a swirl, fresh basil leaves and a sprinkle of pumpkin and sunflower seeds. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 46,
+      "title": "Röd linsgryta med potatis",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 67,
+      "date": "2026-10-21",
+      "prompt": "A bowl of thick red-orange lentil and tomato stew with soft cubes of potato, warmly spiced with cumin and coriander, rustic and homely, a spoon beside the bowl. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 49,
+      "title": "Senapsdressad pärlcouscous",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 70,
+      "date": "2026-10-21",
+      "prompt": "A bowl of pearl couscous (large round Israeli couscous) tossed in a glossy mustard and honey vinaigrette with lots of chopped fresh dill, pale golden and simple, served as a side salad. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 50,
+      "title": "Fisk med örtsås",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 71,
+      "date": "2026-10-21",
+      "prompt": "A plate of poached white fish fillet covered in a light pale herb sauce made from fish stock and white wine with chopped thyme, basil and parsley, halved blistered cherry tomatoes on top and around, with boiled potatoes on the side. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 51,
+      "title": "Pasta med lax och sås på vitt vin, grädde och spenat",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 72,
+      "date": "2026-10-21",
+      "prompt": "A plate of pasta (tagliatelle) in a creamy white wine sauce with cubes of pan-fried salmon, wilted chopped spinach and shallots, flecked with thyme and parsley, a lemon wedge beside it. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 52,
+      "title": "Amandas pasta med morötter, lök & sweet chili",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 73,
+      "date": "2026-10-21",
+      "prompt": "A bowl of pasta tossed with a creamy pale orange sauce of grated carrot, soft strips of fried yellow onion, crème fraîche and sweet chili sauce, with green peas folded in and a sprinkle of chopped nuts on top, simple vegetarian weeknight dinner. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 53,
+      "title": "Indisk gryta med spenat, kikärter, senap & yoghurt",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 74,
+      "date": "2026-10-21",
+      "prompt": "A bowl of Indian chickpea and spinach stew: chickpeas in a thick dark green and red-brown tomato-yoghurt sauce with lots of chopped spinach, warm spices, served with a mound of white rice beside it. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 54,
+      "title": "Majsplättar med kokosmjölk",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 75,
+      "date": "2026-10-21",
+      "prompt": "A plate with a stack of small golden corn pancakes (plättar) studded with whole sweetcorn kernels, served with a bowl of tzatziki, a small dish of sweet chili sauce and some carrot sticks, child-friendly dinner. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 55,
+      "title": "Amandas laxbiffar",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 76,
+      "date": "2026-10-21",
+      "prompt": "A plate with four pan-fried salmon patties: round, rustic, pale pink-orange minced salmon patties with a golden crust and flecks of herbs and onion, served with boiled potatoes and a wedge of lemon, no whole fillets, no eggs visible. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 58,
+      "title": "Broccolipesto",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 79,
+      "date": "2026-10-21",
+      "prompt": "A small bowl of thick green broccoli pesto with visible texture of blended broccoli, toasted nuts and seeds and grated parmesan, drizzled with rapeseed oil, a spoon in it, some toasted bread or pasta beside it. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 59,
+      "title": "Krämig bönmasala",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 80,
+      "date": "2026-10-21",
+      "prompt": "A bowl of creamy red-orange bean masala: mixed cooked beans in a smooth tomato, carrot and yoghurt sauce with garam masala, with soft melting pieces of mozzarella and chopped cashew nuts stirred in, served with rice. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 60,
+      "title": "Oreganokyckling",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 81,
+      "date": "2026-10-21",
+      "prompt": "A pan of chicken breast strips browned and simmered in a creamy pale sauce with dried oregano, garlic and a touch of balsamic vinegar, served with rice or potatoes and a green salad on the side. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 62,
+      "title": "Rödbetsrisotto",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 83,
+      "date": "2026-10-21",
+      "prompt": "A plate of deep magenta beetroot risotto, creamy with grated parmesan, topped with a spoonful of white yoghurt mixed with chèvre, a scattering of toasted nuts and seeds and a little black pepper. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 64,
+      "title": "Färgstark grönsakswok",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 85,
+      "date": "2026-10-21",
+      "prompt": "A wok or plate of colourful stir-fried vegetables, still crisp: strips of red onion, diagonal slices of leek, chunky strips of red and yellow bell pepper, long carrot ribbons and sliced celery, lightly seasoned with garam masala, served with saffron-yellow couscous and a spoonful of thick natural yoghurt. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 183,
+      "title": "Butternutpumpa- och poblano-sallad med fetaost",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 204,
+      "date": "2026-10-21",
+      "prompt": "A platter of roasted salad: cubes of roasted orange butternut squash and strips of roasted dark green poblano pepper, sweetcorn kernels, crumbled white feta, toasted pumpkin seeds and torn mint leaves, drizzled with a red harissa-lime dressing. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 263,
+      "title": "Örtig tortellinisoppa",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 284,
+      "date": "2026-10-21",
+      "prompt": "A bowl of smooth red tomato soup with cheese tortellini added, a swirl of cream, fresh oregano and basil leaves, grated parmesan on top, served with the tortellini visible in the soup. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 264,
+      "title": "Väffeltoast med rökt kalkon, äpple och dijonkräm",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 285,
+      "date": "2026-10-21",
+      "prompt": "Toasted sandwiches pressed in a waffle iron so the wholegrain bread has a golden waffle pattern, cut open to show melted cheese, thin slices of smoked turkey and thin slices of green apple with dijon crème fraîche, served with snack vegetables (cucumber, carrot sticks) and a glass of milk. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 265,
+      "title": "Snabbrimmad torsk med ägg och persilja",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 286,
+      "date": "2026-10-21",
+      "prompt": "A plate of oven-baked white cod fillet with a creamy white sauce poured over, topped with chopped hard-boiled egg and lots of chopped curly parsley, with boiled potatoes, green peas and a few tomato wedges on the side, classic Swedish fish dinner. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 267,
+      "title": "Örtiga minibiffar med potatismos",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 288,
+      "date": "2026-10-21",
+      "prompt": "A plate of small herby minced beef patties (mini pan-fried meatballs flattened into little patties) with golden crust and flecks of oregano, some stuffed with feta and olives, served with a generous mound of creamy mashed potatoes, a light cream gravy and a spoonful of lingonberries. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 268,
+      "title": "Nudelwok med thai-basilika och ostronsås",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 289,
+      "date": "2026-10-21",
+      "prompt": "A wok of stir-fried egg noodles with shredded kale and cabbage, carrot strips, bell pepper, mushrooms and cubes of golden fried tofu in a glossy dark oyster sauce, topped with chopped peanuts, sliced spring onion, Thai basil leaves and a lime wedge. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 269,
+      "title": "Gräddig Cashew-Kyckling med Curry",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 290,
+      "date": "2026-10-21",
+      "prompt": "A bowl of chicken pieces in a creamy golden yellow curry sauce made from blended parsnip, turmeric, cream and cashew nuts, with green haricots verts, served over rice, topped with toasted coconut flakes, fresh coriander and a few cherry tomatoes. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 270,
+      "title": "Brysselkålbonara",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 291,
+      "date": "2026-10-21",
+      "prompt": "A plate of spaghetti carbonara-style with egg yolk and parmesan clinging to the strands, tossed with quartered pan-fried Brussels sprouts with crispy caramelised edges and chopped toasted hazelnuts, black pepper and a little lemon zest, no bacon. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 271,
+      "title": "Tikka Masala",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 292,
+      "date": "2026-10-21",
+      "prompt": "A bowl of tikka masala: strips of chicken in a smooth, creamy red-orange tomato and coconut sauce, served with basmati rice, topped with fresh coriander, cubes of mango and chopped peanuts. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 272,
+      "title": "Jordnöts- och kikärtsgryta med kokosris",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 293,
+      "date": "2026-10-21",
+      "prompt": "A bowl of peanut chickpea curry: chickpeas in a rich golden-brown coconut and peanut butter sauce with red curry paste and wilted spinach, served over white coconut rice, topped with chopped salted peanuts, fresh coriander and a spoonful of red chili crisp. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 274,
+      "title": "Fiskgryta med lax och tomat",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 295,
+      "date": "2026-10-21",
+      "prompt": "A bowl of quick salmon stew: chunks of pink salmon and whole snap peas in a creamy pale red tomato and cream sauce with lots of chopped fresh dill, served with white rice. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 275,
+      "title": "Blomkålsgryta med indiska smaker",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 296,
+      "date": "2026-10-21",
+      "prompt": "A pot of Indian-spiced cauliflower stew: oven-roasted cauliflower florets with golden tips in a creamy orange tomato and coconut sauce with strips of red bell pepper, garnished with coriander, served with basmati rice and a piece of naan bread. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 276,
+      "title": "Nabas marockanska harirarasoppa",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 297,
+      "date": "2026-10-21",
+      "prompt": "A bowl of Moroccan harira soup: a thick red-brown tomato soup with chickpeas, small risoni pasta, finely chopped celery and warm spices (cinnamon, turmeric, paprika), topped with fresh coriander, served with lemon wedges and a piece of baguette. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 277,
+      "title": "Lövbiffsrullader med färskost",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 298,
+      "date": "2026-10-21",
+      "prompt": "A pan of browned beef roulades (thin minute steaks rolled around garlic-and-herb cream cheese, held with toothpicks) in a creamy pepper sauce with crushed black, green and pink peppercorns, served with oven-roasted vegetables or potatoes, pressed cucumber and a spoon of blackcurrant jelly. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 278,
+      "title": "Oxjärpar i krämig gräddsås",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 299,
+      "date": "2026-10-21",
+      "prompt": "A pan of oval Swedish beef patties (järpar, like elongated meatballs) simmering in a creamy light brown gravy flavoured with dijon mustard and thyme, served with boiled potatoes or roasted root vegetables, lingonberries and chopped parsley. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 279,
+      "title": "Biffnudelsallad med chili- & limedressing",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 300,
+      "date": "2026-10-21",
+      "prompt": "A large bowl of Thai-style beef noodle salad: cold rice noodles with ribbons of carrot, sliced spring onion and bean sprouts, topped with thinly sliced medium-rare seared beef, charred pak choi wedges, toasted sesame seeds and coriander, with a glossy chili-lime fish sauce dressing drizzled over. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 280,
+      "title": "Kålmaja på nolltid",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 301,
+      "date": "2026-10-21",
+      "prompt": "A pan of Swedish kålmaja: browned minced beef and strips of soft pointed cabbage and onion in a creamy light brown sauce with a touch of syrup and soy, served with boiled potatoes, raw stirred lingonberries, chopped parsley and pressed cucumber. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 281,
+      "title": "Turkisk manti på 10 minuter",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 302,
+      "date": "2026-10-21",
+      "prompt": "A plate of Turkish-style manti shortcut: pasta topped with a generous dollop of thick garlic yoghurt, spiced browned minced beef with onion, finely chopped tomato and parsley, drizzled with melted butter stained red with paprika or Aleppo pepper. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 282,
+      "title": "Persisk makaroni med krispig tadig",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 303,
+      "date": "2026-10-21",
+      "prompt": "Persian macaroni (makaroni) turned out of the pot like a cake: spaghetti layered with a saffron-tinted spiced minced beef and tomato sauce, with a crispy golden-brown bottom crust (tahdig) of pasta on top, sprinkled with chopped parsley. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 283,
+      "title": "Kebabgryta med sting",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 304,
+      "date": "2026-10-21",
+      "prompt": "A pot of Swedish kebab stew: strips of kebab meat in a spicy red tomato sauce with paprika, cumin and curry, served with warm pita bread, rice and a bowl of white garlic sauce. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 284,
+      "title": "Tacogratäng med potatis",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 305,
+      "date": "2026-10-21",
+      "prompt": "A rectangular oven dish of taco gratin: thin slices of potato layered with taco-spiced minced beef and salsa, topped with a creamy crème fraîche and sweet chili layer and melted golden grated cheese, served with nacho chips and a bowl of iceberg lettuce, tomato and cucumber. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 285,
+      "title": "Kycklinggratäng med röd pesto",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 306,
+      "date": "2026-10-21",
+      "prompt": "An oven dish of chicken gratin: browned chicken fillet halves and whole cherry tomatoes with strips of sun-dried tomato in a creamy red pesto sauce, topped with melted golden mozzarella and fresh basil leaves, a bowl of couscous on the side. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 286,
+      "title": "Kycklinggratäng med basilika & bacon",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 307,
+      "date": "2026-10-21",
+      "prompt": "An oven dish of chicken gratin: slices of browned chicken in a creamy mushroom sauce with crispy bacon pieces, parmesan and basil, baked golden on top, served with cooked whole wheat grain (matvete) and rocket leaves. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 287,
+      "title": "Basmatiris med biryanitäcke",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 308,
+      "date": "2026-10-21",
+      "prompt": "A platter of fluffy white basmati rice covered with a biryani-style topping of golden fried chicken pieces and onion with turmeric and cardamom, chickpeas, toasted cashew nuts, plump raisins and toasted vermicelli strands, served with a bowl of mint yoghurt. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    },
+    {
+      "id": 288,
+      "title": "Kycklinggryta med smak av saffran",
+      "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
+      "steps": 20,
+      "seed": 309,
+      "date": "2026-10-21",
+      "prompt": "A pot of golden-orange saffron chicken stew: pieces of chicken thigh, chunks of carrot and red bell pepper in a fragrant turmeric, cinnamon and tomato broth tinted yellow by saffron, served with basmati rice. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+    }
+  ]
+}
