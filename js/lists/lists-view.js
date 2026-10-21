@@ -130,6 +130,7 @@ async function loadListsTabInner() {
   try {
     _householdId = await window.getHouseholdId();
     await refreshData();
+    window._listsLoadedAt = Date.now();   // färskhetsstämpel för flikbytet (navigation.js)
   } catch {
     if (_supported !== false && host) {
       host.innerHTML = `${headingHtml('Listor')}

@@ -325,6 +325,10 @@ async function boot() {
   await requireAuth();
   window.perfMark?.('auth');
   await init();   // startar även matsedelsladdningen (parallellt med recepten, se init)
+  // Batch C2: Listor-fliken förhämtas när huvudtråden har tid (2 frågor), så
+  // första flikbytet är momentant. Inköp förhämtas redan av Idag-vyn (shopState).
+  const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 1500));
+  idle(() => { if (!window._listsLoadedAt) Promise.resolve(window.loadListsTab?.()).catch(() => {}); });
 
   // Deep-link via query param: ?tab=recept|vecka|shop|listor
   const tabParam = new URLSearchParams(window.location.search).get('tab');

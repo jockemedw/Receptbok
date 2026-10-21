@@ -1063,8 +1063,9 @@ export async function loadShoppingTab() {
 
 // Bakgrundsuppdatering (realtime-event, API-svar som ändrat listan): syns inte
 // Inköp-fliken markeras den bara som inaktuell (window._shopDirty) — fliken
-// laddas alltid om vid nästa besök (navigation.js), och vägar som behöver
-// listan medan den är dold (Idag/dag-sheetens "lägg till") laddar då först.
+// laddas då om vid nästa besök (navigation.js; en färsk, oförändrad lista
+// laddas inte om — Batch C), och vägar som behöver listan medan den är dold
+// (Idag/dag-sheetens "lägg till") laddar då först.
 // Syns fliken uppdateras den tyst (utan spinner, se nedan).
 export function refreshShoppingTab() {
   if (document.body.dataset.activeTab !== 'shop') {
@@ -1139,6 +1140,7 @@ async function loadShoppingTabInner() {
     const hasManual      = items.some(i => i.source === 'manual');
 
     document.getElementById('shopLoading').style.display = 'none';
+    window._shopLoadedAt = Date.now();   // färskhetsstämpel för flikbytet (navigation.js)
     if (!hasRecipeItems && !hasManual) {
       contentEl.style.display = 'none';
       document.getElementById('shopNoData').style.display = '';
@@ -1149,7 +1151,9 @@ async function loadShoppingTabInner() {
     }
     document.getElementById('shopNoData').style.display = 'none';
     contentEl.style.display = '';
-    if (typeof window.initDispatchUI === 'function') window.initDispatchUI();
+    // Willys-knappen (två API-anrop med kallstart) initieras EN gång, och först
+    // när Inköp-fliken faktiskt syns — inte vid Idag-vyns förhämtning vid boot.
+    if (document.body.dataset.activeTab === 'shop') ensureDispatchUI();
 
     const preserveChecked = window._preserveChecked === true;
     window._preserveChecked = false;
@@ -1620,6 +1624,14 @@ window.clearPickedItems   = clearPickedItems;
 window.copyShoppingList   = copyShoppingList;
 window.addManualItem      = addManualItem;
 window.loadShoppingTab    = loadShoppingTab;
+// Batch C3: initDispatchUI (preferenser + butiksstatus via /api/) körs en gång per sidladdning.
+let _dispatchUiInited = false;
+export function ensureDispatchUI() {
+  if (_dispatchUiInited || typeof window.initDispatchUI !== 'function') return;
+  _dispatchUiInited = true;
+  window.initDispatchUI();
+}
+window.ensureDispatchUI   = ensureDispatchUI;
 window.refreshShoppingTab = refreshShoppingTab;
 window.renderShoppingData = renderShoppingData;
 window.markRoundShopped   = markRoundShopped;

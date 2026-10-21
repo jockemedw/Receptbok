@@ -180,6 +180,8 @@ Störst effekt på kallstarten, lägst risk, inga schemaändringar.
 
 ### Batch C — Flikbyten utan spinner (½ session, R)
 
+**✅ C1–C3 BYGGDA (Session 158j, 2026-10-21).** Färskhetsregel i `navigation.js` (60 s + `_shopDirty` från realtime) i stället för omhämtning vid varje flikbyte; Listor förhämtas i tomgång; `initDispatchUI` en gång och först när Inköp syns. C4 (CLS) återstår som granskning.
+
 | # | Åtgärd | Fil(er) |
 |---|---|---|
 | C1 | **Stale-while-revalidate i minnet** för Inköp: om `_shopListId` och renderad lista finns → visa den direkt, hämta om i bakgrunden och diff-rendera vid skillnad (samma idé som `applyRemoteUpdate`). Spinnern bara första gången. | `shopping-list.js` `loadShoppingTab` |

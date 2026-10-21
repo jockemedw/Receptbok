@@ -1,5 +1,13 @@
 // Flik-navigering (Idag, Matsedel, Inköp, Recept, Listor).
 
+// Batch C (prestandaplanen): Inköp och Listor hämtas inte om vid varje flikbyte.
+// Realtime-kanalerna markerar fliken som inaktuell (_shopDirty) när någon annan
+// ändrar, och egna ändringar uppdaterar vyn direkt — så en lista som laddats
+// nyss är färsk. Efter FRESH_MS hämtas den om ändå (tyst, utan spinner), som
+// skyddsnät om ett realtime-event gått förlorat (t.ex. app i bakgrunden).
+const FRESH_MS = 60 * 1000;
+const isStale = (loadedAt, dirty) => dirty || !loadedAt || (Date.now() - loadedAt) > FRESH_MS;
+
 export function switchTab(tab) {
   // Rulla till toppen FÖRST, medan layouten för den gamla vyn fortfarande är
   // ren — då kostar scrollen ingen extra layout. Görs den efter vybytet
@@ -17,8 +25,11 @@ export function switchTab(tab) {
     el.classList.toggle('active', el.dataset.tab === tab);
   });
   document.getElementById('fabImport').style.display              = tab === 'recept' ? 'block' : 'none';
-  if (tab === 'shop') window.loadShoppingTab();
-  if (tab === 'listor') window.loadListsTab?.();
+  if (tab === 'shop') {
+    window.ensureDispatchUI?.();   // Willys-knappen: avgörs först när fliken faktiskt syns
+    if (isStale(window._shopLoadedAt, window._shopDirty)) window.loadShoppingTab();
+  }
+  if (tab === 'listor' && isStale(window._listsLoadedAt, false)) window.loadListsTab?.();
 }
 
 window.switchTab = switchTab;
