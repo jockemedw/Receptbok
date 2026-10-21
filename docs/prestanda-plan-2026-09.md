@@ -166,6 +166,8 @@ Störst effekt på kallstarten, lägst risk, inga schemaändringar.
 
 ### Batch B — Leverans av statiska filer (1 session + beslut B1, R)
 
+**✅ B1, B2, B3, B4, B5 BYGGDA (Session 158i, 2026-10-21).** `scripts/build.mjs` (esbuild) → `public/` som Vercels `outputDirectory`; en hashad bundle med supabase-js inbakad (CDN-importen aliasas, versionen pinnad i package.json); DM Sans självhostad (fyra variabla woff2); SW cache-först på hashade filer, precache skrivs av bygget, navigeringstimeout 2,5 s; `immutable` för dist/fonts/icons/hashad CSS; CI bygger. Avvikelse från planen: källan behåller `?v=`-modulerna så GitHub Pages-backupen och harnessen fungerar obyggt — bygget skriver om index.html/SW i utdatan i stället för i källan. Mobilmätning enligt status.md:s kö.
+
 | # | Åtgärd | Fil(er) | Kommentar |
 |---|---|---|---|
 | B1 | **Versionera modulerna** så de kan cachas hårt. Två vägar (beslut): (a) minimal byggsteg med `esbuild` i Vercels `buildCommand` som bundlar `js/app.js` → `dist/app.[hash].js` och skriver in hashen i `index.html`; SW:n blir cache-först på hashade filer. (b) Behåll no-build: `importmap` i `index.html` som mappar alla 27 modulspecifierare till `?v=N`-URL:er, och en `vercel.json`-headers-regel med `immutable` för allt med `?v=`. Rekommendation: **(a)** — en request i stället för 27, borttagen versionsbump-ritual (hashen sköter det), och SW:n kan äntligen ge snabbstart. Kostnad: ett `package.json`-devberoende och en ändrad deploykonvention (CLAUDE.md-uppdatering). | `vercel.json`, `index.html`, `service-worker.js`, ev. `build.mjs` | Största enskilda vinsten på återbesök. |

@@ -11,7 +11,7 @@ Browser (index.html + js/-moduler)
 Vercel serverless (api/) ── service-role → Supabase (Postgres + Auth + Realtime)
                          └─ inofficiella Willys-endpoints (reor + varukorg)
 ```
-- **Frontend:** `index.html` (~620 rader ren markup) + `js/`-moduler. Hostas på Vercel (primär, `https://receptbok-six.vercel.app/`) + GitHub Pages (backup).
+- **Frontend:** `index.html` (~620 rader ren markup) + `js/`-moduler. Hostas på Vercel (primär, `https://receptbok-six.vercel.app/`) + GitHub Pages (backup). **På Vercel byggs appen** av `scripts/build.mjs` (esbuild → `public/`: en hashad JS-bundle med supabase-js inbakad, hashad CSS, självhostade fonter, SW med innehållshash). Källan körs obyggd på Pages/lokalt.
 - **Backend:** Vercel serverless i `api/` — max-tider per funktion i `vercel.json` (generate 15s, import-recipe 30s, dispatch 60s).
 - **Data — Supabase är sanningskällan.** Tabeller: `recipes` · `weekly_plans` + `meal_days` (custom-/egna dagar = `meal_days` med `plan_id NULL` — **bevaras alltid vid generering**) · `shopping_lists` + items · `recipe_history` (`usedOn` per hushåll, 14-dagarsfönster) · `plan_archives` · `pantry_items` (skafferi/"har hemma") · `family_lists` + `family_list_items` (listor & anteckningar) · `pricing_status` (larmbanner) · `households` + `household_members`. Fält↔rad-mappning för recept: `js/data-mapper.js`.
 - **GitHub-JSON: nästan avvecklad.** Enda aktiva filen är `dispatch-preferences.json` (inköpspreferenser, läses/skrivs via `api/_shared/github.js` med 3-retry-SHA). Övriga JSON-filer i repo-roten (`weekly-plan.json`, `shopping-list.json`, `recipe-history.json`, `custom-days.json`, `plan-archive.json`, `offers.json`) är **kvarlämnade och läses inte av koden** — rör dem inte, radera dem inte utan Joakims OK.
@@ -44,9 +44,9 @@ Vercel serverless (api/) ── service-role → Supabase (Postgres + Auth + Rea
 - Claude pushar direkt till `main` efter varje ändring — användaren behöver inte använda GitHub Desktop.
 
 ## Deployment & versionsbump (viktig konvention!)
-- Commit + push till `main` → Vercel + GitHub Pages deployas automatiskt (~30 sek). Ingen manuell åtgärd.
-- **Vid varje frontend-ändring som ska nå mobilen: bumpa versionerna.** CSS: `css/styles.css?v=N` i `index.html`. JS-entry: `js/app.js?v=N` i `index.html`. Service worker: `CACHE_VERSION = 'receptbok-vN'` i `service-worker.js`. Utan bump ser Joakim gamla cachade filer och tror att ändringen inte fungerar.
-- **Verifiering:** Joakim har ingen lokal testmiljö — UI verifieras på mobil mot live-deployen. Playwright/headless lokalt är för-verifiering; skarp mobilverifiering loggas i verifieringskön i `docs/status.md`.
+- Commit + push till `main` → Vercel (kör `node scripts/build.mjs`, ~40 sek) + GitHub Pages deployas automatiskt. **Sedan 2026-10-21 uteblir Vercels auto-deploy ibland** (öppen utredning i status.md) — kontrollera `curl -s https://receptbok-six.vercel.app/ | grep -o 'dist/app\.[0-9a-f]*\.js'` efter merge; har hashen inte ändrats: `vercel deploy --prod --yes` i HUVUDKATALOGEN (`.vercel/repo.json` ligger där; från en worktree deployas fel träd).
+- **Versionsbump (`styles.css?v=N`, `app.js?v=N`, `CACHE_VERSION`) gäller bara den obyggda källan** = GitHub Pages-backupen och lokal förhandsvisning. På Vercel sköter bygget det med innehållshashar (SW:n byter cache automatiskt när något ändrats). Bumpa ändå vid frontend-ändringar så backupen inte serverar stale filer — men det är inte längre det som avgör om Joakim ser ändringen på mobilen.
+- **Verifiering:** Joakim har ingen lokal testmiljö — UI verifieras på mobil mot live-deployen. Bygget kan röktestas lokalt: `node scripts/build.mjs` och servera `public/` statiskt (startar till inloggningsrutan utan konsolfel = bundlen är hel). Playwright/headless lokalt är för-verifiering; skarp mobilverifiering loggas i verifieringskön i `docs/status.md`.
 
 ## Operativa regler (följ utan att fråga)
 - Frontend-JS ligger i `js/`-moduler — redigera rätt modulfil, inte `index.html` (ren HTML-markup).
@@ -86,7 +86,7 @@ node scripts/audit-ingredients.mjs     # gradera ingrediensavvikelser (P0/P1/P2)
 Innan "klart" deklareras ska Claude alltid:
 1. Läsa tillbaka den editerade filen och verifiera att ändringen landade rätt (Edit-hooken fångar syntaxfel).
 2. Kontrollera att relaterade funktioner inte brutits — Grep efter berörda funktionsnamn om tveksamt; kör hela testsviten vid fleramodulsändringar.
-3. Vid frontend-ändring: bumpa styles-/app-/SW-versionerna (se *Deployment*).
+3. Vid frontend-ändring: bumpa styles-/app-/SW-versionerna för backupen (se *Deployment*) och kör `node scripts/build.mjs` så att bygget går igenom (CI gör det också).
 4. Committa och pusha; mergea till `main`.
 5. Uppdatera `docs/status.md`: ny "Senaste session"-ruta + verifieringskö + digest-blocket om öppet läge ändrats. CLAUDE.md rörs bara om den *stabila* kontexten ändrats.
 6. **Arkivera föregående session:** flytta nuvarande sessionsruta till toppen av `docs/session-log-archive.md` (status.md håller bara EN ruta). Lyft oavslutade punkter till *Kända buggar* / *Väntar på live-verifiering* / *Öppna utredningar* — öppet arbete ska synas strukturerat, inte begravas i prosa.

@@ -73,3 +73,5 @@ STATUS.md
 scripts/recipe-images/report.json
 scripts/recipe-images/sources-report.json
 scripts/recipe-images/batch.log
+# Byggutdata (scripts/build.mjs → Vercel outputDirectory)
+public/
