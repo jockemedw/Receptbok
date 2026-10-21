@@ -29,9 +29,22 @@ import './weekly-plan/deals-popup.js';
 import './weekly-plan/wiz-deals.js';
 
 async function init() {
+  // Batch A1 (prestandaplanen): matsedeln hämtas PARALLELLT med recepten — båda
+  // behöver bara hushålls-id. loadWeeklyPlan väntar på window._recipesReady innan
+  // den ritar, så renderordningen recept → matsedel är oförändrad; det är bara
+  // nätverksrundorna som överlappar. Löftet löses ALLTID (finally), även när
+  // recepten inte gick att ladda — annars skulle matsedeln aldrig ritas.
+  let recipesReady;
+  window._recipesReady = new Promise((resolve) => { recipesReady = resolve; });
   try {
     const householdId = await window.getHouseholdId();
     window.perfMark?.('hushåll');
+    if (householdId) {
+      Promise.resolve(window.loadWeeklyPlan?.()).then(
+        () => window.perfMark?.('matsedel'),
+        () => window.perfMark?.('matsedel:fel'),
+      );
+    }
     if (!householdId) {
       // Pausad free-tier-databas ser ut som "hushåll saknas" — skilj på dem
       // så familjen får veta att det bara är att vänta, inte att något är trasigt.
@@ -68,6 +81,8 @@ async function init() {
       <p style="color:var(--rust)"></p>
       <button type="button" class="empty-reset-btn" onclick="location.reload()">Prova igen</button>`;
     loading.querySelector('p').textContent = err.message;
+  } finally {
+    recipesReady();
   }
 }
 
@@ -309,14 +324,7 @@ async function boot() {
   window.perfInstallLateHooks?.();
   await requireAuth();
   window.perfMark?.('auth');
-  await init();
-  // Planladdningen är medvetet inte awaitad (som förut) — vi hakar bara på för
-  // att markera när matsedelsdatat landat. Tvåargumentsformen håller ett
-  // avvisat löfte hanterat.
-  Promise.resolve(window.loadWeeklyPlan()).then(
-    () => window.perfMark?.('matsedel'),
-    () => window.perfMark?.('matsedel:fel'),
-  );
+  await init();   // startar även matsedelsladdningen (parallellt med recepten, se init)
 
   // Deep-link via query param: ?tab=recept|vecka|shop|listor
   const tabParam = new URLSearchParams(window.location.search).get('tab');

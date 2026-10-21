@@ -17,7 +17,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/+esm">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=208">
+<link rel="stylesheet" href="css/styles.css?v=209">
 </head>
 <body data-active-tab="idag">
 
@@ -49,7 +49,15 @@
 </header>
 
 <div id="todayView" class="visible">
-  <div class="today-loading"><span class="today-loading-spin">⟳</span><p>Laddar…</p></div>
+  <!-- Idag-skelett (Batch A5): syns från första målningen, före JS och auth.
+       Ersätts av today-view.js vid första riktiga renderingen. -->
+  <div class="td td-skel" aria-busy="true" aria-label="Laddar">
+    <div class="td-head"><div class="skel skel-h1"></div><div class="skel skel-sub"></div></div>
+    <div class="td-cols">
+      <div class="td-col"><div class="skel skel-hero"></div><div class="skel skel-row"></div><div class="skel skel-row"></div></div>
+      <div class="td-col"><div class="skel skel-card"></div></div>
+    </div>
+  </div>
 </div>
 
 <main id="receptView" style="display:none">
@@ -665,6 +673,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=176"></script>
+<script type="module" src="js/app.js?v=177"></script>
 </body>
 </html>

@@ -77,7 +77,7 @@ function mk(kind, title, cookId, r, saving, planDay) {
 }
 
 function thumbHtml(info, size = 72) {
-  const img = info?.r ? recipeImage(info.r) : '';
+  const img = info?.r ? recipeImage(info.r, 'thumb') : '';
   if (img) return `<span class="td-thumb"><img src="${img}" alt="" width="${size}" height="${size}" loading="lazy" decoding="async" onerror="this.remove()"></span>`;
   const icon = !info ? I.plus : info.kind === 'free' ? I.free : info.kind === 'note' ? (info.leftovers ? I.leftovers : I.pencil) : I.pot;
   return `<span class="td-thumb" aria-hidden="true">${icon}</span>`;
@@ -326,8 +326,16 @@ window.openPinnedNote = function (id) {
   if (typeof window.flOpenNote === 'function') window.flOpenNote(id);
 };
 
+// Batch A5: samma skelett som index.html ritar före JS/auth — ingen spinner,
+// bara tysta ytor där innehållet snart landar.
 function loadingHtml() {
-  return `<div class="today-loading"><span class="today-loading-spin">⟳</span><p>Laddar…</p></div>`;
+  return `<div class="td td-skel" aria-busy="true" aria-label="Laddar">
+    <div class="td-head"><div class="skel skel-h1"></div><div class="skel skel-sub"></div></div>
+    <div class="td-cols">
+      <div class="td-col"><div class="skel skel-hero"></div><div class="skel skel-row"></div><div class="skel skel-row"></div></div>
+      <div class="td-col"><div class="skel skel-card"></div></div>
+    </div>
+  </div>`;
 }
 
 // F162: pausad free-tier-databas (Session 106) gav bara besked inne i den
@@ -481,7 +489,7 @@ window.todayAddItem = async function () {
 };
 
 // ── Håll Idag-vyn i synk med datat ────────────────────────────────────────────
-function wrap(name, { async = false, onAfter } = {}) {
+function wrap(name, { async = false, onAfter, onBefore } = {}) {
   const orig = window[name];
   if (typeof orig !== 'function' || orig.__todayWrapped) return;
   const after = () => {
@@ -490,7 +498,7 @@ function wrap(name, { async = false, onAfter } = {}) {
     onAfter?.();
   };
   const wrapped = async
-    ? async function (...args) { const r = await orig.apply(this, args); after(); return r; }
+    ? async function (...args) { onBefore?.(); const r = await orig.apply(this, args); after(); return r; }
     : function (...args) { const r = orig.apply(this, args); after(); return r; };
   wrapped.__todayWrapped = true;
   window[name] = wrapped;
@@ -500,14 +508,15 @@ function installHooks() {
   wrap('renderWeeklyPlanData');
   // Inköpslistans ändringar (bockar, nya varor, ombyggd lista) speglas i kortet.
   wrap('renderFullShoppingList');
-  // Kollar prisstatus + pinnade lappar först när loadWeeklyPlan (och därmed
-  // auth+household) är klar — bådadera är hushållsskopad data som kräver en
-  // inloggad session.
+  // Prisstatus + pinnade lappar startar SAMTIDIGT som planladdningen (Batch A3)
+  // — loadWeeklyPlan anropas först när auth+household är klara, och båda väntar
+  // själva in getHouseholdId, så de ligger i samma våg som planfrågorna i stället
+  // för en egen runda efteråt.
   // Pinnade lappar hämtas bara vid första planladdningen med Idag synlig
   // (boot) och sedan vid varje Idag-besök (switchTab-kroken) — inte vid varje
   // realtime-omladdning av planen. Prisstatusen läses en gång per sidladdning.
   let bootNotesChecked = false;
-  wrap('loadWeeklyPlan', { async: true, onAfter: () => {
+  wrap('loadWeeklyPlan', { async: true, onBefore: () => {
     checkPricingStatus();
     if (bootNotesChecked || !todayVisible()) return;
     bootNotesChecked = true;

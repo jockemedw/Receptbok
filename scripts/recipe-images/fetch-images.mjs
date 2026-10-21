@@ -25,6 +25,8 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { loadAi, writeManifest as sharedWriteManifest, writeThumbs } from './_manifest.mjs';
+const fetched = [];   // id:n som hämtats i den här körningen (→ miniatyrer)
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..', '..');
@@ -180,17 +182,11 @@ function existingIds() {
   return new Set(readdirSync(IMG_DIR).map((f) => /^r(\d+)\.webp$/.exec(f)?.[1]).filter(Boolean).map(Number));
 }
 
-function writeManifest(ids) {
-  const sorted = [...ids].sort((a, b) => a - b);
-  const body = `// GENERERAD av scripts/recipe-images/fetch-images.mjs — redigera inte för hand.
-// Recept-id:n som har en bild i images/recipes/r<id>.webp (640×640 webp, kopia
-// från källan). Appen läser mängden i js/utils.js (recipeImage) så listan aldrig
-// ritar trasiga bilder för recept som saknar en.
-export const RECIPE_IMAGE_IDS = new Set([
-${sorted.map((id) => `  ${id},`).join('\n')}
-]);
-`;
-  writeFileSync(MANIFEST, body);
+// Manifestet skrivs av den delade skrivaren (_manifest.mjs) så AI-mängden och
+// bildhasharna följer med; miniatyrer för de hämtade bilderna skrivs först.
+async function writeManifest(ids) {
+  await writeThumbs(fetched);
+  sharedWriteManifest(ids, new Set(loadAi().images.map((x) => x.id)));
 }
 
 const sqlStr = (s) => `'${String(s).replace(/'/g, "''")}'`;
@@ -237,6 +233,7 @@ for (const r of candidates) {
     const buf = await httpGet(imgUrl, { binary: true });
     await sharp(buf).rotate().resize(SIZE, SIZE, { fit: 'cover', position: 'attention' }).webp({ quality: 80 }).toFile(path.join(IMG_DIR, `r${r.id}.webp`));
     have.add(r.id);
+    fetched.push(r.id);
     done++;
     process.stdout.write(`  ✓ r${r.id}.webp  ${r.title}\n`);
     await sleep(400);
@@ -247,7 +244,7 @@ for (const r of candidates) {
 }
 
 if (!DRY) {
-  writeManifest(have);
+  await writeManifest(have);
   writeBackfill(backfill);
 }
 writeFileSync(REPORT, JSON.stringify(report, null, 2) + '\n');
