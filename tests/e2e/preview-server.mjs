@@ -33,6 +33,20 @@ const STUB_PATH = '/tests/e2e/fixtures/supabase-stub.js';
 createServer(async (req, res) => {
   try {
     const url = new URL(req.url, 'http://localhost');
+    // POST /dump → scripts/.cache/recipes-live.json (gitignorerad). Används för att
+    // få ut window.RECIPES ur en inloggad flik i webbläsarpanelen till dev-skripten
+    // (bildhämtningen) utan service-role-nyckel. Bara localhost, bara den filen.
+    if (req.method === 'POST' && url.pathname === '/dump') {
+      const chunks = [];
+      for await (const c of req) chunks.push(c);
+      const body = Buffer.concat(chunks).toString('utf8');
+      JSON.parse(body);   // måste vara giltig JSON
+      const { mkdirSync, writeFileSync } = await import('node:fs');
+      mkdirSync(path.join(ROOT, 'scripts', '.cache'), { recursive: true });
+      writeFileSync(path.join(ROOT, 'scripts', '.cache', 'recipes-live.json'), body);
+      res.writeHead(200, { 'Content-Type': 'application/json' }).end(JSON.stringify({ ok: true, bytes: body.length }));
+      return;
+    }
     let rel = decodeURIComponent(url.pathname);
     if (rel === '/' || rel.endsWith('/')) rel += 'index.html';
     if (rel.startsWith('/api/')) { res.writeHead(404).end('{}'); return; }
