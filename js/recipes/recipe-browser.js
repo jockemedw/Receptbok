@@ -147,7 +147,7 @@ export function cardMetaHtml(r) {
 }
 
 export function thumbHtml(r, cls = 'rc-thumb') {
-  const image = recipeImage(r);
+  const image = recipeImage(r, 'thumb');
   return image
     ? `<img class="${cls}" src="${image}" alt="" loading="lazy" decoding="async" width="56" height="56" onerror="recipeThumbFallback(this)">`
     : `<span class="${cls} is-empty" aria-hidden="true">${ICON_POT}</span>`;

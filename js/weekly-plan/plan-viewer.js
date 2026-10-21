@@ -381,21 +381,19 @@ async function loadCustomDays() {
 }
 
 async function loadActivePlanFromSupabase(householdId) {
+  // Batch A2: dagarna bäddas in i samma PostgREST-fråga (FK meal_days.plan_id →
+  // weekly_plans.id) — en nätverksrunda i stället för två.
   const { data: plans, error: plansErr } = await window.db
     .from('weekly_plans')
-    .select('*')
+    .select('*, meal_days(*)')
     .eq('household_id', householdId)
     .eq('is_active', true)
+    .order('date', { referencedTable: 'meal_days' })
     .limit(1);
   if (plansErr) throw plansErr;
   const wp = plans?.[0];
   if (!wp) return null;
-  const { data: mealDays, error: daysErr } = await window.db
-    .from('meal_days')
-    .select('*')
-    .eq('plan_id', wp.id)
-    .order('date');
-  if (daysErr) throw daysErr;
+  const mealDays = wp.meal_days || [];
   return {
     id:          wp.id,   // för realtime-ekokontrollen (plan_id-värdet)
     generated:   wp.generated_at,
@@ -417,20 +415,19 @@ async function loadActivePlanFromSupabase(householdId) {
 }
 
 async function loadShopSummaryFromSupabase(householdId) {
+  // Batch A2: receptvarorna bäddas in (filtret på shopping_items.source gäller
+  // bara de inbäddade raderna, inte vilka listor som träffas).
   const { data: lists } = await window.db
     .from('shopping_lists')
-    .select('*')
+    .select('*, shopping_items(category, name, position)')
     .eq('household_id', householdId)
     .eq('is_active', true)
+    .eq('shopping_items.source', 'recipe')
+    .order('position', { referencedTable: 'shopping_items' })
     .limit(1);
   const list = lists?.[0];
   if (!list) return null;
-  const { data: items } = await window.db
-    .from('shopping_items')
-    .select('category, name, position')
-    .eq('list_id', list.id)
-    .eq('source', 'recipe')
-    .order('position');
+  const items = list.shopping_items || [];
   const recipeItems = {};
   for (const row of (items || [])) {
     if (!recipeItems[row.category]) recipeItems[row.category] = [];
@@ -1076,6 +1073,9 @@ export async function loadWeeklyPlan() {
       loadArchive(),
       loadCustomDays(),
     ]);
+    // Batch A1: hämtningen ovan löper parallellt med receptladdningen i app.js —
+    // men renderingen slår upp recept (bild, tid, protein), så vänta in dem.
+    await window._recipesReady;
     document.getElementById('weekLoading').style.display = 'none';
     const hasAnything = (plan?.days?.length) || (archive?.plans?.length) || Object.keys(customDays.entries || {}).length;
     if (!hasAnything) { document.getElementById('weekNoData').style.display = ''; return; }

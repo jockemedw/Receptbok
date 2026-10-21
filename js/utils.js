@@ -2,6 +2,9 @@ import * as RECIPE_IMAGES from './recipe-images.js';
 const RECIPE_IMAGE_IDS = RECIPE_IMAGES.RECIPE_IMAGE_IDS;
 // AI-genererade serveringsförslag (manifestet skriver mängden; saknas den = tom)
 const RECIPE_IMAGE_AI_IDS = RECIPE_IMAGES.RECIPE_IMAGE_AI_IDS || new Set();
+// Innehållshash per bild (manifestet) → cache-brytare i URL:en, så bilderna kan
+// ligga ett år i cache (vercel.json) och ändå bytas när en bild görs om.
+const RECIPE_IMAGE_HASH = RECIPE_IMAGES.RECIPE_IMAGE_HASH || {};
 // Delade hjälpfunktioner och konstanter — ingen sidoeffekt, inga DOM-beroenden.
 
 export const proteinLabel = {
@@ -133,8 +136,12 @@ export function isoWeekNumber(dateIso) {
 // Manifestet js/recipe-images.js genereras av scripts/recipe-images/*.mjs och säger
 // vilka id:n som har bild (och vilka som är AI-genererade serveringsförslag) — så
 // listan aldrig ritar trasiga <img>.
-export function recipeImage(r) {
-  return r && RECIPE_IMAGE_IDS.has(r.id) ? `images/recipes/r${r.id}.webp` : '';
+// variant 'thumb' = 192×192 (listor, dagkort, Idag) — en tiondel av fullbilden.
+export function recipeImage(r, variant = 'full') {
+  if (!r || !RECIPE_IMAGE_IDS.has(r.id)) return '';
+  const h = RECIPE_IMAGE_HASH[r.id];
+  const dir = variant === 'thumb' ? 'images/recipes/thumbs' : 'images/recipes';
+  return `${dir}/r${r.id}.webp${h ? `?v=${h}` : ''}`;
 }
 
 // AI-genererat serveringsförslag (då ska bildtexten säga det).

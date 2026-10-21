@@ -11,12 +11,12 @@
 //
 // CACHE_VERSION bumpas när precache-listan ändras — gamla cachar städas i activate.
 
-const CACHE_VERSION = 'receptbok-v129';
+const CACHE_VERSION = 'receptbok-v130';
 
 const PRECACHE = [
   './',
   './index.html',
-  './css/styles.css?v=208',
+  './css/styles.css?v=209',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -100,9 +100,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Övriga statiska filer (css/ikoner/typsnitt): stale-while-revalidate
-  // (nyckel = full URL inkl. ?v=N).
-  if (/\.(css|png|svg|webmanifest|woff2?)(\?|$)/.test(url.pathname + url.search)) {
+  // Övriga statiska filer (css/ikoner/typsnitt/receptbilder): stale-while-revalidate
+  // (nyckel = full URL inkl. ?v=N — receptbilderna bär en innehållshash).
+  if (/\.(css|png|svg|webp|webmanifest|woff2?)(\?|$)/.test(url.pathname + url.search)) {
     event.respondWith(
       caches.match(req).then((cached) => {
         const refresh = fetch(req)

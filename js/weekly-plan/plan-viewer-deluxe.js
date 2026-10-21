@@ -692,7 +692,7 @@ function footActionsHtml() {
 // Bildruta per dag: foto när receptet har ett, annars en ikon som skiljer
 // recept (gryta) från egen notering (penna) / rester (skål) / fri dag.
 function dayThumbHtml(r, icon = I.pot) {
-  const img = r ? recipeImage(r) : '';
+  const img = r ? recipeImage(r, 'thumb') : '';
   if (img) return `<span class="dlx-day-thumb"><img src="${img}" alt="" loading="lazy" decoding="async" width="56" height="56" onerror="this.parentNode.classList.add('is-empty');this.remove()"></span>`;
   return `<span class="dlx-day-thumb is-empty" aria-hidden="true">${icon}</span>`;
 }

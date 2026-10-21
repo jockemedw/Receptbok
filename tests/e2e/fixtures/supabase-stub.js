@@ -184,6 +184,8 @@ const TABLES = {
   family_list_items: FAMILY_LIST_ITEMS,
   recipe_history: [],
 };
+// FK-kolumn per barntabell för inbäddning (select('*, barn(*)')).
+const EMBED_FK = { meal_days: 'plan_id', shopping_items: 'list_id', family_list_items: 'list_id' };
 // Harnessens API-stubbar (t.ex. /api/replace-recipe) speglar serverns skrivning
 // hit, så en senare omhämtning ser samma tillstånd som API-svaret.
 window.__stubTables = TABLES;
@@ -198,9 +200,23 @@ class Query {
     this._limit = null;
     this._single = null;
     this._write = null;
+    this.embeds = [];          // [{ table, filters: [], sort }] — PostgREST-inbäddning
   }
-  select() { return this; }
-  eq(col, val) { this.filters.push([col, 'eq', val]); return this; }
+  // Inbäddade resurser som i PostgREST: select('*, meal_days(*)') hänger på
+  // barnraderna via FK (EMBED_FK). Räcker för appens boot-frågor (Batch A2).
+  select(cols) {
+    for (const m of String(cols || '').matchAll(/([a-z_]+)\(/g)) this.embeds.push({ table: m[1], filters: [], sort: null });
+    return this;
+  }
+  embedFor(col) {
+    const i = col.indexOf('.');
+    return i > 0 ? this.embeds.find((e) => e.table === col.slice(0, i)) : null;
+  }
+  eq(col, val) {
+    const e = this.embedFor(col);
+    if (e) { e.filters.push([col.slice(e.table.length + 1), 'eq', val]); return this; }
+    this.filters.push([col, 'eq', val]); return this;
+  }
   neq(col, val) { this.filters.push([col, 'neq', val]); return this; }
   is(col, val) { this.filters.push([col, 'is', val]); return this; }
   in(col, vals) { this.filters.push([col, 'in', vals]); return this; }
@@ -209,7 +225,12 @@ class Query {
   lt(col, v) { this.filters.push([col, 'lt', v]); return this; }
   lte(col, v) { this.filters.push([col, 'lte', v]); return this; }
   match(obj) { for (const k of Object.keys(obj)) this.filters.push([k, 'eq', obj[k]]); return this; }
-  order(col, opts) { this.sort = { col, asc: opts?.ascending !== false }; return this; }
+  order(col, opts) {
+    const ref = opts?.referencedTable || opts?.foreignTable;
+    const e = ref ? this.embeds.find((x) => x.table === ref) : null;
+    if (e) { e.sort = { col, asc: opts?.ascending !== false }; return this; }
+    this.sort = { col, asc: opts?.ascending !== false }; return this;
+  }
   limit(n) { this._limit = n; return this; }
   maybeSingle() { this._single = 'maybe'; return this; }
   single() { this._single = 'one'; return this; }
@@ -222,8 +243,8 @@ class Query {
   catch(onErr) { return this._run().catch(onErr); }
   finally(fn) { return this._run().finally(fn); }
 
-  matches(row) {
-    return this.filters.every(([col, op, val]) => {
+  matches(row, filters = this.filters) {
+    return filters.every(([col, op, val]) => {
       const v = row[col];
       switch (op) {
         case 'eq':  return v === val;
@@ -274,6 +295,18 @@ class Query {
       });
     }
     if (this._limit != null) rows = rows.slice(0, this._limit);
+    if (this.embeds.length) {
+      rows = rows.map((row) => {
+        const out = { ...row };
+        for (const e of this.embeds) {
+          const fk = EMBED_FK[e.table];
+          let kids = fk ? (TABLES[e.table] || []).filter((k) => k[fk] === row.id && this.matches(k, e.filters)) : [];
+          if (e.sort) kids = [...kids].sort((a, b) => (a[e.sort.col] === b[e.sort.col] ? 0 : (a[e.sort.col] > b[e.sort.col] ? 1 : -1) * (e.sort.asc ? 1 : -1)));
+          out[e.table] = kids.map((k) => ({ ...k }));
+        }
+        return out;
+      });
+    }
     if (this._single) {
       if (this._single === 'one' && rows.length !== 1) {
         return { data: null, error: { message: 'no rows', code: 'PGRST116' } };

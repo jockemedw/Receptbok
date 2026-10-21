@@ -4574,6 +4574,15 @@ body.cook-open { overflow: hidden; }
 }
 
 .today-loading { text-align: center; padding: 4rem 1rem; color: var(--moss-muted); }
+/* Idag-skelett (Batch A5) — currentColor med låg opacitet, så det följer båda temana. */
+.td-skel .skel { border-radius: 12px; background: currentColor; opacity: .08; animation: skelPulse 1.4s ease-in-out infinite; }
+.td-skel .skel-h1 { height: 2rem; width: 60%; margin-bottom: .5rem; }
+.td-skel .skel-sub { height: 1rem; width: 40%; }
+.td-skel .skel-hero { height: 220px; margin-bottom: 1rem; border-radius: 16px; }
+.td-skel .skel-row { height: 56px; margin-bottom: .6rem; }
+.td-skel .skel-card { height: 160px; border-radius: 16px; }
+@keyframes skelPulse { 0%, 100% { opacity: .08; } 50% { opacity: .16; } }
+@media (prefers-reduced-motion: reduce) { .td-skel .skel { animation: none; } }
 .today-loading-spin { display: inline-block; font-size: 1.8rem; animation: todaySpin 1s linear infinite; }
 @keyframes todaySpin { to { transform: rotate(360deg); } }
 

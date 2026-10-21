@@ -12,7 +12,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import path from 'node:path';
-import { ROOT, IMG_DIR, existingImageIds, loadAi, saveAi, writeManifest, ingredientNames } from './_manifest.mjs';
+import { ROOT, IMG_DIR, existingImageIds, loadAi, saveAi, writeManifest, writeThumbs, ingredientNames } from './_manifest.mjs';
 
 const API = process.env.COMFY_API || 'http://127.0.0.1:8188';
 const COMFY_OUT = process.env.COMFY_OUT || 'C:/Users/joaki/ComfyUI_windows_portable/ComfyUI/output';
@@ -114,6 +114,7 @@ const { default: sharp } = DRY ? { default: null } : await import('sharp');
 if (!DRY) mkdirSync(OUT_DIR, { recursive: true });
 const ai = loadAi();
 let done = 0, failed = 0;
+const generated = [];
 for (const r of targets) {
   const prompt = promptFor(r);
   if (DRY) { console.log(`  ${r.id} ${r.title}\n     ${prompt}`); continue; }
@@ -132,6 +133,7 @@ for (const r of targets) {
       haveImg.add(r.id);
     }
     done++;
+    if (OUT_DIR === IMG_DIR) generated.push(r.id);
     console.log(`  ✓ r${r.id}.webp  ${r.title}  (${secs}s)`);
   } catch (e) {
     failed++;
@@ -141,6 +143,7 @@ for (const r of targets) {
 }
 if (!DRY && OUT_DIR === IMG_DIR && done) {
   saveAi(ai);
+  await writeThumbs(generated);
   writeManifest(haveImg, new Set(ai.images.map((x) => x.id)));
 }
 console.log(`klart: ${done} genererade · ${failed} misslyckade`);

@@ -1,7 +1,8 @@
 // Delat av generate-images.mjs (Gemini) och generate-local.mjs (ComfyUI/FLUX):
 // provenienslogg för AI-bilder (ai-generated.json) + skrivning av manifestet
 // js/recipe-images.js med både alla bild-id:n och AI-delmängden.
-import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -10,6 +11,23 @@ export const ROOT = path.resolve(__dirname, '..', '..');
 export const IMG_DIR = path.join(ROOT, 'images', 'recipes');
 export const AI_JSON = path.join(__dirname, 'ai-generated.json');
 export const MANIFEST = path.join(ROOT, 'js', 'recipe-images.js');
+export const THUMB_DIR = path.join(IMG_DIR, 'thumbs');
+export const THUMB_SIZE = 192;   // 56–72 css-px i listorna × 3 (retina) → 192 räcker
+
+// Kort innehållshash → cache-brytare (?v=) i appen; samma hash för fullbild och miniatyr.
+export function imageHash(id) {
+  return createHash('sha1').update(readFileSync(path.join(IMG_DIR, `r${id}.webp`))).digest('hex').slice(0, 8);
+}
+
+// Miniatyrer (images/recipes/thumbs/r<id>.webp). Körs av bildskripten efter varje
+// ny/omgjord bild och av make-thumbs.mjs för hela mängden.
+export async function writeThumbs(ids) {
+  const { default: sharp } = await import('sharp');
+  mkdirSync(THUMB_DIR, { recursive: true });
+  for (const id of ids) {
+    await sharp(path.join(IMG_DIR, `r${id}.webp`)).resize(THUMB_SIZE, THUMB_SIZE, { fit: 'cover' }).webp({ quality: 78 }).toFile(path.join(THUMB_DIR, `r${id}.webp`));
+  }
+}
 
 export function existingImageIds() {
   if (!existsSync(IMG_DIR)) return new Set();
@@ -41,6 +59,11 @@ ${sorted.map((id) => `  ${id},`).join('\n')}
 export const RECIPE_IMAGE_AI_IDS = new Set([
 ${ai.map((id) => `  ${id},`).join('\n')}
 ]);
+// Innehållshash per bild → cache-brytare (?v=) så bilderna kan ligga ett år i
+// cache (vercel.json) och ändå bytas när en bild görs om. Miniatyrer i thumbs/.
+export const RECIPE_IMAGE_HASH = {
+${sorted.map((id) => `  ${id}: '${imageHash(id)}',`).join('\n')}
+};
 `);
 }
 
