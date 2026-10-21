@@ -6,7 +6,7 @@
 // Läser state: RECIPES, groupBy, recipeQuick, recipeFilters, replaceMode, customPickMode
 // Skriver state: groupBy, recipeQuick, _recipeDetailId, RECIPES[].tested
 
-import { proteinLabel, timeStr, escapeHtml, jsStringAttr, PROTEIN_COLOR, svCompare, recipeImage } from '../utils.js';
+import { proteinLabel, timeStr, escapeHtml, jsStringAttr, PROTEIN_COLOR, svCompare, recipeImage, recipeImgAttrs } from '../utils.js';
 
 // ── Grupperingsdefinitioner ───────────────────────────────────────────────────
 // Varje grupp är en lista av sektioner. Sektionerna utvärderas i ordning;
@@ -147,9 +147,9 @@ export function cardMetaHtml(r) {
 }
 
 export function thumbHtml(r, cls = 'rc-thumb') {
-  const image = recipeImage(r, 'thumb');
+  const image = recipeImgAttrs(r, '(min-width: 900px) 56px, 45vw');
   return image
-    ? `<img class="${cls}" src="${image}" alt="" loading="lazy" decoding="async" width="56" height="56" onerror="recipeThumbFallback(this)">`
+    ? `<img class="${cls}" ${image} alt="" loading="lazy" decoding="async" width="56" height="56" onerror="recipeThumbFallback(this)">`
     : `<span class="${cls} is-empty" aria-hidden="true">${ICON_POT}</span>`;
 }
 

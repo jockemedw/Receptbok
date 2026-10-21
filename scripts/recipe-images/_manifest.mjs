@@ -12,7 +12,7 @@ export const IMG_DIR = path.join(ROOT, 'images', 'recipes');
 export const AI_JSON = path.join(__dirname, 'ai-generated.json');
 export const MANIFEST = path.join(ROOT, 'js', 'recipe-images.js');
 export const THUMB_DIR = path.join(IMG_DIR, 'thumbs');
-export const THUMB_SIZE = 192;   // 56–72 css-px i listorna × 3 (retina) → 192 räcker
+export const THUMB_SIZE = 320;   // små rutor (56–128 css-px) × 2–3 (retina); större rutor tar fullbilden via srcset
 
 // Kort innehållshash → cache-brytare (?v=) i appen; samma hash för fullbild och miniatyr.
 export function imageHash(id) {
@@ -25,7 +25,7 @@ export async function writeThumbs(ids) {
   const { default: sharp } = await import('sharp');
   mkdirSync(THUMB_DIR, { recursive: true });
   for (const id of ids) {
-    await sharp(path.join(IMG_DIR, `r${id}.webp`)).resize(THUMB_SIZE, THUMB_SIZE, { fit: 'cover' }).webp({ quality: 78 }).toFile(path.join(THUMB_DIR, `r${id}.webp`));
+    await sharp(path.join(IMG_DIR, `r${id}.webp`)).resize(THUMB_SIZE, THUMB_SIZE, { fit: 'cover' }).webp({ quality: 82 }).toFile(path.join(THUMB_DIR, `r${id}.webp`));
   }
 }
 
