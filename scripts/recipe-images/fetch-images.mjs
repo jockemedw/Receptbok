@@ -2,7 +2,7 @@
 // Hämtar receptbilder från källan (dishingouthealth.com) och lagrar dem som
 // nedskalade, kvadratiskt beskurna webp-kopior i repot — inte hotlänkade.
 //
-//   node scripts/recipe-images/fetch-images.mjs --from=<recept.json> [--dry-run] [--limit=N] [--force]
+//   node scripts/recipe-images/fetch-images.mjs --from=<recept.json> [--dry-run] [--limit=N] [--force] [--only=id,id]
 //
 // <recept.json> = en array av recept i appens format (id, title, notes …), t.ex.
 //   - scripts/.cache/recipes.json (från scripts/export-recipes.mjs — har {recipes:[…]})
@@ -44,6 +44,7 @@ const FROM = args.get('from');
 const DRY = args.get('dry-run') === 'true';
 const FORCE = args.get('force') === 'true';
 const LIMIT = args.has('limit') ? Number(args.get('limit')) : Infinity;
+const ONLY = args.has('only') ? new Set(args.get('only').split(',').map(Number)) : null;   // --only=2,3,4 → bara dessa id:n
 if (!FROM) {
   console.error('Ange --from=<recept.json>. Se kommentaren överst i skriptet.');
   process.exit(2);
@@ -54,6 +55,13 @@ function loadRecipes(file) {
   const raw = JSON.parse(readFileSync(path.resolve(ROOT, file), 'utf8'));
   const arr = Array.isArray(raw) ? raw : (raw.recipes || raw.rows || []);
   return arr.map((r) => ({ id: Number(r.id), title: String(r.title || ''), notes: r.notes || '', sourceUrl: r.sourceUrl || r.source_url || null }));
+}
+
+// Manuellt verifierade källor (sources.json): id+titel → url (+ ev. direkt bild-URL).
+const MANUAL_PATH = path.join(__dirname, 'sources.json');
+const MANUAL = existsSync(MANUAL_PATH) ? JSON.parse(readFileSync(MANUAL_PATH, 'utf8')).sources : [];
+function manualFor(r) {
+  return MANUAL.find((m) => m.id === r.id && m.title.toLowerCase() === String(r.title).toLowerCase()) || null;
 }
 
 const SOURCE_RE = /Källa:\s*(.+?),\s*dishingouthealth\.com/i;
@@ -142,8 +150,8 @@ function tokens(slug) {
 
 // ── Bild-URL ur receptsidan ─────────────────────────────────────────────────
 function imageUrlFromHtml(html) {
-  const og = /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i.exec(html)
-          || /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i.exec(html);
+  const og = /<meta[^>]+(?:property|name)=["']og:image["'][^>]+content=["']([^"']+)["']/i.exec(html)
+          || /<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']og:image["']/i.exec(html);
   if (og) return og[1];
   for (const block of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
     try {
@@ -200,8 +208,8 @@ function writeBackfill(rows) {
 
 // ── Huvudflöde ───────────────────────────────────────────────────────────────
 const recipes = loadRecipes(FROM);
-const candidates = recipes.map((r) => ({ ...r, srcTitle: sourceTitle(r.notes) })).filter((r) => r.srcTitle || r.sourceUrl);
-console.log(`${recipes.length} recept i ${FROM}, ${candidates.length} med dishingouthealth-källa.`);
+const candidates = recipes.map((r) => ({ ...r, srcTitle: sourceTitle(r.notes), manual: manualFor(r) })).filter((r) => r.srcTitle || r.sourceUrl || r.manual);
+console.log(`${recipes.length} recept i ${FROM}, ${candidates.length} med källa (dishingouthealth eller sources.json).`);
 
 const slugs = await loadSlugMap();
 console.log(`${slugs.size} sidor i sajtens sitemap.`);
@@ -214,15 +222,17 @@ let sharp = null;
 if (!DRY) { ({ default: sharp } = await import('sharp')); mkdirSync(IMG_DIR, { recursive: true }); }
 
 for (const r of candidates) {
-  const hit = r.sourceUrl ? { url: r.sourceUrl, how: 'column' } : matchSlug(r.srcTitle, slugs);
+  if (ONLY && !ONLY.has(r.id)) continue;
+  const hit = r.manual ? { url: r.manual.url, how: 'manual', image: r.manual.image || null }
+    : r.sourceUrl ? { url: r.sourceUrl, how: 'column' }
+    : (r.srcTitle ? matchSlug(r.srcTitle, slugs) : null);
   if (!hit) { report.unmatched.push({ id: r.id, title: r.title, srcTitle: r.srcTitle, slug: slugify(r.srcTitle) }); continue; }
   backfill.push({ id: r.id, title: r.title, url: hit.url });
   report.matched.push({ id: r.id, title: r.title, srcTitle: r.srcTitle, url: hit.url, how: hit.how });
   if (have.has(r.id) && !FORCE) { report.skipped.push(r.id); continue; }
   if (DRY || done >= LIMIT) continue;
   try {
-    const html = await httpGet(hit.url);
-    const imgUrl = imageUrlFromHtml(html);
+    const imgUrl = hit.image || imageUrlFromHtml(await httpGet(hit.url));
     if (!imgUrl) throw new Error('ingen og:image/JSON-LD-bild');
     const buf = await httpGet(imgUrl, { binary: true });
     await sharp(buf).rotate().resize(SIZE, SIZE, { fit: 'cover', position: 'attention' }).webp({ quality: 80 }).toFile(path.join(IMG_DIR, `r${r.id}.webp`));
