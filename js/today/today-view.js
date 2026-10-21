@@ -370,6 +370,7 @@ function todayVisible() {
 }
 
 let _renderedIso = null;
+let _lastTodayHtml = '';   // F2: senaste renderade markup — identisk sträng → rör inte DOM:en
 
 export function renderTodayView() {
   if (!todayVisible()) return;
@@ -392,8 +393,8 @@ function renderTodayViewInner() {
   const prevVal = prevInput ? prevInput.value : null;
   const hadFocus = prevInput && document.activeElement === prevInput;
 
-  if (!window._todayReady) { host.innerHTML = loadingHtml(); return; }
-  if (window._dbResting) { host.innerHTML = `<div class="td">${dbRestingHtml()}</div>`; return; }
+  if (!window._todayReady) { _lastTodayHtml = ''; host.innerHTML = loadingHtml(); return; }
+  if (window._dbResting) { _lastTodayHtml = ''; host.innerHTML = `<div class="td">${dbRestingHtml()}</div>`; return; }
 
   const timeline = window._timelineByDate || {};
   const hasPlan = Object.values(timeline).some(d => d.recipeId || d.isCustom || d.blocked);
@@ -431,7 +432,7 @@ function renderTodayViewInner() {
     : noPlanHtml();
   const right = shopHtml(st) + (hasPlan ? todoHtml(weekDays, st, pending) : '') + pinnedNotesHtml();
 
-  host.innerHTML = `
+  const html = `
     <div class="td">
       <div class="td-head">
         <h1 class="td-h1">${esc(h1)}</h1>
@@ -443,6 +444,11 @@ function renderTodayViewInner() {
         <div class="td-col">${right}</div>
       </div>
     </div>`;
+  // F2: Idag renderas av flera krokar (plan, inköpslista, flikbyte) — oftast
+  // utan att något ändrats. Identisk markup → ingen DOM-utbytning, inget fladder.
+  if (html === _lastTodayHtml) return;
+  _lastTodayHtml = html;
+  host.innerHTML = html;
 
   if (prevVal != null) {
     const input = document.getElementById('todayAddInput');

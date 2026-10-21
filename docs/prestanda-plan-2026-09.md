@@ -245,6 +245,8 @@ Två kandidater, går inte att skilja på ett enda mätvärde:
 
 ### Batch F — Renderkostnad och CSS-hygien (½–1 session, R)
 
+**✅ F1, F2 BYGGDA; F3, F4 UTGÅR (redan åtgärdade/inaktuell audit); F5 bara vid behov (Session 158l, 2026-10-21).**
+
 | # | Åtgärd | Fil(er) |
 |---|---|---|
 | F1 | **Förberäknad sökindex** per recept (`_haystack` = titel+protein+taggar+ingredienser+instruktioner i lowercase, byggd en gång i `recipeFromRow`-steget i `app.js`, inte i mappern) → `matchesSearch` blir en `includes`. | `recipe-browser.js`, `app.js` |
@@ -254,6 +256,8 @@ Två kandidater, går inte att skilja på ett enda mätvärde:
 | F5 | (Vid behov efter mätning) dela `styles.css` i kritisk + per-flik-del laddad med `media`/`rel=preload` — bara om Fas 0 visar att CSS-parsning syns i long tasks. | `styles.css`, `index.html` |
 
 ### Batch G — Upplevt flöde (½ session, R, efter A–C)
+
+**✅ BYGGD (Session 158l): skelett (Inköp, Matsedel, Listor) med `aria-busy`, tryckfeedback på knappklasserna som saknade `:active`.**
 
 Skelett i stället för spinnrar överallt där data väntas (Inköp, Listor, dag-sheeten när recept hämtas), tryckfeedback inom 100 ms på alla knappar som gör nätverksanrop (`loading`-klassen finns på flera, inte alla), och `aria-busy` på ytor som laddar (löser samtidigt P2-fyndet om `aria-live`). Respekterar `prefers-reduced-motion` som förut.
 

@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/+esm">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/dm-sans-latin.woff2">
-<link rel="stylesheet" href="css/styles.css?v=211">
+<link rel="stylesheet" href="css/styles.css?v=212">
 </head>
 <body data-active-tab="idag">
 
@@ -112,9 +112,17 @@
   <div class="content-heading">
     <h2 class="content-heading-title">Matsedel</h2>
   </div>
-  <div id="weekLoading" class="no-data">
-    <div class="no-data-icon"><svg class="icon icon-em-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12 M6 20h12 M6 4l6 8-6 8 M18 4l-6 8 6 8"/></svg></div>
-    <p>Laddar matsedeln…</p>
+  <div id="weekLoading">
+    <div class="td-skel sk-list" aria-busy="true" aria-label="Laddar matsedeln">
+      <div class="skel skel-h1"></div>
+      <div class="skel skel-row"></div>
+      <div class="skel skel-row"></div>
+      <div class="skel skel-row"></div>
+      <div class="skel skel-row"></div>
+      <div class="skel skel-row"></div>
+      <div class="skel skel-row"></div>
+      <div class="skel skel-row"></div>
+    </div>
   </div>
 
   <div id="weekNoData" class="no-data" style="display:none">
@@ -356,9 +364,16 @@
                onkeydown="if(event.key==='Enter'){event.preventDefault();addManualItem('manualItemInputTop','manualAddBtnTop')}">
         <button type="button" id="manualAddBtnTop" onclick="addManualItem('manualItemInputTop','manualAddBtnTop')">Lägg till</button>
       </label>
-      <div id="shopLoading" class="no-data">
-        <div class="no-data-icon"><svg class="icon icon-em-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4h12 M6 20h12 M6 4l6 8-6 8 M18 4l-6 8 6 8"/></svg></div>
-        <p>Laddar inköpslistan…</p>
+      <div id="shopLoading">
+        <div class="td-skel sk-list" aria-busy="true" aria-label="Laddar inköpslistan">
+      <div class="skel skel-h1"></div>
+      <div class="skel skel-row"></div>
+      <div class="skel skel-row"></div>
+      <div class="skel skel-row"></div>
+      <div class="skel skel-row"></div>
+      <div class="skel skel-row"></div>
+      <div class="skel skel-row"></div>
+    </div>
       </div>
       <div id="shopNoData" class="no-data" style="display:none">
         <div class="no-data-icon"><svg class="icon icon-em-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h13l-1.5 9.5a1.5 1.5 0 0 1-1.5 1.3H8a1.5 1.5 0 0 1-1.5-1.3z"/><path d="M9 7V5.5a1.5 1.5 0 0 1 1.5-1.5h2A1.5 1.5 0 0 1 14 5.5V7"/></svg></div>
@@ -671,6 +686,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=183"></script>
+<script type="module" src="js/app.js?v=184"></script>
 </body>
 </html>

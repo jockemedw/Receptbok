@@ -4617,6 +4617,16 @@ body.cook-open { overflow: hidden; }
 .td-skel .skel-hero { height: 220px; margin-bottom: 1rem; border-radius: 16px; }
 .td-skel .skel-row { height: 56px; margin-bottom: .6rem; }
 .td-skel .skel-card { height: 160px; border-radius: 16px; }
+/* Listskelett (Inköp, Matsedel, Listor — Batch G): rubrikstreck + rader. */
+.td-skel.sk-list { display: flex; flex-direction: column; gap: 10px; padding: 8px 0 24px; }
+.td-skel.sk-list .skel-h1 { width: 40%; margin-bottom: 6px; }
+.td-skel.sk-list .skel-row { height: 52px; margin: 0; }
+#weekLoading .sk-list { padding: 16px 16px 24px; max-width: var(--content-max); margin: 0 auto; }   /* Matsedelns yta saknar eget sidoindrag */
+/* Tryckfeedback (Batch G): knappar som gör nätverksanrop svarar direkt under fingret. */
+.td-btn:active, .dlx-btn:active, .rd-btn:active, .btn-secondary:active, .dlx-sheet-pbtn:active, .dlx-sheet-addbtn:active, .fl-btn-danger:active { transform: scale(0.98); }
+@media (prefers-reduced-motion: reduce) {
+  .td-btn:active, .dlx-btn:active, .rd-btn:active, .btn-secondary:active, .dlx-sheet-pbtn:active, .dlx-sheet-addbtn:active, .fl-btn-danger:active { transform: none; opacity: .85; }
+}
 @keyframes skelPulse { 0%, 100% { opacity: .08; } 50% { opacity: .16; } }
 @media (prefers-reduced-motion: reduce) { .td-skel .skel { animation: none; } }
 .today-loading-spin { display: inline-block; font-size: 1.8rem; animation: todaySpin 1s linear infinite; }

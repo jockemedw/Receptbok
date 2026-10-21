@@ -232,14 +232,16 @@ export function closeRecipeDetail() {
 }
 
 // ── Sökning + filter + gruppering + render ────────────────────────────────────
+// F1 (prestandaplanen): söktexten byggs EN gång per receptobjekt (lazy, cachad
+// som r._haystack) i stället för fem toLowerCase-svep per recept och tangent.
+// Editorn ersätter objektet vid spar (RECIPES[idx] = updated / push) → ny cache.
+// toggleTested muterar bara r.tested, som inte ingår i texten.
+function haystack(r) {
+  return r._haystack || (r._haystack = [r.title, r.protein || '', ...(r.tags || []), ...(r.ingredients || []), ...(r.instructions || [])].join('\n').toLowerCase());
+}
 function matchesSearch(r, q) {
   if (!q) return true;
-  if (r.title.toLowerCase().includes(q))                               return true;
-  if ((r.protein || '').toLowerCase().includes(q))                     return true;
-  if (r.tags.some(t => t.toLowerCase().includes(q)))                   return true;
-  if (r.ingredients.some(i => i.toLowerCase().includes(q)))            return true;
-  if (r.instructions.some(s => s.toLowerCase().includes(q)))           return true;
-  return false;
+  return haystack(r).includes(q);
 }
 
 function timeBucket(r) {
