@@ -69,9 +69,9 @@
       "title": "Tonfiskpasta",
       "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
       "steps": 20,
-      "seed": 45,
+      "seed": 525,
       "date": "2026-10-21",
-      "prompt": "A plate of fresh fettuccine tossed with a chunky sauce of canned tuna flakes, chopped tomatoes, sliced celery, capers, onion and chili flakes in olive oil, rustic and simple, no cream. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+      "prompt": "Italian pasta al tonno made with canned tuna: a plate of fettuccine coated in a chunky tomato sauce that is speckled all through with small shredded flakes of pale tuna, the same soft flaky crumbled texture as tuna straight from the tin, evenly mixed into the sauce with chopped tomatoes, sliced celery, green capers, onion and chili flakes in olive oil. An opened tin of flaked tuna in water stands next to the plate. No cream, no cheese. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
     },
     {
       "id": 29,
@@ -195,9 +195,9 @@
       "title": "Majsplättar med kokosmjölk",
       "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
       "steps": 20,
-      "seed": 75,
+      "seed": 265,
       "date": "2026-10-21",
-      "prompt": "A plate with a stack of small golden corn pancakes (plättar) studded with whole sweetcorn kernels, served with a bowl of tzatziki, a small dish of sweet chili sauce and some carrot sticks, child-friendly dinner. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+      "prompt": "A plate with a stack of small thin Swedish pancakes (plättar) with an even, smooth golden-brown surface like plain pancakes, served with a bowl of tzatziki, a small dish of sweet chili sauce and some carrot sticks, child-friendly dinner. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
     },
     {
       "id": 55,
@@ -267,9 +267,9 @@
       "title": "Örtig tortellinisoppa",
       "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
       "steps": 20,
-      "seed": 284,
+      "seed": 364,
       "date": "2026-10-21",
-      "prompt": "A bowl of smooth red tomato soup with cheese tortellini added, a swirl of cream, fresh oregano and basil leaves, grated parmesan on top, served with the tortellini visible in the soup. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+      "prompt": "A bowl of smooth red tomato soup with a swirl of cream, with cheese tortellini floating in it: small ring-shaped folded stuffed pasta parcels with pinched edges (tortellini), fresh oregano and basil leaves, grated parmesan on top. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
     },
     {
       "id": 264,
@@ -285,9 +285,9 @@
       "title": "Snabbrimmad torsk med ägg och persilja",
       "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
       "steps": 20,
-      "seed": 286,
+      "seed": 476,
       "date": "2026-10-21",
-      "prompt": "A plate of oven-baked white cod fillet with a creamy white sauce poured over, topped with chopped hard-boiled egg and lots of chopped curly parsley, with boiled potatoes, green peas and a few tomato wedges on the side, classic Swedish fish dinner. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+      "prompt": "A plate of oven-baked white cod fillet with a creamy white sauce poured over, topped with a generous sprinkle of finely chopped egg crumble (tiny crumbs of boiled egg white and yolk mixed with chopped curly parsley, like a gremolata scattered over the fish), with boiled potatoes, green peas and a few tomato wedges on the side, classic Swedish fish dinner. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
     },
     {
       "id": 267,
@@ -321,9 +321,9 @@
       "title": "Brysselkålbonara",
       "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
       "steps": 20,
-      "seed": 291,
+      "seed": 371,
       "date": "2026-10-21",
-      "prompt": "A plate of spaghetti carbonara-style with egg yolk and parmesan clinging to the strands, tossed with quartered pan-fried Brussels sprouts with crispy caramelised edges and chopped toasted hazelnuts, black pepper and a little lemon zest, no bacon. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+      "prompt": "A plate of spaghetti coated in a glossy pale creamy parmesan sauce clinging to the strands, tossed with quartered pan-fried Brussels sprouts with crispy caramelised edges and chopped toasted hazelnuts, cracked black pepper and a little lemon zest, nothing on top of the pasta except sprouts, nuts and grated parmesan. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
     },
     {
       "id": 271,
@@ -420,9 +420,9 @@
       "title": "Persisk makaroni med krispig tadig",
       "model": "comfyui/flux1-krea-dev-Q5_K_S.gguf",
       "steps": 20,
-      "seed": 303,
+      "seed": 383,
       "date": "2026-10-21",
-      "prompt": "Persian macaroni (makaroni) turned out of the pot like a cake: spaghetti layered with a saffron-tinted spiced minced beef and tomato sauce, with a crispy golden-brown bottom crust (tahdig) of pasta on top, sprinkled with chopped parsley. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
+      "prompt": "Persian makaroni tahdig: a round golden dome of spaghetti turned out of the pot onto a plate, the outside is a crispy golden-brown crust of fried spaghetti strands, one wedge cut away showing spaghetti tangled together with a red saffron-tinted minced beef and tomato sauce inside, sprinkled with chopped parsley. It is a pasta dish, pressed and flipped out of a pot, not a dessert. Overhead food photograph, shot straight from above with a 50mm lens, soft natural window daylight, on a light linen tablecloth, simple matte ceramic tableware, Swedish everyday home cooking, realistic and appetizing, slightly rustic, no hands, no people, no text, no logos."
     },
     {
       "id": 283,
