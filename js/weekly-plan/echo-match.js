@@ -122,3 +122,41 @@ export function applyListCoverage(plan, customDays, { listId, coveredDates, oldL
   for (const [date, e] of Object.entries(customDays?.entries || {})) fix(e, date);
   return changed;
 }
+
+// Batch D2: spegla en UPDATE-rad från realtime direkt i minnet, så Matsedeln/
+// Idag kan ritas om utan omhämtning. Samma fältmappning som loadActivePlan/
+// loadCustomDays i plan-viewer.js. Returnerar false när raden inte går att
+// placera entydigt — då hämtar anroparen om som förut:
+//   • plandag i en annan plan än den visade, eller ett datum planen saknar
+//   • egen dag vars datum samtidigt är en plandag (detach/attach pågår)
+//   • raden saknar fält (gammal replica identity) eller datum
+export function applyMealDayRow(row, plan, customDays) {
+  if (!row || typeof row !== 'object' || typeof row.date !== 'string' || !row.date) return false;
+  if (!ECHO_FIELDS.every((k) => has(row, k))) return false;
+  const planDay = (plan?.days || []).find((d) => d.date === row.date) || null;
+
+  if (row.plan_id != null) {
+    if (!plan || plan.id !== row.plan_id || !planDay) return false;
+    if (customDays?.entries?.[row.date]) return false;
+    planDay.recipe        = row.recipe_title_snapshot || null;
+    planDay.recipeId      = row.recipe_id ?? null;
+    planDay.saving        = row.saving ?? null;
+    planDay.savingMatches = row.saving_matches ?? null;
+    planDay.locked        = row.locked === true;
+    planDay.blocked       = row.blocked === true;
+    planDay.shoppedAt     = row.shopped_at ?? null;
+    planDay.listId        = row.shopping_list_id ?? null;
+    return true;
+  }
+
+  if (planDay || !customDays || !customDays.entries) return false;
+  customDays.entries[row.date] = {
+    note:        row.custom_note || '',
+    recipeId:    row.recipe_id ?? null,
+    recipeTitle: row.recipe_title_snapshot || '',
+    blocked:     row.blocked === true,
+    shoppedAt:   row.shopped_at ?? null,
+    listId:      row.shopping_list_id ?? null,
+  };
+  return true;
+}

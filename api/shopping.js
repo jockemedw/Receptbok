@@ -46,8 +46,9 @@ export default createSupabaseHandler(async (req, res) => {
       return res.status(400).json({ error: "Något av datumen såg konstigt ut — ladda om sidan och prova igen." });
     }
     const householdId = await getHouseholdId();
-    const { shoppingList, coveredDates, skipped } = await setCoveredDays({ householdId, dates: clean });
-    return res.status(200).json({ ok: true, shoppingList, coveredDates, skipped });
+    const { shoppingList, coveredDates, skipped, restoredDates } = await setCoveredDays({ householdId, dates: clean });
+    // restoredDates (Batch D1): dagar vars inhandlad-spärr nollades — klienten nollar dem lokalt i stället för att hämta om planen.
+    return res.status(200).json({ ok: true, shoppingList, coveredDates, skipped, restoredDates });
   }
 
   if (action === "add_day") {
