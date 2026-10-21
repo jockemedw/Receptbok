@@ -244,9 +244,20 @@ export async function saveShoppingDayPick() {
     window._planMutateUntil = Date.now() + 4000;   // dämpa realtids-ekot
     // Inköp-fliken: nya listan ritas direkt ur svaret (switchTab nedan
     // uppdaterar den sedan tyst, utan spinner).
-    if (data.shoppingList && window.renderShoppingData) window.renderShoppingData(data.shoppingList);
-    else window._preserveChecked = false;
-    await window.loadWeeklyPlan?.(); // Matsedeln: "på listan"-chipsen + ev. återlagda dagar
+    if (data.shoppingList && window.renderShoppingData) {
+      // Batch D1: Matsedeln uppdateras ur svaret. Täckningspekarna sätts av
+      // renderShoppingData → applyShopListToPlan; återlagda dagar (servern
+      // nollade spärren) nollas lokalt här — ingen omhämtning av planen.
+      for (const d of (data.restoredDates || [])) {
+        const pd = (window._lastPlan?.days || []).find((x) => x.date === d); if (pd) pd.shoppedAt = null;
+        const cd = window._customDays?.entries?.[d]; if (cd) cd.shoppedAt = null;
+      }
+      window.renderShoppingData(data.shoppingList);
+      if ((data.restoredDates || []).length) window.rerenderPlan?.();
+    } else {
+      window._preserveChecked = false;
+      await window.loadWeeklyPlan?.(); // reserv: svaret saknade listan
+    }
 
     const n = (data.coveredDates || dates).length;
     const skipped = (data.skipped || []).length;

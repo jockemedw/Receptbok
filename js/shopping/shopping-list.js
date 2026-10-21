@@ -104,8 +104,10 @@ function subscribeShoppingItems(listId) {
         // Lokala borttagningar är redan hanterade → då blir detta en no-op.
         if (oldRow?.id != null) applyRemovalById(oldRow.id);
         else { window._preserveChecked = false; refreshShoppingTab(); }
+      } else if (eventType === 'INSERT' && applyRemoteInsert(newRow)) {
+        // Batch D3: ny egen vara (partnerns, eller ekot av vår egen) läggs till på plats.
       } else {
-        // Ny vara eller manuell vara ändrad → ladda om
+        // Receptvaror i bulk (ombyggd lista) eller okänt läge → ladda om
         window._preserveChecked = false;
         refreshShoppingTab();
       }
@@ -376,6 +378,30 @@ export async function commitRowEdit(inputEl) {
 // DB-omladdning. Bevarar kategoriordningen och kräver ingen sid-omladdning.
 // Re-keyar receptvarornas index kontigerligt så bock-state förblir korrekt.
 // Returnerar true om varan fanns (annars no-op, t.ex. redan borttagen).
+// Batch D3: en ny EGEN vara (INSERT) läggs till i minnet och ritas — ingen
+// omladdning. Receptvaror kommer i bulk när listan byggs om → false (omladdning).
+// Finns namnet redan (ekot av vår egen insert) uppdateras bara id/position.
+// Visas ingen lista alls (tomt läge) → false, så omladdningen visar innehållet.
+function applyRemoteInsert(row) {
+  if (!row || row.id == null || row.source !== 'manual' || !row.name) return false;
+  if (!window._shopListId || document.getElementById('shopContent')?.style.display === 'none') return false;
+  const key = `manual::${row.name}`;
+  window._shopItemIds = window._shopItemIds || {};
+  _itemPos.set(row.id, row.position ?? (window._shopManualItems || []).length);
+  if ((window._shopManualItems || []).includes(row.name)) {
+    window._shopItemIds[key] = row.id;
+    return true;
+  }
+  window._shopItemIds[key] = row.id;
+  window._checkedItems = window._checkedItems || {};
+  window._checkedItems[key] = row.checked === true;
+  const posOf = (name) => _itemPos.get(window._shopItemIds['manual::' + name]) ?? Number.MAX_SAFE_INTEGER;
+  const manual = [...(window._shopManualItems || []), row.name].sort((a, b) => posOf(a) - posOf(b));
+  renderFullShoppingList(window._shopRecipeItems || null, manual);
+  updateShopSummary();
+  return true;
+}
+
 function applyRemovalById(id) {
   if (id == null) return false;
   const recipeItems = {};
@@ -1238,13 +1264,19 @@ export async function addManualItem(inputId = 'manualItemInput', btnId = 'manual
     // så att man kan börja med egna varor utan att först generera en matsedel.
     const listId = await ensureActiveShoppingList();
     const position = (window._shopManualItems || []).length;
-    const { error } = await window.db
+    const { data: row, error } = await window.db
       .from('shopping_items')
-      .insert({ list_id: listId, category: 'Övrigt', name: item, source: 'manual', checked: false, position });
+      .insert({ list_id: listId, category: 'Övrigt', name: item, source: 'manual', checked: false, position })
+      .select('id, name, source, position, checked')
+      .single();
     if (error) throw error;
     input.value = '';
-    window._preserveChecked = true;
-    loadShoppingTab();
+    // Batch D3: raden läggs till på plats ur insert-svaret; realtime-ekot känns
+    // igen på namnet. Går det inte (tomt läge, ny lista) → omladdning som förut.
+    if (!applyRemoteInsert(row)) {
+      window._preserveChecked = true;
+      loadShoppingTab();
+    }
   } catch {
     window.showToast('Kunde inte lägga till varan — prova igen.', { type: 'error' });
   } finally {

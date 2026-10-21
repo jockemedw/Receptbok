@@ -16,7 +16,7 @@
 // fyller precache-listan med de hashade filerna. Obyggt (GitHub Pages-backupen,
 // lokal förhandsvisning) gäller värdena nedan — bumpas när precache-listan ändras.
 
-const CACHE_VERSION = 'receptbok-v135';
+const CACHE_VERSION = 'receptbok-v136';
 
 const PRECACHE = [
   './',

@@ -191,6 +191,8 @@ Störst effekt på kallstarten, lägst risk, inga schemaändringar.
 
 ### Batch D — Mutationer och realtime: använd svaret, hämta inte om (1 session, **D**)
 
+**✅ D1–D3 BYGGDA, D4 UTGÅR (Session 158k, 2026-10-21).** D2: `applyMealDayRow` speglar UPDATE i minnet + `rerenderPlan`; D3: `applyRemoteInsert` för egna varor (även den egna insertens svar); D1: dagväljaren nollar `restoredDates` lokalt (nytt fält i `set_days`-svaret) i stället för `loadWeeklyPlan`; `sheetListAction` renderade redan ur svaret. D4 behövdes inte — radnivå-ekot (`isKnownRow`) fanns redan, tidsfönstret är reserv.
+
 | # | Åtgärd | Fil(er) | Risk |
 |---|---|---|---|
 | D1 | `POST /api/shopping` (`add_day`/`remove_day`/`set_days`) returnerar redan/kan returnera täckningsraderna + listan → `sheetListAction` och `day-picker.js` renderar från svaret (som `dlxShuffle` gör) i stället för `loadShoppingTab()` + `loadWeeklyPlan()`. | `api/shopping.js`, `api/_shared/shopping-store.js`, `plan-viewer-deluxe.js`, `day-picker.js` | Medel — rör svar-kontraktet; tester i `shopping-store.test.js`, `plan-orchestration.test.js`. |

@@ -5,7 +5,7 @@
 //   _activeShopListId, planConfirmed, replaceMode, customPickMode, _opBusy, _planMutateUntil
 
 import { fmtIso, fmtShort, getHolidayName, isoWeekNumber, escapeHtml, jsStringAttr, retroWindowStartIso, SAVING_BASIS, SAVING_CAVEAT } from '../utils.js';
-import { mealDayRowMatches, applyListCoverage } from './echo-match.js';
+import { mealDayRowMatches, applyListCoverage, applyMealDayRow } from './echo-match.js';
 
 const ICON_COIN = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 7.5v9 M9.5 9.7c.6-.7 1.5-1 2.5-1s2 .3 2.4 1c.5.8 0 1.7-1 2-.7.2-2.7.3-3.4.7-.9.4-1.4 1.3-.9 2.1.5.7 1.6 1 2.5 1s1.9-.3 2.5-1"/></svg>';
 const ICON_POT = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13c0-3.5 3.5-6 8-6s8 2.5 8 6"/><path d="M3 13h18"/><path d="M5.5 13v2c0 1.5 1 2.5 2.5 2.5h8c1.5 0 2.5-1 2.5-2.5v-2"/><path d="M11 4.5c0-.8.5-1.5 1-1.5s1 .7 1 1.5"/></svg>';
@@ -198,6 +198,13 @@ function subscribeMealDays(householdId) {
       if (window._planMutateUntil && Date.now() < window._planMutateUntil) {
         markPlanStale(payload);
         setTimeout(reloadIfStale, (window._planMutateUntil - Date.now()) + 50);
+        return;
+      }
+      // Batch D2: partnerns ändring av en befintlig dag (recept, notering, fri dag,
+      // inhandlad, listpekare) speglas direkt i minnet och ritas om — ingen
+      // omhämtning. INSERT/DELETE och rader som byter plan hämtas om som förut.
+      if (payload.eventType === 'UPDATE' && applyMealDayRow(payload.new, window._lastPlan, window._customDays)) {
+        rerenderPlan();
         return;
       }
       window.loadWeeklyPlan();
@@ -1305,6 +1312,7 @@ window.confirmPlan         = confirmPlan;
 window.discardPlan         = discardPlan;
 window.renderWeeklyPlanData = renderWeeklyPlanData;
 window.loadWeeklyPlan      = loadWeeklyPlan;
+window.rerenderPlan        = rerenderPlan;   // ritar om ur minnet (Batch D)
 window.customDayEditorHtml = customDayEditorHtml;
 window.saveCustomDay       = saveCustomDay;
 window.clearCustomDay      = clearCustomDay;

@@ -13,8 +13,10 @@
 //   5. Tidsstämplar jämförs som tidpunkter, id som text
 //   6. applyListCoverage speglar serverns täckningspekare (steg 5 i
 //      rebuildActiveList) och rör inte inhandlade dagar
+//   7. applyMealDayRow (Batch D2) speglar en UPDATE-rad i minnet och avvisar
+//      rader som inte går att placera entydigt
 
-import { mealDayRowMatches, applyListCoverage, ECHO_FIELDS } from "../js/weekly-plan/echo-match.js";
+import { mealDayRowMatches, applyListCoverage, applyMealDayRow, ECHO_FIELDS } from "../js/weekly-plan/echo-match.js";
 
 let passed = 0;
 let failed = 0;
@@ -158,6 +160,46 @@ const customRow = (over = {}) => ({
   const c3 = custom();
   applyListCoverage(p3, c3, { listId: "L1", coveredDates: ["2026-09-28"], oldListId: "L1" });
   assertEq(c3.entries["2026-10-06"].listId, "L1", "täckning: samma lista som förut → ingen nollning");
+}
+
+// ── 7. applyMealDayRow (Batch D2): UPDATE speglas i minnet, oklara rader avvisas ─
+{
+  const row = (over = {}) => ({
+    date: "2026-10-21", plan_id: "P1", recipe_id: 42, blocked: false, custom_note: null,
+    shopped_at: null, shopping_list_id: "L1", recipe_title_snapshot: "Pork ramen",
+    saving: 12, saving_matches: null, locked: false, ...over,
+  });
+  const mkPlan = () => ({ id: "P1", days: [{ date: "2026-10-21", recipe: "Gammalt", recipeId: 1, saving: null, savingMatches: null, locked: false, blocked: false, shoppedAt: null, listId: null }] });
+  const mkCustom = () => ({ entries: { "2026-10-25": { note: "pizza", recipeId: null, recipeTitle: "", blocked: false, shoppedAt: null, listId: null } } });
+
+  // Plandag: alla fält skrivs över
+  const p = mkPlan(), c = mkCustom();
+  assertEq(applyMealDayRow(row(), p, c), true, "apply: plandag i visad plan → true");
+  assertEq(p.days[0].recipeId, 42, "apply: recipeId uppdaterat");
+  assertEq(p.days[0].recipe, "Pork ramen", "apply: titeln uppdaterad");
+  assertEq(p.days[0].saving, 12, "apply: besparingen uppdaterad");
+  assertEq(p.days[0].listId, "L1", "apply: listpekaren uppdaterad");
+  assertEq(mealDayRowMatches(row(), p, c), true, "apply: efter spegling känns raden igen som eko");
+
+  // Plandag i en annan plan / okänt datum → omhämtning
+  assertEq(applyMealDayRow(row({ plan_id: "P2" }), mkPlan(), mkCustom()), false, "apply: annan plan → false");
+  assertEq(applyMealDayRow(row({ date: "2026-10-22" }), mkPlan(), mkCustom()), false, "apply: datum saknas i planen → false");
+
+  // Egen dag: entry skrivs/ersätts
+  const c2 = mkCustom();
+  assertEq(applyMealDayRow(row({ date: "2026-10-25", plan_id: null, recipe_id: null, custom_note: "rester", shopping_list_id: null, recipe_title_snapshot: null }), mkPlan(), c2), true, "apply: egen dag → true");
+  assertEq(c2.entries["2026-10-25"].note, "rester", "apply: noteringen uppdaterad");
+  assertEq(c2.entries["2026-10-25"].recipeTitle, "", "apply: tom titel blir tom sträng");
+
+  // Egen dag vars datum är en plandag (detach pågår) → omhämtning
+  assertEq(applyMealDayRow(row({ plan_id: null }), mkPlan(), mkCustom()), false, "apply: egen dag på plandagens datum → false");
+  // Plandag vars datum också finns som egen dag → omhämtning
+  const c3 = mkCustom(); c3.entries["2026-10-21"] = { note: "x", recipeId: null, recipeTitle: "", blocked: false, shoppedAt: null, listId: null };
+  assertEq(applyMealDayRow(row(), mkPlan(), c3), false, "apply: plandag som också är egen dag → false");
+  // Saknade fält (gammal replica identity) → false
+  const partial = row(); delete partial.shopping_list_id;
+  assertEq(applyMealDayRow(partial, mkPlan(), mkCustom()), false, "apply: saknat fält → false");
+  assertEq(applyMealDayRow(null, mkPlan(), mkCustom()), false, "apply: null → false");
 }
 
 // ── Resultat ──────────────────────────────────────────────────────────────────
