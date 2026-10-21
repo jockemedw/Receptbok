@@ -14,15 +14,14 @@
 // Utdata: images/recipes/r<id>.webp (640×640, kvalitet 80), ai-generated.json
 // (id, titel, modell, datum, prompt) och manifestet via fetch-images skrivfunktion.
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { loadAi, saveAi, writeManifest, ingredientNames as sharedIngredientNames } from './_manifest.mjs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..', '..');
 const IMG_DIR = path.join(ROOT, 'images', 'recipes');
-const AI_JSON = path.join(__dirname, 'ai-generated.json');
-const MANIFEST = path.join(ROOT, 'js', 'recipe-images.js');
 
 const args = new Map(process.argv.slice(2).map((a) => { const m = a.match(/^--([^=]+)(?:=(.*))?$/); return m ? [m[1], m[2] ?? 'true'] : [a, 'true']; }));
 const FROM = args.get('from');
@@ -51,18 +50,13 @@ if (!KEY && !DRY) { console.error('Ingen GOOGLE_API_KEY (miljön, .env.vercel.lo
 // ── Recept ───────────────────────────────────────────────────────────────────
 const raw = JSON.parse(readFileSync(path.resolve(ROOT, FROM), 'utf8'));
 const recipes = (Array.isArray(raw) ? raw : raw.recipes || []).map((r) => ({ id: Number(r.id), title: r.title, protein: r.protein, tags: r.tags || [], ingredients: r.ingredients || [], notes: r.notes || '' }));
-const haveImg = new Set(existsSync(IMG_DIR) ? readdirSync(IMG_DIR).map((f) => /^r(\d+)\.webp$/.exec(f)?.[1]).filter(Boolean).map(Number) : []);
+const haveImg = (await import('./_manifest.mjs')).existingImageIds();
 const targets = recipes.filter((r) => ONLY ? ONLY.has(r.id) : (!haveImg.has(r.id) && !/dishingouthealth/i.test(r.notes)));
 
 // ── Prompt ───────────────────────────────────────────────────────────────────
 // Ingrediensnamnen (utan mängder) ger modellen rätt råvaror; stilen är låst så
 // bilderna hänger ihop med de riktiga fotona (uppifrån, dagsljus, ljus duk).
-function ingredientNames(list) {
-  return list
-    .map((l) => String(l).replace(/^[^:]{1,20}:\s*/, '').replace(/\(.*?\)/g, '').replace(/^[\d½¼¾,.\-–\s]+(kg|hg|g|l|dl|cl|ml|msk|tsk|krm|st|burk(ar)?|påse|pkt|förp\.?|klyft(a|or)|kruk(a|or)|skiv(a|or)|bit(ar)?)?\b\.?\s*/i, '').trim())
-    .filter((s) => s && !/^(salt|peppar|svartpeppar|salt och (svart)?peppar|vatten|olja|rapsolja|olivolja|smör|smör eller olja)/i.test(s))
-    .slice(0, 12);
-}
+const ingredientNames = sharedIngredientNames;
 function promptFor(r) {
   const ings = ingredientNames(r.ingredients).join(', ');
   return `Fotorealistiskt matfoto av en svensk hemlagad middag: "${r.title}". ` +
@@ -88,25 +82,6 @@ async function generate(prompt) {
   const part = data.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data);
   if (!part) throw new Error('inget bildsvar: ' + JSON.stringify(data).slice(0, 300));
   return { buf: Buffer.from(part.inlineData.data, 'base64'), mime: part.inlineData.mimeType };
-}
-
-// ── Manifest + provenienslogg ────────────────────────────────────────────────
-function loadAi() { return existsSync(AI_JSON) ? JSON.parse(readFileSync(AI_JSON, 'utf8')) : { _: 'AI-genererade receptbilder (serveringsförslag) — id, modell, datum, prompt. Läses av fetch-images.mjs när manifestet skrivs (RECIPE_IMAGE_AI_IDS → bildtexten i appen).', images: [] }; }
-export function writeManifest(ids, aiIds) {
-  const sorted = [...ids].sort((a, b) => a - b);
-  const ai = [...aiIds].filter((id) => ids.has(id)).sort((a, b) => a - b);
-  writeFileSync(MANIFEST, `// GENERERAD av scripts/recipe-images/fetch-images.mjs / generate-images.mjs — redigera inte för hand.
-// Recept-id:n som har en bild i images/recipes/r<id>.webp (640×640 webp). Appen
-// läser mängderna i js/utils.js (recipeImage) så listan aldrig ritar trasiga bilder.
-export const RECIPE_IMAGE_IDS = new Set([
-${sorted.map((id) => `  ${id},`).join('\n')}
-]);
-// Delmängd som är AI-genererade serveringsförslag (scripts/recipe-images/ai-generated.json)
-// — visas med bildtexten "AI-genererad bild · serveringsförslag".
-export const RECIPE_IMAGE_AI_IDS = new Set([
-${ai.map((id) => `  ${id},`).join('\n')}
-]);
-`);
 }
 
 // ── Kör ──────────────────────────────────────────────────────────────────────
@@ -138,7 +113,7 @@ for (const r of targets) {
   }
 }
 if (!DRY && OUT_DIR === IMG_DIR) {
-  writeFileSync(AI_JSON, JSON.stringify(ai, null, 2) + '\n');
+  saveAi(ai);
   writeManifest(haveImg, new Set(ai.images.map((x) => x.id)));
 }
 console.log(`klart: ${done} genererade · ${failed} misslyckade`);
