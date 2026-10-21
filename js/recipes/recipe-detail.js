@@ -160,7 +160,7 @@ export function renderRecipeDetail(id) {
     <article class="rd" style="--p:${color}">
       <div class="rd-hero">
         ${image
-          ? `<figure class="rd-photo"><img src="${image}" alt="${escapeHtml(r.title)}" width="640" height="480" decoding="async">${recipeImageIsAi(r) ? '<figcaption>AI-genererad bild · serveringsförslag</figcaption>' : ''}</figure>`
+          ? `<figure class="rd-photo"><img src="${image}" alt="${escapeHtml(r.title)}" width="640" height="480" loading="lazy" decoding="async">${recipeImageIsAi(r) ? '<figcaption>AI-genererad bild · serveringsförslag</figcaption>' : ''}</figure>`
           : `<div class="rd-photo is-empty" aria-hidden="true">${I.pot}<span>Ingen bild än</span></div>`}
         <div class="rd-head">
           <div class="rd-eyebrow"><span class="rd-dot"></span>${escapeHtml(eyebrow)}</div>

@@ -146,6 +146,8 @@ Ordningen är vald efter (förväntad effekt × sannolikhet att den märks på m
 
 ### Batch A — Boot-vägen: från seriell kedja till parallell (1 session, R)
 
+**✅ A1, A2, A3, A5 BYGGDA (Session 158f, 2026-10-21, PR #261).** Uppmätt live på desktop med varm SW och färsk token: DCL 205 ms, alla sju boot-frågor i EN våg, matsedel 447 ms (före: 2 279 ms), 12 frågor (före 15). A2 bekräftade FK:erna live (`weekly_plans → meal_days(*)`, `shopping_lists → shopping_items(...)`). A4 (DOM-hygien), A6 (dubbelrendering), A7 (token-rundan — nu ett dashboardbeslut om JWT-livslängd, se status.md) och A8 (dubbelhämtningen gick inte att reproducera 2026-10-21: en `recipes`-fråga per boot) återstår. Samtidigt byggt utanför planen: **bildpaketet** (192-px-miniatyrer, innehållshash + `immutable`, webp i SW) — bilderna fanns inte när planen skrevs.
+
 Störst effekt på kallstarten, lägst risk, inga schemaändringar.
 
 | # | Åtgärd | Fil(er) | Förväntad effekt |
