@@ -7195,7 +7195,7 @@ body[data-active-tab="shop"] .shop-mobile-bar { display: flex; }
 }
 
 /* ── IDAG (ny design 2026-10, mockups B-Idag + B-Idag-mobil) ──────────────────
-   Kvällens kort med konkreta handlingar, i morgon-rad, veckoöversikt (text på
+   Kvällens kort som hero (bild i full bredd; "I morgon"-raden togs bort 2026-10-21), veckoöversikt (text på
    desktop, prickar på mobil), inköpsstatus med snabbinmatning, "Att göra" på
    desktop. Två kolumner ≥900px. Gamla .today-*-reglerna ovan är döda utom
    .today-eyebrow, .today-link, .today-note-kort och .today-loading. */
@@ -7226,6 +7226,15 @@ body[data-active-tab="shop"] .shop-mobile-bar { display: flex; }
 .td-tonight-title { margin: 0; font-family: var(--font-display); font-size: 24px; font-weight: 600; line-height: 1.1; color: var(--forest-deep); }
 .td-meta { font-size: 13px; color: var(--moss-muted); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .td-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--p, var(--birch)); display: inline-block; }
+/* Ikväll som hero: bilden i full bredd över texten; accentramen behålls. */
+.td-tonight.td-hero { padding: 0; gap: 0; overflow: hidden; }
+.td-hero-media { position: relative; aspect-ratio: 4 / 3; background: var(--paper); color: var(--p, var(--birch)); display: flex; align-items: center; justify-content: center; }
+.td-hero-media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.td-hero-media.is-empty { aspect-ratio: auto; min-height: 112px; }
+.td-hero-media.is-empty svg { width: 44px; height: 44px; }
+.td-hero-ai { position: absolute; right: 10px; bottom: 10px; font-size: 11px; font-weight: 600; letter-spacing: 0.02em; padding: 3px 9px; border-radius: 999px; background: rgba(20, 28, 22, 0.55); color: #fff; }
+.td-hero-body { display: flex; flex-direction: column; gap: 12px; padding: 14px 16px 16px; }
+.td-hero .td-tonight-title { font-size: 26px; }
 .td-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .td-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: 1 1 auto;
@@ -7239,14 +7248,8 @@ body[data-active-tab="shop"] .shop-mobile-bar { display: flex; }
 .td-btn-quiet { flex: 0 1 auto; }
 @media (hover: hover) { .td-btn:hover { background: var(--paper); } .td-btn-accent:hover { background: var(--rust-deep); } }
 
-/* I morgon */
-.td-tomorrow { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; min-height: 56px; padding: 12px 14px; border-radius: 12px; background: var(--linen-card); border: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; width: 100%; }
-.td-tomorrow-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.td-tomorrow-title { font-size: 16px; font-weight: 600; color: var(--forest-deep); }
-.td-tomorrow-sub { font-size: 13px; color: var(--moss-muted); }
 .td-chev { color: var(--moss-muted); display: flex; }
 .td-chev svg { width: 16px; height: 16px; }
-.td-tomorrow .td-thumb { display: none; }
 
 /* Veckan */
 .td-week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
@@ -7305,17 +7308,19 @@ body[data-active-tab="shop"] .shop-mobile-bar { display: flex; }
   .td-col { gap: 16px; }
   .td-card { padding: 20px; border-radius: 18px; gap: 12px; }
   .td-h2 { font-size: 18px; }
-  .td-tonight { display: grid; grid-template-columns: 160px 1fr; gap: 20px; padding: 20px; }
-  .td-tonight-row { display: contents; }
-  .td-tonight .td-thumb { width: 160px; height: 160px; border-radius: 12px; }
-  .td-tonight .td-thumb svg { width: 40px; height: 40px; }
-  .td-tonight-txt { gap: 12px; min-height: 160px; }
+  .td-tonight.td-empty { display: grid; grid-template-columns: 160px 1fr; gap: 20px; padding: 20px; }
+  .td-tonight.td-empty .td-tonight-row { display: contents; }
+  .td-tonight.td-empty .td-thumb { width: 160px; height: 160px; border-radius: 12px; }
+  .td-tonight.td-empty .td-thumb svg { width: 40px; height: 40px; }
+  .td-tonight.td-empty .td-tonight-txt { gap: 12px; min-height: 160px; }
   .td-tonight-title { font-size: 28px; }
   .td-tonight .td-actions { margin-top: auto; }
+  .td-tonight.td-hero { padding: 0; gap: 0; }
+  .td-hero-media { aspect-ratio: 16 / 10; }
+  .td-hero-media.is-empty { min-height: 140px; }
+  .td-hero-body { padding: 18px 20px 20px; gap: 14px; }
+  .td-hero .td-tonight-title { font-size: 32px; }
   .td-btn { flex: 0 1 auto; padding: 10px 16px; }
-  .td-tomorrow { grid-template-columns: 72px 1fr auto; gap: 16px; padding: 14px 16px; border-radius: 14px; }
-  .td-tomorrow .td-thumb { display: flex; }
-  .td-tomorrow-title { font-size: 18px; }
   .td-week { gap: 6px; }
   .tw-day { align-items: flex-start; padding: 8px 6px; border-radius: 10px; min-height: 84px; }
   .tw-lbl-long { display: inline; font-size: 12px; }

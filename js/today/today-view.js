@@ -13,7 +13,7 @@
 // Re-render: vi wrappar renderWeeklyPlanData + loadWeeklyPlan + switchTab (samma
 // synk-mönster som deluxe). Importeras EFTER deluxe → wrappningen ligger ytterst.
 
-import { fmtIso, PROTEIN_COLOR, isoWeekNumber, escapeHtml, weekStartOf, addDaysIso, jsStringAttr, recipeImage } from '../utils.js';
+import { fmtIso, PROTEIN_COLOR, isoWeekNumber, escapeHtml, weekStartOf, addDaysIso, jsStringAttr, recipeImage, recipeImageIsAi } from '../utils.js';
 import { DB_RESTING_MESSAGE } from '../supabase-client.js';
 
 const MONTH_NAMES_LONG = ['januari', 'februari', 'mars', 'april', 'maj', 'juni', 'juli', 'augusti', 'september', 'oktober', 'november', 'december'];
@@ -121,40 +121,30 @@ function tonightHtml(entry, info) {
     ? `<button type="button" class="td-btn td-btn-accent" onclick="openCookMode(${info.cookId})">${I.play}Börja laga</button>`
     : `<button type="button" class="td-btn td-btn-accent" onclick="${pick}">Välj ett recept i stället</button>`;
 
+  // Hero (2026-10-21, Joakim): kvällens bild bär kortet i full bredd — fullbilden
+  // (inte miniatyren), eftersom den är sidans största yta (LCP) och får laddas först.
+  const hero = info.r ? recipeImage(info.r) : '';
+  const heroIcon = info.kind === 'free' ? I.free : info.kind === 'note' ? (info.leftovers ? I.leftovers : I.pencil) : I.pot;
+  const media = hero
+    ? `<div class="td-hero-media"><img src="${hero}" alt="" width="640" height="640" fetchpriority="high" decoding="async" onerror="this.parentNode.classList.add('is-empty');this.remove()">${recipeImageIsAi(info.r) ? '<span class="td-hero-ai">AI-bild · serveringsförslag</span>' : ''}</div>`
+    : `<div class="td-hero-media is-empty" style="--p:${info.color}" aria-hidden="true">${heroIcon}</div>`;
+  const eyebrow = entry ? `Ikväll · ${esc(entry.day.toLowerCase())}` : 'Ikväll';
+
   return `
-    <article class="td-card td-tonight">
-      <div class="td-tonight-row">
-        ${thumbHtml(info)}
+    <article class="td-card td-tonight td-hero">
+      ${media}
+      <div class="td-hero-body">
         <div class="td-tonight-txt">
-          <span class="td-eyebrow">Ikväll</span>
+          <span class="td-eyebrow">${eyebrow}</span>
           <h2 class="td-tonight-title">${esc(info.title)}</h2>
           <div class="td-meta">${meta}</div>
         </div>
-      </div>
-      <div class="td-actions">
-        ${primary}
-        <button type="button" class="td-btn td-btn-quiet" onclick="${click}">Byt dag</button>
+        <div class="td-actions">
+          ${primary}
+          <button type="button" class="td-btn td-btn-quiet" onclick="${click}">Byt dag</button>
+        </div>
       </div>
     </article>`;
-}
-
-function tomorrowHtml(entry, info) {
-  if (!entry) return '';
-  const eyebrow = `I morgon · ${esc(entry.day.toLowerCase())}`;
-  const click = `dlxDayClick('${entry.date}', '${attr(entry.day)}')`;
-  const sub = !info ? 'Inget planerat — tryck för att planera'
-    : info.kind === 'recipe' ? [info.time ? `${info.time} min` : '', info.protein ? PROTEIN_LABEL[info.protein] || info.protein : ''].filter(Boolean).join(' · ')
-    : info.kind === 'free' ? 'Fri dag' : 'Egen dag';
-  return `
-    <button type="button" class="td-tomorrow" onclick="${click}">
-      ${thumbHtml(info)}
-      <span class="td-tomorrow-txt">
-        <span class="td-eyebrow">${eyebrow}</span>
-        <span class="td-tomorrow-title">${esc(info ? info.title : 'Inget planerat')}</span>
-        ${sub ? `<span class="td-tomorrow-sub">${esc(sub)}</span>` : ''}
-      </span>
-      <span class="td-chev" aria-hidden="true">${I.chev}</span>
-    </button>`;
 }
 
 function weekHtml(weekDays, weekNo) {
@@ -411,13 +401,9 @@ function renderTodayViewInner() {
   const now = new Date();
   const todayIso = fmtIso(now);
   _renderedIso = todayIso;
-  const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
-  const tomorrowIso = fmtIso(tomorrow);
 
   const todayEntry = timeline[todayIso] || null;
   const todayInfo = dayInfo(todayEntry);
-  const tomorrowEntry = timeline[tomorrowIso] || null;
-  const tomorrowInfo = dayInfo(tomorrowEntry);
 
   const wk = isoWeekNumber(todayIso);
   const h1 = todayEntry
@@ -441,7 +427,7 @@ function renderTodayViewInner() {
   if (st) subParts.push(`${st.total} ${st.total === 1 ? 'vara' : 'varor'} på inköpslistan`);
 
   const left = hasPlan
-    ? tonightHtml(todayEntry, todayInfo) + tomorrowHtml(tomorrowEntry, tomorrowInfo) + weekHtml(weekDays, wk)
+    ? tonightHtml(todayEntry, todayInfo) + weekHtml(weekDays, wk)
     : noPlanHtml();
   const right = shopHtml(st) + (hasPlan ? todoHtml(weekDays, st, pending) : '') + pinnedNotesHtml();
 
