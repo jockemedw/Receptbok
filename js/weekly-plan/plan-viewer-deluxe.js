@@ -10,7 +10,7 @@
 // Re-render: vi wrappar window.renderWeeklyPlanData (och loadWeeklyPlan/switchTab,
 // se installHooks) så vyn alltid hålls i synk efter generering/byte/bekräftelse.
 
-import { fmtIso, fmtShort, PROTEIN_COLOR, isoWeekNumber, escapeHtml, weekStartOf, addDaysIso, getHolidayName, jsStringAttr, retroWindowStartIso, recipeImage } from '../utils.js';
+import { fmtIso, fmtShort, PROTEIN_COLOR, isoWeekNumber, escapeHtml, weekStartOf, addDaysIso, getHolidayName, jsStringAttr, retroWindowStartIso, recipeImage, recipeImgAttrs } from '../utils.js';
 
 const DAY_NAMES_LONG = ['Söndag', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag'];
 const MONTH_NAMES_SHORT = ['jan', 'feb', 'mars', 'apr', 'maj', 'juni', 'juli', 'aug', 'sep', 'okt', 'nov', 'dec'];
@@ -692,8 +692,8 @@ function footActionsHtml() {
 // Bildruta per dag: foto när receptet har ett, annars en ikon som skiljer
 // recept (gryta) från egen notering (penna) / rester (skål) / fri dag.
 function dayThumbHtml(r, icon = I.pot) {
-  const img = r ? recipeImage(r, 'thumb') : '';
-  if (img) return `<span class="dlx-day-thumb"><img src="${img}" alt="" loading="lazy" decoding="async" width="56" height="56" onerror="this.parentNode.classList.add('is-empty');this.remove()"></span>`;
+  const img = r ? recipeImgAttrs(r, '(min-width: 900px) 128px, 56px') : '';
+  if (img) return `<span class="dlx-day-thumb"><img ${img} alt="" loading="lazy" decoding="async" width="56" height="56" onerror="this.parentNode.classList.add('is-empty');this.remove()"></span>`;
   return `<span class="dlx-day-thumb is-empty" aria-hidden="true">${icon}</span>`;
 }
 

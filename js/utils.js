@@ -136,7 +136,7 @@ export function isoWeekNumber(dateIso) {
 // Manifestet js/recipe-images.js genereras av scripts/recipe-images/*.mjs och säger
 // vilka id:n som har bild (och vilka som är AI-genererade serveringsförslag) — så
 // listan aldrig ritar trasiga <img>.
-// variant 'thumb' = 192×192 (listor, dagkort, Idag) — en tiondel av fullbilden.
+// variant 'thumb' = 320×320 (små rutor) — se recipeImgAttrs för srcset mot fullbilden.
 export function recipeImage(r, variant = 'full') {
   if (!r || !RECIPE_IMAGE_IDS.has(r.id)) return '';
   const h = RECIPE_IMAGE_HASH[r.id];
@@ -145,6 +145,16 @@ export function recipeImage(r, variant = 'full') {
 }
 
 // AI-genererat serveringsförslag (då ska bildtexten säga det).
+// src/srcset/sizes för en miniatyrruta: webbläsaren väljer 320-px-miniatyren för
+// små rutor och fullbilden (640) där rutan × pixeltäthet kräver det — t.ex.
+// receptkorten på mobil (≈166 css-px × 3 = 500 px), där 192/320 blev suddigt
+// (Joakim 2026-10-21). `sizes` beskriver rutans css-bredd per brytpunkt.
+export function recipeImgAttrs(r, sizes) {
+  const thumb = recipeImage(r, 'thumb');
+  if (!thumb) return '';
+  return `src="${thumb}" srcset="${thumb} 320w, ${recipeImage(r)} 640w" sizes="${sizes}"`;
+}
+
 export function recipeImageIsAi(r) {
   return !!r && RECIPE_IMAGE_AI_IDS.has(r.id);
 }

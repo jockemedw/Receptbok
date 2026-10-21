@@ -13,7 +13,7 @@
 // Re-render: vi wrappar renderWeeklyPlanData + loadWeeklyPlan + switchTab (samma
 // synk-mönster som deluxe). Importeras EFTER deluxe → wrappningen ligger ytterst.
 
-import { fmtIso, PROTEIN_COLOR, isoWeekNumber, escapeHtml, weekStartOf, addDaysIso, jsStringAttr, recipeImage, recipeImageIsAi } from '../utils.js';
+import { fmtIso, PROTEIN_COLOR, isoWeekNumber, escapeHtml, weekStartOf, addDaysIso, jsStringAttr, recipeImage, recipeImageIsAi, recipeImgAttrs } from '../utils.js';
 import { DB_RESTING_MESSAGE } from '../supabase-client.js';
 
 const MONTH_NAMES_LONG = ['januari', 'februari', 'mars', 'april', 'maj', 'juni', 'juli', 'augusti', 'september', 'oktober', 'november', 'december'];
@@ -77,8 +77,8 @@ function mk(kind, title, cookId, r, saving, planDay) {
 }
 
 function thumbHtml(info, size = 72) {
-  const img = info?.r ? recipeImage(info.r, 'thumb') : '';
-  if (img) return `<span class="td-thumb"><img src="${img}" alt="" width="${size}" height="${size}" loading="lazy" decoding="async" onerror="this.remove()"></span>`;
+  const img = info?.r ? recipeImgAttrs(info.r, '(min-width: 900px) 160px, 72px') : '';
+  if (img) return `<span class="td-thumb"><img ${img} alt="" width="${size}" height="${size}" loading="lazy" decoding="async" onerror="this.remove()"></span>`;
   const icon = !info ? I.plus : info.kind === 'free' ? I.free : info.kind === 'note' ? (info.leftovers ? I.leftovers : I.pencil) : I.pot;
   return `<span class="td-thumb" aria-hidden="true">${icon}</span>`;
 }
