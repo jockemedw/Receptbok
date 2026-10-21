@@ -125,7 +125,8 @@ export async function loadListsTab() {
 async function loadListsTabInner() {
   const host = document.getElementById('listsContent');
   if (host && !host.innerHTML) {
-    host.innerHTML = `${headingHtml('Listor')}<div class="no-data">Hämtar listorna…</div>`;
+    // Skelett i stället för text (Batch G) — samma stil som Idag/Inköp/Matsedel.
+    host.innerHTML = `${headingHtml('Listor')}<div class="td-skel sk-list" aria-busy="true" aria-label="Hämtar listorna">${'<div class="skel skel-row"></div>'.repeat(4)}</div>`;
   }
   try {
     _householdId = await window.getHouseholdId();
