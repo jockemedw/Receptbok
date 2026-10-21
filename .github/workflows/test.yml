@@ -36,3 +36,8 @@ jobs:
 
       - name: Syntaxkoll av frontend-moduler
         run: node --check js/app.js
+
+      # Samma bygge som Vercel kör (scripts/build.mjs) — en trasig bundle ska
+      # fastna här, inte i en tyst deploy.
+      - name: Bygg (esbuild → public/)
+        run: node scripts/build.mjs

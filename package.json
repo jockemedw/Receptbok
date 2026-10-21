@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "@supabase/supabase-js": "^2.105.4",
+    "@supabase/supabase-js": "2.116.0",
     "jose": "^6.2.11"
   },
   "type": "module",
   "devDependencies": {
+    "esbuild": "^0.25.10",
     "sharp": "^0.35.5"
   }
 }
