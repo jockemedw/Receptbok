@@ -41,7 +41,7 @@ Vercel serverless (api/) ── service-role → Supabase (Postgres + Auth + Rea
 - **Förklaringsnivå 3.5** — använd analogi + teknisk term i parentes vid behov. Nivå 1–2 för rutinändringar, 3.5 vid beslut eller felsökning.
 - **Felmeddelanden i appen** — alltid på begriplig svenska utan tekniska termer, med handlingsorienterad uppmaning. Inte: `409 — SHA conflict`. Utan: `Kunde inte spara matsedeln — prova att generera igen.`
 - **Stanna och bekräfta** — om ett meddelande är feedback/återkoppling (inte en tydlig instruktion), tolka det INTE som en order att agera. Ställ en kort fråga och invänta svar.
-- Claude pushar direkt till `main` efter varje ändring — användaren behöver inte använda GitHub Desktop.
+- **Preview-länk vid granskning** — skicka alltid med Vercel preview-länken (från PR:en) så användaren kan granska ändringen live innan merge.
 
 ## Deployment & versionsbump (viktig konvention!)
 - Commit + push till `main` → Vercel (kör `node scripts/build.mjs`, ~40 sek) + GitHub Pages deployas automatiskt. Git-deployen tar 1–3 min. **Verifiera efter merge:** `curl -s https://receptbok-six.vercel.app/ | grep -o 'dist/app\.[0-9a-f]*\.js'` ska visa ny hash; uteblir den efter 3 min (hände 2026-10-21 under ett par timmar): `vercel deploy --prod --yes` i HUVUDKATALOGEN (`.vercel/repo.json` ligger där; från en worktree deployas fel träd).
@@ -51,7 +51,7 @@ Vercel serverless (api/) ── service-role → Supabase (Postgres + Auth + Rea
 ## Operativa regler (följ utan att fråga)
 - Frontend-JS ligger i `js/`-moduler — redigera rätt modulfil, inte `index.html` (ren HTML-markup).
 - Appen ska fungera på alla enheter; mobil prioriteras (touch-first, hover aldrig som primär interaktion, touch-targets ≥44px, respektera `prefers-reduced-motion`).
-- **Mergea till main** — efter varje push, mergea feature-branchen till `main` (squash-PR är mönstret). Skippa bara om användaren explicit ber om det.
+- **Mergea till main** — mergea feature-branchen till `main` (squash-PR) bara när användaren godkänt ändringen via preview.
 - Nya tabeller får RLS med household-policy-mallen (kopiera från `db/migrations/002_pantry_items.sql`).
 
 ## Monetiseringsriktning (beslutad 2026-07-10/11 — stabil kontext)
@@ -87,7 +87,7 @@ Innan "klart" deklareras ska Claude alltid:
 1. Läsa tillbaka den editerade filen och verifiera att ändringen landade rätt (Edit-hooken fångar syntaxfel).
 2. Kontrollera att relaterade funktioner inte brutits — Grep efter berörda funktionsnamn om tveksamt; kör hela testsviten vid fleramodulsändringar.
 3. Vid frontend-ändring: bumpa styles-/app-/SW-versionerna för backupen (se *Deployment*) och kör `node scripts/build.mjs` så att bygget går igenom (CI gör det också).
-4. Committa och pusha; mergea till `main`.
+4. Committa och pusha till feature-branchen; skicka preview-länk och invänta godkännande innan merge till `main`.
 5. Uppdatera `docs/status.md`: ny "Senaste session"-ruta + verifieringskö + digest-blocket om öppet läge ändrats. CLAUDE.md rörs bara om den *stabila* kontexten ändrats.
 6. **Arkivera föregående session:** flytta nuvarande sessionsruta till toppen av `docs/session-log-archive.md` (status.md håller bara EN ruta). Lyft oavslutade punkter till *Kända buggar* / *Väntar på live-verifiering* / *Öppna utredningar* — öppet arbete ska synas strukturerat, inte begravas i prosa.
 

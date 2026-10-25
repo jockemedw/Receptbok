@@ -5437,6 +5437,7 @@ main#receptView {
   .dlx-sheet-scroll { overflow: visible; padding: 0 1.25rem 0.5rem; }
   .dlx-sheet.has-more::after { display: none; }
   .dlx-sheet[data-view="meny"] .dlx-sheet-list { max-width: 640px; }
+  .dlx-sheet[data-view="meny"] .dlx-sheet-primary { max-width: 480px; }
   .dlx-sheet .dlx-detail-cols { gap: 1.5rem; }
   .dlx-day.is-open { border-color: var(--rust); box-shadow: 0 0 0 1px var(--rust) inset; }
 }
