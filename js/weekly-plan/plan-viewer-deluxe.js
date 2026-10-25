@@ -1723,7 +1723,18 @@ function markOpenCard() {
   if (!host) return;
   host.querySelectorAll('article.is-open').forEach(el => el.classList.remove('is-open'));
   const date = window._dlxSheet?.date;
-  if (date) host.querySelector(`article[data-date="${date}"]`)?.classList.add('is-open');
+  const sheet = document.getElementById('dlxSheet');
+  if (date) {
+    const card = host.querySelector(`article[data-date="${date}"]`);
+    card?.classList.add('is-open');
+    if (sheet && card && _isDesktop()) {
+      const cr = card.getBoundingClientRect();
+      const sr = sheet.getBoundingClientRect();
+      sheet.style.setProperty('--dlx-caret-x', `${cr.left + cr.width / 2 - sr.left}px`);
+    }
+  } else if (sheet) {
+    sheet.style.removeProperty('--dlx-caret-x');
+  }
 }
 
 // En åtgärdsrad: ikon + titel, beskrivning bara där åtgärden inte säger sig
@@ -1761,6 +1772,35 @@ function sheetWhen(d) {
 
 // Receptdetalj i sheeten (ersätter den gamla inline-utfällningen). Läsvänlig,
 // scrollar i sheeten; åtgärderna bor i meny-vyn.
+function recipeColumnHtml(d) {
+  const rid = d.isCustom ? d.customRecipeId : d.recipeId;
+  const r = recipeById(rid);
+  if (!r) return '';
+  const ings = (r.ingredients || []).map(i => `<li>${esc(i)}</li>`).join('');
+  const steps = (r.instructions || []).map((st, i) =>
+    `<li><span class="dlx-step-num">${i + 1}</span><span>${esc(st)}</span></li>`).join('');
+  const notes = r.notes ? `<div class="dlx-notes">💡 ${esc(r.notes)}</div>` : '';
+  return `
+    <div class="dlx-detail-head">
+      <button type="button" class="dlx-status dlx-status-toggle ${r.tested ? 'tested' : 'untested'}"
+              onclick="dlxToggleTested(event, ${r.id})" aria-pressed="${r.tested ? 'true' : 'false'}"
+              title="${r.tested ? 'Tryck för att märka som oprövat' : 'Tryck när ni har lagat den — märker receptet som provat'}"
+        >${r.tested ? '✓ Provat' : 'Ej provat'}</button>
+      <span class="dlx-detail-portions">${r.servings} portioner</span>
+    </div>
+    <div class="dlx-detail-cols">
+      <section class="dlx-detail-block">
+        <h4>Ingredienser</h4>
+        <ul class="dlx-ings">${ings}</ul>
+      </section>
+      <section class="dlx-detail-block">
+        <h4>Gör så här</h4>
+        <ol class="dlx-steps">${steps}</ol>
+      </section>
+    </div>
+    ${notes}`;
+}
+
 function sheetRecipeHtml(d) {
   const rid = d.isCustom ? d.customRecipeId : d.recipeId;
   const title = d.isCustom ? d.customRecipeTitle : d.recipe;
@@ -1862,8 +1902,13 @@ function sheetMenuHtml(d) {
   } else if (d.planId === 'active' && !d.isArchive && !d.isPast) {
     second = `<button type="button" class="dlx-sheet-pbtn" onclick="dlxSheetView('byt')">${I.shuffle}<span>Byt recept</span></button>`;
   }
+  const desktop = _isDesktop();
+  const primaryLabel = desktop ? 'Börja laga' : 'Visa receptet';
+  const primaryAction = desktop
+    ? `dlxCloseSheet();openCookMode(${(recipeById(isCustomRecipe ? d.customRecipeId : d.recipeId) || {}).id || 0})`
+    : "dlxSheetView('recept')";
   const primary = `<div class="dlx-sheet-primary">
-      <button type="button" class="dlx-sheet-pbtn fill" onclick="dlxSheetView('recept')">${I.pot}<span>Visa receptet</span></button>
+      <button type="button" class="dlx-sheet-pbtn fill" onclick="${primaryAction}">${I.pot}<span>${primaryLabel}</span></button>
       ${second}
     </div>`;
 
@@ -2036,6 +2081,15 @@ function renderSheet() {
       ${chips}`;
   }
 
+  // Desktop tvåkolumnspanel: wrappa meny/byt/ingen/flyttaval/lista med receptkolumn
+  const hasRecipe = !!(d.isCustom ? d.customRecipeId : d.recipeId);
+  if (_isDesktop() && hasRecipe && s.view !== 'recept' && s.view !== 'editor') {
+    const recipe = recipeColumnHtml(d);
+    if (recipe) {
+      body = `<div class="dlx-panel-cols"><div class="dlx-panel-actions">${body}</div><div class="dlx-panel-recipe">${recipe}</div></div>`;
+    }
+  }
+
   // Grepp + stängkryss ligger utanför scrollytan så krysset alltid syns.
   // Scrollpositionen behålls vid omrendering av SAMMA vy (t.ex. provat-toggeln).
   const prev = el.querySelector('.dlx-sheet-scroll');
@@ -2049,6 +2103,8 @@ function renderSheet() {
   const sc = el.querySelector('.dlx-sheet-scroll');
   if (keepTop) sc.scrollTop = keepTop;
   updateSheetScrollHint();
+  // Uppdatera pilen efter DOM-uppdatering
+  if (_isDesktop()) requestAnimationFrame(() => markOpenCard());
 }
 
 // Synlig scroll-ledtråd: tona ut nederkanten när det finns mer att scrolla
