@@ -5421,6 +5421,25 @@ main#receptView {
 .dlx-sheet .dlx-notes { margin: 0.8rem 0.1rem 0; }
 .dlx-sheet .dlx-mini-btn { min-height: 44px; }
 
+/* Desktop: sheeten blir en sidopanel som glider in från höger */
+@media (min-width: 900px) {
+  .dlx-sheet-backdrop.open { opacity: 1; background: rgba(44, 63, 51, 0.22); }
+  .dlx-sheet {
+    left: auto; right: 0; top: 0; bottom: 0;
+    max-width: 420px; width: 100%;
+    border-radius: 0;
+    max-height: none;
+    padding-bottom: 1.5rem;
+    transform: translateX(105%);
+    transition: transform var(--dur-sheet) var(--ease-out);
+    box-shadow: -8px 0 32px rgba(44, 63, 51, 0.18);
+  }
+  .dlx-sheet.open { transform: translateX(0); }
+  .dlx-sheet-grip { display: none; }
+  .dlx-sheet-scroll { padding: 0 1.25rem 0.5rem; }
+  .dlx-sheet .dlx-detail-cols { gap: 1.5rem; }
+}
+
 /* ── LISTOR-FLIKEN (P1 Familjehubben — gemensamma listor, js/lists/) ── */
 #listsView {
   display: none;
