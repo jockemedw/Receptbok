@@ -5421,23 +5421,24 @@ main#receptView {
 .dlx-sheet .dlx-notes { margin: 0.8rem 0.1rem 0; }
 .dlx-sheet .dlx-mini-btn { min-height: 44px; }
 
-/* Desktop: sheeten blir en sidopanel som glider in från höger */
+/* Desktop: sheeten reparenteras inline under gridden */
 @media (min-width: 900px) {
-  .dlx-sheet-backdrop.open { opacity: 1; background: rgba(44, 63, 51, 0.22); }
+  .dlx-sheet-backdrop { display: none !important; }
   .dlx-sheet {
-    left: auto; right: 0; top: 0; bottom: 0;
-    max-width: 420px; width: 100%;
-    border-radius: 0;
-    max-height: none;
-    padding-bottom: 1.5rem;
-    transform: translateX(105%);
-    transition: transform var(--dur-sheet) var(--ease-out);
-    box-shadow: -8px 0 32px rgba(44, 63, 51, 0.18);
+    position: relative; inset: auto;
+    width: auto; max-width: none; max-height: none;
+    margin: 16px 0 0; border-radius: 14px;
+    box-shadow: none; border: 1px solid var(--birch-soft);
+    transform: none; transition: none;
+    padding-bottom: 1.25rem;
   }
-  .dlx-sheet.open { transform: translateX(0); }
+  .dlx-sheet:not(.open) { display: none; }
   .dlx-sheet-grip { display: none; }
-  .dlx-sheet-scroll { padding: 0 1.25rem 0.5rem; }
+  .dlx-sheet-scroll { overflow: visible; padding: 0 1.25rem 0.5rem; }
+  .dlx-sheet.has-more::after { display: none; }
+  .dlx-sheet[data-view="meny"] .dlx-sheet-list { max-width: 640px; }
   .dlx-sheet .dlx-detail-cols { gap: 1.5rem; }
+  .dlx-day.is-open { border-color: var(--rust); box-shadow: 0 0 0 1px var(--rust) inset; }
 }
 
 /* ── LISTOR-FLIKEN (P1 Familjehubben — gemensamma listor, js/lists/) ── */

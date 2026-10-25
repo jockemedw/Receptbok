@@ -276,6 +276,7 @@ function snapBack(pane, W, ms) {
 
 // Knapp-/drag-/hjul-steg: samma band, bara utan finger.
 function animateWeekChange(dir, targetWeek) {
+  window.dlxCloseSheet?.();
   const apply = () => { _dlxWeekStart = targetWeek === currentWeekStart() ? null : targetWeek; };
   const pane = document.getElementById('weekDeluxe');
   const pager = pane?.parentElement;
@@ -318,6 +319,7 @@ window.dlxDragWeekStep = function (dir, probe = false) {
 
 // Direkt hopp (autohopp vid färsk generering + notis-bannern) — ingen svep-anim.
 window.dlxWeekGoto = function (dateIso) {
+  window.dlxCloseSheet?.();
   const ws = weekStartOf(dateIso);
   _dlxWeekStart = ws === currentWeekStart() ? null : ws;
   renderDeluxe();
@@ -1129,6 +1131,7 @@ function renderDeluxeInner() {
   renderDaysDiff(host, weekDays, { tonightHtml: tonight, tonightDate: todayIso });
   setSec(host, 'foot', footActionsHtml());
   applyPendingMarks(host);
+  markOpenCard();
 }
 
 // ── Väntar-markering för optimistiska val (Välj själv) ──────────────────────
@@ -1626,9 +1629,36 @@ window.dlxDayClick = function (date, dayName) {
   openDaySheet(date, dayName);
 };
 
+// ponytail: desktop = inline-panel (reparenterad under gridden), mobil = bottom sheet
+const _isDesktop = () => window.matchMedia('(min-width: 900px)').matches;
+
+function reparentSheet() {
+  const sheet = document.getElementById('dlxSheet');
+  if (!sheet) return;
+  if (_isDesktop()) {
+    const host = document.getElementById('weekDeluxe');
+    const daysSec = host?.querySelector(':scope > .dlx-sec[data-sec="days"]');
+    if (!daysSec) return;
+    let detailSec = host.querySelector(':scope > .dlx-sec[data-sec="detail"]');
+    if (!detailSec) {
+      detailSec = document.createElement('div');
+      detailSec.className = 'dlx-sec';
+      detailSec.dataset.sec = 'detail';
+      daysSec.after(detailSec);
+    }
+    if (sheet.parentElement !== detailSec) detailSec.appendChild(sheet);
+    sheet.setAttribute('aria-modal', 'false');
+  } else {
+    if (sheet.parentElement !== document.body) document.body.appendChild(sheet);
+    sheet.setAttribute('aria-modal', 'true');
+  }
+}
+
 // Rendera och öppna dag-sheeten (fade in via rAF).
 function showSheet() {
+  reparentSheet();
   renderSheet();
+  markOpenCard();
   requestAnimationFrame(() => {
     document.getElementById('dlxSheetBackdrop')?.classList.add('open');
     document.getElementById('dlxSheet')?.classList.add('open');
@@ -1684,8 +1714,17 @@ window.dlxCloseSheet = function () {
   const sh = document.getElementById('dlxSheet');
   sh?.classList.remove('open');
   if (sh) sh.dataset.view = '';
+  markOpenCard();
   if (wasOpen) window.popSheetHistory?.();
 };
+
+function markOpenCard() {
+  const host = document.getElementById('weekDeluxe');
+  if (!host) return;
+  host.querySelectorAll('article.is-open').forEach(el => el.classList.remove('is-open'));
+  const date = window._dlxSheet?.date;
+  if (date) host.querySelector(`article[data-date="${date}"]`)?.classList.add('is-open');
+}
 
 // En åtgärdsrad: ikon + titel, beskrivning bara där åtgärden inte säger sig
 // själv (max en rad, ellips i CSS).
