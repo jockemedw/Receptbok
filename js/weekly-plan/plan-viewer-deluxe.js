@@ -276,6 +276,7 @@ function snapBack(pane, W, ms) {
 
 // Knapp-/drag-/hjul-steg: samma band, bara utan finger.
 function animateWeekChange(dir, targetWeek) {
+  window.dlxCloseSheet?.();
   const apply = () => { _dlxWeekStart = targetWeek === currentWeekStart() ? null : targetWeek; };
   const pane = document.getElementById('weekDeluxe');
   const pager = pane?.parentElement;
@@ -318,6 +319,7 @@ window.dlxDragWeekStep = function (dir, probe = false) {
 
 // Direkt hopp (autohopp vid färsk generering + notis-bannern) — ingen svep-anim.
 window.dlxWeekGoto = function (dateIso) {
+  window.dlxCloseSheet?.();
   const ws = weekStartOf(dateIso);
   _dlxWeekStart = ws === currentWeekStart() ? null : ws;
   renderDeluxe();
@@ -665,15 +667,17 @@ function buildHeader(weekDays, weekStart, plan, pending) {
     <div class="dlx-header">
       <button type="button" class="dlx-wk-arrow" onclick="dlxWeekStep(-1)"${atMin ? ' disabled' : ''} aria-label="Föregående vecka">${I.chevL}</button>
       <div class="dlx-header-title">
-        <h1 class="dlx-h1">Vecka ${isoWeekNumber(weekStart)}${todayBtn}</h1>
+        <div class="dlx-title-row">
+          <h1 class="dlx-h1">Vecka ${isoWeekNumber(weekStart)}${todayBtn}</h1>
+          <div class="dlx-wk-group" role="group" aria-label="Byt vecka">
+            <button type="button" onclick="dlxWeekStep(-1)"${atMin ? ' disabled' : ''}>${I.chevL}v. ${prevNo}</button>
+            <button type="button" onclick="dlxWeekStep(1)"${atMax ? ' disabled' : ''}>v. ${nextNo}${I.chevR}</button>
+          </div>
+        </div>
         <div class="dlx-header-sub">${esc(weekRangeText(weekStart))} · ${summary.join(' · ')}</div>
       </div>
       <button type="button" class="dlx-wk-arrow" onclick="dlxWeekStep(1)"${atMax ? ' disabled' : ''} aria-label="Nästa vecka">${I.chevR}</button>
       <div class="dlx-header-actions">
-        <div class="dlx-wk-group" role="group" aria-label="Byt vecka">
-          <button type="button" onclick="dlxWeekStep(-1)"${atMin ? ' disabled' : ''}>${I.chevL}v. ${prevNo}</button>
-          <button type="button" onclick="dlxWeekStep(1)"${atMax ? ' disabled' : ''}>v. ${nextNo}${I.chevR}</button>
-        </div>
         ${isCurrentWeek ? '' : `<button type="button" class="dlx-btn" onclick="dlxWeekToday()">Idag</button>`}
         <button type="button" class="dlx-btn" onclick="switchTab('shop')">${I.cart}Inköp för veckan</button>
         <button type="button" class="dlx-btn dlx-btn-accent" onclick="openNewPlan()">${I.sparkle}Föreslå matsedel</button>
@@ -1127,6 +1131,7 @@ function renderDeluxeInner() {
   renderDaysDiff(host, weekDays, { tonightHtml: tonight, tonightDate: todayIso });
   setSec(host, 'foot', footActionsHtml());
   applyPendingMarks(host);
+  markOpenCard();
 }
 
 // ── Väntar-markering för optimistiska val (Välj själv) ──────────────────────
@@ -1624,9 +1629,36 @@ window.dlxDayClick = function (date, dayName) {
   openDaySheet(date, dayName);
 };
 
+// ponytail: desktop = inline-panel (reparenterad under gridden), mobil = bottom sheet
+const _isDesktop = () => window.matchMedia('(min-width: 900px)').matches;
+
+function reparentSheet() {
+  const sheet = document.getElementById('dlxSheet');
+  if (!sheet) return;
+  if (_isDesktop()) {
+    const host = document.getElementById('weekDeluxe');
+    const daysSec = host?.querySelector(':scope > .dlx-sec[data-sec="days"]');
+    if (!daysSec) return;
+    let detailSec = host.querySelector(':scope > .dlx-sec[data-sec="detail"]');
+    if (!detailSec) {
+      detailSec = document.createElement('div');
+      detailSec.className = 'dlx-sec';
+      detailSec.dataset.sec = 'detail';
+      daysSec.after(detailSec);
+    }
+    if (sheet.parentElement !== detailSec) detailSec.appendChild(sheet);
+    sheet.setAttribute('aria-modal', 'false');
+  } else {
+    if (sheet.parentElement !== document.body) document.body.appendChild(sheet);
+    sheet.setAttribute('aria-modal', 'true');
+  }
+}
+
 // Rendera och öppna dag-sheeten (fade in via rAF).
 function showSheet() {
+  reparentSheet();
   renderSheet();
+  markOpenCard();
   requestAnimationFrame(() => {
     document.getElementById('dlxSheetBackdrop')?.classList.add('open');
     document.getElementById('dlxSheet')?.classList.add('open');
@@ -1682,8 +1714,28 @@ window.dlxCloseSheet = function () {
   const sh = document.getElementById('dlxSheet');
   sh?.classList.remove('open');
   if (sh) sh.dataset.view = '';
+  markOpenCard();
   if (wasOpen) window.popSheetHistory?.();
 };
+
+function markOpenCard() {
+  const host = document.getElementById('weekDeluxe');
+  if (!host) return;
+  host.querySelectorAll('article.is-open').forEach(el => el.classList.remove('is-open'));
+  const date = window._dlxSheet?.date;
+  const sheet = document.getElementById('dlxSheet');
+  if (date) {
+    const card = host.querySelector(`article[data-date="${date}"]`);
+    card?.classList.add('is-open');
+    if (sheet && card && _isDesktop()) {
+      const cr = card.getBoundingClientRect();
+      const sr = sheet.getBoundingClientRect();
+      sheet.style.setProperty('--dlx-caret-x', `${cr.left + cr.width / 2 - sr.left}px`);
+    }
+  } else if (sheet) {
+    sheet.style.removeProperty('--dlx-caret-x');
+  }
+}
 
 // En åtgärdsrad: ikon + titel, beskrivning bara där åtgärden inte säger sig
 // själv (max en rad, ellips i CSS).
@@ -1720,6 +1772,35 @@ function sheetWhen(d) {
 
 // Receptdetalj i sheeten (ersätter den gamla inline-utfällningen). Läsvänlig,
 // scrollar i sheeten; åtgärderna bor i meny-vyn.
+function recipeColumnHtml(d) {
+  const rid = d.isCustom ? d.customRecipeId : d.recipeId;
+  const r = recipeById(rid);
+  if (!r) return '';
+  const ings = (r.ingredients || []).map(i => `<li>${esc(i)}</li>`).join('');
+  const steps = (r.instructions || []).map((st, i) =>
+    `<li><span class="dlx-step-num">${i + 1}</span><span>${esc(st)}</span></li>`).join('');
+  const notes = r.notes ? `<div class="dlx-notes">💡 ${esc(r.notes)}</div>` : '';
+  return `
+    <div class="dlx-detail-head">
+      <button type="button" class="dlx-status dlx-status-toggle ${r.tested ? 'tested' : 'untested'}"
+              onclick="dlxToggleTested(event, ${r.id})" aria-pressed="${r.tested ? 'true' : 'false'}"
+              title="${r.tested ? 'Tryck för att märka som oprövat' : 'Tryck när ni har lagat den — märker receptet som provat'}"
+        >${r.tested ? '✓ Provat' : 'Ej provat'}</button>
+      <span class="dlx-detail-portions">${r.servings} portioner</span>
+    </div>
+    <div class="dlx-detail-cols">
+      <section class="dlx-detail-block">
+        <h4>Ingredienser</h4>
+        <ul class="dlx-ings">${ings}</ul>
+      </section>
+      <section class="dlx-detail-block">
+        <h4>Gör så här</h4>
+        <ol class="dlx-steps">${steps}</ol>
+      </section>
+    </div>
+    ${notes}`;
+}
+
 function sheetRecipeHtml(d) {
   const rid = d.isCustom ? d.customRecipeId : d.recipeId;
   const title = d.isCustom ? d.customRecipeTitle : d.recipe;
@@ -1821,8 +1902,13 @@ function sheetMenuHtml(d) {
   } else if (d.planId === 'active' && !d.isArchive && !d.isPast) {
     second = `<button type="button" class="dlx-sheet-pbtn" onclick="dlxSheetView('byt')">${I.shuffle}<span>Byt recept</span></button>`;
   }
+  const desktop = _isDesktop();
+  const primaryLabel = desktop ? 'Börja laga' : 'Visa receptet';
+  const primaryAction = desktop
+    ? `dlxCloseSheet();openCookMode(${(recipeById(isCustomRecipe ? d.customRecipeId : d.recipeId) || {}).id || 0})`
+    : "dlxSheetView('recept')";
   const primary = `<div class="dlx-sheet-primary">
-      <button type="button" class="dlx-sheet-pbtn fill" onclick="dlxSheetView('recept')">${I.pot}<span>Visa receptet</span></button>
+      <button type="button" class="dlx-sheet-pbtn fill" onclick="${primaryAction}">${I.pot}<span>${primaryLabel}</span></button>
       ${second}
     </div>`;
 
@@ -1995,6 +2081,15 @@ function renderSheet() {
       ${chips}`;
   }
 
+  // Desktop tvåkolumnspanel: wrappa meny/byt/ingen/flyttaval/lista med receptkolumn
+  const hasRecipe = !!(d.isCustom ? d.customRecipeId : d.recipeId);
+  if (_isDesktop() && hasRecipe && s.view !== 'recept' && s.view !== 'editor') {
+    const recipe = recipeColumnHtml(d);
+    if (recipe) {
+      body = `<div class="dlx-panel-cols"><div class="dlx-panel-actions">${body}</div><div class="dlx-panel-recipe">${recipe}</div></div>`;
+    }
+  }
+
   // Grepp + stängkryss ligger utanför scrollytan så krysset alltid syns.
   // Scrollpositionen behålls vid omrendering av SAMMA vy (t.ex. provat-toggeln).
   const prev = el.querySelector('.dlx-sheet-scroll');
@@ -2008,6 +2103,8 @@ function renderSheet() {
   const sc = el.querySelector('.dlx-sheet-scroll');
   if (keepTop) sc.scrollTop = keepTop;
   updateSheetScrollHint();
+  // Uppdatera pilen efter DOM-uppdatering
+  if (_isDesktop()) requestAnimationFrame(() => markOpenCard());
 }
 
 // Synlig scroll-ledtråd: tona ut nederkanten när det finns mer att scrolla
