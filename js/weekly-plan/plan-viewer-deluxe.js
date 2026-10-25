@@ -665,15 +665,17 @@ function buildHeader(weekDays, weekStart, plan, pending) {
     <div class="dlx-header">
       <button type="button" class="dlx-wk-arrow" onclick="dlxWeekStep(-1)"${atMin ? ' disabled' : ''} aria-label="Föregående vecka">${I.chevL}</button>
       <div class="dlx-header-title">
-        <h1 class="dlx-h1">Vecka ${isoWeekNumber(weekStart)}${todayBtn}</h1>
+        <div class="dlx-title-row">
+          <h1 class="dlx-h1">Vecka ${isoWeekNumber(weekStart)}${todayBtn}</h1>
+          <div class="dlx-wk-group" role="group" aria-label="Byt vecka">
+            <button type="button" onclick="dlxWeekStep(-1)"${atMin ? ' disabled' : ''}>${I.chevL}v. ${prevNo}</button>
+            <button type="button" onclick="dlxWeekStep(1)"${atMax ? ' disabled' : ''}>v. ${nextNo}${I.chevR}</button>
+          </div>
+        </div>
         <div class="dlx-header-sub">${esc(weekRangeText(weekStart))} · ${summary.join(' · ')}</div>
       </div>
       <button type="button" class="dlx-wk-arrow" onclick="dlxWeekStep(1)"${atMax ? ' disabled' : ''} aria-label="Nästa vecka">${I.chevR}</button>
       <div class="dlx-header-actions">
-        <div class="dlx-wk-group" role="group" aria-label="Byt vecka">
-          <button type="button" onclick="dlxWeekStep(-1)"${atMin ? ' disabled' : ''}>${I.chevL}v. ${prevNo}</button>
-          <button type="button" onclick="dlxWeekStep(1)"${atMax ? ' disabled' : ''}>v. ${nextNo}${I.chevR}</button>
-        </div>
         ${isCurrentWeek ? '' : `<button type="button" class="dlx-btn" onclick="dlxWeekToday()">Idag</button>`}
         <button type="button" class="dlx-btn" onclick="switchTab('shop')">${I.cart}Inköp för veckan</button>
         <button type="button" class="dlx-btn dlx-btn-accent" onclick="openNewPlan()">${I.sparkle}Föreslå matsedel</button>

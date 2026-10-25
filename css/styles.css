@@ -6991,6 +6991,8 @@ body:has(#receptView.rv-detail-open) #fabImport { display: none !important; }
 }
 .dlx-wk-arrow svg { width: 16px; height: 16px; }
 .dlx-wk-arrow:disabled { opacity: 0.3; pointer-events: none; }
+.dlx-title-row { display: contents; }
+.dlx-wk-group { display: none; }
 .dlx-header-actions { display: none; }
 
 .dlx-btn {
@@ -7050,12 +7052,13 @@ body:has(#receptView.rv-detail-open) #fabImport { display: none !important; }
 .dlx-day.custom.slim .dlx-day-head { grid-template-columns: 44px 56px 1fr auto; }
 
 @media (min-width: 900px) {
-  #weekView { padding: 0 32px 64px; margin: 0 auto; }
+  #weekView { max-width: none; padding: 0 clamp(32px, 4vw, 80px) 64px; margin: 0 auto; }
   .dlx-header { grid-template-columns: 1fr auto; align-items: flex-end; gap: 24px; padding: 32px 0 28px; }
   .dlx-wk-arrow { display: none; }
   .dlx-header-title { align-items: flex-start; text-align: left; gap: 6px; }
+  .dlx-title-row { display: flex; align-items: center; gap: 16px; }
   .dlx-h1 { font-size: 40px; line-height: 1.05; }
-  .dlx-header-sub { font-size: 14px; }
+  .dlx-header-sub { font-size: 14px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .dlx-header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
   .dlx-wk-group { display: inline-flex; border: 1px solid var(--birch-soft); border-radius: 10px; overflow: hidden; }
   .dlx-wk-group button {
