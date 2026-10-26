@@ -10,7 +10,7 @@
 // Re-render: vi wrappar window.renderWeeklyPlanData (och loadWeeklyPlan/switchTab,
 // se installHooks) så vyn alltid hålls i synk efter generering/byte/bekräftelse.
 
-import { fmtIso, fmtShort, PROTEIN_COLOR, isoWeekNumber, escapeHtml, weekStartOf, addDaysIso, getHolidayName, jsStringAttr, retroWindowStartIso, recipeImage, recipeImgAttrs } from '../utils.js';
+import { fmtIso, fmtShort, PROTEIN_COLOR, isoWeekNumber, escapeHtml, weekStartOf, addDaysIso, getHolidayName, jsStringAttr, retroWindowStartIso, recipeImage, recipeImageIsAi, recipeImgAttrs } from '../utils.js';
 
 const DAY_NAMES_LONG = ['Söndag', 'Måndag', 'Tisdag', 'Onsdag', 'Torsdag', 'Fredag', 'Lördag'];
 const MONTH_NAMES_SHORT = ['jan', 'feb', 'mars', 'apr', 'maj', 'juni', 'juli', 'aug', 'sep', 'okt', 'nov', 'dec'];
@@ -1770,6 +1770,14 @@ function sheetWhen(d) {
   return `${d.isToday ? 'Ikväll' : esc(d.day)} · ${d.dayNum} ${MONTH_NAMES_SHORT[d.month]}`;
 }
 
+// Receptbilden överst i receptvyn (samma fullbild som Recept-fliken). Recept
+// utan bild får ingen platshållare — då börjar vyn direkt på status-raden.
+function sheetPhotoHtml(r) {
+  const src = recipeImage(r);
+  if (!src) return '';
+  return `<figure class="dlx-photo"><img src="${src}" alt="" width="640" height="640" decoding="async" onerror="this.parentNode.remove()">${recipeImageIsAi(r) ? '<span class="dlx-photo-ai">AI-bild · serveringsförslag</span>' : ''}</figure>`;
+}
+
 // Receptdetalj i sheeten (ersätter den gamla inline-utfällningen). Läsvänlig,
 // scrollar i sheeten; åtgärderna bor i meny-vyn.
 function recipeColumnHtml(d) {
@@ -1781,6 +1789,7 @@ function recipeColumnHtml(d) {
     `<li><span class="dlx-step-num">${i + 1}</span><span>${esc(st)}</span></li>`).join('');
   const notes = r.notes ? `<div class="dlx-notes">💡 ${esc(r.notes)}</div>` : '';
   return `
+    ${sheetPhotoHtml(r)}
     <div class="dlx-detail-head">
       <button type="button" class="dlx-status dlx-status-toggle ${r.tested ? 'tested' : 'untested'}"
               onclick="dlxToggleTested(event, ${r.id})" aria-pressed="${r.tested ? 'true' : 'false'}"
@@ -1819,6 +1828,7 @@ function sheetRecipeHtml(d) {
   const notes = r.notes ? `<div class="dlx-notes">💡 ${esc(r.notes)}</div>` : '';
   return `${back}
     ${sheetHead(sheetWhen(d), esc(r.title), '')}
+    ${sheetPhotoHtml(r)}
     <div class="dlx-detail-head">
       <button type="button" class="dlx-status dlx-status-toggle ${r.tested ? 'tested' : 'untested'}"
               onclick="dlxToggleTested(event, ${r.id})" aria-pressed="${r.tested ? 'true' : 'false'}"
