@@ -1073,7 +1073,28 @@ export async function markRoundShopped() {
   } catch (e) {
     if (btn) { btn.disabled = false; btn.textContent = 'Vi har handlat ✓'; }
     window.showToast?.(e?.serverMsg || 'Kunde inte markera som inhandlat — prova igen.', { type: 'error' });
+    return;
   }
+  await offerClearAfterShopping();
+}
+
+// Följdfrågan efter "Vi har handlat" (Joakim 2026-10-26): töm listan direkt
+// i stället för att leta upp Rensa lista. Dagarna är redan stämplade, så en
+// tom lista påverkar inte vad nästa lista tar med.
+async function offerClearAfterShopping() {
+  const keys = Object.keys(window._shopItemIds || {});
+  if (!keys.length) return;
+  const open = keys.filter((k) => !window._checkedItems?.[k]).length;
+  const ok = await window.confirmDialog({
+    title: 'Rensa inköpslistan också?',
+    message: open
+      ? `Listan töms inför nästa gång. ${open === 1 ? '1 vara är inte avbockad — den' : `${open} varor är inte avbockade — de`} försvinner också. Det går inte att ångra.`
+      : 'Listan töms inför nästa gång. Det går inte att ångra.',
+    confirmLabel: 'Rensa listan',
+    cancelLabel: 'Behåll listan',
+    danger: true,
+  });
+  if (ok) await clearShoppingList({ confirm: false });
 }
 
 // Perf-wrapper (mätning bakom ?perf=1) — mäter hela flikladdningen inkl. de
@@ -1406,8 +1427,8 @@ async function commitManualOrder(shownOrderIdx) {
   }
 }
 
-export async function clearShoppingList() {
-  const ok = await window.confirmDialog({
+export async function clearShoppingList({ confirm = true } = {}) {
+  const ok = !confirm || await window.confirmDialog({
     title: 'Rensa hela inköpslistan?',
     message: 'Alla varor tas bort — även egna tillägg och det som redan är avbockat. Det går inte att ångra.',
     confirmLabel: 'Rensa listan',
@@ -1435,8 +1456,7 @@ export async function clearShoppingList() {
   } catch {
     window.showToast('Kunde inte rensa listan — prova igen.', { type: 'error' });
   } finally {
-    btn.disabled = false;
-    btn.textContent = 'Rensa lista';
+    if (btn) { btn.disabled = false; btn.textContent = 'Rensa lista'; }
   }
 }
 
