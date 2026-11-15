@@ -77,6 +77,25 @@ async function fetchRecipes(householdId) {
   }));
 }
 
+// Dagar i listan som REDAN har innehåll — plandag med recept, fri dag eller
+// notering, oavsett plan_id. Används av "Föreslå middagar för de tomma dagarna"
+// (only_empty_days): de dagarna får varken väljas eller skrivas över, annars
+// skulle UPSERT:en i savePlanToSupabase ersätta en plandag/fri dag som inte
+// ligger i custom-dagarna (plan_id NULL). En helt tom rad räknas som ledig.
+// Läsfel kastas — hellre avbryta än gissa att dagarna är lediga.
+export async function findOccupiedDates(householdId, dates, database = db) {
+  if (!dates.length) return new Set();
+  const { data, error } = await database
+    .from("meal_days")
+    .select("date, plan_id, recipe_id, blocked, custom_note")
+    .eq("household_id", householdId)
+    .in("date", dates);
+  if (error) throw error;
+  return new Set((data || [])
+    .filter((r) => r.plan_id == null || r.recipe_id != null || r.blocked === true || !!r.custom_note)
+    .map((r) => r.date));
+}
+
 // Lösgör den gamla planens kvarvarande dagar från planen — de blir EGNA dagar
 // (plan_id = null), exakt samma form som en dag familjen planerat själv.
 //
@@ -331,6 +350,10 @@ export default createSupabaseHandler(async (req, res) => {
     deal_canons = [],
     season_weight = false,
     dry_run = false,
+    // "Föreslå middagar för de tomma dagarna": fyll bara dagar utan innehåll i
+    // start_date–end_date. Alla dagar som redan har något (plandag, egen dag,
+    // notering, fri dag) hoppas över helt och skrivs aldrig över.
+    only_empty_days = false,
   } = req.body;
 
   if (!start_date || !end_date) {
@@ -386,6 +409,13 @@ export default createSupabaseHandler(async (req, res) => {
   // custom-dagar finns och UPSERT:en skriver över dem. Avbryt hellre allt.
   if (customRows?.error) throw customRows.error;
   const customDates = new Set((customRows?.data || []).map((r) => r.date));
+  // Tomdagsläget: lägg till ALLA upptagna dagar (även plandagar med recept och
+  // fria dagar, som inte är plan_id NULL) i hoppa-över-mängden. De filtreras då
+  // bort ur både receptvalet och dag-raderna som skrivs → UPSERT:en når dem aldrig.
+  if (only_empty_days === true) {
+    const occupied = await findOccupiedDates(householdId, buildDayList(start_date, end_date).map((d) => d.date));
+    for (const date of occupied) customDates.add(date);
+  }
 
   const filtered = filterRecipes(allRecipes, constraints);
 
@@ -412,7 +442,11 @@ export default createSupabaseHandler(async (req, res) => {
   // Om varenda dag i intervallet redan är planerad (custom) eller blockerad finns
   // inget att generera — begripligt fel i stället för en tom plan/krasch.
   if (activeDays.length === 0) {
-    return res.status(400).json({ error: "Alla dagar i intervallet är redan planerade eller blockerade — inget att generera." });
+    return res.status(400).json({
+      error: only_empty_days === true
+        ? "Det finns inga tomma dagar att fylla i den här veckan."
+        : "Alla dagar i intervallet är redan planerade eller blockerade — inget att generera.",
+    });
   }
 
   // F295: om proteintoggeln lämnar poolen helt vegetarisk (t.ex. "endast

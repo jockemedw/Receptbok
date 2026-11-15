@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.116.0/+esm">
 <link rel="preload" as="font" type="font/woff2" crossorigin href="fonts/dm-sans-latin.woff2">
-<link rel="stylesheet" href="css/styles.css?v=215">
+<link rel="stylesheet" href="css/styles.css?v=216">
 </head>
 <body data-active-tab="idag">
 
@@ -134,10 +134,10 @@
   <div id="weekContent" style="display:none">
     <div class="week-section">
       <p class="week-meta" id="weekMeta"></p>
-      <div class="confirm-plan-wrap" id="confirmPlanWrap" style="display:none">
-        <button class="confirm-plan-btn" id="confirmPlanBtn" onclick="confirmPlan()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5 9.5 17.5 19.5 6.8"/></svg> Bekräfta matsedeln</button>
-        <button class="discard-plan-btn" id="discardPlanBtn" onclick="discardPlan()">Kassera förslag</button>
-        <p class="confirm-status" id="confirmStatus"></p>
+      <div class="confirm-plan-wrap" id="confirmPlanWrap" style="display:none" role="region" aria-label="Förslaget väntar på dig">
+        <p class="confirm-status" id="confirmStatus" role="status"></p>
+        <button class="confirm-plan-btn" id="confirmPlanBtn" onclick="confirmPlan()"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5 9.5 17.5 19.5 6.8"/></svg><span id="confirmPlanLabel">Använd förslaget</span></button>
+        <button class="discard-plan-btn" id="discardPlanBtn" onclick="discardPlan()">Släng</button>
       </div>
     </div>
 
@@ -351,12 +351,13 @@
           <h2 class="content-heading-title">Inköp</h2>
           <span class="content-heading-sub" id="shopSub"></span>
         </div>
-        <button type="button" class="prisopt-btn shop-days-btn" onclick="openShoppingDayPicker()" aria-label="Välj vilka dagar inköpslistan ska täcka">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="m8.5 15.5 2 2 4-4"/></svg>
-          Välj dagar
-        </button>
       </div>
       <div class="shop-progress-thin" id="shopProgressThin" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Plockat"><div></div></div>
+      <section class="shop-days" id="shopDays" aria-labelledby="shopDaysLabel">
+        <h3 class="shop-days-label" id="shopDaysLabel">Listan gäller middagarna</h3>
+        <div class="shop-chips" id="shopDayChips" role="group" aria-labelledby="shopDaysLabel"></div>
+        <p class="shop-days-note" id="shopCoverage" hidden></p>
+      </section>
       <label class="shop-add-row">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
         <span class="sr-only">Lägg till vara</span>
@@ -377,12 +378,12 @@
       </div>
       <div id="shopNoData" class="no-data" style="display:none">
         <div class="no-data-icon"><svg class="icon icon-em-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 7h13l-1.5 9.5a1.5 1.5 0 0 1-1.5 1.3H8a1.5 1.5 0 0 1-1.5-1.3z"/><path d="M9 7V5.5a1.5 1.5 0 0 1 1.5-1.5h2A1.5 1.5 0 0 1 14 5.5V7"/></svg></div>
-        <p>Ingen inköpslista ännu — välj vilka dagar du vill handla för, så byggs listan. Egna varor lägger du till i fältet ovan.</p>
+        <p>Ingen inköpslista ännu — tryck på de middagar du vill handla för ovan, så byggs listan. Egna varor lägger du till i fältet ovan.</p>
         <button class="empty-cta-btn" onclick="openShoppingDayPicker()">Välj dagar att handla för</button>
       </div>
       <div id="shopContent" style="display:none">
-        <div id="shopCoverage" style="display:none"></div>
         <div id="shoppingList"></div>
+        <p class="shop-hint">Håll på en vara för att ändra den eller markera att ni har den hemma.</p>
         <div id="shoppingText" class="shop-text-view" hidden></div>
       </div>
     </main>
@@ -398,6 +399,7 @@
           <button class="shop-dispatch-btn" id="dispatchToWillysBtn" style="display:none" onclick="openStorePicker()">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 12.4a1 1 0 0 0 1 .8h9.7a1 1 0 0 0 1-.8L21 8H6"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/></svg> Skicka till butik
           </button>
+          <button type="button" class="shop-done-btn" id="markShoppedBtn" onclick="markRoundShopped()" hidden>Vi har handlat</button>
         </div>
         <button type="button" class="shop-side-btn" onclick="copyShoppingList()">Kopiera lista</button>
         <label class="shop-side-toggle">
@@ -406,9 +408,6 @@
         </label>
       </section>
       <section class="shop-panel">
-        <h2 class="shop-panel-h2 small">Dagar i listan</h2>
-        <div class="shop-daystrip" id="shopDayStrip"></div>
-        <p class="shop-side-note" id="shopDaysNote"></p>
         <div class="shop-side-links">
           <button type="button" onclick="clearPickedItems()">Rensa plockade</button>
           <button type="button" class="danger" onclick="clearShoppingList()">Rensa lista</button>
@@ -612,6 +611,19 @@
   </div>
 </div>
 
+<!-- Radmenyn på Inköp (håll på en vara, pekskärm) — js/shopping/shopping-list.js. -->
+<div class="bottom-sheet" id="shopRowSheet" role="dialog" aria-modal="true" aria-labelledby="shopRowTitle" hidden>
+  <div class="bottom-sheet-backdrop" data-sheet-close="shopRowSheet"></div>
+  <div class="bottom-sheet-panel storepick-panel">
+    <div class="bottom-sheet-handle"></div>
+    <h3 class="bottom-sheet-title shop-row-title" id="shopRowTitle"></h3>
+    <div class="storepick-body" id="shopRowBody"></div>
+    <div class="daypick-foot">
+      <button type="button" class="daypick-cancel" data-sheet-close="shopRowSheet">Avbryt</button>
+    </div>
+  </div>
+</div>
+
 <div class="bottom-sheet" id="shopStoreSheet" role="dialog" aria-modal="true" aria-labelledby="shopStoreTitle" hidden>
   <div class="bottom-sheet-backdrop" data-sheet-close="shopStoreSheet"></div>
   <div class="bottom-sheet-panel storepick-panel">
@@ -686,6 +698,6 @@
   </div>
 </div>
 
-<script type="module" src="js/app.js?v=188"></script>
+<script type="module" src="js/app.js?v=189"></script>
 </body>
 </html>

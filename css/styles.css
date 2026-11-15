@@ -106,7 +106,7 @@
     --z-stack: 99;           /* bottom-right-stack */
     --z-chrome: 100;         /* header + bottom-nav */
     --z-sheet: 200;          /* bottom-sheet */
-    --z-fab: 900;            /* fab-import */
+    --z-fab: 150;            /* fab-import — under sheets/overlays (var 900) */
     --z-dlx-backdrop: 950;   /* dlx-sheet-backdrop */
     --z-dlx-sheet: 960;      /* dlx-sheet */
     --z-modal: 1000;         /* modal-overlay */
@@ -3039,10 +3039,11 @@
     display: none;
   }
   .fab-import { display: block; }
-  /* F266: FAB:en (z-fab 900) låg ovanpå öppna bottom-sheets (z-sheet 200) på
+  /* F266: FAB:en (z-fab var 900) låg ovanpå öppna bottom-sheets (z-sheet 200) på
      Recept-fliken och stal tryck från t.ex. Filter-sheetens "Rensa alla".
      Dölj/inaktivera den medan en sheet är öppen. */
-  body:has(.bottom-sheet.open) .fab-import { display: none; }
+  /* !important: navigation.js sätter style.display inline, som annars vinner. */
+  body:has(.bottom-sheet.open) .fab-import { display: none !important; }
   .fab-import:active { transform: scale(0.93); }
   @media (hover: hover) {
     .fab-import:hover { background: var(--rust); }
@@ -4209,10 +4210,10 @@ body.cook-open { overflow: hidden; }
   transform: translateY(2rem);
   transition: opacity var(--dur-slow) var(--ease-standard), transform var(--dur-slow) var(--ease-standard);
   pointer-events: none;   /* äter inte tryck under ut-fade innan DOM-borttagning (Session 120) */
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  overflow: hidden;       /* scrollen bor i .cook-main — huvud, förlopp och fotrad står still */
   overscroll-behavior: contain;
 }
+.cook-overlay [hidden] { display: none !important; }
 .cook-overlay.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
 
 /* Recept-editorns modal — mjuk fade/slide i stället för hård pop-in (Session 120).
@@ -4239,10 +4240,11 @@ body.cook-open { overflow: hidden; }
 }
 .cook-head {
   display: flex;
-  align-items: flex-start;
-  gap: 1rem;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
   /* safe-arean hanteras av .cook-safe-strip ovanför — bara vanlig luft här */
-  padding: 1.1rem 1.25rem 0.4rem;
+  padding: 0.8rem 1rem 0.5rem;
 }
 .cook-head-info { flex: 1; min-width: 0; }
 .cook-eyebrow {
@@ -4256,22 +4258,41 @@ body.cook-open { overflow: hidden; }
 }
 .cook-title {
   font-family: var(--font-display);
-  font-size: 1.5rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: var(--forest-deep);
   line-height: 1.2;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 .cook-meta {
   font-size: 0.85rem;
   color: var(--moss-muted);
-  margin-top: 0.3rem;
+  margin: 0 0 0.8rem;
 }
+.cook-ings-btn {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0.4rem 0.95rem;
+  border-radius: 999px;
+  border: 1.5px solid var(--lichen-deep);
+  background: transparent;
+  color: var(--lichen-deep);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cook-ings-btn[aria-pressed="true"] { background: var(--lichen-deep); color: var(--on-accent); }
+.cook-ings-btn:active { filter: brightness(1.08); }
 .cook-close {
   background: var(--stone);
   border: none;
   color: var(--forest);
-  width: 2.6rem;
-  height: 2.6rem;
+  width: 2.75rem;
+  height: 2.75rem;
   border-radius: 50%;
   font-size: 1.05rem;
   cursor: pointer;
@@ -4279,14 +4300,13 @@ body.cook-open { overflow: hidden; }
 }
 .cook-close:active { background: var(--birch-soft); }
 .cook-progress {
-  position: sticky;
-  top: env(safe-area-inset-top, 0px);
-  z-index: var(--z-sticky);
+  flex-shrink: 0;
   background: var(--linen);
   display: flex;
+  flex-direction: row-reverse;   /* etiketten först i DOM-ordning efter linjen, visas före */
   align-items: center;
   gap: 0.85rem;
-  padding: 0.7rem 1.25rem;
+  padding: 0.5rem 1.25rem 0.7rem;
   border-bottom: 1px solid var(--birch-soft);
 }
 .cook-progress-track {
@@ -4309,12 +4329,90 @@ body.cook-open { overflow: hidden; }
   color: var(--forest);
   white-space: nowrap;
 }
+.cook-main {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
 .cook-body {
   padding: 1rem 1.25rem calc(env(safe-area-inset-bottom, 0px) + 2rem);
   max-width: 42rem;
   margin: 0 auto;
   width: 100%;
 }
+/* Ett steg i taget: stor text, läsbar på armlängds avstånd */
+.cook-big-num {
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  background: var(--moss-soft);
+  color: var(--lichen-deep);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0.6rem 0 1.1rem;
+}
+.cook-big-text {
+  font-size: 1.375rem;   /* 22px */
+  line-height: 1.4;
+  color: var(--forest-deep);
+  overflow-wrap: anywhere;
+}
+.cook-allsteps-btn {
+  display: block;
+  margin: 2rem auto 0;
+  min-height: 44px;
+  padding: 0.4rem 1rem;
+  background: none;
+  border: none;
+  color: var(--moss-muted);
+  font-family: inherit;
+  font-size: 0.875rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+/* Fast fotrad */
+.cook-foot {
+  flex-shrink: 0;
+  background: var(--linen);
+  border-top: 1px solid var(--birch-soft);
+  padding: 0.75rem 1rem calc(env(safe-area-inset-bottom, 0px) + 0.75rem);
+}
+.cook-foot-steps, .cook-foot-back {
+  display: flex;
+  gap: 0.75rem;
+  max-width: 42rem;
+  margin: 0 auto;
+}
+.cook-prev, .cook-next {
+  min-height: 56px;
+  border-radius: 14px;
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.cook-prev {
+  flex: 1;
+  background: var(--stone);
+  color: var(--forest);
+  border: 1.5px solid var(--birch-soft);
+}
+.cook-next {
+  flex: 2;
+  background: var(--rust);
+  color: var(--on-accent);
+  border: none;
+}
+.cook-prev:active, .cook-next:active { filter: brightness(1.08); }
+.cook-prev:disabled { opacity: 0.4; cursor: default; filter: none; }
+.cook-next[data-last="1"] { background: var(--lichen-deep); }
 .cook-ings-wrap {
   background: var(--linen-card);
   border: 1px solid var(--birch-soft);
@@ -4322,21 +4420,20 @@ body.cook-open { overflow: hidden; }
   padding: 0.85rem 1rem;
   margin-bottom: 1.1rem;
 }
-.cook-ings-wrap summary {
+.cook-ings-title {
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: var(--forest-deep);
-  cursor: pointer;
-  user-select: none;
 }
 .cook-ings { list-style: none; margin-top: 0.6rem; }
 .cook-ing {
   display: flex;
   align-items: center;
   gap: 0.7rem;
+  min-height: 48px;
   padding: 0.5rem 0;
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   color: var(--forest);
   cursor: pointer;
   border-bottom: 1px solid var(--hairline);
@@ -6781,13 +6878,16 @@ button.storepick-row:active { border-color: var(--lichen); background: var(--mos
 #receptView.rv-detail-open .rv-detail {
   display: block;
   position: fixed;
-  inset: 0 0 var(--bottom-nav-h);   /* bottennavet förblir nåbart under detaljen */
+  /* Ända ner till skärmkanten (bottennavet ligger över, z-chrome > detaljen).
+     Tidigare inset-bottom = --bottom-nav-h (84px) men navet är ~75px högt, så
+     en 9px lucka släppte igenom receptlistan bakom detaljen. */
+  inset: 0;
   z-index: calc(var(--z-chrome) - 1);
   background: var(--linen);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  padding: calc(var(--top-safe) + 8px) 16px 32px;
+  padding: calc(var(--top-safe) + 8px) 16px calc(var(--bottom-nav-h) + 24px);
 }
 body[data-active-tab="recept"]:has(#receptView.rv-detail-open) { overflow: hidden; }
 body:has(#receptView.rv-detail-open) #fabImport { display: none !important; }
@@ -7080,6 +7180,68 @@ body:has(#receptView.rv-detail-open) #fabImport { display: none !important; }
 .dlx-foot { display: flex; gap: 8px; padding: 14px 16px 0; }
 .dlx-foot .dlx-btn { flex: 1; }
 
+/* Förslag med ett tryck: ettrycksknapp + en rad inställningar + "Anpassa" */
+.dlx-foot.has-propose { flex-direction: column; }
+.dlx-foot.has-propose .dlx-btn { flex: none; }
+.dlx-propose { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.dlx-propose-btn { width: 100%; text-align: center; }
+.dlx-propose-btn:disabled { opacity: 0.6; cursor: progress; }
+.dlx-propose-sub {
+  margin: 0; display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+  gap: 2px 10px; font-size: 12px; line-height: 1.4; color: var(--moss-muted); text-align: center;
+}
+.dlx-propose-link {
+  position: relative; border: 0; background: none; padding: 0; font: inherit; font-weight: 600;
+  color: var(--lichen-deep); text-decoration: underline; text-underline-offset: 2px; cursor: pointer;
+}
+.dlx-propose-link::after { content: ''; position: absolute; inset: -14px -10px; }   /* 44px träffyta */
+
+/* Förslagets dagar: streckad accentram + liten etikett, INTE nedtonade.
+   "Annan rätt" byter just dagens rätt (samma väg som Slumpa i dag-sheeten). */
+.dlx-day.is-proposal,
+.dlx-day.is-proposal.is-today,
+.dlx-day.is-proposal.is-weekend { border: 2px dashed var(--rust); outline: 0; box-shadow: none; }
+.dlx-day.is-proposal .dlx-day-head { padding-top: 16px; }
+.dlx-prop-tag {
+  position: absolute; top: 0; right: 0; z-index: 1; pointer-events: none;
+  padding: 2px 8px 3px 9px; border-radius: 0 0 0 8px;
+  font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1.2;
+  color: var(--rust-deep); background: color-mix(in srgb, var(--rust) 16%, var(--linen-card));
+}
+.dlx-alt-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-width: 44px; min-height: 44px; padding: 0; border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--rust) 50%, transparent);
+  background: color-mix(in srgb, var(--rust) 10%, transparent); color: var(--rust-deep);
+  font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.dlx-alt-btn svg { width: 18px; height: 18px; flex: none; }
+.dlx-alt-txt { display: none; }
+@media (hover: hover) { .dlx-alt-btn:hover { background: color-mix(in srgb, var(--rust) 20%, transparent); } }
+
+/* Använd förslaget / Släng: fast rad ovanför bottennavet på mobil (desktop: under veckan) */
+.confirm-status:empty { display: none; }
+.confirm-plan-btn { gap: 8px; }
+@media (max-width: 899px) {
+  .confirm-plan-wrap {
+    position: fixed; left: 0; right: 0; bottom: var(--bottom-nav-h); z-index: calc(var(--z-chrome) - 1);
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+    padding: 10px 16px 12px; background: var(--linen);
+    border-top: 1px solid var(--birch-soft); box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.1);
+  }
+  .confirm-plan-btn { flex: 1 1 auto; width: auto; min-height: 48px; border-radius: 12px; font-size: 15px; font-weight: 600; }
+  .discard-plan-btn { flex: none; width: auto; margin: 0; min-height: 48px; padding: 0 18px; border-radius: 12px; }
+  .confirm-status { order: -1; flex-basis: 100%; margin: 0; text-align: left; }
+  /* Raden får inte täcka sista dagkortet / knapparna under listan */
+  body.has-confirm-bar #weekView { padding-bottom: calc(4rem + 84px); }
+  /* Flytande knappar och toasts lyfts över raden så de inte täcker "Släng" */
+  body[data-active-tab="vecka"].has-confirm-bar .bottom-right-stack { bottom: calc(var(--bottom-nav-h) + 84px + 1rem); }
+  body[data-active-tab="vecka"].has-confirm-bar #toastHost { bottom: calc(var(--bottom-nav-h) + 84px + 0.5rem); }
+}
+@media (min-width: 600px) and (max-width: 899px) {
+  .confirm-plan-wrap { padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)); }
+}
+
 /* Dagslista (mobil): 44px datumkolumn · 56px bildruta · text · handtag */
 .dlx-days { gap: 8px; padding: 0 16px; }
 .dlx-day { border-radius: 12px; border: 0; background: var(--linen-card); }
@@ -7123,13 +7285,19 @@ body:has(#receptView.rv-detail-open) #fabImport { display: none !important; }
 @media (min-width: 900px) {
   #weekView { max-width: 1360px; padding: 0 clamp(24px, 3vw, 48px) 64px; margin: 0 auto; box-sizing: content-box; }
   #confirmPlanWrap, #ingredientSection { max-width: none; margin: 0; }
+  #confirmPlanWrap { margin-top: 20px; }
   .dlx-header { grid-template-columns: 1fr auto; align-items: flex-end; gap: 24px; padding: 32px 0 28px; }
   .dlx-wk-arrow { display: none; }
   .dlx-header-title { align-items: flex-start; text-align: left; gap: 6px; }
   .dlx-title-row { display: flex; align-items: center; gap: 16px; }
   .dlx-h1 { font-size: 40px; line-height: 1.05; }
   .dlx-header-sub { font-size: 14px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-  .dlx-header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+  .dlx-header-actions { display: flex; gap: 10px; align-items: flex-start; flex-wrap: wrap; justify-content: flex-end; }
+  .dlx-propose { align-items: stretch; }
+  .dlx-propose-sub { justify-content: flex-end; text-align: right; max-width: 340px; margin-left: auto; }
+  .dlx-day.is-proposal .dlx-day-head { grid-template-rows: auto auto 1fr auto; }   /* Annan rätt längst ned i raden */
+  .dlx-alt-btn { width: 100%; padding: 0 10px; }
+  .dlx-alt-txt { display: inline; }
   .dlx-wk-group { display: inline-flex; border: 1px solid var(--birch-soft); border-radius: 10px; overflow: hidden; }
   .dlx-wk-group button {
     display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 10px 14px;
@@ -7164,10 +7332,10 @@ body:has(#receptView.rv-detail-open) #fabImport { display: none !important; }
   .dlx-day.is-open { border-color: var(--rust); box-shadow: 0 0 0 1px var(--rust) inset; }
 
   /* Bekräfta-raden: en rad, fast knappbredd */
-  .confirm-plan-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 24px 0 0; }
+  .confirm-plan-wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 20px 0 0; padding: 16px 20px; background: var(--linen-card); border: 2px dashed var(--rust); border-radius: 14px; }
   .confirm-plan-btn { width: auto; gap: 8px; min-width: 220px; min-height: 48px; padding: 0 26px; border-radius: 10px; font-size: 15px; font-weight: 600; }
   .discard-plan-btn { width: auto; margin: 0; min-height: 48px; padding: 0 18px; border-radius: 10px; }
-  .confirm-status { flex-basis: 100%; margin: 0; }
+  .confirm-status { flex-basis: 100%; margin: 0; order: 3; }
 }
 
 /* ── INKÖP (ny design 2026-10, mockups B-Inkop + B-Inkop-mobil) ───────────────
@@ -7178,10 +7346,45 @@ body:has(#receptView.rv-detail-open) #fabImport { display: none !important; }
 .sr-only { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 #shopView { max-width: var(--content-max); padding: 0 0 calc(4rem + 72px); }
 .shop-layout { display: flex; flex-direction: column; }
-.shop-main { min-width: 0; padding: 0 16px; display: flex; flex-direction: column; gap: 14px; }
+.shop-main { width: 100%; min-width: 0; padding: 0 16px; display: flex; flex-direction: column; gap: 14px; }
 #shopView .content-heading.shop-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; padding: 1.25rem 0 0; }
 .shop-heading-txt { min-width: 0; }
-.shop-days-btn { flex: none; }
+/* Dagbrickor: "Listan gäller middagarna" — på listan (fylld) / inte på listan
+   (kontur) / redan inhandlad (ljus + bock). Mobil: en rad som sidscrollar. */
+.shop-days { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.shop-days-label { margin: 0; font-family: var(--font-body); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--moss-muted); }
+.shop-chips { display: flex; gap: 8px; overflow-x: auto; margin: 0 -16px; padding: 2px 16px 4px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.shop-chips::-webkit-scrollbar { display: none; }
+.shop-chip {
+  flex: none; display: inline-flex; align-items: center; gap: 6px; max-width: 200px;
+  min-height: 44px; padding: 0 14px; border-radius: 999px;
+  border: 1.5px solid var(--birch-soft); background: transparent; color: var(--forest-deep);
+  font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+  transition: background var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast);
+}
+.shop-chip-txt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shop-chip.is-on { background: var(--lichen-deep); border-color: var(--lichen-deep); color: var(--on-accent); }
+.shop-chip.is-shopped { background: var(--moss-soft); border-color: transparent; color: var(--lichen-deep); }
+.shop-chip.is-more { border-style: dashed; color: var(--moss-muted); font-weight: 500; }
+.shop-chip:active { transform: scale(0.97); }
+.shop-chip:disabled { cursor: progress; }
+.shop-chip:disabled:not(.is-busy) { opacity: 0.55; }
+.shop-chip.is-busy { opacity: 0.85; }
+.shop-chip-tick { width: 14px; height: 14px; flex: none; }
+.shop-chip-spin {
+  width: 13px; height: 13px; flex: none; border-radius: 50%;
+  border: 2px solid currentColor; border-right-color: transparent;
+  animation: shopChipSpin 0.8s linear infinite;
+}
+@keyframes shopChipSpin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .shop-chip { transition: none; }
+  .shop-chip:active { transform: none; }
+  .shop-chip-spin { animation: none; border-right-color: currentColor; opacity: 0.5; }
+}
+.shop-chips-empty { align-self: center; font-size: 13px; color: var(--moss-muted); padding-right: 4px; }
+.shop-days-note { margin: 0; font-size: 13px; color: var(--lichen-deep); font-weight: 500; }
+.shop-days-note[hidden] { display: none; }
 .shop-progress-thin { height: 4px; border-radius: 2px; background: var(--stone); overflow: hidden; }
 .shop-progress-thin > div { height: 100%; width: 0; background: var(--lichen-deep); transition: width var(--dur-base); }
 .shop-add-row {
@@ -7218,11 +7421,40 @@ body:has(#receptView.rv-detail-open) #fabImport { display: none !important; }
 #shoppingList .shopping-item .item-checkbox { flex: none; width: 22px; height: 22px; border-radius: 6px; }
 #shoppingList .item-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 #shoppingList .item-text { font-size: 15px; }
+#shoppingList .shopping-item { position: relative; transition: background var(--dur-fast); }
+#shoppingList .shopping-item.lp-hold { background: var(--stone); }
+#shoppingList .item-top { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+#shoppingList .item-text { min-width: 0; overflow-wrap: anywhere; }
+#shoppingList .item-amt { flex: none; margin-left: auto; font-size: 14px; color: var(--moss-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+#shoppingList .shopping-item.checked .item-amt { text-decoration: line-through; }
+.shop-src { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shop-hint { display: none; margin: 12px 0 0; font-size: 12px; line-height: 1.4; color: var(--moss-muted); text-align: center; }
+/* Pekskärm: raden är bock + namn + mängd. Penn/hus göms visuellt (men finns kvar
+   för tangentbord och skärmläsare, och visas vid fokus); åtgärderna nås genom att
+   hålla på raden (arket "shopRowSheet"). Mus (hover: hover) behåller ikonerna. */
+@media (hover: none) {
+  .shop-hint { display: block; }
+  #shoppingList .shopping-item { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+  #shoppingList .item-edit-input { -webkit-user-select: text; user-select: text; }
+  #shoppingList .shopping-item .row-edit-btn,
+  #shoppingList .shopping-item .pantry-btn {
+    position: absolute; width: 1px; height: 1px; min-width: 0; min-height: 0; margin: -1px; padding: 0;
+    overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+  }
+  #shoppingList .shopping-item .row-edit-btn:focus-visible,
+  #shoppingList .shopping-item .pantry-btn:focus-visible {
+    position: static; width: 44px; height: 44px; min-width: 44px; min-height: 44px; margin: 0; overflow: visible; clip-path: none;
+  }
+}
+#shopRowSheet.lp-wait { pointer-events: none; }
+.shop-row-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 2.5rem; }
+.storepick-row.is-danger .storepick-name { color: var(--rust-deep); }
 .shop-src { font-size: 11px; color: var(--birch); line-height: 1.2; }
 #shoppingList .shopping-item.checked .shop-src { opacity: 0.6; }
 #shoppingList .shop-pantry-section { opacity: 0.65; }
 #shoppingList .shop-pantry-section .shopping-item { background: transparent; border: 1px dashed var(--birch-soft); }
-#shoppingList .shop-pantry-section .item-text { text-decoration: line-through; font-style: normal; }
+#shoppingList .shop-pantry-section .item-text,
+#shoppingList .shop-pantry-section .item-amt { text-decoration: line-through; font-style: normal; }
 #shoppingList .shop-pantry-section .item-checkbox { border-style: dashed; }
 #shoppingList .shop-done-section { margin-top: 6px; }
 
@@ -7234,7 +7466,8 @@ body:has(#receptView.rv-detail-open) #fabImport { display: none !important; }
 .shop-progress-row { display: flex; justify-content: space-between; font-size: 14px; color: var(--moss-muted); }
 .shop-progress { height: 6px; border-radius: 3px; background: var(--stone); overflow: hidden; margin-top: -6px; }
 .shop-progress > div { height: 100%; width: 0; background: var(--lichen-deep); transition: width var(--dur-base); }
-.shop-side-dispatch:empty { display: none; }
+.shop-side-dispatch { display: flex; flex-direction: column; gap: 8px; }
+.shop-side-dispatch:not(:has(> button:not([hidden]):not([style*="none"]))) { display: none; }
 .shop-side .shop-dispatch-btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
   min-height: 48px; padding: 12px 18px; border-radius: 12px; border: 0;
@@ -7247,13 +7480,6 @@ body:has(#receptView.rv-detail-open) #fabImport { display: none !important; }
 }
 .shop-side-toggle { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--moss-muted); min-height: 44px; cursor: pointer; }
 .shop-side-toggle input { width: 20px; height: 20px; accent-color: var(--lichen-deep); margin: 0; }
-.shop-daystrip { display: flex; gap: 6px; }
-.shop-daycell {
-  flex: 1; text-align: center; padding: 8px 0; border-radius: 8px;
-  font-size: 13px; color: var(--birch); border: 1px dashed var(--birch-soft);
-}
-.shop-daycell.is-on { font-weight: 600; color: var(--on-accent); background: var(--lichen-deep); border-color: transparent; }
-.shop-daycell.is-shopped { font-weight: 600; color: var(--lichen-deep); background: var(--moss-soft); border-color: transparent; }
 .shop-side-note { margin: 0; font-size: 13px; color: var(--moss-muted); }
 .shop-side-links { display: flex; gap: 14px; font-size: 13px; }
 .shop-side-links button { border: 0; background: none; padding: 0; min-height: 32px; font: inherit; font-size: 13px; color: var(--moss-muted); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
@@ -7269,10 +7495,26 @@ body:has(#receptView.rv-detail-open) #fabImport { display: none !important; }
   z-index: calc(var(--z-chrome) - 1);
 }
 body[data-active-tab="shop"] .shop-mobile-bar { display: flex; }
-.shop-mobile-dispatch { flex: 1; display: flex; }
-.shop-mobile-dispatch:empty + .shop-more-btn { margin-left: auto; }
+.shop-mobile-dispatch { flex: 1; display: flex; min-width: 0; }
+.shop-mobile-dispatch:not(:has(.shop-dispatch-btn:not([style*="none"]))) { display: none; }
+.shop-more-btn { margin-left: auto; }
+.shop-mobile-dispatch .shop-dispatch-btn .icon { display: none; }
+/* "Till toppen"-knappen ska ligga OVANFÖR den fasta raden, inte på den. */
+@media (max-width: 899px) {
+  body[data-active-tab="shop"] .bottom-right-stack { bottom: calc(var(--bottom-nav-h) + 76px + 12px); }
+}
+/* "Vi har handlat" — sekundär handling, ligger i samma fasta rad som Skicka. */
+.shop-done-btn {
+  min-height: 48px; padding: 0 16px; border-radius: 12px; white-space: nowrap;
+  border: 1.5px solid var(--lichen-deep); background: var(--linen-card); color: var(--lichen-deep);
+  font: inherit; font-weight: 600; cursor: pointer;
+}
+.shop-done-btn[hidden] { display: none; }
+.shop-done-btn.all-picked { background: var(--lichen-deep); color: var(--on-accent); }
+.shop-mobile-bar > .shop-done-btn { flex: 1; min-width: 0; box-shadow: var(--shadow-md); }
+.shop-side .shop-done-btn { width: 100%; }
 .shop-mobile-dispatch .shop-dispatch-btn {
-  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; padding: 0 12px;
   min-height: 48px; border-radius: 12px; border: 0; margin: 0;
   background: var(--rust); color: var(--on-accent); font: inherit; font-weight: 600; cursor: pointer;
   box-shadow: var(--shadow-md);
@@ -7314,6 +7556,8 @@ body[data-active-tab="shop"] .shop-mobile-bar { display: flex; }
   .shop-add-row button { min-height: 44px; padding: 0 18px; }
   #shoppingList .shopping-item { display: grid; grid-template-columns: 24px 1fr auto auto auto auto; gap: 14px; }
   #shoppingList .item-main { flex-direction: row; align-items: baseline; justify-content: space-between; gap: 12px; }
+  #shoppingList .item-top { flex: 1; }
+  .shop-chips { flex-wrap: wrap; overflow: visible; margin: 0; padding: 0; }
   .shop-src { font-size: 12px; }
   .shop-side { flex: 1 1 300px; max-width: 340px; position: sticky; top: calc(var(--header-h) + 24px); margin-top: 32px; }
   .shop-mobile-bar { display: none !important; }
@@ -7392,7 +7636,20 @@ body[data-active-tab="shop"] .shop-mobile-bar { display: flex; }
 .tw-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--p, var(--moss-muted)); }
 .tw-day.is-empty .tw-dot { background: transparent; border: 1px dashed var(--birch); }
 .tw-txt { display: none; }
-.td-caption { font-size: 12px; color: var(--moss-muted); }
+/* Mobil: sju textrader i stället för de sju prickrutorna. */
+.td-week { display: none; }
+.td-weeklist { display: flex; flex-direction: column; }
+.tw-row {
+  display: flex; align-items: center; gap: 14px; min-height: 44px; padding: 8px 4px; width: 100%;
+  background: transparent; border: 0; border-bottom: 1px solid var(--hairline);
+  color: var(--forest); font: inherit; font-size: 15px; text-align: left; cursor: pointer;
+}
+.tw-row:last-child { border-bottom: 0; }
+.tw-row-day { flex: none; width: 2.2em; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--moss-muted); }
+.tw-row-txt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tw-row.is-empty .tw-row-txt { font-style: italic; color: var(--moss-muted); }
+.tw-row.is-today .tw-row-day, .tw-row.is-today .tw-row-txt { color: var(--rust); font-weight: 700; }
+.tw-row.is-past { opacity: 0.55; }
 
 /* Inköp */
 .td-shop-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--moss-muted); gap: 8px; }
@@ -7408,15 +7665,31 @@ body[data-active-tab="shop"] .shop-mobile-bar { display: flex; }
 .td-shoplist li:last-child { border-bottom: 0; }
 .td-shoplist li span:last-child { color: var(--birch); font-size: 12px; white-space: nowrap; }
 
-/* Att göra (desktop) */
-.td-todo { display: none; }
-.td-todo-item {
-  display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 10px 12px; border-radius: 10px;
-  background: var(--linen); border: 0; color: inherit; font: inherit; text-align: left; cursor: pointer; width: 100%;
+/* Nästa steg — mörk forest-yta (i mörkt tema inverteras forest/linen-card av
+   tokens, så kortet är en ljus yta mot den mörka sidan). Klart-läget är lichen. */
+.td-next { gap: 8px; padding: 16px; border-radius: 16px; background: var(--forest); color: var(--linen-card); }
+.td-next-d { display: none; }
+.td-next-steps { display: flex; gap: 4px; margin-bottom: 4px; }
+.td-next-bar { flex: 1; height: 4px; border-radius: 2px; background: currentColor; opacity: 0.25; }
+.td-next-bar.is-on { opacity: 1; }
+.td-next-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.8; }
+.td-next-title { margin: 0; font-family: var(--font-display); font-size: 21px; font-weight: 600; line-height: 1.15; color: inherit; }
+.td-next-text { margin: 0; font-size: 14px; opacity: 0.88; }
+.td-next-btn {
+  align-self: stretch; min-height: 48px; margin-top: 6px; padding: 10px 16px; border-radius: 10px; border: 0;
+  background: var(--linen-card); color: var(--forest-deep); font: inherit; font-size: 15px; font-weight: 700; cursor: pointer;
 }
-.td-todo-ic { width: 32px; height: 32px; border-radius: 8px; background: var(--moss-soft); color: var(--lichen-deep); display: flex; align-items: center; justify-content: center; flex: none; }
-.td-todo-ic svg { width: 16px; height: 16px; }
-.td-todo-item span:nth-child(2) { flex: 1; }
+.td-next-btn:active { opacity: 0.85; }
+/* Mörkt tema: tokens inverteras, så kortet får egna värden — mörkgrön yta, ljus text. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .td-next:not(.is-done) { background: #3a5646; color: #f0ebe0; }
+  :root:not([data-theme="light"]) .td-next:not(.is-done) .td-next-btn { background: #f0ebe0; color: #1d2721; }
+}
+:root[data-theme="dark"] .td-next:not(.is-done) { background: #3a5646; color: #f0ebe0; }
+:root[data-theme="dark"] .td-next:not(.is-done) .td-next-btn { background: #f0ebe0; color: #1d2721; }
+.td-next.is-done { background: var(--moss-soft); color: var(--forest); }
+.td-next.is-done .td-next-title { font-size: 17px; }
+@media (hover: hover) { .td-next-btn:hover { background: var(--paper); } }
 
 /* Tomma/vilande lägen */
 .td-empty { text-align: center; padding: 26px 22px; }
@@ -7455,5 +7728,9 @@ body[data-active-tab="shop"] .shop-mobile-bar { display: flex; }
   .tw-dot { width: 7px; height: 7px; }
   .tw-day.is-empty .tw-dot, .tw-day.is-own .tw-dot { display: none; }
   .td-shoplist { display: flex; }
-  .td-todo { display: flex; }
+  .td-week { display: grid; }
+  .td-weeklist { display: none; }
+  .td-next-m { display: none; }
+  .td-next-d { display: flex; }
+  .td-next-btn { align-self: flex-start; }
 }

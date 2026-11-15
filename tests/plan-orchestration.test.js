@@ -46,8 +46,12 @@
 //   11. Hjälpare i generate.js (S155): historikfel loggas men kastar inte (planen
 //      är redan aktiv), allowed_proteins tål array/ogiltigt värde, och
 //      buildDayList är tidszonsoberoende över sommartidsbytet.
+//   12. only_empty_days ("Föreslå middagar för de tomma dagarna"): findOccupiedDates
+//      pekar ut plandagar med recept, fria dagar, noteringar och egna dagar —
+//      och när bara de tomma dagarna skrivs förblir de upptagna orörda (recept,
+//      notering, fri dag) efter hela sekvensen save → activate.
 
-import { savePlanToSupabase, detachOldPlanDays, activatePlan, activatePlanAtomic, isMissingRpcError, saveHistoryToSupabase, parseAllowedProteins, buildDayList } from "../api/generate.js";
+import { savePlanToSupabase, detachOldPlanDays, activatePlan, activatePlanAtomic, isMissingRpcError, saveHistoryToSupabase, parseAllowedProteins, buildDayList, findOccupiedDates } from "../api/generate.js";
 import { discardActivePlan } from "../api/discard-plan.js";
 
 // ─── Mockad Supabase-db (kedjebar query-builder) ─────────────────────────────
@@ -678,6 +682,45 @@ const assertJson = (a, e, desc) => assertEq(JSON.stringify(a), JSON.stringify(e)
   } finally {
     if (prevTz === undefined) delete process.env.TZ; else process.env.TZ = prevTz;
   }
+}
+
+// ─── Test 12: tomdagsläget skyddar varje upptagen dag ────────────────────────
+{
+  const D = (n) => isoDaysAgo(-n);
+  const db = makeMockDb({
+    plans: [{ id: 1, household_id: "h", start_date: D(0), end_date: D(3), is_active: true }],
+    mealDays: [
+      { plan_id: 1,    household_id: "h", date: D(0), recipe_id: 11, recipe_title_snapshot: "Plandag", blocked: false, custom_note: null },
+      { plan_id: 1,    household_id: "h", date: D(1), recipe_id: null, recipe_title_snapshot: null, blocked: true, custom_note: null },
+      { plan_id: null, household_id: "h", date: D(2), recipe_id: null, recipe_title_snapshot: null, blocked: false, custom_note: "Hos mormor" },
+      { plan_id: 1,    household_id: "h", date: D(3), recipe_id: null, recipe_title_snapshot: null, blocked: false, custom_note: null },
+    ],
+  });
+  const range = buildDayList(D(0), D(5)).map((d) => d.date);
+  const occupied = await findOccupiedDates("h", range, db);
+  assertEq([...occupied].sort().join(","), [D(0), D(1), D(2)].join(","),
+    "tomdagar: plandag med recept, fri dag och notering är upptagna; helt tom rad och okänd dag är lediga");
+
+  // Handlerns flöde: bara lediga dagar (D3, D4, D5) skrivs, sedan aktivering.
+  const free = range.filter((d) => !occupied.has(d));
+  const plan = { generated: D(0), startDate: D(0), endDate: D(5),
+    days: free.map((date, i) => ({ date, day: "x", recipe: `Nytt${i}`, recipeId: 50 + i })) };
+  const newId = await savePlanToSupabase(plan, "h", db);
+  await activatePlanAtomic(newId, D(0), "h", db);
+  const row = (date) => db._state.mealDays.find((d) => d.date === date);
+  assertEq(row(D(0)).recipe_id, 11, "tomdagar: befintlig plandag behåller sitt recept");
+  assertEq(row(D(1)).blocked, true, "tomdagar: fri dag förblir fri");
+  assertEq(row(D(2)).custom_note, "Hos mormor", "tomdagar: noteringen finns kvar");
+  assertEq(row(D(2)).plan_id, null, "tomdagar: egna dagen är fortfarande egen");
+  assertEq(row(D(4)).plan_id, newId, "tomdagar: tom dag fylls med förslaget");
+  assertEq(row(D(5)).recipe_title_snapshot, "Nytt2", "tomdagar: sista tomma dagen fylls");
+  assertEq((db._state.plans.find((p) => p.id === newId).replaced_days || []).map((r) => r.date).join(","), D(3),
+    "tomdagar: ögonblicksbilden innehåller bara den helt tomma raden — ingen plandag med innehåll ersattes");
+  // Kassera förslaget: de upptagna dagarna står kvar precis som förut.
+  await discardActivePlan("h", db, { rebuild: async () => ({}) });
+  assertEq(row(D(0)).recipe_id, 11, "tomdagar efter kassering: plandagen finns kvar");
+  assertEq(row(D(1)).blocked, true, "tomdagar efter kassering: fri dag finns kvar");
+  assertEq(row(D(2)).custom_note, "Hos mormor", "tomdagar efter kassering: noteringen finns kvar");
 }
 
 // ─── Slutrapport ──────────────────────────────────────────────────────────────

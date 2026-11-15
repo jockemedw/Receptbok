@@ -1,8 +1,8 @@
 // Idag-fliken — appens startflik och svaret på "vad blir det ikväll?".
 // Ny design 2026-10 (docs/design/mockups B-Idag + B-Idag-mobil): kvällens kort
 // med konkreta handlingar (Börja laga / Välj ett recept i stället / Byt dag),
-// i morgon-rad, veckoöversikt (dagnamn + rätt på desktop, prickar på mobil),
-// inköpsstatus med snabbinmatning och en kort "Att göra"-lista på desktop.
+// "Nästa steg"-kort (next-step.js), veckoöversikt (dagnamn + rätt i text),
+// inköpsstatus med snabbinmatning.
 //
 // Läser: window._timelineByDate (byggs av renderWeeklyPlanData i plan-viewer.js),
 //        window.RECIPES, window._dbResting, inköpslistans minne
@@ -15,6 +15,7 @@
 
 import { fmtIso, PROTEIN_COLOR, isoWeekNumber, escapeHtml, weekStartOf, addDaysIso, jsStringAttr, recipeImage, recipeImageIsAi, recipeImgAttrs } from '../utils.js';
 import { DB_RESTING_MESSAGE } from '../supabase-client.js';
+import { computeNextStep, STAGES } from './next-step.js';
 
 const MONTH_NAMES_LONG = ['januari', 'februari', 'mars', 'april', 'maj', 'juni', 'juli', 'augusti', 'september', 'oktober', 'november', 'december'];
 const MONTH_NAMES_SHORT = ['jan', 'feb', 'mars', 'apr', 'maj', 'juni', 'juli', 'aug', 'sep', 'okt', 'nov', 'dec'];
@@ -163,10 +164,15 @@ function weekHtml(weekDays, weekNo) {
         <span class="tw-dot" aria-hidden="true"></span>
       </button>`;
   }).join('');
-  const empties = weekDays.filter(d => !dayInfo(d) && d.date >= todayIso);
-  const caption = empties.length
-    ? `${empties.map(d => d.day).join(', ')} saknar middag. Färgprick = recept från receptboken; övriga är egna dagar.`
-    : 'Färgprick = recept från receptboken · grå = egen dag · streckad = tom';
+  // Mobil: sju textrader (dagförkortning + rätt) i stället för prickar.
+  const rows = weekDays.map(d => {
+    const info = dayInfo(d);
+    const cls = ['tw-row', !info ? 'is-empty' : '', d.date === todayIso ? 'is-today' : '', d.date < todayIso ? 'is-past' : ''].filter(Boolean).join(' ');
+    return `<button type="button" class="${cls}" onclick="dlxDayClick('${d.date}', '${attr(d.day)}')">
+        <span class="tw-row-day">${esc(d.day.slice(0, 3))}</span>
+        <span class="tw-row-txt">${info ? esc(info.title) : 'Tomt'}</span>
+      </button>`;
+  }).join('');
   return `
     <section class="td-card">
       <div class="td-card-head">
@@ -174,9 +180,58 @@ function weekHtml(weekDays, weekNo) {
         <span class="today-link" role="button" tabindex="0" onclick="switchTab('vecka')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();switchTab('vecka');}">Hela matsedeln</span>
       </div>
       <div class="td-week">${tiles}</div>
-      <div class="td-caption">${esc(caption)}</div>
+      <div class="td-weeklist">${rows}</div>
     </section>`;
 }
+
+// ── Nästa steg ───────────────────────────────────────────────────────────────
+// Tillståndet samlas här; beslutet fattas av den rena computeNextStep.
+function nextStepState(weekDays, st, plan, pending) {
+  const todayIso = fmtIso(new Date());
+  const days = weekDays.map(d => {
+    const info = dayInfo(d);
+    return {
+      date: d.date, day: d.day, dayShort: d.dayShort,
+      kind: !info ? null : info.kind === 'recipe' ? 'recipe' : info.kind === 'free' ? 'free' : 'own',
+      shoppedAt: d.shoppedAt || null,
+      onList: !!d.onList,
+    };
+  });
+  const proposal = pending
+    ? { count: (plan.days || []).filter(x => x.recipeId || x.recipe).length || plan.days.length, startDate: plan.startDate || null }
+    : null;
+  return { todayIso, days, proposal, itemsLeft: st ? Math.max(0, st.total - st.done) : 0 };
+}
+
+function nextStepHtml(step, extraCls = '') {
+  const bars = STAGES.map((name, i) => `<span class="td-next-bar${i < step.stage ? ' is-on' : ''}" title="${esc(name)}"></span>`).join('');
+  const stageName = STAGES[step.stage - 1];
+  const done = step.stage === 4;
+  return `
+    <section class="td-card td-next${done ? ' is-done' : ''}${extraCls}" aria-label="Nästa steg">
+      <div class="td-next-steps" role="img" aria-label="Steg ${step.stage} av 4: ${esc(stageName)}">${bars}</div>
+      <span class="td-next-eyebrow">${done ? 'Klart' : `Nästa steg · ${esc(stageName.toLowerCase())}`}</span>
+      <h2 class="td-next-title">${esc(step.title)}</h2>
+      ${step.text ? `<p class="td-next-text">${esc(step.text)}</p>` : ''}
+      ${step.action ? `<button type="button" class="td-next-btn" onclick="todayNextStep('${step.action.kind}', '${attr(step.action.arg || '')}')">${esc(step.action.label)}</button>` : ''}
+    </section>`;
+}
+
+// Knapparna på Nästa steg-kortet — bara anrop av befintliga funktioner.
+window.todayNextStep = function (kind, arg) {
+  if (kind === 'proposal') {
+    window.switchTab('vecka');           // switchTab nollställer visad vecka …
+    if (arg) window.dlxWeekGoto?.(arg);  // … så hoppa till förslagets vecka efteråt
+  } else if (kind === 'propose-empty') {
+    window.switchTab('vecka');
+    if (typeof window.proposeEmptyDays === 'function') window.proposeEmptyDays();
+    else window.openNewPlan?.();
+  } else if (kind === 'day-picker') {
+    window.openShoppingDayPicker?.();
+  } else if (kind === 'shop') {
+    window.switchTab('shop');
+  }
+};
 
 // Inköpslistans läge ur minnet (laddas tyst första gången Idag visas).
 let _shopLoadKicked = false;
@@ -236,17 +291,6 @@ function shopHtml(st) {
       ${rows ? `<ul class="td-shoplist">${rows}</ul>` : ''}
       <button type="button" class="td-btn td-shop-open" onclick="switchTab('shop')">${I.cart}Öppna listan</button>
     </section>`;
-}
-
-function todoHtml(weekDays, st, pending) {
-  const todayIso = fmtIso(new Date());
-  const items = [];
-  const empty = weekDays.find(d => !dayInfo(d) && d.date >= todayIso);
-  if (empty) items.push(`<button type="button" class="td-todo-item" onclick="dlxDayClick('${empty.date}', '${attr(empty.day)}')"><span class="td-todo-ic">${I.plus}</span><span>Fyll ${esc(empty.day.toLowerCase())}en i matsedeln</span><span class="td-chev">${I.chev}</span></button>`);
-  if (pending) items.push(`<button type="button" class="td-todo-item" onclick="switchTab('vecka')"><span class="td-todo-ic">${I.tick}</span><span>Bekräfta matsedelsförslaget</span><span class="td-chev">${I.chev}</span></button>`);
-  if (st && st.total - st.done > 0) items.push(`<button type="button" class="td-todo-item" onclick="switchTab('shop')"><span class="td-todo-ic">${I.cart}</span><span>Skicka veckans lista till butiken</span><span class="td-chev">${I.chev}</span></button>`);
-  if (!items.length) return '';
-  return `<section class="td-card td-todo"><h2 class="td-h2">Att göra</h2>${items.join('')}</section>`;
 }
 
 // ── Willys-larmbanner (backlog #2, reaktiv in-app-variant) ───────────────────
@@ -427,10 +471,12 @@ function renderTodayViewInner() {
   if (hasPlan && empties) subParts.push(`${empties} ${empties === 1 ? 'dag' : 'dagar'} kvar att fylla i matsedeln`);
   if (st) subParts.push(`${st.total} ${st.total === 1 ? 'vara' : 'varor'} på inköpslistan`);
 
+  // Nästa steg: under kvällens kort på mobil, överst i högerkolumnen på desktop.
+  const nextHtml = hasPlan ? nextStepHtml(computeNextStep(nextStepState(weekDays, st, plan, pending))) : '';
   const left = hasPlan
-    ? tonightHtml(todayEntry, todayInfo) + weekHtml(weekDays, wk)
+    ? tonightHtml(todayEntry, todayInfo) + nextHtml.replace('class="td-card td-next', 'class="td-card td-next td-next-m') + weekHtml(weekDays, wk)
     : noPlanHtml();
-  const right = shopHtml(st) + (hasPlan ? todoHtml(weekDays, st, pending) : '') + pinnedNotesHtml();
+  const right = nextHtml.replace('class="td-card td-next', 'class="td-card td-next td-next-d') + shopHtml(st) + pinnedNotesHtml();
 
   const html = `
     <div class="td">

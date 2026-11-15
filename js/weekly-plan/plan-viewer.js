@@ -891,7 +891,32 @@ export function closeSavingPopover() {
   document.querySelectorAll('.saving-overlay').forEach((el) => el.remove());
 }
 
-// ── Bekräftelse ───────────────────────────────────────────────────────────────
+// ── Använd förslaget / Släng ──────────────────────────────────────────────────
+// (Tidigare "Bekräfta matsedeln" / "Kassera förslag" — samma endpoints, nya namn.)
+
+// Antal föreslagna middagar i det obekräftade förslaget.
+function proposalMealCount() {
+  return (window._lastPlan?.days || []).filter((d) => d.recipeId).length;
+}
+
+function confirmLabelText() {
+  const n = proposalMealCount();
+  return n > 0 ? `Använd förslaget · ${n} ${n === 1 ? 'middag' : 'middagar'}` : 'Använd förslaget';
+}
+
+function setConfirmLabel(text) {
+  const el = document.getElementById('confirmPlanLabel');
+  if (el) el.textContent = text;
+}
+
+// Visar/döljer raden och reserverar plats under dagkorten på mobil (raden är
+// fast ovanför bottennavet — se .has-confirm-bar i css/styles.css).
+function syncConfirmBar(visible) {
+  const wrap = document.getElementById('confirmPlanWrap');
+  if (wrap) wrap.style.display = visible ? '' : 'none';
+  document.body.classList.toggle('has-confirm-bar', !!visible);
+}
+
 
 export async function discardPlan() {
   // Ligger förslagsdagar (o-inhandlade) på inköpslistan tas deras varor bort.
@@ -900,11 +925,11 @@ export async function discardPlan() {
     return t?.onList && !t.shoppedAt;
   });
   const ok = await window.confirmDialog({
-    title: 'Kassera förslaget?',
+    title: 'Släng förslaget?',
     message: onList
-      ? 'Den föreslagna matsedeln tas bort. Varorna för förslagets dagar tas bort från inköpslistan.'
-      : 'Den föreslagna matsedeln tas bort.',
-    confirmLabel: 'Kassera',
+      ? 'Förslaget tas bort. Varorna för förslagets dagar tas bort från inköpslistan.'
+      : 'Förslaget tas bort.',
+    confirmLabel: 'Släng',
     danger: true,
   });
   if (!ok) return;
@@ -913,7 +938,7 @@ export async function discardPlan() {
   const statusEl = document.getElementById('confirmStatus');
   btn.disabled = true;
   if (confirmBtn) confirmBtn.disabled = true;
-  btn.textContent = 'Kasserar…';
+  btn.textContent = 'Slänger…';
   statusEl.textContent = '';
 
   try {
@@ -924,6 +949,7 @@ export async function discardPlan() {
 
     window.planConfirmed = false;
     window.dlxCloseSheet?.();
+    syncConfirmBar(false);
 
     // Rita den tomma planen ur svaret direkt (ingen extra planhämtning) och läs
     // arkiv, egna dagar och inköpssummering färskt ur Supabase — kasseringen kan
@@ -953,10 +979,10 @@ export async function discardPlan() {
   } catch (e) {
     btn.disabled = false;
     if (confirmBtn) confirmBtn.disabled = false;
-    btn.textContent = 'Kassera förslag';
+    btn.textContent = 'Släng';
     statusEl.textContent = e.userFacing
-      ? `Kunde inte kassera: ${e.message} — prova igen.`
-      : 'Kunde inte kassera — prova igen.';
+      ? `Kunde inte slänga förslaget: ${e.message} — prova igen.`
+      : 'Kunde inte slänga förslaget — prova igen.';
     statusEl.className = 'confirm-status';
     console.error('discardPlan error:', e);
   }
@@ -966,7 +992,7 @@ export async function confirmPlan() {
   const btn      = document.getElementById('confirmPlanBtn');
   const statusEl = document.getElementById('confirmStatus');
   btn.disabled    = true;
-  btn.textContent = 'Bekräftar…';
+  setConfirmLabel('Sparar…');
   statusEl.textContent = '';
 
   try {
@@ -976,19 +1002,21 @@ export async function confirmPlan() {
 
     window.planConfirmed = true;
     if (window._lastPlan) window._lastPlan.confirmedAt = data.weeklyPlan?.confirmedAt || new Date().toISOString();
-    document.getElementById('confirmPlanWrap').style.display = 'none';
+    syncConfirmBar(false);
+    // Förslagsramarna och "Annan rätt"-knapparna försvinner när planen är använd.
+    window.renderDeluxe?.();
 
     // Inköpslistan byggs INTE här längre (Session 134) — familjen väljer själv
     // vilka dagar som ska handlas. Toasten bär genvägen till det steget.
-    window.showToast?.('Matsedeln bekräftad — välj sedan vilka dagar du vill handla för.', {
+    window.showToast?.('Förslaget är använt — välj sedan vilka dagar du vill handla för.', {
       type: 'success',
       duration: 6000,
       action: { label: 'Välj dagar', onClick: () => window.openShoppingDayPicker?.() },
     });
   } catch (e) {
     btn.disabled    = false;
-    btn.textContent = '✓ Bekräfta matsedeln';
-    statusEl.textContent = userFacingMessage(e, 'Kunde inte bekräfta — prova igen.');
+    setConfirmLabel(confirmLabelText());
+    statusEl.textContent = userFacingMessage(e, 'Kunde inte använda förslaget — prova igen.');
     statusEl.className   = 'confirm-status';
   }
 }
@@ -1013,8 +1041,7 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
     document.getElementById('weekLoading').style.display = 'none';
     document.getElementById('weekContent').style.display = 'none';
     document.getElementById('weekNoData').style.display = '';
-    const confirmWrap = document.getElementById('confirmPlanWrap');
-    if (confirmWrap) confirmWrap.style.display = 'none';
+    syncConfirmBar(false);
     return;
   }
 
@@ -1043,17 +1070,15 @@ export function renderWeeklyPlanData(plan, shop, freshlyGenerated = false, archi
   const confirmWrap   = document.getElementById('confirmPlanWrap');
   const confirmStatus = document.getElementById('confirmStatus');
   const confirmBtn    = document.getElementById('confirmPlanBtn');
-  if (confirmWrap) {
-    confirmWrap.style.display = (hasActivePlan && !confirmed) ? '' : 'none';
-  }
+  if (confirmWrap) syncConfirmBar(hasActivePlan && !confirmed);
   if (confirmBtn) {
     confirmBtn.disabled = false;
-    confirmBtn.textContent = '✓ Bekräfta matsedeln';
+    setConfirmLabel(confirmLabelText());
   }
   const discardBtn = document.getElementById('discardPlanBtn');
   if (discardBtn) {
     discardBtn.disabled = false;
-    discardBtn.textContent = 'Kassera förslag';
+    discardBtn.textContent = 'Släng';
   }
   if (confirmStatus) {
     confirmStatus.textContent = '';

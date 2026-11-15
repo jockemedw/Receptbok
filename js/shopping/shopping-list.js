@@ -606,10 +606,10 @@ export function updateShopProgress() {
   const { total, done, perCat } = shopCounts();
   // Allt i korgen + o-inhandlade täckta dagar → lyft fram "Vi har handlat"
   // (föreslå, aldrig stämpla automatiskt — bockning sker gradvis i butiken).
-  const covEl = document.getElementById('shopCoverage');
-  if (covEl) {
+  const doneBtn = document.getElementById('markShoppedBtn');
+  if (doneBtn) {
     const hasUnshopped = (window._shopCoverage || []).some((r) => !r.shopped_at);
-    covEl.classList.toggle('all-picked', total > 0 && done >= total && hasUnshopped);
+    doneBtn.classList.toggle('all-picked', total > 0 && done >= total && hasUnshopped);
   }
   document.querySelectorAll('.shopping-cat-count[data-cat]').forEach(el => {
     const c = perCat[el.dataset.cat];
@@ -628,7 +628,13 @@ function itemTextCell(name, rowId, key) {
               onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}"
               onblur="commitRowEdit(this)">`;
   }
-  return `<span class="item-text">${escapeHtml(name)}</span>`;
+  // Mängden i slutparentesen ("mjölk (2 dl)") visas som egen högerställd cell
+  // — bara visning, namnet i state/databas är oförändrat.
+  const m = String(name).match(/^(.*?)\s*\(([^()]+)\)\s*$/);
+  if (m && m[1].trim()) {
+    return `<span class="item-top"><span class="item-text">${escapeHtml(m[1].trim())}</span><span class="item-amt">${escapeHtml(m[2].trim())}</span></span>`;
+  }
+  return `<span class="item-top"><span class="item-text">${escapeHtml(name)}</span></span>`;
 }
 
 const ICON_PENCIL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4l10-10a2 2 0 0 0-2.8-2.8L5 17v3z"/><path d="M13.5 6.5l4 4"/></svg>';
@@ -758,11 +764,13 @@ export function rebuildShopText() {
 }
 
 // ── Källa per rad (ny design 2026-10) ────────────────────────────────────────
-// Receptnamnet som en liten etikett. shopping_items bär ingen receptreferens
-// (byggaren slår ihop över recept), så källan gissas: varans namn (före
-// mängdparentesen) mot ingrediensraderna i de recept listan täcker
-// (window._shopCoverage → recipe_title_snapshot → window.RECIPES).
-// ponytail: substring-gissning; kolumn shopping_items.sources om det ska vara exakt.
+// Liten etikett under varunamnet. shopping_items bär ingen receptreferens
+// (byggaren slår ihop över recept), så för receptvaror härleds källan: varans
+// namn (före mängdparentesen) som HELT ORD i ingrediensraderna hos de recept
+// listan täcker (window._shopCoverage → recipe_title_snapshot → window.RECIPES).
+// Ett recept → rättens namn, flera → "N rätter", inget säkert träffsvar →
+// ingen källrad alls (hellre tomt än fel). Egna varor är alltid "Eget tillägg".
+// ponytail: kolumn shopping_items.sources om det ska vara exakt.
 let _srcCache = null;
 function coverRecipes() {
   const titles = new Set((window._shopCoverage || []).map((r) => (r.recipe_title_snapshot || '').toLowerCase()).filter(Boolean));
@@ -774,8 +782,11 @@ function itemSourceLabel(name) {
   const base = String(name).split(' (')[0].trim().toLowerCase();
   let label = '';
   if (base.length >= 3) {
-    const hits = _srcCache.recipes.filter((r) => (r.ingredients || []).some((l) => l.toLowerCase().includes(base)));
-    if (hits.length) label = hits[0].title + (hits.length > 1 ? ` +${hits.length - 1}` : '');
+    const esc = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const re = new RegExp(`(^|[^\\p{L}])${esc}([^\\p{L}]|$)`, 'u');
+    const hits = _srcCache.recipes.filter((r) => (r.ingredients || []).some((l) => re.test(l.toLowerCase())));
+    if (hits.length === 1) label = hits[0].title;
+    else if (hits.length > 1) label = `${hits.length} rätter`;
   }
   _srcCache.map.set(name, label);
   return label;
@@ -833,6 +844,7 @@ export function renderFullShoppingList(recipeItems, manualItems) {
   window._shopRecipeItems = recipeItems;
   window._shopManualItems = manualItems;
   _srcCache = null;
+  initRowLongPress();
   let checkHtml = '';
   const handla = window._handlaMode === true;
   const doneItems = [];   // handla-läge: bockade varor samlas här → visas under strecket
@@ -920,14 +932,6 @@ export function renderFullShoppingList(recipeItems, manualItems) {
 }
 
 // ── Sammanfattning: rubrikrad, plockat-räknare, veckoremsa (ny design 2026-10) ──
-const DAY_LETTERS = ['M', 'T', 'O', 'T', 'F', 'L', 'S'];
-function weekStartIso(iso) {
-  const d = new Date(iso + 'T12:00:00');
-  const dow = (d.getDay() + 6) % 7;
-  d.setDate(d.getDate() - dow);
-  return fmtIso(d);
-}
-function addDays(iso, n) { const d = new Date(iso + 'T12:00:00'); d.setDate(d.getDate() + n); return fmtIso(d); }
 function longDay(iso) {
   const d = new Date(iso + 'T12:00:00');
   const s = d.toLocaleDateString('sv-SE', { weekday: 'long', day: 'numeric', month: 'short' });
@@ -951,25 +955,8 @@ export function updateShopSummary() {
     if (bar) bar.style.width = pct + '%';
     if (wrap) wrap.setAttribute('aria-valuenow', String(pct));
   }
-  // Veckoremsa: innevarande vecka, täckta dagar markerade
-  const strip = document.getElementById('shopDayStrip');
-  if (strip) {
-    const ws = weekStartIso(fmtIso(new Date()));
-    const covered = new Set(cov.map((r) => r.date));
-    const shopped = new Set(cov.filter((r) => r.shopped_at).map((r) => r.date));
-    strip.innerHTML = DAY_LETTERS.map((l, i) => {
-      const iso = addDays(ws, i);
-      const cls = covered.has(iso) ? (shopped.has(iso) ? ' is-shopped' : ' is-on') : '';
-      return `<span class="shop-daycell${cls}" title="${escapeHtml(longDay(iso))}">${l}</span>`;
-    }).join('');
-    const note = document.getElementById('shopDaysNote');
-    if (note) {
-      const n = cov.length;
-      note.textContent = n === 0
-        ? 'Listan har inga receptdagar — välj dagar så fylls den på. Egna dagar ger inga varor.'
-        : `Listan täcker ${n} ${n === 1 ? 'middag' : 'middagar'}${unshopped.length < n ? `, ${n - unshopped.length} redan inhandlad${n - unshopped.length === 1 ? '' : 'e'}` : ''}.`;
-    }
-  }
+  // Dagbrickorna följer tidslinjen — rita om (bara om något ändrats).
+  window.renderShopDayChips?.();
 }
 
 // ── Mobil: panelen ("⋯") som bottensheet; Skicka-knappen i den fasta raden ──
@@ -995,6 +982,17 @@ function placeShopChrome() {
   const mobile = !(window.matchMedia && window.matchMedia('(min-width: 900px)').matches);
   const host = document.getElementById(mobile ? 'shopMobileDispatch' : 'shopSideDispatch');
   if (host && btn.parentElement !== host) host.appendChild(btn);
+  // "Vi har handlat" följer med: fast rad på mobil, sidopanelen på desktop.
+  const done = document.getElementById('markShoppedBtn');
+  if (done) {
+    const doneHost = document.getElementById(mobile ? 'shopMobileBar' : 'shopSideDispatch');
+    if (mobile) {
+      const more = doneHost?.querySelector('.shop-more-btn');
+      if (doneHost && done.parentElement !== doneHost) doneHost.insertBefore(done, more || null);
+    } else if (doneHost && done.parentElement !== doneHost) {
+      doneHost.appendChild(done);
+    }
+  }
   if (!mobile) closeShopSide();
 }
 if (window.matchMedia) window.matchMedia('(min-width: 900px)').addEventListener('change', placeShopChrome);
@@ -1006,28 +1004,21 @@ placeShopChrome();
 // listan täcker och bär knappen som stämplar rundan som inhandlad.
 
 export function renderShopCoverage() {
-  const el = document.getElementById('shopCoverage');
-  if (!el) return;
   const cov = window._shopCoverage || [];
   const unshopped = cov.filter((r) => !r.shopped_at);
-  if (!cov.length) { el.innerHTML = ''; el.style.display = 'none'; return; }
-  el.style.display = '';
-
-  if (!unshopped.length) {
-    el.innerHTML = `<div class="shop-coverage is-done">
-      <span class="shop-coverage-txt">Inhandlat ✓ — nästa lista tar bara med nya middagar</span>
-    </div>`;
-    return;
+  // "Vi har handlat" syns bara när det finns o-inhandlade middagar på listan.
+  const btn = document.getElementById('markShoppedBtn');
+  if (btn) btn.hidden = !unshopped.length;
+  document.getElementById('shopSideDispatch')?.classList.toggle('has-done', !!unshopped.length);
+  // Stämplade dagar syns som "inhandlad"-brickor bara inom brickfönstret —
+  // här står förklaringen när hela listans täckning är inhandlad.
+  const el = document.getElementById('shopCoverage');
+  if (el) {
+    const allDone = cov.length > 0 && !unshopped.length;
+    el.hidden = !allDone;
+    el.textContent = allDone ? 'Inhandlat ✓ — nästa lista tar bara med nya middagar.' : '';
   }
-
-  const n = unshopped.length;
-  const span = n > 1
-    ? `${fmtShort(unshopped[0].date)} – ${fmtShort(unshopped[n - 1].date)}`
-    : fmtShort(unshopped[0].date);
-  el.innerHTML = `<div class="shop-coverage">
-    <span class="shop-coverage-txt">Listan täcker <strong>${n} ${n === 1 ? 'middag' : 'middagar'}</strong> · ${escapeHtml(span)}</span>
-    <button type="button" class="shop-coverage-btn" id="markShoppedBtn" onclick="markRoundShopped()">Vi har handlat ✓</button>
-  </div>`;
+  window.renderShopDayChips?.();
 }
 
 export async function refreshShopCoverage() {
@@ -1067,11 +1058,12 @@ export async function markRoundShopped() {
     try { data = await res.json(); } catch { /* ingen JSON */ }
     if (!res.ok) throw Object.assign(new Error(data.error || ''), { serverMsg: data.error });
     window._preserveChecked = false;
+    if (btn) { btn.disabled = false; btn.textContent = 'Vi har handlat'; }   // knappen är ett fast element (göms av renderShopCoverage)
     await loadShoppingTab();          // konverterade varor visas nu som Egna tillägg
     window.loadWeeklyPlan?.();        // chips på Matsedeln + Idag
     window.showToast?.('Markerat som inhandlat — nya middagar lägger bara till nya varor.', { type: 'success' });
   } catch (e) {
-    if (btn) { btn.disabled = false; btn.textContent = 'Vi har handlat ✓'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Vi har handlat'; }
     window.showToast?.(e?.serverMsg || 'Kunde inte markera som inhandlat — prova igen.', { type: 'error' });
     return;
   }
@@ -1130,6 +1122,7 @@ async function loadShoppingTabInner() {
   const seq = ++_shopLoadSeq;
   const stale = () => seq !== _shopLoadSeq;
   window._shopDirty = false;
+  window.renderShopDayChips?.();   // brickorna står även över en tom lista
   // Stale-while-revalidate: visas redan en lista, låt den stå kvar medan vi
   // hämtar — ingen spinner-blink vid flikbyte eller efter en ändring.
   const contentEl = document.getElementById('shopContent');
@@ -1192,6 +1185,7 @@ async function loadShoppingTabInner() {
       contentEl.style.display = 'none';
       document.getElementById('shopNoData').style.display = '';
       window._shopRecipeItems = null; window._shopManualItems = [];
+      renderShopCoverage();
       updateShopSummary();
       unsubscribeShoppingItems();
       return;
@@ -1651,6 +1645,139 @@ export function renderShoppingData(shop) {
   document.getElementById('shopNoData').style.display  = 'none';
   document.getElementById('shopContent').style.display = '';
 }
+
+// ── Håll på en vara (pekskärm) ───────────────────────────────────────────────
+// På pekskärm är penn- och hus-knapparna dolda; samma åtgärder (Ändra, Har
+// hemma, Ta bort) nås genom att hålla ~500 ms på raden → ett litet ark.
+// Render-only vad gäller raden; åtgärderna går via befintliga funktioner
+// (editShopRow, togglePantryItem, removeShopItem/removeManualItem).
+// Krockar undviks så här:
+//  - vanligt tryck: timern avbryts vid pointerup före 500 ms → onclick bockar som förut
+//  - scroll: rör fingret sig > LP_SLOP px (eller webbläsaren tar över med
+//    pointercancel) avbryts timern
+//  - draghandtaget/knappar/fält: ignoreras (handtagets pointerdown stoppar
+//    dessutom bubblingen, Session 122/132-logiken är orörd)
+//  - klicket som följer på ett långtryck sväljs (annars bockas varan)
+//  - mus: ingen långtrycksgest (musen har knapparna synliga)
+const LP_MS = 500;
+const LP_SLOP = 10;
+let _lp = null;
+let _lpSuppressUntil = 0;
+let _rowSheetKey = null;
+let _lpBound = false;
+
+function cancelRowPress() {
+  if (!_lp) return;
+  clearTimeout(_lp.timer);
+  clearTimeout(_lp.armTimer);
+  _lp.li.classList.remove('lp-hold');
+  _lp = null;
+}
+
+function onRowPressDown(e) {
+  cancelRowPress();
+  if (e.pointerType === 'mouse' || (e.button != null && e.button > 0)) return;
+  if (_manualDrag || window._opBusy) return;
+  const li = e.target.closest?.('.shopping-item');
+  if (!li || li.classList.contains('row-editing')) return;
+  if (e.target.closest('button, input, .drag-handle')) return;
+  const st = { li, x: e.clientX, y: e.clientY };
+  st.armTimer = setTimeout(() => li.classList.add('lp-hold'), 150);
+  st.timer = setTimeout(() => {
+    _lp = null;
+    li.classList.remove('lp-hold');
+    try { navigator.vibrate?.(12); } catch { /* ingen haptik */ }
+    openRowSheet(li);
+    holdUntilFingerLifts();
+  }, LP_MS);
+  _lp = st;
+}
+
+// Medan fingret fortfarande ligger kvar efter långtrycket: arket tar inte emot
+// tryck (webbläsarens klick vid släpp träffar annars arkets bakgrund/knappar
+// → arket stängs eller en åtgärd utlöses av misstag) och klicket på raden
+// sväljs så varan inte bockas. Släpps fingret hålls spärren ~400 ms till.
+function holdUntilFingerLifts() {
+  const sheet = document.getElementById('shopRowSheet');
+  sheet?.classList.add('lp-wait');
+  _lpSuppressUntil = Infinity;
+  let done = false;
+  const release = () => {
+    if (done) return;
+    done = true;
+    document.removeEventListener('pointerup', release, true);
+    document.removeEventListener('pointercancel', release, true);
+    _lpSuppressUntil = Date.now() + 500;
+    setTimeout(() => sheet?.classList.remove('lp-wait'), 400);
+  };
+  document.addEventListener('pointerup', release, true);
+  document.addEventListener('pointercancel', release, true);
+  setTimeout(release, 8000);   // säkerhetsnät om släppet aldrig når oss
+}
+
+function onRowPressMove(e) {
+  if (!_lp) return;
+  if (Math.hypot(e.clientX - _lp.x, e.clientY - _lp.y) > LP_SLOP) cancelRowPress();
+}
+
+function initRowLongPress() {
+  const list = document.getElementById('shoppingList');
+  if (!list || _lpBound) return;
+  _lpBound = true;
+  list.addEventListener('pointerdown', onRowPressDown);
+  list.addEventListener('pointermove', onRowPressMove);
+  list.addEventListener('pointerup', cancelRowPress);
+  list.addEventListener('pointercancel', cancelRowPress);
+  list.addEventListener('pointerleave', cancelRowPress);
+  window.addEventListener('scroll', cancelRowPress, { passive: true, capture: true });
+  // Klicket efter långtrycket ska inte bocka varan.
+  list.addEventListener('click', (e) => {
+    if (Date.now() < _lpSuppressUntil && e.target.closest('.shopping-item')) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  }, true);
+  // Android öppnar annars en egen snabbmeny vid långtryck.
+  list.addEventListener('contextmenu', (e) => {
+    if (e.target.closest('.shopping-item') && window.matchMedia?.('(hover: none)').matches) e.preventDefault();
+  });
+}
+
+function openRowSheet(li) {
+  const key = li.dataset.key;
+  const name = itemNameForKey(key, window._shopRecipeItems);
+  if (!key || name == null) return;
+  _rowSheetKey = key;
+  const pantry = isPantryName(name);
+  const rows = [
+    `<button type="button" class="storepick-row" onclick="shopRowAction('edit')"><span class="storepick-name">Ändra</span></button>`,
+  ];
+  if (window._pantrySupported) {
+    rows.push(`<button type="button" class="storepick-row" onclick="shopRowAction('pantry')"><span class="storepick-name">${pantry ? 'Lägg tillbaka i listan' : 'Har hemma'}</span></button>`);
+  }
+  rows.push(`<button type="button" class="storepick-row is-danger" onclick="shopRowAction('remove')"><span class="storepick-name">Ta bort</span></button>`);
+  const title = document.getElementById('shopRowTitle');
+  if (title) title.textContent = name;
+  const body = document.getElementById('shopRowBody');
+  if (body) body.innerHTML = rows.join('');
+  window.openBottomSheet?.('shopRowSheet');
+}
+
+export function shopRowAction(action) {
+  const key = _rowSheetKey;
+  _rowSheetKey = null;
+  window.closeBottomSheet?.('shopRowSheet');
+  if (!key) return;
+  const name = itemNameForKey(key, window._shopRecipeItems);
+  if (name == null) return;
+  if (action === 'edit') editShopRow(key);
+  else if (action === 'pantry') togglePantryItem(name);
+  else if (action === 'remove') {
+    if (key.startsWith('manual::')) removeManualItem(name);
+    else removeShopItem(key);
+  }
+}
+window.shopRowAction = shopRowAction;
 
 // Exponera på window för inline onclick-attribut
 window.setShopMode        = setShopMode;

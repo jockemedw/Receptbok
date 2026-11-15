@@ -1,6 +1,12 @@
 # Sessionshistorik — arkiv
 
-Sessioner 8–158. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+Sessioner 8–159. Senaste sessionen ligger i `docs/status.md`. Full git-historik: `git log --oneline`.
+
+## Session 159 — Receptbilden i matsedelns receptvy
+
+**Session 159 — Receptbilden i matsedelns receptvy (2026-10-26, render-only; styles v215/app v187/SW v140 för backupen).**
+
+Joakim (skärmdump av dag-sheeten för Kålmaja på nolltid): "Jag vill att receptbilden syns när receptet öppnas i matsedeln." Dag-sheetens receptvy (`sheetRecipeHtml`) och desktop-panelens receptkolumn (`recipeColumnHtml`) i `js/weekly-plan/plan-viewer-deluxe.js` visade ingen bild, till skillnad från Recept-fliken och Idag. Nu: fullbilden under titeln via ny `sheetPhotoHtml(r)` — 16:10, rundade hörn, AI-badge "AI-bild · serveringsförslag" nere till höger som på Idag, ingen platshållare för recept utan bild, trasig fil tar bort figuren (`.dlx-photo` i styles.css; desktop-kolumnen max 560 px). Förhandsgranskat i mörkt tema på 400 px. Hela sviten grön, bygget går igenom. Gren `feat/sheet-receptbild`. **159b — följdfråga efter "Vi har handlat" (Joakim: "det ska följa en fråga om man också vill rensa inköpslistan"; datamuterande via befintlig väg):** efter lyckad `mark_shopped` frågar Inköp "Rensa inköpslistan också?" (Behåll listan / Rensa listan, med antal o-avbockade varor som också försvinner). Ja = samma rensning som Rensa lista (`clearShoppingList({ confirm: false })` — raderar varorna och inaktiverar listan); dagarna är redan stämplade så nästa lista påverkas inte. Rättat på köpet: Rensa lista kastade TypeError i `finally` (knappen `modeBtnClear` finns inte i nya layouten) — listan rensades men felet bubblade. Provat i förhandsservern (mockad `mark_shopped`): andra dialogen visas, listan töms, inga sidfel. app v188 / SW v141. Gren `feat/handlat-rensa`.
 
 ## Session 158 — Ny design + prestandaplanen A–G
 

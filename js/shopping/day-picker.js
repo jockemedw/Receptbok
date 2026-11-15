@@ -228,8 +228,21 @@ export async function saveShoppingDayPick() {
   }
 
   s.busy = true;
-  window._opBusy = true;
   renderShopDayPicker();
+  try {
+    await commitShopDays(dates);
+  } finally {
+    if (state()) { state().busy = false; renderShopDayPicker(); }
+  }
+}
+
+// EN skrivväg för "vilka dagar ligger på listan" — används av dagväljarens
+// spara-knapp och av dagbrickorna på Inköp-fliken. `dates` = hela det önskade
+// urvalet (servern: action set_days). Felet visas som toast (aldrig kastat);
+// returnerar true när listan uppdaterades. quiet = brickorna: ingen
+// bekräftelsetoast (brickan själv visar resultatet) och ingen flikväxling.
+async function commitShopDays(dates, { quiet = false } = {}) {
+  window._opBusy = true;
   try {
     const res = await window.apiFetch('/api/shopping', {
       method: 'POST',
@@ -240,7 +253,7 @@ export async function saveShoppingDayPick() {
     try { data = await res.json(); } catch { /* ingen JSON */ }
     if (!res.ok) throw Object.assign(new Error(data.error || ''), { serverMsg: data.error });
 
-    closeShoppingDayPicker();
+    if (state()) closeShoppingDayPicker();
     window._planMutateUntil = Date.now() + 4000;   // dämpa realtids-ekot
     // Inköp-fliken: nya listan ritas direkt ur svaret (switchTab nedan
     // uppdaterar den sedan tyst, utan spinner).
@@ -264,14 +277,106 @@ export async function saveShoppingDayPick() {
     const msg = n === 0
       ? 'Receptvarorna är borta från inköpslistan — dina egna tillägg står kvar.'
       : `Ingredienserna för ${n} ${n === 1 ? 'middag' : 'middagar'} ligger nu på inköpslistan.`;
-    window.showToast?.(skipped ? `${msg} ${skipped} ${skipped === 1 ? 'dag' : 'dagar'} hoppades över (saknar recept).` : msg, { type: 'success' });
-    window.switchTab?.('shop');
+    const skipMsg = skipped ? `${skipped} ${skipped === 1 ? 'dag' : 'dagar'} hoppades över (saknar recept).` : '';
+    if (!quiet) window.showToast?.(skipMsg ? `${msg} ${skipMsg}` : msg, { type: 'success' });
+    else if (skipMsg) window.showToast?.(skipMsg, { type: 'success' });
+    if (!quiet || document.body.dataset.activeTab !== 'shop') window.switchTab?.('shop');
+    return true;
   } catch (e) {
-    if (state()) { state().busy = false; renderShopDayPicker(); }
     window.showToast?.(e?.serverMsg || 'Kunde inte uppdatera inköpslistan — prova igen.', { type: 'error' });
+    return false;
   } finally {
     window._opBusy = false;
-    if (state()) state().busy = false;
+  }
+}
+
+// ── Dagbrickor överst på Inköp-fliken ────────────────────────────────────────
+// "Listan gäller middagarna": en bricka per kommande receptdag (idag t.o.m.
+// nästa veckas söndag, plus dagar som redan ligger på listan utanför det
+// fönstret). Tre lägen — på listan / inte på listan / redan inhandlad. Tryck
+// slår av/på dagen via commitShopDays (samma som dagväljarens spara-knapp).
+// "Fler dagar" öppnar dagväljaren (tidigare dagar, hela matsedeln …).
+// Läser: window._timelineByDate (samma källa som dagväljaren). Skriver inget
+// delat state — bara _chipBusyDate (vilken bricka som väntar).
+const DAY_NAMES_SHORT = ['Sön', 'Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör'];
+let _chipBusyDate = null;
+let _chipsHtml = null;
+let _chipsLoading = false;
+
+function chipWindowEnd() {
+  const d = new Date();
+  d.setHours(12, 0, 0, 0);
+  const dow = (d.getDay() + 6) % 7;            // måndag = 0
+  d.setDate(d.getDate() + (6 - dow) + 7);      // söndag nästa vecka
+  return fmtIso(d);
+}
+
+function chipDays() {
+  const todayIso = fmtIso(new Date());
+  const end = chipWindowEnd();
+  return pickableDays().filter((d) => {
+    const active = d.onList && !d.shoppedAt;
+    if (d.isArchive && !active) return false;
+    if (active) return true;                    // på listan syns alltid (annars går den inte att ta bort)
+    return d.date >= todayIso && d.date <= end;
+  });
+}
+
+function chipHtml(d, dupDow) {
+  const dow = new Date(d.date + 'T12:00:00').getDay();
+  const mode = d.shoppedAt ? 'shopped' : (d.onList ? 'on' : 'off');
+  const busy = _chipBusyDate === d.date;
+  const title = dayTitle(d);
+  const long = `${DAY_NAMES_LONG[dow]} ${new Date(d.date + 'T12:00:00').getDate()}/${new Date(d.date + 'T12:00:00').getMonth() + 1}`;
+  const stateTxt = mode === 'on' ? 'ligger på listan — tryck för att ta bort'
+    : mode === 'shopped' ? 'redan inhandlad — tryck för att lägga tillbaka på listan'
+    : 'ligger inte på listan — tryck för att lägga till';
+  const mark = busy
+    ? '<span class="shop-chip-spin" aria-hidden="true"></span>'
+    : mode === 'shopped' ? '<svg class="shop-chip-tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' : '';
+  return `<button type="button" class="shop-chip is-${mode}${busy ? ' is-busy' : ''}" data-date="${escapeHtml(d.date)}"
+      aria-pressed="${mode === 'on'}" ${busy ? 'aria-busy="true"' : ''}${_chipBusyDate ? ' disabled' : ''}
+      aria-label="${escapeHtml(`${long} — ${title} — ${stateTxt}`)}"
+      onclick="toggleShopDayChip(this.dataset.date)">${mark}<span class="shop-chip-txt">${escapeHtml(DAY_NAMES_SHORT[dow])}${dupDow.has(dow) ? ' ' + new Date(d.date + 'T12:00:00').getDate() : ''} · ${escapeHtml(title)}</span></button>`;
+}
+
+export function renderShopDayChips() {
+  const el = document.getElementById('shopDayChips');
+  if (!el) return;
+  // Tidslinjen byggs av Matsedeln — har den aldrig renderats (gick direkt till
+  // Inköp) hämtas den en gång och brickorna ritas om när den kommit.
+  if (!window._timelineByDate && window.loadWeeklyPlan && !_chipsLoading) {
+    _chipsLoading = true;
+    Promise.resolve(window.loadWeeklyPlan()).catch(() => {}).finally(() => { _chipsLoading = false; renderShopDayChips(); });
+  }
+  const days = chipDays();
+  // Samma veckodag två gånger (två veckor) → lägg på datum så brickorna går att skilja åt.
+  const seen = new Set();
+  const dupDow = new Set();
+  for (const d of days) { const w = new Date(d.date + 'T12:00:00').getDay(); if (seen.has(w)) dupDow.add(w); seen.add(w); }
+  const more = `<button type="button" class="shop-chip is-more" onclick="openShoppingDayPicker()" aria-haspopup="dialog"${_chipBusyDate ? ' disabled' : ''}>Fler dagar</button>`;
+  const html = (days.length ? days.map((d) => chipHtml(d, dupDow)).join('') : '<span class="shop-chips-empty">Inga planerade middagar just nu</span>') + more;
+  if (html === _chipsHtml) return;
+  _chipsHtml = html;
+  const focusDate = el.contains(document.activeElement) ? document.activeElement?.dataset?.date : null;
+  el.innerHTML = html;
+  if (focusDate) el.querySelector(`.shop-chip[data-date="${CSS.escape(focusDate)}"]`)?.focus({ preventScroll: true });
+}
+
+export async function toggleShopDayChip(date) {
+  if (!date || _chipBusyDate || window._opBusy || state()) return;
+  const days = pickableDays();
+  const d = days.find((x) => x.date === date);
+  if (!d) return;
+  const set = new Set(currentlyCovered(days));
+  if (d.onList && !d.shoppedAt) set.delete(date); else set.add(date);
+  _chipBusyDate = date;
+  renderShopDayChips();
+  try {
+    await commitShopDays([...set].sort(), { quiet: true });
+  } finally {
+    _chipBusyDate = null;
+    renderShopDayChips();   // lyckat: nytt läge ur tidslinjen · misslyckat: tillbaka till förra
   }
 }
 
@@ -323,3 +428,5 @@ window.clearShopDaySelection  = clearShopDaySelection;
 window.saveShoppingDayPick    = saveShoppingDayPick;
 window.renderShopDayPicker    = renderShopDayPicker;
 window.renderShopDayFoot      = renderShopDayFoot;
+window.renderShopDayChips     = renderShopDayChips;
+window.toggleShopDayChip      = toggleShopDayChip;

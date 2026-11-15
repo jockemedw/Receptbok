@@ -30,6 +30,7 @@ async function initServingsSetting() {
     if (input) input.value = data.target_servings;
     document.getElementById('servingsRow')?.style.setProperty('display', '');
     document.getElementById('servingsDivider')?.style.setProperty('display', '');
+    window.renderDeluxe?.();   // ettrycksknappens inställningsrad visar portionerna
   } catch { /* raden förblir dold */ }
 }
 
@@ -143,6 +144,8 @@ export function updateSettingsPreview() {
     preview.textContent = `${matching.length} recept matchar dina filter`;
   }
   preview.style.color  = matching.length < 3 ? 'var(--rust)' : 'var(--lichen)';
+  // Inställningsraden under "Föreslå middagar för N tomma dagar" speglar samma fält.
+  try { window.renderDeluxe?.(); } catch { /* vyn ritas om vid nästa tillfälle */ }
 }
 
 const DAY_ABBR = ['Sön', 'Mån', 'Tis', 'Ons', 'Tor', 'Fre', 'Lör'];
@@ -228,6 +231,43 @@ export function toggleDayBlock(btn) {
 export function getBlockedDates() {
   return Array.from(document.querySelectorAll('.day-toggle-chip.blocked'))
     .map(b => b.dataset.date);
+}
+
+// Efter en lyckad generering: läs färskt arkiv + egna dagar ur Supabase och rita
+// förslaget. Delas av guiden (generatePlan) och ettrycksförslaget.
+async function renderGeneratedPlan(data) {
+  if (!data.weeklyPlan) return;
+  // Hämta arkiv + custom-dagar från Supabase efter generering
+  let archive = { plans: [] };
+  let customDays = window._customDays || { entries: {} };
+  try {
+    const householdId = await window.getHouseholdId();
+    const [ar, cd] = await Promise.all([
+      window.db.from('plan_archives').select('*').eq('household_id', householdId).order('archived_at', { ascending: false }),
+      window.db.from('meal_days').select('*').eq('household_id', householdId).is('plan_id', null),
+    ]);
+    if (ar.data) {
+      archive = {
+        plans: ar.data.map(row => ({
+          startDate:  row.start_date,
+          endDate:    row.end_date,
+          archivedAt: row.archived_at,
+          days:       row.days || [],
+        }))
+      };
+    }
+    if (cd.data) {
+      const entries = {};
+      for (const row of cd.data) {
+        entries[row.date] = {
+          note: row.custom_note || '', recipeId: row.recipe_id ?? null, recipeTitle: row.recipe_title_snapshot || '',
+          blocked: row.blocked === true, shoppedAt: row.shopped_at ?? null, listId: row.shopping_list_id ?? null,
+        };
+      }
+      customDays = { entries };
+    }
+  } catch { /* OK, kör utan uppdatering */ }
+  window.renderWeeklyPlanData(data.weeklyPlan, null, true, archive, customDays);
 }
 
 export async function generatePlan() {
@@ -329,39 +369,7 @@ export async function generatePlan() {
       window.showToast?.('Reapriserna kunde inte hämtas just nu — matsedeln skapades utan prisoptimering.', { type: 'info', duration: 6000 });
     }
     if (wantsOptimize) window.resetDealSelection?.();
-    if (data.weeklyPlan) {
-      // Hämta arkiv + custom-dagar från Supabase efter generering
-      let archive = { plans: [] };
-      let customDays = window._customDays || { entries: {} };
-      try {
-        const householdId = await window.getHouseholdId();
-        const [ar, cd] = await Promise.all([
-          window.db.from('plan_archives').select('*').eq('household_id', householdId).order('archived_at', { ascending: false }),
-          window.db.from('meal_days').select('*').eq('household_id', householdId).is('plan_id', null),
-        ]);
-        if (ar.data) {
-          archive = {
-            plans: ar.data.map(row => ({
-              startDate:  row.start_date,
-              endDate:    row.end_date,
-              archivedAt: row.archived_at,
-              days:       row.days || [],
-            }))
-          };
-        }
-        if (cd.data) {
-          const entries = {};
-          for (const row of cd.data) {
-            entries[row.date] = {
-              note: row.custom_note || '', recipeId: row.recipe_id ?? null, recipeTitle: row.recipe_title_snapshot || '',
-              blocked: row.blocked === true, shoppedAt: row.shopped_at ?? null, listId: row.shopping_list_id ?? null,
-            };
-          }
-          customDays = { entries };
-        }
-      } catch { /* OK, kör utan uppdatering */ }
-      window.renderWeeklyPlanData(data.weeklyPlan, null, true, archive, customDays);
-    }
+    await renderGeneratedPlan(data);
     // Veckans fynd: spara rea-förslagen — popupen nås via "sparat · fynd" i premiumvyns hero.
     window._weeklyDeals = data.deals || null;
     window.switchTab('vecka');
@@ -389,6 +397,124 @@ export async function generatePlan() {
       : 'Kunde inte skapa matsedeln — kontrollera nätet och prova igen.';
     status.className   = 'trigger-status error';
     btn.disabled       = false;
+  }
+}
+
+// ── Förslag med ett tryck: "Föreslå middagar för N tomma dagar" ──────────────
+// Samma inställningar som guiden (fälten i #planSheet: oprövade, vegetariska
+// dagar, Ture-dagar, proteiner, säsong, + portionerna i households.target_servings)
+// men utan guiden, och bara för de TOMMA dagarna i den visade veckan. Skyddet för
+// befintliga dagar ligger i servern (only_empty_days i api/generate.js): allt som
+// redan har innehåll hoppas över och skrivs aldrig över. Klienten hittar de tomma
+// dagarna med dlxEmptyDates (plan-viewer-deluxe.js) — samma regel som knappen.
+//
+// Antalen i guiden gäller en hel vecka (7 dagar). Färre tomma dagar → antalen
+// skalas ner i samma proportion, annars skulle t.ex. 4 vegetariska dagar ta över
+// ett förslag på 3 dagar.
+const PROTEIN_NAME = { fisk: 'fisk', kyckling: 'kyckling', 'kött': 'kött', 'fläsk': 'fläsk', vegetarisk: 'vegetariskt' };
+
+function proposalSettings(n) {
+  const num = (id) => parseInt(document.getElementById(id)?.value) || 0;
+  const scale = (v) => (n >= 7 ? Math.min(v, n) : Math.min(n, Math.round(v * n / 7)));
+  const ture = scale(num('tureDays'));
+  let veg = scale(num('vegetarianDays'));
+  if (veg + ture > n) veg = Math.max(0, n - ture);
+  const servingsRow = document.getElementById('servingsRow');
+  const servings = (servingsRow && servingsRow.style.display !== 'none')
+    ? (parseInt(document.getElementById('targetServings')?.value) || null) : null;
+  return {
+    servings, veg, ture,
+    untested: Math.min(num('untestedCount'), n),
+    proteins: getSelectedProteins(),
+    season: !!document.getElementById('seasonWeight')?.checked,
+  };
+}
+
+// En rad under ettrycksknappen, t.ex. "4 portioner · 2 vegetariska · högst 1 oprövat".
+export function proposalSettingsLine(n) {
+  const st = proposalSettings(n || 7);
+  const parts = [];
+  if (st.servings) parts.push(`${st.servings} portioner`);
+  if (st.veg > 0) parts.push(`${st.veg} ${st.veg === 1 ? 'vegetarisk' : 'vegetariska'}`);
+  if (st.ture > 0) parts.push(`${st.ture} Ture-${st.ture === 1 ? 'dag' : 'dagar'}`);
+  parts.push(st.untested === 0 ? 'inga oprövade' : `högst ${st.untested} ${st.untested === 1 ? 'oprövat' : 'oprövade'}`);
+  const missing = Object.keys(PROTEIN_NAME).filter((p) => !st.proteins.includes(p));
+  if (missing.length) parts.push(`utan ${missing.map((p) => PROTEIN_NAME[p]).join(', ')}`);
+  if (st.season) parts.push('säsongsanpassat');
+  return parts.join(' · ');
+}
+
+let _proposing = false;
+
+function setProposeBusy(busy) {
+  document.querySelectorAll('.dlx-propose-btn').forEach((b) => {
+    b.disabled = busy;
+    const label = b.querySelector('span');
+    if (label) {
+      if (busy) { b.dataset.label = label.textContent; label.textContent = 'Föreslår middagar…'; }
+      else if (b.dataset.label) label.textContent = b.dataset.label;
+    }
+  });
+}
+
+export async function proposeEmptyDays(weekStartIso) {
+  if (_proposing) return;
+  const toast = (msg, type = 'info') => window.showToast?.(msg, { type, duration: 6000 });
+
+  // Väntar redan ett förslag? Då skulle ett nytt göra det gamla till egna dagar —
+  // be familjen först använda eller slänga det.
+  const plan = window._lastPlan;
+  if ((plan?.days?.length) && !plan.confirmedAt && !window.planConfirmed) {
+    toast('Ett förslag väntar redan — använd det eller släng det först.');
+    return;
+  }
+  if (window._opBusy) { toast('En ändring sparas just nu — vänta en stund och prova igen.'); return; }
+
+  const dates = (window.dlxEmptyDates?.(weekStartIso) || []).slice().sort();
+  if (!dates.length) { toast('Det finns inga tomma dagar att fylla i veckan.'); return; }
+
+  const n = dates.length;
+  const st = proposalSettings(n);
+  _proposing = true;
+  setProposeBusy(true);
+  try {
+    const res = await window.apiFetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        start_date:       dates[0],
+        end_date:         dates[n - 1],
+        only_empty_days:  true,        // servern hoppar över ALLT som redan har innehåll
+        allowed_proteins: st.proteins.join(','),
+        untested_count:   st.untested,
+        vegetarian_days:  st.veg,
+        ture_days:        st.ture,
+        blocked_dates:    [],
+        deal_canons:      [],          // prisagnostiskt — prisoptimering hör till guiden
+        season_weight:    st.season,
+      }),
+    });
+    let data = {};
+    try { data = await res.json(); } catch { /* ingen JSON */ }
+    if (!res.ok) {
+      const e = new Error(data.error || 'Okänt fel');
+      e.userFacing = !!data.error;
+      throw e;
+    }
+    await renderGeneratedPlan(data);
+    window._weeklyDeals = data.deals || null;
+    window.switchTab('vecka');   // nollställer visad vecka → hoppa sedan till förslagets vecka
+    window.dlxWeekGoto?.(data.weeklyPlan?.startDate || dates[0]);
+    window.showToast?.(`Förslag klart — ${data.days} ${data.days === 1 ? 'middag' : 'middagar'}. Byt det du inte vill ha, använd sedan förslaget.`, {
+      type: 'success', duration: 7000,
+    });
+  } catch (err) {
+    toast((err.userFacing && err.message)
+      ? err.message
+      : 'Kunde inte föreslå middagar — kontrollera nätet och prova igen.', 'error');
+  } finally {
+    _proposing = false;
+    setProposeBusy(false);
   }
 }
 
@@ -440,6 +566,8 @@ window.getBlockedDates      = getBlockedDates;
 window.generatePlan         = generatePlan;
 window.toggleTrigger        = toggleTrigger;
 window.openNewPlan          = openNewPlan;
+window.proposeEmptyDays     = proposeEmptyDays;
+window.proposalSettingsLine = proposalSettingsLine;
 window.wizGo                = wizGo;
 window.stepNum              = stepNum;
 window.stepServings         = stepServings;
