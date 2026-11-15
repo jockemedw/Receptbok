@@ -6,7 +6,7 @@ vid sessionstart eller när du behöver veta vad som är öppet. Arkiv: `docs/se
 
 <!-- DIGEST:START -->
 ## ▶ Nästa session — börja här
-- **Session 160: VECKOFLÖDET BYGGT — Nästa steg-kort på Idag, förslag med ett tryck för tomma dagar (ny `only_empty_days` i `api/generate.js`, datamuterande), "Använd förslaget/Släng", dagbrickor + rena rader i Inköp, lagning steg för steg (styles v216/app v189/SW v142).** PR öppen, väntar Joakims OK via preview. Mobilkoll enligt kön.
+- **Session 160: VECKOFLÖDET BYGGT — Nästa steg-kort på Idag, förslag med ett tryck för tomma dagar (ny `only_empty_days` i `api/generate.js`, datamuterande), "Använd förslaget/Släng", dagbrickor + rena rader i Inköp, lagning steg för steg (styles v216/app v189/SW v142).** PR #273 MERGAD till main 2026-11-15 (Joakims OK). Mobilkoll enligt kön — börja med ettrycksförslaget på en vecka med blandat innehåll.
 - **Session 159b: "Vi har handlat" följs av frågan om listan också ska rensas.** Mobilkoll enligt kön.
 - **Session 159: receptbilden syns nu i matsedelns receptvy (dag-sheeten + desktop-panelen).** Mobilkoll enligt kön.
 - **Session 158l: Batch F/G LIVE — sökindex, Idag utan tomma omritningar, skelett i Inköp/Matsedel/Listor, tryckfeedback. Prestandaplanen A–G genomförd.** Kvar: JWT-beslutet (A7), A4/A6/A8, C4. Mobilkoll enligt kön.
