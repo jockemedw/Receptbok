@@ -579,7 +579,7 @@ function buildHero(weekDays, weekStart, plan, pending) {
   // syns här, "Bekräftad" bara i veckor med den bekräftade planens dagar.
   const badge = (pending && hasActiveDays)
     ? `<span class="dlx-rail-badge pending">Förslag</span>`
-    : ((hasActiveDays && plan?.confirmedAt) ? `<span class="dlx-rail-badge">Bekräftad</span>` : '');
+    : '';
 
   // Grann-veckor i kanterna (diskret svep-affordans + tapbara). Sidan som pekar
   // mot idag ersätts av en rust "Idag"-pill när man svept bort från nuvarande vecka.
@@ -645,8 +645,7 @@ function weekSummaryParts(weekDays, plan, pending) {
   if (free) parts.push(`${free} ${free === 1 ? 'fri dag' : 'fria dagar'}`);
   if (empty) parts.push(`${empty} ${empty === 1 ? 'dag' : 'dagar'} kvar att fylla`);
   const hasActiveDays = weekDays.some(d => d.planId === 'active');
-  if (pending && hasActiveDays) parts.push('<strong class="dlx-sum-badge pending">Förslag — bekräfta nedan</strong>');
-  else if (hasActiveDays && plan?.confirmedAt) parts.push('<strong class="dlx-sum-badge">Bekräftad</strong>');
+  if (pending && hasActiveDays) parts.push('<strong class="dlx-sum-badge pending">Förslag — använd eller släng</strong>');
   const totalSaving = weekDays.reduce((sum, d) => sum + (d.saving || 0), 0);
   const hasDeals = hasActiveDays && !!(window._weeklyDeals?.candidates?.length);
   if (totalSaving >= 1) parts.push(`${fmtKr(totalSaving)} sparat${hasDeals ? ' · <button type="button" class="dlx-sum-link" onclick="openDealsPopup()">Se fynd</button>' : ''}`);
@@ -680,16 +679,51 @@ function buildHeader(weekDays, weekStart, plan, pending) {
       <div class="dlx-header-actions">
         ${isCurrentWeek ? '' : `<button type="button" class="dlx-btn" onclick="dlxWeekToday()">Idag</button>`}
         <button type="button" class="dlx-btn" onclick="switchTab('shop')">${I.cart}Inköp för veckan</button>
-        <button type="button" class="dlx-btn dlx-btn-accent" onclick="openNewPlan()">${I.sparkle}Föreslå matsedel</button>
+        ${proposeHtml(weekDays, weekStart, pending, true)}
       </div>
     </div>`;
 }
 
+// Förslag med ett tryck: tomma dagar i den VISADE veckan, från och med idag.
+// Bara dagar helt utan innehåll räknas — plandagar, egna dagar (även tomma
+// rader), noteringar och fria dagar är upptagna. Servern skyddar dem dessutom
+// själv (only_empty_days i api/generate.js).
+function emptyDatesOf(weekDays) {
+  const todayIso = fmtIso(new Date());
+  return weekDays
+    .filter(d => d.date >= todayIso && !d.isArchive && !d.isCustom && !dayHasContent(d))
+    .map(d => d.date);
+}
+
+// Exponeras så Idag-fliken/generatorn räknar med EXAKT samma regel.
+window.dlxEmptyDates = function (weekStartIso) {
+  return emptyDatesOf(weekDaysOf(weekStartIso || currentWeekStart()));
+};
+
+// Primärknappen. Finns inga tomma dagar (eller väntar redan ett förslag) räcker
+// den vanliga vägen: "Föreslå matsedel" öppnar guiden. Under ettrycksknappen:
+// inställningarna i en rad + "Anpassa" som öppnar den oförändrade guiden.
+function proposeHtml(weekDays, weekStart, pending, withIcon) {
+  const empty = pending ? [] : emptyDatesOf(weekDays);
+  if (!empty.length) {
+    return `<button type="button" class="dlx-btn dlx-btn-accent" onclick="openNewPlan()">${withIcon ? I.sparkle : ''}Föreslå matsedel</button>`;
+  }
+  const n = empty.length;
+  const line = window.proposalSettingsLine?.(n) || '';
+  return `<div class="dlx-propose">
+    <button type="button" class="dlx-btn dlx-btn-accent dlx-propose-btn" onclick="proposeEmptyDays('${weekStart}')">${I.sparkle}<span>Föreslå middagar för ${n} ${n === 1 ? 'tom dag' : 'tomma dagar'}</span></button>
+    <p class="dlx-propose-sub">${line ? `<span class="dlx-propose-sum">${esc(line)}</span>` : ''}<button type="button" class="dlx-propose-link" onclick="openNewPlan()">Anpassa</button></p>
+  </div>`;
+}
+
 // Mobil: knapparna under dagslistan (desktop har dem i huvudet).
-function footActionsHtml() {
-  return `<div class="dlx-foot">
+function footActionsHtml(weekDays, weekStart, pending) {
+  const propose = proposeHtml(weekDays, weekStart, pending, false);
+  const one = propose.includes('dlx-propose');
+  return `<div class="dlx-foot${one ? ' has-propose' : ''}">
+    ${one ? propose : ''}
     <button type="button" class="dlx-btn" onclick="switchTab('shop')">Inköp för veckan</button>
-    <button type="button" class="dlx-btn dlx-btn-accent" onclick="openNewPlan()">Föreslå matsedel</button>
+    ${one ? '' : propose}
   </div>`;
 }
 
@@ -896,8 +930,13 @@ function emptyDayCard(d) {
     </article>`;
 }
 
+// Obekräftat förslag? Sätts i renderDeluxeInner innan korten ritas. Förslagets
+// receptdagar får streckad ram + "Förslag"-etikett + "Annan rätt"-knapp.
+let _proposalOn = false;
+
 function renderDayCard(d) {
   const isRecipe = d.recipeId && !d.isCustom;
+  const isProposal = _proposalOn && isRecipe && d.planId === 'active' && !d.isArchive;
   const cls = (d.isToday ? ' is-today' : '') + (d.isPast ? ' is-past' : '') + (d.isArchive ? ' is-archive' : '');
   let html = isRecipe ? recipeDayCard(d, { cls }) : emptyDayCard(d);
   // recipeDayCard får is-today/is-past/is-archive via opts; emptyDayCard (egen dag,
@@ -916,6 +955,16 @@ function renderDayCard(d) {
       html = html.replace('<span class="dlx-day-chev"', `${chip}<span class="dlx-day-chev"`);
     } else {
       html = html.replace('<div class="dlx-day-main">', `<div class="dlx-day-main">${chip}`);
+    }
+  }
+  if (isProposal) {
+    html = html.replace('class="dlx-day', 'class="dlx-day is-proposal');
+    html = html.replace('<span class="dlx-rail"></span>', '<span class="dlx-rail"></span><span class="dlx-prop-tag">Förslag</span>');
+    // "Annan rätt" tar chevronens plats (draghandtaget är ändå bara en antydan —
+    // hela kortet går att dra). Samma byt-väg som dag-sheetens Slumpa.
+    if (canShuffleDay(d)) {
+      const btn = `<button type="button" class="dlx-alt-btn" aria-label="Annan rätt för ${esc(d.day)} ${d.dayNum}" onclick="event.stopPropagation();dlxShuffle('${d.date}')">${I.shuffle}<span class="dlx-alt-txt">Annan rätt</span></button>`;
+      html = html.replace(/<span class="dlx-day-chev"[^>]*>[\s\S]*?<\/span>/, btn);
     }
   }
   return html;
@@ -1106,6 +1155,7 @@ function renderDeluxeInner() {
   const plan = window._lastPlan || null;
   const pending = !!(plan?.days?.length) && !plan?.confirmedAt && !window.planConfirmed;
   const todayIso = fmtIso(new Date());
+  _proposalOn = pending;
 
   // EN kalendervecka i taget (mån–sön), default innevarande. Passerade veckor
   // är ett ‹-tryck bort (ersätter det gamla historik-dragspelet). Ikväll-kortet
@@ -1129,7 +1179,7 @@ function renderDeluxeInner() {
   setSec(host, 'banner', weekNoticeHtml(plan, pending, weekStart) + modeBannerHtml() + placeBannerHtml());
   setSec(host, 'today', '');
   renderDaysDiff(host, weekDays, { tonightHtml: tonight, tonightDate: todayIso });
-  setSec(host, 'foot', footActionsHtml());
+  setSec(host, 'foot', footActionsHtml(weekDays, weekStart, pending));
   applyPendingMarks(host);
   markOpenCard();
 }
